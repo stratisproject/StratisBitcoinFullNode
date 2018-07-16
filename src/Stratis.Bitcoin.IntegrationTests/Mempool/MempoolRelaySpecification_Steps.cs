@@ -59,7 +59,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected void nodeA_connects_to_nodeB()
         {
-            this.nodeA.CreateRPCClient().AddNode(this.nodeB.Endpoint, true);
+            this.nodeA.CreateRPCClient().AddNode(this.nodeB.Endpoint, false);
+            TestHelper.WaitLoop(() => TestHelper.IsNodeConnected(this.nodeA));
+            TestHelper.IsNodeConnected(this.nodeA).Should().BeTrue();
+
+            this.nodeB.CreateRPCClient().AddNode(this.nodeA.Endpoint, false);
+            TestHelper.WaitLoop(() => TestHelper.IsNodeConnected(this.nodeB));
+            TestHelper.IsNodeConnected(this.nodeB).Should().BeTrue();
+
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodeA, this.nodeB));
         }
 
@@ -72,7 +79,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected void nodeB_connects_to_nodeC()
         {
-            this.nodeB.CreateRPCClient().AddNode(this.nodeC.Endpoint, true);
+            this.nodeB.CreateRPCClient().AddNode(this.nodeC.Endpoint, false);
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodeB, this.nodeC));
         }
 

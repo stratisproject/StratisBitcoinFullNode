@@ -280,10 +280,10 @@ namespace Stratis.Bitcoin
             this.loggerFactory.Dispose();
 
             foreach (IDisposable disposable in this.Resources)
-                disposable.Dispose();
+                disposable?.Dispose();
 
             // Fire the NodeFeatureExecutor.Stop.
-            this.fullNodeFeatureExecutor.Dispose();
+            this.fullNodeFeatureExecutor?.Dispose();
 
             // Fire INodeLifetime.Stopped.
             this.nodeLifetime.NotifyStopped();

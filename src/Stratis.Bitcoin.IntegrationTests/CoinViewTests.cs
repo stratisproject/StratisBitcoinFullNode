@@ -179,26 +179,26 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 //Core1 discovers 10 blocks, sends to stratis
                 Block tip = coreNode1.FindBlock(10).Last();
-                stratisNode.CreateRPCClient().AddNode(coreNode1.Endpoint, true);
+                stratisNode.CreateRPCClient().AddNode(coreNode1.Endpoint, false);
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash());
                 stratisNode.CreateRPCClient().RemoveNode(coreNode1.Endpoint);
 
                 //Core2 discovers 20 blocks, sends to stratis
                 tip = coreNode2.FindBlock(20).Last();
-                stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
+                stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, false);
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
                 stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
                 ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
 
                 //Core1 discovers 30 blocks, sends to stratis
                 tip = coreNode1.FindBlock(30).Last();
-                stratisNode.CreateRPCClient().AddNode(coreNode1.Endpoint, true);
+                stratisNode.CreateRPCClient().AddNode(coreNode1.Endpoint, false);
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash());
                 stratisNode.CreateRPCClient().RemoveNode(coreNode1.Endpoint);
 
                 //Core2 discovers 50 blocks, sends to stratis
                 tip = coreNode2.FindBlock(50).Last();
-                stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
+                stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, false);
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
                 stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
                 ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();

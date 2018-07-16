@@ -112,14 +112,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisBitcoinPowApiRunner(this.GetNextDataFolderName()), start);
         }
 
-        public CoreNode CreateStratisPosNode()
+        public CoreNode CreateStratisPosNode(string agent = null)
         {
-            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName()), false, "stratis.conf");
+            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(agent)), false, "stratis.conf");
         }
 
-        public CoreNode CreateStratisPosApiNode()
+        public CoreNode CreateStratisPosApiNode(string agent = null)
         {
-            return CreateNode(new StratisPosApiRunner(this.GetNextDataFolderName()), false, "stratis.conf");
+            return CreateNode(new StratisPosApiRunner(this.GetNextDataFolderName(agent)), false, "stratis.conf");
         }
 
         public CoreNode CloneStratisNode(CoreNode cloneNode)

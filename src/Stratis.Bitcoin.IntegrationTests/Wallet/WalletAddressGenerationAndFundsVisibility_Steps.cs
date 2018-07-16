@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private CoreNode sendingStratisBitcoinNode;
         private CoreNode receivingStratisBitcoinNode;
         private long walletBalance;
+        private long previousCoinBaseMaturity;
 
         protected override void BeforeTest()
         {
@@ -38,6 +39,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         protected override void AfterTest()
         {
+            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = this.previousCoinBaseMaturity;
+            this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = this.previousCoinBaseMaturity;
         }
 
         public Wallet_address_generation_and_funds_visibility(ITestOutputHelper output) : base(output)
@@ -48,6 +51,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             this.sendingStratisBitcoinNode = this.nodeGroup[SendingNodeName];
             this.receivingStratisBitcoinNode = this.nodeGroup[ReceivingNodeName];
+
+            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity.Should()
+                .Be(this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity);
+            this.previousCoinBaseMaturity = this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity;
 
             var coinbaseMaturity = 1;
 
@@ -128,7 +135,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void getting_wallet_balance()
         {
-            this.sharedSteps.WaitForNodeToSync(this.nodeGroup.Values.ToArray());
+            this.sharedSteps.WaitForNodesToSync(this.nodeGroup.Values.ToArray());
 
             this.walletBalance = this.receivingStratisBitcoinNode.FullNode.WalletManager()
                .GetSpendableTransactionsInWallet(ReceivingWalletName)

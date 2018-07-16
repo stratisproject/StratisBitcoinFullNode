@@ -11,6 +11,8 @@ using Stratis.Bitcoin.Features.Wallet;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
+    using System.Linq;
+
     public sealed class StratisBitcoinPosRunner : NodeRunner
     {
         public StratisBitcoinPosRunner(string dataDir)
@@ -21,7 +23,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
+            var agent = this.DataFolder.Split('\\').Last();
+            var settings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder, $"-agentprefix={agent}" });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)

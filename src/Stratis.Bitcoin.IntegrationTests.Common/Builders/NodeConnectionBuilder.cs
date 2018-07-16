@@ -34,8 +34,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
 
         public NodeConnectionBuilder Connect(string from, string to)
         {
-            this.nodes[from].CreateRPCClient().AddNode(this.nodes[to].Endpoint, true);
-            this.sharedSteps.WaitForNodeToSync(this.nodes[from], this.nodes[to]);
+            this.nodes[from].FullNode.ConnectionManager.AddConnectedPeer(this.nodes[to].CreateNetworkPeerClient());
+            this.sharedSteps.WaitForNodesToSync(this.nodes[from], this.nodes[to]);
             return this;
         }
 

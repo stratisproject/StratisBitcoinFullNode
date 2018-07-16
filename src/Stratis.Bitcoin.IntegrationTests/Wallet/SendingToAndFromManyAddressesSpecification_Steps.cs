@@ -136,6 +136,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             this.sharedSteps.MineBlocks(1, this.nodes[NodeTwo], WalletAccountName, WalletName, WalletPassword, this.transactionFee.Satoshi);
 
+            this.sharedSteps.WaitForNodesToSync(this.nodes.Values.ToArray());
+
             this.nodes[NodeOne].WalletBalance(WalletName).Should().Be(nodeOneBeforeBalance + Money.Coins(49));
 
             this.nodes[NodeTwo].WalletSpendableTransactionCount(WalletName).Should().Be(3);

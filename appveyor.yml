@@ -76,9 +76,6 @@ test_script:
       
       foreach ($testFolder in ls *.Tests) {
 
-            # exclude integration tests
-            if ($testFolder -like '*Integration.Tests*' -Or $testFolder -like '*IntegrationTests*') { continue }
-            
             Push-Location $testFolder
 
             Write-Host "[$env:configuration] Running tests in $testFolder" -foregroundcolor "magenta"
@@ -90,7 +87,22 @@ test_script:
             }
     
             Pop-Location
-      }  
+      }
+      
+      foreach ($testFolder in ls *.IntegrationTests) {
+
+            Push-Location $testFolder
+
+            Write-Host "[$env:configuration] Running integration tests in $testFolder" -foregroundcolor "magenta"
+            dotnet test -c $env:configuration --no-build
+            
+            if ($LastExitCode -ne 0) { 
+                $anyFailures = $TRUE
+                Add-AppveyorMessage -Message "Some tests failed in $testFolder."
+            }
+    
+            Pop-Location
+      }
 
       Write-Host "[$env:configuration] FINISHED dotnet test" -foregroundcolor "magenta"
       if ($anyFailures -eq $TRUE) { $host.SetShouldExit(1) }
