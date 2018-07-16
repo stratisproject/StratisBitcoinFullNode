@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
 
                 if (connectBlocksResult.ConsensusTipChanged)
-                    this.NotifyBehaviorsOnConsensusTipChanged();
+                    await this.NotifyBehaviorsOnConsensusTipChangedAsync().ConfigureAwait(false);
 
                 lock (this.peerLock)
                 {
@@ -376,30 +376,30 @@ namespace Stratis.Bitcoin.Consensus
         /// Notifies the chained header behaviors of all connected peers when a consensus tip is changed.
         /// Consumes headers from their caches if there are any.
         /// </summary>
-        private void NotifyBehaviorsOnConsensusTipChanged()
+        private async Task NotifyBehaviorsOnConsensusTipChangedAsync()
         {
             this.logger.LogTrace("()");
 
-            var behaviors = new List<ChainHeadersBehavior>();
+            var behaviors = new List<ConsensusManagerBehavior>();
 
             lock (this.peerLock)
             {
                 foreach (INetworkPeer peer in this.peersByPeerId.Values)
-                    behaviors.Add(peer.Behavior<ChainHeadersBehavior>());
+                    behaviors.Add(peer.Behavior<ConsensusManagerBehavior>());
             }
 
             var blocksToDownload = new List<ConnectNewHeadersResult>();
 
-            foreach (ChainHeadersBehavior chainHeadersBehavior in behaviors)
+            foreach (ConsensusManagerBehavior consensusManagerBehavior in behaviors)
             {
-                ConnectNewHeadersResult connectNewHeadersResult = chainHeadersBehavior.ConsensusTipChanged(this.Tip);
+                ConnectNewHeadersResult connectNewHeadersResult = await consensusManagerBehavior.ConsensusTipChangedAsync(this.Tip).ConfigureAwait(false);
 
-                int? peerId = chainHeadersBehavior.AttachedPeer?.Connection?.Id;
+                int? peerId = consensusManagerBehavior.AttachedPeer?.Connection?.Id;
 
                 if (peerId == null)
                     continue;
 
-                if (connectNewHeadersResult.DownloadTo == null)
+                if (connectNewHeadersResult == null)
                 {
                     this.logger.LogTrace("No new blocks to download were presented by peer ID {0}.", peerId);
                     continue;
@@ -646,7 +646,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Informs <see cref="ChainHeadersBehavior"/> of each peer
+        /// Informs <see cref="ConsensusManagerBehavior"/> of each peer
         /// to be resynced and simulates disconnection of the peer.
         /// </summary>
         /// <param name="peerIds">List of peer IDs to resync.</param>
@@ -664,7 +664,7 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         this.logger.LogTrace("Resyncing peer ID {0}.", peerId);
 
-                        Task task = peer.Behavior<ChainHeadersBehavior>().ResetPendingTipAndSyncAsync();
+                        Task task = peer.Behavior<ConsensusManagerBehavior>().ResetExpectedPeerTipAndSyncAsync();
                         resyncTasks.Add(task);
                     }
                     else
