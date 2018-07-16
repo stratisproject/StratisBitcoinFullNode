@@ -801,6 +801,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             if (this.IsConnected) this.SetStateAsync(NetworkPeerState.Disconnecting).GetAwaiter().GetResult();
 
+            this.Behaviors?.ToList().ForEach(b => b?.Detach());
+            this.Behaviors?.Clear();
+
             this.Connection.Disconnect();
 
             if (this.DisconnectReason == null)
