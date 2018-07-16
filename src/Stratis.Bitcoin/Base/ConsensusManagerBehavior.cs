@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.Base
 
             if (headersPayload.Headers.Count > MaxItemsPerHeadersMessage)
             {
-                this.logger.LogTrace("Headers payload with {0} headers was received. Protocol violation. Banning the peer.", headersPayload.Headers.Count);
+                this.logger.LogDebug("Headers payload with {0} headers was received. Protocol violation. Banning the peer.", headersPayload.Headers.Count);
 
                 validationError = "Protocol violation.";
 
@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.Base
             {
                 if (headersPayload.Headers[i].HashPrevBlock != headersPayload.Headers[i - 1].GetHash())
                 {
-                    this.logger.LogTrace("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.",
+                    this.logger.LogDebug("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.",
                         peer.RemoteSocketEndpoint, i, headersPayload.Headers[i].HashPrevBlock, headersPayload.Headers[i - 1].GetHash());
 
                     validationError = "Peer presented nonconsecutive headers.";
@@ -366,7 +366,7 @@ namespace Stratis.Bitcoin.Base
             }
             catch (ConnectHeaderException)
             {
-                this.logger.LogTrace("Unable to connect headers.");
+                this.logger.LogDebug("Unable to connect headers.");
                 this.cachedHeaders.Clear();
 
                 // Resync in case can't connect.
@@ -374,7 +374,7 @@ namespace Stratis.Bitcoin.Base
             }
             catch (CheckpointMismatchException)
             {
-                this.logger.LogTrace("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
+                this.logger.LogDebug("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
                 this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer presented header that violates a checkpoint.");
             }
             //TODO catch more exceptions when validator are implemented and CM.HeadersPresented can throw anything else
