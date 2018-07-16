@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
     public abstract class ConsensusRules : IConsensusRules
     {
         /// <summary>A factory to creates logger instances for each rule.</summary>
-        private readonly ILoggerFactory loggerFactory;
+        public readonly ILoggerFactory LoggerFactory;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.DateTimeProvider = dateTimeProvider;
             this.Chain = chain;
             this.NodeDeployments = nodeDeployments;
-            this.loggerFactory = loggerFactory;
+            this.LoggerFactory = loggerFactory;
             this.ConsensusSettings = consensusSettings;
             this.Checkpoints = checkpoints;
             this.ConsensusParams = this.Network.Consensus;
@@ -95,14 +95,19 @@ namespace Stratis.Bitcoin.Consensus.Rules
             foreach (ConsensusRule consensusRule in ruleRegistration.GetRules())
             {
                 consensusRule.Parent = this;
-                consensusRule.Logger = this.loggerFactory.CreateLogger(consensusRule.GetType().FullName);
+                consensusRule.Logger = this.LoggerFactory.CreateLogger(consensusRule.GetType().FullName);
                 consensusRule.Initialize();
-                
-                this.consensusRules.Add(consensusRule.GetType().FullName, new ConsensusRuleDescriptor(consensusRule));
-            }
 
-            this.validationRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<ValidationRuleAttribute>().Any() || w.RuleAttributes.Count == 0));
-            this.executionRules.AddRange(this.consensusRules.Values.Where(w => w.RuleAttributes.OfType<ExecutionRuleAttribute>().Any()));
+                var rule = new ConsensusRuleDescriptor(consensusRule);
+
+                this.consensusRules.Add(consensusRule.GetType().FullName, rule);
+
+                if (rule.RuleAttributes.OfType<ExecutionRuleAttribute>().Any())
+                    this.executionRules.Add(rule);
+
+                if (rule.RuleAttributes.OfType<ValidationRuleAttribute>().Any() || rule.RuleAttributes.Count == 0)
+                    this.validationRules.Add(rule);
+            }
 
             return this;
         }
