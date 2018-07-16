@@ -30,9 +30,8 @@ namespace Stratis.Bitcoin.Features.Apps
         public IEnumerable<IStratisApp> Applications
         {
             get
-            {
-                if (this.applications == null)
-                    this.Load();
+            {                
+                this.Load();
 
                 return this.applications;
             }
@@ -42,7 +41,8 @@ namespace Stratis.Bitcoin.Features.Apps
         {
             try
             {
-                Debug.Assert(this.applications==null);
+                if (this.applications != null)
+                    return;
 
                 this.applications = new List<IStratisApp>();
 
