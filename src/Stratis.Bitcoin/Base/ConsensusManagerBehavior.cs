@@ -172,25 +172,15 @@ namespace Stratis.Bitcoin.Base
                 return;
             }
 
-            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
+            HeadersPayload headersPayload = this.ConstructHeadersPayload(getHeadersPayload.BlockLocator, getHeadersPayload.HashStop);
 
-            if (fork != null)
+            if (headersPayload != null)
             {
-                var headers = new HeadersPayload();
-
-                foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
-                {
-                    headers.Headers.Add(header.Header);
-
-                    if ((header.HashBlock == getHeadersPayload.HashStop) || (headers.Headers.Count == MaxItemsPerHeadersMessage))
-                        break;
-                }
-
-                this.logger.LogTrace("{0} headers were selected for sending, last one is '{1}'.", headers.Headers.Count, headers.Headers.Last().GetHash());
+                this.logger.LogTrace("{0} headers were selected for sending, last one is '{1}'.", headersPayload.Headers.Count, headersPayload.Headers.LastOrDefault()?.GetHash());
 
                 try
                 {
-                    await peer.SendMessageAsync(headers).ConfigureAwait(false);
+                    await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -199,6 +189,36 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>Constructs the headers from locator to consensus tip.</summary>
+        /// <param name="locator">Block locator.</param>
+        /// <param name="hashStop">Hash of the block after which constructing headers payload should stop.</param>
+        /// <returns><see cref="HeadersPayload"/> with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
+        private HeadersPayload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(locator), locator, nameof(hashStop), hashStop);
+
+            ChainedHeader fork = this.chain.FindFork(locator);
+
+            if (fork == null)
+            {
+                this.logger.LogTrace("(-)[INVALID_LOCATOR]:null");
+                return null;
+            }
+
+            var headers = new HeadersPayload();
+
+            foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
+            {
+                headers.Headers.Add(header.Header);
+
+                if ((header.HashBlock == hashStop) || (headers.Headers.Count == MaxItemsPerHeadersMessage))
+                    break;
+            }
+
+            this.logger.LogTrace("(-):'{0}'", headers);
+            return headers;
         }
 
         /// <summary>
