@@ -83,11 +83,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private void a_gap_limit_of_21()
         {
             int customUnusedAddressBuffer = 21;
-
+            var configParameters =
+                new NodeConfigParameters {{"walletaddressbuffer", customUnusedAddressBuffer.ToString()}};
             this.nodeGroup = this.nodeGroupBuilder
                 .StratisPowNode(SendingNodeName).Start().NotInIBD()
                 .WithWallet(SendingWalletName, WalletPassword)
-                .StratisCustomPowNode(ReceivingNodeName, new[] { $"-walletaddressbuffer={customUnusedAddressBuffer}" }).Start()
+                .StratisCustomPowNode(ReceivingNodeName, configParameters).Start()
                 .WithWallet(ReceivingWalletName, WalletPassword)
                 .WithConnections()
                 .Connect(SendingNodeName, ReceivingNodeName)

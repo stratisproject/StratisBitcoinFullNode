@@ -5,11 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -26,72 +24,6 @@ using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
-    public static class FullNodeExt
-    {
-        public static WalletManager WalletManager(this FullNode fullNode)
-        {
-            return fullNode.NodeService<IWalletManager>() as WalletManager;
-        }
-
-        public static WalletTransactionHandler WalletTransactionHandler(this FullNode fullNode)
-        {
-            return fullNode.NodeService<IWalletTransactionHandler>() as WalletTransactionHandler;
-        }
-
-        public static ConsensusLoop ConsensusLoop(this FullNode fullNode)
-        {
-            return fullNode.NodeService<IConsensusLoop>() as ConsensusLoop;
-        }
-
-        public static CoinView CoinView(this FullNode fullNode)
-        {
-            return fullNode.NodeService<CoinView>();
-        }
-
-        public static MempoolManager MempoolManager(this FullNode fullNode)
-        {
-            return fullNode.NodeService<MempoolManager>();
-        }
-
-        public static BlockStoreManager BlockStoreManager(this FullNode fullNode)
-        {
-            return fullNode.NodeService<BlockStoreManager>();
-        }
-
-        public static ChainedHeader GetBlockStoreTip(this FullNode fullNode)
-        {
-            return fullNode.NodeService<IChainState>().BlockStoreTip;
-        }
-    }
-
-    public enum CoreNodeState
-    {
-        Stopped,
-        Starting,
-        Running,
-        Killed
-    }
-
-    public class NodeConfigParameters : Dictionary<string, string>
-    {
-        public void Import(NodeConfigParameters configParameters)
-        {
-            foreach (KeyValuePair<string, string> kv in configParameters)
-            {
-                if (!this.ContainsKey(kv.Key))
-                    this.Add(kv.Key, kv.Value);
-            }
-        }
-
-        public override string ToString()
-        {
-            var builder = new StringBuilder();
-            foreach (KeyValuePair<string, string> kv in this)
-                builder.AppendLine(kv.Key + "=" + kv.Value);
-            return builder.ToString();
-        }
-    }
-
     public class NodeBuilder : IDisposable
     {
         public List<CoreNode> Nodes { get; }
@@ -142,18 +74,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             throw new FileNotFoundException($"Could not load the file {path}.");
         }
 
-        private CoreNode CreateNode(NodeRunner runner, bool start, string configFile = "bitcoin.conf")
+        private CoreNode CreateNode(NodeRunner runner, bool start, string configFile = "bitcoin.conf", bool useCookieAuth = false)
         {
-            var node = new CoreNode(runner, this, configFile);
+            var node = new CoreNode(runner, this, configFile, useCookieAuth);
             this.Nodes.Add(node);
             if (start) node.Start();
             return node;
         }
 
-        public CoreNode CreateBitcoinCoreNode(string version = "0.13.1")
+        public CoreNode CreateBitcoinCoreNode(string version = "0.13.1", bool useCookieAuth = false)
         {
             string bitcoinDPath = GetBitcoinCorePath(version);
-            return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), false);
+            return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), start: false, useCookieAuth: useCookieAuth);
         }
 
         public CoreNode CreateStratisPowNode(bool start = false)
@@ -161,7 +93,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName()), start);
         }
 
-        public CoreNode CreateStratisCustomPowNode(IEnumerable<string> args, bool start = false)
+        public CoreNode CreateStratisCustomPowNode(NodeConfigParameters configParameters, bool start = false)
         {
             var callback = new Action<IFullNodeBuilder>( builder => builder
                 .UseBlockStore()
@@ -172,7 +104,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 .AddRPC()
                 .MockIBD());
 
-            return CreateCustomNode(start, callback, Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, args);
+            return CreateCustomNode(start, callback, Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
         }
 
         public CoreNode CreateStratisPowApiNode(bool start = false)
@@ -199,24 +131,23 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>A helper method to create a node instance with a non-standard set of features enabled. The node can be PoW or PoS, as long as the appropriate features are provided.</summary>
-        /// <param name="dataDir">The node's data directory where downloaded chain data gets stored.</param>
         /// <param name="callback">A callback accepting an instance of <see cref="IFullNodeBuilder"/> that constructs a node with a custom feature set.</param>
         /// <param name="network">The network the node will be running on.</param>
         /// <param name="protocolVersion">Use <see cref="ProtocolVersion.PROTOCOL_VERSION"/> for BTC PoW-like networks and <see cref="ProtocolVersion.ALT_PROTOCOL_VERSION"/> for Stratis PoS-like networks.</param>
-        /// <param name="configFileName">The name for the node's configuration file.</param>
         /// <param name="agent">A user agent string to distinguish different node versions from each other.</param>
-        public CoreNode CreateCustomNode(bool start, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, IEnumerable<string> args = null, string agent = "Custom")
+        /// <param name="configParameters">Use this to pass in any custom configuration parameters used to set up the CoreNode</param>
+        public CoreNode CreateCustomNode(bool start, Action<IFullNodeBuilder> callback, Network network, ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, string agent = "Custom", NodeConfigParameters configParameters = null)
         {
-            var argsList = args as List<string> ?? args?.ToList() ?? new List<string>();
+            configParameters = configParameters ?? new NodeConfigParameters();
 
-            string configFileName = "custom.conf";
-            if (!argsList.Any(a => a.StartsWith("-conf="))) argsList.Add($"-conf={configFileName}");
-            else configFileName = argsList.First(a => a.StartsWith("-conf=")).Replace("-conf=", "");
+            configParameters.SetDefaultValueIfUndefined("conf", "custom.conf");
+            string configFileName = configParameters["conf"];
 
-            string dataDir = this.GetNextDataFolderName(agent);
-            if (!argsList.Any(a => a.StartsWith("-datadir="))) argsList.Add($"-datadir={dataDir}");
+            configParameters.SetDefaultValueIfUndefined("datadir", this.GetNextDataFolderName(agent));
+            string dataDir = configParameters["datadir"];
 
-            return CreateNode(new CustomNodeRunner(dataDir, callback, network, protocolVersion, argsList, agent), start, configFileName);
+            configParameters.ToList().ForEach(p => this.ConfigParameters[p.Key] = p.Value);
+            return CreateNode(new CustomNodeRunner(dataDir, callback, network, protocolVersion, configParameters, agent), start, configFileName);
         }
 
         private string GetNextDataFolderName(string folderName = null)

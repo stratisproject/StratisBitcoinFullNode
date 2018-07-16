@@ -51,6 +51,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             this.sharedSteps.MineBlocks(1, this.nodes[JingTheFastMiner], AccountZero, WalletZero, WalletPassword);
             this.sharedSteps.WaitForNodesToSync(this.nodes[JingTheFastMiner], this.nodes[Bob]);
+
             this.nodes[JingTheFastMiner].FullNode.Chain.Tip.Height.Should().Be(1);
             this.nodes[Bob].FullNode.Chain.Tip.Height.Should().Be(1);
 

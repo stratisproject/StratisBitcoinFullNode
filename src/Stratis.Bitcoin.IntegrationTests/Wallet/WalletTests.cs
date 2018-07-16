@@ -353,18 +353,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
 
                 //// sync all nodes
-                RPCClient stratisReceiverRpcClient = stratisReceiver.CreateRPCClient();
-                stratisReceiverRpcClient.AddNode(stratisSender.Endpoint, false);
-                stratisReceiverRpcClient.AddNode(stratisReorg.Endpoint, false);
-                RPCClient stratisSenderRpcClient = stratisSender.CreateRPCClient();
-                stratisSenderRpcClient.AddNode(stratisReorg.Endpoint, false);
-
+                stratisReceiver.CreateRPCClient().AddNode(stratisSender.Endpoint, true);
+                stratisReceiver.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+                stratisSender.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
 
                 // remove the reorg node and wait for node to be disconnected
-                stratisReceiverRpcClient.RemoveNode(stratisReorg.Endpoint);
-                stratisSenderRpcClient.RemoveNode(stratisReorg.Endpoint);
+                stratisReceiver.CreateRPCClient().RemoveNodeAsync(stratisReorg.Endpoint);
+                stratisSender.CreateRPCClient().RemoveNodeAsync(stratisReorg.Endpoint);
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
 
                 // create a reorg by mining on two different chains
@@ -376,8 +373,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
 
                 // connect the reorg chain
-                stratisReceiverRpcClient.AddNode(stratisReorg.Endpoint, false);
-                stratisSenderRpcClient.AddNode(stratisReorg.Endpoint, false);
+                stratisReceiver.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
+                stratisSender.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
                 // wait for the chains to catch up
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));

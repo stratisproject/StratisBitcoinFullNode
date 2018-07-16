@@ -283,7 +283,7 @@ namespace Stratis.Bitcoin
                 disposable?.Dispose();
 
             // Fire the NodeFeatureExecutor.Stop.
-            this.fullNodeFeatureExecutor.Dispose();
+            this.fullNodeFeatureExecutor?.Dispose();
 
             // Fire INodeLifetime.Stopped.
             this.nodeLifetime.NotifyStopped();
