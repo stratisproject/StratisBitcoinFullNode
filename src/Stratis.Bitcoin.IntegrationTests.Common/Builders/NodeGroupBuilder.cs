@@ -35,9 +35,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
             return this;
         }
 
-        public NodeGroupBuilder StratisCustomPowNode(string nodeName, IEnumerable<string> args)
+        public NodeGroupBuilder StratisCustomPowNode(string nodeName, NodeConfigParameters configParameters)
         {
-            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisCustomPowNode(args));
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisCustomPowNode(configParameters));
+            return this;
+        }
+
+        public NodeGroupBuilder CreateStratisPowApiNode(string nodeName)
+        {
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPowApiNode());
             return this;
         }
 

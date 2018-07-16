@@ -73,7 +73,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext = new ValidationContext();
             BlockHeader blockHeader = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
             this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(blockHeader, new uint256("bcd7d5de8d3bcc7b15e7c8e5fe77c0227cdfa6c682ca13dcf4910616f10fdd06"), HeightOfBlockchain);
-            this.ruleContext.ValidationContext.Block = new Block() { Transactions = new List<Transaction>() };
+
+            Block block = this.network.CreateBlock();
+            block.Transactions = new List<Transaction>();
+            this.ruleContext.ValidationContext.Block = block;
         }
 
         protected void WhenExecutingTheRule(ConsensusRule rule, RuleContext ruleContext)
