@@ -9,15 +9,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     /// Stratis X has a version prefix starting xq5h. Full node has a version prefix xpub for extended public key. 
     /// 3rd parties like Ledger haven't update yet to the full node version prefix.
     /// This class provides a way to convert from the legacy format to the current format.
-    /// <remarks>This class can be removed when the 3rd parties update their software.</remarks>
     /// </summary>
+    /// <remarks>This class can be removed when the 3rd parties update their software.</remarks>
     public class LegacyExtPubKeyConverter
     { 
         /// <summary>
         /// Converts a legacy Stratis format into a current Stratis format Base58 extended public key.
         /// </summary>
         /// <param name="extPubKey">The extended public key that may or may not need converting.</param>
-        /// <returns></returns>
+        /// <returns>The same extended public key if version bytes is already the Stratis full node one,
+        /// or The corrected extended public key if the version bytes was the Stratis X one.</returns>
         public static string ConvertIfInLegacyStratisFormat(string extPubKey, Network network)
         {
             byte[] stratisVersionBytes = network.GetVersionBytes(Base58Type.EXT_PUBLIC_KEY, true);

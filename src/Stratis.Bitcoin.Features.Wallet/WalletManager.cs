@@ -339,7 +339,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.UpdateWhenChainDownloaded(new[] { wallet }, creationTime);
             }
 
-            // Save the changes to the file and add addresses to be tracked.
             this.SaveWallet(wallet);
             this.Load(wallet);
 
