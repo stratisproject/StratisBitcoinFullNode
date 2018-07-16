@@ -1,6 +1,5 @@
 ﻿using Xunit;
 // ReSharper disable once InconsistentNaming
-
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
     public partial class Wallet_address_generation_and_funds_visibility

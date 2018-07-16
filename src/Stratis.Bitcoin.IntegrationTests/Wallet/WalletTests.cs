@@ -354,8 +354,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
 
                 // remove the reorg node and wait for node to be disconnected
-                stratisReceiver.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
-                stratisSender.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
+                stratisReceiver.CreateRPCClient().RemoveNodeAsync(stratisReorg.Endpoint);
+                stratisSender.CreateRPCClient().RemoveNodeAsync(stratisReorg.Endpoint);
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
 
                 // create a reorg by mining on two different chains

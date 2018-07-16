@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Configuration
         /// - Alternatively, if the file name is not supplied then a network-specific file 
         ///   name would be determined. In this case we first need to determine the network.
         /// </remarks>
-        public NodeSettings(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion, 
+        public NodeSettings(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion,
             string agent = "StratisBitcoin", string[] args = null)
         {
             // Create the default logger factory and logger.
@@ -106,16 +106,16 @@ namespace Stratis.Bitcoin.Configuration
             this.ConfigReader = new TextFileConfiguration(args ?? new string[] { });
 
             // Log arguments.
-            this.Logger.LogDebug("Arguments: network='{0}', protocolVersion='{1}', agent='{2}', args='{3}'.", 
+            this.Logger.LogDebug("Arguments: network='{0}', protocolVersion='{1}', agent='{2}', args='{3}'.",
                 this.Network == null ? "(None)" : this.Network.Name,
                 this.ProtocolVersion,
                 this.Agent,
-                args == null?"(None)":string.Join(" ", args));
+                args == null ? "(None)" : string.Join(" ", args));
 
             // By default, we look for a file named '<network>.conf' in the network's data directory,
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
             this.ConfigurationFile = this.ConfigReader.GetOrDefault<string>("conf", null, this.Logger)?.NormalizeDirectorySeparator();
-            this.DataDir = this.ConfigReader.GetOrDefault<string>("datadir",  null, this.Logger)?.NormalizeDirectorySeparator();        
+            this.DataDir = this.ConfigReader.GetOrDefault<string>("datadir", null, this.Logger)?.NormalizeDirectorySeparator();
 
             // If the configuration file is relative then assume it is relative to the data folder and combine the paths.
             if (this.DataDir != null && this.ConfigurationFile != null)
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Configuration
                 this.DataDir = Directory.CreateDirectory(directoryPath).FullName;
                 this.Logger.LogDebug("Data directory initialized with path {0}.", this.DataDir);
             }
-            
+
             // Set the data folder.
             this.DataFolder = new DataFolder(this.DataDir);
 
@@ -320,7 +320,7 @@ namespace Stratis.Bitcoin.Configuration
         {
             Guard.NotNull(network, nameof(network));
 
-            NodeSettings defaults = Default(network:network);
+            NodeSettings defaults = Default(network: network);
             string daemonName = Path.GetFileName(Assembly.GetEntryAssembly().Location);
 
             var builder = new StringBuilder();
@@ -346,7 +346,7 @@ namespace Stratis.Bitcoin.Configuration
 
             ConnectionManagerSettings.PrintHelp(network);
         }
-        
+
         /// <summary>
         /// Get the default configuration.
         /// </summary>
@@ -354,13 +354,13 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            NodeSettings defaults = Default(network:network);
+            NodeSettings defaults = Default(network: network);
 
             builder.AppendLine("####Node Settings####");
             builder.AppendLine($"#Test network. Defaults to 0.");
-            builder.AppendLine($"testnet={((network.IsTest() && !network.IsRegTest())?1:0)}");
+            builder.AppendLine($"testnet={((network.IsTest() && !network.IsRegTest()) ? 1 : 0)}");
             builder.AppendLine($"#Regression test network. Defaults to 0.");
-            builder.AppendLine($"regtest={(network.IsRegTest()?1:0)}");
+            builder.AppendLine($"regtest={(network.IsRegTest() ? 1 : 0)}");
             builder.AppendLine($"#Minimum fee rate. Defaults to {network.MinTxFee}.");
             builder.AppendLine($"#mintxfee={network.MinTxFee}");
             builder.AppendLine($"#Fallback fee rate. Defaults to {network.FallbackFee}.");
