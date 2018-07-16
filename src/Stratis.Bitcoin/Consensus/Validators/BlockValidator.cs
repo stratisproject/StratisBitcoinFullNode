@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
     public interface IHeaderValidator
     {
         /// <summary>
-        /// Validation of a header that was seen for the first time.
+        /// Validates a block header.
         /// </summary>
         /// <param name="chainedHeader">The chained header to be validated.</param>
         void ValidateHeader(ChainedHeader chainedHeader);
@@ -26,7 +26,8 @@ namespace Stratis.Bitcoin.Consensus.Validators
     public interface IPartialValidation
     {
         /// <summary>
-        /// Partial validation of a block, this will not change any state in the consensus store when validating a block.
+        /// Schedules a block for background partial validation.
+        /// Partial validation is the validation that doesn't involve change to underline store like rewinding or updating the database.
         /// </summary>
         /// <param name="chainedHeaderBlock">The block to validate.</param>
         /// <param name="onPartialValidationCompletedAsyncCallback">A callback that is called when validation is complete.</param>
@@ -48,7 +49,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         void VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader);
     }
 
-    // <inheritdoc />
+    /// <inheritdoc />
     public class HeaderValidator : IHeaderValidator
     {
         private readonly IConsensusRules consensusRules;
@@ -60,20 +61,21 @@ namespace Stratis.Bitcoin.Consensus.Validators
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        // <inheritdoc />
+        /// <inheritdoc />
         public void ValidateHeader(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             var validationContext = new ValidationContext { ChainedHeader = chainedHeader };
 
-            this.consensusRules.HeaderValidationAsync(validationContext, null);
+            // TODO: pass the tip.
+            this.consensusRules.HeaderValidation(validationContext, null);
 
             this.logger.LogTrace("(-)");
         }
     }
 
-    // <inheritdoc />
+    /// <inheritdoc />
     public class IntegrityValidator : IIntegrityValidator
     {
         private readonly IConsensusRules consensusRules;
@@ -85,20 +87,21 @@ namespace Stratis.Bitcoin.Consensus.Validators
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        // <inheritdoc />
+        /// <inheritdoc />
         public void VerifyBlockIntegrity(Block block, ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             var validationContext = new ValidationContext { Block = block };
 
-            this.consensusRules.IntegrityValidationAsync(validationContext, null);
+            // TODO: pass the tip.
+            this.consensusRules.IntegrityValidation(validationContext, null);
 
             this.logger.LogTrace("(-)");
         }
     }
 
-    // <inheritdoc />
+    /// <inheritdoc />
     public class PartialValidation : IPartialValidation
     {
         private readonly IConsensusRules consensusRules;
@@ -119,7 +122,8 @@ namespace Stratis.Bitcoin.Consensus.Validators
 
             var validationContext = new ValidationContext {Block = item.ChainedHeaderBlock.Block};
 
-            await this.consensusRules.PartialValidationAsync(new ValidationContext { Block = item.ChainedHeaderBlock.Block, ChainedHeader = item.ChainedHeaderBlock.ChainedHeader }, null);
+            // TODO: pass the tip.
+            await this.consensusRules.PartialValidationAsync(validationContext, null).ConfigureAwait(false);
 
             var partialValidationResult = new PartialValidationResult
             {
@@ -134,7 +138,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
             this.logger.LogTrace("(-)");
         }
 
-        // <inheritdoc />
+        /// <inheritdoc />
         public void StartPartialValidation(ChainedHeaderBlock chainedHeaderBlock, OnPartialValidationCompletedAsyncCallback onPartialValidationCompletedAsyncCallback)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
@@ -148,13 +152,18 @@ namespace Stratis.Bitcoin.Consensus.Validators
             this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Hold information related to partial validation.
+        /// </summary>
         public class PartialValidationItem
         {
+            /// <summary>The block and the header to be partially validated.</summary>
             public ChainedHeaderBlock ChainedHeaderBlock { get; set; }
 
+            /// <summary>After validation a call back will be invoked asynchronously.</summary>
             public OnPartialValidationCompletedAsyncCallback PartialValidationCompletedAsyncCallback { get; set; }
 
-            /// <inheritdoc/>
+            /// <inheritdoc />
             public override string ToString()
             {
                 return $"{nameof(this.ChainedHeaderBlock)}={this.ChainedHeaderBlock}";

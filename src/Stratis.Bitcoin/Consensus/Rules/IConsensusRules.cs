@@ -87,28 +87,28 @@ namespace Stratis.Bitcoin.Consensus.Rules
         Task<RewindState> RewindAsync();
 
         /// <summary>
-        /// Execute rules that are marked with the as <see cref="HeaderValidationRuleAttribute"/>.
+        /// Execute rules that are marked with the <see cref="HeaderValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
         /// <param name="tip">The current tip.</param>
-        Task HeaderValidationAsync(ValidationContext validationContext, ChainedHeader tip);
-        
-        /// <summary>
-        /// Execute rules that are marked with the as <see cref="IntegrityValidationRuleAttribute"/>.
-        /// </summary>
-        /// <param name="validationContext">The validation context.</param>
-        /// <param name="tip">The current tip.</param>
-        Task IntegrityValidationAsync(ValidationContext validationContext, ChainedHeader tip);
+        void HeaderValidation(ValidationContext validationContext, ChainedHeader tip);
 
         /// <summary>
-        /// Execute rules that are marked with the as <see cref="PartialValidationRuleAttribute"/>.
+        /// Execute rules that are marked with the <see cref="IntegrityValidationRuleAttribute"/>.
+        /// </summary>
+        /// <param name="validationContext">The validation context.</param>
+        /// <param name="tip">The current tip.</param>
+        void IntegrityValidation(ValidationContext validationContext, ChainedHeader tip);
+
+        /// <summary>
+        /// Execute rules that are marked with the <see cref="PartialValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
         /// <param name="tip">The current tip.</param>
         Task PartialValidationAsync(ValidationContext validationContext, ChainedHeader tip);
 
         /// <summary>
-        /// Execute rules that are marked with the as <see cref="FullValidationRuleAttribute"/>.
+        /// Execute rules that are marked with the <see cref="FullValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
         /// <param name="tip">The current tip.</param>

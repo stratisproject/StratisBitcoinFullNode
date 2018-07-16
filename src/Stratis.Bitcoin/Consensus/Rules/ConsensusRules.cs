@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
                 this.consensusRules.Add(consensusRule.GetType().FullName, consensusRule);
 
-                var ruleAttributes = Attribute.GetCustomAttributes(consensusRule.GetType()).OfType<RuleAttribute>().ToList();
+                List<RuleAttribute> ruleAttributes = Attribute.GetCustomAttributes(consensusRule.GetType()).OfType<RuleAttribute>().ToList();
 
                 if(!ruleAttributes.Any())
                     throw new ConsensusException($"The rule {consensusRule.GetType().FullName} must have at least one {nameof(RuleAttribute)}");
@@ -204,23 +204,23 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <inheritdoc/>
-        public async Task HeaderValidationAsync(ValidationContext validationContext, ChainedHeader tip)
+        public void HeaderValidation(ValidationContext validationContext, ChainedHeader tip)
         {
             Guard.NotNull(validationContext, nameof(validationContext));
 
             RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
 
-            await this.ExecuteRulesAsync(this.headerValidationRules, ruleContext).ConfigureAwait(false);
+            this.ExecuteRules(this.headerValidationRules, ruleContext);
         }
 
         /// <inheritdoc/>
-        public async Task IntegrityValidationAsync(ValidationContext validationContext, ChainedHeader tip)
+        public void IntegrityValidation(ValidationContext validationContext, ChainedHeader tip)
         {
             Guard.NotNull(validationContext, nameof(validationContext));
 
             RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
 
-            await this.ExecuteRulesAsync(this.integrityValidationRules, ruleContext).ConfigureAwait(false);
+            this.ExecuteRules(this.integrityValidationRules, ruleContext);
         }
 
         /// <inheritdoc/>
@@ -260,6 +260,33 @@ namespace Stratis.Bitcoin.Consensus.Rules
                         else
                         {
                             await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
+                        }
+                    }
+                }
+            }
+            catch (ConsensusErrorException ex)
+            {
+                ruleContext.ValidationContext.Error = ex.ConsensusError;
+            }
+        }
+
+        private void ExecuteRules(List<ConsensusRuleDescriptor> rules, RuleContext ruleContext)
+        {
+            try
+            {
+                using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
+                {
+                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainedHeader.BlockValidationState == ValidationState.AssumedValid;
+
+                    foreach (ConsensusRuleDescriptor ruleDescriptor in rules)
+                    {
+                        if (ruleContext.SkipValidation && ruleDescriptor.RuleAttribute.CanSkipValidation)
+                        {
+                            this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.ConsensusTip?.Height);
+                        }
+                        else
+                        {
+                            ruleDescriptor.Rule.Run(ruleContext);
                         }
                     }
                 }
