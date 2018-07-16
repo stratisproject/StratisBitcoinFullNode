@@ -418,7 +418,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             ICollection<HdAccount> accounts = this.Accounts;
 
-            if (accounts.Any(x => x.HdPath.Split('/').Last() == accountIndex + "'"))
+            if (accounts.Any(a => a.Index == accountIndex))
             {
                 throw new WalletException("There is already an account in this wallet with index: " + accountIndex);
             }
@@ -498,7 +498,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The list of external addresses, typically used for receiving money.
         /// </summary>
         [JsonProperty(PropertyName = "externalAddresses")]
-        public ICollection<HdAddress> ExternalAddresses { get ; set; }
+        public ICollection<HdAddress> ExternalAddresses { get; set; }
 
         /// <summary>
         /// The list of internal addresses, typically used to receive change.

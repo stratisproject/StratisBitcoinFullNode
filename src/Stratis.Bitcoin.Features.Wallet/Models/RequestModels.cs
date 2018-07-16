@@ -82,12 +82,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
         public string FolderPath { get; set; }
 
-
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
 
         public string Network { get; set; }
-
 
         [JsonConverter(typeof(IsoDateTimeConverter))]
         public DateTime CreationDate { get; set; }
