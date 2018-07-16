@@ -1782,7 +1782,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int chainExtension = 16;
             const int assumeValidHeaderHeight = 25;
             const int headersStartHeight = 15;
-            const int headersEndHeight = 30;
 
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(true).Build();
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
@@ -1806,7 +1805,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Present chain h15->h30 covering second checkpoint at h20 and assume valid at h25.
             // -----CP1----HEADERS_START----CP2-----AV----HEADERS_END
             // h1---h10--------h15----------h20-----h25------h30-----
-            int headersToPresentCount = (headersEndHeight - headersStartHeight + 1 /* inclusive */);
             listOfChainHeaders = listOfChainHeaders.Skip(headersStartHeight - 1).ToList();
             ConnectNewHeadersResult connectedHeadersResultNew = chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
 
