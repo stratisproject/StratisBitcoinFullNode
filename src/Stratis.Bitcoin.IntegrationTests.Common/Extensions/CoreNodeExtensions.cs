@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -78,14 +79,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                     block.Header.Nonce = ++nonce;
 
                 blocks.Add(block);
-
-                //if (broadcast)
-                //{
-                //    uint256 blockHash = block.GetHash();
-                //    var chainedHeader = new ChainedHeader(block.Header, blockHash, coreNode.FullNode.Chain.Tip);
-                //    ChainedHeader oldTip = coreNode.FullNode.Chain.SetTip(chainedHeader);
-                //    coreNode.FullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
-                //}
             }
 
             return blocks.Select(b => b.GetHash()).ToArray();
