@@ -38,6 +38,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var stateMock = new Mock<IContractStateRepository>();
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
             var txContextMock = new Mock<ISmartContractTransactionContext>();
+            txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
             var result = new SmartContractExecutionResult();
             this.transferProcessor.Process(stateMock.Object, carrier.CallData, txContextMock.Object, new List<TransferInfo>(), false);
 
@@ -56,6 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var stateMock = new Mock<IContractStateRepository>();
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
             var txContextMock = new Mock<ISmartContractTransactionContext>();
+            txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
             var result = new SmartContractExecutionResult();
             this.transferProcessor.Process(stateMock.Object, carrier.CallData, txContextMock.Object, new List<TransferInfo>(), false);
             
