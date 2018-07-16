@@ -92,8 +92,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var revert = result.ExecutionException != null;
 
-            var internalTransaction = this.transferProcessor.Process(
-                carrier,
+            var internalTransaction = this.transferProcessor.Process(carrier.CallData,
                 this.stateSnapshot,
                 transactionContext,
                 result.InternalTransfers,

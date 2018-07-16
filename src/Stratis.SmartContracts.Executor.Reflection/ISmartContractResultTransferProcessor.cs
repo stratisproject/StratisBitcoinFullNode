@@ -14,7 +14,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Returns a single Transaction which accounts for value transfers that occurred during contract execution.
         /// </summary>
-        Transaction Process(SmartContractCarrier carrier,
+        Transaction Process(CallData callData,
             IContractStateRepository stateSnapshot,
             ISmartContractTransactionContext transactionContext,
             IList<TransferInfo> internalTransfers,

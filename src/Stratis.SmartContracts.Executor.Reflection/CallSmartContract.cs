@@ -110,7 +110,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger.LogTrace("(-)");
 
             var internalTransaction = this.transferProcessor.Process(
-                carrier, 
+                callData, 
                 this.stateSnapshot, 
                 transactionContext, 
                 result.InternalTransfers, 
