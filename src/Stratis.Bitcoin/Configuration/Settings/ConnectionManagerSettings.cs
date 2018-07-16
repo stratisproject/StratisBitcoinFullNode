@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             if (this.ExternalEndpoint == null)
             {
-                this.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, nodeSettings.Network.DefaultPort);
+                this.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, port);
             }
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds, this.logger);

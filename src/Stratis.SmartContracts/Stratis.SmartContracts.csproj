@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <Authors>Stratis Group Ltd.</Authors>
+    <Company>Stratis Group Ltd.</Company>
+    <Product>Stratis Smart Contracts</Product>
+    <Version>0.3.0-alpha</Version>
+    <PackageId>Stratis.SmartContracts</PackageId>
+  </PropertyGroup>
+
+</Project>

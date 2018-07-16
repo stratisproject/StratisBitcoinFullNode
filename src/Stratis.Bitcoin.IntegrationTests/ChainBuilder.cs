@@ -70,11 +70,12 @@ namespace Stratis.Bitcoin.IntegrationTests
             for (int i = 0; i < blockCount; i++)
             {
                 uint nonce = 0;
-                var block = new Block();
+                var block = this.network.CreateBlock();
                 block.Header.HashPrevBlock = this.Chain.Tip.HashBlock;
                 block.Header.Bits = block.Header.GetWorkRequired(this.network, this.Chain.Tip);
                 block.Header.UpdateTime(now, this.network, this.Chain.Tip);
-                var coinbase = new Transaction();
+
+                var coinbase = this.network.CreateTransaction();
                 coinbase.AddInput(TxIn.CreateCoinbase(this.Chain.Height + 1));
                 coinbase.AddOutput(new TxOut(this.network.GetReward(this.Chain.Height + 1), this.MinerScriptPubKey));
                 block.AddTransaction(coinbase);

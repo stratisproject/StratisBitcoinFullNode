@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
             transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
 
-            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             this.ruleContext.Consensus = this.network.Consensus;
             this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
             this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             var invalidTransaction = new Transaction();
 
-            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             this.ruleContext.Consensus = this.network.Consensus;
             this.ruleContext.ValidationContext.Block.Transactions.Add(validTransaction);
             this.ruleContext.ValidationContext.Block.Transactions.Add(invalidTransaction);

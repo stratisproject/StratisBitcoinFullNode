@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -18,16 +17,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfStakeBlock_SetsStake_SetsNextWorkRequiredAsync()
         {
+            Block block = this.network.CreateBlock();
+            Transaction transaction = this.network.CreateTransaction();
+            block.AddTransaction(transaction);
+            block.AddTransaction(CreateCoinStakeTransaction(this.network, new Key(), 6, this.concurrentChain.GetBlock(5).HashBlock));
             this.ruleContext.ValidationContext = new ValidationContext()
             {
-                Block = new Block()
-                {
-                    Transactions = new List<Transaction>()
-                        {
-                            new Transaction(),
-                            CreateCoinStakeTransaction(this.network, new Key(), 6, this.concurrentChain.GetBlock(5).HashBlock)
-                        }
-                },
+                Block = block,
                 ChainedHeader = this.concurrentChain.GetBlock(4)
             };
 
@@ -54,15 +50,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_DoNotCheckPow_SetsStake_SetsNextWorkRequiredAsync()
         {
+            Block block = this.network.CreateBlock();
+            Transaction transaction = this.network.CreateTransaction();
+            block.AddTransaction(transaction);
+
             this.ruleContext.ValidationContext = new ValidationContext()
             {
-                Block = new Block()
-                {
-                    Transactions = new List<Transaction>()
-                    {
-                        new Transaction()
-                    }
-                },
+                Block = block,
                 ChainedHeader = this.concurrentChain.GetBlock(4)
             };
             this.ruleContext.MinedBlock = true;
@@ -125,15 +119,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorExceptionAsync()
         {
+            Block block = this.network.CreateBlock();
+            Transaction transaction = this.network.CreateTransaction();
+            block.AddTransaction(transaction);
+
             this.ruleContext.ValidationContext = new ValidationContext()
             {
-                Block = new Block()
-                {
-                    Transactions = new List<Transaction>()
-                    {
-                        new Transaction()
-                    }
-                },
+                Block = block,
                 ChainedHeader = this.concurrentChain.GetBlock(4)
             };
             this.ruleContext.MinedBlock = false;
@@ -145,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
         private static Transaction CreateCoinStakeTransaction(Network network, Key key, int height, uint256 prevout)
         {
-            var coinStake = new Transaction();
+            var coinStake = network.CreateTransaction();
             coinStake.Time = (uint)18276127;
             coinStake.AddInput(new TxIn(new OutPoint(prevout, 1)));
             coinStake.AddOutput(new TxOut(0, new Script()));

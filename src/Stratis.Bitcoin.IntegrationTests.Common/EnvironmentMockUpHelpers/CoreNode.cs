@@ -14,33 +14,33 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.Core.State;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
     public class CoreNode
     {
-        private readonly int[] ports;
         private readonly NodeRunner runner;
         private readonly NetworkCredential creds;
         private List<Transaction> transactions = new List<Transaction>();
-        private readonly HashSet<OutPoint> locked = new HashSet<OutPoint>();
-        private readonly Money fee = Money.Coins(0.0001m);
         private readonly object lockObject = new object();
 
-        /// <summary>Location of the data directory for the node.</summary>
-        public string DataFolder
-        {
-            get { return this.runner.DataFolder; }
-        }
+        public int ProtocolPort => int.Parse(this.ConfigParameters["port"]);
+        public int RpcPort => int.Parse(this.ConfigParameters["rpcport"]);
+        public int ApiPort => int.Parse(this.ConfigParameters["apiport"]);
 
-        public IPEndPoint Endpoint { get { return new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.ports[0]); } }
+        /// <summary>Location of the data directory for the node.</summary>
+        public string DataFolder => this.runner.DataFolder;
+
+        public IPEndPoint Endpoint => new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.ProtocolPort);
 
         public string Config { get; }
 
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public bool CookieAuth { get; set; }
 
-        public CoreNode(NodeRunner runner, NodeBuilder builder, string configfile)
+        public CoreNode(NodeRunner runner, NodeBuilder builder, string configfile, bool useCookieAuth = false)
         {
             this.runner = runner;
 
@@ -56,19 +56,19 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             string pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
             this.creds = new NetworkCredential(pass, pass);
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
+            this.CookieAuth = useCookieAuth;
             this.ConfigParameters.Import(builder.ConfigParameters);
-            this.ports = new int[3];
-            TestHelper.FindPorts(this.ports);
+            var randomFoundPorts = new int[3];
+            TestHelper.FindPorts(randomFoundPorts);
+            this.ConfigParameters.SetDefaultValueIfUndefined("port", randomFoundPorts[0].ToString());
+            this.ConfigParameters.SetDefaultValueIfUndefined("rpcport", randomFoundPorts[1].ToString());
+            this.ConfigParameters.SetDefaultValueIfUndefined("apiport", randomFoundPorts[2].ToString());
+
+            CreateConfigFile(this.ConfigParameters);
         }
 
         /// <summary>Get stratis full node if possible.</summary>
-        public FullNode FullNode
-        {
-            get
-            {
-                return this.runner.FullNode;
-            }
-        }
+        public FullNode FullNode => this.runner.FullNode;
 
         public CoreNodeState State { get; private set; }
 
@@ -82,12 +82,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public void NotInIBD()
         {
-            (this.FullNode.NodeService<IInitialBlockDownloadState>() as InitialBlockDownloadStateMock).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+            ((InitialBlockDownloadStateMock) this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
         public RPCClient CreateRPCClient()
         {
-            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.ports[1].ToString() + "/"), Network.RegTest);
+            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.RpcPort + "/"), Network.RegTest);
         }
 
         public INetworkPeer CreateNetworkPeerClient()
@@ -96,32 +96,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             loggerFactory.AddConsoleWithFilters();
 
             var networkPeerFactory = new NetworkPeerFactory(this.runner.Network, DateTimeProvider.Default, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
-            return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ports[0].ToString()).GetAwaiter().GetResult();
+            return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
         }
 
         public void Start()
         {
-            Directory.CreateDirectory(this.runner.DataFolder);
-
-            var config = new NodeConfigParameters();
-            config.Add("regtest", "1");
-            config.Add("rest", "1");
-            config.Add("server", "1");
-            config.Add("txindex", "1");
-            if (!this.CookieAuth)
-            {
-                config.Add("rpcuser", this.creds.UserName);
-                config.Add("rpcpassword", this.creds.Password);
-            }
-            config.Add("port", this.ports[0].ToString());
-            config.Add("rpcport", this.ports[1].ToString());
-            config.Add("apiport", this.ports[2].ToString());
-            config.Add("printtoconsole", "1");
-            config.Add("keypool", "10");
-            config.Add("agentprefix", "node" + this.ports[0].ToString());
-            config.Import(this.ConfigParameters);
-            File.WriteAllText(this.Config, config.ToString());
-
             lock (this.lockObject)
             {
                 this.runner.Start();
@@ -134,6 +113,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 StartStratisRunner();
 
             this.State = CoreNodeState.Running;
+        }
+
+        private void CreateConfigFile(NodeConfigParameters configParameters = null)
+        {
+            Directory.CreateDirectory(this.runner.DataFolder);
+
+            configParameters = configParameters ?? new NodeConfigParameters();
+            configParameters.SetDefaultValueIfUndefined("regtest", "1");
+            configParameters.SetDefaultValueIfUndefined("rest", "1");
+            configParameters.SetDefaultValueIfUndefined("server", "1");
+            configParameters.SetDefaultValueIfUndefined("txindex", "1");
+            if (!this.CookieAuth)
+            {
+                configParameters.SetDefaultValueIfUndefined("rpcuser", this.creds.UserName);
+                configParameters.SetDefaultValueIfUndefined("rpcpassword", this.creds.Password);
+            }
+
+            configParameters.SetDefaultValueIfUndefined("printtoconsole", "1");
+            configParameters.SetDefaultValueIfUndefined("keypool", "10");
+            configParameters.SetDefaultValueIfUndefined("agentprefix", "node" + this.ProtocolPort);
+            configParameters.Import(this.ConfigParameters);
+            File.WriteAllText(this.Config, configParameters.ToString());
         }
 
         public void Restart()
@@ -202,7 +203,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 };
 
                 DateTimeOffset before = DateTimeOffset.UtcNow;
-                await peer.SendMessageAsync(ping);
+                await peer.SendMessageAsync(ping, cancellation);
 
                 while ((await listener.ReceivePayloadAsync<PongPayload>(cancellation).ConfigureAwait(false)).Nonce != ping.Nonce)
                 {
@@ -364,7 +365,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     {
                         BlockLocators = awaited,
                         HashStop = hashStop
-                    }).GetAwaiter().GetResult();
+                    }, cancellationToken).GetAwaiter().GetResult();
 
                     while (true)
                     {
@@ -439,7 +440,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public bool AddToStratisMempool(Transaction trx)
         {
-            FullNode fullNode = (this.runner as StratisBitcoinPowRunner).FullNode;
+            FullNode fullNode = ((StratisBitcoinPowRunner) this.runner).FullNode;
             var state = new MempoolValidationState(true);
 
             return fullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
@@ -453,59 +454,57 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         [Obsolete("Please use GenerateStratisWithMiner instead.")]
         public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
         {
-            FullNode fullNode = (this.runner as StratisBitcoinPowRunner).FullNode;
+            ContractStateRepositoryRoot state = null;
+            FullNode fullNode = null;
+
+            if (this.runner is StratisBitcoinPowRunner powRunner)
+                fullNode = powRunner.FullNode;
+
+            if (this.runner is StratisSmartContractNode smartContractNode)
+            {
+                fullNode = smartContractNode.FullNode;
+                state = fullNode.NodeService<ContractStateRepositoryRoot>();
+            }
+
             BitcoinSecret dest = this.MinerSecret;
             var blocks = new List<Block>();
-            DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
+            DateTimeOffset now = this.MockTime ?? DateTimeOffset.UtcNow;
 
             for (int i = 0; i < blockCount; i++)
             {
                 uint nonce = 0;
-                var block = new Block();
+                var block = this.runner.Network.Consensus.ConsensusFactory.CreateBlock();
                 block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
                 block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
                 block.Header.UpdateTime(now, fullNode.Network, fullNode.Chain.Tip);
-                var coinbase = new Transaction();
+
+                var coinbase = this.runner.Network.Consensus.ConsensusFactory.CreateTransaction();
                 coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));
                 coinbase.AddOutput(new TxOut(fullNode.Network.GetReward(fullNode.Chain.Height + 1), dest.GetAddress()));
                 block.AddTransaction(coinbase);
+
                 if (passedTransactions?.Any() ?? false)
                 {
                     passedTransactions = this.Reorder(passedTransactions);
                     block.Transactions.AddRange(passedTransactions);
                 }
+
                 block.UpdateMerkleRoot();
+
+                if (block.Header is SmartContractBlockHeader smartContractBlockHeader)
+                    smartContractBlockHeader.HashStateRoot = new uint256(state.Root);
+
                 while (!block.CheckProofOfWork())
                     block.Header.Nonce = ++nonce;
+
                 blocks.Add(block);
+
                 if (broadcast)
                 {
                     uint256 blockHash = block.GetHash();
                     var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
                     ChainedHeader oldTip = fullNode.Chain.SetTip(newChain);
                     fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
-
-                    //try
-                    //{
-                    //    var blockResult = new BlockResult { Block = block };
-                    //    fullNode.ConsensusLoop.AcceptBlock(blockResult);
-
-                    //    // similar logic to what's in the full node code
-                    //    if (blockResult.Error == null)
-                    //    {
-                    //        fullNode.ChainBehaviorState.ConsensusTip = fullNode.ConsensusLoop.Tip;
-                    //        //if (fullNode.Chain.Tip.HashBlock == blockResult.ChainedHeader.HashBlock)
-                    //        //{
-                    //        //    var unused = cache.FlushAsync();
-                    //        //}
-                    //        fullNode.Signals.Blocks.Broadcast(block);
-                    //    }
-                    //}
-                    //catch (ConsensusErrorException)
-                    //{
-                    //    // set back the old tip
-                    //    fullNode.Chain.SetTip(oldTip);
-                    //}
                 }
             }
 
@@ -570,11 +569,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                             node.DependsOn.Remove(parent);
                     }
 
-                    if (node.DependsOn.Count == 0)
-                    {
-                        result.Add(node.Transaction);
-                        dictionary.Remove(node.Hash);
-                    }
+                    if (node.DependsOn.Count != 0)
+                        continue;
+
+                    result.Add(node.Transaction);
+                    dictionary.Remove(node.Hash);
                 }
             }
 
@@ -587,11 +586,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return this.MinerSecret;
 
             BitcoinSecret dest = rpc.ListSecrets().FirstOrDefault();
-            if (dest == null)
-            {
-                BitcoinAddress address = rpc.GetNewAddress();
-                dest = rpc.DumpPrivKey(address);
-            }
+            if (dest != null) return dest;
+
+            BitcoinAddress address = rpc.GetNewAddress();
+            dest = rpc.DumpPrivKey(address);
             return dest;
         }
     }
