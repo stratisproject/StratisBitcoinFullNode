@@ -92,15 +92,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var revert = result.ExecutionException != null;
 
-            var internalTransaction = this.transferProcessor.Process(carrier.CallData,
-                this.stateSnapshot,
+            var internalTransaction = this.transferProcessor.Process(this.stateSnapshot,
+                carrier.CallData,
                 transactionContext,
-                result.InternalTransfers,
-                revert);
+                result.InternalTransfers, revert);
 
             (var fee, var refundTxOuts) = this.refundProcessor.Process(
-                carrier,
-                transactionContext.MempoolFee,
+                carrier.CallData, 
+                transactionContext.MempoolFee, 
+                transactionContext.Sender,
                 result.GasConsumed,
                 result.ExecutionException);
 

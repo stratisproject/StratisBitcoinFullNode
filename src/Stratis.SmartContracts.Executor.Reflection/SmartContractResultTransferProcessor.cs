@@ -20,8 +20,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <inheritdoc />
-        public Transaction Process(CallData callData,
-            IContractStateRepository stateSnapshot,
+        public Transaction Process(IContractStateRepository stateSnapshot,
+            CallData callData,
             ISmartContractTransactionContext transactionContext,
             IList<TransferInfo> internalTransfers,
             bool reversionRequired)

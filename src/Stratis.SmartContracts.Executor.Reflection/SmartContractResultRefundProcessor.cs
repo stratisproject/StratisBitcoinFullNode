@@ -20,7 +20,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
 
-        public (Money, List<TxOut>) Process(SmartContractCarrier carrier, Money mempoolFee,
+        public (Money, List<TxOut>) Process(CallData callData,
+            ulong mempoolFee, uint160 sender,
             Gas gasConsumed,
             Exception exception)
         {
@@ -36,13 +37,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return (fee, refunds);
             }
 
-            var refund = new Money(carrier.GasCostBudget - (gasConsumed * carrier.CallData.GasPrice));
-            this.logger.LogTrace("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(carrier.GasCostBudget), carrier.GasCostBudget, nameof(gasConsumed), gasConsumed, nameof(carrier.CallData.GasPrice), carrier.CallData.GasPrice, nameof(refund), refund);
+            var refund = new Money(callData.GasCostBudget - (gasConsumed * callData.GasPrice));
+            this.logger.LogTrace("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(callData.GasCostBudget), callData.GasCostBudget, nameof(gasConsumed), gasConsumed, nameof(callData.GasPrice), callData.GasPrice, nameof(refund), refund);
 
             if (refund > 0)
             {
                 fee -= refund;
-                refunds.Add(CreateRefund(carrier.Sender, refund));
+                refunds.Add(CreateRefund(sender, refund));
             }
 
             this.logger.LogTrace("(-)");

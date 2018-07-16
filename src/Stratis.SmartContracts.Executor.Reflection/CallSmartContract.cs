@@ -60,11 +60,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             // Execute the call to the contract.
-            return this.CreateContextAndExecute(callData.ContractAddress, contractExecutionCode, callData.MethodName, transactionContext, carrier, callData);
+            return this.CreateContextAndExecute(callData.ContractAddress, contractExecutionCode, callData.MethodName, transactionContext, callData);
         }
 
         private ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode,
-            string methodName, ISmartContractTransactionContext transactionContext, SmartContractCarrier carrier,
+            string methodName, ISmartContractTransactionContext transactionContext,
             CallData callData)
         {
             this.logger.LogTrace("()");
@@ -109,16 +109,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.logger.LogTrace("(-)");
 
-            var internalTransaction = this.transferProcessor.Process(
+            var internalTransaction = this.transferProcessor.Process(this.stateSnapshot, 
                 callData, 
-                this.stateSnapshot, 
                 transactionContext, 
-                result.InternalTransfers, 
+                result.InternalTransfers,
                 revert);
 
             (var fee, var refundTxOuts) = this.refundProcessor.Process(
-                carrier,
-                transactionContext.MempoolFee,
+                callData, 
+                transactionContext.MempoolFee, 
+                transactionContext.Sender,
                 result.GasConsumed,
                 result.ExecutionException);
 

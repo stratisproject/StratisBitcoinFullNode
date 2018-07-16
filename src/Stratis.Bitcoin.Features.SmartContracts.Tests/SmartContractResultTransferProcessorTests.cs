@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
             var txContextMock = new Mock<ISmartContractTransactionContext>();
             var result = new SmartContractExecutionResult();
-            this.transferProcessor.Process(carrier.CallData, stateMock.Object, txContextMock.Object, new List<TransferInfo>(), false);
+            this.transferProcessor.Process(stateMock.Object, carrier.CallData, txContextMock.Object, new List<TransferInfo>(), false);
 
             // Ensure no state changes were made and no transaction has been added
             Assert.Null(result.InternalTransaction);
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
             var txContextMock = new Mock<ISmartContractTransactionContext>();
             var result = new SmartContractExecutionResult();
-            this.transferProcessor.Process(carrier.CallData, stateMock.Object, txContextMock.Object, new List<TransferInfo>(), false);
+            this.transferProcessor.Process(stateMock.Object, carrier.CallData, txContextMock.Object, new List<TransferInfo>(), false);
             
             // Ensure unspent was saved, but no condensing transaction was generated.
             Assert.Null(result.InternalTransaction);
