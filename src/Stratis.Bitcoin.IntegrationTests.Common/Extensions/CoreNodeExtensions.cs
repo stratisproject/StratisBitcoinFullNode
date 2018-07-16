@@ -49,7 +49,12 @@ namespace Stratis.Bitcoin.IntegrationTests
             return coreNode.FullNode.NodeService<ApiSettings>()?.ApiPort ?? -1;
         }
 
-        public static uint256[] GenerateBlocks(this CoreNode coreNode, int blocksToGenerate, List<Transaction> transactions = null)
+        public static uint256[] GenerateBlocks(this CoreNode coreNode, int blocksToGenerate)
+        {
+            return GenerateBlocks(coreNode, blocksToGenerate, new List<Transaction>());
+        }
+
+        public static uint256[] GenerateBlocks(this CoreNode coreNode, int blocksToGenerate, List<Transaction> transactions)
         {
             var blocks = new List<Block>();
 
@@ -57,17 +62,17 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 uint nonce = 0;
 
-                var block = coreNode.FullNode.Network.Consensus.ConsensusFactory.CreateBlock();
+                var block = coreNode.FullNode.Network.CreateBlock();
                 block.Header.HashPrevBlock = coreNode.FullNode.Chain.Tip.HashBlock;
                 block.Header.Bits = block.Header.GetWorkRequired(coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
                 block.Header.UpdateTime(DateTimeOffset.UtcNow, coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);
 
-                var coinbase = new Transaction();
+                var coinbase = coreNode.FullNode.Network.CreateTransaction();
                 coinbase.AddInput(TxIn.CreateCoinbase(coreNode.FullNode.Chain.Height + 1));
                 coinbase.AddOutput(new TxOut(coreNode.FullNode.Network.GetReward(coreNode.FullNode.Chain.Height + 1), coreNode.MinerSecret.GetAddress()));
                 block.AddTransaction(coinbase);
 
-                if (transactions?.Any() ?? false)
+                if (transactions.Any())
                 {
                     transactions = Reorder(transactions);
                     block.Transactions.AddRange(transactions);
