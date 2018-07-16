@@ -248,26 +248,12 @@ namespace Stratis.Bitcoin.Base
                 return;
             }
 
-            if (headers.Count > MaxItemsPerHeadersMessage)
+            if (!this.ValidateHeadersPayload(peer, headersPayload, out string validationError))
             {
-                this.logger.LogTrace("Headers payload with {0} headers was received. Protocol violation. Banning the peer.", headers.Count);
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Protocol violation.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, validationError);
 
-                this.logger.LogTrace("(-)[TOO_MANY_HEADERS]");
+                this.logger.LogTrace("(-)[VALIDATION_FAILED]");
                 return;
-            }
-
-            // Check headers for consecutiveness.
-            for (int i = 1; i < headers.Count; i++)
-            {
-                if (headers[i].HashPrevBlock != headers[i - 1].GetHash())
-                {
-                    this.logger.LogTrace("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.", peer.RemoteSocketEndpoint, i, headers[i].HashPrevBlock, headers[i - 1].GetHash());
-                    this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer presented nonconsecutive headers.");
-
-                    this.logger.LogTrace("(-)[PEER_BANNED]");
-                    return;
-                }
             }
 
             using (await this.asyncLock.LockAsync().ConfigureAwait(false))
@@ -314,6 +300,46 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>Validates the headers payload.</summary>
+        /// <param name="peer">The peer who sent the payload.</param>
+        /// <param name="headersPayload">Headers payload to validate.</param>
+        /// <param name="validationError">The validation error that is set in case <c>false</c> is returned.</param>
+        /// <returns><c>true</c> if payload was valid, <c>false</c> otherwise.</returns>
+        private bool ValidateHeadersPayload(INetworkPeer peer, HeadersPayload headersPayload, out string validationError)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(headersPayload), headersPayload);
+
+            validationError = null;
+
+            if (headersPayload.Headers.Count > MaxItemsPerHeadersMessage)
+            {
+                this.logger.LogTrace("Headers payload with {0} headers was received. Protocol violation. Banning the peer.", headersPayload.Headers.Count);
+
+                validationError = "Protocol violation.";
+
+                this.logger.LogTrace("(-)[TOO_MANY_HEADERS]:false");
+                return false;
+            }
+
+            // Check headers for consecutiveness.
+            for (int i = 1; i < headersPayload.Headers.Count; i++)
+            {
+                if (headersPayload.Headers[i].HashPrevBlock != headersPayload.Headers[i - 1].GetHash())
+                {
+                    this.logger.LogTrace("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.",
+                        peer.RemoteSocketEndpoint, i, headersPayload.Headers[i].HashPrevBlock, headersPayload.Headers[i - 1].GetHash());
+
+                    validationError = "Peer presented nonconsecutive headers.";
+
+                    this.logger.LogTrace("(-)[NONCONSECUTIVE]:false");
+                    return false;
+                }
+            }
+
+            this.logger.LogTrace("(-):true");
+            return true;
         }
 
         /// <summary>Presents the headers to <see cref="ConsensusManager"/> and handles exceptions if any.</summary>
