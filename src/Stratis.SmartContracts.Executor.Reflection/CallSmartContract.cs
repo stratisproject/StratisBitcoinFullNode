@@ -50,8 +50,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var callData = callDataDeserializationResult.Value;
 
-            var carrier = SmartContractCarrier.Deserialize(transactionContext);
-
             // Get the contract code (dll) from the repository.
             byte[] contractExecutionCode = this.stateSnapshot.GetCode(callData.ContractAddress);
             if (contractExecutionCode == null)

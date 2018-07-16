@@ -66,7 +66,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// Contract validation failed, so set the gas units used to a value from the price list and set
         /// the validation errors in a <see cref="SmartContractValidationException"/>.
         /// </summary>
-        public static SmartContractExecutionResult ValidationFailed(SmartContractCarrier carrier, SmartContractValidationResult validationResult)
+        public static SmartContractExecutionResult ValidationFailed(SmartContractValidationResult validationResult)
         {
             var executionResult = new SmartContractExecutionResult
             {

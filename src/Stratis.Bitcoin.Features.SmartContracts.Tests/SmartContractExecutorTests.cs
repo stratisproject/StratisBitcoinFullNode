@@ -135,7 +135,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var executor = new CreateSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                this.network,
+                this.network, 
+                this.serializer,
                 this.state,
                 this.validator,
                 this.refundProcessor,
@@ -170,7 +171,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var executor = new CreateSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                this.network,
+                this.network, 
+                this.serializer,
                 this.state,
                 this.validator,
                 this.refundProcessor,
@@ -203,7 +205,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var executor = new CreateSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                this.network,
+                this.network, 
+                this.serializer,
                 this.state,
                 this.validator,
                 this.refundProcessor,
@@ -241,7 +244,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var executor = new CreateSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                this.network,
+                this.network, 
+                this.serializer,
                 this.state,
                 this.validator,
                 this.refundProcessor,

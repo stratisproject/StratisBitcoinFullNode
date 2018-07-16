@@ -51,7 +51,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             if (transactionContext.IsCreate)
             {
-                return new CreateSmartContract(this.keyEncodingStrategy, this.loggerFactory, this.network,
+                return new CreateSmartContract(this.keyEncodingStrategy, this.loggerFactory, this.network, this.serializer,
                     stateRepository, this.validator, this.refundProcessor, this.transferProcessor, this.vm);
             }
 
