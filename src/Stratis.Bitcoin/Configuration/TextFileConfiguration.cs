@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <exception cref="FormatException">Thrown if the string does not represent a valid value of <typeparamref name="T"/>.</exception>
         private T ConvertValue<T>(string str)
         {
-            if (typeof(T) == typeof(bool))
+            if (typeof(T) == typeof(bool) || typeof(T) == typeof(bool?))
             {
                 var trueValues = new[] { "1", "true" };
                 var falseValues = new[] { "0", "false" };

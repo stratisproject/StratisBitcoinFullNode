@@ -71,29 +71,40 @@ namespace Stratis.Bitcoin.P2P
                 PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
                 if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
                 {
-                    // IpRangeFiltering disabled for localhost nodes by default.
-                    if (ipEndpoint.Address != null && !ipEndpoint.Address.IsLocal())
+                    // Nodes disallow connection to peers in same range to prevent sybil attacks.     
+                    if (ipEndpoint.Address.IsLocal())
                     {
-                        // Check if we are disabling IP range filtering:
-                        // (Nodes disallow connection to peers in same range to prevent sybil attacks).
-                        if (!this.ConnectionSettings.IpRangeFilteringDisabled)
+                        // Local peer: filtering is disabled unless explicitly set to true.
+                        if (this.ConnectionSettings.IpRangeFiltering == true)
                         {
-                            // The already connected endpoints.
-                            IPEndPoint[] connectedEndpoints = this.ConnectorPeers.Select(x => x.PeerEndPoint).ToArray();
-
-                            // Check if new endpoint is part of the existing group collection.
-                            System.Func<IPEndPoint, byte[]> getGroup = (a) => a.Address.GetGroup();
-                            bool groupExist = connectedEndpoints.Any(a => getGroup(a).SequenceEqual(getGroup(peerAddress.Endpoint.MapToIpv6())));
-                            if (groupExist)
+                            if (this.PeerIsPartOfExistingGroupOfConnectedEndpoints(peerAddress))
                             {
                                 continue;
                             }
                         }
+                        await this.ConnectAsync(peerAddress).ConfigureAwait(false);
                     }
-
-                    await this.ConnectAsync(peerAddress).ConfigureAwait(false);
+                    else
+                    {
+                        // Remote peer: filtering is enabled unless explicitly set to false.
+                        if (this.ConnectionSettings.IpRangeFiltering != false)
+                        {
+                            if (this.PeerIsPartOfExistingGroupOfConnectedEndpoints(peerAddress))
+                            {
+                                continue;
+                            }
+                        }
+                        await this.ConnectAsync(peerAddress).ConfigureAwait(false);
+                    }
                 }
             }
         }
+
+        private bool PeerIsPartOfExistingGroupOfConnectedEndpoints(PeerAddress peerAddress)
+        {
+            IPEndPoint[] connectedEndpoints = this.ConnectorPeers.Select(x => x.PeerEndPoint).ToArray();
+            byte[] GetGroup(IPEndPoint a) => a.Address.GetGroup();
+            return connectedEndpoints.Any(a => GetGroup(a).SequenceEqual(GetGroup(peerAddress.Endpoint.MapToIpv6())));
+        }  
     }
 }

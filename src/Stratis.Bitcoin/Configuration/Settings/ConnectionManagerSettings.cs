@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1, this.logger);
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true, this.logger);
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly, this.logger);
-            this.IpRangeFilteringDisabled = config.GetOrDefault("IpRangeFilteringDisabled", false, this.logger);
+            this.IpRangeFiltering = config.GetOrDefault<bool?>("IpRangeFiltering", null, this.logger);
 
             var agentPrefix = config.GetOrDefault("agentprefix", string.Empty, this.logger).Replace("-", "");
             if (agentPrefix.Length > MaximumAgentPrefixLength)
@@ -221,6 +221,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
         public bool RelayTxes { get; set; }
 
         /// <summary>Disable functionality whereby nodes disallow connection to peers that are within the same IP range to prevent sybil attacks.</summary>
-        public bool IpRangeFilteringDisabled { get; internal set; }
+        public bool? IpRangeFiltering { get; internal set; }
     }
 }

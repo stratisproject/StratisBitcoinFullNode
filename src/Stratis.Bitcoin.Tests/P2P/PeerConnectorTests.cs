@@ -214,7 +214,6 @@ namespace Stratis.Bitcoin.Tests.P2P
         public void PeerConnectorDiscovery_ConnectsTo_NodeInSameNetworkGroup_WithIpRangeFilteringDisabled()
         {
             Network testNetwork = Network.Main;
-            var nodeSettings = new NodeSettings(testNetwork, args: new[] { "-IpRangeFilteringDisabled" });
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
 
@@ -251,6 +250,8 @@ namespace Stratis.Bitcoin.Tests.P2P
             networkPeer3.SetupGet(np => np.RemoteSocketPort).Returns(80);
             networkPeer3.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
 
+            // IpRangeFiltering enabled by default, disabled explicitly.
+            var nodeSettings = new NodeSettings(testNetwork, args: new[] { "-IpRangeFiltering=false" });
             var connectionManagerSettingsExisting = new ConnectionManagerSettings(nodeSettings);
 
             connectionManagerSettingsExisting.AddNode.Add(endpointNode1);
@@ -282,10 +283,9 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         [Fact]
-        public void PeerConnectorDiscovery_ConnectsTo_LocalHostNodes_WithIpRangeFilteringEnabled()
+        public void PeerConnectorDiscovery_ConnectsTo_LocalHostNodes_IpRangeFilteringDisabled()
         {
             Network testNetwork = Network.Main;
-            var nodeSettings = new NodeSettings(testNetwork, args: new[] { string.Empty }); // No IpRangeFilteringDisabled arg.
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
 
@@ -311,6 +311,9 @@ namespace Stratis.Bitcoin.Tests.P2P
             networkPeer2.SetupGet(np => np.RemoteSocketPort).Returns(90);
             networkPeer2.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
 
+            // IpRangeFiltering disabled by default for localhost.
+            var nodeSettings = new NodeSettings(testNetwork);
+
             var connectionManagerSettingsExisting = new ConnectionManagerSettings(nodeSettings);
 
             connectionManagerSettingsExisting.AddNode.Add(endpointNode1);
@@ -328,7 +331,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerConnector.Initialize(connectionManagerExisting);
             peerConnector.OnConnectAsync().GetAwaiter().GetResult();
 
-            // Connects to localhost nodes even with IP range filtering enabled.
+            // Connects to localhost nodes in same group.
             Assert.Contains(endpointNode1, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
             Assert.Contains(endpointNode2, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
         }
@@ -337,7 +340,6 @@ namespace Stratis.Bitcoin.Tests.P2P
         public void PeerConnectorDiscovery_DoesNotConnectTo_NodeInSameNetworkGroup_WithIpRangeFilteringEnabled()
         {
             Network testNetwork = Network.Main;
-            var nodeSettings = new NodeSettings(testNetwork, args: new[] { string.Empty });  // No IpRangeFilteringDisabled arg.
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
 
@@ -373,7 +375,10 @@ namespace Stratis.Bitcoin.Tests.P2P
             networkPeer3.SetupGet(np => np.RemoteSocketAddress).Returns(addressInSameNetworkGroup);
             networkPeer3.SetupGet(np => np.RemoteSocketPort).Returns(80);
             networkPeer3.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
-            
+
+            // IpRangeFiltering enabled by default, enabled explicitly.
+            var nodeSettings = new NodeSettings(testNetwork, args: new[] { "-IpRangeFiltering" });
+
             var connectionManagerSettingsExisting = new ConnectionManagerSettings(nodeSettings);
 
             connectionManagerSettingsExisting.AddNode.Add(endpointNode1);
