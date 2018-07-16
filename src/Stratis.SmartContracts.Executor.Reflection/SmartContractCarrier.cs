@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using CSharpFunctionalExtensions;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
@@ -9,6 +10,83 @@ using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
+    public class CallDataSerializer : ICallDataSerializer
+    {
+        // TODO this is ugly but there is poor DI support for rules so we can't inject it yet
+        public static ICallDataSerializer Default = new CallDataSerializer();
+
+        private const int intLength = sizeof(int);
+
+        public Result<CallData> Deserialize(byte[] smartContractBytes)
+        { 
+            var byteCursor = 1;
+            var takeLength = 0;
+
+            var type = smartContractBytes[0];
+
+            var vmVersion = Deserialize<int>(smartContractBytes, ref byteCursor, ref takeLength);
+            var gasPrice = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
+            var gasLimit = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
+
+            if (type == (byte)ScOpcodeType.OP_CALLCONTRACT)
+            {
+                var contractAddress = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
+                var methodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+                var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+                var callData = new CallData(type, vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw);
+                return Result.Ok(callData);
+            }
+
+            if (type == (byte)ScOpcodeType.OP_CREATECONTRACT)
+            {
+                var contractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
+                var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+                var callData = new CallData(type, vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw);
+                return Result.Ok(callData);
+            }
+
+            return Result.Fail<CallData>("Error deserializing calldata");
+        }
+
+        private static T Deserialize<T>(byte[] smartContractBytes, ref int byteCursor, ref int takeLength)
+        {
+            takeLength = BitConverter.ToInt16(smartContractBytes.Skip(byteCursor).Take(intLength).ToArray(), 0);
+            byteCursor += intLength;
+
+            if (takeLength == 0)
+                return default(T);
+
+            object result = null;
+
+            if (typeof(T) == typeof(bool))
+                result = BitConverter.ToBoolean(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
+
+            if (typeof(T) == typeof(byte[]))
+                result = smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray();
+
+            if (typeof(T) == typeof(int))
+                result = BitConverter.ToInt32(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
+
+            if (typeof(T) == typeof(short))
+                result = BitConverter.ToInt16(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
+
+            if (typeof(T) == typeof(string))
+                result = Encoding.UTF8.GetString(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray());
+
+            if (typeof(T) == typeof(uint))
+                result = BitConverter.ToUInt32(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
+
+            if (typeof(T) == typeof(uint160))
+                result = new uint160(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray());
+
+            if (typeof(T) == typeof(ulong))
+                result = BitConverter.ToUInt64(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
+
+            byteCursor += takeLength;
+
+            return (T)result;
+        }
+    }
     /// <summary>
     /// This class holds execution code and other information related to smart contact.
     /// <para>

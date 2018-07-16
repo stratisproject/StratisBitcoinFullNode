@@ -52,5 +52,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         /// <summary>The contract code that will be executed.</summary>
         public byte[] ContractExecutionCode { get; }
+
+        /// <summary>The maximum cost (in satoshi) the contract can spend.</summary>
+        public ulong GasCostBudget
+        {
+            get
+            {
+                checked
+                {
+                    return this.GasPrice * this.GasLimit;
+                }
+            }
+        }
     }
 }
