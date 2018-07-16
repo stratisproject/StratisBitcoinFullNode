@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Base
                 return;
             }
 
-            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocators);
+            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
 
             if (fork != null)
             {
@@ -370,7 +370,7 @@ namespace Stratis.Bitcoin.Base
             {
                 var headersPayload = new GetHeadersPayload()
                 {
-                    BlockLocators = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
+                    BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
                     HashStop = null
                 };
 
