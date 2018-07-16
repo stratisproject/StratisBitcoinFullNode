@@ -13,9 +13,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class CallDataSerializer : ICallDataSerializer
     {
         // TODO this is ugly but there is poor DI support for rules so we can't inject it yet
-        public static ICallDataSerializer Default = new CallDataSerializer();
+        public static ICallDataSerializer Default = new CallDataSerializer(new MethodParameterSerializer());
+
+        private readonly IMethodParameterSerializer methodParamSerializer;
 
         private const int intLength = sizeof(int);
+
+        public CallDataSerializer(IMethodParameterSerializer methodParameterSerializer)
+        {
+            this.methodParamSerializer = methodParameterSerializer;
+        }
 
         public Result<CallData> Deserialize(byte[] smartContractBytes)
         { 
@@ -33,7 +40,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 var contractAddress = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
                 var methodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
                 var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
-                var callData = new CallData(type, vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw);
+
+                var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
+
+                var callData = new CallData(type, vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw, methodParameters);
                 return Result.Ok(callData);
             }
 
@@ -41,11 +51,23 @@ namespace Stratis.SmartContracts.Executor.Reflection
             {
                 var contractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
                 var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
-                var callData = new CallData(type, vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw);
+
+                var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
+
+                var callData = new CallData(type, vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw, methodParameters);
                 return Result.Ok(callData);
             }
 
             return Result.Fail<CallData>("Error deserializing calldata");
+        }
+
+        private object[] DeserializeMethodParameters(string methodParametersRaw)
+        {
+            object[] methodParameters = null;
+
+            if (!string.IsNullOrWhiteSpace(methodParametersRaw))
+                methodParameters = this.methodParamSerializer.ToObjects(methodParametersRaw);
+            return methodParameters;
         }
 
         private static T Deserialize<T>(byte[] smartContractBytes, ref int byteCursor, ref int takeLength)
@@ -219,8 +241,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (this.CallData.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT)
                 bytes.AddRange(this.PrefixLength(this.CallData.ContractExecutionCode));
 
-            if (!string.IsNullOrWhiteSpace(this.CallData.MethodParameters) && this.MethodParameters.Length > 0)
-                bytes.AddRange(this.PrefixLength(this.serializer.ToBytes(this.CallData.MethodParameters)));
+            if (!string.IsNullOrWhiteSpace(this.CallData.MethodParametersRaw) && this.MethodParameters.Length > 0)
+                bytes.AddRange(this.PrefixLength(this.serializer.ToBytes(this.CallData.MethodParametersRaw)));
             else
                 bytes.AddRange(BitConverter.GetBytes(0));
 
@@ -266,8 +288,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             carrier.TransactionHash = transactionContext.TransactionHash;
             carrier.Value = transactionContext.TxOutValue;
 
-            if (!string.IsNullOrWhiteSpace(callData.MethodParameters))
-                carrier.MethodParameters = carrier.serializer.ToObjects(callData.MethodParameters);
+            if (!string.IsNullOrWhiteSpace(callData.MethodParametersRaw))
+                carrier.MethodParameters = carrier.serializer.ToObjects(callData.MethodParametersRaw);
 
             return carrier;
         }

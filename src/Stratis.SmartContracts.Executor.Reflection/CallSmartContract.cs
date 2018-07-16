@@ -83,10 +83,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 ),
                 contractAddress,
                 callData.GasPrice,
-                carrier.MethodParameters
+                callData.MethodParameters
             );
 
-            LogExecutionContext(this.logger, block, executionContext.Message, contractAddress, carrier, callData);
+            LogExecutionContext(this.logger, block, executionContext.Message, contractAddress, callData);
 
             var gasMeter = new GasMeter(callData.GasLimit);
 
@@ -145,7 +145,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress,
-            SmartContractCarrier carrier, CallData callData)
+            CallData callData)
         {
             var builder = new StringBuilder();
 
@@ -154,8 +154,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             builder.Append(string.Format("{0}:{1},", nameof(callData.GasPrice), callData.GasPrice));
             builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.GasLimit), message.GasLimit, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
 
-            if (carrier.MethodParameters != null && carrier.MethodParameters.Length > 0)
-                builder.Append(string.Format(",{0}:{1}", nameof(carrier.MethodParameters), carrier.MethodParameters));
+            if (callData.MethodParameters != null && callData.MethodParameters.Length > 0)
+                builder.Append(string.Format(",{0}:{1}", nameof(callData.MethodParameters), callData.MethodParameters));
 
             logger.LogTrace("{0}", builder.ToString());
         }

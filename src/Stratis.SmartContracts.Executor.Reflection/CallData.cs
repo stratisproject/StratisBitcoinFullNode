@@ -5,7 +5,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public struct CallData
     {
         public CallData(byte opCodeType, int vmVersion, ulong gasPrice, Gas gasLimit, uint160 address,
-            string method, string parameters = "")
+            string method, string rawParameters = "", object[] methodParameters = null)
         {
             this.OpCodeType = opCodeType;
             this.VmVersion = vmVersion;
@@ -13,26 +13,30 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.GasLimit = gasLimit;
             this.ContractAddress = address;
             this.MethodName = method;
-            this.MethodParameters = parameters;
+            this.MethodParametersRaw = rawParameters;            
+            this.MethodParameters = methodParameters;
             this.ContractExecutionCode = new byte[0];
         }
 
-        public CallData(byte opCodeType, int vmVersion, ulong gasPrice, Gas gasLimit, byte[] code, string parameters = "")
+        public CallData(byte opCodeType, int vmVersion, ulong gasPrice, Gas gasLimit, byte[] code, string rawParameters = "", object[] methodParameters = null)
         {
             this.OpCodeType = opCodeType;
             this.VmVersion = vmVersion;
             this.GasPrice = gasPrice;
             this.GasLimit = gasLimit;
-            this.MethodParameters = parameters;
             this.ContractExecutionCode = code;
             this.MethodName = "";
+            this.MethodParametersRaw = rawParameters;
+            this.MethodParameters = methodParameters;
             this.ContractAddress = uint160.Zero;
         }
 
         /// <summary>The method name of the contract that will be executed.</summary>
         public string MethodName { get; }
 
-        public string MethodParameters { get; }
+        public string MethodParametersRaw { get; }
+
+        public object[] MethodParameters { get; }
 
         public uint160 ContractAddress { get; }
 
