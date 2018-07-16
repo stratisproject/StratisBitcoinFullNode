@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -50,15 +49,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorExceptionAsync()
         {
+            Block block = this.network.CreateBlock();
             this.ruleContext.ValidationContext = new ValidationContext()
             {
-                Block = new Block()
-                {
-                    Transactions = new List<Transaction>()
-                        {
-                            new NBitcoin.Transaction()
-                        }
-                },
+                Block = block,
                 ChainedHeader = this.concurrentChain.GetBlock(4)
             };
             this.ruleContext.MinedBlock = false;

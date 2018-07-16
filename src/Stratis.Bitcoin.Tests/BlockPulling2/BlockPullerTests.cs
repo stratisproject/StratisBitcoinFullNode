@@ -972,7 +972,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             Assert.True(this.puller.AssignedHeadersByPeerId.ContainsKey(peer1.Connection.Id));
 
             foreach (ChainedHeader chainedHeader in this.puller.AssignedHeadersByPeerId.First().Value)
-                Assert.True(headers.Contains(chainedHeader));
+                Assert.Contains(chainedHeader, headers);
 
             Assert.True(this.puller.AssignedHeadersByPeerId[peer1.Connection.Id].Count == headers.Count);
         }
@@ -1062,7 +1062,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.puller.PushBlock(peer1Headers.First().HashBlock, this.helper.GenerateBlock(100), peer2.Connection.Id);
 
             foreach (ChainedHeader chainedHeader in this.puller.AssignedHeadersByPeerId[peer1.Connection.Id])
-                Assert.True(peer1Headers.Contains(chainedHeader));
+                Assert.Contains(chainedHeader, peer1Headers);
             
             Assert.Empty(this.helper.CallbacksCalled);
             Assert.Equal(peer1Headers.Count, this.puller.AssignedDownloadsByHash.Count);
