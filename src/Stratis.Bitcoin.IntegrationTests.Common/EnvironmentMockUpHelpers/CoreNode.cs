@@ -20,7 +20,6 @@ using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
-using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
@@ -272,7 +271,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
                     if (includeUnbroadcasted)
                     {
-                        this.transactions = this.Reorder(this.transactions);
+                        this.transactions = CoreNodeExtensions.Reorder(this.transactions);
                         block.Transactions.AddRange(this.transactions);
                         this.transactions.Clear();
                     }
@@ -450,46 +449,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { ReserveFullNodeScript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
         }
 
-        [Obsolete("Please use GenerateStratisWithMiner instead.")]
-        public uint256[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
-        {
-            FullNode fullNode = (this.runner as StratisBitcoinPowRunner).FullNode;
-            BitcoinSecret dest = this.MinerSecret;
-            var blocks = new List<Block>();
-            DateTimeOffset now = this.MockTime == null ? DateTimeOffset.UtcNow : this.MockTime.Value;
-
-            for (int i = 0; i < blockCount; i++)
-            {
-                uint nonce = 0;
-                var block = new Block();
-                block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
-                block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
-                block.Header.UpdateTime(now, fullNode.Network, fullNode.Chain.Tip);
-                var coinbase = new Transaction();
-                coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));
-                coinbase.AddOutput(new TxOut(fullNode.Network.GetReward(fullNode.Chain.Height + 1), dest.GetAddress()));
-                block.AddTransaction(coinbase);
-                if (passedTransactions?.Any() ?? false)
-                {
-                    passedTransactions = this.Reorder(passedTransactions);
-                    block.Transactions.AddRange(passedTransactions);
-                }
-                block.UpdateMerkleRoot();
-                while (!block.CheckProofOfWork())
-                    block.Header.Nonce = ++nonce;
-                blocks.Add(block);
-                if (broadcast)
-                {
-                    uint256 blockHash = block.GetHash();
-                    var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
-                    ChainedHeader oldTip = fullNode.Chain.SetTip(newChain);
-                    fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
-                }
-            }
-
-            return blocks.Select(b => b.GetHash()).ToArray();
-        }
-
         public async Task BroadcastBlocksAsync(Block[] blocks, INetworkPeer peer)
         {
             foreach (Block block in blocks)
@@ -504,59 +463,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             this.SelectMempoolTransactions();
             return this.GenerateAsync(blockCount, includeMempool).GetAwaiter().GetResult();
-        }
-
-        private class TransactionNode
-        {
-            public uint256 Hash = null;
-            public Transaction Transaction = null;
-            public List<TransactionNode> DependsOn = new List<TransactionNode>();
-
-            public TransactionNode(Transaction tx)
-            {
-                this.Transaction = tx;
-                this.Hash = tx.GetHash();
-            }
-        }
-
-        private List<Transaction> Reorder(List<Transaction> transactions)
-        {
-            if (transactions.Count == 0)
-                return transactions;
-
-            var result = new List<Transaction>();
-            Dictionary<uint256, TransactionNode> dictionary = transactions.ToDictionary(t => t.GetHash(), t => new TransactionNode(t));
-            foreach (TransactionNode transaction in dictionary.Select(d => d.Value))
-            {
-                foreach (TxIn input in transaction.Transaction.Inputs)
-                {
-                    TransactionNode node = dictionary.TryGet(input.PrevOut.Hash);
-                    if (node != null)
-                    {
-                        transaction.DependsOn.Add(node);
-                    }
-                }
-            }
-
-            while (dictionary.Count != 0)
-            {
-                foreach (TransactionNode node in dictionary.Select(d => d.Value).ToList())
-                {
-                    foreach (TransactionNode parent in node.DependsOn.ToList())
-                    {
-                        if (!dictionary.ContainsKey(parent.Hash))
-                            node.DependsOn.Remove(parent);
-                    }
-
-                    if (node.DependsOn.Count == 0)
-                    {
-                        result.Add(node.Transaction);
-                        dictionary.Remove(node.Hash);
-                    }
-                }
-            }
-
-            return result;
         }
 
         private BitcoinSecret GetFirstSecret(RPCClient rpc)

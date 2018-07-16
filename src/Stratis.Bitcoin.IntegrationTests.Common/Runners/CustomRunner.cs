@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
@@ -12,7 +11,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
     {
         private readonly string agent;
         private readonly Action<IFullNodeBuilder> callback;
-        private readonly string configFileName;
         private readonly Network network;
         private readonly ProtocolVersion protocolVersion;
         private List<string> args;
