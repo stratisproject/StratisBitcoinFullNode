@@ -14,12 +14,14 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.Core.State;
 using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
@@ -452,7 +454,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         [Obsolete("Please use GenerateStratisWithMiner instead.")]
         public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
         {
-            FullNode fullNode = ((StratisBitcoinPowRunner) this.runner).FullNode;
+            ContractStateRepositoryRoot state = null;
+            FullNode fullNode = null;
+
+            if (this.runner is StratisBitcoinPowRunner powRunner)
+                fullNode = powRunner.FullNode;
+
+            if (this.runner is StratisSmartContractNode smartContractNode)
+            {
+                fullNode = smartContractNode.FullNode;
+                state = fullNode.NodeService<ContractStateRepositoryRoot>();
+            }
+
             BitcoinSecret dest = this.MinerSecret;
             var blocks = new List<Block>();
             DateTimeOffset now = this.MockTime ?? DateTimeOffset.UtcNow;
@@ -460,30 +473,39 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             for (int i = 0; i < blockCount; i++)
             {
                 uint nonce = 0;
-                var block = new Block();
+                var block = this.runner.Network.Consensus.ConsensusFactory.CreateBlock();
                 block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
                 block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
                 block.Header.UpdateTime(now, fullNode.Network, fullNode.Chain.Tip);
-                var coinbase = new Transaction();
+
+                var coinbase = this.runner.Network.Consensus.ConsensusFactory.CreateTransaction();
                 coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));
                 coinbase.AddOutput(new TxOut(fullNode.Network.GetReward(fullNode.Chain.Height + 1), dest.GetAddress()));
                 block.AddTransaction(coinbase);
+
                 if (passedTransactions?.Any() ?? false)
                 {
                     passedTransactions = this.Reorder(passedTransactions);
                     block.Transactions.AddRange(passedTransactions);
                 }
+
                 block.UpdateMerkleRoot();
+
+                if (block.Header is SmartContractBlockHeader smartContractBlockHeader)
+                    smartContractBlockHeader.HashStateRoot = new uint256(state.Root);
+
                 while (!block.CheckProofOfWork())
                     block.Header.Nonce = ++nonce;
+
                 blocks.Add(block);
 
-                if (!broadcast) continue;
-
-                uint256 blockHash = block.GetHash();
-                var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
-                ChainedHeader oldTip = fullNode.Chain.SetTip(newChain);
-                fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
+                if (broadcast)
+                {
+                    uint256 blockHash = block.GetHash();
+                    var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
+                    ChainedHeader oldTip = fullNode.Chain.SetTip(newChain);
+                    fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
+                }
             }
 
             return blocks.ToArray();
