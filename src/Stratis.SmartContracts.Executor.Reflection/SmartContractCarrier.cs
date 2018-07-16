@@ -43,7 +43,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
 
-                var callData = new CallData(type, vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw, methodParameters);
+                var callData = new CallData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw, methodParameters);
                 return Result.Ok(callData);
             }
 
@@ -54,7 +54,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
 
-                var callData = new CallData(type, vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw, methodParameters);
+                var callData = new CallData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw, methodParameters);
                 return Result.Ok(callData);
             }
 
@@ -180,7 +180,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var serializer = new MethodParameterSerializer();
             string methodParams = GetMethodParams(serializer, methodParameters);
 
-            var callData = new CallData((byte) ScOpcodeType.OP_CREATECONTRACT, vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParams);
+            var callData = new CallData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParams);
 
             var carrier = new SmartContractCarrier(new MethodParameterSerializer());
             carrier.CallData = callData;
@@ -201,7 +201,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var serializer = new MethodParameterSerializer();
             string methodParams = GetMethodParams(serializer, methodParameters);
             var carrier = new SmartContractCarrier(new MethodParameterSerializer());
-            carrier.CallData = new CallData((byte)ScOpcodeType.OP_CALLCONTRACT, vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParams);
+            carrier.CallData = new CallData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParams);
             
             if (!string.IsNullOrWhiteSpace(methodParams))
                 carrier.MethodParameters = serializer.ToObjects(methodParams);
@@ -311,14 +311,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 var contractAddress = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
                 var methodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
                 var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
-                return new CallData(type, vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw);
+                return new CallData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw);
             }
 
             if (type == (byte) ScOpcodeType.OP_CREATECONTRACT)
             {
                 var contractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
                 var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
-                return new CallData(type, vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw);
+                return new CallData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw);
             }
 
             // TODO Return a DeserializationResult and handle in executor

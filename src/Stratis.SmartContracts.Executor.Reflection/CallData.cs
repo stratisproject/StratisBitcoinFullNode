@@ -1,13 +1,14 @@
 ﻿using NBitcoin;
+using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
     public struct CallData
     {
-        public CallData(byte opCodeType, int vmVersion, ulong gasPrice, Gas gasLimit, uint160 address,
+        public CallData(int vmVersion, ulong gasPrice, Gas gasLimit, uint160 address,
             string method, string rawParameters = "", object[] methodParameters = null)
         {
-            this.OpCodeType = opCodeType;
+            this.OpCodeType = (byte) ScOpcodeType.OP_CALLCONTRACT;
             this.VmVersion = vmVersion;
             this.GasPrice = gasPrice;
             this.GasLimit = gasLimit;
@@ -18,9 +19,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.ContractExecutionCode = new byte[0];
         }
 
-        public CallData(byte opCodeType, int vmVersion, ulong gasPrice, Gas gasLimit, byte[] code, string rawParameters = "", object[] methodParameters = null)
+        public CallData(int vmVersion, ulong gasPrice, Gas gasLimit, byte[] code, string rawParameters = "",
+            object[] methodParameters = null)
         {
-            this.OpCodeType = opCodeType;
+            this.OpCodeType = (byte)ScOpcodeType.OP_CREATECONTRACT;
             this.VmVersion = vmVersion;
             this.GasPrice = gasPrice;
             this.GasLimit = gasLimit;
