@@ -29,21 +29,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>The contract data provided with the transaction</summary>
         public CallData CallData { get; set; }
 
-        /// <summary>The maximum cost (in satoshi) the contract can spend.</summary>
-        public ulong GasCostBudget
-        {
-            get
-            {
-                checked
-                {
-                    return this.CallData.GasPrice * this.CallData.GasLimit;
-                }
-            }
-        }
-
-        /// <summary>The size of the bytes (int) we take to determine the length of the subsequent byte array.</summary>
-        private const int intLength = sizeof(int);
-
         /// <summary>The method parameters that will be passed to the <see cref="MethodName"/> when the contract is executed.</summary>
         public object[] MethodParameters { get; private set; }
 
