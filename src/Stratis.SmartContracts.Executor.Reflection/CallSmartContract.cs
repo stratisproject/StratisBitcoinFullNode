@@ -57,14 +57,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 transactionContext.BlockHeight,
                 transactionContext.CoinbaseAddress,
                 transactionContext.Sender,
-                transactionContext.TxOutValue);
-            
-            // Get the contract code (dll) from the repository.
-            byte[] contractExecutionCode = this.stateSnapshot.GetCode(callData.ContractAddress);
-            if (contractExecutionCode == null)
-            {
-                return SmartContractExecutionResult.ContractDoesNotExist(callData.MethodName);
-            }
+                transactionContext.TxOutValue);           
 
             var contractAddress = callData.ContractAddress;
 
