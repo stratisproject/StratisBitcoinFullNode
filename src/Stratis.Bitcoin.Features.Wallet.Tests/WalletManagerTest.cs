@@ -276,8 +276,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mnemonic = new Mnemonic(Wordlist.French, WordCount.Eighteen);
 
-            // create the wallet
-            var returnedMnemonic = walletManager.CreateWallet(password, "mywallet", null, mnemonic);
+            Mnemonic returnedMnemonic = walletManager.CreateWallet(password, "mywallet", null, mnemonic);
 
             Assert.Equal(mnemonic.DeriveSeed(), returnedMnemonic.DeriveSeed());
         }
