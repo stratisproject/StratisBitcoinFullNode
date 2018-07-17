@@ -95,7 +95,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
-            var result = this.vm.Create(callData.ContractExecutionCode, executionContext, gasMeter, persistentState, this.stateSnapshot);
+            var result = this.vm.Create(callData.ContractExecutionCode, executionContext, gasMeter, persistentState, this.stateSnapshot, callData);
 
             var revert = result.ExecutionException != null;
 

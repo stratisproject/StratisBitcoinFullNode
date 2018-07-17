@@ -198,7 +198,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 context,
                 gasMeter, 
                 persistentState,
-                repository);
+                repository, 
+                callData);
 
             track.Commit();
 

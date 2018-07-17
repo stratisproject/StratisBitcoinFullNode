@@ -34,8 +34,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public VmExecutionResult Create(byte[] contractCode,
             ISmartContractExecutionContext context,
             IGasMeter gasMeter,
-            IPersistentState persistentState, 
-            IContractStateRepository repository)
+            IPersistentState persistentState,
+            IContractStateRepository repository, 
+            CallData callData)
         {
             this.logger.LogTrace("()");
 

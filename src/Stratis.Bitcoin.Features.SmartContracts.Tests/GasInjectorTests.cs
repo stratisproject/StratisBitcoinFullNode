@@ -194,10 +194,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1);
 
+            var callData = new CallData(1, executionContext.GasPrice, gasLimit, originalAssemblyBytes);
+
             var result = vm.Create(
                 originalAssemblyBytes,
                 executionContext,
-                gasMeter, persistentState, repository);
+                gasMeter, 
+                persistentState, 
+                this.repository,
+                callData);
 
             // TODO: Un-hard-code this. 
             // Constructor: 15
@@ -223,10 +228,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory);
             var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1, new[] { "Tset Owner" });
 
+            var callData = new CallData(1, executionContext.GasPrice, gasLimit, originalAssemblyBytes);
+
             var result = vm.Create(
                 originalAssemblyBytes,
                 executionContext,
-                gasMeter, persistentState, repository);
+                gasMeter, 
+                persistentState, 
+                this.repository, 
+                callData);
 
             // Constructor: 15
             // Property setter: 12
