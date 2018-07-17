@@ -174,24 +174,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractStateRepository track = repository.StartTracking();
 
             var gasMeter = new GasMeter(callData.GasLimit);
-            var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
-            var persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, this.network);
 
-            var context = new SmartContractExecutionContext(
-                            new Block(1, TestAddress),
-                            new Message(
-                                TestAddress,
-                                TestAddress,
-                                value,
-                                callData.GasLimit
-                                ),
-                            TestAddress.ToUint160(this.network),
-                            callData.GasPrice,
-                            callData.MethodParameters
-                        );
+            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, this.network);
 
             var transactionContext = new TransactionContext(
                 txHash: uint256.One,
@@ -208,8 +195,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             track.Commit();
 
-            Assert.Equal(6, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("EndBlock")), 0));
-            Assert.Equal(TestAddress.ToUint160(this.network).ToBytes(), track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("Owner")));
+            var v = track.GetStorageValue(result.NewContractAddress,
+                Encoding.UTF8.GetBytes("EndBlock"));
+            Assert.Equal(6, BitConverter.ToInt16(v, 0));
+            Assert.Equal(TestAddress.ToUint160(this.network).ToBytes(), track.GetStorageValue(result.NewContractAddress, Encoding.UTF8.GetBytes("Owner")));
         }
     }
 }

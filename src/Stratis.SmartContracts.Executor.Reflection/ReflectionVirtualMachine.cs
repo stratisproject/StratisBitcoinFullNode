@@ -68,7 +68,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 ),
                 new Message(
                     contractAddress.ToAddress(this.network),
-                    transactionContext.To.ToAddress(this.network),
+                    transactionContext.From.ToAddress(this.network),
                     transactionContext.Amount,
                     callData.GasLimit
                 ),
