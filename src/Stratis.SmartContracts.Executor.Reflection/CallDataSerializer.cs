@@ -33,7 +33,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var gasPrice = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
             var gasLimit = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
 
-            if (type == (byte)ScOpcodeType.OP_CALLCONTRACT)
+            if (IsCallContract(type))
             {
                 var contractAddress = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
                 var methodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
@@ -45,7 +45,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return Result.Ok(callData);
             }
 
-            if (type == (byte)ScOpcodeType.OP_CREATECONTRACT)
+            if (IsCreateContract(type))
             {
                 var contractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
                 var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
@@ -57,6 +57,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             return Result.Fail<CallData>("Error deserializing calldata");
+        }
+
+        private static bool IsCreateContract(byte type)
+        {
+            return type == (byte)ScOpcodeType.OP_CREATECONTRACT;
+        }
+
+        private static bool IsCallContract(byte type)
+        {
+            return type == (byte)ScOpcodeType.OP_CALLCONTRACT;
         }
 
         private object[] DeserializeMethodParameters(string methodParametersRaw)
