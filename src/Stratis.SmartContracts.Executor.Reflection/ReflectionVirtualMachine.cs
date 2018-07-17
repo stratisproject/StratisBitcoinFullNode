@@ -135,8 +135,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.logger.LogTrace("(){0}:{1}", nameof(callData.MethodName), callData.MethodName);
 
-            ISmartContractExecutionResult executionResult = new SmartContractExecutionResult();
-
             if (callData.MethodName == null)
             {
                 this.logger.LogTrace("(-)[CALLCONTRACT_METHODNAME_NOT_GIVEN]");
@@ -181,10 +179,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 LogException(result.Exception);
 
                 this.logger.LogTrace("(-)[CALLCONTRACT_INSTANTIATION_FAILED]:{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
-
-                executionResult.Exception = result.Exception.InnerException ?? result.Exception;
-                executionResult.GasConsumed = gasMeter.GasConsumed;
-
+               
                 return VmExecutionResult.Error(gasMeter.GasConsumed, result.Exception.InnerException ?? result.Exception);
             }
             else
