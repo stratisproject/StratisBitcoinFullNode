@@ -437,10 +437,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public bool AddToStratisMempool(Transaction trx)
         {
-            FullNode fullNode = ((StratisBitcoinPowRunner)this.runner).FullNode;
             var state = new MempoolValidationState(true);
-
-            return fullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
+            return this.FullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
         }
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)
