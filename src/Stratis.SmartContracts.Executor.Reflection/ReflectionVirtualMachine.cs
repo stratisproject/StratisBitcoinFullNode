@@ -134,6 +134,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.logger.LogTrace("(){0}:{1}", nameof(callData.MethodName), callData.MethodName);
 
+            gasMeter.Spend((Gas)GasPriceList.BaseCost);
+
             if (callData.MethodName == null)
             {
                 this.logger.LogTrace("(-)[CALLCONTRACT_METHODNAME_NOT_GIVEN]");

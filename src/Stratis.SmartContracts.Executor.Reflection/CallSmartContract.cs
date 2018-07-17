@@ -82,8 +82,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             LogExecutionContext(this.logger, block, executionContext.Message, contractAddress, callData);
 
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
-
             var result = this.vm.ExecuteMethod(gasMeter,
                 this.stateSnapshot, 
                 callData,
