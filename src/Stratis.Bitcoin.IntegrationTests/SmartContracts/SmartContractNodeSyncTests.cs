@@ -64,7 +64,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Thread.Sleep(1);
 
             // Make sure that miner did not advance yet but connector did.
-            Assert.NotEqual(miner.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(connector.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(miner.FullNode.Chain.Tip.Height, networkHeight);
             Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight + 1);
