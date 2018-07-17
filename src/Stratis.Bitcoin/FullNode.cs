@@ -178,6 +178,7 @@ namespace Stratis.Bitcoin
 
             this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
 
+            this.logger.LogInformation(Properties.Resources.AsciiLogo);
             this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
 
             this.State = FullNodeState.Initialized;
