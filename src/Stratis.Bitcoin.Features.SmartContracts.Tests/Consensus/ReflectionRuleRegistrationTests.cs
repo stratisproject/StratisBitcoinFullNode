@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
             var feature = new ReflectionVirtualMachineFeature(consensusRules, loggerFactory);
             feature.Initialize();
 
-            Assert.Single(consensusRules.Rules.Where(r => r.Rule.GetType() == typeof(SmartContractFormatRule)));
+            Assert.Single(consensusRules.Rules.Where(r => r.GetType() == typeof(SmartContractFormatRule)));
         }
     }
 }
