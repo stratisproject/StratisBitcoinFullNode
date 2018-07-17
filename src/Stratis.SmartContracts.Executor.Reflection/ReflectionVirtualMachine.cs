@@ -91,8 +91,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 return VmExecutionResult.Error(gasMeter.GasConsumed, result.Exception.InnerException ?? result.Exception);
             }
-            else
-                this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_SUCCEEDED]");
+
+            this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_SUCCEEDED]");
+            
+            this.logger.LogTrace("(-):{0}={1}", nameof(contractAddress), contractAddress);
+
+            repository.SetCode(contractAddress, callData.ContractExecutionCode);
 
             this.logger.LogTrace("(-):{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
 

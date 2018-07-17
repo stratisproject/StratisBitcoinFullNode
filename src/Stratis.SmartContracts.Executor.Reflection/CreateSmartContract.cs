@@ -54,9 +54,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var callData = callDataDeserializationResult.Value;
 
-            // Create a new address for the contract.
-            uint160 newContractAddress = Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(transactionContext.TransactionHash);
-
             // Decompile the contract execution code and validate it.
             SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(callData.ContractExecutionCode);
             SmartContractValidationResult validation = this.validator.Validate(decompilation);
@@ -116,10 +113,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
             else
             {
-                this.logger.LogTrace("(-):{0}={1}", nameof(newContractAddress), newContractAddress);
-
-                this.stateSnapshot.SetCode(newContractAddress, callData.ContractExecutionCode);
-
                 this.stateSnapshot.Commit();
             }
 
