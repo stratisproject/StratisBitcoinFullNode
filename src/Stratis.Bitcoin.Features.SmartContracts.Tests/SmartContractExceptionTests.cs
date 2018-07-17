@@ -47,18 +47,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] contractCode = compilationResult.Compilation;
 
-            var gasLimit = (Gas)100;
+            var gasLimit = (Gas)10000;
             var gasMeter = new GasMeter(gasLimit);
-            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(persistenceStrategy,
-                TestAddress.ToUint160(this.network), this.network);
+
             var internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
 
             var address = TestAddress.ToUint160(this.network);
 
-            var callData = new CallData(1, 1, gasLimit, contractCode);
-
+            var callData = new CallData(1, 1, gasLimit, address, "ThrowException");
+            this.repository.SetCode(address, contractCode);
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
 
             var result = vm.ExecuteMethod(gasMeter, 
