@@ -311,6 +311,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Thread.Sleep(1);
 
             // Make sure that miner did not advance yet but connector did.
+            Assert.NotEqual(miner.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(connector.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(miner.FullNode.Chain.Tip.Height, networkHeight);
             Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight + 1);
@@ -322,6 +323,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             networkHeight++;
 
             // Make sure that at this moment miner's tip != network's and connector's tip.
+            Assert.NotEqual(miner.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(connector.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(miner.FullNode.Chain.Tip.Height, networkHeight);
             Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight);
