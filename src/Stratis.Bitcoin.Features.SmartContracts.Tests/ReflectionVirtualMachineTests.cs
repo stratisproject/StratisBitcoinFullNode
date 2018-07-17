@@ -193,11 +193,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                             callData.MethodParameters
                         );
 
+            var transactionContext = new TransactionContext(
+                txHash: uint256.One,
+                blockHeight: 1,
+                coinbase: TestAddress.ToUint160(this.network),
+                sender: TestAddress.ToUint160(this.network),
+                amount: value
+                );
+
             var result = vm.Create(context,
                 gasMeter, 
                 persistentState,
                 repository, 
-                callData);
+                callData,
+                transactionContext);
 
             track.Commit();
 

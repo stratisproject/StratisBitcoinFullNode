@@ -5,14 +5,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public class TransactionContext : ITransactionContext
     {
-        public TransactionContext(uint256 txHash, ulong blockHeight, uint160 coinbase, uint160 sender, ulong amount, byte[] data)
+        public TransactionContext(uint256 txHash, ulong blockHeight, uint160 coinbase, uint160 sender, ulong amount)
         {
             this.TransactionHash = txHash;
             this.BlockHeight = blockHeight;
             this.Coinbase = coinbase;
             this.From = sender;
             this.Amount = amount;
-            this.Data = data;
         }
 
         public ulong Amount { get; set; }
@@ -21,7 +20,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public ulong BlockHeight { get; }
         public uint160 From { get; }
         public uint160 To { get; }
-        public byte[] Data { get; }
     }
 
     public interface ITransactionContext
@@ -50,11 +48,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// The destination address
         /// </summary>
         uint160 To { get; }
-
-        /// <summary>
-        /// All of the bytes included in the scriptpubkey
-        /// </summary>
-        byte[] Data { get; }
     }
 
     /// <summary>

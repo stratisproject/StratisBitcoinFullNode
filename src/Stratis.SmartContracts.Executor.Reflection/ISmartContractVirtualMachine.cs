@@ -6,7 +6,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         VmExecutionResult Create(ISmartContractExecutionContext context,
             IGasMeter gasMeter, IPersistentState persistentState, IContractStateRepository repository,
-            CallData callData);
+            CallData callData, ITransactionContext transactionContext);
 
         VmExecutionResult ExecuteMethod(byte[] contractCode,
             string methodName,

@@ -195,12 +195,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1);
 
             var callData = new CallData(1, executionContext.GasPrice, gasLimit, originalAssemblyBytes);
+            
+            var transactionContext = new TransactionContext(
+                txHash: uint256.One,
+                blockHeight: 0,
+                coinbase: TestAddress.ToUint160(this.network),
+                sender: TestAddress.ToUint160(this.network),
+                amount: 0
+            );
 
             var result = vm.Create(executionContext,
                 gasMeter, 
                 persistentState, 
                 this.repository,
-                callData);
+                callData, 
+                transactionContext);
 
             // TODO: Un-hard-code this. 
             // Constructor: 15
@@ -228,11 +237,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var callData = new CallData(1, executionContext.GasPrice, gasLimit, originalAssemblyBytes);
 
+            var transactionContext = new TransactionContext(
+                txHash: uint256.One,
+                blockHeight: 0,
+                coinbase: TestAddress.ToUint160(this.network),
+                sender: TestAddress.ToUint160(this.network),
+                amount: 0
+            );
+
             var result = vm.Create(executionContext,
                 gasMeter, 
                 persistentState, 
                 this.repository, 
-                callData);
+                callData, transactionContext);
 
             // Constructor: 15
             // Property setter: 12
