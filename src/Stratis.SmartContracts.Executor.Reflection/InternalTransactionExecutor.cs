@@ -87,11 +87,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var callData = new CallData(1, 0, smartContractState.GasMeter.GasLimit, addressTo.ToUint160(this.network), contractDetails.ContractMethodName, "", contractDetails.MethodParameters);
             
-            var result = this.vm.ExecuteMethod(
-                contractCode,
-                contractDetails.ContractMethodName,
-                newContext,
-                smartContractState.GasMeter, 
+            var result = this.vm.ExecuteMethod(smartContractState.GasMeter, 
                 newPersistentState, 
                 track, 
                 callData, 

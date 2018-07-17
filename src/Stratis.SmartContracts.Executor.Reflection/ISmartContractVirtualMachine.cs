@@ -8,10 +8,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IContractStateRepository repository,
             CallData callData, ITransactionContext transactionContext);
 
-        VmExecutionResult ExecuteMethod(byte[] contractCode,
-            string methodName,
-            ISmartContractExecutionContext context,
-            IGasMeter gasMeter, IPersistentState persistentState, IContractStateRepository repository,
+        VmExecutionResult ExecuteMethod(IGasMeter gasMeter, IPersistentState persistentState,
+            IContractStateRepository repository,
             CallData callData, ITransactionContext transactionContext);
     }
 }

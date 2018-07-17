@@ -99,11 +99,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
-            var result = this.vm.ExecuteMethod(
-                contractCode,
-                methodName,
-                executionContext,
-                gasMeter,
+            var result = this.vm.ExecuteMethod(gasMeter,
                 persistentState,
                 this.stateSnapshot, 
                 callData,

@@ -127,25 +127,23 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Invokes a method on an existing smart contract
         /// </summary>
-        public VmExecutionResult ExecuteMethod(byte[] contractCode,
-            string contractMethodName,
-            ISmartContractExecutionContext context,
-            IGasMeter gasMeter,
+        public VmExecutionResult ExecuteMethod(IGasMeter gasMeter,
             IPersistentState persistentState,
-            IContractStateRepository repository, CallData callData, ITransactionContext transactionContext)
+            IContractStateRepository repository,
+            CallData callData,
+            ITransactionContext transactionContext)
         {
-            this.logger.LogTrace("(){0}:{1}", nameof(contractMethodName), contractMethodName);
+            this.logger.LogTrace("(){0}:{1}", nameof(callData.MethodName), callData.MethodName);
 
             ISmartContractExecutionResult executionResult = new SmartContractExecutionResult();
 
-            if (contractMethodName == null)
+            if (callData.MethodName == null)
             {
                 this.logger.LogTrace("(-)[CALLCONTRACT_METHODNAME_NOT_GIVEN]");
                 return VmExecutionResult.Error(gasMeter.GasConsumed, null);
-
             }
 
-            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToContractMethod(contractCode, contractMethodName);
+            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToContractMethod(callData.ContractExecutionCode, callData.MethodName);
             Type contractType = Load(gasInjectedCode);
             if (contractType == null)
             {
@@ -157,16 +155,24 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this, repository, internalTransferList, transactionContext);
 
-            var balanceState = new BalanceState(repository, context.Message.Value, internalTransferList);
+            var balanceState = new BalanceState(repository, transactionContext.Amount, internalTransferList);
 
             var contractState = new SmartContractState(
-                context.Block,
-                context.Message,
+                new Block(
+                    transactionContext.BlockHeight,
+                    transactionContext.Coinbase.ToAddress(this.network)
+                ),
+                new Message(
+                    callData.ContractAddress.ToAddress(this.network),
+                    transactionContext.From.ToAddress(this.network),
+                    transactionContext.Amount,
+                    callData.GasLimit
+                ),
                 persistentState,
                 gasMeter,
                 internalTransactionExecutor,
                 new InternalHashHelper(),
-                () => balanceState.GetBalance(context.ContractAddress));
+                () => balanceState.GetBalance(callData.ContractAddress));
 
             LifecycleResult result = SmartContractRestorer.Restore(contractType, contractState);
 
@@ -188,15 +194,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             try
             {
-                MethodInfo methodToInvoke = contractType.GetMethod(contractMethodName);
+                MethodInfo methodToInvoke = contractType.GetMethod(callData.MethodName);
                 if (methodToInvoke == null)
-                    throw new ArgumentException(string.Format("[CALLCONTRACT_METHODTOINVOKE_NULL_DOESNOT_EXIST]:{0}={1}", nameof(contractMethodName), contractMethodName));
+                    throw new ArgumentException(string.Format("[CALLCONTRACT_METHODTOINVOKE_NULL_DOESNOT_EXIST]:{0}={1}", nameof(callData.MethodName), callData.MethodName));
 
                 if (methodToInvoke.IsConstructor)
                     throw new ConstructorInvocationException("[CALLCONTRACT_CANNOT_INVOKE_CTOR]");
 
                 SmartContract smartContract = result.Object;
-                methodResult = methodToInvoke.Invoke(smartContract, context.Parameters);
+                methodResult = methodToInvoke.Invoke(smartContract, callData.MethodParameters);
             }
             catch (ArgumentException argumentException)
             {

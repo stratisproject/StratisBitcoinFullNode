@@ -69,11 +69,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
 
-            var result = vm.ExecuteMethod(
-                contractCode,
-                "ThrowException",
-                context,
-                gasMeter, persistentState, 
+            var result = vm.ExecuteMethod(gasMeter, persistentState, 
                 this.repository, 
                 callData, 
                 transactionContext);
