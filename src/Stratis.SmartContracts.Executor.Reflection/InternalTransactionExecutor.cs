@@ -78,8 +78,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
 
             IContractStateRepository track = this.contractStateRepository.StartTracking();
-            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, smartContractState.GasMeter, this.keyEncodingStrategy);
-            IPersistentState newPersistentState = new PersistentState(persistenceStrategy, addressTo.ToUint160(this.network), this.network);
 
             var callData = new CallData(1, 0, smartContractState.GasMeter.GasLimit, addressTo.ToUint160(this.network), contractDetails.ContractMethodName, "", contractDetails.MethodParameters);
             
