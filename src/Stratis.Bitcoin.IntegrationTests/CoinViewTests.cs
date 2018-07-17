@@ -24,10 +24,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class CoinViewTests
     {
-        /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
-
-        /// <summary>Provider of binary (de)serialization for data stored in the database.</summary>
+        private readonly Network network;
         private readonly DBreezeSerializer dbreezeSerializer;
 
         /// <summary>
@@ -36,8 +34,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         public CoinViewTests()
         {
             this.loggerFactory = new LoggerFactory();
+            this.network = Network.Main;
             this.dbreezeSerializer = new DBreezeSerializer();
-            this.dbreezeSerializer.Initialize(Network.Main);
+            this.dbreezeSerializer.Initialize(this.network);
         }
 
         [Fact]
@@ -286,8 +285,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             uint nonce = RandomUtils.GetUInt32();
             foreach (ConcurrentChain chain in chains)
             {
-                var block = new Block();
-                block.AddTransaction(new Transaction());
+                Block block = this.network.CreateBlock();
+                block.AddTransaction(this.network.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
                 block.Header.Nonce = nonce;

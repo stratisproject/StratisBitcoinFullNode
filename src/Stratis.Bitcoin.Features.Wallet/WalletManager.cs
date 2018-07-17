@@ -10,6 +10,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
@@ -75,6 +76,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The settings for the wallet feature.</summary>
         private readonly WalletSettings walletSettings;
 
+        /// <summary>The settings for the wallet feature.</summary>
+        private readonly IScriptAddressReader scriptAddressReader;
+
         public uint256 WalletTipHash { get; set; }
 
         // In order to allow faster look-ups of transactions affecting the wallets' addresses,
@@ -95,6 +99,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
+            IScriptAddressReader scriptAddressReader,
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node will broadcast to.
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -106,6 +111,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(scriptAddressReader, nameof(scriptAddressReader));
 
             this.walletSettings = walletSettings;
             this.lockObject = new object();
@@ -120,6 +126,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.nodeLifetime = nodeLifetime;
             this.fileStorage = new FileStorage<Wallet>(dataFolder.WalletPath);
             this.broadcasterManager = broadcasterManager;
+            this.scriptAddressReader = scriptAddressReader;
             this.dateTimeProvider = dateTimeProvider;
 
             // register events
@@ -490,10 +497,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Get the account.
                 HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
 
-                List<HdAddress> unusedAddresses = isChange ? 
-                    account.InternalAddresses.Where(acc => !acc.Transactions.Any()).ToList() : 
+                List<HdAddress> unusedAddresses = isChange ?
+                    account.InternalAddresses.Where(acc => !acc.Transactions.Any()).ToList() :
                     account.ExternalAddresses.Where(acc => !acc.Transactions.Any()).ToList();
-                
+
                 int diff = unusedAddresses.Count - count;
                 var newAddresses = new List<HdAddress>();
                 if (diff < 0)
@@ -515,7 +522,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
             return addresses;
         }
-        
+
         /// <inheritdoc />
         public (string folderPath, IEnumerable<string>) GetWalletsFiles()
         {
@@ -871,7 +878,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(transaction), hash, nameof(blockHeight), blockHeight);
-            
+
             bool foundReceivingTrx = false, foundSendingTrx = false;
 
             lock (this.lockObject)
@@ -1057,26 +1064,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 foreach (TxOut paidToOutput in paidToOutputs)
                 {
                     // Figure out how to retrieve the destination address.
-                    string destinationAddress = string.Empty;
-                    ScriptTemplate scriptTemplate = paidToOutput.ScriptPubKey.FindTemplate(this.network);
-                    switch (scriptTemplate.Type)
-                    {
-                        // Pay to PubKey can be found in outputs of staking transactions.
-                        case TxOutType.TX_PUBKEY:
-                            PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(paidToOutput.ScriptPubKey);
-                            destinationAddress = pubKey.GetAddress(this.network).ToString();
-                            break;
-                        // Pay to PubKey hash is the regular, most common type of output.
-                        case TxOutType.TX_PUBKEYHASH:
-                            destinationAddress = paidToOutput.ScriptPubKey.GetDestinationAddress(this.network).ToString();
-                            break;
-                        case TxOutType.TX_NONSTANDARD:
-                        case TxOutType.TX_SCRIPTHASH:
-                        case TxOutType.TX_MULTISIG:
-                        case TxOutType.TX_NULL_DATA:
-                        case TxOutType.TX_SEGWIT:
-                            break;
-                    }
+                    string destinationAddress = this.scriptAddressReader.GetAddressFromScriptPubKey(this.network, paidToOutput.ScriptPubKey);
 
                     payments.Add(new PaymentDetails
                     {
@@ -1280,7 +1268,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Create a folder if none exists and persist the file.
             this.SaveWallet(walletFile);
-            
+
             this.logger.LogTrace("(-)");
             return walletFile;
         }
@@ -1390,7 +1378,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.outpointLookup[new OutPoint(transactionData.Id, transactionData.Index)] = transactionData;
             }
         }
-        
+
         /// <inheritdoc />
         public IEnumerable<string> GetWalletsNames()
         {
