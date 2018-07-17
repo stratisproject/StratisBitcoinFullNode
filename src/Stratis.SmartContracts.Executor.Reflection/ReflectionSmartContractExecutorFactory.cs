@@ -16,7 +16,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly Network network;
         private readonly ISmartContractResultRefundProcessor refundProcessor;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
-        private readonly SmartContractValidator validator;
         private readonly ISmartContractVirtualMachine vm;
         private readonly ICallDataSerializer serializer;
 
@@ -26,7 +25,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ICallDataSerializer serializer,
             ISmartContractResultRefundProcessor refundProcessor,
             ISmartContractResultTransferProcessor transferProcessor,
-            SmartContractValidator validator,
             ISmartContractVirtualMachine vm)
         {
             this.keyEncodingStrategy = keyEncodingStrategy;
@@ -34,7 +32,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.network = network;
             this.refundProcessor = refundProcessor;
             this.transferProcessor = transferProcessor;
-            this.validator = validator;
             this.vm = vm;
             this.serializer = serializer;
         }
