@@ -3,6 +3,60 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
+    public class TransactionContext : ITransactionContext
+    {
+        public TransactionContext(uint256 txHash, ulong blockHeight, uint160 coinbase, uint160 sender, ulong amount, byte[] data)
+        {
+            this.TransactionHash = txHash;
+            this.BlockHeight = blockHeight;
+            this.Coinbase = coinbase;
+            this.From = sender;
+            this.Amount = amount;
+            this.Data = data;
+        }
+
+        public ulong Amount { get; set; }
+        public uint256 TransactionHash { get; }
+        public uint160 Coinbase { get; }
+        public ulong BlockHeight { get; }
+        public uint160 From { get; }
+        public uint160 To { get; }
+        public byte[] Data { get; }
+    }
+
+    public interface ITransactionContext
+    {
+        /// <summary>
+        /// Hash of the currently executing transaction.
+        /// </summary>
+        uint256 TransactionHash { get; }
+
+        /// <summary>
+        /// Address of the coinbase for the current block.
+        /// </summary>
+        uint160 Coinbase { get; }
+
+        /// <summary>
+        /// Height of the current block in the chain.
+        /// </summary>
+        ulong BlockHeight { get; }
+
+        /// <summary>
+        /// Address of the sender for the current contract call.
+        /// </summary>
+        uint160 From { get; }
+
+        /// <summary>
+        /// The destination address
+        /// </summary>
+        uint160 To { get; }
+
+        /// <summary>
+        /// All of the bytes included in the scriptpubkey
+        /// </summary>
+        byte[] Data { get; }
+    }
+
     /// <summary>
     /// Information about the current state of the blockchain that is passed into the virtual machine.
     /// </summary>
