@@ -35,9 +35,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a new instance of a smart contract by invoking the contract's constructor
         /// </summary>
-        public VmExecutionResult Create(
-            IGasMeter gasMeter,
-            IPersistentState persistentState,
+        public VmExecutionResult Create(IGasMeter gasMeter,
             IContractStateRepository repository,
             CallData callData,
             ITransactionContext transactionContext)
@@ -52,6 +50,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // Create an account for the contract in the state repository.
             repository.CreateAccount(contractAddress);
+            
+            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
+
+            var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
 
             var internalTransferList = new List<TransferInfo>();
 

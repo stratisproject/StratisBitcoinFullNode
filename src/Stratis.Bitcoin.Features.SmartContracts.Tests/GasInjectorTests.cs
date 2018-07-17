@@ -205,7 +205,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             );
 
             var result = vm.Create(gasMeter, 
-                persistentState, 
                 this.repository,
                 callData, 
                 transactionContext);
@@ -245,7 +244,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             );
 
             var result = vm.Create(gasMeter, 
-                persistentState, 
                 this.repository, 
                 callData, transactionContext);
 

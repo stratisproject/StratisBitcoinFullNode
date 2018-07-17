@@ -69,9 +69,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             var gasMeter = new GasMeter(callData.GasLimit);
-
-            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, gasMeter, new BasicKeyEncodingStrategy());
-            var persistentState = new PersistentState(persistenceStrategy, newContractAddress, this.network);
             
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
@@ -82,7 +79,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 transactionContext.Sender,
                 transactionContext.TxOutValue);
             
-            var result = this.vm.Create(gasMeter, persistentState, this.stateSnapshot, callData, context);
+            var result = this.vm.Create(gasMeter, this.stateSnapshot, callData, context);
 
             var revert = result.ExecutionException != null;
 
