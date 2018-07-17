@@ -42,6 +42,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.logger.LogTrace("()");
 
+            gasMeter.Spend((Gas)GasPriceList.BaseCost);
+
             byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(callData.ContractExecutionCode);
 
             Type contractType = Load(gasInjectedCode);

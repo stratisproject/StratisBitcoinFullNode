@@ -67,8 +67,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var gasMeter = new GasMeter(callData.GasLimit);
             
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
-
             var context = new TransactionContext(
                 transactionContext.TransactionHash,
                 transactionContext.BlockHeight,
