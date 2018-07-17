@@ -3228,16 +3228,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = this.CreateWalletManager(dataFolder, Network.StratisMain);
             var wallet = walletManager.RecoverWallet("wallet1", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTime.Now.AddHours(-2));
 
-            try
-            {
-                wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount0ExtPubKey), 1, DateTime.Now.AddHours(-2));
+            var addNewAccount = new Action(() => wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount0ExtPubKey), 1, DateTime.Now.AddHours(-2)));
 
-                Assert.True(false, "should have thrown exception but didn't.");
-            }
-            catch (WalletException e)
-            {
-                Assert.Equal("There is already an account in this wallet with this xpubkey: " + stratisAccount0ExtPubKey, e.Message);
-            }
+            addNewAccount.Should().Throw<WalletException>()
+                .WithMessage("There is already an account in this wallet with this xpubkey: " + stratisAccount0ExtPubKey);
         }
 
         private WalletManager CreateWalletManager(DataFolder dataFolder, Network network, params string[] cmdLineArgs)

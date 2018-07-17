@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             Given(a_proof_of_stake_node_with_api_enabled);
             Given(an_extpubkey_only_wallet_with_account_0);
             When(attempting_to_add_an_account);
-            Then(it_is_rejected_and_user_is_told_to_restore_instead);
+            Then(it_is_rejected_as_forbidden);
         }
 
         [Fact]

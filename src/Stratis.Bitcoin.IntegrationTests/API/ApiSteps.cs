@@ -347,11 +347,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .Should().Be(this.transaction.GetHash().ToString());
         }
 
-        private void it_is_rejected_and_user_is_told_to_restore_instead()
+        private void it_is_rejected_as_forbidden()
         {
             this.postResponse.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
-
-            //TODO: this.postResponseText.Should().Be("Use recover - via - extpubkey instead.");
         }
 
         private void the_blockhash_is_returned()

@@ -12,11 +12,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     /// </summary>
     /// <remarks>This class can be removed when the 3rd parties update their software.</remarks>
     public class LegacyExtPubKeyConverter
-    { 
+    {
         /// <summary>
         /// Converts a legacy Stratis format into a current Stratis format Base58 extended public key.
         /// </summary>
         /// <param name="extPubKey">The extended public key that may or may not need converting.</param>
+        /// <param name="network">The network to get the version bytes for.</param>
         /// <returns>The same extended public key if version bytes is already the Stratis full node one,
         /// or The corrected extended public key if the version bytes was the Stratis X one.</returns>
         public static string ConvertIfInLegacyStratisFormat(string extPubKey, Network network)
