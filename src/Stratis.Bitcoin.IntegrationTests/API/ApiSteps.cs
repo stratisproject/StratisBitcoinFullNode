@@ -501,6 +501,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 {
                     AccountName = WalletAccountName,
                     AllowUnconfirmed = true,
+                    ShuffleOutputs = false,
                     Amount = this.transferAmount.ToString(),
                     DestinationAddress = this.receiverAddress.Address,
                     FeeType = FeeType.Medium.ToString("D"),
