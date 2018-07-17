@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <AssemblyName>Stratis.ModuleValidation.Net</AssemblyName>
+    <RootNamespace>Stratis.ModuleValidation.Net</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.10.0-beta7" />
+  </ItemGroup>
+
+</Project>
