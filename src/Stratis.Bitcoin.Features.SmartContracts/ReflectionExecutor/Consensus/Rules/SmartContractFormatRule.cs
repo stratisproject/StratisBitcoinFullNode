@@ -65,7 +65,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
             }
 
             var serializer = CallDataSerializer.Default;
-
             var callDataDeserializationResult = serializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
 
             if (callDataDeserializationResult.IsFailure)
