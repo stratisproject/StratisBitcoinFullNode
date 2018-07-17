@@ -159,7 +159,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, null);
             }
 
-            var contractAddress = callData.ContractAddress;
+            uint160 contractAddress = callData.ContractAddress;
 
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
 
