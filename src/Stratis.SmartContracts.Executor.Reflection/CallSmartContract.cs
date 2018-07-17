@@ -82,16 +82,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             LogExecutionContext(this.logger, block, executionContext.Message, contractAddress, callData);
 
-
-            IPersistenceStrategy persistenceStrategy =
-                new MeteredPersistenceStrategy(this.stateSnapshot, gasMeter, this.keyEncodingStrategy);
-
-            var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
-
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
             var result = this.vm.ExecuteMethod(gasMeter,
-                persistentState,
                 this.stateSnapshot, 
                 callData,
                 context);

@@ -128,7 +128,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// Invokes a method on an existing smart contract
         /// </summary>
         public VmExecutionResult ExecuteMethod(IGasMeter gasMeter,
-            IPersistentState persistentState,
             IContractStateRepository repository,
             CallData callData,
             ITransactionContext transactionContext)
@@ -149,12 +148,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToContractMethod(callData.ContractExecutionCode, callData.MethodName);
+            
             Type contractType = Load(gasInjectedCode);
+
             if (contractType == null)
             {
                 this.logger.LogTrace("(-)[CALLCONTRACT_CONTRACTTYPE_NULL]");
                 return VmExecutionResult.Error(gasMeter.GasConsumed, null);
             }
+
+            var contractAddress = callData.ContractAddress;
+
+            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
+
+            IPersistentState persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
 
             var internalTransferList = new List<TransferInfo>();
 
