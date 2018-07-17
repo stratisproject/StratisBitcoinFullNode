@@ -81,10 +81,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var callData = new CallData(1, 0, smartContractState.GasMeter.GasLimit, addressTo.ToUint160(this.network), contractDetails.ContractMethodName, "", contractDetails.MethodParameters);
             
+            var context = new TransactionContext(
+                this.transactionContext.TransactionHash,
+                this.transactionContext.BlockHeight,
+                this.transactionContext.Coinbase,
+                smartContractState.Message.ContractAddress.ToUint160(this.network),
+                amountToTransfer);
+
             var result = this.vm.ExecuteMethod(smartContractState.GasMeter, 
                 track, 
-                callData, 
-                this.transactionContext);
+                callData,
+                context);
 
             var revert = result.ExecutionException != null;
 
