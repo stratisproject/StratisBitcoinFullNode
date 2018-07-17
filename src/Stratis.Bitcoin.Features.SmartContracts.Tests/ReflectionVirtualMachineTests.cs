@@ -77,7 +77,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var transactionContext = new TransactionContext(uint256.One, 1, address, address, 0);
 
             var result = vm.ExecuteMethod(gasMeter, 
-                persistentState, 
                 repository, 
                 callData, 
                 transactionContext);
@@ -121,7 +120,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var transactionContext = new TransactionContext(uint256.One, 1, address, address, value);
 
             var result = vm.ExecuteMethod(gasMeter, 
-                persistentState, 
                 repository, 
                 callData, 
                 transactionContext);

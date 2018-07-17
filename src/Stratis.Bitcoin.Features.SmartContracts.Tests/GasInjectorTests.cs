@@ -143,7 +143,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
 
             var result = vm.ExecuteMethod(gasMeter, 
-                persistentState, 
                 this.repository, 
                 callData, 
                 transactionContext);
@@ -173,7 +172,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
 
-            var result = vm.ExecuteMethod(gasMeter, persistentState, this.repository, callData, transactionContext);
+            var result = vm.ExecuteMethod(gasMeter, this.repository, callData, transactionContext);
 
             Assert.NotNull(result.ExecutionException);
             Assert.Equal((Gas)0, gasMeter.GasAvailable);
