@@ -40,7 +40,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.logger.LogTrace("()");
 
-            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(contractCode);
+            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(callData.ContractExecutionCode);
 
             Type contractType = Load(gasInjectedCode);
 
@@ -57,10 +57,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 gasMeter,
                 internalTransactionExecutor,
                 new InternalHashHelper(),
-                () => balanceState.GetBalance(context.ContractAddress));
+                () => balanceState.GetBalance(callData.ContractAddress));
 
             // Invoke the constructor of the provided contract code
-            LifecycleResult result = SmartContractConstructor.Construct(contractType, contractState, context.Parameters);
+            LifecycleResult result = SmartContractConstructor.Construct(contractType, contractState, callData.MethodParameters);
 
             if (!result.Success)
             {
