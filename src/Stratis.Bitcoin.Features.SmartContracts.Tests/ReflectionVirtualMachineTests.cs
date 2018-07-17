@@ -65,9 +65,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var gasMeter = new GasMeter(callData.GasLimit);
 
-            var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(persistenceStrategy, callData.ContractAddress, this.network);
-
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
@@ -75,6 +72,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var address = TestAddress.ToUint160(this.network);
 
             var transactionContext = new TransactionContext(uint256.One, 1, address, address, 0);
+
+            repository.SetCode(callData.ContractAddress, contractExecutionCode);
 
             var result = vm.ExecuteMethod(gasMeter, 
                 repository, 
@@ -108,9 +107,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var gasMeter = new GasMeter(callData.GasLimit);
 
-            var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(persistenceStrategy, callData.ContractAddress, this.network);
-
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
@@ -118,6 +114,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var address = TestAddress.ToUint160(this.network);
 
             var transactionContext = new TransactionContext(uint256.One, 1, address, address, value);
+
+            repository.SetCode(callData.ContractAddress, contractExecutionCode);
 
             var result = vm.ExecuteMethod(gasMeter, 
                 repository, 
