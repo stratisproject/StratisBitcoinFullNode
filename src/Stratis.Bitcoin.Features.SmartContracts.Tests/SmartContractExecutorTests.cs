@@ -134,13 +134,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
-            var executor = new CreateSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network, 
+            var executor = new CreateSmartContract(this.loggerFactory, 
                 this.serializer,
                 this.state,
-                this.validator,
                 this.refundProcessor,
                 this.transferProcessor, 
                 this.vm);
@@ -170,13 +166,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
             
-            var executor = new CreateSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network, 
+            var executor = new CreateSmartContract(this.loggerFactory, 
                 this.serializer,
                 this.state,
-                this.validator,
                 this.refundProcessor,
                 this.transferProcessor, 
                 this.vm);
@@ -204,13 +196,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
-            var executor = new CreateSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network, 
+            var executor = new CreateSmartContract(this.loggerFactory, 
                 this.serializer,
                 this.state,
-                this.validator,
                 this.refundProcessor,
                 this.transferProcessor, 
                 this.vm);
@@ -243,13 +231,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //and get the module definition
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
 
-            var executor = new CreateSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network, 
+            var executor = new CreateSmartContract(this.loggerFactory, 
                 this.serializer,
                 this.state,
-                this.validator,
                 this.refundProcessor,
                 this.transferProcessor, 
                 this.vm);

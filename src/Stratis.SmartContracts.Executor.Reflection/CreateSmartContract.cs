@@ -13,21 +13,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         private readonly ILogger logger;
         private readonly IContractStateRepository stateSnapshot;
-        private readonly SmartContractValidator validator;
-        private readonly Network network;
-        private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILoggerFactory loggerFactory;
         private readonly ISmartContractResultRefundProcessor refundProcessor;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
         private readonly ISmartContractVirtualMachine vm;
         private readonly ICallDataSerializer serializer;
 
-        public CreateSmartContract(IKeyEncodingStrategy keyEncodingStrategy,
-            ILoggerFactory loggerFactory,
-            Network network,
+        public CreateSmartContract(ILoggerFactory loggerFactory,
             ICallDataSerializer serializer,
             IContractStateRepository stateSnapshot,
-            SmartContractValidator validator,
             ISmartContractResultRefundProcessor refundProcessor,
             ISmartContractResultTransferProcessor transferProcessor,
             ISmartContractVirtualMachine vm)
@@ -35,9 +29,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.loggerFactory = loggerFactory;
             this.stateSnapshot = stateSnapshot;
-            this.validator = validator;
-            this.network = network;
-            this.keyEncodingStrategy = keyEncodingStrategy;
             this.refundProcessor = refundProcessor;
             this.transferProcessor = transferProcessor;
             this.vm = vm;
