@@ -360,7 +360,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     BlockLocator awaited = currentTip.Previous == null ? currentTip.GetLocator() : currentTip.Previous.GetLocator();
                     peer.SendMessageAsync(new GetHeadersPayload()
                     {
-                        BlockLocators = awaited,
+                        BlockLocator = awaited,
                         HashStop = hashStop
                     }, cancellationToken).GetAwaiter().GetResult();
 

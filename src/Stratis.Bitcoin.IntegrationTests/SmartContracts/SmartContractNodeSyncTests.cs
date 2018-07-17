@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using System.Threading;
-using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -46,11 +45,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var networkNode1 = simulator.Nodes[2];
             var networkNode2 = simulator.Nodes[3];
 
-            var minerNetwork = miner.FullNode.NodeService<Network>();
-            var connectorNetwork = connector.FullNode.NodeService<Network>();
-            var nodeOneNetwork = networkNode1.FullNode.NodeService<Network>();
-            var nodeTwoNetwork = networkNode2.FullNode.NodeService<Network>();
-
             miner.CreateRPCClient().AddNode(connector.Endpoint, true);
             connector.CreateRPCClient().AddNode(networkNode1.Endpoint, true);
             connector.CreateRPCClient().AddNode(networkNode2.Endpoint, true);
@@ -82,7 +76,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             networkHeight++;
 
             // Make sure that at this moment miner's tip != network's and connector's tip.
-            Assert.NotEqual(miner.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(connector.FullNode.Chain.Tip.HashBlock, networkNode1.FullNode.Chain.Tip.HashBlock);
             Assert.Equal(miner.FullNode.Chain.Tip.Height, networkHeight);
             Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight);
