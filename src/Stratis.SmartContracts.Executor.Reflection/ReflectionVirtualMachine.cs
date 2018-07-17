@@ -48,8 +48,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             Type contractType = Load(gasInjectedCode);
             
-            // TODO generate this
-            uint160 contractAddress = null;
+            uint160 contractAddress = Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(transactionContext.TransactionHash);
 
             var internalTransferList = new List<TransferInfo>();
 
