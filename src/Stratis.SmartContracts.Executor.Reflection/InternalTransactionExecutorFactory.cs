@@ -23,9 +23,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.network = network;
         }
 
-        public IInternalTransactionExecutor Create(ISmartContractVirtualMachine vm, IContractStateRepository stateRepository, List<TransferInfo> internalTransferList)
+        public IInternalTransactionExecutor Create(ISmartContractVirtualMachine vm,
+            IContractStateRepository stateRepository, List<TransferInfo> internalTransferList,
+            ITransactionContext transactionContext)
         {
-            return new InternalTransactionExecutor(vm, stateRepository, internalTransferList, this.keyEncodingStrategy, this.loggerFactory, this.network);
+            return new InternalTransactionExecutor(transactionContext, vm, stateRepository, internalTransferList, this.keyEncodingStrategy, this.loggerFactory, this.network);
         }
     }
 }

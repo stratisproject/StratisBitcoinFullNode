@@ -86,13 +86,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                             callData.GasPrice
                         );
 
+            var address = TestAddress.ToUint160(this.network);
+
+            var transactionContext = new TransactionContext(uint256.One, 1, address, address, 0);
+
             var result = vm.ExecuteMethod(
                 contractExecutionCode,
                 "StoreData",
                 context,
                 gasMeter, 
                 persistentState, 
-                repository);
+                repository, 
+                callData, 
+                transactionContext);
 
             stateRepository.Commit();
 
@@ -143,13 +149,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                             callData.MethodParameters
                         );
 
+            var address = TestAddress.ToUint160(this.network);
+
+            var transactionContext = new TransactionContext(uint256.One, 1, address, address, value);
+
             var result = vm.ExecuteMethod(
                 contractExecutionCode,
                 "StoreData",
                 context,
                 gasMeter, 
                 persistentState, 
-                repository);
+                repository, 
+                callData, 
+                transactionContext);
 
             track.Commit();
 

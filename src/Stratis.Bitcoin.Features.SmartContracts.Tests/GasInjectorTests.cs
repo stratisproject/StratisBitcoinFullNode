@@ -140,13 +140,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new Block(0, TestAddress),
                 new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1, new object[] { 1 });
 
+            var address = TestAddress.ToUint160(this.network);
+
+            var callData = new CallData(1, 1, gasLimit, originalAssemblyBytes);
+
+            var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
+
             var result = vm.ExecuteMethod(
                 originalAssemblyBytes,
                 MethodName,
                 executionContext,
                 gasMeter, 
                 persistentState, 
-                this.repository);
+                this.repository, 
+                callData, 
+                transactionContext);
 
             Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasConsumed));
         }
@@ -168,11 +176,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
             var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1);
 
+            var address = TestAddress.ToUint160(this.network);
+
+            var callData = new CallData(1, 1, gasLimit, originalAssemblyBytes);
+
+            var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
+
             var result = vm.ExecuteMethod(
                 originalAssemblyBytes,
                 "UseAllGas",
                 executionContext,
-                gasMeter, persistentState, repository);
+                gasMeter, persistentState, this.repository, callData, transactionContext);
 
             Assert.NotNull(result.ExecutionException);
             Assert.Equal((Gas)0, gasMeter.GasAvailable);

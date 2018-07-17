@@ -18,14 +18,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
         private readonly ISmartContractVirtualMachine vm;
+        private readonly ITransactionContext transactionContext;
 
-        public InternalTransactionExecutor(ISmartContractVirtualMachine vm,
+        public InternalTransactionExecutor(ITransactionContext transactionContext, ISmartContractVirtualMachine vm,
             IContractStateRepository contractStateRepository,
             List<TransferInfo> internalTransferList,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network)
         {
+            this.transactionContext = transactionContext;
             this.contractStateRepository = contractStateRepository;
             this.internalTransferList = internalTransferList;
             this.keyEncodingStrategy = keyEncodingStrategy;
@@ -83,13 +85,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, addressTo.ToUint160(this.network), 0, contractDetails.MethodParameters);
 
+            var callData = new CallData(1, 0, smartContractState.GasMeter.GasLimit, addressTo.ToUint160(this.network), contractDetails.ContractMethodName, "", contractDetails.MethodParameters);
+            
             var result = this.vm.ExecuteMethod(
                 contractCode,
                 contractDetails.ContractMethodName,
                 newContext,
                 smartContractState.GasMeter, 
                 newPersistentState, 
-                track);
+                track, 
+                callData, 
+                this.transactionContext);
 
             var revert = result.ExecutionException != null;
 

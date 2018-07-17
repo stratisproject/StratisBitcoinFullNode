@@ -78,7 +78,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var internalTransferList = new List<TransferInfo>();
 
-            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this, repository, internalTransferList);
+            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this, repository, internalTransferList, transactionContext);
 
             var balanceState = new BalanceState(repository, transactionContext.Amount, internalTransferList);
 
@@ -131,8 +131,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             string contractMethodName,
             ISmartContractExecutionContext context,
             IGasMeter gasMeter,
-            IPersistentState persistentState, 
-            IContractStateRepository repository)
+            IPersistentState persistentState,
+            IContractStateRepository repository, CallData callData, ITransactionContext transactionContext)
         {
             this.logger.LogTrace("(){0}:{1}", nameof(contractMethodName), contractMethodName);
 
@@ -155,7 +155,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var internalTransferList = new List<TransferInfo>();
 
-            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this, repository, internalTransferList);
+            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this, repository, internalTransferList, transactionContext);
 
             var balanceState = new BalanceState(repository, context.Message.Value, internalTransferList);
 

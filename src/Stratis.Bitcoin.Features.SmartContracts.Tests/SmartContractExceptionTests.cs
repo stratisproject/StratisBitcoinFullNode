@@ -63,12 +63,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new object[] { }
             );
 
+            var address = TestAddress.ToUint160(this.network);
+
+            var callData = new CallData(1, 1, gasLimit, contractCode);
+
+            var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
+
             var result = vm.ExecuteMethod(
                 contractCode,
                 "ThrowException",
                 context,
                 gasMeter, persistentState, 
-                this.repository);
+                this.repository, 
+                callData, 
+                transactionContext);
 
             Assert.Equal(typeof(Exception), result.ExecutionException.GetType());
         }

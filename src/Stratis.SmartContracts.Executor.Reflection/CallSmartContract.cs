@@ -50,6 +50,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var callData = callDataDeserializationResult.Value;
 
+            var gasMeter = new GasMeter(callData.GasLimit);
+
+            var context = new TransactionContext(
+                transactionContext.TransactionHash,
+                transactionContext.BlockHeight,
+                transactionContext.CoinbaseAddress,
+                transactionContext.Sender,
+                transactionContext.TxOutValue);
+            
             // Get the contract code (dll) from the repository.
             byte[] contractExecutionCode = this.stateSnapshot.GetCode(callData.ContractAddress);
             if (contractExecutionCode == null)
@@ -82,7 +91,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             LogExecutionContext(this.logger, block, executionContext.Message, contractAddress, callData);
 
-            var gasMeter = new GasMeter(callData.GasLimit);
 
             IPersistenceStrategy persistenceStrategy =
                 new MeteredPersistenceStrategy(this.stateSnapshot, gasMeter, this.keyEncodingStrategy);
@@ -97,7 +105,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 executionContext,
                 gasMeter,
                 persistentState,
-                this.stateSnapshot);
+                this.stateSnapshot, 
+                callData,
+                context);
 
             var revert = result.ExecutionException != null;
 
