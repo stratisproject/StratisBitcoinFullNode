@@ -149,7 +149,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractDoesNotExistException(callData.MethodName));
             }
 
-            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToContractMethod(callData.ContractExecutionCode, callData.MethodName);
+            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToContractMethod(contractExecutionCode, callData.MethodName);
             
             Type contractType = Load(gasInjectedCode);
 
