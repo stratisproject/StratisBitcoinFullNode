@@ -51,41 +51,35 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             byte[] contractExecutionCode = compilationResult.Compilation;
             //-------------------------------------------------------
 
-            //Call smart contract and add to transaction-------------
-            var carrier = SmartContractCarrier.CallContract(1, new uint160(1), "StoreData", 1, (Gas)500000);
-            var transactionCall = new Transaction();
-            transactionCall.AddInput(new TxIn());
-            TxOut callTxOut = transactionCall.AddOutput(0, new Script(carrier.Serialize()));
-            //-------------------------------------------------------
-
-            //Deserialize the contract from the transaction----------
-            var deserializedCall = SmartContractCarrier.Deserialize(transactionCall);
+            //Set the calldata for the transaction----------
+            var callData = new CallData(1, 1, (Gas)5000000, new uint160(1), "StoreData");
+            var value = Money.Zero;
             //-------------------------------------------------------
 
             var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             IContractStateRepository stateRepository = repository.StartTracking();
 
-            var gasMeter = new GasMeter(deserializedCall.CallData.GasLimit);
+            var gasMeter = new GasMeter(callData.GasLimit);
 
             var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(persistenceStrategy, deserializedCall.CallData.ContractAddress, this.network);
+            var persistentState = new PersistentState(persistenceStrategy, callData.ContractAddress, this.network);
 
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory);
 
-            var sender = deserializedCall.Sender?.ToString() ?? TestAddress.ToString();
+            var sender = TestAddress.ToString();
 
             var context = new SmartContractExecutionContext(
                             new Block(1, new Address("2")),
                             new Message(
-                                new Address(deserializedCall.CallData.ContractAddress.ToString()),
+                                new Address(callData.ContractAddress.ToString()),
                                 new Address(sender),
-                                deserializedCall.Value,
-                                deserializedCall.CallData.GasLimit
+                                value,
+                                callData.GasLimit
                                 ),
                             TestAddress.ToUint160(this.network),
-                            deserializedCall.CallData.GasPrice
+                            callData.GasPrice
                         );
 
             var result = vm.ExecuteMethod(
@@ -98,8 +92,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             stateRepository.Commit();
 
-            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), stateRepository.GetStorageValue(deserializedCall.CallData.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
-            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), repository.GetStorageValue(deserializedCall.CallData.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
+            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), stateRepository.GetStorageValue(callData.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
+            Assert.Equal(Encoding.UTF8.GetBytes("TestValue"), repository.GetStorageValue(callData.ContractAddress, Encoding.UTF8.GetBytes("TestKey")));
         }
 
         [Fact]
@@ -111,48 +105,38 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] contractExecutionCode = compilationResult.Compilation;
             //-------------------------------------------------------
-
-            //    //Call smart contract and add to transaction-------------
-            string[] methodParameters = new string[]
-            {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 5),
-            };
-
-            var carrier = SmartContractCarrier.CallContract(1, new uint160(1), "StoreData", 1, (Gas)500000, methodParameters);
-            var transactionCall = new Transaction();
-            transactionCall.AddInput(new TxIn());
-            TxOut callTxOut = transactionCall.AddOutput(0, new Script(carrier.Serialize()));
-            //-------------------------------------------------------
-
-            //Deserialize the contract from the transaction----------
-            var deserializedCall = SmartContractCarrier.Deserialize(transactionCall);
+            
+            //Set the calldata for the transaction----------
+            var methodParameters = new object[] { (short)5 };
+            var callData = new CallData(1, 1, (Gas)5000000, new uint160(1), "StoreData", "", methodParameters);
+            var value = Money.Zero;
             //-------------------------------------------------------
 
             var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             IContractStateRepository track = repository.StartTracking();
 
-            var gasMeter = new GasMeter(deserializedCall.CallData.GasLimit);
+            var gasMeter = new GasMeter(callData.GasLimit);
 
             var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(persistenceStrategy, deserializedCall.CallData.ContractAddress, this.network);
+            var persistentState = new PersistentState(persistenceStrategy, callData.ContractAddress, this.network);
 
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory);
 
-            var sender = deserializedCall.Sender?.ToString() ?? TestAddress;
+            var sender = TestAddress;
 
             var context = new SmartContractExecutionContext(
                             new Block(1, new Address("2")),
                             new Message(
-                                deserializedCall.CallData.ContractAddress.ToAddress(this.network),
+                                callData.ContractAddress.ToAddress(this.network),
                                 new Address(sender),
-                                deserializedCall.Value,
-                                deserializedCall.CallData.GasLimit
+                                value,
+                                callData.GasLimit
                                 ),
-                            deserializedCall.CallData.ContractAddress,
-                            deserializedCall.CallData.GasPrice,
-                            deserializedCall.MethodParameters
+                            callData.ContractAddress,
+                            callData.GasPrice,
+                            callData.MethodParameters
                         );
 
             var result = vm.ExecuteMethod(
@@ -178,28 +162,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.True(compilationResult.Success);
             byte[] contractExecutionCode = compilationResult.Compilation;
-            //-------------------------------------------------------
+            //-------------------------------------------------------            
 
-            //    //Call smart contract and add to transaction-------------
-            string[] methodParameters = new string[]
-            {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ULong, 5),
-            };
-
-            var carrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)500000, methodParameters);
-            var transactionCall = new Transaction();
-            transactionCall.AddInput(new TxIn());
-            TxOut callTxOut = transactionCall.AddOutput(0, new Script(carrier.Serialize()));
-            //-------------------------------------------------------
-
-            //Deserialize the contract from the transaction----------
-            var deserializedCall = SmartContractCarrier.Deserialize(transactionCall);
-            //-------------------------------------------------------
+            //Set the calldata for the transaction----------
+            var methodParameters = new object[] { (ulong)5 };
+            var callData = new CallData(1, 1, (Gas)5000000, contractExecutionCode, "", methodParameters);
+            var value = Money.Zero;
+            //-------------------------------------------------------            
 
             var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             IContractStateRepository track = repository.StartTracking();
 
-            var gasMeter = new GasMeter(deserializedCall.CallData.GasLimit);
+            var gasMeter = new GasMeter(callData.GasLimit);
             var persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
             var persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
             var internalTxExecutorFactory =
@@ -211,12 +185,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                             new Message(
                                 TestAddress,
                                 TestAddress,
-                                deserializedCall.Value,
-                                deserializedCall.CallData.GasLimit
+                                value,
+                                callData.GasLimit
                                 ),
                             TestAddress.ToUint160(this.network),
-                            deserializedCall.CallData.GasPrice,
-                            deserializedCall.MethodParameters
+                            callData.GasPrice,
+                            callData.MethodParameters
                         );
 
             var result = vm.Create(

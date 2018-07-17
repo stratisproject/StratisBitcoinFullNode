@@ -1,5 +1,4 @@
-﻿using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State;
+﻿using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {

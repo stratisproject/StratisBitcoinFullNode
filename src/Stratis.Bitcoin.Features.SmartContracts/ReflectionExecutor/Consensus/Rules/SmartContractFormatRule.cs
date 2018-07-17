@@ -57,36 +57,49 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
             if (!transaction.IsSmartContractExecTransaction())
                 return;
 
-            // TODO: What if deserialization throws an error? We should check this.
-            // Also the deserializer should throw custom exceptions.
-            SmartContractCarrier carrier = SmartContractCarrier.Deserialize(transaction);
+            var scTxOut = transaction.TryGetSmartContractTxOut();
 
-            if (carrier.CallData.GasPrice < GasPriceMinimum)
+            if (scTxOut == null)
+            {
+                new ConsensusError("no-smart-contract-tx-out", "No smart contract TxOut").Throw();
+            }
+
+            var serializer = CallDataSerializer.Default;
+            var callDataDeserializationResult = serializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
+
+            if (callDataDeserializationResult.IsFailure)
+            {
+                new ConsensusError("invalid-calldata-format", "Invalid CallData format").Throw();
+            }
+
+            var callData = callDataDeserializationResult.Value;
+
+            if (callData.GasPrice < GasPriceMinimum)
             {
                 // Supplied gas price is too low.
                 this.ThrowGasPriceLessThanMinimum();
             }
 
-            if (carrier.CallData.GasPrice > GasPriceMaximum)
+            if (callData.GasPrice > GasPriceMaximum)
             {
                 // Supplied gas price is too high.
                 this.ThrowGasPriceMoreThanMaximum();
             }
 
-            if (carrier.CallData.GasLimit < GasLimitMinimum)
+            if (callData.GasLimit < GasLimitMinimum)
             {
                 // Supplied gas limit is too low.
                 this.ThrowGasLessThanBaseFee();
             }
 
-            if (carrier.CallData.GasLimit > GasLimitMaximum)
+            if (callData.GasLimit > GasLimitMaximum)
             {
                 // Supplied gas limit is too high - at a certain point we deem that a contract is taking up too much time. 
                 this.ThrowGasGreaterThanHardLimit();
             }
 
             // Note carrier.GasCostBudget cannot overflow given values are within constraints above.
-            if (suppliedBudget < new Money(carrier.GasCostBudget))
+            if (suppliedBudget < new Money(callData.GasCostBudget))
             {
                 // Supplied satoshis are less than the budget we said we had for the contract execution
                 this.ThrowGasGreaterThanFee();
