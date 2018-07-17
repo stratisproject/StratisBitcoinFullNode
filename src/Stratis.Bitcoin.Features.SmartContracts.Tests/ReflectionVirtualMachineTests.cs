@@ -193,9 +193,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                             callData.MethodParameters
                         );
 
-            var result = vm.Create(
-                contractExecutionCode,
-                context,
+            var result = vm.Create(context,
                 gasMeter, 
                 persistentState,
                 repository, 

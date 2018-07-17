@@ -31,11 +31,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a new instance of a smart contract by invoking the contract's constructor
         /// </summary>
-        public VmExecutionResult Create(byte[] contractCode,
-            ISmartContractExecutionContext context,
+        public VmExecutionResult Create(ISmartContractExecutionContext context,
             IGasMeter gasMeter,
             IPersistentState persistentState,
-            IContractStateRepository repository, 
+            IContractStateRepository repository,
             CallData callData)
         {
             this.logger.LogTrace("()");
