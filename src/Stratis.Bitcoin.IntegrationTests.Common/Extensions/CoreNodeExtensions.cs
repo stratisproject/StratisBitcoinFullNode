@@ -84,6 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             uint256 blockHash = block.GetHash();
             var chainedHeader = new ChainedHeader(block.Header, blockHash, coreNode.FullNode.Chain.Tip);
+            ChainedHeader oldTip = coreNode.FullNode.Chain.SetTip(chainedHeader);
             coreNode.FullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
 
             return block;
