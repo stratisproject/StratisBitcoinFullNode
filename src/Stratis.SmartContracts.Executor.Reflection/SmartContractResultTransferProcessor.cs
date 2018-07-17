@@ -20,8 +20,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <inheritdoc />
-        public Transaction Process(SmartContractCarrier carrier,
-            IContractStateRepository stateSnapshot,
+        public Transaction Process(IContractStateRepository stateSnapshot,
+            CallData callData,
             ISmartContractTransactionContext transactionContext,
             IList<TransferInfo> internalTransfers,
             bool reversionRequired)
@@ -29,33 +29,33 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (reversionRequired)
             {
                 // Send back funds
-                if (carrier.Value > 0)
+                if (transactionContext.TxOutValue > 0)
                 {
                     return CreateRefundTransaction(transactionContext);
                 }
             }
 
             // If contract received no funds and made no transfers, do nothing.
-            if (carrier.Value == 0 && !internalTransfers.Any())
+            if (transactionContext.TxOutValue == 0 && !internalTransfers.Any())
             {
                 return null;
             }
 
             // TODO we should not be generating addresses in here!
             uint160 contractAddress = null;
-            if (carrier.CallData.ContractAddress == uint160.Zero)
-                contractAddress = carrier.GetNewContractAddress();
+            if (callData.ContractAddress == uint160.Zero)
+                contractAddress = Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(transactionContext.TransactionHash);
             else
-                contractAddress = carrier.CallData.ContractAddress;
+                contractAddress = callData.ContractAddress;
 
             // If contract had no balance, received funds, but made no transfers, assign the current UTXO.
-            if (stateSnapshot.GetUnspent(contractAddress) == null && carrier.Value > 0 && !internalTransfers.Any())
+            if (stateSnapshot.GetUnspent(contractAddress) == null && transactionContext.TxOutValue > 0 && !internalTransfers.Any())
             {
                 stateSnapshot.SetUnspent(contractAddress, new ContractUnspentOutput
                 {
-                    Value = carrier.Value,
-                    Hash = carrier.TransactionHash,
-                    Nvout = carrier.Nvout
+                    Value = transactionContext.TxOutValue,
+                    Hash = transactionContext.TransactionHash,
+                    Nvout = transactionContext.Nvout
                 });
 
                 return null;

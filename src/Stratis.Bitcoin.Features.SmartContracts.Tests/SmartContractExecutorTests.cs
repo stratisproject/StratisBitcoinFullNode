@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly SmartContractValidator validator;
         private InternalTransactionExecutorFactory internalTxExecutorFactory;
         private ReflectionVirtualMachine vm;
+        private ICallDataSerializer serializer;
 
         public SmartContractExecutorTests()
         {
@@ -45,6 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
             this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
             this.vm = new ReflectionVirtualMachine(this.internalTxExecutorFactory, loggerFactory);
+            this.serializer = CallDataSerializer.Default;
         }
 
         [Fact]
@@ -73,7 +75,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var executor = new CallSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                this.network,
+                this.network, 
+                this.serializer,
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor, 
@@ -105,7 +108,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var executor = new CallSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                this.network,
+                this.network, 
+                this.serializer,
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor, 
@@ -131,7 +135,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var executor = new CreateSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                this.network,
+                this.network, 
+                this.serializer,
                 this.state,
                 this.validator,
                 this.refundProcessor,
@@ -166,7 +171,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var executor = new CreateSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                this.network,
+                this.network, 
+                this.serializer,
                 this.state,
                 this.validator,
                 this.refundProcessor,
@@ -199,7 +205,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var executor = new CreateSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                this.network,
+                this.network, 
+                this.serializer,
                 this.state,
                 this.validator,
                 this.refundProcessor,
@@ -237,7 +244,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var executor = new CreateSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                this.network,
+                this.network, 
+                this.serializer,
                 this.state,
                 this.validator,
                 this.refundProcessor,
@@ -294,7 +302,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var callExecutor = new CallSmartContract(
                 this.keyEncodingStrategy,
                 this.loggerFactory,
-                this.network,
+                this.network, 
+                this.serializer,
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor, 
