@@ -212,10 +212,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 transactionContext);
 
             // TODO: Un-hard-code this. 
+            // Basefee: 1000
             // Constructor: 15
             // Property setter: 12
             // Storage: 150
-            Assert.Equal((Gas)177, result.GasConsumed);
+            Assert.Equal((Gas)1177, result.GasConsumed);
         }
 
         [Fact]
@@ -248,10 +249,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.repository, 
                 callData, transactionContext);
 
+            // Basefee: 1000
             // Constructor: 15
             // Property setter: 12
             // Storage: 150
-            Assert.Equal((Gas)177, result.GasConsumed);
+            Assert.Equal((Gas)1177, result.GasConsumed);
         }
     }
 }
