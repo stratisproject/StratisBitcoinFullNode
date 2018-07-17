@@ -1,14 +1,69 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Moq;
+using NBitcoin;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.BlockPulling2;
+using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Tests.BlockPulling2;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Base
 {
     public class ConsensusManagerBehaviorTests
     {
+        public ConsensusManagerBehaviorTests()
+        {
+            Mock<INetworkPeer> peer = this.CreatePeerMock();
+
+            ConsensusManagerBehavior behavior = this.CreateBehavior();
+            behavior.Attach(peer.Object);
+            peer.Setup(x => x.Behavior<ConsensusManagerBehavior>()).Returns(() => behavior);
+        }
+
+        private Mock<INetworkPeer> CreatePeerMock()
+        {
+            var peer = new Mock<INetworkPeer>();
+
+            var loggerFactory = new ExtendedLoggerFactory();
+            loggerFactory.AddConsoleWithFilters();
+
+            var connection = new NetworkPeerConnection(Network.StratisMain, peer.Object, new TcpClient(), 0, (message, token) => Task.CompletedTask,
+                new DateTimeProvider(), loggerFactory, new PayloadProvider());
+
+            peer.SetupGet(networkPeer => networkPeer.Connection).Returns(connection);
+
+            var connectionParameters = new NetworkPeerConnectionParameters();
+            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), Network.StratisMain, new DateTimeProvider().GetTimeOffset());
+            version.Services = NetworkPeerServices.Network;
+
+            peer.SetupGet(x => x.PeerVersion).Returns(version);
+            peer.SetupGet(x => x.State).Returns(NetworkPeerState.HandShaked);
+            peer.SetupGet(x => x.MessageReceived).Returns(new AsyncExecutionEvent<INetworkPeer, IncomingMessage>());
+
+            return peer;
+        }
+
+        private ConsensusManagerBehavior CreateBehavior()
+        {
+            var chain = new ConcurrentChain(Network.StratisMain);
+
+            //ConsensusManagerBehavior behavior = new ConsensusManagerBehavior();
+
+
+
+            return null;
+        }
+
         /// <summary>
         /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header10).
         /// Cached headers contain nothing. <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6.
