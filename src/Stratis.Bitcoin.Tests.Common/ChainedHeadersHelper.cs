@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading;
 using NBitcoin;
 
@@ -10,7 +8,13 @@ namespace Stratis.Bitcoin.Tests.Common
     {
         private static int currentNonce = 0;
 
-        public static List<ChainedHeader> CreateConsequtiveHeaders(int count, ChainedHeader prevBlock = null)
+        /// <summary>
+        /// Creates specified amount of consecutive headers.
+        /// </summary>
+        /// <param name="count">Amount of blocks to generate.</param>
+        /// <param name="prevBlock">If not <c>null</c> the headers will be generated on top of it.</param>
+        /// <returns></returns>
+        public static List<ChainedHeader> CreateConsecutiveHeaders(int count, ChainedHeader prevBlock = null)
         {
             var chainedHeaders = new List<ChainedHeader>();
             Network network = Network.StratisMain;
@@ -36,6 +40,7 @@ namespace Stratis.Bitcoin.Tests.Common
             return chainedHeaders;
         }
 
+        /// <summary>Creates genesis header for stratis mainnet.</summary>
         public static ChainedHeader CreateGenesisChainedHeader()
         {
             return new ChainedHeader(Network.StratisMain.GetGenesis().Header, Network.StratisMain.GenesisHash, 0);

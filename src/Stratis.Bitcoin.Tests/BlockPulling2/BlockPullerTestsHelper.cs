@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         public ChainedHeader CreateChainedHeader()
         {
-            return ChainedHeadersHelper.CreateConsequtiveHeaders(1).First();
+            return ChainedHeadersHelper.CreateConsecutiveHeaders(1).First();
         }
 
         public bool DoubleEqual(double a, double b)

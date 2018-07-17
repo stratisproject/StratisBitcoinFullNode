@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
         private int getHeadersPayloadSentTimes;
 
+        /// <summary>How many times behavior called the <see cref="ConsensusManager.HeadersPresented"/>.</summary>
         private int headersPresentedCalledTimes;
 
         public ConsensusManagerBehaviorTests()
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.Base
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
 
-            this.headers = ChainedHeadersHelper.CreateConsequtiveHeaders(100);
+            this.headers = ChainedHeadersHelper.CreateConsecutiveHeaders(100);
         }
 
         private Mock<INetworkPeer> CreatePeerMock()
@@ -113,7 +114,6 @@ namespace Stratis.Bitcoin.Tests.Base
             if (cache != null)
                 cmBehavior.SetPrivateVariableValue("cachedHeaders", cache);
 
-            // Behavior called trysync right after attaching, reset it.
             this.getHeadersPayloadSentTimes = 0;
 
             this.peerMock.Setup(x => x.SendMessageAsync(It.IsAny<Payload>(), It.IsAny<CancellationToken>())).Returns((Payload payload, CancellationToken token) =>
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ConsensusTipChanged_CTAdvancedBuNoCachedHeadersAsync()
         {
-            ConsensusManagerBehavior behavior = this.CreateAndAttachBehavior(this.headers[5], null, this.headers[10]);
+            ConsensusManagerBehavior behavior = this.CreateAndAttachBehavior(consensusTip: this.headers[5], cache: null, expectedPeerTip: this.headers[10]);
 
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
 
@@ -159,8 +159,9 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             var cache = new List<BlockHeader>() {this.headers[11].Header, this.headers[12].Header};
 
-            ConsensusManagerBehavior behavior = this.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
-                (presentedHeaders, triggerDownload) =>
+            ConsensusManagerBehavior behavior = this.CreateAndAttachBehavior(consensusTip: this.headers[5], cache: cache,
+                expectedPeerTip: this.headers[10], peerState: NetworkPeerState.HandShaked,
+                connectNewHeadersMethod: (presentedHeaders, triggerDownload) =>
                 {
                     if (presentedHeaders.Last() == this.headers[12].Header)
                     {
@@ -183,7 +184,7 @@ namespace Stratis.Bitcoin.Tests.Base
         /// Cached headers have items 11 to 50.  Setup  <see cref="ConsensusManager.HeadersPresented"/> to stop consumption when block 40 is reached.
         /// <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6. Make sure ExpectedPeerTip == 40,
         /// cached headers contain 10 items (41 to 50) and getHeaders payload wasn't sent to the peer.
-        /// Make sure return headers up to header 40 were consumed.
+        /// Make sure in return value headers up to header 40 were consumed.
         /// </summary>
         [Fact]
         public async Task ConsensusTipChanged_CachedHeadersConsumedPartiallyAsync()
@@ -249,7 +250,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
         /// <summary>
         /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header10). Cached headers have items 11 to 12.
-        /// Peer is not attached (AttachedPeer == null). <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6.
+        /// Peer is not attached (attached peer is <c>null</c>). <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6.
         /// Make sure return value is <c>null</c>.
         /// </summary>
         [Fact]
