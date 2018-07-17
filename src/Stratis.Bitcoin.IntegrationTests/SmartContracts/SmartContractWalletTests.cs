@@ -89,7 +89,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // generate two new blocks do the trx is confirmed
                 scSender.AddToStratisMempool(scSender.FullNode.Network.CreateTransaction(trx.ToBytes()));
-                //scSender.GenerateBlockManually(new List<Transaction>(new[] { scSender.FullNode.Network.CreateTransaction(trx.ToBytes()) }));
                 scSender.GenerateStratisWithMiner(1);
 
                 // wait for block repo for block sync to work
