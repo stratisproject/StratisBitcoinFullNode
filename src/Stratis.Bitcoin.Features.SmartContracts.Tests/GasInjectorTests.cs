@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
@@ -92,10 +94,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private readonly ILoggerFactory loggerFactory;
 
+        private readonly SmartContractValidator validator;
+
         public GasInjectorTests()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
+            this.validator = new SmartContractValidator(new List<ISmartContractValidator>());
         }
 
         [Fact]
@@ -128,7 +133,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 TestAddress.ToUint160(this.network), this.network);
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, this.network);
+            
+            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
 
             var executionContext = new SmartContractExecutionContext(
                 new Block(0, TestAddress),
@@ -159,8 +165,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, this.network);
-
+            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
             var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1);
 
             var result = vm.ExecuteMethod(
@@ -186,12 +191,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var gasLimit = (Gas)500000;
             var gasMeter = new GasMeter(gasLimit);
-            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, new BasicKeyEncodingStrategy());
-            var persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, this.network);
-
+            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
             var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1);
 
             var callData = new CallData(1, executionContext.GasPrice, gasLimit, originalAssemblyBytes);
@@ -227,10 +229,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var gasLimit = (Gas)500000;
             var gasMeter = new GasMeter(gasLimit);
-            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, new BasicKeyEncodingStrategy());
-            var persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
             var internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, this.network);
+            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network); 
+            
             var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1, new[] { "Tset Owner" });
 
             var callData = new CallData(1, executionContext.GasPrice, gasLimit, originalAssemblyBytes, "", new[] { "Test Owner" });

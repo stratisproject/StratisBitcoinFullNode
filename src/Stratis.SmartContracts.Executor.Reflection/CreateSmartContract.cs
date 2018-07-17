@@ -54,17 +54,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var callData = callDataDeserializationResult.Value;
 
-            // Decompile the contract execution code and validate it.
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(callData.ContractExecutionCode);
-            SmartContractValidationResult validation = this.validator.Validate(decompilation);
-
-            // If validation failed, refund the sender any remaining gas.
-            if (!validation.IsValid)
-            {
-                this.logger.LogTrace("(-)[CONTRACT_VALIDATION_FAILED]");
-                return SmartContractExecutionResult.ValidationFailed(validation);
-            }
-
             var gasMeter = new GasMeter(callData.GasLimit);
             
             var context = new TransactionContext(

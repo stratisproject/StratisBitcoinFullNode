@@ -15,16 +15,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
 
-        public InternalTransactionExecutorFactory(IKeyEncodingStrategy keyEncodingStrategy, ILoggerFactory loggerFactory, Network network)
+        public InternalTransactionExecutorFactory(IKeyEncodingStrategy keyEncodingStrategy,
+            ILoggerFactory loggerFactory, Network network)
         {
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.loggerFactory = loggerFactory;
             this.network = network;
         }
 
-        public IInternalTransactionExecutor Create(IContractStateRepository stateRepository, List<TransferInfo> internalTransferList)
+        public IInternalTransactionExecutor Create(ISmartContractVirtualMachine vm, IContractStateRepository stateRepository, List<TransferInfo> internalTransferList)
         {
-            return new InternalTransactionExecutor(stateRepository, internalTransferList, this.keyEncodingStrategy, this.loggerFactory, this.network);
+            return new InternalTransactionExecutor(vm, stateRepository, internalTransferList, this.keyEncodingStrategy, this.loggerFactory, this.network);
         }
     }
 }

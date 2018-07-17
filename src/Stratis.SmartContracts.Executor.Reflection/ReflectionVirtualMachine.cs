@@ -8,6 +8,8 @@ using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 using Stratis.SmartContracts.Executor.Reflection.Lifecycle;
 using Block = Stratis.SmartContracts.Core.Block;
@@ -22,11 +24,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly InternalTransactionExecutorFactory internalTransactionExecutorFactory;
         private readonly ILogger logger;
         private readonly Network network;
+        private readonly ISmartContractValidator validator;
         public static int VmVersion = 1;
 
-        public ReflectionVirtualMachine(InternalTransactionExecutorFactory internalTransactionExecutorFactory,
-            ILoggerFactory loggerFactory, Network network)
+        public ReflectionVirtualMachine(ISmartContractValidator validator,
+            InternalTransactionExecutorFactory internalTransactionExecutorFactory,
+            ILoggerFactory loggerFactory,
+            Network network)
         {
+            this.validator = validator;
             this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.network = network;
@@ -44,6 +50,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
+            // Decompile the contract execution code and validate it.
+            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(callData.ContractExecutionCode);
+
+            SmartContractValidationResult validation = this.validator.Validate(decompilation);
+
+            // If validation failed, refund the sender any remaining gas.
+            if (!validation.IsValid)
+            {
+                this.logger.LogTrace("(-)[CONTRACT_VALIDATION_FAILED]");
+                return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractValidationException(validation.Errors));
+            }
+
             byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(callData.ContractExecutionCode);
 
             Type contractType = Load(gasInjectedCode);
@@ -59,7 +77,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var internalTransferList = new List<TransferInfo>();
 
-            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(repository, internalTransferList);
+            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this, repository, internalTransferList);
 
             var balanceState = new BalanceState(repository, transactionContext.Amount, internalTransferList);
 
@@ -136,7 +154,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var internalTransferList = new List<TransferInfo>();
 
-            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(repository, internalTransferList);
+            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this, repository, internalTransferList);
 
             var balanceState = new BalanceState(repository, context.Message.Value, internalTransferList);
 

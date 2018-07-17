@@ -17,8 +17,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
+        private readonly ISmartContractVirtualMachine vm;
 
-        public InternalTransactionExecutor(
+        public InternalTransactionExecutor(ISmartContractVirtualMachine vm,
             IContractStateRepository contractStateRepository,
             List<TransferInfo> internalTransferList,
             IKeyEncodingStrategy keyEncodingStrategy,
@@ -31,6 +32,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.network = network;
+            this.vm = vm;
         }
 
         ///<inheritdoc/>
@@ -81,9 +83,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, addressTo.ToUint160(this.network), 0, contractDetails.MethodParameters);
 
-            ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.loggerFactory, this.network);
-
-            var result = vm.ExecuteMethod(
+            var result = this.vm.ExecuteMethod(
                 contractCode,
                 contractDetails.ContractMethodName,
                 newContext,
