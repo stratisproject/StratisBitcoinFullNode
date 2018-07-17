@@ -14,7 +14,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.Amount = amount;
         }
 
-        public ulong Amount { get; set; }
+        public Money Amount { get; }
         public uint256 TransactionHash { get; }
         public uint160 Coinbase { get; }
         public ulong BlockHeight { get; }
@@ -24,6 +24,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
     public interface ITransactionContext
     {
+        /// <summary>
+        /// The amount sent with the transaction
+        /// </summary>
+        Money Amount { get; }
+
         /// <summary>
         /// Hash of the currently executing transaction.
         /// </summary>

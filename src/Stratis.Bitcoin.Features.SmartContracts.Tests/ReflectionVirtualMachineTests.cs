@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory);
+            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, this.network);
 
             var sender = TestAddress.ToString();
 
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory);
+            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, this.network);
 
             var sender = TestAddress;
 
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory);
+            var vm = new ReflectionVirtualMachine(internalTxExecutorFactory, this.loggerFactory, this.network);
 
             var context = new SmartContractExecutionContext(
                             new Block(1, TestAddress),

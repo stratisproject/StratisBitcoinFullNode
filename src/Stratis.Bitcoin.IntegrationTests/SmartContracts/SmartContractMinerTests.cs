@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 
                 this.serializer = CallDataSerializer.Default;
                 this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
-                this.vm = new ReflectionVirtualMachine(this.internalTxExecutorFactory, loggerFactory);
+                this.vm = new ReflectionVirtualMachine(this.internalTxExecutorFactory, loggerFactory, this.network);
                 this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.serializer, this.refundProcessor, this.transferProcessor, this.validator, this.vm);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());

@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);
             this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
             this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
-            this.vm = new ReflectionVirtualMachine(this.internalTxExecutorFactory, loggerFactory);
+            this.vm = new ReflectionVirtualMachine(this.internalTxExecutorFactory, this.loggerFactory, this.network);
             this.serializer = CallDataSerializer.Default;
         }
 

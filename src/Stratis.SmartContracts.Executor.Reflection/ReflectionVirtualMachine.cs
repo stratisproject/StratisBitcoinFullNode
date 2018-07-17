@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 using Stratis.SmartContracts.Executor.Reflection.Lifecycle;
+using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -18,14 +20,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         private readonly InternalTransactionExecutorFactory internalTransactionExecutorFactory;
         private readonly ILogger logger;
+        private readonly Network network;
         public static int VmVersion = 1;
 
-        public ReflectionVirtualMachine(
-            InternalTransactionExecutorFactory internalTransactionExecutorFactory,
-            ILoggerFactory loggerFactory)
+        public ReflectionVirtualMachine(InternalTransactionExecutorFactory internalTransactionExecutorFactory,
+            ILoggerFactory loggerFactory, Network network)
         {
             this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
+            this.network = network;
         }
 
         /// <summary>
@@ -44,21 +47,32 @@ namespace Stratis.SmartContracts.Executor.Reflection
             byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(callData.ContractExecutionCode);
 
             Type contractType = Load(gasInjectedCode);
+            
+            // TODO generate this
+            uint160 contractAddress = null;
 
             var internalTransferList = new List<TransferInfo>();
 
             IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(repository, internalTransferList);
 
-            var balanceState = new BalanceState(repository, context.Message.Value, internalTransferList);
+            var balanceState = new BalanceState(repository, transactionContext.Amount, internalTransferList);
 
             var contractState = new SmartContractState(
-                context.Block,
-                context.Message,
+                new Block(
+                    transactionContext.BlockHeight,
+                    transactionContext.Coinbase.ToAddress(this.network)
+                ),
+                new Message(
+                    contractAddress.ToAddress(this.network),
+                    transactionContext.To.ToAddress(this.network),
+                    transactionContext.Amount,
+                    callData.GasLimit
+                ),
                 persistentState,
                 gasMeter,
                 internalTransactionExecutor,
                 new InternalHashHelper(),
-                () => balanceState.GetBalance(callData.ContractAddress));
+                () => balanceState.GetBalance(contractAddress));
 
             // Invoke the constructor of the provided contract code
             LifecycleResult result = SmartContractConstructor.Construct(contractType, contractState, callData.MethodParameters);
