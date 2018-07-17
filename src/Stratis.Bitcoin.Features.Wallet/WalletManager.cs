@@ -358,7 +358,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotEmpty(name, nameof(name));
             Guard.NotNull(extPubKey, nameof(extPubKey));
-            this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(name), name, nameof(extPubKey), extPubKey, nameof(accountIndex), accountIndex);
+
 
             // Create a wallet file.
             Wallet wallet = this.GenerateWalletFileXpub(name, creationTime);

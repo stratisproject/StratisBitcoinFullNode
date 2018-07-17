@@ -219,6 +219,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         public IActionResult Recover([FromBody]WalletRecoveryRequest request)
         {
             Guard.NotNull(request, nameof(request));
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(request), nameof(request.Name), request.Name);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -252,6 +253,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
+            finally
+            {
+                this.logger.LogTrace("(-)");
+            }
         }
 
         /// <summary>
@@ -263,6 +268,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         public IActionResult RecoverViaExtPubKey([FromBody]WalletExtPubRecoveryRequest request)
         {
             Guard.NotNull(request, nameof(request));
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(request), nameof(request.Name), request.Name);
 
             if (!this.ModelState.IsValid)
             {
@@ -271,11 +277,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                string accountExtPubKey = 
-                    this.network.IsBitcoin() ? 
-                        request.ExtPubKey : LegacyExtPubKeyConverter.ConvertIfInLegacyStratisFormat(request.ExtPubKey, this.network);
+                string accountExtPubKey =
+                    this.network.IsBitcoin()
+                        ? request.ExtPubKey
+                        : LegacyExtPubKeyConverter.ConvertIfInLegacyStratisFormat(request.ExtPubKey, this.network);
 
-                this.walletManager.RecoverWallet(request.Name, ExtPubKey.Parse(accountExtPubKey), request.AccountIndex, request.CreationDate);
+                this.walletManager.RecoverWallet(request.Name, ExtPubKey.Parse(accountExtPubKey), request.AccountIndex,
+                    request.CreationDate);
 
                 this.walletSyncManager.SyncFromDate(request.CreationDate);
 
@@ -297,6 +305,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+            finally
+            {
+                this.logger.LogTrace("(-)");
             }
         }
 
