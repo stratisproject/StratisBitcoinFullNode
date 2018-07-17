@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
@@ -26,18 +28,22 @@ namespace Stratis.Bitcoin.Tests.Base
         private AsyncExecutionEvent<INetworkPeer, NetworkPeerState> stateChanged;
         private AsyncExecutionEvent<INetworkPeer, IncomingMessage> messageReceived;
 
+        private Mock<INetworkPeer> peerMock;
+
+        private readonly List<ChainedHeader> headers;
+
         private readonly ExtendedLoggerFactory loggerFactory;
+
+        private int getHeadersPayloadSentTimes;
+
+        private int headersPresentedCalledTimes;
 
         public ConsensusManagerBehaviorTests()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
 
-            Mock<INetworkPeer> peer = this.CreatePeerMock();
-
-            ConsensusManagerBehavior behavior = this.CreateBehavior();
-            behavior.Attach(peer.Object);
-            peer.Setup(x => x.Behavior<ConsensusManagerBehavior>()).Returns(() => behavior);
+            this.headers = ChainedHeadersHelper.CreateConsequtiveHeaders(100);
         }
 
         private Mock<INetworkPeer> CreatePeerMock()
@@ -66,68 +72,179 @@ namespace Stratis.Bitcoin.Tests.Base
             return peer;
         }
 
-        private ConsensusManagerBehavior CreateBehavior()
+        private ConsensusManagerBehavior CreateAndAttachBehavior(ChainedHeader consensusTip,
+            List<BlockHeader> cache = null, ChainedHeader expectedPeerTip = null, NetworkPeerState peerState = NetworkPeerState.HandShaked,
+            Func<List<BlockHeader>, bool, ConnectNewHeadersResult> connectNewHeadersMethod = null)
         {
+            // Chain
             var chain = new ConcurrentChain(Network.StratisMain);
-            List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsequtiveHeaders(10);
-            chain.SetTip(headers.Last());
+            chain.SetTip(consensusTip);
 
+            // Ibd
             var ibdState = new Mock<IInitialBlockDownloadState>();
             ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => this.IsIBD);
 
-            IConsensusManager cm = new Mock<IConsensusManager>().Object;
+            // Consensus manager
+            var cmMock = new Mock<IConsensusManager>();
 
-            var behavior = new ConsensusManagerBehavior(chain, ibdState.Object, cm, new Mock<IPeerBanning>().Object,
+            cmMock.Setup(x => x.HeadersPresented(It.IsAny<INetworkPeer>(), It.IsAny<List<BlockHeader>>(), It.IsAny<bool>()))
+                .Returns((INetworkPeer p, List<BlockHeader> presentedHeaders, bool triggerDownload) =>
+            {
+                this.headersPresentedCalledTimes++;
+
+                return connectNewHeadersMethod?.Invoke(presentedHeaders, triggerDownload);
+            });
+
+            cmMock.Setup(x => x.Tip).Returns(consensusTip);
+
+            var cmBehavior = new ConsensusManagerBehavior(chain, ibdState.Object, cmMock.Object, new Mock<IPeerBanning>().Object,
                 new Mock<IConnectionManager>().Object, this.loggerFactory);
 
-            return behavior;
+            // Peer and behavior
+            this.peerMock = this.CreatePeerMock();
+
+            cmBehavior.Attach(this.peerMock.Object);
+            this.peerMock.Setup(x => x.Behavior<ConsensusManagerBehavior>()).Returns(() => cmBehavior);
+            this.peerMock.Setup(x => x.State).Returns(peerState);
+
+            if (expectedPeerTip != null)
+                cmBehavior.SetPrivatePropertyValue("ExpectedPeerTip", expectedPeerTip);
+
+            if (cache != null)
+                cmBehavior.SetPrivateVariableValue("cachedHeaders", cache);
+
+            // Behavior called trysync right after attaching, reset it.
+            this.getHeadersPayloadSentTimes = 0;
+
+            this.peerMock.Setup(x => x.SendMessageAsync(It.IsAny<Payload>(), It.IsAny<CancellationToken>())).Returns((Payload payload, CancellationToken token) =>
+            {
+                if (payload is GetHeadersPayload)
+                    this.getHeadersPayloadSentTimes++;
+
+                return Task.CompletedTask;
+            });
+
+            return cmBehavior;
+        }
+
+        private List<BlockHeader> getCachedHeaders(ConsensusManagerBehavior behavior)
+        {
+            return behavior.GetMemberValue("cachedHeaders") as List<BlockHeader>;
         }
 
         /// <summary>
         /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header10).
         /// Cached headers contain nothing. <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6.
-        /// Make sure that ResyncAsync wasn't called on the peer, CM.HeadersPresented wasn't called. Return value is <c>null</c>.
+        /// Make sure that getHeaders payload wasn't sent to the peer, <see cref="ConsensusManager.HeadersPresented"/> wasn't called. Return value is <c>null</c>.
         /// </summary>
         [Fact]
-        public async Task ConsensusTipChanged_CTAdvancedBuNoCachedHeaders()
+        public async Task ConsensusTipChanged_CTAdvancedBuNoCachedHeadersAsync()
         {
+            ConsensusManagerBehavior behavior = this.CreateAndAttachBehavior(this.headers[5], null, this.headers[10]);
 
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+
+            Assert.Null(result);
+            Assert.Equal(0, this.getHeadersPayloadSentTimes);
+            Assert.Equal(0, this.headersPresentedCalledTimes);
         }
 
         /// <summary>
         /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header10). Cached headers have items 11 to 12.
         /// <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6.
-        /// Make sure <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> == 12, Cached headers are empty and ResyncAsync was called.
-        /// Make sure return headers up to header 12 were consumed.
+        /// Make sure <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> == 12, Cached headers are empty and getHeaders payload was sent to the peer.
         /// </summary>
         [Fact]
-        public async Task ConsensusTipChanged_CachedHeadersConsumedFully()
+        public async Task ConsensusTipChanged_CachedHeadersConsumedFullyAsync()
         {
+            var cache = new List<BlockHeader>() {this.headers[11].Header, this.headers[12].Header};
 
+            ConsensusManagerBehavior behavior = this.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) =>
+                {
+                    if (presentedHeaders.Last() == this.headers[12].Header)
+                    {
+                        return new ConnectNewHeadersResult() {Consumed = this.headers[12] };
+                    }
+
+                    return null;
+                });
+
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+
+            Assert.Equal(this.headers[12], behavior.ExpectedPeerTip);
+            Assert.Empty(this.getCachedHeaders(behavior));
+            Assert.Equal(1, this.getHeadersPayloadSentTimes);
+            Assert.Equal(result.Consumed, this.headers[12]);
         }
 
         /// <summary>
         /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header10).
-        /// Cached headers have items 11 to 50.  Setup CM.HeadersPresented to stop consumption when block 40 is reached.
+        /// Cached headers have items 11 to 50.  Setup  <see cref="ConsensusManager.HeadersPresented"/> to stop consumption when block 40 is reached.
         /// <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6. Make sure ExpectedPeerTip == 40,
-        /// cached headers contain 10 items (41 to 50) and ResyncAsync wasn't called.
+        /// cached headers contain 10 items (41 to 50) and getHeaders payload wasn't sent to the peer.
         /// Make sure return headers up to header 40 were consumed.
         /// </summary>
         [Fact]
-        public async Task ConsensusTipChanged_CachedHeadersConsumedPartially()
+        public async Task ConsensusTipChanged_CachedHeadersConsumedPartiallyAsync()
         {
+            var cache = new List<BlockHeader>();
+            for (int i= 11; i <= 50; i++)
+                cache.Add(this.headers[i].Header);
 
+            ConsensusManagerBehavior behavior = this.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) =>
+                {
+                    if (presentedHeaders.Last() == this.headers[50].Header)
+                    {
+                        return new ConnectNewHeadersResult() { Consumed = this.headers[40] };
+                    }
+
+                    return null;
+                });
+
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+
+            Assert.Equal(this.headers[40], behavior.ExpectedPeerTip);
+            Assert.Equal(0, this.getHeadersPayloadSentTimes);
+            Assert.Equal(result.Consumed, this.headers[40]);
+
+            List<BlockHeader> cacheAfterTipChanged = this.getCachedHeaders(behavior);
+
+            Assert.Equal(10, cacheAfterTipChanged.Count);
+
+            for (int i = 41; i <= 50; i++)
+                Assert.Contains(this.headers[i].Header, cacheAfterTipChanged);
         }
 
         /// <summary>
         /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header10). Cached headers have items 14 to 15.
         /// <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6. Make sure that cached headers contain no elements,
-        /// ResyncAsync is called and <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is still 10. Make sure return value is <c>null</c>.
+        /// getHeaders payload was sent to the peer is called and <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is still 10. Make sure return value is <c>null</c>.
         /// </summary>
         [Fact]
-        public async Task ConsensusTipChanged_NotAbleToConnectCachedHeaders()
+        public async Task ConsensusTipChanged_NotAbleToConnectCachedHeadersAsync()
         {
+            var cache = new List<BlockHeader>() { this.headers[14].Header, this.headers[15].Header };
 
+            ConsensusManagerBehavior behavior = this.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) =>
+                {
+                    if (presentedHeaders.First() == this.headers[14].Header)
+                    {
+                        throw new ConnectHeaderException();
+                    }
+
+                    return null;
+                });
+
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+
+            Assert.Equal(this.headers[10], behavior.ExpectedPeerTip);
+            Assert.Equal(1, this.getHeadersPayloadSentTimes);
+            Assert.Null(result);
+
+            Assert.Empty(this.getCachedHeaders(behavior));
         }
 
         /// <summary>
@@ -136,9 +253,20 @@ namespace Stratis.Bitcoin.Tests.Base
         /// Make sure return value is <c>null</c>.
         /// </summary>
         [Fact]
-        public async Task ConsensusTipChanged_PeerNotAttached()
+        public async Task ConsensusTipChanged_PeerNotAttachedAsync()
         {
+            var cache = new List<BlockHeader>() { this.headers[11].Header, this.headers[12].Header };
 
+            ConsensusManagerBehavior behavior = this.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10]);
+
+            // That will set peer to null.
+            behavior.Dispose();
+
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+
+            Assert.Equal(0, this.getHeadersPayloadSentTimes);
+            Assert.Equal(0, this.headersPresentedCalledTimes);
+            Assert.Null(result);
         }
     }
 }
