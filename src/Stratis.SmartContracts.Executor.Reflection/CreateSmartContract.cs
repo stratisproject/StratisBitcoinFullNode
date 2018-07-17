@@ -102,7 +102,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 transactionContext.Sender,
                 transactionContext.TxOutValue);
             
-            var result = this.vm.Create(executionContext, gasMeter, persistentState, this.stateSnapshot, callData, context);
+            var result = this.vm.Create(gasMeter, persistentState, this.stateSnapshot, callData, context);
 
             var revert = result.ExecutionException != null;
 
