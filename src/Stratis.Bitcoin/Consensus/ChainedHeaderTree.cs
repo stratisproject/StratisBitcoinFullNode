@@ -154,7 +154,8 @@ namespace Stratis.Bitcoin.Consensus
     internal sealed class ChainedHeaderTree : IChainedHeaderTree
     {
         private readonly Network network;
-        private readonly IBlockValidator blockValidator;
+        private readonly IHeaderValidator headerValidator;
+        private readonly IIntegrityValidator integrityValidator;
         private readonly ILogger logger;
         private readonly ICheckpoints checkpoints;
         private readonly IChainState chainState;
@@ -201,14 +202,16 @@ namespace Stratis.Bitcoin.Consensus
         public ChainedHeaderTree(
             Network network,
             ILoggerFactory loggerFactory,
-            IBlockValidator blockValidator,
+            IHeaderValidator headerValidator,
+            IIntegrityValidator integrityValidator,
             ICheckpoints checkpoints,
             IChainState chainState,
             IFinalizedBlockHeight finalizedBlockHeight,
             ConsensusSettings consensusSettings)
         {
             this.network = network;
-            this.blockValidator = blockValidator;
+            this.headerValidator = headerValidator;
+            this.integrityValidator = integrityValidator;
             this.checkpoints = checkpoints;
             this.chainState = chainState;
             this.finalizedBlockHeight = finalizedBlockHeight;
@@ -646,7 +649,7 @@ namespace Stratis.Bitcoin.Consensus
                 throw new BlockDownloadedForMissingChainedHeaderException();
             }
 
-            this.blockValidator.VerifyBlockIntegrity(block, chainedHeader);
+            this.integrityValidator.VerifyBlockIntegrity(block, chainedHeader);
 
             this.logger.LogTrace("(-):'{0}'", chainedHeader);
             return chainedHeader;
@@ -688,8 +691,14 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConnectHeaderException();
             }
 
-            List<ChainedHeader> newChainedHeaders = this.CreateNewHeaders(headers);
             uint256 lastHash = headers.Last().GetHash();
+
+            List<ChainedHeader> newChainedHeaders = null;
+
+            if (!this.chainedHeadersByHash.ContainsKey(lastHash))
+                newChainedHeaders = this.CreateNewHeaders(headers);
+            else
+                this.logger.LogTrace("No new headers presented.");
 
             this.AddOrReplacePeerTip(networkPeerId, lastHash);
 
@@ -1076,7 +1085,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             var newChainedHeader = new ChainedHeader(currentBlockHeader, currentBlockHeader.GetHash(), previousChainedHeader);
 
-            this.blockValidator.ValidateHeader(newChainedHeader);
+            this.headerValidator.ValidateHeader(newChainedHeader);
             newChainedHeader.BlockValidationState = ValidationState.HeaderValidated;
 
             previousChainedHeader.Next.Add(newChainedHeader);

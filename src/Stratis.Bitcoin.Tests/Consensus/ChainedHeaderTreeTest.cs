@@ -80,7 +80,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public class TestContext
         {
             public Network Network = Network.RegTest;
-            public Mock<IBlockValidator> ChainedHeaderValidatorMock = new Mock<IBlockValidator>();
+            public Mock<IHeaderValidator> HeaderValidatorMock = new Mock<IHeaderValidator>();
+            public Mock<IIntegrityValidator> IntegrityValidatorMock = new Mock<IIntegrityValidator>();
             public Mock<ICheckpoints> CheckpointsMock = new Mock<ICheckpoints>();
             public Mock<IChainState> ChainStateMock = new Mock<IChainState>();
             public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
@@ -97,7 +98,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.ChainedHeaderTree = new ChainedHeaderTree(
                     this.Network,
                     new ExtendedLoggerFactory(),
-                    this.ChainedHeaderValidatorMock.Object,
+                    this.HeaderValidatorMock.Object,
+                    this.IntegrityValidatorMock.Object,
                     this.CheckpointsMock.Object,
                     this.ChainStateMock.Object,
                     this.FinalizedBlockMock.Object,
@@ -485,7 +487,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listContainingInvalidHeader = testContext.ChainedHeaderToList(invalidChainedHeader, 1);
             BlockHeader invalidBlockHeader = listContainingInvalidHeader[0];
 
-            testContext.ChainedHeaderValidatorMock.Setup(x => x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
+            testContext.HeaderValidatorMock.Setup(x => x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
 
             Assert.Throws<InvalidHeaderTestException>(() => chainedHeaderTree.ConnectNewHeaders(1, listContainingInvalidHeader));
 
@@ -540,7 +542,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             int depthOfInvalidHeader = 3;
             BlockHeader invalidBlockHeader = listOfPeerOnesHeaders[depthOfInvalidHeader];
-            testContext.ChainedHeaderValidatorMock.Setup(x =>
+            testContext.HeaderValidatorMock.Setup(x =>
                 x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
 
             Assert.Throws<InvalidHeaderTestException>(() => chainedHeaderTree.ConnectNewHeaders(1, listOfPeerOnesHeaders));
@@ -1720,7 +1722,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int chainExtension = 16;
             const int assumeValidHeaderHeight = 25;
             const int headersStartHeight = 15;
-            const int headersEndHeight = 30;
 
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(true).Build();
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
@@ -1744,7 +1745,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Present chain h15->h30 covering second checkpoint at h20 and assume valid at h25.
             // -----CP1----HEADERS_START----CP2-----AV----HEADERS_END
             // h1---h10--------h15----------h20-----h25------h30-----
-            int headersToPresentCount = (headersEndHeight - headersStartHeight + 1 /* inclusive */);
             listOfChainHeaders = listOfChainHeaders.Skip(headersStartHeight - 1).ToList();
             ConnectNewHeadersResult connectedHeadersResultNew = chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
 

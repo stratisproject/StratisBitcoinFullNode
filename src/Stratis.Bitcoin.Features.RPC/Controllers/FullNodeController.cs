@@ -39,6 +39,9 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
         private readonly IConsensusLoop consensusLoop;
 
+        /// <summary>An interface implementation for the blockstore.</summary>
+        private readonly IBlockStore blockStore;
+
         public FullNodeController(
             ILoggerFactory loggerFactory,
             IPooledTransaction pooledTransaction = null,
@@ -51,7 +54,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             Network network = null,
             ConcurrentChain chain = null,
             IChainState chainState = null,
-            Connection.IConnectionManager connectionManager = null)
+            Connection.IConnectionManager connectionManager = null,
+            IBlockStore blockStore = null)
             : base(
                   fullNode: fullNode,
                   nodeSettings: nodeSettings,
@@ -66,6 +70,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             this.getUnspentTransaction = getUnspentTransaction;
             this.networkDifficulty = networkDifficulty;
             this.consensusLoop = consensusLoop;
+            this.blockStore = blockStore;
         }
 
         /// <summary>
@@ -104,8 +109,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             if (trx == null)
             {
-                var blockStore = this.FullNode.NodeFeature<IBlockStore>();
-                trx = blockStore != null ? await blockStore.GetTrxAsync(trxid) : null;
+                trx = this.blockStore != null ? await this.blockStore.GetTrxAsync(trxid) : null;
             }
 
             if (trx == null)
@@ -272,9 +276,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)
         {
             ChainedHeader block = null;
-            var blockStore = this.FullNode.NodeFeature<IBlockStore>();
 
-            uint256 blockid = blockStore != null ? await blockStore.GetTrxBlockIdAsync(trxid) : null;
+            uint256 blockid = this.blockStore != null ? await this.blockStore.GetTrxBlockIdAsync(trxid) : null;
             if (blockid != null)
                 block = this.Chain?.GetBlock(blockid);
 
