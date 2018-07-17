@@ -169,9 +169,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             track.Commit();
 
-            var v = track.GetStorageValue(result.NewContractAddress,
+            var endBlockValue = track.GetStorageValue(result.NewContractAddress,
                 Encoding.UTF8.GetBytes("EndBlock"));
-            Assert.Equal(6, BitConverter.ToInt16(v, 0));
+            Assert.Equal(6, BitConverter.ToInt16(endBlockValue, 0));
             Assert.Equal(TestAddress.ToUint160(this.network).ToBytes(), track.GetStorageValue(result.NewContractAddress, Encoding.UTF8.GetBytes("Owner")));
         }
     }
