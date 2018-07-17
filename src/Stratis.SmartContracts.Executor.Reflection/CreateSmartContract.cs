@@ -99,7 +99,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var executionResult = new SmartContractExecutionResult
             {
-                NewContractAddress = revert ? null : newContractAddress,
+                NewContractAddress = revert ? null : result.NewContractAddress,
                 Exception = result.ExecutionException,
                 GasConsumed = result.GasConsumed,
                 Return = result.Result,

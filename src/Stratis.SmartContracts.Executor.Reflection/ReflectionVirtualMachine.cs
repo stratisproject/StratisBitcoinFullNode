@@ -96,7 +96,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.logger.LogTrace("(-):{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
 
-            return VmExecutionResult.Success(internalTransferList, gasMeter.GasConsumed, result.Object);
+            return VmExecutionResult.CreationSuccess(contractAddress, internalTransferList, gasMeter.GasConsumed, result.Object);
         }
 
         /// <summary>
