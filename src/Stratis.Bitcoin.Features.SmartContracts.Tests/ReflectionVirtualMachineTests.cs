@@ -72,20 +72,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
 
-            var sender = TestAddress.ToString();
-
-            var context = new SmartContractExecutionContext(
-                            new Block(1, new Address("2")),
-                            new Message(
-                                new Address(callData.ContractAddress.ToString()),
-                                new Address(sender),
-                                value,
-                                callData.GasLimit
-                                ),
-                            TestAddress.ToUint160(this.network),
-                            callData.GasPrice
-                        );
-
             var address = TestAddress.ToUint160(this.network);
 
             var transactionContext = new TransactionContext(uint256.One, 1, address, address, 0);
@@ -130,21 +116,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
 
-            var sender = TestAddress;
-
-            var context = new SmartContractExecutionContext(
-                            new Block(1, new Address("2")),
-                            new Message(
-                                callData.ContractAddress.ToAddress(this.network),
-                                new Address(sender),
-                                value,
-                                callData.GasLimit
-                                ),
-                            callData.ContractAddress,
-                            callData.GasPrice,
-                            callData.MethodParameters
-                        );
-
             var address = TestAddress.ToUint160(this.network);
 
             var transactionContext = new TransactionContext(uint256.One, 1, address, address, value);
@@ -157,8 +128,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             track.Commit();
 
-            Assert.Equal(5, BitConverter.ToInt16(track.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
-            Assert.Equal(5, BitConverter.ToInt16(repository.GetStorageValue(context.Message.ContractAddress.ToUint160(this.network), Encoding.UTF8.GetBytes("orders")), 0));
+            Assert.Equal(5, BitConverter.ToInt16(track.GetStorageValue(callData.ContractAddress, Encoding.UTF8.GetBytes("orders")), 0));
+            Assert.Equal(5, BitConverter.ToInt16(repository.GetStorageValue(callData.ContractAddress, Encoding.UTF8.GetBytes("orders")), 0));
         }
 
         [Fact]

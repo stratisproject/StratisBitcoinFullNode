@@ -136,10 +136,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
 
-            var executionContext = new SmartContractExecutionContext(
-                new Block(0, TestAddress),
-                new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1, new object[] { 1 });
-
             var address = TestAddress.ToUint160(this.network);
 
             var callData = new CallData(1, 1, gasLimit, originalAssemblyBytes);
@@ -170,7 +166,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
-            var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1);
 
             var address = TestAddress.ToUint160(this.network);
 

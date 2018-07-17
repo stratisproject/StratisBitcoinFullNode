@@ -55,14 +55,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
 
-            var context = new SmartContractExecutionContext(
-                new Block(0, TestAddress),
-                new Message(TestAddress, TestAddress, 0, gasLimit),
-                TestAddress.ToUint160(this.network),
-                1,
-                new object[] { }
-            );
-
             var address = TestAddress.ToUint160(this.network);
 
             var callData = new CallData(1, 1, gasLimit, contractCode);

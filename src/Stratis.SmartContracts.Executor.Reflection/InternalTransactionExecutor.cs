@@ -81,10 +81,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, smartContractState.GasMeter, this.keyEncodingStrategy);
             IPersistentState newPersistentState = new PersistentState(persistenceStrategy, addressTo.ToUint160(this.network), this.network);
 
-            var newMessage = new Message(addressTo, smartContractState.Message.ContractAddress, amountToTransfer, (Gas)(smartContractState.Message.GasLimit - smartContractState.GasMeter.GasConsumed));
-
-            ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, addressTo.ToUint160(this.network), 0, contractDetails.MethodParameters);
-
             var callData = new CallData(1, 0, smartContractState.GasMeter.GasLimit, addressTo.ToUint160(this.network), contractDetails.ContractMethodName, "", contractDetails.MethodParameters);
             
             var result = this.vm.ExecuteMethod(smartContractState.GasMeter, 

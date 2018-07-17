@@ -67,8 +67,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             var contractAddress = callData.ContractAddress;
-            var contractCode = contractExecutionCode;
-            var methodName = callData.MethodName;
 
             this.logger.LogTrace("()");
 
