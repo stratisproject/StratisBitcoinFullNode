@@ -128,9 +128,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var gasLimit = (Gas)500000;
             var gasMeter = new GasMeter(gasLimit);
-            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(persistenceStrategy,
-                TestAddress.ToUint160(this.network), this.network);
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             
@@ -138,16 +135,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var address = TestAddress.ToUint160(this.network);
 
-            var callData = new CallData(1, 1, gasLimit, originalAssemblyBytes);
+            var callData = new CallData(1, 1, gasLimit, address, "TestMethod", "", new object[] {1});
 
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
+
+            this.repository.SetCode(callData.ContractAddress, originalAssemblyBytes);
 
             var result = vm.ExecuteMethod(gasMeter, 
                 this.repository, 
                 callData, 
                 transactionContext);
 
-            Assert.Equal(aimGasAmount, Convert.ToInt32(result.GasConsumed));
+            Assert.Equal(GasPriceList.BaseCost + (ulong) aimGasAmount, result.GasConsumed);
         }
 
         [Fact]
@@ -160,17 +159,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var gasLimit = (Gas)500000;
             var gasMeter = new GasMeter(gasLimit);
-            var persistenceStrategy = new MeteredPersistenceStrategy(this.repository, gasMeter, this.keyEncodingStrategy);
-            var persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
 
             var address = TestAddress.ToUint160(this.network);
 
-            var callData = new CallData(1, 1, gasLimit, originalAssemblyBytes);
+            var callData = new CallData(1, 1, gasLimit, address, "UseAllGas");
 
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
+
+            this.repository.SetCode(callData.ContractAddress, originalAssemblyBytes);
 
             var result = vm.ExecuteMethod(gasMeter, this.repository, callData, transactionContext);
 
