@@ -1,19 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.BlockPulling2;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
-using Stratis.Bitcoin.Tests.BlockPulling2;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -21,8 +21,15 @@ namespace Stratis.Bitcoin.Tests.Base
 {
     public class ConsensusManagerBehaviorTests
     {
+        private bool IsIBD = false;
+
+        private readonly ExtendedLoggerFactory loggerFactory;
+
         public ConsensusManagerBehaviorTests()
         {
+            this.loggerFactory = new ExtendedLoggerFactory();
+            this.loggerFactory.AddConsoleWithFilters();
+
             Mock<INetworkPeer> peer = this.CreatePeerMock();
 
             ConsensusManagerBehavior behavior = this.CreateBehavior();
@@ -34,11 +41,8 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             var peer = new Mock<INetworkPeer>();
 
-            var loggerFactory = new ExtendedLoggerFactory();
-            loggerFactory.AddConsoleWithFilters();
-
             var connection = new NetworkPeerConnection(Network.StratisMain, peer.Object, new TcpClient(), 0, (message, token) => Task.CompletedTask,
-                new DateTimeProvider(), loggerFactory, new PayloadProvider());
+                new DateTimeProvider(), this.loggerFactory, new PayloadProvider());
 
             peer.SetupGet(networkPeer => networkPeer.Connection).Returns(connection);
 
@@ -56,12 +60,18 @@ namespace Stratis.Bitcoin.Tests.Base
         private ConsensusManagerBehavior CreateBehavior()
         {
             var chain = new ConcurrentChain(Network.StratisMain);
+            List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsequtiveHeaders(10);
+            chain.SetTip(headers.Last());
 
-            //ConsensusManagerBehavior behavior = new ConsensusManagerBehavior();
+            var ibdState = new Mock<IInitialBlockDownloadState>();
+            ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => this.IsIBD);
 
+            ConsensusManager cm = new Mock<ConsensusManager>().Object;
 
+            var behavior = new ConsensusManagerBehavior(chain, ibdState.Object, cm, new Mock<IPeerBanning>().Object,
+                new Mock<IConnectionManager>().Object, this.loggerFactory);
 
-            return null;
+            return behavior;
         }
 
         /// <summary>
@@ -117,7 +127,7 @@ namespace Stratis.Bitcoin.Tests.Base
         /// Make sure return value is <c>null</c>.
         /// </summary>
         [Fact]
-        public async Task ConsensusTipChanged_()
+        public async Task ConsensusTipChanged_PeerNotAttached()
         {
 
         }
