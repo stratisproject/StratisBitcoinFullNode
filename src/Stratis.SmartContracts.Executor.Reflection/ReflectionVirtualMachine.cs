@@ -50,6 +50,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             
             uint160 contractAddress = Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(transactionContext.TransactionHash);
 
+            // Create an account for the contract in the state repository.
+            repository.CreateAccount(contractAddress);
+
             var internalTransferList = new List<TransferInfo>();
 
             IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(repository, internalTransferList);

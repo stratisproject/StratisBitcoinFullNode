@@ -57,9 +57,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // Create a new address for the contract.
             uint160 newContractAddress = Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(transactionContext.TransactionHash);
 
-            // Create an account for the contract in the state repository.
-            this.stateSnapshot.CreateAccount(newContractAddress);
-
             // Decompile the contract execution code and validate it.
             SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(callData.ContractExecutionCode);
             SmartContractValidationResult validation = this.validator.Validate(decompilation);
