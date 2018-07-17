@@ -712,7 +712,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress2, "Tester", gasPrice, gasLimit, testMethodParameters);
             pblocktemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
-            Assert.True(Convert.ToBoolean(context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("SaveWorked"))[0]));
+            byte[] stateSaveValue = context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("SaveWorked"));
+            Assert.NotNull(stateSaveValue);
+            Assert.Single(stateSaveValue);
+            Assert.True(Convert.ToBoolean(stateSaveValue[0]));
         }
 
         [Fact]
