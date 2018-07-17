@@ -23,6 +23,9 @@ namespace Stratis.Bitcoin.Tests.Base
     {
         private bool IsIBD = false;
 
+        private AsyncExecutionEvent<INetworkPeer, NetworkPeerState> stateChanged;
+        private AsyncExecutionEvent<INetworkPeer, IncomingMessage> messageReceived;
+
         private readonly ExtendedLoggerFactory loggerFactory;
 
         public ConsensusManagerBehaviorTests()
@@ -54,6 +57,12 @@ namespace Stratis.Bitcoin.Tests.Base
             peer.SetupGet(x => x.State).Returns(NetworkPeerState.HandShaked);
             peer.SetupGet(x => x.MessageReceived).Returns(new AsyncExecutionEvent<INetworkPeer, IncomingMessage>());
 
+            this.stateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
+            this.messageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
+
+            peer.Setup(x => x.StateChanged).Returns(() => this.stateChanged);
+            peer.Setup(x => x.MessageReceived).Returns(() => this.messageReceived);
+
             return peer;
         }
 
@@ -66,7 +75,7 @@ namespace Stratis.Bitcoin.Tests.Base
             var ibdState = new Mock<IInitialBlockDownloadState>();
             ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => this.IsIBD);
 
-            ConsensusManager cm = new Mock<ConsensusManager>().Object;
+            IConsensusManager cm = new Mock<IConsensusManager>().Object;
 
             var behavior = new ConsensusManagerBehavior(chain, ibdState.Object, cm, new Mock<IPeerBanning>().Object,
                 new Mock<IConnectionManager>().Object, this.loggerFactory);

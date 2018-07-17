@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <inheritdoc cref="ConsensusManager"/>
-        private readonly ConsensusManager consensusManager;
+        private readonly IConsensusManager consensusManager;
 
         /// <inheritdoc cref="ConcurrentChain"/>
         private readonly ConcurrentChain chain;
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Protects access to <see cref="cachedHeaders"/>.</summary>
         private readonly AsyncLock asyncLock;
 
-        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, ConsensusManager consensusManager, IPeerBanning peerBanning, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
+        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
