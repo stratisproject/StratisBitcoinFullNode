@@ -188,6 +188,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 new InternalHashHelper(),
                 () => balanceState.GetBalance(callData.ContractAddress));
 
+            LogExecutionContext(this.logger, contractState.Block, contractState.Message, contractAddress, callData);
+
             LifecycleResult result = SmartContractRestorer.Restore(contractType, contractState);
 
             if (!result.Success)
