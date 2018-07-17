@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
@@ -34,7 +35,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a new instance of a smart contract by invoking the contract's constructor
         /// </summary>
-        public VmExecutionResult Create(IGasMeter gasMeter,
+        public VmExecutionResult Create(
+            IGasMeter gasMeter,
             IPersistentState persistentState,
             IContractStateRepository repository,
             CallData callData,
@@ -71,6 +73,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 internalTransactionExecutor,
                 new InternalHashHelper(),
                 () => balanceState.GetBalance(contractAddress));
+
+            LogExecutionContext(this.logger, contractState.Block, contractState.Message, contractAddress, callData);
 
             // Invoke the constructor of the provided contract code
             LifecycleResult result = SmartContractConstructor.Construct(contractType, contractState, callData.MethodParameters);
@@ -207,6 +211,22 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             Assembly contractAssembly = Assembly.Load(byteCode);
             return contractAssembly.ExportedTypes.FirstOrDefault();
+        }
+
+        internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress,
+            CallData callData)
+        {
+            var builder = new StringBuilder();
+
+            builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
+            builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress(this.network)));
+            builder.Append(string.Format("{0}:{1},", nameof(callData.GasPrice), callData.GasPrice));
+            builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.GasLimit), message.GasLimit, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
+
+            if (callData.MethodParameters != null && callData.MethodParameters.Length > 0)
+                builder.Append(string.Format(",{0}:{1}", nameof(callData.MethodParameters), callData.MethodParameters));
+
+            logger.LogTrace("{0}", builder.ToString());
         }
     }
 }

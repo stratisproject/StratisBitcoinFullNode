@@ -71,23 +71,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return SmartContractExecutionResult.ValidationFailed(validation);
             }
 
-            var block = new Block(transactionContext.BlockHeight, transactionContext.CoinbaseAddress.ToAddress(this.network));
-            var executionContext = new SmartContractExecutionContext
-            (
-                block,
-                new Message(
-                    newContractAddress.ToAddress(this.network),
-                    transactionContext.Sender.ToAddress(this.network),
-                    transactionContext.TxOutValue,
-                    callData.GasLimit
-                ),
-                newContractAddress,
-                callData.GasPrice,
-                callData.MethodParameters
-            );
-
-            LogExecutionContext(this.logger, block, executionContext.Message, newContractAddress, callData);
-
             var gasMeter = new GasMeter(callData.GasLimit);
 
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(this.stateSnapshot, gasMeter, new BasicKeyEncodingStrategy());
@@ -147,22 +130,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             return executionResult;
-        }
-
-        internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress,
-            CallData callData)
-        {
-            var builder = new StringBuilder();
-
-            builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
-            builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress(this.network)));
-            builder.Append(string.Format("{0}:{1},", nameof(callData.GasPrice), callData.GasPrice));
-            builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.GasLimit), message.GasLimit, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
-
-            if (callData.MethodParameters != null && callData.MethodParameters.Length > 0)
-                builder.Append(string.Format(",{0}:{1}", nameof(callData.MethodParameters), callData.MethodParameters));
-
-            logger.LogTrace("{0}", builder.ToString());
         }
     }
 }
