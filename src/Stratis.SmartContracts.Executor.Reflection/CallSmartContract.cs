@@ -57,14 +57,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return SmartContractExecutionResult.ContractDoesNotExist(callData.MethodName);
             }
 
-            // Execute the call to the contract.
-            return this.CreateContextAndExecute(callData.ContractAddress, contractExecutionCode, callData.MethodName, transactionContext, callData);
-        }
+            var contractAddress = callData.ContractAddress;
+            var contractCode = contractExecutionCode;
+            var methodName = callData.MethodName;
 
-        private ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode,
-            string methodName, ISmartContractTransactionContext transactionContext,
-            CallData callData)
-        {
             this.logger.LogTrace("()");
 
             var block = new Block(transactionContext.BlockHeight,
@@ -107,15 +103,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.logger.LogTrace("(-)");
 
-            var internalTransaction = this.transferProcessor.Process(this.stateSnapshot, 
-                callData, 
-                transactionContext, 
+            var internalTransaction = this.transferProcessor.Process(this.stateSnapshot,
+                callData,
+                transactionContext,
                 result.InternalTransfers,
                 revert);
 
             (var fee, var refundTxOuts) = this.refundProcessor.Process(
-                callData, 
-                transactionContext.MempoolFee, 
+                callData,
+                transactionContext.MempoolFee,
                 transactionContext.Sender,
                 result.GasConsumed,
                 result.ExecutionException);
@@ -128,7 +124,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 InternalTransaction = internalTransaction,
                 Fee = fee,
                 Refunds = refundTxOuts
-            };                       
+            };
 
             if (revert)
             {
