@@ -66,6 +66,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return ExecuteTransferFundsToContract(contractCode, smartContractState, addressTo, amountToTransfer, contractDetails);
         }
 
+        ///<inheritdoc/>
+        public ICreateResult Create<T>(ISmartContractState smartContractState, object[] parameters, ulong amountToTransfer)
+        {
+            throw new System.NotImplementedException();
+        }
+
         /// <summary>
         /// If the address to where the funds will be tranferred to is a contract, instantiate and execute it.
         /// </summary>
@@ -81,6 +87,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, addressTo.ToUint160(this.network), 0, contractDetails.MethodParameters);
 
+            // Ideally this would be injected but then there's a circular reference between InternalTransactionExecutorFactory and ReflectionVirtualMachine
             ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.loggerFactory);
 
             var result = vm.ExecuteMethod(
