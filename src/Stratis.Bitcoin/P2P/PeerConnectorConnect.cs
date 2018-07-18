@@ -63,48 +63,22 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public override async Task OnConnectAsync()
         {
+            base.connectedEndpoints = this.ConnectorPeers.Select(x => x.PeerEndPoint).ToArray();
+
             foreach (IPEndPoint ipEndpoint in this.ConnectionSettings.Connect)
             {
                 if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                     return;
 
                 PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
-                if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
-                {
-                    // Nodes disallow connection to peers in same range to prevent sybil attacks.     
-                    if (ipEndpoint.Address.IsLocal())
-                    {
-                        // Local peer: filtering is disabled unless explicitly set to true.
-                        if (this.ConnectionSettings.IpRangeFiltering == true)
-                        {
-                            if (this.PeerIsPartOfExistingGroupOfConnectedEndpoints(peerAddress))
-                            {
-                                continue;
-                            }
-                        }
-                        await this.ConnectAsync(peerAddress).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        // Remote peer: filtering is enabled unless explicitly set to false.
-                        if (this.ConnectionSettings.IpRangeFiltering != false)
-                        {
-                            if (this.PeerIsPartOfExistingGroupOfConnectedEndpoints(peerAddress))
-                            {
-                                continue;
-                            }
-                        }
-                        await this.ConnectAsync(peerAddress).ConfigureAwait(false);
-                    }
-                }
+                if (peerAddress == null)
+                    continue;
+
+                if (this.IsPeerConnected(peerAddress.Endpoint))
+                    continue;
+
+                await this.ConnectAsync(peerAddress).ConfigureAwait(false);
             }
         }
-
-        private bool PeerIsPartOfExistingGroupOfConnectedEndpoints(PeerAddress peerAddress)
-        {
-            IPEndPoint[] connectedEndpoints = this.ConnectorPeers.Select(x => x.PeerEndPoint).ToArray();
-            byte[] GetGroup(IPEndPoint a) => a.Address.GetGroup();
-            return connectedEndpoints.Any(a => GetGroup(a).SequenceEqual(GetGroup(peerAddress.Endpoint.MapToIpv6())));
-        }  
     }
 }

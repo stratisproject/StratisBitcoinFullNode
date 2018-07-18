@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1, this.logger);
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true, this.logger);
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly, this.logger);
-            this.IpRangeFiltering = config.GetOrDefault<bool?>("IpRangeFiltering", null, this.logger);
+            this.IpRangeFiltering = config.GetOrDefault<bool>("IpRangeFiltering", true, this.logger);
 
             var agentPrefix = config.GetOrDefault("agentprefix", string.Empty, this.logger).Replace("-", "");
             if (agentPrefix.Length > MaximumAgentPrefixLength)
@@ -163,6 +163,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#agentprefix=<string>");
             builder.AppendLine($"#Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { (DefaultBlocksOnly ? 1 : 0) }.");
             builder.AppendLine($"#blocksonly={ (DefaultBlocksOnly ? 1 : 0) }");
+            builder.AppendLine($"#bantime=<number>");
+            builder.AppendLine($"#Disallow connection to peers in same IP range. Default true.");
         }
 
         /// <summary>
@@ -186,6 +188,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
             builder.AppendLine($"-agentprefix=<string>     An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
             builder.AppendLine($"-blocksonly=<0 or 1>      Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { DefaultBlocksOnly }.");
+            builder.AppendLine($"-iprangefiltering=<true or false> Disallow connection to peers in same IP range.  Default is true for remote hosts.");
 
             defaults.Logger.LogInformation(builder.ToString());
         }
@@ -221,6 +224,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
         public bool RelayTxes { get; set; }
 
         /// <summary>Disable functionality whereby nodes disallow connection to peers that are within the same IP range to prevent sybil attacks.</summary>
-        public bool? IpRangeFiltering { get; internal set; }
+        public bool IpRangeFiltering { get; internal set; }
     }
 }

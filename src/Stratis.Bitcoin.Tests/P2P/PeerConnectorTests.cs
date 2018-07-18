@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(endpointAddNode, IPAddress.Loopback);
             peerAddressManager.AddPeer(endpointDiscoveredNode, IPAddress.Loopback);
 
-            var nodeSettings = new NodeSettings();
+            var nodeSettings = new NodeSettings(Network.Main, args: new[] { "-IpRangeFiltering=false" });
 
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
             connectionManagerSettings.AddNode.Add(endpointAddNode);
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(endpointConnectNode, IPAddress.Loopback);
             peerAddressManager.AddPeer(endpointDiscoveredNode, IPAddress.Loopback);
 
-            var nodeSettings = new NodeSettings();
+            var nodeSettings = new NodeSettings(Network.Main, args: new[] { "-IpRangeFiltering=false" });
 
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
             connectionManagerSettings.Connect.Add(endpointConnectNode);
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(endpointConnectNode, IPAddress.Loopback);
             peerAddressManager.AddPeer(endpointDiscoveredNode, IPAddress.Loopback);
 
-            var nodeSettings = new NodeSettings();
+            var nodeSettings = new NodeSettings(Network.Main, args: new[] { "-IpRangeFiltering=false" });
 
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
             connectionManagerSettings.AddNode.Add(endpointAddNode);
@@ -213,200 +213,131 @@ namespace Stratis.Bitcoin.Tests.P2P
         [Fact]
         public void PeerConnectorDiscovery_ConnectsTo_NodeInSameNetworkGroup_WithIpRangeFilteringDisabled()
         {
-            Network testNetwork = Network.Main;
+           Network mainNetwork = Network.Main;
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
 
-            // Peer 1.
-            IPAddress originalAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var endpointNode1 = new IPEndPoint(originalAddress, 80);
-            peerAddressManager.AddPeer(endpointNode1, IPAddress.Loopback);
-
-            Mock<INetworkPeer> networkPeer1 = new Mock<INetworkPeer>();
-            networkPeer1.SetupGet(np => np.PeerEndPoint).Returns(new IPEndPoint(originalAddress, 80));
-            networkPeer1.SetupGet(np => np.RemoteSocketAddress).Returns(originalAddress);
-            networkPeer1.SetupGet(np => np.RemoteSocketPort).Returns(80);
-            networkPeer1.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
-
-            // Peer 2 has different network group.
-            IPAddress addressInDifferentNetworkGroup = IPAddress.Parse("::ffff:193.168.0.1");
-            var endpointNode2 = new IPEndPoint(addressInDifferentNetworkGroup, 80);
-            peerAddressManager.AddPeer(endpointNode2, IPAddress.Loopback);
-
-            Mock<INetworkPeer> networkPeer2 = new Mock<INetworkPeer>();
-            networkPeer2.SetupGet(np => np.PeerEndPoint).Returns(new IPEndPoint(addressInDifferentNetworkGroup, 80));
-            networkPeer2.SetupGet(np => np.RemoteSocketAddress).Returns(addressInDifferentNetworkGroup);
-            networkPeer2.SetupGet(np => np.RemoteSocketPort).Returns(80);
-            networkPeer2.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
-
-            // Peer 3 has same network group.
-            IPAddress addressInSameNetworkGroup = IPAddress.Parse("::ffff:192.168.0.2");
-            var endpointNode3 = new IPEndPoint(addressInSameNetworkGroup, 80);
-            peerAddressManager.AddPeer(endpointNode3, IPAddress.Loopback);
-
-            Mock<INetworkPeer> networkPeer3 = new Mock<INetworkPeer>();
-            networkPeer3.SetupGet(np => np.PeerEndPoint).Returns(new IPEndPoint(addressInSameNetworkGroup, 80));
-            networkPeer3.SetupGet(np => np.RemoteSocketAddress).Returns(addressInSameNetworkGroup);
-            networkPeer3.SetupGet(np => np.RemoteSocketPort).Returns(80);
-            networkPeer3.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
-
             // IpRangeFiltering enabled by default, disabled explicitly.
-            var nodeSettings = new NodeSettings(testNetwork, args: new[] { "-IpRangeFiltering=false" });
+            var nodeSettings = new NodeSettings(mainNetwork, args: new[] { "-IpRangeFiltering=false" });
+            
             var connectionManagerSettingsExisting = new ConnectionManagerSettings(nodeSettings);
-
-            connectionManagerSettingsExisting.AddNode.Add(endpointNode1);
-            connectionManagerSettingsExisting.Connect.Add(endpointNode1);
-
-            connectionManagerSettingsExisting.AddNode.Add(endpointNode2);
-            connectionManagerSettingsExisting.Connect.Add(endpointNode2);
-
-            connectionManagerSettingsExisting.AddNode.Add(endpointNode3);
-            connectionManagerSettingsExisting.Connect.Add(endpointNode3);
-
             Mock<INetworkPeerFactory> networkPeerFactoryExisting = new Mock<INetworkPeerFactory>();
-            networkPeerFactoryExisting.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.Is<IPEndPoint>(x => Equals(x, endpointNode1)), It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer1.Object));
-            networkPeerFactoryExisting.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.Is<IPEndPoint>(x => Equals(x, endpointNode2)), It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer2.Object));
-            networkPeerFactoryExisting.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.Is<IPEndPoint>(x => Equals(x, endpointNode3)), It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer3.Object));
 
             var peerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.network, networkPeerFactoryExisting.Object, this.nodeLifetime, nodeSettings, connectionManagerSettingsExisting, peerAddressManager, new SelfEndpointTracker());
 
             IConnectionManager connectionManagerExisting = this.CreateConnectionManager(nodeSettings, connectionManagerSettingsExisting, peerAddressManager, peerConnector);
             peerConnector.Initialize(connectionManagerExisting);
-            peerConnector.OnConnectAsync().GetAwaiter().GetResult();
+            
+            // Peer 1.
+            IPAddress originalAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpointNode1 = new IPEndPoint(originalAddress, 80);
+            peerAddressManager.AddPeer(endpointNode1, IPAddress.Loopback);
+            bool connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointNode1);
+            Assert.True(connectedToThisPeer);
 
-            // Connects to nodes from a different network group.
-            Assert.Contains(endpointNode1, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
-            Assert.Contains(endpointNode2, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            // Peer 2 has different network group.
+            IPAddress addressInDifferentNetworkGroup = IPAddress.Parse("::ffff:193.168.0.1");
+            var endpointNode2 = new IPEndPoint(addressInDifferentNetworkGroup, 80);
+            peerAddressManager.AddPeer(endpointNode2, IPAddress.Loopback);
+            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointNode2);
+            Assert.True(connectedToThisPeer);  // Different network group: connects.
 
-            // Connects to nodes in the same network group.
-            Assert.Contains(endpointNode3, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            // Peer 3 has same network group.
+            IPAddress addressInSameNetworkGroupPeer3 = IPAddress.Parse("::ffff:192.168.0.2");
+            var endpointNode3 = new IPEndPoint(addressInSameNetworkGroupPeer3, 80);
+            peerAddressManager.AddPeer(endpointNode3, IPAddress.Loopback);
+            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointNode3);
+            Assert.True(connectedToThisPeer); // Same network group: connects.
+
+            // Peer 4 has same network group.
+            IPAddress addressInSameNetworkGroupPeer4 = IPAddress.Parse("::ffff:192.168.1.0");
+            var endpointNode4 = new IPEndPoint(addressInSameNetworkGroupPeer4, 80);
+            peerAddressManager.AddPeer(endpointNode4, IPAddress.Loopback);
+            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointNode4);
+            Assert.True(connectedToThisPeer); // Same network group: connects.
         }
 
         [Fact]
-        public void PeerConnectorDiscovery_ConnectsTo_LocalHostNodes_IpRangeFilteringDisabled()
+        public void PeerConnectorDiscovery_ConnectsTo_LocalHostNodes_IpRangeFilteringEnabled()
         {
-            Network testNetwork = Network.Main;
+            // Setup.
+            Network mainNetwork = Network.Main;
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            var nodeSettings = new NodeSettings(mainNetwork, args: new[] { "-IpRangeFiltering" });
+
+            var connectionManagerSettingsExisting = new ConnectionManagerSettings(nodeSettings);
+            Mock<INetworkPeerFactory> networkPeerFactoryExisting = new Mock<INetworkPeerFactory>();
+
+            var peerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.network, networkPeerFactoryExisting.Object, this.nodeLifetime, nodeSettings, connectionManagerSettingsExisting, peerAddressManager, new SelfEndpointTracker());
+
+            IConnectionManager connectionManagerExisting = this.CreateConnectionManager(nodeSettings, connectionManagerSettingsExisting, peerAddressManager, peerConnector);
+            peerConnector.Initialize(connectionManagerExisting);
 
             // Peer 1 on localhost.
             IPAddress originalAddress = IPAddress.Parse("::ffff:127.0.0.1");
-            var endpointNode1 = new IPEndPoint(originalAddress, 80);
-            peerAddressManager.AddPeer(endpointNode1, IPAddress.Loopback);
-
-            Mock<INetworkPeer> networkPeer1 = new Mock<INetworkPeer>();
-            networkPeer1.SetupGet(np => np.PeerEndPoint).Returns(new IPEndPoint(originalAddress, 80));
-            networkPeer1.SetupGet(np => np.RemoteSocketAddress).Returns(originalAddress);
-            networkPeer1.SetupGet(np => np.RemoteSocketPort).Returns(80);
-            networkPeer1.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
+            var originalLocalhostNodeEndpoint = new IPEndPoint(originalAddress, 80);
+            bool connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, originalLocalhostNodeEndpoint);
+            Assert.True(connectedToThisPeer);
 
             // Peer 2 on localhost on different port.
             IPAddress addressInSameNetworkGroup = IPAddress.Parse("::ffff:127.0.0.1");
-            var endpointNode2 = new IPEndPoint(addressInSameNetworkGroup, 90);
-            peerAddressManager.AddPeer(endpointNode2, IPAddress.Loopback);
-
-            Mock<INetworkPeer> networkPeer2 = new Mock<INetworkPeer>();
-            networkPeer2.SetupGet(np => np.PeerEndPoint).Returns(new IPEndPoint(addressInSameNetworkGroup, 90));
-            networkPeer2.SetupGet(np => np.RemoteSocketAddress).Returns(addressInSameNetworkGroup);
-            networkPeer2.SetupGet(np => np.RemoteSocketPort).Returns(90);
-            networkPeer2.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
-
-            // IpRangeFiltering disabled by default for localhost.
-            var nodeSettings = new NodeSettings(testNetwork);
-
-            var connectionManagerSettingsExisting = new ConnectionManagerSettings(nodeSettings);
-
-            connectionManagerSettingsExisting.AddNode.Add(endpointNode1);
-            connectionManagerSettingsExisting.Connect.Add(endpointNode1);
-
-            connectionManagerSettingsExisting.AddNode.Add(endpointNode2);
-            connectionManagerSettingsExisting.Connect.Add(endpointNode2);
-
-            Mock<INetworkPeerFactory> networkPeerFactoryExisting = new Mock<INetworkPeerFactory>();
-            networkPeerFactoryExisting.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.Is<IPEndPoint>(x => Equals(x, endpointNode1)), It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer1.Object));
-            networkPeerFactoryExisting.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.Is<IPEndPoint>(x => Equals(x, endpointNode2)), It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer2.Object));
-            var peerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.network, networkPeerFactoryExisting.Object, this.nodeLifetime, nodeSettings, connectionManagerSettingsExisting, peerAddressManager, new SelfEndpointTracker());
-
-            IConnectionManager connectionManagerExisting = this.CreateConnectionManager(nodeSettings, connectionManagerSettingsExisting, peerAddressManager, peerConnector);
-            peerConnector.Initialize(connectionManagerExisting);
-            peerConnector.OnConnectAsync().GetAwaiter().GetResult();
-
-            // Connects to localhost nodes in same group.
-            Assert.Contains(endpointNode1, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
-            Assert.Contains(endpointNode2, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
+            var secondLocalhostNodeEndpoint = new IPEndPoint(addressInSameNetworkGroup, 90);
+            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, secondLocalhostNodeEndpoint);
+            Assert.True(connectedToThisPeer);
         }
-        
+
         [Fact]
         public void PeerConnectorDiscovery_DoesNotConnectTo_NodeInSameNetworkGroup_WithIpRangeFilteringEnabled()
         {
-            Network testNetwork = Network.Main;
+            // Setup.
+            Network mainNetwork = Network.Main;
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
-
-            // Peer 1.
-            IPAddress originalAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var endpointNode1 = new IPEndPoint(originalAddress, 80);           
-            peerAddressManager.AddPeer(endpointNode1, IPAddress.Loopback);
-
-            Mock<INetworkPeer> networkPeer1 = new Mock<INetworkPeer>();
-            networkPeer1.SetupGet(np => np.PeerEndPoint).Returns(new IPEndPoint(originalAddress, 80));
-            networkPeer1.SetupGet(np => np.RemoteSocketAddress).Returns(originalAddress);
-            networkPeer1.SetupGet(np => np.RemoteSocketPort).Returns(80);
-            networkPeer1.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
-
-            // Peer 2 has different network group.
-            IPAddress addressInDifferentNetworkGroup = IPAddress.Parse("::ffff:193.168.0.1");
-            var endpointNode2 = new IPEndPoint(addressInDifferentNetworkGroup, 80);
-            peerAddressManager.AddPeer(endpointNode2, IPAddress.Loopback);
-
-            Mock<INetworkPeer> networkPeer2 = new Mock<INetworkPeer>();
-            networkPeer2.SetupGet(np => np.PeerEndPoint).Returns(new IPEndPoint(addressInDifferentNetworkGroup, 80));
-            networkPeer2.SetupGet(np => np.RemoteSocketAddress).Returns(addressInDifferentNetworkGroup);
-            networkPeer2.SetupGet(np => np.RemoteSocketPort).Returns(80);
-            networkPeer2.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
-            
-            // Peer 3 has same network group.
-            IPAddress addressInSameNetworkGroup = IPAddress.Parse("::ffff:192.168.0.2");
-            var endpointNode3 = new IPEndPoint(addressInSameNetworkGroup, 80);
-            peerAddressManager.AddPeer(endpointNode3, IPAddress.Loopback);
-
-            Mock<INetworkPeer> networkPeer3 = new Mock<INetworkPeer>();
-            networkPeer3.SetupGet(np => np.PeerEndPoint).Returns(new IPEndPoint(addressInSameNetworkGroup, 80));
-            networkPeer3.SetupGet(np => np.RemoteSocketAddress).Returns(addressInSameNetworkGroup);
-            networkPeer3.SetupGet(np => np.RemoteSocketPort).Returns(80);
-            networkPeer3.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
-
-            // IpRangeFiltering enabled by default, enabled explicitly.
-            var nodeSettings = new NodeSettings(testNetwork, args: new[] { "-IpRangeFiltering" });
+            var nodeSettings = new NodeSettings(mainNetwork, args: new[] { "-IpRangeFiltering" });
 
             var connectionManagerSettingsExisting = new ConnectionManagerSettings(nodeSettings);
-
-            connectionManagerSettingsExisting.AddNode.Add(endpointNode1);
-            connectionManagerSettingsExisting.Connect.Add(endpointNode1);
-
-            connectionManagerSettingsExisting.AddNode.Add(endpointNode2);
-            connectionManagerSettingsExisting.Connect.Add(endpointNode2);
-
-            connectionManagerSettingsExisting.AddNode.Add(endpointNode3);
-            connectionManagerSettingsExisting.Connect.Add(endpointNode3);
-            
             Mock<INetworkPeerFactory> networkPeerFactoryExisting = new Mock<INetworkPeerFactory>();
-            networkPeerFactoryExisting.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.Is<IPEndPoint>(x => Equals(x, endpointNode1)), It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer1.Object));
-            networkPeerFactoryExisting.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.Is<IPEndPoint>(x => Equals(x, endpointNode2)), It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer2.Object));
-            networkPeerFactoryExisting.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.Is<IPEndPoint>(x => Equals(x, endpointNode3)), It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer3.Object));
-           
+
             var peerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.network, networkPeerFactoryExisting.Object, this.nodeLifetime, nodeSettings, connectionManagerSettingsExisting, peerAddressManager, new SelfEndpointTracker());
 
             IConnectionManager connectionManagerExisting = this.CreateConnectionManager(nodeSettings, connectionManagerSettingsExisting, peerAddressManager, peerConnector);
             peerConnector.Initialize(connectionManagerExisting);
-            peerConnector.OnConnectAsync().GetAwaiter().GetResult();
-            
-            // Connects to nodes from a different network group.
-            Assert.Contains(endpointNode1, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
-            Assert.Contains(endpointNode2, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));
 
-            // Does not connect to nodes in the same network group.
-            Assert.DoesNotContain(endpointNode3, peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint));     
+            // Original peer.
+            IPAddress originalAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var originalNodeEndpoint = new IPEndPoint(originalAddress, 80);
+            bool connectToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, originalNodeEndpoint);
+            Assert.True(connectToThisPeer);
+            
+            // Peer from same group.
+            IPAddress addressFromNodeInSameGroup = IPAddress.Parse("::ffff:192.168.0.2");
+            var endpointOfNodeInSameGroup = new IPEndPoint(addressFromNodeInSameGroup, 80);
+            connectToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointOfNodeInSameGroup);
+            Assert.False(connectToThisPeer);
+
+            // Peer from different group.
+            IPAddress addressFromNodeInDifferentGroup = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpointOfNodeInDifferentGroup = new IPEndPoint(addressFromNodeInDifferentGroup, 80);
+            connectToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointOfNodeInDifferentGroup);
+            Assert.True(connectToThisPeer);
+        }
+
+        private static bool ConnectToPeer(PeerAddressManager peerAddressManager, Mock<INetworkPeerFactory> networkPeerFactoryExisting, ConnectionManagerSettings connectionManagerSettingsExisting, PeerConnectorConnectNode peerConnector, IPEndPoint endpointNode)
+        {
+            peerAddressManager.AddPeer(endpointNode, IPAddress.Loopback);
+            Mock<INetworkPeer> networkPeer = new Mock<INetworkPeer>();
+            networkPeer.SetupGet(np => np.PeerEndPoint).Returns(new IPEndPoint(endpointNode.Address, endpointNode.Port));
+            networkPeer.SetupGet(np => np.RemoteSocketAddress).Returns(endpointNode.Address);
+            networkPeer.SetupGet(np => np.RemoteSocketPort).Returns(endpointNode.Port);
+            networkPeer.SetupGet(np => np.State).Returns(NetworkPeerState.HandShaked);
+            networkPeerFactoryExisting.Setup(npf => 
+                npf.CreateConnectedNetworkPeerAsync(It.Is<IPEndPoint>(x => Equals(x, endpointNode)), 
+                    It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer.Object));
+            connectionManagerSettingsExisting.AddNode.Add(endpointNode);
+            connectionManagerSettingsExisting.Connect.Add(endpointNode);
+            peerConnector.OnConnectAsync().GetAwaiter().GetResult();
+            return peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint).Contains(endpointNode);
         }
 
         [Fact]
