@@ -19,6 +19,8 @@ namespace Stratis.SmartContracts.Core.State
         byte[] GetCodeHash(uint160 addr);
         void SetStorageValue(uint160 addr, byte[] key, byte[] value);
         byte[] GetStorageValue(uint160 addr, byte[] key);
+        string GetContractType(uint160 addr);
+        void SetContractType(uint160 addr, string type);
         IContractStateRepository StartTracking();
         void Flush();
         void Commit();

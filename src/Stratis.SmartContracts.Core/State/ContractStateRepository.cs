@@ -100,6 +100,19 @@ namespace Stratis.SmartContracts.Core.State
             return accountState == null ? null : this.storageCache.Get(addr.ToBytes()).Get(key);
         }
 
+        public string GetContractType(uint160 addr)
+        {
+            AccountState accountState = this.GetAccountState(addr);
+            return accountState != null ? accountState.TypeName : "";
+        }
+
+        public void SetContractType(uint160 addr, string type)
+        {
+            AccountState accountState = this.GetOrCreateAccountState(addr);
+            accountState.TypeName = type;
+            this.accountStateCache.Put(addr.ToBytes(), accountState);
+        }
+
         public IContractStateRepository StartTracking()
         {
             ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(this.accountStateCache, WriteCache<AccountState>.CacheType.SIMPLE);
