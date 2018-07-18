@@ -340,7 +340,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (this.isBlocksOnlyMode && inventoryTxs.Any())
             {
-                this.logger.LogInformation("Transaction inventory sent in violation of protocol peer '{1}'.", peer.RemoteSocketEndpoint);
+                this.logger.LogInformation("Transaction inventory sent in violation of protocol peer '{0}'.", peer.RemoteSocketEndpoint);
             }
 
             this.logger.LogTrace("(-)");
