@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.SaveWallets();
                 this.logger.LogInformation("Wallets saved to file at {0}.", this.dateTimeProvider.GetUtcNow());
 
-                this.logger.LogTrace("(-)");
+                this.logger.LogTrace("(-)[IN_ASYNC_LOOP]");
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
@@ -361,7 +361,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(name), name, nameof(extPubKey), extPubKey, nameof(accountIndex), accountIndex);
             
             // Create a wallet file.
-            Wallet wallet = this.GenerateWalletFileXpub(name, creationTime);
+            Wallet wallet = this.GenerateExtPubKeyOnlyWalletFile(name, creationTime);
 
             // Generate account
             HdAccount account = wallet.AddNewAccount(this.coinType, extPubKey, accountIndex, this.dateTimeProvider.GetTimeOffset());
@@ -425,7 +425,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 if (account != null)
                 {
-                    this.logger.LogTrace("(-)");
+                    this.logger.LogTrace("(-)[ACCOUNT_FOUND]");
                     return account;
                 }
 
@@ -480,7 +480,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
             return res;
         }
-
 
         /// <inheritdoc />
         public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false)
@@ -1275,7 +1274,15 @@ namespace Stratis.Bitcoin.Features.Wallet
             return walletFile;
         }
 
-        private Wallet GenerateWalletFileXpub(string name, DateTimeOffset? creationTime = null)
+        /// <summary>
+        /// Generates the wallet file without private key and chain code.
+        /// For use with only the extended public key.
+        /// </summary>
+        /// <param name="name">The name of the wallet.</param>
+        /// <param name="creationTime">The time this wallet was created.</param>
+        /// <returns>The wallet object that was saved into the file system.</returns>
+        /// <exception cref="WalletException">Thrown if wallet cannot be created.</exception>
+        private Wallet GenerateExtPubKeyOnlyWalletFile(string name, DateTimeOffset? creationTime = null)
         {
             Guard.NotEmpty(name, nameof(name));
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);

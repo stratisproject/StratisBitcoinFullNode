@@ -292,6 +292,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         public AccountRoot()
         {
+            this.accountLockObject = new object();
             this.Accounts = new List<HdAccount>();
         }
 
@@ -319,6 +320,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         [JsonProperty(PropertyName = "accounts")]
         public ICollection<HdAccount> Accounts { get; set; }
+
+        /// <summary>Protects access to <see cref="Accounts"/>.</summary>
+        private readonly object accountLockObject;
 
         /// <summary>
         /// Gets the first account that contains no transaction.
@@ -375,35 +379,35 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));
             Guard.NotNull(chainCode, nameof(chainCode));
 
-            // Get the current collection of accounts.
-            List<HdAccount> accounts = this.Accounts.ToList();
-
-            int newAccountIndex = 0;
-            if (accounts.Any())
+            lock (this.accountLockObject)
             {
-                newAccountIndex = accounts.Max(a => a.Index) + 1;
+                int newAccountIndex = 0;
+                if (this.Accounts.Any())
+                {
+                    newAccountIndex = this.Accounts.Max(a => a.Index) + 1;
+                }
+
+                // Get the extended pub key used to generate addresses for this account.
+                string accountHdPath = HdOperations.GetAccountHdPath((int) this.CoinType, newAccountIndex);
+                Key privateKey = HdOperations.DecryptSeed(encryptedSeed, password, network);
+                ExtPubKey accountExtPubKey = HdOperations.GetExtendedPublicKey(privateKey, chainCode, accountHdPath);
+
+                var newAccount = new HdAccount
+                {
+                    Index = newAccountIndex,
+                    ExtendedPubKey = accountExtPubKey.ToString(network),
+                    ExternalAddresses = new List<HdAddress>(),
+                    InternalAddresses = new List<HdAddress>(),
+                    Name = $"account {newAccountIndex}",
+                    HdPath = accountHdPath,
+                    CreationTime = accountCreationTime
+                };
+
+                this.Accounts.Add(newAccount);
+                this.Accounts = this.Accounts;
+
+                return newAccount;
             }
-
-            // Get the extended pub key used to generate addresses for this account.
-            string accountHdPath = HdOperations.GetAccountHdPath((int)this.CoinType, newAccountIndex);
-            Key privateKey = HdOperations.DecryptSeed(encryptedSeed, password, network);
-            ExtPubKey accountExtPubKey = HdOperations.GetExtendedPublicKey(privateKey, chainCode, accountHdPath);
-
-            var newAccount = new HdAccount
-            {
-                Index = newAccountIndex,
-                ExtendedPubKey = accountExtPubKey.ToString(network),
-                ExternalAddresses = new List<HdAddress>(),
-                InternalAddresses = new List<HdAddress>(),
-                Name = $"account {newAccountIndex}",
-                HdPath = accountHdPath,
-                CreationTime = accountCreationTime
-            };
-
-            accounts.Add(newAccount);
-            this.Accounts = accounts;
-
-            return newAccount;
         }
 
         /// <summary>
@@ -416,35 +420,35 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A new HD account.</returns>
         public HdAccount AddNewAccount(ExtPubKey accountExtPubKey, int accountIndex, Network network, DateTimeOffset accountCreationTime)
         {
-            ICollection<HdAccount> accounts = this.Accounts;
-
-            if (accounts.Any(a => a.Index == accountIndex))
+            lock (this.accountLockObject)
             {
-                throw new WalletException("There is already an account in this wallet with index: " + accountIndex);
+                if (this.Accounts.Any(a => a.Index == accountIndex))
+                {
+                    throw new WalletException("There is already an account in this wallet with index: " + accountIndex);
+                }
+
+                if (this.Accounts.Any(x => x.ExtendedPubKey == accountExtPubKey.ToString(network)))
+                {
+                    throw new WalletException("There is already an account in this wallet with this xpubkey: " +
+                                              accountExtPubKey.ToString(network));
+                }
+
+                string accountHdPath = HdOperations.GetAccountHdPath((int) this.CoinType, accountIndex);
+
+                var newAccount = new HdAccount
+                {
+                    Index = accountIndex,
+                    ExtendedPubKey = accountExtPubKey.ToString(network),
+                    ExternalAddresses = new List<HdAddress>(),
+                    InternalAddresses = new List<HdAddress>(),
+                    Name = $"account {accountIndex}",
+                    HdPath = accountHdPath,
+                    CreationTime = accountCreationTime
+                };
+
+                this.Accounts.Add(newAccount);
+                return newAccount;
             }
-
-            if (accounts.Any(x => x.ExtendedPubKey == accountExtPubKey.ToString(network)))
-            {
-                throw new WalletException("There is already an account in this wallet with this xpubkey: " + accountExtPubKey.ToString(network));
-            }
-
-            string accountHdPath = HdOperations.GetAccountHdPath((int)this.CoinType, accountIndex);
-
-            var newAccount = new HdAccount
-            {
-                Index = accountIndex,
-                ExtendedPubKey = accountExtPubKey.ToString(network),
-                ExternalAddresses = new List<HdAddress>(),
-                InternalAddresses = new List<HdAddress>(),
-                Name = $"account {accountIndex}",
-                HdPath = accountHdPath,
-                CreationTime = accountCreationTime
-            };
-
-            accounts.Add(newAccount);
-            this.Accounts = accounts;
-
-            return newAccount;
         }
     }
 
