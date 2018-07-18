@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ConsensusTipChanged_ConsensusTipAdvancedBuNoCachedHeadersAsync()
         {
-            ConsensusManagerBehavior behavior = await this.helper.CreateAndAttachBehaviorAsync(this.headers[5], null, this.headers[10]);
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], null, this.headers[10]);
 
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
 
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             var cache = new List<BlockHeader>() {this.headers[11].Header, this.headers[12].Header};
 
-            ConsensusManagerBehavior behavior = await this.helper.CreateAndAttachBehaviorAsync(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
                 (presentedHeaders, triggerDownload) =>
                 {
                     if (presentedHeaders.Last() == this.headers[12].Header)
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Tests.Base
             for (int i= 11; i <= 50; i++)
                 cache.Add(this.headers[i].Header);
 
-            ConsensusManagerBehavior behavior = await this.helper.CreateAndAttachBehaviorAsync(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
                 (presentedHeaders, triggerDownload) =>
                 {
                     if (presentedHeaders.Last() == this.headers[50].Header)
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             var cache = new List<BlockHeader>() { this.headers[14].Header, this.headers[15].Header };
 
-            ConsensusManagerBehavior behavior = await this.helper.CreateAndAttachBehaviorAsync(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
                 (presentedHeaders, triggerDownload) =>
                 {
                     if (presentedHeaders.First() == this.headers[14].Header)
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             var cache = new List<BlockHeader>() { this.headers[11].Header, this.headers[12].Header };
 
-            ConsensusManagerBehavior behavior = await this.helper.CreateAndAttachBehaviorAsync(this.headers[5], cache, this.headers[10]);
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10]);
 
             // That will set peer to null.
             behavior.Dispose();

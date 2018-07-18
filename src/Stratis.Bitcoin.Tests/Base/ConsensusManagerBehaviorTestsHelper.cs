@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Tests.Base
         /// <param name="peerState">Peer connection state.</param>
         /// <param name="connectNewHeadersMethod">Method which is invoked when behavior calls CM.HeadersPresented.</param>
         /// <returns></returns>
-        public async Task<ConsensusManagerBehavior> CreateAndAttachBehaviorAsync(ChainedHeader consensusTip, List<BlockHeader> cache = null,
+        public ConsensusManagerBehavior CreateAndAttachBehavior(ChainedHeader consensusTip, List<BlockHeader> cache = null,
             ChainedHeader expectedPeerTip = null, NetworkPeerState peerState = NetworkPeerState.HandShaked,
             Func<List<BlockHeader>, bool, ConnectNewHeadersResult> connectNewHeadersMethod = null)
         {
@@ -81,8 +81,6 @@ namespace Stratis.Bitcoin.Tests.Base
             this.PeerMock = this.CreatePeerMock();
 
             cmBehavior.Attach(this.PeerMock.Object);
-
-            await Task.Delay(500);
 
             this.PeerMock.Setup(x => x.Behavior<ConsensusManagerBehavior>()).Returns(() => cmBehavior);
             this.PeerMock.Setup(x => x.State).Returns(peerState);

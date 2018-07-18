@@ -441,6 +441,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("()");
 
             // Initialize auto sync timer.
+            int interval = (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds;
             this.autosyncTimer = new Timer(async (o) =>
             {
                 this.logger.LogTrace("()");
@@ -448,7 +449,7 @@ namespace Stratis.Bitcoin.Base
                 await this.ResyncAsync().ConfigureAwait(false);
 
                 this.logger.LogTrace("(-)");
-            }, null, 0, (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds);
+            }, null, interval, interval);
 
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
                 this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip.Height;
