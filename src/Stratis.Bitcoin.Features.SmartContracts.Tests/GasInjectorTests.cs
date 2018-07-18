@@ -136,6 +136,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var result = vm.ExecuteMethod(
                 originalAssemblyBytes,
+                ContractName,
                 MethodName,
                 executionContext,
                 gasMeter, 
@@ -165,6 +166,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var result = vm.ExecuteMethod(
                 originalAssemblyBytes,
+                ContractName,
                 "UseAllGas",
                 executionContext,
                 gasMeter, persistentState, repository);
@@ -196,8 +198,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var result = vm.Create(
                 originalAssemblyBytes,
+                ContractName,
                 executionContext,
-                gasMeter, persistentState, repository);
+                gasMeter,
+                persistentState,
+                repository);
 
             // TODO: Un-hard-code this. 
             // Constructor: 15
@@ -225,6 +230,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var result = vm.Create(
                 originalAssemblyBytes,
+                ContractName,
                 executionContext,
                 gasMeter, persistentState, repository);
 

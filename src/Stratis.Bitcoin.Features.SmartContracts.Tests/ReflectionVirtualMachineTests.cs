@@ -84,6 +84,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var result = vm.ExecuteMethod(
                 contractExecutionCode,
+                "StorageTest",
                 "StoreData",
                 context,
                 gasMeter, 
@@ -141,6 +142,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var result = vm.ExecuteMethod(
                 contractExecutionCode,
+                "StorageTest",
                 "StoreData",
                 context,
                 gasMeter, 
@@ -195,6 +197,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var result = vm.Create(
                 contractExecutionCode,
+                "Auction",
                 context,
                 gasMeter, 
                 persistentState,

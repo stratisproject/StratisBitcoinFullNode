@@ -43,7 +43,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(contractCode);
 
-            Type contractType = Load(gasInjectedCode);
+            Type contractType = Load(gasInjectedCode, typeName);
 
             var internalTransferList = new List<TransferInfo>();
 

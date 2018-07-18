@@ -61,9 +61,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return TransferResult.Empty();
             }
 
+            string typeName = this.contractStateRepository.GetContractType(addressTo.ToUint160(this.network));
+
             this.logger.LogTrace("(-)[TRANSFER_TO_CONTRACT]");
 
-            return ExecuteTransferFundsToContract(contractCode, smartContractState, addressTo, amountToTransfer, contractDetails);
+            return ExecuteTransferFundsToContract(contractCode, typeName, smartContractState, addressTo, amountToTransfer, contractDetails);
         }
 
         ///<inheritdoc/>
@@ -75,7 +77,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// If the address to where the funds will be tranferred to is a contract, instantiate and execute it.
         /// </summary>
-        private ITransferResult ExecuteTransferFundsToContract(byte[] contractCode, ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
+        private ITransferResult ExecuteTransferFundsToContract(byte[] contractCode, string typeName, ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
 
@@ -92,6 +94,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var result = vm.ExecuteMethod(
                 contractCode,
+                typeName,
                 contractDetails.ContractMethodName,
                 newContext,
                 smartContractState.GasMeter, 
