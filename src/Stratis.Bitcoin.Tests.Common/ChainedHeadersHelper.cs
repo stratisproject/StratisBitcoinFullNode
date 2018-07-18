@@ -12,18 +12,26 @@ namespace Stratis.Bitcoin.Tests.Common
         /// </summary>
         private static int currentNonce = 0;
 
-        /// <summary>
-        /// Creates specified number of consecutive headers.
-        /// </summary>
+        /// <summary>Creates specified number of consecutive headers.</summary>
         /// <param name="count">Number of blocks to generate.</param>
         /// <param name="prevBlock">If not <c>null</c> the headers will be generated on top of it.</param>
-        /// <returns></returns>
-        public static List<ChainedHeader> CreateConsecutiveHeaders(int count, ChainedHeader prevBlock = null)
+        /// <param name="includePrevBlock">If <c>true</c> <paramref name="prevBlock"/> will be added as a first item in the list or genesis header if <paramref name="prevBlock"/> is <c>null</c>.</param>
+        public static List<ChainedHeader> CreateConsecutiveHeaders(int count, ChainedHeader prevBlock = null, bool includePrevBlock = false)
         {
             var chainedHeaders = new List<ChainedHeader>();
             Network network = Network.StratisMain;
 
-            ChainedHeader tip = prevBlock ?? CreateGenesisChainedHeader();
+            ChainedHeader tip = prevBlock;
+
+            if (tip == null)
+            {
+                ChainedHeader genesis = CreateGenesisChainedHeader();
+                tip = genesis;
+            }
+
+            if (includePrevBlock)
+                chainedHeaders.Add(tip);
+
             uint256 hashPrevBlock = tip.HashBlock;
 
             for (int i = 0; i < count; i++)

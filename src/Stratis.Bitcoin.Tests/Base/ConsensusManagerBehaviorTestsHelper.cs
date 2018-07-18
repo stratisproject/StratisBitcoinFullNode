@@ -45,9 +45,9 @@ namespace Stratis.Bitcoin.Tests.Base
         /// <summary>Creates the and attaches a new <see cref="ConsensusManagerBehavior"/>.</summary>
         /// <param name="consensusTip">Consensus tip.</param>
         /// <param name="cache">List of cached headers with which behavior is initialized.</param>
-        /// <param name="expectedPeerTip">Behavior's expected tip.</param>
-        /// <param name="peerState">Peer connection state.</param>
-        /// <param name="connectNewHeadersMethod">Method which is invoked when behavior calls CM.HeadersPresented.</param>
+        /// <param name="expectedPeerTip">Behavior's expected tip's initial value.</param>
+        /// <param name="peerState">Peer connection state returned by the <see cref="INetworkPeer.State"/>.</param>
+        /// <param name="connectNewHeadersMethod">Method which is invoked when behavior calls <see cref="IConsensusManager.HeadersPresented"/>.</param>
         /// <returns></returns>
         public ConsensusManagerBehavior CreateAndAttachBehavior(ChainedHeader consensusTip, List<BlockHeader> cache = null,
             ChainedHeader expectedPeerTip = null, NetworkPeerState peerState = NetworkPeerState.HandShaked,
