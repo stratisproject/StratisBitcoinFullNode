@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 
@@ -18,6 +19,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 ConsensusErrors.HighHash.Throw();
 
             context.NextWorkRequired = context.ValidationContext.ChainedHeader.GetWorkRequired(context.Consensus);
+
+            BlockHeader header = context.ValidationContext.Block.Header;
+
+            // Check proof of work.
+            if (header.Bits != context.NextWorkRequired)
+            {
+                this.Logger.LogTrace("(-)[BAD_DIFF_BITS]");
+                ConsensusErrors.BadDiffBits.Throw();
+            }
 
             return Task.CompletedTask;
         }

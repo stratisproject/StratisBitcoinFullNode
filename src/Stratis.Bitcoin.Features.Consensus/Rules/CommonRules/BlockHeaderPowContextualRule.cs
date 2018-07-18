@@ -27,13 +27,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             int height = context.ConsensusTipHeight + 1;
 
-            // Check proof of work.
-            if (header.Bits != context.NextWorkRequired)
-            {
-                this.Logger.LogTrace("(-)[BAD_DIFF_BITS]");
-                ConsensusErrors.BadDiffBits.Throw();
-            }
-
             // Check timestamp against prev.
             if (header.BlockTime <= context.ConsensusTip.GetMedianTimePast())
             {

@@ -30,6 +30,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             context.NextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.ValidationContext.ChainedHeader.Previous, context.Consensus, posRuleContext.BlockStake.IsProofOfStake());
 
+            BlockHeader header = context.ValidationContext.Block.Header;
+
+            // Check proof of work.
+            if (header.Bits != context.NextWorkRequired)
+            {
+                this.Logger.LogTrace("(-)[BAD_DIFF_BITS]");
+                ConsensusErrors.BadDiffBits.Throw();
+            }
+
             return Task.CompletedTask;
         }
     }
