@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .FeatureServices(services =>
                     {
                         // Validator
-                        SmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
+                        ISmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
                         {
                             new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
                             new SmartContractDeterminismValidator()
