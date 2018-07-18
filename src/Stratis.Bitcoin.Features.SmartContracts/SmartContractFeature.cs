@@ -95,7 +95,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<InternalTransactionExecutorFactory>();
                         services.AddSingleton<ISmartContractVirtualMachine, ReflectionVirtualMachine>();
 
-                        services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), new SmartContractScriptAddressReader(new ScriptAddressReader())));
+                        var callDataSerializer = CallDataSerializer.Default;
+                        services.AddSingleton(callDataSerializer);
+                        services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), 
+                            new SmartContractScriptAddressReader(new ScriptAddressReader(), callDataSerializer)));
                     });
             });
 

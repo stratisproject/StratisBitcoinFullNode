@@ -18,13 +18,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ISmartContractResultRefundProcessor refundProcessor;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
         private readonly ISmartContractVirtualMachine vm;
+        private readonly ICallDataSerializer serializer;
 
         public CallSmartContract(IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network,
+            ICallDataSerializer serializer,
             IContractStateRepository stateSnapshot,
             ISmartContractResultRefundProcessor refundProcessor,
-            ISmartContractResultTransferProcessor transferProcessor, 
+            ISmartContractResultTransferProcessor transferProcessor,
             ISmartContractVirtualMachine vm)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
@@ -35,27 +37,33 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.refundProcessor = refundProcessor;
             this.transferProcessor = transferProcessor;
             this.vm = vm;
+            this.serializer = serializer;
         }
 
         public ISmartContractExecutionResult Execute(ISmartContractTransactionContext transactionContext)
         {
             this.logger.LogTrace("()");
 
-            var carrier = SmartContractCarrier.Deserialize(transactionContext);
+            var callDataDeserializationResult = this.serializer.Deserialize(transactionContext.ScriptPubKey.ToBytes());
+
+            // TODO Handle deserialization failure
+
+            var callData = callDataDeserializationResult.Value;
 
             // Get the contract code (dll) from the repository.
-            byte[] contractExecutionCode = this.stateSnapshot.GetCode(carrier.CallData.ContractAddress);
+            byte[] contractExecutionCode = this.stateSnapshot.GetCode(callData.ContractAddress);
             if (contractExecutionCode == null)
             {
-                return SmartContractExecutionResult.ContractDoesNotExist(carrier);
+                return SmartContractExecutionResult.ContractDoesNotExist(callData.MethodName);
             }
 
             // Execute the call to the contract.
-            return this.CreateContextAndExecute(carrier.CallData.ContractAddress, contractExecutionCode, carrier.CallData.MethodName, transactionContext, carrier);
+            return this.CreateContextAndExecute(callData.ContractAddress, contractExecutionCode, callData.MethodName, transactionContext, callData);
         }
 
         private ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode,
-            string methodName, ISmartContractTransactionContext transactionContext, SmartContractCarrier carrier)
+            string methodName, ISmartContractTransactionContext transactionContext,
+            CallData callData)
         {
             this.logger.LogTrace("()");
 
@@ -67,18 +75,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 block,
                 new Message(
                     contractAddress.ToAddress(this.network),
-                    carrier.Sender.ToAddress(this.network),
-                    carrier.Value,
-                    carrier.CallData.GasLimit
+                    transactionContext.Sender.ToAddress(this.network),
+                    transactionContext.TxOutValue,
+                    callData.GasLimit
                 ),
                 contractAddress,
-                carrier.CallData.GasPrice,
-                carrier.MethodParameters
+                callData.GasPrice,
+                callData.MethodParameters
             );
 
-            LogExecutionContext(this.logger, block, executionContext.Message, contractAddress, carrier);
+            LogExecutionContext(this.logger, block, executionContext.Message, contractAddress, callData);
 
-            var gasMeter = new GasMeter(carrier.CallData.GasLimit);
+            var gasMeter = new GasMeter(callData.GasLimit);
 
             IPersistenceStrategy persistenceStrategy =
                 new MeteredPersistenceStrategy(this.stateSnapshot, gasMeter, this.keyEncodingStrategy);
@@ -99,16 +107,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.logger.LogTrace("(-)");
 
-            var internalTransaction = this.transferProcessor.Process(
-                carrier, 
-                this.stateSnapshot, 
+            var internalTransaction = this.transferProcessor.Process(this.stateSnapshot, 
+                callData, 
                 transactionContext, 
-                result.InternalTransfers, 
+                result.InternalTransfers,
                 revert);
 
             (var fee, var refundTxOuts) = this.refundProcessor.Process(
-                carrier,
-                transactionContext.MempoolFee,
+                callData, 
+                transactionContext.MempoolFee, 
+                transactionContext.Sender,
                 result.GasConsumed,
                 result.ExecutionException);
 
@@ -134,17 +142,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return executionResult;
         }
 
-        internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress, SmartContractCarrier carrier)
+        internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress,
+            CallData callData)
         {
             var builder = new StringBuilder();
 
             builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
             builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress(this.network)));
-            builder.Append(string.Format("{0}:{1},", nameof(carrier.CallData.GasPrice), carrier.CallData.GasPrice));
+            builder.Append(string.Format("{0}:{1},", nameof(callData.GasPrice), callData.GasPrice));
             builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.GasLimit), message.GasLimit, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
 
-            if (carrier.MethodParameters != null && carrier.MethodParameters.Length > 0)
-                builder.Append(string.Format(",{0}:{1}", nameof(carrier.MethodParameters), carrier.MethodParameters));
+            if (callData.MethodParameters != null && callData.MethodParameters.Length > 0)
+                builder.Append(string.Format(",{0}:{1}", nameof(callData.MethodParameters), callData.MethodParameters));
 
             logger.LogTrace("{0}", builder.ToString());
         }
