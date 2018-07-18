@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 
@@ -15,13 +13,13 @@ namespace Stratis.Bitcoin.Consensus.Rules
     public abstract class ConsensusRules : IConsensusRules
     {
         /// <summary>A factory to creates logger instances for each rule.</summary>
-        private readonly ILoggerFactory loggerFactory;
+        public readonly ILoggerFactory LoggerFactory;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         /// <summary>A collection of rules that well be executed by the rules engine.</summary>
-        private readonly Dictionary<string, ConsensusRule> consensusRules;
+        private readonly Dictionary<string, ConsensusRuleDescriptor> consensusRules;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; }
@@ -48,28 +46,17 @@ namespace Stratis.Bitcoin.Consensus.Rules
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
         /// <summary>
-        /// Group of rules that are marked with a <see cref="PartialValidationRuleAttribute"/> or no attribute.
+        /// Grouping of rules that are marked with a <see cref="ValidationRuleAttribute"/> or no attribute.
         /// </summary>
-        private readonly List<ConsensusRuleDescriptor> partialValidationRules;
+        private readonly List<ConsensusRuleDescriptor> validationRules;
 
         /// <summary>
-        /// Group of rules that are marked with a <see cref="FullValidationRuleAttribute"/>.
+        /// Grouping of rules that are marked with a <see cref="ExecutionRuleAttribute"/>.
         /// </summary>
-        private readonly List<ConsensusRuleDescriptor> fullValidationRules;
-
-        /// <summary>
-        /// Group of rules that are marked with a <see cref="IntegrityValidationRuleAttribute"/>.
-        /// </summary>
-        private readonly List<ConsensusRuleDescriptor> integrityValidationRules;
-
-        /// <summary>
-        /// Group of rules that are marked with a <see cref="HeaderValidationRuleAttribute"/>.
-        /// </summary>
-        private readonly List<ConsensusRuleDescriptor> headerValidationRules;
-
+        private readonly List<ConsensusRuleDescriptor> executionRules;
 
         /// <inheritdoc />
-        public IEnumerable<ConsensusRule> Rules => this.consensusRules.Values;
+        public IEnumerable<ConsensusRuleDescriptor> Rules => this.consensusRules.Values;
 
         /// <summary>
         /// Initializes an instance of the object.
@@ -88,19 +75,16 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.DateTimeProvider = dateTimeProvider;
             this.Chain = chain;
             this.NodeDeployments = nodeDeployments;
-            this.loggerFactory = loggerFactory;
+            this.LoggerFactory = loggerFactory;
             this.ConsensusSettings = consensusSettings;
             this.Checkpoints = checkpoints;
             this.ConsensusParams = this.Network.Consensus;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
 
-            this.consensusRules = new Dictionary<string, ConsensusRule>();
-            this.partialValidationRules = new List<ConsensusRuleDescriptor>();
-            this.headerValidationRules = new List<ConsensusRuleDescriptor>();
-            this.fullValidationRules = new List<ConsensusRuleDescriptor>();
-            this.integrityValidationRules = new List<ConsensusRuleDescriptor>();
-
+            this.consensusRules = new Dictionary<string, ConsensusRuleDescriptor>();
+            this.validationRules = new List<ConsensusRuleDescriptor>();
+            this.executionRules = new List<ConsensusRuleDescriptor>();
         }
 
         /// <inheritdoc />
@@ -111,30 +95,18 @@ namespace Stratis.Bitcoin.Consensus.Rules
             foreach (ConsensusRule consensusRule in ruleRegistration.GetRules())
             {
                 consensusRule.Parent = this;
-                consensusRule.Logger = this.loggerFactory.CreateLogger(consensusRule.GetType().FullName);
+                consensusRule.Logger = this.LoggerFactory.CreateLogger(consensusRule.GetType().FullName);
                 consensusRule.Initialize();
 
-                this.consensusRules.Add(consensusRule.GetType().FullName, consensusRule);
+                var rule = new ConsensusRuleDescriptor(consensusRule);
 
-                List<RuleAttribute> ruleAttributes = Attribute.GetCustomAttributes(consensusRule.GetType()).OfType<RuleAttribute>().ToList();
+                this.consensusRules.Add(consensusRule.GetType().FullName, rule);
 
-                if(!ruleAttributes.Any())
-                    throw new ConsensusException($"The rule {consensusRule.GetType().FullName} must have at least one {nameof(RuleAttribute)}");
+                if (rule.RuleAttributes.OfType<ExecutionRuleAttribute>().Any())
+                    this.executionRules.Add(rule);
 
-                foreach (RuleAttribute ruleAttribute in ruleAttributes)
-                {
-                    if (ruleAttribute is FullValidationRuleAttribute)
-                        this.fullValidationRules.Add(new ConsensusRuleDescriptor(consensusRule, ruleAttribute));
-
-                    if (ruleAttribute is PartialValidationRuleAttribute)
-                        this.partialValidationRules.Add(new ConsensusRuleDescriptor(consensusRule, ruleAttribute));
-
-                    if (ruleAttribute is HeaderValidationRuleAttribute)
-                        this.headerValidationRules.Add(new ConsensusRuleDescriptor(consensusRule, ruleAttribute));
-
-                    if (ruleAttribute is IntegrityValidationRuleAttribute)
-                        this.integrityValidationRules.Add(new ConsensusRuleDescriptor(consensusRule, ruleAttribute));
-                }
+                if (rule.RuleAttributes.OfType<ValidationRuleAttribute>().Any() || rule.RuleAttributes.Count == 0)
+                    this.validationRules.Add(rule);
             }
 
             return this;
@@ -151,7 +123,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <inheritdoc/>
-        [Obsolete("Delete when CM activates")]
         public async Task AcceptBlockAsync(ValidationContext validationContext, ChainedHeader tip)
         {
             Guard.NotNull(validationContext, nameof(validationContext));
@@ -169,14 +140,13 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <inheritdoc />
-        [Obsolete("Delete when CM activates")]
         public async Task ValidateAndExecuteAsync(RuleContext ruleContext)
         {
             await this.ValidateAsync(ruleContext);
 
             using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
             {
-                foreach (ConsensusRuleDescriptor ruleDescriptor in this.fullValidationRules)
+                foreach (ConsensusRuleDescriptor ruleDescriptor in this.executionRules)
                 {
                     await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
                 }
@@ -184,14 +154,13 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <inheritdoc />
-        [Obsolete("Delete when CM activates")]
         public async Task ValidateAsync(RuleContext ruleContext)
         {
             using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
             {
-                foreach (ConsensusRuleDescriptor ruleDescriptor in this.partialValidationRules)
+                foreach (ConsensusRuleDescriptor ruleDescriptor in this.validationRules)
                 {
-                    if (ruleContext.SkipValidation && ruleDescriptor.RuleAttribute.CanSkipValidation)
+                    if (ruleContext.SkipValidation && ruleDescriptor.CanSkipValidation)
                     {
                         this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.ConsensusTip?.Height);
                     }
@@ -200,100 +169,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
                         await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
                     }
                 }
-            }
-        }
-
-        /// <inheritdoc/>
-        public void HeaderValidation(ValidationContext validationContext, ChainedHeader tip)
-        {
-            Guard.NotNull(validationContext, nameof(validationContext));
-
-            RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
-
-            this.ExecuteRules(this.headerValidationRules, ruleContext);
-        }
-
-        /// <inheritdoc/>
-        public void IntegrityValidation(ValidationContext validationContext, ChainedHeader tip)
-        {
-            Guard.NotNull(validationContext, nameof(validationContext));
-
-            RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
-
-            this.ExecuteRules(this.integrityValidationRules, ruleContext);
-        }
-
-        /// <inheritdoc/>
-        public async Task FullValidationAsync(ValidationContext validationContext, ChainedHeader tip)
-        {
-            Guard.NotNull(validationContext, nameof(validationContext));
-
-            RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
-
-            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc/>
-        public async Task PartialValidationAsync(ValidationContext validationContext, ChainedHeader tip)
-        {
-            Guard.NotNull(validationContext, nameof(validationContext));
-
-            RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
-
-            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
-        }
-
-        private async Task ExecuteRulesAsync(List<ConsensusRuleDescriptor> rules, RuleContext ruleContext)
-        {
-            try
-            {
-                using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
-                {
-                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainedHeader.BlockValidationState == ValidationState.AssumedValid;
-
-                    foreach (ConsensusRuleDescriptor ruleDescriptor in rules)
-                    {
-                        if (ruleContext.SkipValidation && ruleDescriptor.RuleAttribute.CanSkipValidation)
-                        {
-                            this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.ConsensusTip?.Height);
-                        }
-                        else
-                        {
-                            await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
-                        }
-                    }
-                }
-            }
-            catch (ConsensusErrorException ex)
-            {
-                ruleContext.ValidationContext.Error = ex.ConsensusError;
-            }
-        }
-
-        private void ExecuteRules(List<ConsensusRuleDescriptor> rules, RuleContext ruleContext)
-        {
-            try
-            {
-                using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
-                {
-                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainedHeader.BlockValidationState == ValidationState.AssumedValid;
-
-                    foreach (ConsensusRuleDescriptor ruleDescriptor in rules)
-                    {
-                        if (ruleContext.SkipValidation && ruleDescriptor.RuleAttribute.CanSkipValidation)
-                        {
-                            this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.ConsensusTip?.Height);
-                        }
-                        else
-                        {
-                            ruleDescriptor.Rule.Run(ruleContext);
-                        }
-                    }
-                }
-            }
-            catch (ConsensusErrorException ex)
-            {
-                ruleContext.ValidationContext.Error = ex.ConsensusError;
             }
         }
 
@@ -309,7 +184,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <inheritdoc />
         public T GetRule<T>() where T : ConsensusRule
         {
-            return (T)this.Rules.Single(r => r is T);
+            return (T)this.Rules.Single(r => r.Rule is T).Rule;
         }
     }
 

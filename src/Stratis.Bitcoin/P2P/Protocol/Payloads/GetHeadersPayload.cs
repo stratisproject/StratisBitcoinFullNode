@@ -4,7 +4,7 @@ using NBitcoin.Protocol;
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
     /// <summary>
-    /// Ask block headers that happened since BlockLocator.
+    /// Ask block headers that happened since BlockLocators.
     /// </summary>
     [Payload("getheaders")]
     public class GetHeadersPayload : Payload
@@ -22,16 +22,16 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             }
         }
 
-        private BlockLocator blockLocator;
-        public BlockLocator BlockLocator
+        private BlockLocator blockLocators;
+        public BlockLocator BlockLocators
         {
             get
             {
-                return this.blockLocator;
+                return this.blockLocators;
             }
             set
             {
-                this.blockLocator = value;
+                this.blockLocators = value;
             }
         }
 
@@ -54,13 +54,13 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         public GetHeadersPayload(BlockLocator locator)
         {
-            this.BlockLocator = locator;
+            this.BlockLocators = locator;
         }
 
         public override void ReadWriteCore(BitcoinStream stream)
         {
             stream.ReadWrite(ref this.version);
-            stream.ReadWrite(ref this.blockLocator);
+            stream.ReadWrite(ref this.blockLocators);
             stream.ReadWrite(ref this.hashStop);
         }
     }

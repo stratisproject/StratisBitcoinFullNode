@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Base
             ChainedHeader consensusTip = this.chainState.ConsensusTip;
             consensusTip = this.chain.GetBlock(consensusTip.HashBlock);
 
-            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
+            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocators);
             if (fork != null)
             {
                 if ((consensusTip == null) || (fork.Height > consensusTip.Height))
@@ -389,7 +389,7 @@ namespace Stratis.Bitcoin.Base
                 {
                     var headersPayload = new GetHeadersPayload()
                     {
-                        BlockLocator = (this.ExpectedPeerTip ?? this.chainState.ConsensusTip ?? this.chain.Tip).GetLocator(),
+                        BlockLocators = (this.ExpectedPeerTip ?? this.chainState.ConsensusTip ?? this.chain.Tip).GetLocator(),
                         HashStop = null
                     };
 

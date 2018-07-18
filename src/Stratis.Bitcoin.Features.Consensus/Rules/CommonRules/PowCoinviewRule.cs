@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <inheritdoc />
-    [FullValidationRule]
+    [ExecutionRule]
     public sealed class PowCoinviewRule : CoinViewRule
     {
         /// <summary>Consensus parameters.</summary>

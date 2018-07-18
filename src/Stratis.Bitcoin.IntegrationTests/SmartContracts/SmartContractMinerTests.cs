@@ -24,7 +24,6 @@ using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
-using Stratis.Bitcoin.IntegrationTests.Mempool;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
@@ -239,7 +238,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
                 this.chain.SetTip(this.newBlock.Block.Header);
-                await this.consensus.ValidateAndExecuteBlockAsync(new PowRuleContext(new ValidationContext { Block = this.newBlock.Block }, this.network.Consensus, this.consensus.Tip, dateTimeProvider.GetTimeOffset()) { MinedBlock = true });
+                await this.consensus.ValidateAndExecuteBlockAsync(new PowRuleContext(new ValidationContext { Block = this.newBlock.Block }, this.network.Consensus, this.consensus.Tip) { MinedBlock = true });
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
@@ -272,7 +271,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     block.Header.Nonce = this.blockinfo[i].nonce;
 
                     this.chain.SetTip(block.Header);
-                    await this.consensus.ValidateAndExecuteBlockAsync(new PowRuleContext(new ValidationContext { Block = block }, this.network.Consensus, this.consensus.Tip, dateTimeProvider.GetTimeOffset()) { MinedBlock = true });
+                    await this.consensus.ValidateAndExecuteBlockAsync(new PowRuleContext(new ValidationContext { Block = block }, this.network.Consensus, this.consensus.Tip) { MinedBlock = true });
                     blocks.Add(block);
                 }
 
@@ -829,7 +828,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             BlockTemplate pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
             context.chain.SetTip(pblocktemplate.Block.Header);
-            await context.consensus.ValidateAndExecuteBlockAsync(new PowRuleContext(new ValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip, context.date.GetTimeOffset()) { MinedBlock = true });
+            await context.consensus.ValidateAndExecuteBlockAsync(new PowRuleContext(new ValidationContext { Block = pblocktemplate.Block }, context.network.Consensus, context.consensus.Tip) { MinedBlock = true });
             return pblocktemplate;
         }
     }

@@ -17,12 +17,13 @@ using Stratis.SmartContracts.Core.Util;
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     /// <inheritdoc />
-    [FullValidationRule]
+    [ExecutionRule]
     public sealed class SmartContractCoinviewRule : CoinViewRule
     {
         private List<Transaction> blockTxsProcessed;
         private NBitcoin.Consensus consensusParams;
         private Transaction generatedTransaction;
+        private ILogger logger;
         private uint refundCounter;
         private SmartContractConsensusRules smartContractParent;
 
@@ -39,6 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             this.consensusParams = this.Parent.Network.Consensus;
             this.generatedTransaction = null;
+            this.logger = this.Parent.LoggerFactory.CreateLogger(this.GetType());
             this.refundCounter = 1;
             this.smartContractParent = (SmartContractConsensusRules)this.Parent;
 
@@ -331,12 +333,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             // For now we don't want it to interrupt execution so put it in a silly large try catch.
             try
             {
-                this.Logger.LogTrace("Save Receipt : {0}:{1}", nameof(txContext.TransactionHash), txContext.TransactionHash);
+                this.logger.LogTrace("Save Receipt : {0}:{1}", nameof(txContext.TransactionHash), txContext.TransactionHash);
                 this.smartContractParent.ReceiptStorage.SaveReceipt(txContext, result);
             }
             catch (Exception e)
             {
-                this.Logger.LogError("Exception occurred saving contract receipt: {0}", e.Message);
+                this.logger.LogError("Exception occurred saving contract receipt: {0}", e.Message);
             }
         }
     }
