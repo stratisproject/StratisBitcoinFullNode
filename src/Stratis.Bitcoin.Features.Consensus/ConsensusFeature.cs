@@ -255,6 +255,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return new List<ConsensusRule>
                 {
                     new BlockHeaderRule(),
+                    new BitcoinActivationRule(),
 
                     // rules that are inside the method CheckBlockHeader
                     new CalculateWorkRule(),
@@ -262,7 +263,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // rules that are inside the method ContextualCheckBlockHeader
                     new CheckpointsRule(),
                     new AssumeValidRule(),
-                    new BlockHeaderPowContextualRule(),
+                    new HeaderPowRule(),
 
                     // rules that are inside the method ContextualCheckBlock
                     new TransactionLocktimeActivationRule(), // implements BIP113
@@ -292,14 +293,17 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     new BlockHeaderRule(),
 
+                    new StratisVersionRule(),
+
                     // rules that are inside the method CheckBlockHeader
                     new CalculateStakeRule(),
 
                     // rules that are inside the method ContextualCheckBlockHeader
                     new CheckpointsRule(),
                     new AssumeValidRule(),
-                    new BlockHeaderPowContextualRule(),
-                    new BlockHeaderPosContextualRule(),
+                    new HeaderPowRule(),
+                    new HeaderPosRule(),
+                    new PosTimeMaskRule(),
 
                     // rules that are inside the method ContextualCheckBlock
                     new TransactionLocktimeActivationRule(), // implements BIP113

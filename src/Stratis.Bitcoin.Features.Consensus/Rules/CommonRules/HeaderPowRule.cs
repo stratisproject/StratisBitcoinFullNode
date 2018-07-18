@@ -10,8 +10,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Checks if <see cref="Block"/> has a valid PoS header.
     /// </summary>
-    [PartialValidationRule(CanSkipValidation = true)]
-    public class BlockHeaderPowContextualRule : ConsensusRule
+    [HeaderValidationRule(CanSkipValidation = true)]
+    public class HeaderPowRule : ConsensusRule
     {
         /// <inheritdoc />
         /// <param name="context">Context that contains variety of information regarding blocks validation and execution.</param>
@@ -25,8 +25,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             BlockHeader header = context.ValidationContext.Block.Header;
 
-            int height = context.ConsensusTipHeight + 1;
-
             // Check timestamp against prev.
             if (header.BlockTime <= context.ConsensusTip.GetMedianTimePast())
             {
@@ -39,17 +37,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
-            }
-
-            // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
-            // check for version 2, 3 and 4 upgrades.
-            // TODO: this checks need to be moved to their respective validation rules.
-            if (((header.Version < 2) && (height >= this.Parent.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34])) ||
-                ((header.Version < 3) && (height >= this.Parent.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66])) ||
-                ((header.Version < 4) && (height >= this.Parent.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65])))
-            {
-                this.Logger.LogTrace("(-)[BAD_VERSION]");
-                ConsensusErrors.BadVersion.Throw();
             }
 
             return Task.CompletedTask;

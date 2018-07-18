@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 // rules that are inside the method ContextualCheckBlockHeader
                 new CheckpointsRule(),
                 new AssumeValidRule(),
-                new BlockHeaderPowContextualRule(),
+                new HeaderPowRule(),
 
                 // rules that are inside the method ContextualCheckBlock
                 new TransactionLocktimeActivationRule(), // implements BIP113

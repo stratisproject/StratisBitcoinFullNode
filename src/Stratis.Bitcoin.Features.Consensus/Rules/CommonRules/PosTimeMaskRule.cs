@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Checks if <see cref="Block"/> has a valid PoS header.
     /// </summary>
     [PartialValidationRule(CanSkipValidation = true)]
-    public class BlockHeaderPosContextualRule : StakeStoreConsensusRule
+    public class PosTimeMaskRule : StakeStoreConsensusRule
     {
         /// <summary>PoS block's timestamp mask.</summary>
         /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
@@ -27,12 +27,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.Logger.LogTrace("Height of block is {0}, block timestamp is {1}, previous block timestamp is {2}, block version is 0x{3:x}.", chainedHeader.Height, chainedHeader.Header.Time, chainedHeader.Previous.Header.Time, chainedHeader.Header.Version);
 
             var posRuleContext = context as PosRuleContext;
-
-            if (chainedHeader.Header.Version < 7)
-            {
-                this.Logger.LogTrace("(-)[BAD_VERSION]");
-                ConsensusErrors.BadVersion.Throw();
-            }
 
             if (posRuleContext.BlockStake.IsProofOfWork() && (chainedHeader.Height > this.Parent.ConsensusParams.LastPOWBlock))
             {
@@ -54,13 +48,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 this.Logger.LogTrace("(-)[BAD_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();
-            }
-
-            // Check timestamp against prev.
-            if (chainedHeader.Header.Time <= chainedHeader.Previous.Header.Time)
-            {
-                this.Logger.LogTrace("(-)[TIME_TOO_EARLY]");
-                ConsensusErrors.BlockTimestampTooEarly.Throw();
             }
 
             return Task.CompletedTask;

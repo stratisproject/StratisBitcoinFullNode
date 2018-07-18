@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class BlockHeaderPosContextualRuleTest : PosConsensusRuleUnitTestBase
     {      
-        private BlockHeaderPosContextualRule rule;
+        private PosTimeMaskRule rule;
         private const int MaxFutureDriftBeforeHardFork = 128 * 60 * 60;
         private const int MaxFutureDriftAfterHardFork = 15;
 
@@ -199,9 +199,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             (this.ruleContext as PosRuleContext).BlockStake = new BlockStake();
         }
 
-        private BlockHeaderPosContextualRule CreateRule()
+        private PosTimeMaskRule CreateRule()
         {
-            return new BlockHeaderPosContextualRule()
+            return new PosTimeMaskRule()
             {
                 Logger = this.logger.Object,
                 Parent = new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.lookaheadBlockPuller.Object, this.stakeChain.Object, this.stakeValidator.Object)
