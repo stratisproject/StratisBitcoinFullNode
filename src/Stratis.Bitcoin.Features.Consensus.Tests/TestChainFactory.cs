@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             // Simple block creation, nothing special yet:
             var blocks = new List<Block>();
-            for (int i = 0; i < count; ++i)
+            for (int i = 0; i < count; i++)
             {
                 BlockTemplate newBlock = await MineBlockAsync(testChainContext, receiver, mempool, mempoolLock, mutateLastBlock && i == count - 1);
 

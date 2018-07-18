@@ -6,12 +6,16 @@ namespace Stratis.Bitcoin.Tests.Common
 {
     public static class ChainedHeadersHelper
     {
+        /// <summary>
+        /// Nonce that will be used in header creation.
+        /// Every header should have a different nonce to avoid possibility of creating headers with same hash.
+        /// </summary>
         private static int currentNonce = 0;
 
         /// <summary>
-        /// Creates specified amount of consecutive headers.
+        /// Creates specified number of consecutive headers.
         /// </summary>
-        /// <param name="count">Amount of blocks to generate.</param>
+        /// <param name="count">Number of blocks to generate.</param>
         /// <param name="prevBlock">If not <c>null</c> the headers will be generated on top of it.</param>
         /// <returns></returns>
         public static List<ChainedHeader> CreateConsecutiveHeaders(int count, ChainedHeader prevBlock = null)
@@ -22,7 +26,7 @@ namespace Stratis.Bitcoin.Tests.Common
             ChainedHeader tip = prevBlock ?? CreateGenesisChainedHeader();
             uint256 hashPrevBlock = tip.HashBlock;
 
-            for (int i = 0; i < count; ++i)
+            for (int i = 0; i < count; i++)
             {
                 BlockHeader header = network.Consensus.ConsensusFactory.CreateBlockHeader();
                 header.Nonce = (uint)Interlocked.Increment(ref currentNonce);
