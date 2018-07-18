@@ -1,11 +1,6 @@
-﻿using System.Text;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Validation;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
-using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {

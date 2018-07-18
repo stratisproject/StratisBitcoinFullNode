@@ -1,10 +1,6 @@
-﻿using System;
-using System.Text;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -12,17 +8,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         private readonly ILogger logger;
         private readonly IContractStateRepository stateSnapshot;
-        private readonly Network network;
-        private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILoggerFactory loggerFactory;
         private readonly ISmartContractResultRefundProcessor refundProcessor;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
         private readonly ISmartContractVirtualMachine vm;
         private readonly ICallDataSerializer serializer;
 
-        public CallSmartContract(IKeyEncodingStrategy keyEncodingStrategy,
-            ILoggerFactory loggerFactory,
-            Network network,
+        public CallSmartContract(ILoggerFactory loggerFactory,
             ICallDataSerializer serializer,
             IContractStateRepository stateSnapshot,
             ISmartContractResultRefundProcessor refundProcessor,
@@ -32,8 +24,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.loggerFactory = loggerFactory;
             this.stateSnapshot = stateSnapshot;
-            this.network = network;
-            this.keyEncodingStrategy = keyEncodingStrategy;
             this.refundProcessor = refundProcessor;
             this.transferProcessor = transferProcessor;
             this.vm = vm;
