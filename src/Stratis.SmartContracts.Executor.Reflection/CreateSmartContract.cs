@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Linq;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
@@ -62,6 +63,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // Decompile the contract execution code and validate it.
             SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(callData.ContractExecutionCode);
+            decompilation.ContractType = decompilation.ModuleDefinition.Types.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.Name == typeof(DeployContractAttribute).Name));
             SmartContractValidationResult validation = this.validator.Validate(decompilation);
 
             // If validation failed, refund the sender any remaining gas.
@@ -95,7 +97,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
-            var result = this.vm.Create(callData.ContractExecutionCode, executionContext, gasMeter, persistentState, this.stateSnapshot);
+            var result = this.vm.Create(callData.ContractExecutionCode, decompilation.ContractType.Name, executionContext, gasMeter, persistentState, this.stateSnapshot);
 
             var revert = result.ExecutionException != null;
 
@@ -135,7 +137,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 this.logger.LogTrace("(-):{0}={1}", nameof(newContractAddress), newContractAddress);
 
                 this.stateSnapshot.SetCode(newContractAddress, callData.ContractExecutionCode);
-
+                this.stateSnapshot.SetContractType(newContractAddress, decompilation.ContractType.Name);
                 this.stateSnapshot.Commit();
             }
 

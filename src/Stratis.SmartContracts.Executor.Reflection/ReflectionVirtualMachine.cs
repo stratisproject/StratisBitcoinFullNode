@@ -31,7 +31,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a new instance of a smart contract by invoking the contract's constructor
         /// </summary>
-        public VmExecutionResult Create(byte[] contractCode,
+        public VmExecutionResult Create(
+            byte[] contractCode,
+            string typeName,
             ISmartContractExecutionContext context,
             IGasMeter gasMeter,
             IPersistentState persistentState, 
@@ -80,7 +82,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Invokes a method on an existing smart contract
         /// </summary>
-        public VmExecutionResult ExecuteMethod(byte[] contractCode,
+        public VmExecutionResult ExecuteMethod(
+            byte[] contractCode,
+            string typeName,
             string contractMethodName,
             ISmartContractExecutionContext context,
             IGasMeter gasMeter,
@@ -99,7 +103,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToContractMethod(contractCode, contractMethodName);
-            Type contractType = Load(gasInjectedCode);
+            Type contractType = Load(gasInjectedCode, typeName);
             if (contractType == null)
             {
                 this.logger.LogTrace("(-)[CALLCONTRACT_CONTRACTTYPE_NULL]");
@@ -189,10 +193,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// The contract should always be the only exported type.
         /// </para>
         /// </summary>
-        private static Type Load(byte[] byteCode)
+        private static Type Load(byte[] byteCode, string contractType)
         {
             Assembly contractAssembly = Assembly.Load(byteCode);
-            return contractAssembly.ExportedTypes.FirstOrDefault();
+            return contractAssembly.ExportedTypes.FirstOrDefault(x=> x.Name == contractType);
         }
     }
 }

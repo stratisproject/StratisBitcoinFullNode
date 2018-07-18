@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
@@ -57,12 +56,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return SmartContractExecutionResult.ContractDoesNotExist(callData.MethodName);
             }
 
+            string contractType = this.stateSnapshot.GetContractType(callData.ContractAddress);
+
             // Execute the call to the contract.
-            return this.CreateContextAndExecute(callData.ContractAddress, contractExecutionCode, callData.MethodName, transactionContext, callData);
+            return this.CreateContextAndExecute(callData.ContractAddress, contractType, contractExecutionCode, callData.MethodName, transactionContext, callData);
         }
 
-        private ISmartContractExecutionResult CreateContextAndExecute(uint160 contractAddress, byte[] contractCode,
-            string methodName, ISmartContractTransactionContext transactionContext,
+        private ISmartContractExecutionResult CreateContextAndExecute(
+            uint160 contractAddress,
+            string contractType,
+            byte[] contractCode,
+            string methodName, 
+            ISmartContractTransactionContext transactionContext,
             CallData callData)
         {
             this.logger.LogTrace("()");
@@ -97,6 +102,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var result = this.vm.ExecuteMethod(
                 contractCode,
+                contractType,
                 methodName,
                 executionContext,
                 gasMeter,
