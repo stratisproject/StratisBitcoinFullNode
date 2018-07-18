@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
+using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -142,8 +143,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
                 {
                     MinConfirmations = maturity,
-                    FeeType = FeeType.High,
-                    DustPrevention = false
+                    FeeType = FeeType.High
                 };
 
                 Transaction transferContractTransaction = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
@@ -178,8 +178,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
                 {
                     MinConfirmations = maturity,
-                    FeeType = FeeType.High,
-                    DustPrevention = false
+                    FeeType = FeeType.High
                 };
 
                 // Broadcast the token transaction to the network
@@ -210,8 +209,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList(), Password)
                 {
                     MinConfirmations = maturity,
-                    FeeType = FeeType.High,
-                    DustPrevention = false
+                    FeeType = FeeType.High
                 };
 
                 // Broadcast the token transaction to the network
@@ -453,7 +451,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
 
                 SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
-                WalletController senderWalletController = scSender.FullNode.NodeService<WalletController>();
+                SmartContractWalletController senderWalletController = scSender.FullNode.NodeService<SmartContractWalletController>();
                 SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/Auction.cs");
                 Assert.True(compilationResult.Success);
 

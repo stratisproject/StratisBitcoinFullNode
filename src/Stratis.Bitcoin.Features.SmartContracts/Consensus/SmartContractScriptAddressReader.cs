@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
         {
             if (script.IsSmartContractCreate() || script.IsSmartContractCall())
             {
-                var carrier = SmartContractCarrier.Deserialize(script);
+                CallData carrier = SmartContractCarrier.Deserialize(script);
                 return carrier.ContractAddress?.ToAddress(network);
             }
 

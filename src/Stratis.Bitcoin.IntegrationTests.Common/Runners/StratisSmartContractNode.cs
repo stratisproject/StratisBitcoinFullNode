@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
-using Stratis.Bitcoin.Features.Wallet;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
@@ -26,9 +25,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 .UseNodeSettings(settings)
                 .UseBlockStore()
                 .UseSmartContractConsensus()
+                .UseSmartContractWallet()
                 .UseMempool()
                 .AddMining()
-                .UseWallet()
                 .AddRPC()
                 .MockIBD()
                 .AddSmartContracts()
