@@ -410,14 +410,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+
+        /// <inheritdoc cref="AddNewAccount(string, string, byte[], Network, DateTimeOffset)"/>
         /// <summary>
-        /// Adds an account to the current account root using extended public key.
+        /// Adds an account to the current account root using extended public key and account index.
         /// </summary>
         /// <param name="accountExtPubKey">The extended public key for the account.</param>
         /// <param name="accountIndex">The zero-based account index.</param>
-        /// <param name="network">The network for which this account will be created.</param>
-        /// <param name="accountCreationTime">Creation time of the account to be created.</param>
-        /// <returns>A new HD account.</returns>
         public HdAccount AddNewAccount(ExtPubKey accountExtPubKey, int accountIndex, Network network, DateTimeOffset accountCreationTime)
         {
             lock (this.accountLockObject)
