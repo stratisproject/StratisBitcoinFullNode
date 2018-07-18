@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.CookieAuth = useCookieAuth;
             this.ConfigParameters.Import(builder.ConfigParameters);
             var randomFoundPorts = new int[3];
-            TestHelper.FindPorts(randomFoundPorts);
+            IpHelper.FindPorts(randomFoundPorts);
             this.ConfigParameters.SetDefaultValueIfUndefined("port", randomFoundPorts[0].ToString());
             this.ConfigParameters.SetDefaultValueIfUndefined("rpcport", randomFoundPorts[1].ToString());
             this.ConfigParameters.SetDefaultValueIfUndefined("apiport", randomFoundPorts[2].ToString());
@@ -437,10 +437,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public bool AddToStratisMempool(Transaction trx)
         {
-            FullNode fullNode = ((StratisBitcoinPowRunner)this.runner).FullNode;
             var state = new MempoolValidationState(true);
-
-            return fullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
+            return this.FullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
         }
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)
