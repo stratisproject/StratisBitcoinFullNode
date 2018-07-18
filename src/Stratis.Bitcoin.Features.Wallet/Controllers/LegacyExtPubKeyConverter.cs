@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="extPubKey">The extended public key that may or may not need converting.</param>
         /// <param name="network">The network to get the version bytes for.</param>
         /// <returns>The same extended public key if version bytes is already the Stratis full node one,
-        /// or The corrected extended public key if the version bytes was the Stratis X one.</returns>
+        /// or the corrected extended public key if the version bytes was the Stratis X one.</returns>
         public static string ConvertIfInLegacyStratisFormat(string extPubKey, Network network)
         {
             byte[] stratisVersionBytes = network.GetVersionBytes(Base58Type.EXT_PUBLIC_KEY, true);

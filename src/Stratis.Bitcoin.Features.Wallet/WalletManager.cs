@@ -359,8 +359,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(name, nameof(name));
             Guard.NotNull(extPubKey, nameof(extPubKey));
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(name), name, nameof(extPubKey), extPubKey, nameof(accountIndex), accountIndex);
-
-
+            
             // Create a wallet file.
             Wallet wallet = this.GenerateWalletFileXpub(name, creationTime);
 
@@ -402,6 +401,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (wallet.IsExtPubKeyWallet)
             {
+                this.logger.LogTrace("(-)[CANNOT_ADD_ACCOUNT_TO_EXTPUBKEY_WALLET]");
                 throw new CannotAddAccountToXpubKeyWalletException("Use recover-via-extpubkey instead.");
             }
 
@@ -425,6 +425,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 if (account != null)
                 {
+                    this.logger.LogTrace("(-)");
                     return account;
                 }
 

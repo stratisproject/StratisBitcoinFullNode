@@ -272,6 +272,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             if (!this.ModelState.IsValid)
             {
+                this.logger.LogTrace("(-)");
                 return BuildErrorResponse(this.ModelState);
             }
 
@@ -287,6 +288,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 this.walletSyncManager.SyncFromDate(request.CreationDate);
 
+                this.logger.LogTrace("(-)");
                 return this.Ok();
             }
             catch (WalletException e)
@@ -374,7 +376,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             Guard.NotNull(request, nameof(request));
 
-            // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
                 return BuildErrorResponse(this.ModelState);
