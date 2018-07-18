@@ -29,95 +29,75 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <summary>
-        /// Execute the logic in the current rule in an async approach.
-        /// If the validation of the rule fails a <see cref="ConsensusErrorException"/> will be thrown.
-        /// </summary>
-        /// <param name="context">The context that has all info that needs to be validated.</param>
-        /// <returns>The execution task.</returns>
-        public virtual Task RunAsync(RuleContext context)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
         /// Execute the logic in the current rule.
-        /// If the validation of the rule fails a <see cref="ConsensusErrorException"/> will be thrown.
+        /// If the validation of the rule fails a <see cref="ConsensusErrorException"/> will throw.
         /// </summary>
         /// <param name="context">The context that has all info that needs to be validated.</param>
         /// <returns>The execution task.</returns>
-        public virtual void Run(RuleContext context)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract Task RunAsync(RuleContext context);
     }
 
     /// <summary>
-    /// Provide a mapping between a rule and its <see cref="RuleAttribute"/> that can be used by the rule engine.
+    /// Provide additional information about a consensus rule that can be used by the rule engine.
     /// </summary>
     public class ConsensusRuleDescriptor
     {
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public ConsensusRuleDescriptor(ConsensusRule rule, RuleAttribute attribute)
+        public ConsensusRuleDescriptor(ConsensusRule rule)
         {
             Guard.NotNull(rule, nameof(rule));
 
             this.Rule = rule;
-            this.RuleAttribute = attribute;
+            this.RuleAttributes = Attribute.GetCustomAttributes(rule.GetType()).OfType<RuleAttribute>().ToList();
+
+            ValidationRuleAttribute validationRuleAttribute = this.RuleAttributes.OfType<ValidationRuleAttribute>().FirstOrDefault();
+
+            this.CanSkipValidation = validationRuleAttribute?.CanSkipValidation ?? !this.RuleAttributes.Any();
         }
+
+        /// <summary>Rules that are strictly validation can be skipped unless the <see cref="ValidationRuleAttribute.CanSkipValidation"/> is <c>false</c>.</summary>
+        public bool CanSkipValidation { get; } 
 
         /// <summary>The rule represented by this descriptor.</summary>
         public ConsensusRule Rule { get; }
 
         /// <summary>The collection of <see cref="RuleAttribute"/> that are attached to this rule.</summary>
-        public RuleAttribute RuleAttribute { get; }
+        public List<RuleAttribute> RuleAttributes { get; }
     }
 
     /// <summary>
     /// An attribute that can be attached to a <see cref="ConsensusRule"/>.
     /// </summary>
-    /// When <see cref="CanSkipValidation"/> is <c>true</c> rule is allowed to skip validation when the <see cref="RuleContext.SkipValidation"/> is set to <c>true</c>.
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
     public abstract class RuleAttribute : Attribute
+    {
+    }
+
+    /// <summary>
+    /// Whether the rule will be considered a rule that only does validation and does not manipulate state in any way.
+    /// When <c>true</c> rule is allowed to skip validation when the <see cref="ValidationContext.SkipValidation"/> is set to <c>true</c>.
+    /// </summary>
+    /// <remarks>
+    /// State in this context is the manipulation of information in the consensus data store based on actions specified in <see cref="Block"/> and <see cref="Transaction"/>.
+    /// This will allow to ability to run validation checks on blocks (during mining for example) without change the underline store.
+    /// </remarks>
+    public class ValidationRuleAttribute : RuleAttribute
     {
         /// <summary>A flag that specifies the rule can be skipped when the <see cref="RuleContext.SkipValidation"/> is set.</summary>
         public bool CanSkipValidation { get; set; }
     }
 
     /// <summary>
-    /// A rule that is used when a partial validation is performed.
+    /// Whether the rule is manipulating the consensus state, making changes to the store.
     /// </summary>
-    public class PartialValidationRuleAttribute : RuleAttribute
+    public class ExecutionRuleAttribute : RuleAttribute
     {
     }
 
     /// <summary>
-    /// A rule that is used when a full validation is performed.
-    /// </summary>
-    /// <remarks>
-    /// Full validation in this context is the manipulation of information in the consensus data store based on actions specified in <see cref="Block"/> and <see cref="Transaction"/>.
-    /// </remarks>
-    public class FullValidationRuleAttribute : RuleAttribute
-    {
-    }
-
-    /// <summary>
-    /// A rule that is used when a header validation is performed.
-    /// </summary>
-    public class HeaderValidationRuleAttribute : RuleAttribute
-    {
-    }
-
-    /// <summary>
-    /// A rule that is used when integrity validation is performed on a received block.
-    /// </summary>
-    public class IntegrityValidationRuleAttribute : RuleAttribute
-    {
-    }
-
-    /// <summary>
-    /// A rule that is used when a transaction is received not as part of a block.
+    /// Whether the rule is manipulating the consensus state, making changes to the store.
     /// </summary>
     public class MempoolRuleAttribute : RuleAttribute
     {
