@@ -303,5 +303,99 @@ namespace Stratis.Bitcoin.Tests.Base
             for (int i = 1001; i < 1500; i++)
                 Assert.Equal(this.headers[i].Header, headersSent[i - 1001]);
         }
+
+        /// <summary>
+        /// Present 0 headers, make sure <inheritdoc cref="IConsensusManager.HeadersPresented"/>
+        /// and <see cref="GetHeadersPayload"/> wasn't sent.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_EmptyHeadersMessageReceivedAsync()
+        {
+
+        }
+
+        /// <summary>Present non-consecutive headers. Make sure peer was banned.</summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_NonConsecutiveHeadersPresentedAsync()
+        {
+
+        }
+
+        /// <summary>
+        /// Initialize cached headers with CacheSyncHeadersThreshold + 1 items. Present headers.
+        /// Make sure <inheritdoc cref="IConsensusManager.HeadersPresented"/> and <see cref="GetHeadersPayload"/> wasn't sent.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_DontSyncAfterCacheIsFullAsync()
+        {
+
+        }
+
+        /// <summary>
+        /// Initialize cached headers with 1 item. Present 10 headers. Make sure cached headers
+        /// now have 11 items and <see cref="GetHeadersPayload"/> wasn't sent.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_DontSyncAfterCacheIsPopulatedAsync()
+        {
+
+        }
+
+        /// <summary>
+        /// Consensus tip is at 10. We are not in IBD. Present headers from 12 to 20. Make sure <see cref="GetHeadersPayload"/> was sent.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_SyncWhenCacheIsEmptyAsync()
+        {
+
+        }
+
+        /// <summary>
+        /// Consensus tip is at 10a. We are not in IBD. Single checkpoint is at 12a. Present headers 11a, 12b, 13b, 14b.
+        /// Make sure <see cref="GetHeadersPayload"/> wasn't sent and peer was banned.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_PeerThatViolatesCheckpointIsBannedAsync()
+        {
+
+        }
+
+        /// <summary>
+        /// Consensus tip is at 10. We are not in IBD. Present headers 11-15, where header 12 is invalid.
+        /// Make sure <see cref="GetHeadersPayload"/> wasn't sent and peer was banned.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_PeerThatSentInvalidHeaderIsBannedAsync()
+        {
+
+        }
+
+        /// <summary>
+        /// Consensus tip is at 10. We are not in IBD. Present headers 11-15. Make sure <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/>
+        /// is header 15 and <see cref="GetHeadersPayload"/> was sent.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_ConsumeAllHeadersAndAskForMoreAsync()
+        {
+
+        }
+
+        /// <summary>
+        /// Consensus tip is at 10. We are not in IBD. Setup <see cref="IConsensusManager"/> in a way that it will consume headers up to header 40.
+        /// Present headers 11-50.  Make sure that <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 40 and
+        /// <see cref="GetHeadersPayload"/> wasn't sent. Cached headers contain headers from 41 to 50.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_DontSyncAfterSomeHeadersConsumedAndSomeCachedAsync()
+        {
+
+        }
+
+        /// <summary>We receive headers message with 2500 headers. Make sure peer was banned.</summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_BanPeerThatViolatedMaxHeadersCountAsync()
+        {
+
+        }
     }
 }
