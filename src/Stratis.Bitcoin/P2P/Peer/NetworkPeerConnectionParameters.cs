@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -43,9 +44,17 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Services = NetworkPeerServices.Nothing;
             this.ConnectCancellation = default(CancellationToken);
 
-            // Use max supported by MAC OSX Yosemite/Mavericks/Sierra (https://fasterdata.es.net/host-tuning/osx/)
-            this.ReceiveBufferSize = 1048576;
-            this.SendBufferSize = 1048576;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                // Use max supported by MAC OSX Yosemite/Mavericks/Sierra (https://fasterdata.es.net/host-tuning/osx/)
+                this.ReceiveBufferSize = 1048576;
+                this.SendBufferSize = 1048576;
+            }
+            else
+            {               
+                this.ReceiveBufferSize = 1000 * 5000;
+                this.SendBufferSize = 1000 * 5000;
+            }
 
             this.UserAgent = VersionPayload.GetNBitcoinUserAgent();
             this.PreferredTransactionOptions = TransactionOptions.All;
