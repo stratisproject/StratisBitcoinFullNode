@@ -8,8 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
     /// This rule will validate the block size and weight.
-    /// </summary>
-    [PartialValidationRule(CanSkipValidation = true)]
+    /// </summary>        
     public class BlockSizeRule : ConsensusRule
     {
         /// <inheritdoc />

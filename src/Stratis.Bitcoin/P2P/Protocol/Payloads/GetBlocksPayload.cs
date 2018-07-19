@@ -4,7 +4,7 @@ using NBitcoin.Protocol;
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
     /// <summary>
-    /// Ask for the block hashes (inv) that happened since BlockLocator.
+    /// Ask for the block hashes (inv) that happened since BlockLocators.
     /// </summary>
     [Payload("getblocks")]
     public class GetBlocksPayload : Payload

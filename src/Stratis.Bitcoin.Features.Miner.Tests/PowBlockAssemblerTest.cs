@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var txFee = new Money(1000);
                 SetupTxMempool(chain, this.network.Consensus.Options as PowConsensusOptions, txFee, transaction);
                 ValidationContext validationContext = null;
-                var powRuleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, chain.Tip, this.dateTimeProvider.Object.GetTimeOffset());
+                var powRuleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, chain.Tip);
                 this.consensusRules
                     .Setup(s => s.CreateRuleContext(It.IsAny<ValidationContext>(), It.IsAny<ChainedHeader>())).Callback<ValidationContext, ChainedHeader>((r, s) => validationContext = r)
                     .Returns(powRuleContext);
@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.consensusLoop.Setup(c => c.Tip).Returns(chain.GetBlock(5));
 
                 ValidationContext validationContext = null;
-                var powRuleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, chain.Tip, this.dateTimeProvider.Object.GetTimeOffset());
+                var powRuleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, chain.Tip);
                 this.consensusRules
                     .Setup(s => s.CreateRuleContext(It.IsAny<ValidationContext>(), It.IsAny<ChainedHeader>())).Callback<ValidationContext, ChainedHeader>((r, s) => validationContext = r)
                     .Returns(powRuleContext);

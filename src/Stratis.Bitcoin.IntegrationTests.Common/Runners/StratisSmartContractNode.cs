@@ -2,6 +2,7 @@
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
@@ -24,14 +25,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
+                .UseSmartContractConsensus()
                 .UseMempool()
+                .AddMining()
                 .UseWallet()
                 .AddRPC()
-                    .AddSmartContracts()
-                    .UseSmartContractConsensus()
-                    .UseSmartContractMining()
-                    .UseReflectionExecutor()
                 .MockIBD()
+                .AddSmartContracts()
+                .UseReflectionExecutor()
                 .Build();
         }
 
