@@ -91,6 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             MineSpendableCoins();
         }
 
+
         private void a_wallet_with_funds_at_index_20_which_is_beyond_default_gap_limit()
         {
             ExtPubKey xPublicKey = this.GetExtendedPublicKey(ReceivingNodeName);

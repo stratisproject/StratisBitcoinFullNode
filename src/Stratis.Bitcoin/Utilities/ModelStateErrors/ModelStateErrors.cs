@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 
 namespace Stratis.Bitcoin.Utilities.ModelStateErrors
 {
-    public static  class ModelStateErrors
+    public static class ModelStateErrors
     {
         /// <summary>
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
