@@ -84,8 +84,13 @@ namespace Stratis.Bitcoin.P2P
             if (this.peers.Any() == false)
                 return;
 
+            ICollection<PeerAddress> snapshotOfPeersToSave = this.peers.Values;
             var fileStorage = new FileStorage<List<PeerAddress>>(this.PeerFilePath.AddressManagerFilePath);
-            fileStorage.SaveToFile(this.peers.OrderByDescending(p => p.Value.LastConnectionSuccess).Select(p => p.Value).ToList(), PeerFileName);
+            fileStorage.SaveToFile(
+                snapshotOfPeersToSave
+                    .OrderByDescending(p => p.LastConnectionSuccess)
+                    .ToList(), 
+                PeerFileName);
         }
 
         /// <inheritdoc/>

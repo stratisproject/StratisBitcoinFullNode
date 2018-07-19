@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <inheritdoc cref="ConsensusManager"/>
-        private readonly ConsensusManager consensusManager;
+        private readonly IConsensusManager consensusManager;
 
         /// <inheritdoc cref="ConcurrentChain"/>
         private readonly ConcurrentChain chain;
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Protects access to <see cref="cachedHeaders"/>.</summary>
         private readonly AsyncLock asyncLock;
 
-        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, ConsensusManager consensusManager, IPeerBanning peerBanning, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
+        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -441,6 +441,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("()");
 
             // Initialize auto sync timer.
+            int interval = (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds;
             this.autosyncTimer = new Timer(async (o) =>
             {
                 this.logger.LogTrace("()");
@@ -448,7 +449,7 @@ namespace Stratis.Bitcoin.Base
                 await this.ResyncAsync().ConfigureAwait(false);
 
                 this.logger.LogTrace("(-)");
-            }, null, 0, (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds);
+            }, null, interval, interval);
 
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
                 this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip.Height;
