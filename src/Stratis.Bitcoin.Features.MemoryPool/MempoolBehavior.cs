@@ -342,7 +342,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
                 await peer.SendMessageAsync(send).ConfigureAwait(false);
-            }     
+            }
 
             this.logger.LogTrace("(-)");
         }
