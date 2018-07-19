@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Tests.Base
 {
     public class ConsensusManagerBehaviorTests
     {
-        private readonly List<ChainedHeader> headers;
+        private List<ChainedHeader> headers;
 
         private readonly ConsensusManagerBehaviorTestsHelper helper;
 
@@ -162,17 +162,11 @@ namespace Stratis.Bitcoin.Tests.Base
         public async Task ProcessGetHeadersAsync_DontAnswerIfInIBDAsync()
         {
             this.helper.IsIBD = true;
-            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[10]);
+            this.helper.CreateAndAttachBehavior(this.headers[10]);
 
             await this.helper.ReceivePayloadAsync(this.helper.CreateGetHeadersPayload(this.headers[5]));
 
-
-
-
-            /*
-                ===ProcessGetHeadersAsync===
-                this.AttachedPeer.MessageReceived should be used for setting up those tests.
-            */
+            Assert.Empty(this.helper.HeadersPayloadsSent);
         }
 
         /// <summary>
@@ -182,6 +176,18 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ProcessGetHeadersAsync_AnswerToWHitelistedPeersInIBDAsync()
         {
+            this.helper.IsIBD = true;
+            this.helper.IsPeerWhitelisted = true;
+            this.helper.CreateAndAttachBehavior(this.headers[10]);
+
+            await this.helper.ReceivePayloadAsync(this.helper.CreateGetHeadersPayload(this.headers[5]));
+
+            Assert.Single(this.helper.HeadersPayloadsSent);
+
+            List<BlockHeader> headersSent = this.helper.HeadersPayloadsSent.First().Headers;
+            Assert.Equal(5, headersSent.Count);
+            for (int i = 6; i <= 10; i++)
+                Assert.Contains(this.headers[i].Header, headersSent);
         }
 
         /// <summary>
@@ -191,6 +197,16 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ProcessGetHeadersAsync_HeadersSentNormallyAsync()
         {
+            this.helper.CreateAndAttachBehavior(this.headers[10]);
+
+            await this.helper.ReceivePayloadAsync(this.helper.CreateGetHeadersPayload(this.headers[5]));
+
+            Assert.Single(this.helper.HeadersPayloadsSent);
+
+            List<BlockHeader> headersSent = this.helper.HeadersPayloadsSent.First().Headers;
+            Assert.Equal(5, headersSent.Count);
+            for (int i = 6; i <= 10; i++)
+                Assert.Contains(this.headers[i].Header, headersSent);
         }
 
         /// <summary>
@@ -200,6 +216,14 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ProcessGetHeadersAsync_BlockLocatorWithBogusHeadersIgnoredAsync()
         {
+            this.helper.CreateAndAttachBehavior(this.headers[10]);
+
+            List<ChainedHeader> bogusHeaders = ChainedHeadersHelper.CreateConsecutiveHeaders(5);
+            var payload = new GetHeadersPayload(new BlockLocator() { Blocks = bogusHeaders.Select(x => x.HashBlock).ToList()});
+
+            await this.helper.ReceivePayloadAsync(payload);
+
+            Assert.Empty(this.helper.HeadersPayloadsSent);
         }
 
         /// <summary>
@@ -209,6 +233,20 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ProcessGetHeadersAsync_SendsHeadersWithCountLimitedByProtocolAsync()
         {
+            this.headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5000, null, true);
+
+            this.helper.CreateAndAttachBehavior(this.headers[5000]);
+
+            await this.helper.ReceivePayloadAsync(this.helper.CreateGetHeadersPayload(this.headers[1000]));
+
+            Assert.Single(this.helper.HeadersPayloadsSent);
+
+            List<BlockHeader> headersSent = this.helper.HeadersPayloadsSent.First().Headers;
+            int maxHeaders = typeof(ConsensusManagerBehavior).GetPrivateConstantValue<int>("MaxItemsPerHeadersMessage");
+            Assert.Equal(maxHeaders, headersSent.Count);
+
+            for (int i = 1001; i < 1001 + maxHeaders; i++)
+                Assert.Contains(this.headers[i].Header, headersSent);
         }
 
         /// <summary>
@@ -218,6 +256,27 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ProcessGetHeadersAsync_SendsHeadersIfLocatorIsPartiallyOnAForkAsync()
         {
+            this.helper.CreateAndAttachBehavior(this.headers[100]);
+
+            List<ChainedHeader> chainBSuffix = ChainedHeadersHelper.CreateConsecutiveHeaders(50, this.headers[50]);
+            var payload = new GetHeadersPayload(new BlockLocator() { Blocks = new List<uint256>()
+            {
+                chainBSuffix.Single(x => x.Height == 90).HashBlock,
+                chainBSuffix.Single(x => x.Height == 60).HashBlock,
+                this.headers[50].HashBlock,
+                this.headers[30].HashBlock,
+                this.headers[10].HashBlock
+            }});
+
+            await this.helper.ReceivePayloadAsync(payload);
+
+            Assert.Single(this.helper.HeadersPayloadsSent);
+
+            List<BlockHeader> headersSent = this.helper.HeadersPayloadsSent.First().Headers;
+            Assert.Equal(50, headersSent.Count);
+
+            for (int i = 51; i < 100; i++)
+                Assert.Contains(this.headers[i].Header, headersSent);
         }
 
         /// <summary>
@@ -227,6 +286,19 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ProcessGetHeadersAsync_SendsHeadersUpTpHashStopAsync()
         {
+            this.headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5000, null, true);
+
+            this.helper.CreateAndAttachBehavior(this.headers[5000]);
+
+            await this.helper.ReceivePayloadAsync(this.helper.CreateGetHeadersPayload(this.headers[1000], this.headers[1500].HashBlock));
+
+            Assert.Single(this.helper.HeadersPayloadsSent);
+
+            List<BlockHeader> headersSent = this.helper.HeadersPayloadsSent.First().Headers;
+            Assert.Equal(500, headersSent.Count);
+
+            for (int i = 1001; i < 1500; i++)
+                Assert.Contains(this.headers[i].Header, headersSent);
         }
     }
 }

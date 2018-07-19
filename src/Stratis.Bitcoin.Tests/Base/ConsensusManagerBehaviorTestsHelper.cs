@@ -36,6 +36,9 @@ namespace Stratis.Bitcoin.Tests.Base
         /// <summary>Counter that shows how many times <see cref="GetHeadersPayload"/> was sent to the peer.</summary>
         public int GetHeadersPayloadSentTimes;
 
+        /// <summary>List of <see cref="HeadersPayload"/> that were sent to the peer.</summary>
+        public List<HeadersPayload> HeadersPayloadsSent;
+
         public ConsensusManagerBehaviorTestsHelper()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
@@ -94,11 +97,15 @@ namespace Stratis.Bitcoin.Tests.Base
                 cmBehavior.SetPrivateVariableValue("cachedHeaders", cache);
 
             this.GetHeadersPayloadSentTimes = 0;
+            this.HeadersPayloadsSent = new List<HeadersPayload>();
 
             this.PeerMock.Setup(x => x.SendMessageAsync(It.IsAny<Payload>(), It.IsAny<CancellationToken>())).Returns((Payload payload, CancellationToken token) =>
             {
                 if (payload is GetHeadersPayload)
                     this.GetHeadersPayloadSentTimes++;
+
+                if (payload is HeadersPayload headersPayload)
+                    this.HeadersPayloadsSent.Add(headersPayload);
 
                 return Task.CompletedTask;
             });
@@ -143,12 +150,12 @@ namespace Stratis.Bitcoin.Tests.Base
 
         /// <summary>Creates <see cref="GetHeadersPayload"/>.</summary>
         /// <param name="header">Header which is used to create a locator.</param>
-        public GetHeadersPayload CreateGetHeadersPayload(ChainedHeader header)
+        public GetHeadersPayload CreateGetHeadersPayload(ChainedHeader header, uint256 hashStop = null)
         {
             var headersPayload = new GetHeadersPayload()
             {
                 BlockLocator = header.GetLocator(),
-                HashStop = null
+                HashStop = hashStop
             };
 
             return headersPayload;
