@@ -259,6 +259,7 @@ namespace Stratis.Bitcoin.Tests.Base
             this.helper.CreateAndAttachBehavior(this.headers[100]);
 
             List<ChainedHeader> chainBSuffix = ChainedHeadersHelper.CreateConsecutiveHeaders(50, this.headers[50]);
+
             var payload = new GetHeadersPayload(new BlockLocator() { Blocks = new List<uint256>()
             {
                 chainBSuffix.Single(x => x.Height == 90).HashBlock,
@@ -281,7 +282,8 @@ namespace Stratis.Bitcoin.Tests.Base
 
         /// <summary>
         /// Consensus tip is at header 5000. We are not in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
-        /// <see cref="BlockLocator"/> generated from block 1000 with a HashStop equal to 1500. <see cref="HeadersPayload"/> was called with headers 1001 to 1500.
+        /// <see cref="BlockLocator"/> generated from block 1000 with a <see cref="GetHeadersPayload.HashStop"/> equal to 1500.
+        /// Make sure <see cref="HeadersPayload"/> was called with headers 1001 to 1500.
         /// </summary>
         [Fact]
         public async Task ProcessGetHeadersAsync_SendsHeadersUpTpHashStopAsync()
