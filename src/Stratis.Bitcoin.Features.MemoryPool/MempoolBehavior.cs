@@ -311,6 +311,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //uint32_t nFetchFlags = GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
 
             var inventoryTxs = invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX));
+
             lock (this.lockObject)
             {
                 foreach (var inv in inventoryTxs)
@@ -319,29 +320,29 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
             }
 
-            if (!this.isBlocksOnlyMode && peer.IsConnected)
+            var send = new GetDataPayload();
+            foreach (var inv in inventoryTxs)
             {
-                var send = new GetDataPayload();
-                foreach (var inv in inventoryTxs)
+                if (await this.orphans.AlreadyHaveAsync(inv.Hash).ConfigureAwait(false))
                 {
-                    if (await this.orphans.AlreadyHaveAsync(inv.Hash).ConfigureAwait(false))
-                    {
-                        this.logger.LogDebug("Transaction ID '{0}' already in orphans, skipped.", inv.Hash);
-                    }
-                    else
-                    {
-                        send.Inventory.Add(inv);
-                    }
+                    this.logger.LogDebug("Transaction ID '{0}' already in orphans, skipped.", inv.Hash);
+                    continue;
                 }
 
-                this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
-                await peer.SendMessageAsync(send).ConfigureAwait(false);
+                if (this.isBlocksOnlyMode)
+                {
+                    this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
+                    continue;
+                }
+   
+                send.Inventory.Add(inv);
             }
 
-            if (this.isBlocksOnlyMode && inventoryTxs.Any())
+            if (peer.IsConnected)
             {
-                this.logger.LogInformation("Transaction inventory sent in violation of protocol peer '{0}'.", peer.RemoteSocketEndpoint);
-            }
+                this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
+                await peer.SendMessageAsync(send).ConfigureAwait(false);
+            }     
 
             this.logger.LogTrace("(-)");
         }
