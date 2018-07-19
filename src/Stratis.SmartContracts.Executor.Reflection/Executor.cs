@@ -60,7 +60,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var internalTransaction = this.transferProcessor.Process(
                 this.stateSnapshot,
-                callData,
+                creation ? result.NewContractAddress : callData.ContractAddress,
                 transactionContext,
                 result.InternalTransfers,
                 revert);

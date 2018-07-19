@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var address = TestAddress.ToUint160(this.network);
 
-            var callData = new ContractTransactionData(1, 1, gasLimit, address, "TestMethod", "", new object[] {1});
+            var callData = new CallData(gasLimit, address, "TestMethod", new object[] {1});
 
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
 
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var address = TestAddress.ToUint160(this.network);
 
-            var callData = new ContractTransactionData(1, 1, gasLimit, address, "UseAllGas");
+            var callData = new CallData(gasLimit, address, "UseAllGas");
 
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
 
@@ -193,9 +193,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
-            var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1);
 
-            var callData = new ContractTransactionData(1, executionContext.GasPrice, gasLimit, originalAssemblyBytes);
+            var callData = new CreateData(gasLimit, originalAssemblyBytes);
             
             var transactionContext = new TransactionContext(
                 txHash: uint256.One,
@@ -232,9 +231,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network); 
             
-            var executionContext = new SmartContractExecutionContext(new Block(0, TestAddress), new Message(TestAddress, TestAddress, 0, (Gas)500000), TestAddress.ToUint160(this.network), 1, new[] { "Tset Owner" });
-
-            var callData = new ContractTransactionData(1, executionContext.GasPrice, gasLimit, originalAssemblyBytes, "", new[] { "Test Owner" });
+            var callData = new CreateData(gasLimit, originalAssemblyBytes, new[] { "Test Owner" });
 
             var transactionContext = new TransactionContext(
                 txHash: uint256.One,

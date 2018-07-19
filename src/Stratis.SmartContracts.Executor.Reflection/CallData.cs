@@ -4,7 +4,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public struct CallData : ICallData
     {
-        public CallData(Gas gasLimit, uint160 address,string method, object[] methodParameters = null)
+        public CallData(Gas gasLimit, uint160 address, string method, object[] methodParameters = null)
         {
             this.GasLimit = gasLimit;
             this.ContractAddress = address;
