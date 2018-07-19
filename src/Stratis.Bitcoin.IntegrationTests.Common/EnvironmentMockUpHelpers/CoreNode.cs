@@ -14,15 +14,12 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
-using Stratis.SmartContracts.Core.State;
-using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
@@ -59,7 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.CookieAuth = useCookieAuth;
             this.ConfigParameters.Import(builder.ConfigParameters);
             var randomFoundPorts = new int[3];
-            TestHelper.FindPorts(randomFoundPorts);
+            IpHelper.FindPorts(randomFoundPorts);
             this.ConfigParameters.SetDefaultValueIfUndefined("port", randomFoundPorts[0].ToString());
             this.ConfigParameters.SetDefaultValueIfUndefined("rpcport", randomFoundPorts[1].ToString());
             this.ConfigParameters.SetDefaultValueIfUndefined("apiport", randomFoundPorts[2].ToString());
@@ -82,7 +79,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public void NotInIBD()
         {
-            ((InitialBlockDownloadStateMock) this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+            ((InitialBlockDownloadStateMock)this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
         public RPCClient CreateRPCClient()
@@ -273,7 +270,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
                     if (includeUnbroadcasted)
                     {
-                        this.transactions = this.Reorder(this.transactions);
+                        this.transactions = CoreNodeExtensions.Reorder(this.transactions);
                         block.Transactions.AddRange(this.transactions);
                         this.transactions.Clear();
                     }
@@ -363,7 +360,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     BlockLocator awaited = currentTip.Previous == null ? currentTip.GetLocator() : currentTip.Previous.GetLocator();
                     peer.SendMessageAsync(new GetHeadersPayload()
                     {
-                        BlockLocators = awaited,
+                        BlockLocator = awaited,
                         HashStop = hashStop
                     }, cancellationToken).GetAwaiter().GetResult();
 
@@ -440,75 +437,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public bool AddToStratisMempool(Transaction trx)
         {
-            FullNode fullNode = ((StratisBitcoinPowRunner) this.runner).FullNode;
             var state = new MempoolValidationState(true);
-
-            return fullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
+            return this.FullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
         }
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)
         {
             return this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { ReserveFullNodeScript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
-        }
-
-        [Obsolete("Please use GenerateStratisWithMiner instead.")]
-        public Block[] GenerateStratis(int blockCount, List<Transaction> passedTransactions = null, bool broadcast = true)
-        {
-            ContractStateRepositoryRoot state = null;
-            FullNode fullNode = null;
-
-            if (this.runner is StratisBitcoinPowRunner powRunner)
-                fullNode = powRunner.FullNode;
-
-            if (this.runner is StratisSmartContractNode smartContractNode)
-            {
-                fullNode = smartContractNode.FullNode;
-                state = fullNode.NodeService<ContractStateRepositoryRoot>();
-            }
-
-            BitcoinSecret dest = this.MinerSecret;
-            var blocks = new List<Block>();
-            DateTimeOffset now = this.MockTime ?? DateTimeOffset.UtcNow;
-
-            for (int i = 0; i < blockCount; i++)
-            {
-                uint nonce = 0;
-                var block = this.runner.Network.Consensus.ConsensusFactory.CreateBlock();
-                block.Header.HashPrevBlock = fullNode.Chain.Tip.HashBlock;
-                block.Header.Bits = block.Header.GetWorkRequired(fullNode.Network, fullNode.Chain.Tip);
-                block.Header.UpdateTime(now, fullNode.Network, fullNode.Chain.Tip);
-
-                var coinbase = this.runner.Network.Consensus.ConsensusFactory.CreateTransaction();
-                coinbase.AddInput(TxIn.CreateCoinbase(fullNode.Chain.Height + 1));
-                coinbase.AddOutput(new TxOut(fullNode.Network.GetReward(fullNode.Chain.Height + 1), dest.GetAddress()));
-                block.AddTransaction(coinbase);
-
-                if (passedTransactions?.Any() ?? false)
-                {
-                    passedTransactions = this.Reorder(passedTransactions);
-                    block.Transactions.AddRange(passedTransactions);
-                }
-
-                block.UpdateMerkleRoot();
-
-                if (block.Header is SmartContractBlockHeader smartContractBlockHeader)
-                    smartContractBlockHeader.HashStateRoot = new uint256(state.Root);
-
-                while (!block.CheckProofOfWork())
-                    block.Header.Nonce = ++nonce;
-
-                blocks.Add(block);
-
-                if (broadcast)
-                {
-                    uint256 blockHash = block.GetHash();
-                    var newChain = new ChainedHeader(block.Header, blockHash, fullNode.Chain.Tip);
-                    ChainedHeader oldTip = fullNode.Chain.SetTip(newChain);
-                    fullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
-                }
-            }
-
-            return blocks.ToArray();
         }
 
         public async Task BroadcastBlocksAsync(Block[] blocks, INetworkPeer peer)
@@ -525,59 +460,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             this.SelectMempoolTransactions();
             return this.GenerateAsync(blockCount, includeMempool).GetAwaiter().GetResult();
-        }
-
-        private class TransactionNode
-        {
-            public uint256 Hash = null;
-            public Transaction Transaction = null;
-            public List<TransactionNode> DependsOn = new List<TransactionNode>();
-
-            public TransactionNode(Transaction tx)
-            {
-                this.Transaction = tx;
-                this.Hash = tx.GetHash();
-            }
-        }
-
-        private List<Transaction> Reorder(List<Transaction> transactions)
-        {
-            if (transactions.Count == 0)
-                return transactions;
-
-            var result = new List<Transaction>();
-            Dictionary<uint256, TransactionNode> dictionary = transactions.ToDictionary(t => t.GetHash(), t => new TransactionNode(t));
-            foreach (TransactionNode transaction in dictionary.Select(d => d.Value))
-            {
-                foreach (TxIn input in transaction.Transaction.Inputs)
-                {
-                    TransactionNode node = dictionary.TryGet(input.PrevOut.Hash);
-                    if (node != null)
-                    {
-                        transaction.DependsOn.Add(node);
-                    }
-                }
-            }
-
-            while (dictionary.Count != 0)
-            {
-                foreach (TransactionNode node in dictionary.Select(d => d.Value).ToList())
-                {
-                    foreach (TransactionNode parent in node.DependsOn.ToList())
-                    {
-                        if (!dictionary.ContainsKey(parent.Hash))
-                            node.DependsOn.Remove(parent);
-                    }
-
-                    if (node.DependsOn.Count != 0)
-                        continue;
-
-                    result.Add(node.Transaction);
-                    dictionary.Remove(node.Hash);
-                }
-            }
-
-            return result;
         }
 
         private BitcoinSecret GetFirstSecret(RPCClient rpc)

@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             SmartContractFormatRule rule = testContext.CreateRule<SmartContractFormatRule>();
 
-            var context = new PowRuleContext(new ValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
+            var context = new PowRuleContext(new ValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
             context.UnspentOutputSet = GetMockOutputSet();
             context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             SmartContractFormatRule rule = testContext.CreateRule<SmartContractFormatRule>();
 
-            var context = new PowRuleContext(new ValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip)
+            var context = new PowRuleContext(new ValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset())
             {
                 UnspentOutputSet = GetMockOutputSet()
             };
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             SmartContractFormatRule rule = testContext.CreateRule<SmartContractFormatRule>();
 
-            var context = new PowRuleContext(new ValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip);
+            var context = new PowRuleContext(new ValidationContext(), testContext.Network.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
 
             context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
