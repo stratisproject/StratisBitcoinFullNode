@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -44,8 +45,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);
             this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
-            this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
-            this.vm = new ReflectionVirtualMachine(this.internalTxExecutorFactory, loggerFactory);
+            this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
+            this.validator = new SmartContractValidator(new List<ISmartContractValidator>());
+            this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network);
             this.serializer = CallDataSerializer.Default;
         }
 
@@ -71,12 +73,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
             this.state.SetCode(new uint160(1), contractExecutionCode);
             this.state.SetContractType(new uint160(1), "ThrowExceptionContract");
+
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transactionCall);
             
-            var executor = new CallSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network, 
+            var executor = new Executor(this.loggerFactory, 
                 this.serializer,
                 this.state,
                 this.refundProcessor,
@@ -106,10 +106,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), transaction);
 
-            var executor = new CallSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network, 
+            var executor = new Executor(this.loggerFactory, 
                 this.serializer,
                 this.state,
                 this.refundProcessor,
@@ -133,13 +130,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
-            var executor = new CreateSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network, 
+            var executor = new Executor(this.loggerFactory, 
                 this.serializer,
                 this.state,
-                this.validator,
                 this.refundProcessor,
                 this.transferProcessor, 
                 this.vm);
@@ -169,13 +162,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
             
-            var executor = new CreateSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network, 
+            var executor = new Executor(this.loggerFactory, 
                 this.serializer,
                 this.state,
-                this.validator,
                 this.refundProcessor,
                 this.transferProcessor, 
                 this.vm);
@@ -203,13 +192,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
-            var executor = new CreateSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network, 
+            var executor = new Executor(this.loggerFactory, 
                 this.serializer,
                 this.state,
-                this.validator,
                 this.refundProcessor,
                 this.transferProcessor, 
                 this.vm);
@@ -242,13 +227,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //and get the module definition
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
 
-            var executor = new CreateSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network, 
+            var executor = new Executor(this.loggerFactory, 
                 this.serializer,
                 this.state,
-                this.validator,
                 this.refundProcessor,
                 this.transferProcessor, 
                 this.vm);
@@ -300,10 +281,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
 
-            var callExecutor = new CallSmartContract(
-                this.keyEncodingStrategy,
-                this.loggerFactory,
-                this.network, 
+            var callExecutor = new Executor(this.loggerFactory, 
                 this.serializer,
                 this.state,
                 this.refundProcessor,

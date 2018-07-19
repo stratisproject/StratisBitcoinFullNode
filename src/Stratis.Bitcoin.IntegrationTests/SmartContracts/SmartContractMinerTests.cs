@@ -206,8 +206,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 
                 this.serializer = CallDataSerializer.Default;
                 this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
-                this.vm = new ReflectionVirtualMachine(this.internalTxExecutorFactory, loggerFactory);
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network, this.serializer, this.refundProcessor, this.transferProcessor, this.validator, this.vm);
+
+                this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, loggerFactory, this.network);
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(loggerFactory, this.serializer, this.refundProcessor, this.transferProcessor, this.vm);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
 
@@ -711,7 +712,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
             SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, newContractAddress2, "Tester", gasPrice, gasLimit, testMethodParameters);
             pblocktemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
-            Assert.True(Convert.ToBoolean(context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("SaveWorked"))[0]));
+            byte[] stateSaveValue = context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("SaveWorked"));
+            Assert.NotNull(stateSaveValue);
+            Assert.Single(stateSaveValue);
+            Assert.True(Convert.ToBoolean(stateSaveValue[0]));
         }
 
         [Fact]
