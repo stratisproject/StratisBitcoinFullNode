@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         /// <inheritdoc />
         public Transaction Process(IContractStateRepository stateSnapshot,
-            CallData callData,
+            ContractTransactionData contractTransactionData,
             ISmartContractTransactionContext transactionContext,
             IList<TransferInfo> internalTransfers,
             bool reversionRequired)
@@ -43,10 +43,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // TODO we should not be generating addresses in here!
             uint160 contractAddress = null;
-            if (callData.ContractAddress == uint160.Zero)
+            if (contractTransactionData.ContractAddress == uint160.Zero)
                 contractAddress = Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(transactionContext.TransactionHash);
             else
-                contractAddress = callData.ContractAddress;
+                contractAddress = contractTransactionData.ContractAddress;
 
             // If contract had no balance, received funds, but made no transfers, assign the current UTXO.
             if (stateSnapshot.GetUnspent(contractAddress) == null && transactionContext.TxOutValue > 0 && !internalTransfers.Any())

@@ -79,9 +79,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var callData = callDataResult.Value;
 
             Assert.True(callDataResult.IsSuccess);
-            Assert.Equal(carrier.CallData.VmVersion, callData.VmVersion);
-            Assert.Equal(carrier.CallData.OpCodeType, callData.OpCodeType);            
-            Assert.Equal(carrier.CallData.ContractExecutionCode, callData.ContractExecutionCode);
+            Assert.Equal(carrier.ContractTransactionData.VmVersion, callData.VmVersion);
+            Assert.Equal(carrier.ContractTransactionData.OpCodeType, callData.OpCodeType);            
+            Assert.Equal(carrier.ContractTransactionData.ContractExecutionCode, callData.ContractExecutionCode);
             Assert.Equal(6, callData.MethodParameters.Length);
 
             Assert.NotNull(callData.MethodParameters[0]);
@@ -102,8 +102,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.NotNull(callData.MethodParameters[5]);
             Assert.Equal("#", callData.MethodParameters[5]);
 
-            Assert.Equal(carrier.CallData.GasPrice, callData.GasPrice);
-            Assert.Equal(carrier.CallData.GasLimit, callData.GasLimit);
+            Assert.Equal(carrier.ContractTransactionData.GasPrice, callData.GasPrice);
+            Assert.Equal(carrier.ContractTransactionData.GasLimit, callData.GasLimit);
         }
 
         [Fact]
@@ -117,12 +117,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var callData = callDataResult.Value;
 
             Assert.True(callDataResult.IsSuccess);
-            Assert.Equal(smartContractCarrier.CallData.VmVersion, callData.VmVersion);
-            Assert.Equal(smartContractCarrier.CallData.OpCodeType, callData.OpCodeType);
-            Assert.Equal(smartContractCarrier.CallData.ContractAddress, callData.ContractAddress);
-            Assert.Equal(smartContractCarrier.CallData.MethodName, callData.MethodName);
-            Assert.Equal(smartContractCarrier.CallData.GasPrice, callData.GasPrice);
-            Assert.Equal(smartContractCarrier.CallData.GasLimit, callData.GasLimit);
+            Assert.Equal(smartContractCarrier.ContractTransactionData.VmVersion, callData.VmVersion);
+            Assert.Equal(smartContractCarrier.ContractTransactionData.OpCodeType, callData.OpCodeType);
+            Assert.Equal(smartContractCarrier.ContractTransactionData.ContractAddress, callData.ContractAddress);
+            Assert.Equal(smartContractCarrier.ContractTransactionData.MethodName, callData.MethodName);
+            Assert.Equal(smartContractCarrier.ContractTransactionData.GasPrice, callData.GasPrice);
+            Assert.Equal(smartContractCarrier.ContractTransactionData.GasLimit, callData.GasLimit);
         }
 
         [Fact]

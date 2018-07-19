@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Returns the fee and refund transactions to account for gas refunds after contract execution.
         /// </summary>
-        (Money, List<TxOut>) Process(CallData callData,
+        (Money, List<TxOut>) Process(ContractTransactionData contractTransactionData,
             ulong mempoolFee, uint160 sender,
             Gas gasConsumed,
             Exception exception);

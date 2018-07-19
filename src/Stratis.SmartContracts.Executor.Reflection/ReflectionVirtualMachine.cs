@@ -258,8 +258,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return contractAssembly.ExportedTypes.FirstOrDefault();
         }
 
-        internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress,
-            ICallData callData)
+        internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress, IBaseContractTransactionData callData)
         {
             var builder = new StringBuilder();
 
