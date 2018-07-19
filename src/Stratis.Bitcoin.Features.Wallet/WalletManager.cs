@@ -332,6 +332,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
                 }
+
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
                 this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
@@ -373,6 +374,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 account = wallet.AddNewAccount(this.coinType, extPubKey, accountIndex, this.dateTimeProvider.GetTimeOffset());
             }
+
             IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
             IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
             this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
@@ -389,7 +391,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 this.UpdateWhenChainDownloaded(new[] { wallet }, creationTime);
             }
-
 
             // Save the changes to the file and add addresses to be tracked.
             this.SaveWallet(wallet);
@@ -455,16 +456,16 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             Wallet wallet = this.GetWalletByName(accountReference.WalletName);
 
-            string res = null;
+            string extPubKey;
             lock (this.lockObject)
             {
                 // Get the account.
                 HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
-                res = account.ExtendedPubKey;
+                extPubKey = account.ExtendedPubKey;
             }
 
-            this.logger.LogTrace("(-):'{0}'", res);
-            return res;
+            this.logger.LogTrace("(-):'{0}'", extPubKey);
+            return extPubKey;
         }
 
         /// <inheritdoc />
