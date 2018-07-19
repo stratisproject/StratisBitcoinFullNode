@@ -152,5 +152,72 @@ namespace Stratis.Bitcoin.Tests.Base
             Assert.Equal(0, this.helper.HeadersPresentedCalledTimes);
             Assert.Null(result);
         }
+
+        /// <summary>
+        /// Consensus tip is at header 10. We are in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// with <see cref="BlockLocator"/> generated from block 5. <see cref="HeadersPayload"/> wasn't sent.
+        /// </summary>
+        [Fact]
+        public async Task ProcessGetHeadersAsync_DontAnswerIfInIBDAsync()
+        {
+            /*
+                ===ProcessGetHeadersAsync===
+                this.AttachedPeer.MessageReceived should be used for setting up those tests.
+            */
+        }
+
+        /// <summary>
+        /// Consensus tip is at header 10. We are in IBD. Peer is whitelisted. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// with <see cref="BlockLocator"/> generated from block 5. <see cref="HeadersPayload"/> was sent with headers 6-10.
+        /// </summary>
+        [Fact]
+        public async Task ProcessGetHeadersAsync_AnswerToWHitelistedPeersInIBDAsync()
+        {
+        }
+
+        /// <summary>
+        /// Consensus tip is at header 10. We are not in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// with <see cref="BlockLocator"/> generated from block 5. <see cref="HeadersPayload"/> was sent with headers 6-10.
+        /// </summary>
+        [Fact]
+        public async Task ProcessGetHeadersAsync_HeadersSentNormallyAsync()
+        {
+        }
+
+        /// <summary>
+        /// Consensus tip is at header 10. We are not in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// with <see cref="BlockLocator"/> containing 5 bogus headers. <see cref="HeadersPayload"/> wasn't sent.
+        /// </summary>
+        [Fact]
+        public async Task ProcessGetHeadersAsync_BlockLocatorWithBogusHeadersIgnoredAsync()
+        {
+        }
+
+        /// <summary>
+        /// Consensus tip is at header 5000. We are not in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// <see cref="BlockLocator"/> generated from block 1000. <see cref="HeadersPayload"/> was sent with headers 1001 to 1001 + MaxItemsPerHeadersMessage.
+        /// </summary>
+        [Fact]
+        public async Task ProcessGetHeadersAsync_SendsHeadersWithCountLimitedByProtocolAsync()
+        {
+        }
+
+        /// <summary>
+        /// Consensus tip is at header 100a. We are not in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// <see cref="BlockLocator"/> that contains headers 90b, 60b, 50a, 30a, 10a. <see cref="HeadersPayload"/> was sent with headers 51a to 100a.
+        /// </summary>
+        [Fact]
+        public async Task ProcessGetHeadersAsync_SendsHeadersIfLocatorIsPartiallyOnAForkAsync()
+        {
+        }
+
+        /// <summary>
+        /// Consensus tip is at header 5000. We are not in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// <see cref="BlockLocator"/> generated from block 1000 with a HashStop equal to 1500. <see cref="HeadersPayload"/> was called with headers 1001 to 1500.
+        /// </summary>
+        [Fact]
+        public async Task ProcessGetHeadersAsync_SendsHeadersUpTpHashStopAsync()
+        {
+        }
     }
 }
