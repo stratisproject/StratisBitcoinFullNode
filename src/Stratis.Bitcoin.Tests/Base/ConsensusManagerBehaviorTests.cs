@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Tests.Base
             List<BlockHeader> headersSent = this.helper.HeadersPayloadsSent.First().Headers;
             Assert.Equal(5, headersSent.Count);
             for (int i = 6; i <= 10; i++)
-                Assert.Contains(this.headers[i].Header, headersSent);
+                Assert.Equal(this.headers[i].Header, headersSent[i - 6]);
         }
 
         /// <summary>
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Tests.Base
             List<BlockHeader> headersSent = this.helper.HeadersPayloadsSent.First().Headers;
             Assert.Equal(5, headersSent.Count);
             for (int i = 6; i <= 10; i++)
-                Assert.Contains(this.headers[i].Header, headersSent);
+                Assert.Equal(this.headers[i].Header, headersSent[i - 6]);
         }
 
         /// <summary>
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Tests.Base
             Assert.Equal(maxHeaders, headersSent.Count);
 
             for (int i = 1001; i < 1001 + maxHeaders; i++)
-                Assert.Contains(this.headers[i].Header, headersSent);
+                Assert.Equal(this.headers[i].Header, headersSent[i - 1001]);
         }
 
         /// <summary>
@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Tests.Base
             Assert.Equal(50, headersSent.Count);
 
             for (int i = 51; i < 100; i++)
-                Assert.Contains(this.headers[i].Header, headersSent);
+                Assert.Equal(this.headers[i].Header, headersSent[i - 51]);
         }
 
         /// <summary>
@@ -301,7 +301,7 @@ namespace Stratis.Bitcoin.Tests.Base
             Assert.Equal(500, headersSent.Count);
 
             for (int i = 1001; i < 1500; i++)
-                Assert.Contains(this.headers[i].Header, headersSent);
+                Assert.Equal(this.headers[i].Header, headersSent[i - 1001]);
         }
     }
 }
