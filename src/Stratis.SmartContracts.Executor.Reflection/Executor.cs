@@ -91,6 +91,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
             else
             {
+                this.logger.LogTrace("(-)[CONTRACT_EXECUTION_SUCCEEDED]");
+
                 this.stateSnapshot.Commit();
             }
 
