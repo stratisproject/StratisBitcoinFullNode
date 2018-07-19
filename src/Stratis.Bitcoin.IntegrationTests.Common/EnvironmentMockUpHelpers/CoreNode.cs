@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public void NotInIBD()
         {
-            ((InitialBlockDownloadStateMock) this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+            ((InitialBlockDownloadStateMock)this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
         }
 
         public RPCClient CreateRPCClient()
@@ -440,10 +440,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public bool AddToStratisMempool(Transaction trx)
         {
-            FullNode fullNode = ((StratisBitcoinPowRunner) this.runner).FullNode;
             var state = new MempoolValidationState(true);
-
-            return fullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
+            return this.runner.FullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
         }
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)
