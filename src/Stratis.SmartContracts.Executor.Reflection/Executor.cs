@@ -4,6 +4,9 @@ using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
+    /// <summary>
+    /// Deserializes raw contract transaction data, dispatches a call to the VM and commits the result to the state repository
+    /// </summary>
     public class Executor : ISmartContractExecutor
     {
         private readonly ILogger logger;
