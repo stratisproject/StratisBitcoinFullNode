@@ -7,7 +7,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
@@ -33,14 +32,14 @@ namespace Stratis.StratisSmartContractsD
                 Bitcoin.IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
-                    .UseSmartContractConsensus()
                     .UseMempool()
                     .UseWallet()
-                    .AddMining()
                     .UseApi()
                     .AddRPC()
-                    .AddSmartContracts()
-                    .UseReflectionExecutor()
+                        .AddSmartContracts()
+                        .UseSmartContractConsensus()
+                        .UseSmartContractMining()
+                        .UseReflectionExecutor()
                     .Build();
 
                 await node.RunAsync();

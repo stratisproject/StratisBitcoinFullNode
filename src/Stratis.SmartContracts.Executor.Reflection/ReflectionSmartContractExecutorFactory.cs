@@ -38,13 +38,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IContractStateRepository stateRepository,
             ISmartContractTransactionContext transactionContext)
         {
-            if (transactionContext.IsCreate)
-            {
-                return new CreateSmartContract(this.loggerFactory, this.serializer,
-                    stateRepository, this.refundProcessor, this.transferProcessor, this.vm);
-            }
-
-            return new CallSmartContract(this.loggerFactory, this.serializer, 
+            return new Executor(this.loggerFactory, this.serializer, 
                     stateRepository, this.refundProcessor, this.transferProcessor, this.vm);
         }
     }
