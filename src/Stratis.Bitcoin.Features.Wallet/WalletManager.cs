@@ -327,7 +327,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Generate multiple accounts and addresses from the get-go.
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
-                HdAccount account = AddNewAccountLocked();
+                HdAccount account;
+                lock (this.lockObject)
+                {
+                    account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
+                }
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
                 this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
@@ -351,14 +355,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.logger.LogTrace("(-)");
             return wallet;
-
-            HdAccount AddNewAccountLocked()
-            {
-                lock (this.lockObject)
-                {
-                    return wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
-                }
-            }
         }
 
         /// <inheritdoc />
@@ -370,9 +366,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             
             // Create a wallet file.
             Wallet wallet = this.GenerateExtPubKeyOnlyWalletFile(name, creationTime);
-            
+
             // Generate account
-            HdAccount account = AddNewAccountLocked();
+            HdAccount account;
+            lock (this.lockObject)
+            {
+                account = wallet.AddNewAccount(this.coinType, extPubKey, accountIndex, this.dateTimeProvider.GetTimeOffset());
+            }
             IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
             IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
             this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
@@ -396,14 +396,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Load(wallet);
             this.logger.LogTrace("(-)");
             return wallet;
-
-            HdAccount AddNewAccountLocked()
-            {
-                lock (this.lockObject)
-                {
-                    return wallet.AddNewAccount(this.coinType, extPubKey, accountIndex, this.dateTimeProvider.GetTimeOffset());
-                }
-            }
         }
 
         /// <inheritdoc />
