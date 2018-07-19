@@ -9,6 +9,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Stratis.Bitcoin.Tests.Base
 {
@@ -305,30 +306,52 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Present 0 headers, make sure <inheritdoc cref="IConsensusManager.HeadersPresented"/>
-        /// and <see cref="GetHeadersPayload"/> wasn't sent.
+        /// Present 0 headers, make sure <inheritdoc cref="IConsensusManager.HeadersPresented"/> wasn't called and
+        /// <see cref="GetHeadersPayload"/> wasn't sent.
         /// </summary>
         [Fact]
         public async Task ProcessHeadersAsync_EmptyHeadersMessageReceivedAsync()
         {
+            this.helper.CreateAndAttachBehavior(this.headers[5]);
 
+            await this.helper.ReceivePayloadAsync(new HeadersPayload());
+
+            Assert.Equal(0, this.helper.HeadersPresentedCalledTimes);
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
         }
 
         /// <summary>Present non-consecutive headers. Make sure peer was banned.</summary>
         [Fact]
         public async Task ProcessHeadersAsync_NonConsecutiveHeadersPresentedAsync()
         {
+            this.helper.CreateAndAttachBehavior(this.headers[5]);
 
+            List<ChainedHeader> headersToPresent = ChainedHeadersHelper.CreateConsecutiveHeaders(5);
+            headersToPresent.AddRange(ChainedHeadersHelper.CreateConsecutiveHeaders(10));
+
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header).ToArray()));
+
+            Assert.True(this.helper.PeerWasBanned);
         }
 
         /// <summary>
-        /// Initialize cached headers with CacheSyncHeadersThreshold + 1 items. Present headers.
+        /// Initialize cached headers with CacheSyncHeadersThreshold + 1 items. Present some headers.
         /// Make sure <inheritdoc cref="IConsensusManager.HeadersPresented"/> and <see cref="GetHeadersPayload"/> wasn't sent.
         /// </summary>
         [Fact]
         public async Task ProcessHeadersAsync_DontSyncAfterCacheIsFullAsync()
         {
+            int cacheSyncHeadersThreshold = typeof(ConsensusManagerBehavior).GetPrivateConstantValue<int>("CacheSyncHeadersThreshold");
 
+            List<ChainedHeader> cachedHeaders = ChainedHeadersHelper.CreateConsecutiveHeaders(cacheSyncHeadersThreshold + 1);
+
+            this.helper.CreateAndAttachBehavior(this.headers[5], cachedHeaders.Select(x => x.Header).ToList());
+
+            List<ChainedHeader> headersToPresent = ChainedHeadersHelper.CreateConsecutiveHeaders(10, cachedHeaders.Last());
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header).ToArray()));
+
+            Assert.Equal(0, this.helper.HeadersPresentedCalledTimes);
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
         }
 
         /// <summary>
@@ -338,7 +361,15 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ProcessHeadersAsync_DontSyncAfterCacheIsPopulatedAsync()
         {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], new List<BlockHeader>() { this.headers[1].Header });
 
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(2).Take(10).Select(x => x.Header).ToArray()));
+
+            List<BlockHeader> cached = this.helper.GetCachedHeaders(behavior);
+            Assert.Equal(11, cached.Count);
+
+            for (int i = 0; i < 11; i++)
+                Assert.Equal(this.headers[i + 1].Header, cached[i]);
         }
 
         /// <summary>
@@ -347,28 +378,40 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ProcessHeadersAsync_SyncWhenCacheIsEmptyAsync()
         {
+            this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) => { throw new ConnectHeaderException(); });
 
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(13).Take(8).Select(x => x.Header).ToArray()));
+
+            Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
         }
 
         /// <summary>
-        /// Consensus tip is at 10a. We are not in IBD. Single checkpoint is at 12a. Present headers 11a, 12b, 13b, 14b.
+        /// Consensus tip is at 10a. We are not in IBD. Mock consensus manager to throw checkpoints exception. Present some headers.
         /// Make sure <see cref="GetHeadersPayload"/> wasn't sent and peer was banned.
         /// </summary>
         [Fact]
         public async Task ProcessHeadersAsync_PeerThatViolatesCheckpointIsBannedAsync()
         {
+            this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) => { throw new CheckpointMismatchException(); });
 
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Take(50).Select(x => x.Header).ToArray()));
+
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
+            Assert.True(this.helper.PeerWasBanned);
         }
 
-        /// <summary>
-        /// Consensus tip is at 10. We are not in IBD. Present headers 11-15, where header 12 is invalid.
-        /// Make sure <see cref="GetHeadersPayload"/> wasn't sent and peer was banned.
-        /// </summary>
-        [Fact]
-        public async Task ProcessHeadersAsync_PeerThatSentInvalidHeaderIsBannedAsync()
-        {
-
-        }
+        // TODO implement when exception is known
+        ///// <summary>
+        ///// Consensus tip is at 10. We are not in IBD. Present headers 11-15, where header 12 is invalid.
+        ///// Make sure <see cref="GetHeadersPayload"/> wasn't sent and peer was banned.
+        ///// </summary>
+        //[Fact]
+        //public async Task ProcessHeadersAsync_PeerThatSentInvalidHeaderIsBannedAsync()
+        //{
+        //
+        //}
 
         /// <summary>
         /// Consensus tip is at 10. We are not in IBD. Present headers 11-15. Make sure <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/>
