@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             HdAddress senderAddress = null;
             if (!string.IsNullOrWhiteSpace(request.Sender))
             {
-                Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
@@ -273,8 +273,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 ChangeAddress = senderAddress,
                 SelectedInputs = selectedInputs,
                 MinConfirmations = MinConfirmationsAllChecks,
-                UseAllInputs = false,
-                DustPrevention = false
             };
 
             try
@@ -312,7 +310,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             HdAddress senderAddress = null;
             if (!string.IsNullOrWhiteSpace(request.Sender))
             {
-                Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
@@ -327,8 +325,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 ChangeAddress = senderAddress,
                 SelectedInputs = selectedInputs,
                 MinConfirmations = MinConfirmationsAllChecks,
-                UseAllInputs = false,
-                DustPrevention = false
             };
 
             try

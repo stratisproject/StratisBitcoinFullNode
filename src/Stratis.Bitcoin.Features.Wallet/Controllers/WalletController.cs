@@ -34,16 +34,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         private readonly CoinType coinType;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        private readonly Network network;
+        public readonly Network Network;
 
-        private readonly IConnectionManager connectionManager;
+        public readonly IConnectionManager ConnectionManager;
 
         private readonly ConcurrentChain chain;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly IBroadcasterManager broadcasterManager;
+        public readonly IBroadcasterManager BroadcasterManager;
 
         /// <summary>Provider of date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -62,12 +62,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
             this.walletSyncManager = walletSyncManager;
-            this.connectionManager = connectionManager;
-            this.network = network;
+            this.ConnectionManager = connectionManager;
+            this.Network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.broadcasterManager = broadcasterManager;
+            this.BroadcasterManager = broadcasterManager;
             this.dateTimeProvider = dateTimeProvider;
         }
 
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Network = wallet.Network,
                     CreationTime = wallet.CreationTime,
                     LastBlockSyncedHeight = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight,
-                    ConnectedNodes = this.connectionManager.ConnectedPeers.Count(),
+                    ConnectedNodes = this.ConnectionManager.ConnectedPeers.Count(),
                     ChainTip = this.chain.Tip.Height,
                     IsChainSynced = this.chain.IsDownloaded(),
                     IsDecrypted = true
@@ -606,7 +606,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
+                Script destination = BitcoinAddress.Create(request.DestinationAddress, this.Network).ScriptPubKey;
                 var context = new TransactionBuildContext(
                     new WalletAccountReference(request.WalletName, request.AccountName),
                     new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList())
@@ -643,7 +643,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
+                Script destination = BitcoinAddress.Create(request.DestinationAddress, this.Network).ScriptPubKey;
                 var context = new TransactionBuildContext(
                     new WalletAccountReference(request.WalletName, request.AccountName),
                     new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
@@ -684,7 +684,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns></returns>
         [Route("send-transaction")]
         [HttpPost]
-        public IActionResult SendTransaction([FromBody] SendTransactionRequest request)
+        public virtual IActionResult SendTransaction([FromBody] SendTransactionRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -694,12 +694,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 return BuildErrorResponse(this.ModelState);
             }
 
-            if (!this.connectionManager.ConnectedPeers.Any())
+            if (!this.ConnectionManager.ConnectedPeers.Any())
                 throw new WalletException("Can't send transaction: sending transaction requires at least one connection!");
 
             try
             {
-                Transaction transaction = this.network.CreateTransaction(request.Hex);
+                Transaction transaction = this.Network.CreateTransaction(request.Hex);
 
                 var model = new WalletSendTransactionModel
                 {
@@ -710,19 +710,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 foreach (TxOut output in transaction.Outputs)
                 {
                     bool isUnspendable = output.ScriptPubKey.IsUnspendable;
-
-                    string address = GetAddressFromScriptPubKey(output);
                     model.Outputs.Add(new TransactionOutputModel
                     {
-                        Address = address,
+                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.Network).ToString(),
                         Amount = output.Value,
                         OpReturnData = isUnspendable ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData) : null
                     });
                 }
 
-                this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+                this.BroadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
-                TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
+                TransactionBroadcastEntry transactionBroadCastEntry = this.BroadcasterManager.GetTransaction(transaction.GetHash());
 
                 if (!string.IsNullOrEmpty(transactionBroadCastEntry?.ErrorMessage))
                 {
@@ -1030,29 +1028,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Retrieves a string that represents the receiving address for an output. For smart contract transactions,
-        /// returns the opcode that was sent i.e. OP_CALL or OP_CREATE
-        /// </summary>
-        private string GetAddressFromScriptPubKey(TxOut output)
-        {
-            if (output.ScriptPubKey.IsSmartContractExec())
-            {
-                return output.ScriptPubKey.ToOps().First().Code.ToString();
-            }
-
-            if (!output.ScriptPubKey.IsUnspendable)
-            {
-                return output.ScriptPubKey.GetDestinationAddress(this.network).ToString();
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
         /// </summary>
         /// <returns>A result containing the errors.</returns>
-        private static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
+        public static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
         {
             List<ModelError> errors = modelState.Values.SelectMany(e => e.Errors).ToList();
             return ErrorHelpers.BuildErrorResponse(
