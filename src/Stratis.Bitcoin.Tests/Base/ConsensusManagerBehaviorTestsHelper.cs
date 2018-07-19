@@ -167,6 +167,7 @@ namespace Stratis.Bitcoin.Tests.Base
             var message = new Message();
             message.Payload = payload;
 
+            // Length of 1 is a bogus value used just to successfully initialize the class.
             await this.MessageReceived.ExecuteCallbacksAsync(this.PeerMock.Object, new IncomingMessage() {Length = 1, Message = message}).ConfigureAwait(false);
         }
     }

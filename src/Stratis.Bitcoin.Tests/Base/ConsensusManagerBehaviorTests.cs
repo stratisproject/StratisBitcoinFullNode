@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Consensus tip is at header 10. We are in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// Consensus tip is at header 10. We are in IBD. Node receives a message with <see cref="GetHeadersPayload"/>
         /// with <see cref="BlockLocator"/> generated from block 5. <see cref="HeadersPayload"/> wasn't sent.
         /// </summary>
         [Fact]
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Consensus tip is at header 10. We are in IBD. Peer is whitelisted. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// Consensus tip is at header 10. We are in IBD. Node is whitelisted. Node receives a message with <see cref="GetHeadersPayload"/>
         /// with <see cref="BlockLocator"/> generated from block 5. <see cref="HeadersPayload"/> was sent with headers 6-10.
         /// </summary>
         [Fact]
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Consensus tip is at header 10. We are not in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// Consensus tip is at header 10. We are not in IBD. Node receives a message with <see cref="GetHeadersPayload"/>
         /// with <see cref="BlockLocator"/> generated from block 5. <see cref="HeadersPayload"/> was sent with headers 6-10.
         /// </summary>
         [Fact]
@@ -210,7 +210,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Consensus tip is at header 10. We are not in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// Consensus tip is at header 10. We are not in IBD. Node receives a message with <see cref="GetHeadersPayload"/>
         /// with <see cref="BlockLocator"/> containing 5 bogus headers. <see cref="HeadersPayload"/> wasn't sent.
         /// </summary>
         [Fact]
@@ -227,8 +227,9 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Consensus tip is at header 5000. We are not in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
-        /// <see cref="BlockLocator"/> generated from block 1000. <see cref="HeadersPayload"/> was sent with headers 1001 to 1001 + MaxItemsPerHeadersMessage.
+        /// Consensus tip is at header 5000. We are not in IBD. Node receives a message with <see cref="GetHeadersPayload"/>
+        /// <see cref="BlockLocator"/> generated from block 1000. <see cref="HeadersPayload"/> was sent with
+        /// headers 1001 to 1001 + maximum amount of headers according to protocol restrictions.
         /// </summary>
         [Fact]
         public async Task ProcessGetHeadersAsync_SendsHeadersWithCountLimitedByProtocolAsync()
@@ -250,7 +251,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Consensus tip is at header 100a. We are not in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// Consensus tip is at header 100a. We are not in IBD. Node receives a message with <see cref="GetHeadersPayload"/>
         /// <see cref="BlockLocator"/> that contains headers 90b, 60b, 50a, 30a, 10a. <see cref="HeadersPayload"/> was sent with headers 51a to 100a.
         /// </summary>
         [Fact]
@@ -258,7 +259,7 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             this.helper.CreateAndAttachBehavior(this.headers[100]);
 
-            List<ChainedHeader> chainBSuffix = ChainedHeadersHelper.CreateConsecutiveHeaders(50, this.headers[50]);
+            List<ChainedHeader> chainBSuffix = ChainedHeadersHelper.CreateConsecutiveHeaders(50, this.headers[55]);
 
             var payload = new GetHeadersPayload(new BlockLocator() { Blocks = new List<uint256>()
             {
@@ -281,7 +282,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Consensus tip is at header 5000. We are not in IBD. Peer receives a message with <see cref="GetHeadersPayload"/>
+        /// Consensus tip is at header 5000. We are not in IBD. Node receives a message with <see cref="GetHeadersPayload"/>
         /// <see cref="BlockLocator"/> generated from block 1000 with a <see cref="GetHeadersPayload.HashStop"/> equal to 1500.
         /// Make sure <see cref="HeadersPayload"/> was called with headers 1001 to 1500.
         /// </summary>
