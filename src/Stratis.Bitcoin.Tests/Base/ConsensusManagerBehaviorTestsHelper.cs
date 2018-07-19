@@ -23,6 +23,8 @@ namespace Stratis.Bitcoin.Tests.Base
     {
         public bool IsIBD = false;
 
+        public bool IsPeerWhitelisted = false;
+
         public AsyncExecutionEvent<INetworkPeer, NetworkPeerState> StateChanged;
         public AsyncExecutionEvent<INetworkPeer, IncomingMessage> MessageReceived;
 
@@ -126,12 +128,39 @@ namespace Stratis.Bitcoin.Tests.Base
             peer.Setup(x => x.StateChanged).Returns(() => this.StateChanged);
             peer.Setup(x => x.MessageReceived).Returns(() => this.MessageReceived);
 
+            var connectionManagerBehaviorMock = new Mock<IConnectionManagerBehavior>();
+            connectionManagerBehaviorMock.Setup(x => x.Whitelisted).Returns(this.IsPeerWhitelisted);
+
+            peer.Setup(x => x.Behavior<IConnectionManagerBehavior>()).Returns(() => connectionManagerBehaviorMock.Object);
+
             return peer;
         }
 
         public List<BlockHeader> GetCachedHeaders(ConsensusManagerBehavior behavior)
         {
             return behavior.GetMemberValue("cachedHeaders") as List<BlockHeader>;
+        }
+
+        /// <summary>Creates <see cref="GetHeadersPayload"/>.</summary>
+        /// <param name="header">Header which is used to create a locator.</param>
+        public GetHeadersPayload CreateGetHeadersPayload(ChainedHeader header)
+        {
+            var headersPayload = new GetHeadersPayload()
+            {
+                BlockLocator = header.GetLocator(),
+                HashStop = null
+            };
+
+            return headersPayload;
+        }
+
+        /// <summary>Simulates receiving a payload from peer.</summary>
+        public async Task ReceivePayloadAsync(Payload payload)
+        {
+            var message = new Message();
+            message.Payload = payload;
+
+            await this.MessageReceived.ExecuteCallbacksAsync(this.PeerMock.Object, new IncomingMessage() {Length = 1, Message = message}).ConfigureAwait(false);
         }
     }
 }

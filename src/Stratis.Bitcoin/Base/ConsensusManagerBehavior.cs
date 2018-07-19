@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Base
             // Ignoring "getheaders" from peers because node is in initial block download unless the peer is whitelisted.
             // We don't want to reveal our position in IBD which can be used by attacker. Also we don't won't to deliver peers any blocks
             // because that will slow down our own syncing process.
-            if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted)
+            if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<IConnectionManagerBehavior>().Whitelisted)
             {
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
                 return;

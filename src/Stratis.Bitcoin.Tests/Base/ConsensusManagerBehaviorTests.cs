@@ -5,6 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -160,6 +161,14 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ProcessGetHeadersAsync_DontAnswerIfInIBDAsync()
         {
+            this.helper.IsIBD = true;
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[10]);
+
+            await this.helper.ReceivePayloadAsync(this.helper.CreateGetHeadersPayload(this.headers[5]));
+
+
+
+
             /*
                 ===ProcessGetHeadersAsync===
                 this.AttachedPeer.MessageReceived should be used for setting up those tests.
