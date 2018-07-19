@@ -63,8 +63,6 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public override async Task OnConnectAsync()
         {
-            base.connectedEndpoints = this.ConnectorPeers.Select(x => x.PeerEndPoint).ToArray();
-
             foreach (IPEndPoint ipEndpoint in this.ConnectionSettings.Connect)
             {
                 if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)

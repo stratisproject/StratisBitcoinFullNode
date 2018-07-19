@@ -81,9 +81,6 @@ namespace Stratis.Bitcoin.P2P
 
         /// <summary>The network the node is running on.</summary>
         private Network network;
-        
-        /// <summary>Peers connected to this peer.</summary>
-        protected IPEndPoint[] connectedEndpoints;
 
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         protected IPeerAddressManager peerAddressManager;
@@ -237,7 +234,10 @@ namespace Stratis.Bitcoin.P2P
 
             // Connect if local, ip range filtering disabled or ip range filtering enabled and peer in a different group. 
             if (!peerAddress.Endpoint.Address.IsLocal() && this.ConnectionSettings.IpRangeFiltering && this.PeerIsPartOfExistingGroup(peerAddress))
+            {
+                this.logger.LogTrace("(-)[RANGE_FILTERED]");
                 return;
+            }
 
             INetworkPeer peer = null;
 
@@ -281,14 +281,18 @@ namespace Stratis.Bitcoin.P2P
 
         private bool PeerIsPartOfExistingGroup(PeerAddress peerAddress)
         {
-            // Same group if first 16 bits of the network part of IP are equal ie. 192.168.
+            if (this.ConnectorPeers == null)
+                return false;
+
             byte[] peerAddressGroup = peerAddress.Endpoint.MapToIpv6().Address.GetGroup();
 
             var endpoints = new List<byte[]>();
-            foreach (IPEndPoint endPoint in this.connectedEndpoints)
+
+            foreach (INetworkPeer endPoint in this.ConnectorPeers)
             {
-                endpoints.Add(endPoint.MapToIpv6().Address.GetGroup());
+                endpoints.Add(endPoint.PeerEndPoint.MapToIpv6().Address.GetGroup());
             }
+
             return endpoints.Any(x => x.SequenceEqual(peerAddressGroup));
         }
 
