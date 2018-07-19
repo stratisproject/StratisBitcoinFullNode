@@ -70,6 +70,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //and get the module definition
             //-------------------------------------------------------
             this.state.SetCode(new uint160(1), contractExecutionCode);
+            this.state.SetContractType(new uint160(1), "ThrowExceptionContract");
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transactionCall);
             
             var executor = new CallSmartContract(

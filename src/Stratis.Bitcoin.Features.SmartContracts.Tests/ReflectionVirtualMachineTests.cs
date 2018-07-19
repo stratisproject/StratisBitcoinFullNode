@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var result = vm.ExecuteMethod(
                 contractExecutionCode,
-                "StorageTest",
+                "StorageTestWithParameters",
                 "StoreData",
                 context,
                 gasMeter, 

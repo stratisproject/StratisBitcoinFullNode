@@ -63,7 +63,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // Decompile the contract execution code and validate it.
             SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(callData.ContractExecutionCode);
-            decompilation.ContractType = decompilation.ModuleDefinition.Types.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.Name == typeof(DeployContractAttribute).Name));
+            decompilation.ContractType = decompilation.ModuleDefinition.Types.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.Name == typeof(ToDeployAttribute).Name));
             SmartContractValidationResult validation = this.validator.Validate(decompilation);
 
             // If validation failed, refund the sender any remaining gas.

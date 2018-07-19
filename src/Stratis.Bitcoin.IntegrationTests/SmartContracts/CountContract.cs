@@ -1,5 +1,6 @@
 ﻿using Stratis.SmartContracts;
 
+[ToDeploy]
 public class CountContract : SmartContract
 {
     public CountContract(ISmartContractState state) : base(state) { }

@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var result = vm.ExecuteMethod(
                 originalAssemblyBytes,
-                ContractName,
+                "OutOfGasTest",
                 "UseAllGas",
                 executionContext,
                 gasMeter, persistentState, repository);
