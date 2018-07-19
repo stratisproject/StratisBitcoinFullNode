@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="walletName">The name of the wallet to remove transactions from.</param>
         /// <param name="transactionsIds">The IDs of transactions to remove.</param>
         /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
-        HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIds(string walletName, IEnumerable<uint256> transactionsIds);
+        HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIdsLocked(string walletName, IEnumerable<uint256> transactionsIds);
 
         /// <summary>
         /// Removes all the transactions from the wallet and persist it.

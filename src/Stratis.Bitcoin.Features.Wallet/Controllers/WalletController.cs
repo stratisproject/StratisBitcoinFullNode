@@ -1007,7 +1007,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 else
                 {
                     IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
-                    result = this.walletManager.RemoveTransactionsByIds(request.WalletName, ids);
+                    result = this.walletManager.RemoveTransactionsByIdsLocked(request.WalletName, ids);
                 }
 
                 // If the user chose to resync the wallet after removing transactions.

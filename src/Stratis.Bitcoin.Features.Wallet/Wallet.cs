@@ -320,9 +320,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         [JsonProperty(PropertyName = "accounts")]
         public ICollection<HdAccount> Accounts { get; set; }
 
-        /// <summary>Protects access to <see cref="Accounts"/>.</summary>
-        private static readonly object accountLockObject = new object();
-
         /// <summary>
         /// Gets the first account that contains no transaction.
         /// </summary>

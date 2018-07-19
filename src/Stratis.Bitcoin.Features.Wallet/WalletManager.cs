@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 HdAccount account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
-                this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
+                this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
             }
 
             // If the chain is downloaded, we set the height of the newly created wallet to it.
@@ -327,10 +327,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Generate multiple accounts and addresses from the get-go.
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
-                HdAccount account = this.AddNewAccountLock(password, wallet);
+                HdAccount account = AddNewAccountLocked();
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
-                this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
+                this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
             }
 
             // If the chain is downloaded, we set the height of the recovered wallet to that of the recovery date.
@@ -351,6 +351,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.logger.LogTrace("(-)");
             return wallet;
+
+            HdAccount AddNewAccountLocked()
+            {
+                lock (this.lockObject)
+                {
+                    return wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
+                }
+            }
         }
 
         /// <inheritdoc />
@@ -362,12 +370,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             
             // Create a wallet file.
             Wallet wallet = this.GenerateExtPubKeyOnlyWalletFile(name, creationTime);
-
+            
             // Generate account
-            HdAccount account = this.AddNewAccountLock(extPubKey, accountIndex, wallet);
+            HdAccount account = AddNewAccountLocked();
             IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
             IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
-            this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
+            this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
 
             // If the chain is downloaded, we set the height of the recovered wallet to that of the recovery date.
             // However, if the chain is still downloading when the user restores a wallet,
@@ -382,27 +390,19 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.UpdateWhenChainDownloaded(new[] { wallet }, creationTime);
             }
 
+
             // Save the changes to the file and add addresses to be tracked.
             this.SaveWallet(wallet);
             this.Load(wallet);
-
             this.logger.LogTrace("(-)");
             return wallet;
-        }
 
-        private HdAccount AddNewAccountLock(ExtPubKey extPubKey, int accountIndex, Wallet wallet)
-        {
-            lock (this.lockObject)
+            HdAccount AddNewAccountLocked()
             {
-                 return wallet.AddNewAccount(this.coinType, extPubKey, accountIndex, this.dateTimeProvider.GetTimeOffset());
-            }
-        }
-
-        private HdAccount AddNewAccountLock(string password, Wallet wallet)
-        {
-            lock (this.lockObject)
-            {
-                return wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
+                lock (this.lockObject)
+                {
+                    return wallet.AddNewAccount(this.coinType, extPubKey, accountIndex, this.dateTimeProvider.GetTimeOffset());
+                }
             }
         }
 
@@ -523,7 +523,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (diff < 0)
                 {
                     newAddresses = account.CreateAddresses(this.network, Math.Abs(diff), isChange: isChange).ToList();
-                    this.UpdateKeysLookupLock(newAddresses);
+                    this.UpdateKeysLookupLocked(newAddresses);
                     generated = true;
                 }
 
@@ -1010,7 +1010,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
 
                 addressTransactions.Add(newTransaction);
-                this.AddInputKeysLookupLock(newTransaction);
+                this.AddInputKeysLookupLocked(newTransaction);
             }
             else
             {
@@ -1148,7 +1148,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     IEnumerable<HdAddress> newAddresses = this.AddAddressesToMaintainBuffer(account, isChange);
 
-                    this.UpdateKeysLookupLock(newAddresses);
+                    this.UpdateKeysLookupLocked(newAddresses);
                 }
             }
 
@@ -1373,7 +1373,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Update the keys and transactions we're tracking in memory for faster lookups.
         /// </summary>
-        public void UpdateKeysLookupLock(IEnumerable<HdAddress> addresses)
+        public void UpdateKeysLookupLocked(IEnumerable<HdAddress> addresses)
         {
             if (addresses == null || !addresses.Any())
             {
@@ -1394,7 +1394,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Add to the list of unspent outputs kept in memory for faster lookups.
         /// </summary>
-        private void AddInputKeysLookupLock(TransactionData transactionData)
+        private void AddInputKeysLookupLocked(TransactionData transactionData)
         {
             Guard.NotNull(transactionData, nameof(transactionData));
 
@@ -1445,7 +1445,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIds(string walletName, IEnumerable<uint256> transactionsIds)
+        public HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIdsLocked(string walletName, IEnumerable<uint256> transactionsIds)
         {
             Guard.NotNull(transactionsIds, nameof(transactionsIds));
             Guard.NotEmpty(walletName, nameof(walletName));
