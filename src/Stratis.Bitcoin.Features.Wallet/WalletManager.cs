@@ -327,7 +327,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Generate multiple accounts and addresses from the get-go.
             for (int i = 0; i < WalletRecoveryAccountsCount; i++)
             {
-                HdAccount account = this.AddNewAccount(password, wallet);
+                HdAccount account = this.AddNewAccountLock(password, wallet);
                 IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
                 IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
                 this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
@@ -364,7 +364,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = this.GenerateExtPubKeyOnlyWalletFile(name, creationTime);
 
             // Generate account
-            HdAccount account = this.AddNewAccount(extPubKey, accountIndex, wallet);
+            HdAccount account = this.AddNewAccountLock(extPubKey, accountIndex, wallet);
             IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
             IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
             this.UpdateKeysLookupLock(newReceivingAddresses.Concat(newChangeAddresses));
@@ -390,7 +390,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             return wallet;
         }
 
-        private HdAccount AddNewAccount(ExtPubKey extPubKey, int accountIndex, Wallet wallet)
+        private HdAccount AddNewAccountLock(ExtPubKey extPubKey, int accountIndex, Wallet wallet)
         {
             lock (this.lockObject)
             {
@@ -398,7 +398,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
-        private HdAccount AddNewAccount(string password, Wallet wallet)
+        private HdAccount AddNewAccountLock(string password, Wallet wallet)
         {
             lock (this.lockObject)
             {
