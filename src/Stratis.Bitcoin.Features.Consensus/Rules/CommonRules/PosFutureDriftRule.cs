@@ -37,9 +37,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// </summary>
         /// <param name="time">UNIX timestamp.</param>
         /// <returns><c>true</c> if for this timestamp future drift should be reduced, <c>false</c> otherwise.</returns>
-        public static bool IsDriftReduced(long time)
+        private static bool IsDriftReduced(long time)
         {
-            // TODO: Break this rule to only be used by the statis chain 
             // this is a specific Stratis bug fix where the blockchain drifted 24 hour ahead as the protocol allowed that.
             // the protocol was fixed but historical blocks are still effected.
             return time > DriftingBugFixTimestamp;
