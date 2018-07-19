@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // send coins to the receiver
                 HdAddress sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                Transaction trx = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(
+                Transaction trx = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network,
                     new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
                 // broadcast to the other node
@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // ====================
                 // send coins to the receiver
                 HdAddress sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                Transaction transaction1 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
+                Transaction transaction1 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network, new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
                 // broadcast to the other node
                 stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction1.ToHex()));
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // send more coins to the wallet
                 sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                Transaction transaction2 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 10, FeeType.Medium, 101));
+                Transaction transaction2 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network, new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 10, FeeType.Medium, 101));
                 stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction2.ToHex()));
                 // wait for the trx to arrive
                 TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
@@ -451,10 +451,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,
+        public static TransactionBuildContext CreateContext(Network network, WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
         {
-            return new TransactionBuildContext(accountReference,
+            return new TransactionBuildContext(
+                network,
+                accountReference,
                 new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), password)
             {
                 MinConfirmations = minConfirmations,

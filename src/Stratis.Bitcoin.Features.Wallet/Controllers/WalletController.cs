@@ -608,6 +608,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 Script destination = BitcoinAddress.Create(request.DestinationAddress, this.Network).ScriptPubKey;
                 var context = new TransactionBuildContext(
+                    this.Network,
                     new WalletAccountReference(request.WalletName, request.AccountName),
                     new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList())
                 {
@@ -645,6 +646,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 Script destination = BitcoinAddress.Create(request.DestinationAddress, this.Network).ScriptPubKey;
                 var context = new TransactionBuildContext(
+                    this.Network,
                     new WalletAccountReference(request.WalletName, request.AccountName),
                     new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
                     request.Password, request.OpReturnData)

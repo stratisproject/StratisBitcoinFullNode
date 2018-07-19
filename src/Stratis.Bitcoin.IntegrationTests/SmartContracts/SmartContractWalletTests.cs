@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
@@ -52,7 +51,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                scSender.GenerateStratis(maturity + 5);
+                scSender.GenerateStratisWithMiner(maturity + 5);
                 // wait for block repo for block sync to work
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
@@ -67,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // send coins to the receiver
                 HdAddress sendto = scReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
-                var txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = Money.COIN * 100, ScriptPubKey = sendto.ScriptPubKey } }.ToList(), Password)
+                var txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = Money.COIN * 100, ScriptPubKey = sendto.ScriptPubKey } }.ToList(), Password)
                 {
                     MinConfirmations = maturity,
                     FeeType = FeeType.Medium
@@ -87,8 +86,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.Null(scReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).First().Transaction.BlockHeight);
 
                 // generate two new blocks do the trx is confirmed
-                scSender.GenerateStratis(1, new List<Transaction>(new[] { scSender.FullNode.Network.CreateTransaction(trx.ToBytes()) }));
-                scSender.GenerateStratis(1);
+                scSender.AddToStratisMempool(scSender.FullNode.Network.CreateTransaction(trx.ToBytes()));
+                scSender.GenerateStratisWithMiner(1);
 
                 // wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
@@ -138,7 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var contractCarrier = SmartContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
 
                 var contractCreateScript = new Script(contractCarrier.Serialize());
-                var txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
+                var txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
                 {
                     MinConfirmations = maturity,
                     FeeType = FeeType.High
@@ -173,7 +172,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.True(compilationResult.Success);
                 contractCarrier = SmartContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
                 contractCreateScript = new Script(contractCarrier.Serialize());
-                txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
+                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
                 {
                     MinConfirmations = maturity,
                     FeeType = FeeType.High
@@ -204,7 +203,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Create a call contract transaction which will transfer funds
                 contractCarrier = SmartContractCarrier.CallContract(1, tokenContractAddress, "Test", gasPrice, gasLimit);
                 Script contractCallScript = new Script(contractCarrier.Serialize());
-                txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList(), Password)
+                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList(), Password)
                 {
                     MinConfirmations = maturity,
                     FeeType = FeeType.High

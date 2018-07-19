@@ -64,8 +64,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public Transaction BuildTransaction(TransactionBuildContext context)
         {
-            context.TransactionBuilder = new TransactionBuilder(this.Network);
-
             this.InitializeTransactionBuilder(context);
 
             if (context.Shuffle)
@@ -157,11 +155,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Here we try to create a transaction that contains all the spendable coins, leaving no room for the fee.
                 // When the transaction builder throws an exception informing us that we have insufficient funds,
                 // we use the amount we're missing as the fee.
-                var context = new TransactionBuildContext(accountReference, recipients, null)
+                var context = new TransactionBuildContext(this.Network, accountReference, recipients, null)
                 {
                     FeeType = feeType,
-                    MinConfirmations = allowUnconfirmed ? 0 : 1,
-                    TransactionBuilder = new TransactionBuilder(this.Network)
+                    MinConfirmations = allowUnconfirmed ? 0 : 1
                 };
 
                 this.AddRecipients(context);
@@ -395,10 +392,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="recipients">The target recipients to send coins to.</param>
         /// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
         /// <param name="opReturnData">Optional transaction data <see cref="OpReturnData"/></param>
-        public TransactionBuildContext(WalletAccountReference accountReference, List<Recipient> recipients, string walletPassword = "", string opReturnData = null)
+        public TransactionBuildContext(Network network, WalletAccountReference accountReference, List<Recipient> recipients, string walletPassword = "", string opReturnData = null)
         {
             Guard.NotNull(recipients, nameof(recipients));
 
+            this.TransactionBuilder = new TransactionBuilder(network);
             this.AccountReference = accountReference;
             this.Recipients = recipients;
             this.WalletPassword = walletPassword;
@@ -441,7 +439,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// The builder used to build the current transaction.
         /// </summary>
-        public TransactionBuilder TransactionBuilder { get; set; }
+        public readonly TransactionBuilder TransactionBuilder;
 
         /// <summary>
         /// The change address, where any remaining funds will be sent to.
