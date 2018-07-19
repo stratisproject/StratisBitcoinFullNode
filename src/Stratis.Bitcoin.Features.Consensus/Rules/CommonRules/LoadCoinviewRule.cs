@@ -11,6 +11,23 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     [FullValidationRule]
+    public class SaveCoinviewRule : UtxoStoreConsensusRule
+    {
+        /// <inheritdoc />
+        public override async Task RunAsync(RuleContext context)
+        {
+            uint256 oldBlockHash = context.ConsensusTip.HashBlock;
+            uint256 nextBlockHash = context.ValidationContext.ChainedHeader.HashBlock;
+
+            // Persist the changes to the coinview. This will likely only be stored in memory,
+            // unless the coinview treashold is reached.
+            this.Logger.LogTrace("Saving coinview changes.");
+            var utxoRuleContext = context as UtxoRuleContext;
+            await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash).ConfigureAwait(false);
+        }
+    }
+
+    [FullValidationRule]
     public class LoadCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />
