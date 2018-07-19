@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             this.ruleContext.ConsensusTip = this.concurrentChain.Tip;
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<SetActivationDeploymentsRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.InvalidPrevTip, exception.ConsensusError);
         }
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             this.ruleContext.ConsensusTip = tip;
 
-            await this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext);
+            await this.consensusRules.RegisterRule<SetActivationDeploymentsRule>().RunAsync(this.ruleContext);
 
             ChainedHeader chainedHeader = this.ruleContext.ValidationContext.ChainedHeader;
             Assert.IsType<ChainedHeader>(chainedHeader);
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             this.ruleContext.ConsensusTip = tip;
 
-            await this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext);
+            await this.consensusRules.RegisterRule<SetActivationDeploymentsRule>().RunAsync(this.ruleContext);
 
             this.dateTimeProvider.Verify();
             Assert.Equal(tip.Height + 1, this.ruleContext.ValidationContext.ChainedHeader.Height);
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             this.ruleContext.ConsensusTip = this.concurrentChain.Tip;
 
-            await this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext);
+            await this.consensusRules.RegisterRule<SetActivationDeploymentsRule>().RunAsync(this.ruleContext);
 
             Assert.NotNull(this.ruleContext.Flags);
             Assert.True(this.ruleContext.Flags.EnforceBIP30);

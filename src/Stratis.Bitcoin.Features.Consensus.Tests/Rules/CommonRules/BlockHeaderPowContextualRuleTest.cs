@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task CheckHeaderBits_ValidationFailAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
-            var rule = testContext.CreateRule<HeaderPowRule>();
+            var rule = testContext.CreateRule<HeaderTimeChecksRule>();
 
             RuleContext context = new PowRuleContext(new ValidationContext (), Network.RegTest.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task ChecBlockPreviousTimestamp_ValidationFailAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
-            var rule = testContext.CreateRule<HeaderPowRule>();
+            var rule = testContext.CreateRule<HeaderTimeChecksRule>();
 
             RuleContext context = new PowRuleContext(new ValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task ChecBlockFutureTimestamp_ValidationFailAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
-            var rule = testContext.CreateRule<HeaderPowRule>();
+            var rule = testContext.CreateRule<HeaderTimeChecksRule>();
 
             RuleContext context = new PowRuleContext(new ValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);

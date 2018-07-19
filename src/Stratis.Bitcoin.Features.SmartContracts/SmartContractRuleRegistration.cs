@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             var rules = new List<ConsensusRule>
             {
-                new BlockHeaderRule(),
+                new SetActivationDeploymentsRule(),
 
                 // rules that are inside the method CheckBlockHeader
                 new CalculateWorkRule(),
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 // rules that are inside the method ContextualCheckBlockHeader
                 new CheckpointsRule(),
                 new AssumeValidRule(),
-                new HeaderPowRule(),
+                new HeaderTimeChecksRule(),
 
                 // rules that are inside the method ContextualCheckBlock
                 new TransactionLocktimeActivationRule(), // implements BIP113

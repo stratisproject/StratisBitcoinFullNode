@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task BlockReceived_IsNextBlock_ValidationSucessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
-            var blockHeaderRule = testContext.CreateRule<BlockHeaderRule>();
+            var blockHeaderRule = testContext.CreateRule<SetActivationDeploymentsRule>();
 
             var context = new PowRuleContext(new ValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = Network.RegTest.Consensus.ConsensusFactory.CreateBlock();
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task BlockReceived_NotNextBlock_ValidationFailAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
-            var blockHeaderRule = testContext.CreateRule<BlockHeaderRule>();
+            var blockHeaderRule = testContext.CreateRule<SetActivationDeploymentsRule>();
 
             var context = new PowRuleContext(new ValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = Network.RegTest.Consensus.ConsensusFactory.CreateBlock();

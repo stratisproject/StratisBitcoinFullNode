@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Check that the previous block hash is correct.
     /// </summary>  
     [PartialValidationRule]
-    public class BlockHeaderRule : ConsensusRule
+    public class SetActivationDeploymentsRule : ConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.InvalidPrevTip">The tip is invalid because a reorg has been detected.</exception>

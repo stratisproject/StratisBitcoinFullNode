@@ -34,9 +34,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 ConsensusErrors.ProofOfWorkTooHigh.Throw();
             }
 
+            PosFutureDriftRule futureDriftRule = this.Parent.GetRule<PosFutureDriftRule>();
+
             // Check coinbase timestamp.
             uint coinbaseTime = context.ValidationContext.Block.Transactions[0].Time;
-            if (chainedHeader.Header.Time > coinbaseTime + PosFutureDriftRule.GetFutureDrift(coinbaseTime))
+            if (chainedHeader.Header.Time > coinbaseTime + futureDriftRule.GetFutureDrift(coinbaseTime))
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();

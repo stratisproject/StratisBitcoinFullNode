@@ -21,11 +21,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             this.rules.Should().HaveCount(16);
 
-            this.rules.ElementAt(0).Should().BeOfType<BlockHeaderRule>();
+            this.rules.ElementAt(0).Should().BeOfType<SetActivationDeploymentsRule>();
             this.rules.ElementAt(1).Should().BeOfType<CalculateWorkRule>();
             this.rules.ElementAt(2).Should().BeOfType<CheckpointsRule>();
             this.rules.ElementAt(3).Should().BeOfType<AssumeValidRule>();
-            this.rules.ElementAt(4).Should().BeOfType<HeaderPowRule>();
+            this.rules.ElementAt(4).Should().BeOfType<HeaderTimeChecksRule>();
             this.rules.ElementAt(5).Should().BeOfType<TransactionLocktimeActivationRule>();
             this.rules.ElementAt(6).Should().BeOfType<CoinbaseHeightActivationRule>();
             this.rules.ElementAt(7).Should().BeOfType<WitnessCommitmentsRule>();

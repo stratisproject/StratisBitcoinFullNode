@@ -254,8 +254,15 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 return new List<ConsensusRule>
                 {
-                    new BlockHeaderRule(),
+                    // == Header ==
+                    new HeaderTimeChecksRule(),
                     new BitcoinActivationRule(),
+
+                    // == Integrity ==
+                    new BlockMerkleRootRule(),
+
+                    // == Partial ==
+                    new SetActivationDeploymentsRule(),
 
                     // rules that are inside the method CheckBlockHeader
                     new CalculateWorkRule(),
@@ -263,7 +270,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // rules that are inside the method ContextualCheckBlockHeader
                     new CheckpointsRule(),
                     new AssumeValidRule(),
-                    new HeaderPowRule(),
 
                     // rules that are inside the method ContextualCheckBlock
                     new TransactionLocktimeActivationRule(), // implements BIP113
@@ -272,10 +278,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new BlockSizeRule(),
 
                     // rules that are inside the method CheckBlock
-                    new BlockMerkleRootRule(),
                     new EnsureCoinbaseRule(),
                     new CheckPowTransactionRule(),
                     new CheckSigOpsRule(),
+
+                    // == Full ==
 
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
@@ -291,9 +298,20 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 return new List<ConsensusRule>
                 {
-                    new BlockHeaderRule(),
+                    // == Header ==
+                    new HeaderTimeChecksRule(),
+                    new HeaderTimeChecksPosRule(),
+                    new PosTimeMaskRule(),
+                    new StratisBigFixPosFutureDriftRule(),
 
                     new StratisVersionRule(),
+
+                    // == Integrity ==
+                    new BlockMerkleRootRule(),
+                    new PosBlockSignatureRule(),
+
+                    // == Partial ==
+                    new SetActivationDeploymentsRule(),
 
                     // rules that are inside the method CheckBlockHeader
                     new CalculateStakeRule(),
@@ -301,9 +319,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // rules that are inside the method ContextualCheckBlockHeader
                     new CheckpointsRule(),
                     new AssumeValidRule(),
-                    new HeaderPowRule(),
-                    new HeaderPosRule(),
-                    new PosTimeMaskRule(),
 
                     // rules that are inside the method ContextualCheckBlock
                     new TransactionLocktimeActivationRule(), // implements BIP113
@@ -314,14 +329,13 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new PosBlockContextRule(), // TODO: this rule needs to be implemented
 
                     // rules that are inside the method CheckBlock
-                    new BlockMerkleRootRule(),
                     new EnsureCoinbaseRule(),
                     new CheckPowTransactionRule(),
                     new CheckPosTransactionRule(),
                     new CheckSigOpsRule(),
-                    new PosFutureDriftRule(),
                     new PosCoinstakeRule(),
-                    new PosBlockSignatureRule(),
+
+                    // == Full ==
 
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
