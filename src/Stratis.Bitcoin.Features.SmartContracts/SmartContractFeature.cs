@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -23,9 +22,6 @@ using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
-using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Broadcasting;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.SmartContracts.Core;
@@ -168,7 +164,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .AddFeature<MiningFeature>()
                     .DependOn<MempoolFeature>()
                     .DependOn<RPCFeature>()
-                    .DependOn<WalletFeature>()
+                    .DependOn<SmartContractWalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
@@ -215,34 +211,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         // Controllers
                         services.AddSingleton<SmartContractsController>();
                     });
-            });
-
-            return fullNodeBuilder;
-        }
-
-        public static IFullNodeBuilder UseSmartContractWallet(this IFullNodeBuilder fullNodeBuilder)
-        {
-            LoggingConfiguration.RegisterFeatureNamespace<WalletFeature>("smart contract wallet");
-
-            fullNodeBuilder.ConfigureFeature(features =>
-            {
-                features
-                .AddFeature<WalletFeature>()
-                .DependOn<MempoolFeature>()
-                .DependOn<BlockStoreFeature>()
-                .DependOn<RPCFeature>()
-                .FeatureServices(services =>
-                {
-                    services.AddSingleton<IWalletSyncManager, WalletSyncManager>();
-                    services.AddSingleton<IWalletTransactionHandler, SmartContractWalletTransactionHandler>();
-                    services.AddSingleton<IWalletManager, WalletManager>();
-                    services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
-                    services.AddSingleton<SmartContractWalletController>();
-                    services.AddSingleton<WalletRPCController>();
-                    services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
-                    services.AddSingleton<BroadcasterBehavior>();
-                    services.AddSingleton<WalletSettings>();
-                });
             });
 
             return fullNodeBuilder;

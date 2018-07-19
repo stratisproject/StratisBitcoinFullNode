@@ -6,7 +6,6 @@ using System.Net;
 using System.Security;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
@@ -16,6 +15,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Bitcoin.Utilities.ModelStateErrors;
 
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {
@@ -34,16 +34,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         private readonly CoinType coinType;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        public readonly Network Network;
+        private readonly Network network;
 
-        public readonly IConnectionManager ConnectionManager;
+        private readonly IConnectionManager connectionManager;
 
         private readonly ConcurrentChain chain;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        public readonly IBroadcasterManager BroadcasterManager;
+        private readonly IBroadcasterManager broadcasterManager;
 
         /// <summary>Provider of date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -62,12 +62,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
             this.walletSyncManager = walletSyncManager;
-            this.ConnectionManager = connectionManager;
-            this.Network = network;
+            this.connectionManager = connectionManager;
+            this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.BroadcasterManager = broadcasterManager;
+            this.broadcasterManager = broadcasterManager;
             this.dateTimeProvider = dateTimeProvider;
         }
 
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -267,7 +267,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Network = wallet.Network,
                     CreationTime = wallet.CreationTime,
                     LastBlockSyncedHeight = wallet.AccountsRoot.Single(a => a.CoinType == this.coinType).LastBlockSyncedHeight,
-                    ConnectedNodes = this.ConnectionManager.ConnectedPeers.Count(),
+                    ConnectedNodes = this.connectionManager.ConnectedPeers.Count(),
                     ChainTip = this.chain.Tip.Height,
                     IsChainSynced = this.chain.IsDownloaded(),
                     IsDecrypted = true
@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -486,7 +486,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -531,7 +531,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // Checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -566,7 +566,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -601,14 +601,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
             {
-                Script destination = BitcoinAddress.Create(request.DestinationAddress, this.Network).ScriptPubKey;
+                Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
                 var context = new TransactionBuildContext(
-                    this.Network,
+                    this.network,
                     new WalletAccountReference(request.WalletName, request.AccountName),
                     new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList())
                 {
@@ -639,14 +639,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
             {
-                Script destination = BitcoinAddress.Create(request.DestinationAddress, this.Network).ScriptPubKey;
+                Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
                 var context = new TransactionBuildContext(
-                    this.Network,
+                    this.network,
                     new WalletAccountReference(request.WalletName, request.AccountName),
                     new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
                     request.Password, request.OpReturnData)
@@ -686,22 +686,22 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <returns></returns>
         [Route("send-transaction")]
         [HttpPost]
-        public virtual IActionResult SendTransaction([FromBody] SendTransactionRequest request)
+        public IActionResult SendTransaction([FromBody] SendTransactionRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
-            if (!this.ConnectionManager.ConnectedPeers.Any())
+            if (!this.connectionManager.ConnectedPeers.Any())
                 throw new WalletException("Can't send transaction: sending transaction requires at least one connection!");
 
             try
             {
-                Transaction transaction = this.Network.CreateTransaction(request.Hex);
+                Transaction transaction = this.network.CreateTransaction(request.Hex);
 
                 var model = new WalletSendTransactionModel
                 {
@@ -714,15 +714,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     bool isUnspendable = output.ScriptPubKey.IsUnspendable;
                     model.Outputs.Add(new TransactionOutputModel
                     {
-                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.Network).ToString(),
+                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
                         Amount = output.Value,
                         OpReturnData = isUnspendable ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData) : null
                     });
                 }
 
-                this.BroadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+                this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
-                TransactionBroadcastEntry transactionBroadCastEntry = this.BroadcasterManager.GetTransaction(transaction.GetHash());
+                TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
 
                 if (!string.IsNullOrEmpty(transactionBroadCastEntry?.ErrorMessage))
                 {
@@ -778,7 +778,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -806,7 +806,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -834,7 +834,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -862,7 +862,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -889,7 +889,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -928,7 +928,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -988,7 +988,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -1015,7 +1015,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             ChainedHeader block = this.chain.GetBlock(uint256.Parse(model.Hash));
@@ -1027,19 +1027,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             this.walletSyncManager.SyncFromHeight(block.Height);
             return this.Ok();
-        }
-
-        /// <summary>
-        /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
-        /// </summary>
-        /// <returns>A result containing the errors.</returns>
-        public static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
-        {
-            List<ModelError> errors = modelState.Values.SelectMany(e => e.Errors).ToList();
-            return ErrorHelpers.BuildErrorResponse(
-                HttpStatusCode.BadRequest,
-                string.Join(Environment.NewLine, errors.Select(m => m.ErrorMessage)),
-                string.Join(Environment.NewLine, errors.Select(m => m.Exception?.Message)));
         }
     }
 }
