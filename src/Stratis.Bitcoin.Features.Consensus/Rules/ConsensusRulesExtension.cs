@@ -13,9 +13,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <typeparam name="T">The type of rule to find.</typeparam>
         /// <param name="rules">The rules to look in.</param>
         /// <returns>The rule or <c>null</c> if not found in the list.</returns>
-        public static T TryFindRule<T>(this IEnumerable<ConsensusRuleDescriptor> rules) where T : ConsensusRule
+        public static T TryFindRule<T>(this IEnumerable<ConsensusRule> rules) where T : ConsensusRule
         {
-            return rules.Select(s => s.Rule).OfType<T>().FirstOrDefault();
+            return rules.Select(rule => rule).OfType<T>().FirstOrDefault();
         }
 
         /// <summary>
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <typeparam name="T">The type of rule to find.</typeparam>
         /// <param name="rules">The rules to look in.</param>
         /// <returns>The rule or <c>null</c> if not found in the list.</returns>
-        public static T FindRule<T>(this IEnumerable<ConsensusRuleDescriptor> rules) where T : ConsensusRule
+        public static T FindRule<T>(this IEnumerable<ConsensusRule> rules) where T : ConsensusRule
         {
             var rule = rules.TryFindRule<T>();
 
