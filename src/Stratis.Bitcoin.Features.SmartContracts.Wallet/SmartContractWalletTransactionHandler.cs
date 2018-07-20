@@ -39,16 +39,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             context.TransactionBuilder.DustPrevention = false;
             context.TransactionBuilder.StandardTransactionPolicy = this.TransactionPolicy;
 
+            this.AddRecipients(context);
+            this.AddOpReturnOutput(context);
+            this.AddCoins(context);
+            this.AddSecrets(context);
+
             if (context.ChangeAddress != null)
                 context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
-            else 
+            else
                 base.FindChangeAddress(context);
 
-            base.AddRecipients(context);
-            base.AddOpReturnOutput(context);
-            base.AddCoins(context);
-            base.AddSecrets(context);
-            base.AddFee(context);
+            this.AddFee(context);
         }
 
         /// <summary>
