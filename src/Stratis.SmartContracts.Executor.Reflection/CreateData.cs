@@ -1,6 +1,6 @@
 ﻿namespace Stratis.SmartContracts.Executor.Reflection
 {
-    public struct CreateData : ICreateData
+    public class CreateData : ICreateData
     {
         public CreateData(Gas gasLimit, byte[] code, object[] methodParameters = null)
         {

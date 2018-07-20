@@ -2,7 +2,7 @@
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
-    public struct CallData : ICallData
+    public class CallData : ICallData
     {
         public CallData(Gas gasLimit, uint160 address, string method, object[] methodParameters = null)
         {

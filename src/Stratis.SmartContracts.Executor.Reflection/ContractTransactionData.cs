@@ -3,7 +3,7 @@ using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
-    public struct ContractTransactionData : ICreateData, ICallData
+    public class ContractTransactionData : ICreateData, ICallData
     {
         public ContractTransactionData(int vmVersion, ulong gasPrice, Gas gasLimit, uint160 address,
             string method, string rawParameters = "", object[] methodParameters = null)
