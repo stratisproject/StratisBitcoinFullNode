@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -8,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Assume valid will allow to skip validation on blocks that are assumed to be valid.
     /// </summary>
-    [ValidationRule(CanSkipValidation = false)]
+    [PartialValidationRule]
     public class AssumeValidRule : ConsensusRule
     {
         /// <inheritdoc />
@@ -19,6 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
+        [Obsolete("Delete when CM is activated")]
         public override Task RunAsync(RuleContext context)
         {
             // Check whether to use assumevalid switch to skip validation.
