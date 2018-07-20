@@ -76,7 +76,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             network.Consensus.Options = new PowConsensusOptions();
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chain = new ConcurrentChain(network);
-            var cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
+            InMemoryCoinView inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
+
+            var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, loggerFactory);
             var networkPeerFactory = new NetworkPeerFactory(network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
 
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
@@ -87,7 +89,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
             var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
             var deployments = new NodeDeployments(network, chain);
-            ConsensusRules consensusRules = new PowConsensusRules(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(), new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            ConsensusRules consensusRules = new PowConsensusRules(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(), inMemoryCoinView, new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
             var consensusLoop = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), new NodeLifetime(), chain, cachedCoinView, blockPuller, deployments, loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, nodeSettings, peerBanning, consensusRules);
             await consensusLoop.StartAsync();
 

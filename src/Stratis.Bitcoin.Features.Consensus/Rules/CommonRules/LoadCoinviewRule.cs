@@ -33,6 +33,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
+            // Check that the current block has not been reorged.
+            // Catching a reorg at this point will not require a rewind.
+            if (context.ValidationContext.Block.Header.HashPrevBlock != context.ConsensusTip.HashBlock)
+            {
+                this.Logger.LogTrace("Reorganization detected.");
+                ConsensusErrors.InvalidPrevTip.Throw();
+            }
+
             var utxoRuleContext = context as UtxoRuleContext;
 
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.

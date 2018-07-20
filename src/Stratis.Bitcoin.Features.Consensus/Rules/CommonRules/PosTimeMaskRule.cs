@@ -15,6 +15,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
         public const uint StakeTimestampMask = 0x0000000F;
 
+        public PosFutureDriftRule FutureDriftRule { get; set; }
+
+        public override void Initialize()
+        {
+            base.Initialize();
+
+            this.FutureDriftRule = this.Parent.GetRule<PosFutureDriftRule>();
+        }
+
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block' timestamp too far in the future.</exception>
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
@@ -34,11 +43,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 ConsensusErrors.ProofOfWorkTooHigh.Throw();
             }
 
-            PosFutureDriftRule futureDriftRule = this.Parent.GetRule<PosFutureDriftRule>();
-
             // Check coinbase timestamp.
             uint coinbaseTime = context.ValidationContext.Block.Transactions[0].Time;
-            if (chainedHeader.Header.Time > coinbaseTime + futureDriftRule.GetFutureDrift(coinbaseTime))
+            if (chainedHeader.Header.Time > coinbaseTime + this.FutureDriftRule.GetFutureDrift(coinbaseTime))
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
