@@ -27,7 +27,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public sealed class SmartContractCarrier
     {
         /// <summary>The contract data provided with the transaction</summary>
-        public ContractTransactionData ContractTransactionData { get; set; }
+        public ContractTxData ContractTxData { get; set; }
 
         /// <summary>The method parameters that will be passed to the <see cref="MethodName"/> when the contract is executed.</summary>
         public object[] MethodParameters { get; private set; }
@@ -64,10 +64,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var serializer = new MethodParameterSerializer();
             string methodParams = GetMethodParams(serializer, methodParameters);
 
-            var callData = new ContractTransactionData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParams);
+            var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParams);
 
             var carrier = new SmartContractCarrier(new MethodParameterSerializer());
-            carrier.ContractTransactionData = callData;
+            carrier.ContractTxData = callData;
 
             if (!string.IsNullOrWhiteSpace(methodParams))
                 carrier.MethodParameters = serializer.ToObjects(methodParams);
@@ -85,7 +85,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var serializer = new MethodParameterSerializer();
             string methodParams = GetMethodParams(serializer, methodParameters);
             var carrier = new SmartContractCarrier(new MethodParameterSerializer());
-            carrier.ContractTransactionData = new ContractTransactionData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParams);
+            carrier.ContractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParams);
             
             if (!string.IsNullOrWhiteSpace(methodParams))
                 carrier.MethodParameters = serializer.ToObjects(methodParams);
@@ -109,24 +109,24 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             var bytes = new List<byte>
             {
-                this.ContractTransactionData.OpCodeType
+                this.ContractTxData.OpCodeType
             };
 
-            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.ContractTransactionData.VmVersion)));
-            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.ContractTransactionData.GasPrice)));
-            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.ContractTransactionData.GasLimit)));
+            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.ContractTxData.VmVersion)));
+            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.ContractTxData.GasPrice)));
+            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.ContractTxData.GasLimit)));
 
-            if (this.ContractTransactionData.OpCodeType == (byte) ScOpcodeType.OP_CALLCONTRACT)
+            if (this.ContractTxData.OpCodeType == (byte) ScOpcodeType.OP_CALLCONTRACT)
             {
-                bytes.AddRange(this.PrefixLength(this.ContractTransactionData.ContractAddress.ToBytes()));
-                bytes.AddRange(this.PrefixLength(Encoding.UTF8.GetBytes(this.ContractTransactionData.MethodName)));
+                bytes.AddRange(this.PrefixLength(this.ContractTxData.ContractAddress.ToBytes()));
+                bytes.AddRange(this.PrefixLength(Encoding.UTF8.GetBytes(this.ContractTxData.MethodName)));
             }
 
-            if (this.ContractTransactionData.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT)
-                bytes.AddRange(this.PrefixLength(this.ContractTransactionData.ContractExecutionCode));
+            if (this.ContractTxData.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT)
+                bytes.AddRange(this.PrefixLength(this.ContractTxData.ContractExecutionCode));
 
-            if (!string.IsNullOrWhiteSpace(this.ContractTransactionData.MethodParametersRaw) && this.MethodParameters.Length > 0)
-                bytes.AddRange(this.PrefixLength(this.serializer.ToBytes(this.ContractTransactionData.MethodParametersRaw)));
+            if (!string.IsNullOrWhiteSpace(this.ContractTxData.MethodParametersRaw) && this.MethodParameters.Length > 0)
+                bytes.AddRange(this.PrefixLength(this.serializer.ToBytes(this.ContractTxData.MethodParametersRaw)));
             else
                 bytes.AddRange(BitConverter.GetBytes(0));
 

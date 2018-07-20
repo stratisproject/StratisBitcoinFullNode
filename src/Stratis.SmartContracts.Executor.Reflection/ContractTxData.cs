@@ -3,9 +3,9 @@ using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
-    public class ContractTransactionData : ICreateData, ICallData
+    public class ContractTxData : ICreateData, ICallData
     {
-        public ContractTransactionData(int vmVersion, ulong gasPrice, Gas gasLimit, uint160 address,
+        public ContractTxData(int vmVersion, ulong gasPrice, Gas gasLimit, uint160 address,
             string method, string rawParameters = "", object[] methodParameters = null)
         {
             this.OpCodeType = (byte) ScOpcodeType.OP_CALLCONTRACT;
@@ -19,7 +19,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.ContractExecutionCode = new byte[0];
         }
 
-        public ContractTransactionData(int vmVersion, ulong gasPrice, Gas gasLimit, byte[] code, string rawParameters = "",
+        public ContractTxData(int vmVersion, ulong gasPrice, Gas gasLimit, byte[] code, string rawParameters = "",
             object[] methodParameters = null)
         {
             this.OpCodeType = (byte)ScOpcodeType.OP_CREATECONTRACT;

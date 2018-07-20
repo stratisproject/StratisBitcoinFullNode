@@ -7,6 +7,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </summary>
     public interface ICallDataSerializer
     {
-        Result<ContractTransactionData> Deserialize(byte[] callData);
+        Result<ContractTxData> Deserialize(byte[] callData);
     }
 }

@@ -99,9 +99,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return executionResult;
         }
 
-        private static bool IsCreateContract(ContractTransactionData contractTransactionData)
+        private static bool IsCreateContract(ContractTxData contractTxData)
         {
-            return contractTransactionData.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT;
+            return contractTxData.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT;
         }
     }
 }
