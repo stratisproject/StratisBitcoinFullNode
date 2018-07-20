@@ -69,6 +69,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="trxid">The transaction hash</param>
         Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
 
+        Task ReindexAsync();
+
         /// <summary>
         /// Set the next block hash and persist it in the database.
         /// </summary>
@@ -338,15 +340,29 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-
             Task task = Task.Run(() =>
             {
                 this.logger.LogTrace("()");
 
-                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+                using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
                 {
-                    // transaction.SelectForward<>
-                    
+                    if (this.TxIndex)
+                    {
+                        // Insert transactions to database.
+                        IEnumerable<Row<byte[], Block>> blockRows = dbreezeTransaction.SelectForward<byte[], Block>(BlockTableName);
+                        foreach (Row<byte[], Block> blockRow in blockRows)
+                        {
+                            foreach (Transaction transaction in blockRow.Value.Transactions)
+                            {
+                                dbreezeTransaction.Insert<byte[], uint256>(TransactionTableName, transaction.GetHash().ToBytes(), blockRow.Value.GetHash());
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Clear tx from database.
+                        dbreezeTransaction.RemoveAllKeys(TransactionTableName, true);
+                    }
                 }
 
                 this.logger.LogTrace("(-)");
@@ -357,10 +373,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return task;
         }
 
-        private void IndexBlocks()
-        {
-            
-        }
 
         /// <summary>
         /// Persist the next block hash and insert new blocks into the database

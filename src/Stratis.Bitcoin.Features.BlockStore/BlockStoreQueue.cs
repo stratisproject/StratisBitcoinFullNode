@@ -114,8 +114,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (this.storeSettings.ReIndex)
             {
-                this.logger.LogTrace("(-)[REINDEX_NOT_SUPPORTED]");
-                throw new NotSupportedException("Re-indexing the block store in currently not supported.");
+                await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
+                await this.blockRepository.ReindexAsync().ConfigureAwait(false);
             }
 
             ChainedHeader initializationTip = this.chain.GetBlock(this.blockRepository.BlockHash);
