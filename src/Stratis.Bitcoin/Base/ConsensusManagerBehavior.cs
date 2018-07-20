@@ -48,6 +48,9 @@ namespace Stratis.Bitcoin.Base
         /// </remarks>
         public ChainedHeader ExpectedPeerTip { get; private set; }
 
+        /// <summary>Gets the last header sent using <see cref="HeadersPayload"/>.</summary>
+        public ChainedHeader LastSentHeader { get; private set; }
+
         /// <summary>Timer that periodically tries to sync.</summary>
         private Timer autosyncTimer;
 
@@ -172,7 +175,7 @@ namespace Stratis.Bitcoin.Base
                 return;
             }
 
-            HeadersPayload headersPayload = this.ConstructHeadersPayload(getHeadersPayload.BlockLocator, getHeadersPayload.HashStop);
+            HeadersPayload headersPayload = this.ConstructHeadersPayload(getHeadersPayload.BlockLocator, getHeadersPayload.HashStop, out ChainedHeader lastHeader);
 
             if (headersPayload != null)
             {
@@ -180,6 +183,8 @@ namespace Stratis.Bitcoin.Base
 
                 try
                 {
+                    this.LastSentHeader = lastHeader;
+
                     await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
@@ -194,12 +199,15 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Constructs the headers from locator to consensus tip.</summary>
         /// <param name="locator">Block locator.</param>
         /// <param name="hashStop">Hash of the block after which constructing headers payload should stop.</param>
+        /// <param name="lastHeader"><see cref="ChainedHeader"/> of the last header that was added to the <see cref="HeadersPayload"/>.</param>
         /// <returns><see cref="HeadersPayload"/> with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
-        private HeadersPayload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop)
+        private HeadersPayload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop, out ChainedHeader lastHeader)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(locator), locator, nameof(hashStop), hashStop);
 
             ChainedHeader fork = this.chain.FindFork(locator);
+
+            lastHeader = null;
 
             if (fork == null)
             {
@@ -211,13 +219,14 @@ namespace Stratis.Bitcoin.Base
 
             foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
             {
+                lastHeader = header;
                 headers.Headers.Add(header.Header);
 
                 if ((header.HashBlock == hashStop) || (headers.Headers.Count == MaxItemsPerHeadersMessage))
                     break;
             }
 
-            this.logger.LogTrace("(-):'{0}'", headers);
+            this.logger.LogTrace("(-):'{0}',{1}='{2}'", headers, nameof(lastHeader), lastHeader);
             return headers;
         }
 
