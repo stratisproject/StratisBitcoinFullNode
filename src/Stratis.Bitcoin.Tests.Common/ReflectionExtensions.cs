@@ -30,6 +30,18 @@ namespace Stratis.Bitcoin.Tests.Common
             throw new Exception();
         }
 
+        /// <summary>Gets private constant member of specified type.</summary>
+        public static T GetPrivateConstantValue<T>(this Type type, string constantName)
+        {
+            T value = type
+                .GetFields(BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                .Where(fi => fi.IsLiteral && !fi.IsInitOnly && fi.FieldType == typeof(T) && fi.Name == constantName)
+                .Select(x => (T)x.GetRawConstantValue())
+                .First();
+
+            return value;
+        }
+
         /// <summary>
         /// Gets the member info.
         /// </summary>
@@ -41,7 +53,7 @@ namespace Stratis.Bitcoin.Tests.Common
             var propertyInfos = new List<PropertyInfo>();
 
             propertyInfos.Add(obj.GetType().GetProperty(memberName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
-            propertyInfos = Enumerable.ToList(Enumerable.Where(propertyInfos, i => !ReferenceEquals(i, null)));
+            propertyInfos = propertyInfos.Where(i => !ReferenceEquals(i, null)).ToList();
             if (propertyInfos.Count != 0)
                 return propertyInfos[0];
 
@@ -50,12 +62,20 @@ namespace Stratis.Bitcoin.Tests.Common
             fieldInfos.Add(obj.GetType().GetField(memberName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
 
             // To add more types of properties.
-            fieldInfos = Enumerable.ToList(Enumerable.Where(fieldInfos, i => !ReferenceEquals(i, null)));
+            fieldInfos = fieldInfos.Where(i => !ReferenceEquals(i, null)).ToList();
 
             if (fieldInfos.Count != 0)
                 return fieldInfos[0];
 
             return null;
+        }
+
+        /// <summary>Calls private method using reflection.</summary>
+        public static object InvokeMethod<T>(this T obj, string methodName, params object[] args)
+        {
+            Type type = typeof(T);
+            MethodInfo method = type.GetTypeInfo().GetDeclaredMethod(methodName);
+            return method.Invoke(obj, args);
         }
 
         /// <summary>
@@ -65,7 +85,6 @@ namespace Stratis.Bitcoin.Tests.Common
         /// <param name="obj">Object from where the Property Value is set</param>
         /// <param name="propertyName">Property name as string.</param>
         /// <param name="value">Value to set.</param>
-        /// <returns>PropertyValue</returns>
         public static void SetPrivatePropertyValue<T>(this object obj, string propertyName, T value)
         {
             Type type = obj.GetType();
@@ -74,6 +93,19 @@ namespace Stratis.Bitcoin.Tests.Common
                 throw new ArgumentOutOfRangeException("propertyName", string.Format("Property {0} was not found in Type {1}", propertyName, obj.GetType().FullName));
 
             type.InvokeMember(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty | BindingFlags.Instance, null, obj, new object[] { value });
+        }
+
+        /// <summary>
+        /// Sets a private variable value for a given object.
+        /// </summary>
+        /// <typeparam name="T">Type of the variable.</typeparam>
+        /// <param name="obj">Object from where the variable value is set</param>
+        /// <param name="variableName">Variable name as string.</param>
+        /// <param name="value">Value to set.</param>
+        public static void SetPrivateVariableValue<T>(this object obj, string variableName, T value)
+        {
+            FieldInfo variable = obj.GetType().GetField(variableName, BindingFlags.NonPublic| BindingFlags.Instance);
+            variable.SetValue(obj, value);
         }
 
         [System.Diagnostics.DebuggerHidden]

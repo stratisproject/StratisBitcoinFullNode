@@ -3,8 +3,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
-using NBitcoin.RPC;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Xunit;
@@ -28,10 +28,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Single(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Single(node2.FullNode.ConnectionManager.ConnectedPeers);
 
-                var behavior = node1.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<ConnectionManagerBehavior>();
+                var behavior = node1.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<IConnectionManagerBehavior>();
                 Assert.False(behavior.Inbound);
                 Assert.True(behavior.OneTry);
-                behavior = node2.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<ConnectionManagerBehavior>();
+                behavior = node2.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<IConnectionManagerBehavior>();
                 Assert.True(behavior.Inbound);
                 Assert.False(behavior.OneTry);
             }
@@ -303,7 +303,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             Assert.Equal(networkHeight, simulator.Nodes.Count);
 
             // Random node on network generates a block.
-            networkNode1.GenerateStratis(1);
+            networkNode1.GenerateStratisWithMiner(1);
 
             // Wait until connector get the hash of network's block.
             while ((connector.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != networkNode1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) ||
@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight + 1);
 
             // Miner mines the block.
-            miner.GenerateStratis(1);
+            miner.GenerateStratisWithMiner(1);
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(miner));
 
             networkHeight++;
@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             Assert.Equal(miner.FullNode.Chain.Tip.Height, networkHeight);
             Assert.Equal(connector.FullNode.Chain.Tip.Height, networkHeight);
 
-            connector.GenerateStratis(1);
+            connector.GenerateStratisWithMiner(1);
             networkHeight++;
 
             int delay = 0;

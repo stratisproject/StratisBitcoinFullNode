@@ -7,7 +7,6 @@ namespace NBitcoin
 {
     [Flags]
     public enum BlockFlag //block index flags
-
     {
         BLOCK_PROOF_OF_STAKE = (1 << 0), // is proof-of-stake block
         BLOCK_STAKE_ENTROPY = (1 << 1), // entropy bit for stake modifier
@@ -32,24 +31,6 @@ namespace NBitcoin
 
         public BlockStake()
         {
-        }
-
-        public BlockStake(byte[] bytes)
-        {
-            this.ReadWrite(bytes);
-        }
-
-        public BlockStake(Block block)
-        {
-            this.StakeModifierV2 = uint256.Zero;
-            this.HashProof = uint256.Zero;
-
-            if (IsProofOfStake(block))
-            {
-                this.SetProofOfStake();
-                this.StakeTime = block.Transactions[1].Time;
-                this.PrevoutStake = block.Transactions[1].Inputs[0].PrevOut;
-            }
         }
 
         public BlockFlag Flags
@@ -117,6 +98,37 @@ namespace NBitcoin
         }
 
         /// <summary>
+        /// Constructs a stake block from a given block.
+        /// </summary>
+        public static BlockStake Load(Block block)
+        {
+            var blockStake = new BlockStake
+            {
+                StakeModifierV2 = uint256.Zero,
+                HashProof = uint256.Zero
+            };
+
+            if (IsProofOfStake(block))
+            {
+                blockStake.SetProofOfStake();
+                blockStake.StakeTime = block.Transactions[1].Time;
+                blockStake.PrevoutStake = block.Transactions[1].Inputs[0].PrevOut;
+            }
+
+            return blockStake;
+        }
+
+        /// <summary>
+        /// Constructs a stake block from a set bytes and the given network.
+        /// </summary>
+        public static BlockStake Load(byte[] bytes, Network network)
+        {
+            var blockStake = new BlockStake();
+            blockStake.ReadWrite(bytes, network.Consensus.ConsensusFactory);
+            return blockStake;
+        }
+
+        /// <summary>
         /// Check PoW and that the blocks connect correctly
         /// </summary>
         /// <param name="network">The network being used</param>
@@ -126,8 +138,10 @@ namespace NBitcoin
         {
             if (network == null)
                 throw new ArgumentNullException("network");
+
             if (chainedHeader.Height != 0 && chainedHeader.Previous == null)
                 return false;
+
             bool heightCorrect = chainedHeader.Height == 0 || chainedHeader.Height == chainedHeader.Previous.Height + 1;
             bool genesisCorrect = chainedHeader.Height != 0 || chainedHeader.HashBlock == network.GetGenesis().GetHash();
             bool hashPrevCorrect = chainedHeader.Height == 0 || chainedHeader.Header.HashPrevBlock == chainedHeader.Previous.HashBlock;
@@ -166,6 +180,11 @@ namespace NBitcoin
     /// </summary>
     public class PosConsensusFactory : ConsensusFactory
     {
+        public PosConsensusFactory()
+            : base()
+        {
+        }
+
         /// <inheritdoc />
         public override Block CreateBlock()
         {
@@ -182,6 +201,18 @@ namespace NBitcoin
         public override Transaction CreateTransaction()
         {
             return new PosTransaction();
+        }
+
+        /// <inheritdoc />
+        public override Transaction CreateTransaction(string hex)
+        {
+            return new PosTransaction(hex);
+        }
+
+        /// <inheritdoc />
+        public override Transaction CreateTransaction(byte[] bytes)
+        {
+            return new PosTransaction(bytes);
         }
     }
 
@@ -218,7 +249,7 @@ namespace NBitcoin
 
             return hash;
         }
-        
+
         /// /// <inheritdoc />
         public override uint256 GetPoWHash()
         {

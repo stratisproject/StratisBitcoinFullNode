@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
             var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, Network.Main, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
-            var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, connectionSettings);
+            var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, connectionSettings, new VersionProvider());
 
             var blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
             var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             BlockTemplate newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
 
-            RuleContext ruleContext = consensusRules.CreateRuleContext(new ValidationContext {Block = newBlock.Block}, consensusLoop.Tip);
+            RuleContext ruleContext = consensusRules.CreateRuleContext(new ValidationContext { Block = newBlock.Block }, consensusLoop.Tip);
             ruleContext.MinedBlock = true;
             await consensusLoop.ValidateAndExecuteBlockAsync(ruleContext);
 
@@ -113,11 +113,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var srcTxs = new List<Transaction>();
             for (int i = 0; i < blockinfo.Count; ++i)
             {
-                Block currentBlock = newBlock.Block.Clone(); // pointer for convenience
+                Block currentBlock = Block.Load(newBlock.Block.ToBytes(network.Consensus.ConsensusFactory), network);
                 currentBlock.Header.HashPrevBlock = chain.Tip.HashBlock;
                 currentBlock.Header.Version = 1;
                 currentBlock.Header.Time = Utils.DateTimeToUnixTime(chain.Tip.GetMedianTimePast()) + 1;
-                Transaction txCoinbase = currentBlock.Transactions[0].Clone();
+
+                Transaction txCoinbase = network.CreateTransaction(currentBlock.Transactions[0].ToBytes());
                 txCoinbase.Inputs.Clear();
                 txCoinbase.Version = 1;
                 txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(blockinfo[i].extraNonce), Op.GetPushOp(chain.Height) })));
@@ -129,6 +130,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     baseheight = chain.Height;
                 if (srcTxs.Count < 4)
                     srcTxs.Add(currentBlock.Transactions[0]);
+
                 currentBlock.UpdateMerkleRoot();
 
                 currentBlock.Header.Nonce = blockinfo[i].nonce;

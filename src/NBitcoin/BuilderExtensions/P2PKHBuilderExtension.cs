@@ -4,7 +4,7 @@
     {
         public override bool CanCombineScriptSig(Network network, Script scriptPubKey, Script a, Script b)
         {
-            return PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(network, scriptPubKey);
+            return PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKey);
         }
 
         public override bool CanDeduceScriptPubKey(Network network, Script scriptSig)
@@ -15,12 +15,12 @@
 
         public override bool CanEstimateScriptSigSize(Network network, Script scriptPubKey)
         {
-            return PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(network, scriptPubKey);
+            return PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKey);
         }
 
         public override bool CanGenerateScriptSig(Network network, Script scriptPubKey)
         {
-            return PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(network, scriptPubKey);
+            return PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKey);
         }
 
         public override Script CombineScriptSig(Network network, Script scriptPubKey, Script a, Script b)

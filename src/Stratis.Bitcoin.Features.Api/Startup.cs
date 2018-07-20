@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Features.Api
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
                 .AddEnvironmentVariables();
+
             this.Configuration = builder.Build();
         }
 
@@ -61,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Api
                     }
                 })
                 // add serializers for NBitcoin objects
-                .AddJsonOptions(options => NBitcoin.JsonConverters.Serializer.RegisterFrontConverters(options.SerializerSettings))
+                .AddJsonOptions(options => Utilities.JsonConverters.Serializer.RegisterFrontConverters(options.SerializerSettings))
                 .AddControllers(services);
 
             // Register the Swagger generator, defining one or more Swagger documents
@@ -83,6 +84,9 @@ namespace Stratis.Bitcoin.Features.Api
                 {
                     setup.IncludeXmlComments(walletXmlPath);
                 }
+
+                setup.DescribeAllEnumsAsStrings();
+
             });
         }
 
@@ -102,6 +106,7 @@ namespace Stratis.Bitcoin.Features.Api
             // Enable middleware to serve swagger-ui (HTML, JS, CSS etc.), specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
+                c.DefaultModelRendering(ModelRendering.Model);
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Stratis.Bitcoin.Api V1");
             });
         }

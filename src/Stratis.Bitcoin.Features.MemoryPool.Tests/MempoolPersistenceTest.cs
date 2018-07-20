@@ -23,8 +23,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 {
     public class MempoolPersistenceTest : IDisposable
     {
-        private readonly bool shouldDeleteFolder = false;
         private readonly string dir;
+        private readonly Network network;
+        private readonly bool shouldDeleteFolder = false;
 
         public MempoolPersistenceTest()
         {
@@ -35,6 +36,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 this.shouldDeleteFolder = true;
                 Directory.CreateDirectory(this.dir);
             }
+
+            this.network = Network.Main;
         }
 
         public void Dispose()
@@ -118,8 +121,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public async Task LoadPoolTest_WithGoodTransactionsAsync()
         {
             string fileName = "mempool.dat";
-            Transaction tx1_parent = Transaction.Load("0100000001c4fadb806f9679c27c30c11b694523f6ac9614f7a69076b8940082ce636040fb000000006b4830450221009ad4b969a40b95017d133b13f7d465031829731f3b0ae4bcdcb5e393f5e919f902207f33aad2c3af48d6d65aaf5dd15a85a1f588ee3d6f477b2236cda1d81d88c43b012102eb184a906e082db44a95347de64110952b5821c42068a2054947aec4bc60db2fffffffff02685e3e00000000001976a9149ed35c9c42543ec67f9e6d1033e2ac1ac76f86ba88acd33e4500000000001976a9143c88fada9101f660d77feec1dd8db4ee9ea01d6788ac00000000", Network.Main);
-            Transaction tx1 = Transaction.Load("0100000001055c4c42511f9d05f2fa817c7f023df567f3d501bebec14ddce7c05a9d5fda52000000006b483045022100de552f011768887141b9a767ae184f61aa3743a32aad394ac1e1ec35345415420220070b3d0afd28414f188c966e334e9f7b65e7440538d93bc1d61f82067fcfd3fa012103b47b6ffce08f54be286620a29f45407fedb7b33acfec938551938ec96a1e1b0bffffffff019f053e000000000017a91493e31884769545a237f164aa07b3caef6b62f6b68700000000", Network.Main);
+            Transaction tx1_parent = this.network.CreateTransaction("0100000001c4fadb806f9679c27c30c11b694523f6ac9614f7a69076b8940082ce636040fb000000006b4830450221009ad4b969a40b95017d133b13f7d465031829731f3b0ae4bcdcb5e393f5e919f902207f33aad2c3af48d6d65aaf5dd15a85a1f588ee3d6f477b2236cda1d81d88c43b012102eb184a906e082db44a95347de64110952b5821c42068a2054947aec4bc60db2fffffffff02685e3e00000000001976a9149ed35c9c42543ec67f9e6d1033e2ac1ac76f86ba88acd33e4500000000001976a9143c88fada9101f660d77feec1dd8db4ee9ea01d6788ac00000000");
+            Transaction tx1 = this.network.CreateTransaction("0100000001055c4c42511f9d05f2fa817c7f023df567f3d501bebec14ddce7c05a9d5fda52000000006b483045022100de552f011768887141b9a767ae184f61aa3743a32aad394ac1e1ec35345415420220070b3d0afd28414f188c966e334e9f7b65e7440538d93bc1d61f82067fcfd3fa012103b47b6ffce08f54be286620a29f45407fedb7b33acfec938551938ec96a1e1b0bffffffff019f053e000000000017a91493e31884769545a237f164aa07b3caef6b62f6b68700000000");
             NodeSettings settings = this.CreateSettings("LoadPoolTest_WithGoodTransactions");
             TxMempool txMemPool;
             MempoolManager mempoolManager = CreateTestMempool(settings, out txMemPool);
@@ -155,8 +158,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public async Task LoadPoolTest_WithExpiredTransaction_PurgesTxAsync()
         {
             string fileName = "mempool.dat";
-            Transaction tx1_parent = Transaction.Load("0100000001c4fadb806f9679c27c30c11b694523f6ac9614f7a69076b8940082ce636040fb000000006b4830450221009ad4b969a40b95017d133b13f7d465031829731f3b0ae4bcdcb5e393f5e919f902207f33aad2c3af48d6d65aaf5dd15a85a1f588ee3d6f477b2236cda1d81d88c43b012102eb184a906e082db44a95347de64110952b5821c42068a2054947aec4bc60db2fffffffff02685e3e00000000001976a9149ed35c9c42543ec67f9e6d1033e2ac1ac76f86ba88acd33e4500000000001976a9143c88fada9101f660d77feec1dd8db4ee9ea01d6788ac00000000", Network.Main);
-            Transaction tx1 = Transaction.Load("0100000001055c4c42511f9d05f2fa817c7f023df567f3d501bebec14ddce7c05a9d5fda52000000006b483045022100de552f011768887141b9a767ae184f61aa3743a32aad394ac1e1ec35345415420220070b3d0afd28414f188c966e334e9f7b65e7440538d93bc1d61f82067fcfd3fa012103b47b6ffce08f54be286620a29f45407fedb7b33acfec938551938ec96a1e1b0bffffffff019f053e000000000017a91493e31884769545a237f164aa07b3caef6b62f6b68700000000", Network.Main);
+            Transaction tx1_parent = this.network.CreateTransaction("0100000001c4fadb806f9679c27c30c11b694523f6ac9614f7a69076b8940082ce636040fb000000006b4830450221009ad4b969a40b95017d133b13f7d465031829731f3b0ae4bcdcb5e393f5e919f902207f33aad2c3af48d6d65aaf5dd15a85a1f588ee3d6f477b2236cda1d81d88c43b012102eb184a906e082db44a95347de64110952b5821c42068a2054947aec4bc60db2fffffffff02685e3e00000000001976a9149ed35c9c42543ec67f9e6d1033e2ac1ac76f86ba88acd33e4500000000001976a9143c88fada9101f660d77feec1dd8db4ee9ea01d6788ac00000000");
+            Transaction tx1 = this.network.CreateTransaction("0100000001055c4c42511f9d05f2fa817c7f023df567f3d501bebec14ddce7c05a9d5fda52000000006b483045022100de552f011768887141b9a767ae184f61aa3743a32aad394ac1e1ec35345415420220070b3d0afd28414f188c966e334e9f7b65e7440538d93bc1d61f82067fcfd3fa012103b47b6ffce08f54be286620a29f45407fedb7b33acfec938551938ec96a1e1b0bffffffff019f053e000000000017a91493e31884769545a237f164aa07b3caef6b62f6b68700000000");
             NodeSettings settings = this.CreateSettings("LoadPoolTest_WithExpiredTxs");
             TxMempool txMemPool;
             MempoolManager mempoolManager = CreateTestMempool(settings, out txMemPool);
@@ -206,8 +209,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 persistence.DumpToStream(settings.Network, toSave, ms);
                 actualStreamLength = ms.Length;
                 ms.Seek(0, SeekOrigin.Begin);
-                var bitcoinReader = new BitcoinStream(ms, false);
-                bitcoinReader.ConsensusFactory = settings.Network.Consensus.ConsensusFactory;
+                var bitcoinReader = new BitcoinStream(ms, false)
+                {
+                    ConsensusFactory = settings.Network.Consensus.ConsensusFactory
+                };
 
                 bitcoinReader.ReadWrite(ref actualVersion);
                 bitcoinReader.ReadWrite(ref actualCount);
@@ -229,7 +234,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
         private NodeSettings CreateSettings(string subDirName)
         {
-            return new NodeSettings(args:new string[] { $"-datadir={ Directory.CreateDirectory(Path.Combine(this.dir, subDirName)).FullName }" });
+            return new NodeSettings(args: new string[] { $"-datadir={ Directory.CreateDirectory(Path.Combine(this.dir, subDirName)).FullName }" });
         }
 
         private IEnumerable<MempoolPersistenceEntry> CreateTestEntries(int numTx)
@@ -249,7 +254,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         private Transaction MakeRandomTx(int satAmount = 10)
         {
             Money amount = Money.FromUnit(satAmount, MoneyUnit.Satoshi);
-            var trx = new Transaction();
+            var trx = this.network.CreateTransaction();
             trx.AddInput(new TxIn(Script.Empty));
             trx.AddOutput(amount, RandomScript());
             trx.AddInput(new TxIn(Script.Empty));
@@ -277,7 +282,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings), loggerFactory, nodeSettings);
             var mempoolLock = new MempoolSchedulerLock();
             var coins = new InMemoryCoinView(settings.Network.GenesisHash);
-            var chain = new ConcurrentChain(Network.Main.GetGenesis().Header);
+            var chain = new ConcurrentChain(Network.Main);
             var mempoolPersistence = new MempoolPersistence(settings, loggerFactory);
             Network.Main.Consensus.Options = new PosConsensusOptions();
             ConsensusRules consensusRules = new PowConsensusRules(Network.Main, loggerFactory, dateTimeProvider, chain, new NodeDeployments(Network.Main, chain), consensusSettings, new Checkpoints(), new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());

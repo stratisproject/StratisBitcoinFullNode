@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -13,6 +12,7 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -49,6 +49,8 @@ namespace Stratis.Bitcoin.Connection
         INetworkPeer FindNodeByEndpoint(IPEndPoint ipEndpoint);
 
         INetworkPeer FindNodeByIp(IPAddress ipAddress);
+
+        INetworkPeer FindNodeById(int peerId);
 
         string GetNodeStats();
 
@@ -137,8 +139,9 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
         private readonly NetworkPeerDisposer networkPeerDisposer;
 
-        public ConnectionManager(
-            IDateTimeProvider dateTimeProvider,
+        private readonly IVersionProvider versionProvider;
+
+        public ConnectionManager(IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
             INetworkPeerFactory networkPeerFactory,
@@ -148,7 +151,8 @@ namespace Stratis.Bitcoin.Connection
             IPeerAddressManager peerAddressManager,
             IEnumerable<IPeerConnector> peerConnectors,
             IPeerDiscovery peerDiscovery,
-            ConnectionManagerSettings connectionSettings)
+            ConnectionManagerSettings connectionSettings,
+            IVersionProvider versionProvider)
         {
             this.connectedPeers = new NetworkPeerCollection();
             this.dateTimeProvider = dateTimeProvider;
@@ -167,7 +171,10 @@ namespace Stratis.Bitcoin.Connection
 
             this.Parameters = parameters;
             this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
-            this.Parameters.UserAgent = $"{this.ConnectionSettings.Agent}:{this.GetVersion()}";
+            this.versionProvider = versionProvider;
+
+            this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{versionProvider.GetVersion()}";
+
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
 
             this.downloads = new Dictionary<INetworkPeer, PerformanceSnapshot>();
@@ -291,20 +298,21 @@ namespace Stratis.Bitcoin.Connection
             return builder.ToString();
         }
 
+
         public string GetNodeStats()
         {
             var builder = new StringBuilder();
 
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
-                var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                var connectionManagerBehavior = peer.Behavior<IConnectionManagerBehavior>();
                 var chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
 
                 string agent = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]";
                 builder.AppendLine(
                     "Peer:" + (peer.RemoteSocketEndpoint + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
                     (" connected:" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + ",").PadRight(LoggingConfiguration.ColumnLength + 7) +
-                    (" height:" + (chainHeadersBehavior.PendingTip != null ? chainHeadersBehavior.PendingTip.Height.ToString() : peer.PeerVersion?.StartHeight.ToString() ?? "unknown") + ",").PadRight(LoggingConfiguration.ColumnLength + 2) +
+                    (" height:" + (chainHeadersBehavior.ExpectedPeerTip != null ? chainHeadersBehavior.ExpectedPeerTip.Height.ToString() : peer.PeerVersion?.StartHeight.ToString() ?? "unknown") + ",").PadRight(LoggingConfiguration.ColumnLength + 2) +
                     " agent:" + agent);
             }
 
@@ -315,12 +323,6 @@ namespace Stratis.Bitcoin.Connection
         {
             double speed = ((double)bytesPerSec / 1024.0);
             return speed.ToString("0.00") + " KB/S";
-        }
-
-        private string GetVersion()
-        {
-            Match match = Regex.Match(this.GetType().AssemblyQualifiedName, "Version=([0-9]+\\.[0-9]+\\.[0-9]+)\\.");
-            return match.Groups[1].Value;
         }
 
         /// <inheritdoc />
@@ -374,6 +376,11 @@ namespace Stratis.Bitcoin.Connection
         public INetworkPeer FindLocalNode()
         {
             return this.connectedPeers.FindLocal();
+        }
+
+        public INetworkPeer FindNodeById(int peerId)
+        {
+            return this.connectedPeers.FindById(peerId);
         }
 
         /// <summary>

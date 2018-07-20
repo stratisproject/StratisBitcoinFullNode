@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Checks if <see cref="Block"/> has a valid PoS header and calculate the next block difficulty.
     /// </summary>
-    [ValidationRule(CanSkipValidation = false)]
+    [PartialValidationRule]
     public class CalculateStakeRule : StakeStoreConsensusRule
     {
         /// <inheritdoc />
@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             var posRuleContext = context as PosRuleContext;
 
-            posRuleContext.BlockStake = new BlockStake(context.ValidationContext.Block);
+            posRuleContext.BlockStake = BlockStake.Load(context.ValidationContext.Block);
 
             if (posRuleContext.BlockStake.IsProofOfWork())
             {

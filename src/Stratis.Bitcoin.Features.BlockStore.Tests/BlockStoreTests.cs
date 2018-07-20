@@ -28,12 +28,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private int repositoryTotalBlocksDeleted = 0;
 
         private Dictionary<uint256, Block> listOfSavedBlocks;
-
-        private ChainedHeader chainStateBlockStoreTip;
-
         private ChainedHeader consensusTip;
 
-        private string testBlockHex = "07000000af72d939050259913e440b23bee62e3b9604129ec8424d265a6ee4916e060000a5a2cbad28617657336403daf202b797bfc4b9c5cfc65a258f32ec33ec9ad485314ea957ffff0f1e812b07000101000000184ea957010000000000000000000000000000000000000000000000000000000000000000ffffffff03510101ffffffff010084d717000000001976a9140099e795d9ee809dc74dce32c79d26db0265072488ac0000000000";
+        private readonly string testBlockHex = "07000000af72d939050259913e440b23bee62e3b9604129ec8424d265a6ee4916e060000a5a2cbad28617657336403daf202b797bfc4b9c5cfc65a258f32ec33ec9ad485314ea957ffff0f1e812b07000101000000184ea957010000000000000000000000000000000000000000000000000000000000000000ffffffff03510101ffffffff010084d717000000001976a9140099e795d9ee809dc74dce32c79d26db0265072488ac0000000000";
 
         public BlockStoreTests()
         {
@@ -84,7 +81,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             var chainStateMoq = new Mock<IChainState>();
             chainStateMoq.Setup(x => x.ConsensusTip).Returns(() => this.consensusTip);
-            chainStateMoq.SetupProperty(x => x.BlockStoreTip, this.chainStateBlockStoreTip);
+            chainStateMoq.SetupProperty(x => x.BlockStoreTip, null);
 
             this.chainState = chainStateMoq.Object;
 

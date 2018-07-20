@@ -549,11 +549,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// These checks don't need to run under the memory pool lock.
         /// </summary>
         /// <param name="context">Current validation context.</param>
-        private void PreMempoolChecks(MempoolValidationContext context)
+        protected virtual void PreMempoolChecks(MempoolValidationContext context)
         {
             // TODO: fix this to use dedicated mempool rules.
             new CheckPowTransactionRule { Logger = this.logger }.CheckTransaction(this.network, this.ConsensusOptions, context.Transaction);
-            if(this.chain.Network.Consensus.IsProofOfStake)
+            if (this.chain.Network.Consensus.IsProofOfStake)
                 new CheckPosTransactionRule { Logger = this.logger }.CheckTransaction(context.Transaction);
 
             // Coinbase is only valid in a block, not as a loose transaction
@@ -633,7 +633,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             int dataOut = 0;
             foreach (TxOut txout in tx.Outputs)
             {
-                ScriptTemplate script = StandardScripts.GetTemplateFromScriptPubKey(this.network, txout.ScriptPubKey);
+                ScriptTemplate script = StandardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
                 if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))  https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L57-L80
                 {
                     context.State.Fail(MempoolErrors.Scriptpubkey).Throw();
@@ -697,7 +697,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// and absurdly high fees.
         /// </summary>
         /// <param name="context">Current validation context.</param>
-        private void CheckFee(MempoolValidationContext context)
+        public virtual void CheckFee(MempoolValidationContext context)
         {
             Money mempoolRejectFee = this.memPool.GetMinFee(this.mempoolSettings.MaxMempool * 1000000).GetFee(context.EntrySize);
             if (mempoolRejectFee > 0 && context.ModifiedFees < mempoolRejectFee)
@@ -1118,7 +1118,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             foreach (TxIn txin in tx.Inputs)
             {
                 TxOut prev = mapInputs.GetOutputFor(txin);
-                ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(this.network, prev.ScriptPubKey);
+                ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(prev.ScriptPubKey);
                 if (template == null)
                     return false;
 

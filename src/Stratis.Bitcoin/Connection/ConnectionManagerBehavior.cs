@@ -8,7 +8,18 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection
 {
-    public class ConnectionManagerBehavior : NetworkPeerBehavior
+    public interface IConnectionManagerBehavior : INetworkPeerBehavior
+    {
+        ConnectionManager ConnectionManager { get; }
+
+        bool Inbound { get; }
+
+        bool Whitelisted { get; }
+
+        bool OneTry { get; }
+    }
+
+    public class ConnectionManagerBehavior : NetworkPeerBehavior, IConnectionManagerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;

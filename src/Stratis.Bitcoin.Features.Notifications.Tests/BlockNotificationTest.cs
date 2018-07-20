@@ -28,9 +28,9 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             var lifetime = new NodeLifetime();
             var signals = new Mock<ISignals>();
-            var chain = new Mock<ConcurrentChain>();
+            var chain = new ConcurrentChain(this.Network);
 
-            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain, new Mock<ILookaheadBlockPuller>().Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
             notification.Notify(lifetime.ApplicationStopping);
 
             signals.Verify(s => s.SignalBlock(It.IsAny<Block>()), Times.Exactly(0));
@@ -47,10 +47,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var signals = new Mock<ISignals>();
 
             var startBlockId = new uint256(156);
-            var chain = new Mock<ConcurrentChain>();
-            chain.Setup(c => c.GetBlock(startBlockId)).Returns((ChainedHeader)null);
-
-            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, new Mock<ILookaheadBlockPuller>().Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
+            var chain = new ConcurrentChain(this.Network);
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain, new Mock<ILookaheadBlockPuller>().Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
             notification.SyncFrom(startBlockId);
             notification.Notify(lifetime.ApplicationStopping);
 
@@ -66,13 +64,13 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         {
             List<Block> blocks = this.CreateBlocks(3);
 
-            var chain = new ConcurrentChain(blocks[0].Header);
+            var chain = new ConcurrentChain(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
             this.AppendBlocksToChain(chain, blocks.Skip(1).Take(2));
 
             DataFolder dataFolder = CreateDataFolder(this);
             var connectionManager = new Mock<IConnectionManager>();
             connectionManager.Setup(c => c.ConnectedPeers).Returns(new NetworkPeerCollection());
-            connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings(args:new string[] { $"-datadir={dataFolder.RootPath}" }));
+            connectionManager.Setup(c => c.NodeSettings).Returns(new NodeSettings(args: new string[] { $"-datadir={dataFolder.RootPath}" }));
             connectionManager.Setup(c => c.Parameters).Returns(new NetworkPeerConnectionParameters());
 
             var lookAheadBlockPuller = new LookaheadBlockPuller(chain, connectionManager.Object, new Mock<ILoggerFactory>().Object);
@@ -99,14 +97,14 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             List<Block> blocks = this.CreateBlocks(2);
 
-            var chain = new ConcurrentChain(blocks[0].Header);
+            var chain = new ConcurrentChain(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
             this.AppendBlocksToChain(chain, blocks.Skip(1).Take(1));
 
             var puller = new Mock<ILookaheadBlockPuller>();
             puller.SetupSequence(s => s.NextBlock(lifetime.ApplicationStopping))
                 .Returns(new LookaheadResult { Block = blocks[0] })
                 .Returns(new LookaheadResult { Block = blocks[1] })
-                .Returns(null);
+                .Returns((LookaheadResult)null);
 
             var signals = new Mock<ISignals>();
 
@@ -132,18 +130,19 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             List<Block> blocks = this.CreateBlocks(3);
 
-            var chain = new ConcurrentChain(blocks[0].Header);
+            var chain = new ConcurrentChain(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
             this.AppendBlocksToChain(chain, blocks.Skip(1));
 
             puller.SetupSequence(p => p.NextBlock(It.IsAny<CancellationToken>()))
                 .Returns(new LookaheadResult() { Block = null })
                 .Returns(new LookaheadResult() { Block = blocks[0] });
 
-            
+
             var source = new CancellationTokenSource();
             CancellationToken token = source.Token;
             signals.Setup(s => s.SignalBlock(It.Is<Block>(b => b.GetHash() == blocks[0].GetHash())))
-                .Callback(() => {
+                .Callback(() =>
+                {
                     source.Cancel();
                 }).Verifiable();
 
@@ -170,11 +169,11 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         public void CallingSyncFromUpdatesStartHashAccordingly()
         {
             var lifetime = new NodeLifetime();
-            var chain = new Mock<ConcurrentChain>();
+            var chain = new ConcurrentChain(this.Network);
             var puller = new Mock<ILookaheadBlockPuller>();
             var signals = new Mock<ISignals>();
 
-            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, puller.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain, puller.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
             var blockId1 = new uint256(150);
             var blockId2 = new uint256(151);
@@ -193,11 +192,11 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         public void SyncFrom_StartHashIsNull_SetsStartHashToBlockNotification()
         {
             var lifetime = new NodeLifetime();
-            var chain = new Mock<ConcurrentChain>();
+            var chain = new ConcurrentChain(this.Network);
             var puller = new Mock<ILookaheadBlockPuller>();
             var signals = new Mock<ISignals>();
 
-            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, puller.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain, puller.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
 
             notification.SyncFrom(null);
 
@@ -213,7 +212,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             List<Block> blocks = this.CreateBlocks(3);
 
-            var chain = new ConcurrentChain(blocks[0].Header);
+            var chain = new ConcurrentChain(this.Network, new ChainedHeader(blocks[0].Header, blocks[0].GetHash(), 0));
             this.AppendBlocksToChain(chain, blocks.Skip(1));
 
             var notification = new BlockNotification(this.LoggerFactory.Object, chain, puller.Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
@@ -229,12 +228,12 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         public void Start_RunsAsyncLoop()
         {
             var lifetime = new NodeLifetime();
-            var chain = new Mock<ConcurrentChain>();
+            var chain = new ConcurrentChain(this.Network);
             var puller = new Mock<ILookaheadBlockPuller>();
             var signals = new Mock<ISignals>();
             var asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
-            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, puller.Object, signals.Object, asyncLoopFactory.Object, lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain, puller.Object, signals.Object, asyncLoopFactory.Object, lifetime);
 
             notification.Start();
 
@@ -244,9 +243,8 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         [Fact]
         public void Stop_DisposesAsyncLoop()
         {
-
             var lifetime = new NodeLifetime();
-            var chain = new Mock<ConcurrentChain>();
+            var chain = new ConcurrentChain(this.Network);
             var puller = new Mock<ILookaheadBlockPuller>();
             var signals = new Mock<ISignals>();
             var asyncLoop = new Mock<IAsyncLoop>();
@@ -254,7 +252,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             asyncLoopFactory.Setup(a => a.Run("Notify", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), null, null))
                 .Returns(asyncLoop.Object);
 
-            var notification = new BlockNotification(this.LoggerFactory.Object, chain.Object, puller.Object, signals.Object, asyncLoopFactory.Object, lifetime);
+            var notification = new BlockNotification(this.LoggerFactory.Object, chain, puller.Object, signals.Object, asyncLoopFactory.Object, lifetime);
 
             notification.Start();
             notification.Stop();
