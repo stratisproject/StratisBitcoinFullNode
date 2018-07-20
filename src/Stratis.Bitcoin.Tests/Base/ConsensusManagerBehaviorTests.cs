@@ -481,5 +481,34 @@ namespace Stratis.Bitcoin.Tests.Base
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
             Assert.True(this.helper.PeerWasBanned);
         }
+
+        /// <summary>
+        /// Simulate that peer state became <see cref="NetworkPeerState.HandShaked"/>.
+        /// Make sure <see cref="GetHeadersPayload"/> was sent.
+        /// </summary>
+        [Fact]
+        public async Task OnStateChangedAsync_SyncOnHandshakeAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[10]);
+
+            await this.helper.StateChanged.ExecuteCallbacksAsync(this.helper.PeerMock.Object, NetworkPeerState.HandShaked);
+
+            Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
+        }
+
+        /// <summary>
+        /// Initialize <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> to be header 5. Call <see cref="ConsensusManagerBehavior.ResetPeerTipInformationAndSyncAsync"/>.
+        /// Make sure <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> became <c>null</c> and <see cref="GetHeadersPayload"/> was sent.
+        /// </summary>
+        [Fact]
+        public async Task ResetPeerTipInformationAndSyncAsync_ResyncsAndResetsAsync()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], null, this.headers[5]);
+
+            await behavior.ResetPeerTipInformationAndSyncAsync();
+
+            Assert.Null(behavior.ExpectedPeerTip);
+            Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
+        }
     }
 }
