@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using FluentAssertions;
 using NBitcoin;
 using NBitcoin.Protocol;
@@ -24,10 +22,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanOverrideOnlyApiPort()
         {
-            var extraParams = new NodeConfigParameters {{"apiport", "12345"}};
+            var extraParams = new NodeConfigParameters { { "apiport", "12345" } };
             using (var nodeBuilder = NodeBuilder.Create(this))
             {
-                var buildAction = new Action<IFullNodeBuilder>(builder => 
+                var buildAction = new Action<IFullNodeBuilder>(builder =>
                     builder.UseBlockStore()
                         .UsePowConsensus()
                         .UseMempool()

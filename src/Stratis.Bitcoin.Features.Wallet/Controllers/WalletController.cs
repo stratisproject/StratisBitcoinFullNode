@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
@@ -148,7 +149,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic: request.Mnemonic);
+                Mnemonic requestMnemonic = string.IsNullOrEmpty(request.Mnemonic) ? null : new Mnemonic(request.Mnemonic);
+
+                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic: requestMnemonic);
 
                 // start syncing the wallet from the creation date
                 this.walletSyncManager.SyncFromDate(this.dateTimeProvider.GetUtcNow());
@@ -172,7 +175,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Loads a wallet previously created by the user.
         /// </summary>
         /// <param name="request">The name of the wallet to load.</param>
-        /// <returns></returns>
         [Route("load")]
         [HttpPost]
         public IActionResult Load([FromBody]WalletLoadRequest request)
@@ -212,12 +214,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Recovers a wallet.
         /// </summary>
         /// <param name="request">The object containing the parameters used to recover a wallet.</param>
-        /// <returns></returns>
         [Route("recover")]
         [HttpPost]
         public IActionResult Recover([FromBody]WalletRecoveryRequest request)
         {
             Guard.NotNull(request, nameof(request));
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(request), nameof(request.Name), request.Name);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -250,6 +252,65 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+            finally
+            {
+                this.logger.LogTrace("(-)");
+            }
+        }
+
+        /// <summary>
+        /// Recovers a wallet using only the extended public key.
+        /// </summary>
+        /// <param name="request">The object containing the parameters used to recover a wallet.</param>
+        [Route("recover-via-extpubkey")]
+        [HttpPost]
+        public IActionResult RecoverViaExtPubKey([FromBody]WalletExtPubRecoveryRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(request), nameof(request.Name), request.Name);
+
+            if (!this.ModelState.IsValid)
+            {
+                this.logger.LogTrace("(-)[MODEL_STATE_INVALID]");
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                string accountExtPubKey =
+                    this.network.IsBitcoin()
+                        ? request.ExtPubKey
+                        : LegacyExtPubKeyConverter.ConvertIfInLegacyStratisFormat(request.ExtPubKey, this.network);
+
+                this.walletManager.RecoverWallet(request.Name, ExtPubKey.Parse(accountExtPubKey), request.AccountIndex,
+                    request.CreationDate);
+
+                this.walletSyncManager.SyncFromDate(request.CreationDate);
+
+                this.logger.LogTrace("(-)");
+                return this.Ok();
+            }
+            catch (WalletException e)
+            {
+                // Wallet already exists.
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, e.Message, e.ToString());
+            }
+            catch (FileNotFoundException e)
+            {
+                // Wallet does not exist.
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound, "Wallet not found.", e.ToString());
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+            finally
+            {
+                this.logger.LogTrace("(-)");
             }
         }
 
@@ -315,7 +376,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             Guard.NotNull(request, nameof(request));
 
-            // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
                 return BuildErrorResponse(this.ModelState);
@@ -786,6 +846,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 HdAccount result = this.walletManager.GetUnusedAccount(request.WalletName, request.Password);
                 return this.Json(result.Name);
             }
+            catch (CannotAddAccountToXpubKeyWalletException e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, e.Message, string.Empty);
+            }
             catch (Exception e)
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
@@ -942,7 +1007,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 else
                 {
                     IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
-                    result = this.walletManager.RemoveTransactionsByIds(request.WalletName, ids);
+                    result = this.walletManager.RemoveTransactionsByIdsLocked(request.WalletName, ids);
                 }
 
                 // If the user chose to resync the wallet after removing transactions.

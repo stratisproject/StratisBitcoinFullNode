@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -164,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string passphrase = "this is my magic passphrase";
 
             // create the wallet
-            Mnemonic mnemonic = walletManager.CreateWallet(password, "mywallet", passphrase);
+            Mnemonic mnemonic = walletManager.CreateWallet(password, "mywallet", passphrase: passphrase);
 
             // assert it has saved it to disk and has been created correctly.
             var expectedWallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(dataFolder.WalletPath + "/mywallet.wallet.json"));
@@ -270,12 +271,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             string password = "test";
 
-            var mnemonicList = new Mnemonic(Wordlist.French, WordCount.Eighteen);
+            var mnemonic = new Mnemonic(Wordlist.French, WordCount.Eighteen);
 
-            // create the wallet
-            Mnemonic mnemonic = walletManager.CreateWallet(password, "mywallet", mnemonicList: mnemonicList.ToString());
+            Mnemonic returnedMnemonic = walletManager.CreateWallet(password, "mywallet", null, mnemonic);
 
-            Assert.Equal(mnemonic.DeriveSeed(), mnemonicList.DeriveSeed());
+            Assert.Equal(mnemonic.DeriveSeed(), returnedMnemonic.DeriveSeed());
         }
 
         [Fact]
@@ -283,9 +283,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            var walletManager = GetWalletManagerWithCustomConfigParam(dataFolder, "-walletaddressbuffer=100");
+            var walletManager = this.CreateWalletManager(dataFolder, Network.Main, "-walletaddressbuffer=100");
 
-            walletManager.CreateWallet("test", "mywallet", new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
+            walletManager.CreateWallet("test", "mywallet", null, new Mnemonic(Wordlist.English, WordCount.Eighteen));
 
             HdAccount hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
 
@@ -3086,7 +3086,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(4, transactionCount);
 
             // Act.
-            HashSet<(uint256, DateTimeOffset)> result = walletManager.RemoveTransactionsByIds("wallet1", new[] { trxUnconfirmed1.Id, trxUnconfirmed2.Id, trxConfirmed1.Id, trxConfirmed2.Id });
+            HashSet<(uint256, DateTimeOffset)> result = walletManager.RemoveTransactionsByIdsLocked("wallet1", new[] { trxUnconfirmed1.Id, trxUnconfirmed2.Id, trxConfirmed1.Id, trxConfirmed2.Id });
 
             // Assert.
             List<TransactionData> remainingTrxs = firstAccount.GetCombinedAddresses().SelectMany(a => a.Transactions).ToList();
@@ -3138,7 +3138,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(3, transactionCount);
 
             // Act.
-            HashSet<(uint256, DateTimeOffset)> result = walletManager.RemoveTransactionsByIds("wallet1", new[]
+            HashSet<(uint256, DateTimeOffset)> result = walletManager.RemoveTransactionsByIdsLocked("wallet1", new[]
             {
                 trxConfirmed1.Id, // Shouldn't be removed.
                 unconfirmedTransactionId, // A transaction + a spending transaction should be removed.
@@ -3160,8 +3160,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            WalletManager walletManager = this.GetWalletManagerWithCustomConfigParam(dataFolder);
-            walletManager.CreateWallet("test", "mywallet", new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
+            WalletManager walletManager = this.CreateWalletManager(dataFolder, Network.Main);
+            walletManager.CreateWallet("test", "mywallet", passphrase: new Mnemonic(Wordlist.English, WordCount.Eighteen).ToString());
 
             // Default of 20 addresses becuause walletaddressbuffer not set
             HdAccount hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
@@ -3169,7 +3169,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(20, hdAccount.InternalAddresses.Count);
 
             // Restart with walletaddressbuffer set
-            walletManager = this.GetWalletManagerWithCustomConfigParam(dataFolder, "-walletaddressbuffer=30");
+            walletManager = this.CreateWalletManager(dataFolder, Network.Main, "-walletaddressbuffer=30");
             walletManager.Start();
 
             // Addresses populated to fill the buffer set
@@ -3178,12 +3178,68 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(30, hdAccount.InternalAddresses.Count);
         }
 
-        private WalletManager GetWalletManagerWithCustomConfigParam(DataFolder dataFolder, params string[] cmdLineArgs)
+        [Fact]
+        public void Recover_via_xpubkey_can_recover_wallet_without_mnemonic()
         {
-            var nodeSettings = new NodeSettings(Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, "StratisBitcoin", cmdLineArgs);
+            DataFolder dataFolder = CreateDataFolder(this);
+
+            const string stratisAccount0ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
+            var walletManager = this.CreateWalletManager(dataFolder, Network.Main);
+            walletManager.RecoverWallet("testWallet", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTime.Now.AddHours(-2));
+            
+            var wallet = walletManager.LoadWallet("password", "testWallet");
+
+            wallet.IsExtPubKeyWallet.Should().BeTrue();
+            wallet.EncryptedSeed.Should().BeNull();
+            wallet.ChainCode.Should().BeNull();
+
+            wallet.AccountsRoot.SelectMany(x => x.Accounts).Single().ExtendedPubKey
+                .Should().Be(stratisAccount0ExtPubKey);
+        }
+
+        [Fact]
+        public void AddNewAccount_via_xpubkey_prevents_adding_an_account_as_an_existing_account_index()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+
+            const string stratisAccount0ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
+            const string stratisAccount1ExtPubKey = "xpub6DGguHV1FQFPvZ5Xu7VfeENyiySv4R2bdd6VtvwxWGVTVNnHUmphMNgTRkLe8j2JdAv332ogZcyhqSuz1yUPnN4trJ49cFQXmEhwNQHUqk1";
+            var walletManager = this.CreateWalletManager(dataFolder, Network.StratisMain);
+            var wallet = walletManager.RecoverWallet("wallet1", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTime.Now.AddHours(-2));
+
+            try
+            {
+                wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount1ExtPubKey), 0, DateTime.Now.AddHours(-2));
+
+                Assert.True(false, "should have thrown exception but didn't.");
+            }
+            catch (WalletException e)
+            {
+                Assert.Equal("There is already an account in this wallet with index: " + 0, e.Message);
+            }
+        }
+
+        [Fact]
+        public void AddNewAccount_via_xpubkey_prevents_adding_the_same_xpub_key_as_different_account()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+
+            const string stratisAccount0ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
+            var walletManager = this.CreateWalletManager(dataFolder, Network.StratisMain);
+            var wallet = walletManager.RecoverWallet("wallet1", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTime.Now.AddHours(-2));
+
+            var addNewAccount = new Action(() => wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount0ExtPubKey), 1, DateTime.Now.AddHours(-2)));
+
+            addNewAccount.Should().Throw<WalletException>()
+                .WithMessage("There is already an account in this wallet with this xpubkey: " + stratisAccount0ExtPubKey);
+        }
+
+        private WalletManager CreateWalletManager(DataFolder dataFolder, Network network, params string[] cmdLineArgs)
+        {
+            var nodeSettings = new NodeSettings(Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, network.Name, cmdLineArgs);
             var walletSettings = new WalletSettings(nodeSettings);
 
-            return new WalletManager(this.LoggerFactory.Object, Network.Main, new ConcurrentChain(Network.Main),
+            return new WalletManager(this.LoggerFactory.Object, network, new ConcurrentChain(network),
                 NodeSettings.Default(), walletSettings, dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
         }
 
@@ -3193,7 +3249,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 
             // create the wallet
-            Mnemonic mnemonic = walletManager.CreateWallet(password, walletName, passphrase);
+            Mnemonic mnemonic = walletManager.CreateWallet(password, walletName, passphrase: passphrase);
             Wallet wallet = walletManager.Wallets.ElementAt(0);
 
             File.Delete(dataFolder.WalletPath + $"/{walletName}.wallet.json");
