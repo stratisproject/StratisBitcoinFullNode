@@ -48,8 +48,9 @@ namespace Stratis.Bitcoin.Base
         /// </remarks>
         public ChainedHeader ExpectedPeerTip { get; private set; }
 
-        /// <summary>Gets the last header sent using <see cref="HeadersPayload"/>.</summary>
-        public ChainedHeader LastSentHeader { get; private set; }
+        /// <summary>Gets the best header sent using <see cref="HeadersPayload"/>.</summary>
+        /// <remarks>Write access should be protected by <see cref="bestSentHeaderLock"/>.</remarks>
+        public ChainedHeader BestSentHeader { get; private set; }
 
         /// <summary>Timer that periodically tries to sync.</summary>
         private Timer autosyncTimer;
@@ -71,6 +72,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Protects access to <see cref="cachedHeaders"/>.</summary>
         private readonly AsyncLock asyncLock;
 
+        /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
+        private readonly object bestSentHeaderLock;
+
         public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
@@ -82,6 +86,7 @@ namespace Stratis.Bitcoin.Base
 
             this.cachedHeaders = new List<BlockHeader>();
             this.asyncLock = new AsyncLock();
+            this.bestSentHeaderLock = new object();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
@@ -108,6 +113,7 @@ namespace Stratis.Bitcoin.Base
                     }
 
                     this.ExpectedPeerTip = result.Consumed;
+                    this.UpdateBestSentHeader(this.ExpectedPeerTip);
 
                     int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
                     this.cachedHeaders.RemoveRange(0, consumedCount);
@@ -183,7 +189,7 @@ namespace Stratis.Bitcoin.Base
 
                 try
                 {
-                    this.LastSentHeader = lastHeader;
+                    this.BestSentHeader = lastHeader;
 
                     await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
                 }
@@ -294,6 +300,7 @@ namespace Stratis.Bitcoin.Base
                 }
 
                 this.ExpectedPeerTip = result.Consumed;
+                this.UpdateBestSentHeader(this.ExpectedPeerTip);
 
                 if (result.Consumed.Header != headers.Last())
                 {
@@ -402,16 +409,38 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Resets the expected peer tip and triggers synchronization.</summary>
-        public async Task ResetExpectedPeerTipAndSyncAsync()
+        /// <summary>Resets the expected peer tip and last sent tip and triggers synchronization.</summary>
+        public async Task ResetPeerTipInformationAndSyncAsync()
         {
             this.logger.LogTrace("()");
 
             this.ExpectedPeerTip = null;
+            this.BestSentHeader = null;
 
             await this.ResyncAsync().ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>Updates the best sent header but only if the new value is better or is on a different chain.</summary>
+        /// <param name="header">The new value to set if it is better or on a different chain.</param>
+        public void UpdateBestSentHeader(ChainedHeader header)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(header), header);
+
+            ChainedHeader bestSentHeader = null;
+
+            lock (this.bestSentHeaderLock)
+            {
+                ChainedHeader fork = header.FindAncestorOrSelf(this.BestSentHeader);
+
+                if (fork != header)
+                    this.BestSentHeader = header;
+
+                bestSentHeader = this.BestSentHeader;
+            }
+
+            this.logger.LogTrace("(-):{0}='{1}'", nameof(this.BestSentHeader), bestSentHeader);
         }
 
         /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/> in case peer's state is <see cref="NetworkPeerState.HandShaked"/>.</summary>
