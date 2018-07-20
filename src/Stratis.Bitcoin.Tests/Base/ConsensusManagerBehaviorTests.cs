@@ -9,7 +9,6 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Stratis.Bitcoin.Tests.Base
 {
@@ -402,7 +401,7 @@ namespace Stratis.Bitcoin.Tests.Base
             Assert.True(this.helper.PeerWasBanned);
         }
 
-        // TODO implement when exception is known
+        // TODO implement when exception is known (when #1683 is merged)
         ///// <summary>
         ///// Consensus tip is at 10. We are not in IBD. Present headers 11-15, where header 12 is invalid.
         ///// Make sure <see cref="GetHeadersPayload"/> wasn't sent and peer was banned.
@@ -412,33 +411,5 @@ namespace Stratis.Bitcoin.Tests.Base
         //{
         //
         //}
-
-        /// <summary>
-        /// Consensus tip is at 10. We are not in IBD. Present headers 11-15. Make sure <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/>
-        /// is header 15 and <see cref="GetHeadersPayload"/> was sent.
-        /// </summary>
-        [Fact]
-        public async Task ProcessHeadersAsync_ConsumeAllHeadersAndAskForMoreAsync()
-        {
-
-        }
-
-        /// <summary>
-        /// Consensus tip is at 10. We are not in IBD. Setup <see cref="IConsensusManager"/> in a way that it will consume headers up to header 40.
-        /// Present headers 11-50.  Make sure that <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 40 and
-        /// <see cref="GetHeadersPayload"/> wasn't sent. Cached headers contain headers from 41 to 50.
-        /// </summary>
-        [Fact]
-        public async Task ProcessHeadersAsync_DontSyncAfterSomeHeadersConsumedAndSomeCachedAsync()
-        {
-
-        }
-
-        /// <summary>We receive headers message with 2500 headers. Make sure peer was banned.</summary>
-        [Fact]
-        public async Task ProcessHeadersAsync_BanPeerThatViolatedMaxHeadersCountAsync()
-        {
-
-        }
     }
 }
