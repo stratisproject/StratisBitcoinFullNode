@@ -428,13 +428,24 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(header), header);
 
+            if (header == null)
+            {
+                this.logger.LogTrace("(-)[HEADER_NULL]");
+                return;
+            }
+
             ChainedHeader bestSentHeader = null;
 
             lock (this.bestSentHeaderLock)
             {
-                ChainedHeader fork = header.FindAncestorOrSelf(this.BestSentHeader);
+                if (this.BestSentHeader != null)
+                {
+                    ChainedHeader ancestorOrSelf = header.FindAncestorOrSelf(this.BestSentHeader);
 
-                if (fork != header)
+                    if (ancestorOrSelf != header)
+                        this.BestSentHeader = header;
+                }
+                else
                     this.BestSentHeader = header;
 
                 bestSentHeader = this.BestSentHeader;
