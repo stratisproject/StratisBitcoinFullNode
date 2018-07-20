@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.ReIndex)
             {
                 await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
-                await this.blockRepository.ReindexAsync().ConfigureAwait(false);
+                await this.blockRepository.ReIndexAsync().ConfigureAwait(false);
             }
 
             ChainedHeader initializationTip = this.chain.GetBlock(this.blockRepository.BlockHash);
@@ -134,8 +134,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     throw new BlockStoreException("You need to rebuild the block store database using -reindex to change -txindex");
                 }
 
-                if (this.storeSettings.TxIndex)
-                    await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
+                // We only reach here in the case where we are syncing with a database with no blocks.
+                // Always set the TxIndex here.
+                await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
             }
             
             // Throw if block store was initialized after the consensus.

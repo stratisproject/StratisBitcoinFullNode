@@ -461,6 +461,84 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             }
         }
 
+        [Fact]
+        public void ReIndexAsync_TxIndex_OffToOn()
+        {
+            string dir = CreateTestDir(this);
+            Block block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            Transaction transaction = Network.Main.CreateTransaction();
+            block.Transactions.Add(transaction);
+
+            using (var engine = new DBreezeEngine(dir))
+            {
+                DBreeze.Transactions.Transaction dbreezeTransaction = engine.GetTransaction();
+                dbreezeTransaction.Insert<byte[], byte[]>("Block", block.GetHash().ToBytes(), block.ToBytes());
+                dbreezeTransaction.Commit();
+            }
+
+            using (IBlockRepository repository = this.SetupRepository(Network.Main, dir))
+            {
+                Task setIndexTask = repository.SetTxIndexAsync(true);
+                setIndexTask.Wait();
+
+                Task reindexTask = repository.ReIndexAsync();
+                reindexTask.Wait();
+            }
+
+            using (var engine = new DBreezeEngine(dir))
+            {
+                DBreeze.Transactions.Transaction dbreezeTransaction = engine.GetTransaction();
+                Dictionary<byte[], Block> blockDict = dbreezeTransaction.SelectDictionary<byte[], Block>("Block");
+                Dictionary<byte[], byte[]> transDict = dbreezeTransaction.SelectDictionary<byte[], byte[]>("Transaction");
+
+                Assert.Single(blockDict);
+                Assert.Equal(block.GetHash(), blockDict.FirstOrDefault().Value.GetHash());
+
+                Assert.Single(transDict);
+                KeyValuePair<byte[], byte[]> savedTransactionRow = transDict.FirstOrDefault();
+                Assert.Equal(transaction.GetHash().ToBytes(), savedTransactionRow.Key);
+                Assert.Equal(block.GetHash().ToBytes(), savedTransactionRow.Value);
+            }
+        }
+
+        [Fact]
+        public void ReIndexAsync_TxIndex_OnToOff()
+        {
+            string dir = CreateTestDir(this);
+            Block block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            Transaction transaction = Network.Main.CreateTransaction();
+            block.Transactions.Add(transaction);
+
+            using (var engine = new DBreezeEngine(dir))
+            {
+                DBreeze.Transactions.Transaction dbreezeTransaction = engine.GetTransaction();
+                dbreezeTransaction.Insert<byte[], byte[]>("Block", block.GetHash().ToBytes(), block.ToBytes());
+                dbreezeTransaction.Insert<byte[], byte[]>("Transaction", transaction.GetHash().ToBytes(), block.GetHash().ToBytes());
+                dbreezeTransaction.Commit();
+            }
+
+            using (IBlockRepository repository = this.SetupRepository(Network.Main, dir))
+            {
+                Task setIndexTask = repository.SetTxIndexAsync(false);
+                setIndexTask.Wait();
+
+                Task reindexTask = repository.ReIndexAsync();
+                reindexTask.Wait();
+            }
+
+            using (var engine = new DBreezeEngine(dir))
+            {
+                DBreeze.Transactions.Transaction dbreezeTransaction = engine.GetTransaction();
+                Dictionary<byte[], Block> blockDict = dbreezeTransaction.SelectDictionary<byte[], Block>("Block");
+                Dictionary<byte[], byte[]> transDict = dbreezeTransaction.SelectDictionary<byte[], byte[]>("Transaction");
+
+                Assert.Single(blockDict);
+                Assert.Equal(block.GetHash(), blockDict.FirstOrDefault().Value.GetHash());
+
+                Assert.Empty(transDict);
+            }
+        }
+
         private IBlockRepository SetupRepository(Network main, string dir)
         {
             var repository = new BlockRepository(main, dir, DateTimeProvider.Default, this.LoggerFactory.Object);

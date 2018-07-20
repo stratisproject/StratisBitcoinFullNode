@@ -87,6 +87,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             throw new NotImplementedException();
         }
 
+        public Task ReIndexAsync()
+        {
+            throw new NotImplementedException();
+        }
+
         public Task SetTxIndexAsync(bool txIndex)
         {
             this.TxIndex = txIndex;
