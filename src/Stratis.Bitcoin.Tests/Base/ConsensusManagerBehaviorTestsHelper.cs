@@ -102,7 +102,10 @@ namespace Stratis.Bitcoin.Tests.Base
             this.PeerMock.Setup(x => x.State).Returns(peerState);
 
             if (expectedPeerTip != null)
+            {
                 cmBehavior.SetPrivatePropertyValue("ExpectedPeerTip", expectedPeerTip);
+                cmBehavior.SetPrivatePropertyValue("BestSentHeader", expectedPeerTip);
+            }
 
             if (cache != null)
                 cmBehavior.SetPrivateVariableValue("cachedHeaders", cache);

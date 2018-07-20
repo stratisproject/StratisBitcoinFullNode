@@ -64,6 +64,7 @@ namespace Stratis.Bitcoin.Tests.Base
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
 
             Assert.Equal(this.headers[12], behavior.ExpectedPeerTip);
+            Assert.Equal(this.headers[12], behavior.BestSentHeader);
             Assert.Empty(this.helper.GetCachedHeaders(behavior));
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
             Assert.Equal(result.Consumed, this.headers[12]);
@@ -94,6 +95,7 @@ namespace Stratis.Bitcoin.Tests.Base
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
 
             Assert.Equal(this.headers[40], behavior.ExpectedPeerTip);
+            Assert.Equal(this.headers[40], behavior.BestSentHeader);
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
             Assert.Equal(result.Consumed, this.headers[40]);
 
@@ -127,6 +129,7 @@ namespace Stratis.Bitcoin.Tests.Base
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
 
             Assert.Equal(this.headers[10], behavior.ExpectedPeerTip);
+            Assert.Equal(this.headers[10], behavior.BestSentHeader);
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
             Assert.Null(result);
             Assert.Empty(this.helper.GetCachedHeaders(behavior));
@@ -334,8 +337,8 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Initialize cached headers with CacheSyncHeadersThreshold + 1 items. Present some headers.
-        /// Make sure <inheritdoc cref="IConsensusManager.HeadersPresented"/> and <see cref="GetHeadersPayload"/> wasn't sent.
+        /// Initialize cached headers so it's full. Present some headers.
+        /// Make sure <inheritdoc cref="IConsensusManager.HeadersPresented"/> wasn't called and <see cref="GetHeadersPayload"/> wasn't sent.
         /// </summary>
         [Fact]
         public async Task ProcessHeadersAsync_DontSyncAfterCacheIsFullAsync()
@@ -369,6 +372,8 @@ namespace Stratis.Bitcoin.Tests.Base
 
             for (int i = 0; i < 11; i++)
                 Assert.Equal(this.headers[i + 1].Header, cached[i]);
+
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
         }
 
         /// <summary>
