@@ -416,7 +416,7 @@ namespace Stratis.Bitcoin.Tests.Base
             this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
                 (presentedHeaders, triggerDownload) => { throw new ConsensusException(""); });
 
-            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(10).Take(5).Select(x => x.Header).ToArray()));
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header).ToArray()));
 
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
             Assert.True(this.helper.PeerWasBanned);
@@ -429,7 +429,16 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ProcessHeadersAsync_ConsumeAllHeadersAndAskForMoreAsync()
         {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) =>
+                {
+                    return new ConnectNewHeadersResult() { Consumed = this.headers.Single(x => x.HashBlock == presentedHeaders.Last().GetHash()) };
+                });
 
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header).ToArray()));
+
+            Assert.Equal(this.headers[15], behavior.ExpectedPeerTip);
+            Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
         }
 
         /// <summary>
@@ -440,14 +449,37 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ProcessHeadersAsync_DontSyncAfterSomeHeadersConsumedAndSomeCachedAsync()
         {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) =>
+                {
+                    return new ConnectNewHeadersResult() { Consumed = this.headers[40] };
+                });
 
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(40).Select(x => x.Header).ToArray()));
+
+            Assert.Equal(this.headers[40], behavior.ExpectedPeerTip);
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
+
+            List<BlockHeader> cached = this.helper.GetCachedHeaders(behavior);
+            Assert.Equal(10, cached.Count);
+
+            for (int i = 41; i <= 50; i++)
+                Assert.Equal(this.headers[i].Header, cached[i - 41]);
         }
 
         /// <summary>We receive headers message with 2500 headers. Make sure peer was banned.</summary>
         [Fact]
         public async Task ProcessHeadersAsync_BanPeerThatViolatedMaxHeadersCountAsync()
         {
+            this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) => { throw new ConsensusException(""); });
 
+            List<ChainedHeader> headersToPresent = ChainedHeadersHelper.CreateConsecutiveHeaders(2500, null, true);
+
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header).ToArray()));
+
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
+            Assert.True(this.helper.PeerWasBanned);
         }
     }
 }
