@@ -229,49 +229,35 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerConnector.Initialize(connectionManagerExisting);
             
             // Peer 1.
-            IPAddress originalAddress = IPAddress.Parse("::ffff:192.168.0.1");
-            var endpointNode1 = new IPEndPoint(originalAddress, 80);
-            peerAddressManager.AddPeer(endpointNode1, IPAddress.Loopback);
-            bool connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointNode1);
+            IPAddress originalAddressPeer1 = IPAddress.Parse("::ffff:57.48.183.81"); // ipv4
+            var endpointPeer1 = new IPEndPoint(originalAddressPeer1, 80);
+            peerAddressManager.AddPeer(endpointPeer1, IPAddress.Loopback);
+            bool connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointPeer1);
             Assert.True(connectedToThisPeer);
 
             // Peer 2 has different network group.
-            IPAddress addressInDifferentNetworkGroup = IPAddress.Parse("193.168.0.1"); // ipv4
-            var endpointNode2 = new IPEndPoint(addressInDifferentNetworkGroup, 80);
-            peerAddressManager.AddPeer(endpointNode2, IPAddress.Loopback);
-            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointNode2);
+            IPAddress addressInDifferentNetworkGroupPeer2 = IPAddress.Parse("99be:f5c5:adc2:525c:f6d7:7b30:5336:5a0f");  // ipv6
+            var endpointPeer2 = new IPEndPoint(addressInDifferentNetworkGroupPeer2, 80);
+            peerAddressManager.AddPeer(endpointPeer2, IPAddress.Loopback);
+            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointPeer2);
             Assert.True(connectedToThisPeer);  // Different network group: connects.
 
-            // Peer 3 has different network group.
-            IPAddress addressInSameNetworkGroupPeer3 = IPAddress.Parse("::ffff:194.168.0.1");
-            var endpointNode3 = new IPEndPoint(addressInSameNetworkGroupPeer3, 80);
-            peerAddressManager.AddPeer(endpointNode3, IPAddress.Loopback);
-            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointNode3);
-            Assert.True(connectedToThisPeer); // Same network group: connects.
-
-            // Peer 4 has same network group.
-            IPAddress addressInSameNetworkGroupPeer4 = IPAddress.Parse("192.168.1.0"); // ipv4
-            var endpointNode4 = new IPEndPoint(addressInSameNetworkGroupPeer4, 80);
-            peerAddressManager.AddPeer(endpointNode4, IPAddress.Loopback);
-            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointNode4);
-            Assert.True(connectedToThisPeer); // Same network group: connects.
-
-            // Peer 5 has same network group.
-            IPAddress addressInSameNetworkGroupPeer5 = IPAddress.Parse("::ffff:192.168.1.1");
-            var endpointNode5 = new IPEndPoint(addressInSameNetworkGroupPeer5, 80);
-            peerAddressManager.AddPeer(endpointNode5, IPAddress.Loopback);
-            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointNode5);
+            // Peer 3 in same network group as Peer 2.
+            IPAddress addressInSameNetworkGroupPeer3 = IPAddress.Parse("99be:f5c5:adc2:525c:db45:d36e:ce01:a394"); // ipv6
+            var endpointPeer3 = new IPEndPoint(addressInSameNetworkGroupPeer3, 80);
+            peerAddressManager.AddPeer(endpointPeer3, IPAddress.Loopback);
+            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointPeer3);
             Assert.True(connectedToThisPeer); // Same network group: connects.
         }
 
         [Fact]
-        public void PeerConnectorDiscovery_ConnectsTo_LocalHostNodes_IpRangeFilteringEnabled()
+        public void PeerConnectorDiscovery_ConnectsTo_LocalNodes_IpRangeFilteringEnabled()
         {
             // Setup.
             Network mainNetwork = Network.Main;
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
-            var nodeSettings = new NodeSettings(mainNetwork, args: new[] { "-IpRangeFiltering" });
+            var nodeSettings = new NodeSettings(mainNetwork, args: new[] { string.Empty }); // Ip range filtering enabled by default.
 
             var connectionManagerSettingsExisting = new ConnectionManagerSettings(nodeSettings);
             Mock<INetworkPeerFactory> networkPeerFactoryExisting = new Mock<INetworkPeerFactory>();
@@ -281,22 +267,22 @@ namespace Stratis.Bitcoin.Tests.P2P
             IConnectionManager connectionManagerExisting = this.CreateConnectionManager(nodeSettings, connectionManagerSettingsExisting, peerAddressManager, peerConnector);
             peerConnector.Initialize(connectionManagerExisting);
 
-            // Peer 1 on localhost.
-            IPAddress originalAddress = IPAddress.Parse("::ffff:127.0.0.1");
-            var originalLocalhostNodeEndpoint = new IPEndPoint(originalAddress, 80);
-            bool connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, originalLocalhostNodeEndpoint);
+            // Peer 1 is a local address.
+            IPAddress originalAddressPeer1 = IPAddress.Parse("::ffff:192.168.0.1"); // ipv4
+            var endpointPeer1 = new IPEndPoint(originalAddressPeer1, 80);
+            bool connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointPeer1);
             Assert.True(connectedToThisPeer);
 
-            // Peer 2 on localhost on different port.
-            IPAddress addressInSameNetworkGroupIpv4 = IPAddress.Parse("127.0.0.1"); // ipv4
-            var secondLocalhostNodeEndpoint = new IPEndPoint(addressInSameNetworkGroupIpv4, 90);
-            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, secondLocalhostNodeEndpoint);
+            // Peer 2 is a local address in a different group.
+            IPAddress addressInDifferentNetworkGroupPeer2 = IPAddress.Parse("::ffff:192.168.1.1"); // ipv4
+            var endpointPeer2 = new IPEndPoint(addressInDifferentNetworkGroupPeer2, 80);
+            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointPeer2);
             Assert.True(connectedToThisPeer);
 
-            // Peer 3 on localhost on different port.
-            IPAddress addressInSameNetworkGroupIpv6 = IPAddress.Parse("::ffff:127.0.0.1");
-            secondLocalhostNodeEndpoint = new IPEndPoint(addressInSameNetworkGroupIpv6, 99);
-            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, secondLocalhostNodeEndpoint);
+            // Peer 3 is a local address in a different group.
+            IPAddress addressInDifferentNetworkGroupPeer3 = IPAddress.Parse("0:0:0:0:0:ffff:c0a8:101"); // ipv6
+            var endpointPeer3 = new IPEndPoint(addressInDifferentNetworkGroupPeer3, 80);
+            connectedToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointPeer3);
             Assert.True(connectedToThisPeer);
         }
 
@@ -318,27 +304,27 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerConnector.Initialize(connectionManagerExisting);
 
             // Original peer.
-            IPAddress originalAddress = IPAddress.Parse("192.168.0.1"); // ipv4
-            var originalNodeEndpoint = new IPEndPoint(originalAddress, 80);
-            bool connectToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, originalNodeEndpoint);
+            IPAddress originalAddressPeer1 = IPAddress.Parse("::ffff:213.86.221.35"); // ipv4
+            var endpointPeer1 = new IPEndPoint(originalAddressPeer1, 80);
+            bool connectToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointPeer1);
             Assert.True(connectToThisPeer);
             
             // Peer from same group.
-            IPAddress addressFromNodeInSameGroup = IPAddress.Parse("192.168.0.2"); // ipv4
-            var endpointOfNodeInSameGroup = new IPEndPoint(addressFromNodeInSameGroup, 80);
-            connectToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointOfNodeInSameGroup);
+            IPAddress addressInSameNetworkGroupPeer2 = IPAddress.Parse("::ffff:213.86.221.36"); // ipv4
+            var endpointPeer2 = new IPEndPoint(addressInSameNetworkGroupPeer2, 80);
+            connectToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointPeer2);
             Assert.False(connectToThisPeer);
 
-            // Peer from same group.
-            addressFromNodeInSameGroup = IPAddress.Parse("::ffff:192.168.0.3");
-            endpointOfNodeInSameGroup = new IPEndPoint(addressFromNodeInSameGroup, 80);
-            connectToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointOfNodeInSameGroup);
+            // Peer from same group: (213.86.221.37)
+            IPAddress addressInSameNetworkGroupPeer3 = IPAddress.Parse("2002:d556:dd25:0:0:0:0:0"); //ipv6 
+            var endpointPeer3 = new IPEndPoint(addressInSameNetworkGroupPeer3, 80);
+            connectToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointPeer3);
             Assert.False(connectToThisPeer);
 
             // Peer from different group.
-            IPAddress addressFromNodeInDifferentGroup = IPAddress.Parse("::ffff:192.168.0.1");
-            var endpointOfNodeInDifferentGroup = new IPEndPoint(addressFromNodeInDifferentGroup, 80);
-            connectToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointOfNodeInDifferentGroup);
+            IPAddress addressInDifferentNetworkGroupPeer4 = IPAddress.Parse("beac:d2f3:f39b:6181:3f:3757:124d:d9d5"); // ipv6
+            var endpointPeer4 = new IPEndPoint(addressInDifferentNetworkGroupPeer4, 80);
+            connectToThisPeer = ConnectToPeer(peerAddressManager, networkPeerFactoryExisting, connectionManagerSettingsExisting, peerConnector, endpointPeer4);
             Assert.True(connectToThisPeer);
         }
 

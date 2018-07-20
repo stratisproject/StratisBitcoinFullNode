@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.P2P
             }
 
             // Connect if local, ip range filtering disabled or ip range filtering enabled and peer in a different group. 
-            if (!peerAddress.Endpoint.Address.IsLocal() && this.ConnectionSettings.IpRangeFiltering && this.PeerIsPartOfExistingGroup(peerAddress))
+            if (peerAddress.Endpoint.Address.IsRoutable(false) && this.ConnectionSettings.IpRangeFiltering && this.PeerIsPartOfExistingGroup(peerAddress))
             {
                 this.logger.LogTrace("(-)[RANGE_FILTERED]");
                 return;
