@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -25,10 +26,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
         public const ulong GasPriceMinimum = 1;
 
         public const ulong GasPriceMaximum = 10_000;
-
-        public SmartContractFormatRule()
-        {
-        }
 
         public override Task RunAsync(RuleContext context)
         {
@@ -57,22 +54,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
             if (!transaction.IsSmartContractExecTransaction())
                 return;
 
-            var scTxOut = transaction.TryGetSmartContractTxOut();
+            TxOut scTxOut = transaction.TryGetSmartContractTxOut();
 
             if (scTxOut == null)
             {
                 new ConsensusError("no-smart-contract-tx-out", "No smart contract TxOut").Throw();
             }
 
-            var serializer = CallDataSerializer.Default;
-            var callDataDeserializationResult = serializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
+            ICallDataSerializer serializer = CallDataSerializer.Default;
+            Result<CallData> callDataDeserializationResult = serializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
 
             if (callDataDeserializationResult.IsFailure)
             {
                 new ConsensusError("invalid-calldata-format", "Invalid CallData format").Throw();
             }
 
-            var callData = callDataDeserializationResult.Value;
+            CallData callData = callDataDeserializationResult.Value;
 
             if (callData.GasPrice < GasPriceMinimum)
             {
