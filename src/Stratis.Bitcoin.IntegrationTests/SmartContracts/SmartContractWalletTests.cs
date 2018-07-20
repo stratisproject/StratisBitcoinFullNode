@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
@@ -13,6 +11,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.MockChain;
+using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
@@ -104,8 +103,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractNode();
-                CoreNode scReceiver = builder.CreateSmartContractNode();
+                CoreNode scSender = builder.CreateSmartContractPosNode();
+                CoreNode scReceiver = builder.CreateSmartContractPosNode();
 
                 builder.StartAll();
 
@@ -149,7 +148,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Transaction transferContractTransaction = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
 
                 // Broadcast the token transaction to the network
-                scSender.FullNode.NodeService<IBroadcasterManager>().BroadcastTransactionAsync(transferContractTransaction);
+                scSender.AddToStratisMempool(transferContractTransaction);
+                //scSender.FullNode.NodeService<IBroadcasterManager>().BroadcastTransactionAsync(transferContractTransaction);
 
                 // Wait for the token transaction to be picked up by the mempool
                 TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
@@ -513,6 +513,65 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
                 Assert.Equal((ulong)30 * 100_000_000, senderState.GetCurrentBalance(new Address(response.NewContractAddress).ToUint160(new SmartContractsRegTest())));
+            }
+        }
+
+        [Fact]
+        public void Create_Contract_WithFunds_Via_Controller_On_POS()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode scSender = builder.CreateSmartContractPosNode();
+                CoreNode scReceiver = builder.CreateSmartContractPosNode();
+
+                builder.StartAll();
+
+                scSender.NotInIBD();
+                scReceiver.NotInIBD();
+
+                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
+                Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
+                Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
+
+                scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
+                scReceiver.SetDummyMinerSecret(new BitcoinSecret(key, scReceiver.FullNode.Network));
+                var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
+                scSender.GenerateStratisWithMiner(maturity + 5);
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
+
+                var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
+                Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
+
+                SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
+                WalletController senderWalletController = scSender.FullNode.NodeService<WalletController>();
+                SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
+                Assert.True(compilationResult.Success);
+
+                var buildRequest = new BuildCreateContractTransactionRequest
+                {
+                    AccountName = AccountName,
+                    Amount = "30",
+                    GasLimit = "10000",
+                    GasPrice = "1",
+                    ContractCode = compilationResult.Compilation.ToHexString(),
+                    FeeAmount = "0.001",
+                    Password = Password,
+                    WalletName = WalletName,
+                    Sender = addr.Address
+                };
+
+                JsonResult result = (JsonResult)senderSmartContractsController.BuildCreateSmartContractTransaction(buildRequest);
+                var response = (BuildCreateContractTransactionResponse)result.Value;
+                var tx = scSender.FullNode.Network.CreateTransaction(response.Hex);
+                tx.Time = (uint)scSender.FullNode.NodeService<IDateTimeProvider>().GetAdjustedTimeAsUnixTimestamp();
+
+                scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, tx.ToHex());
+
+                ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
+                Assert.Equal((ulong)30 * 100_000_000, senderState.GetCurrentBalance(new Address(response.NewContractAddress).ToUint160(scSender.FullNode.Network)));
             }
         }
     }

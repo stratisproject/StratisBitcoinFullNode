@@ -7,24 +7,28 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 
-namespace Stratis.Bitcoin.Features.SmartContracts
+namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
 {
     /// <summary>
-    /// Extension of consensus rules that provide access to a store based on UTXO (Unspent transaction outputs).
+    /// Extension of consensus rules that provide access to a PoS store.
     /// </summary>
-    public class SmartContractConsensusRules : PowConsensusRules
+    /// <remarks>
+    /// A Proof-Of-Stake blockchain as implemented in this code base represents a hybrid POS/POW consensus model.
+    /// </remarks>
+    public sealed class SmartContractPosRules : PosConsensusRules
     {
         public readonly ISmartContractExecutorFactory ExecutorFactory;
         public readonly ContractStateRepositoryRoot OriginalStateRoot;
         public readonly ISmartContractReceiptStorage ReceiptStorage;
 
-        public SmartContractConsensusRules(
+        public SmartContractPosRules(
             ConcurrentChain chain,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
@@ -35,9 +39,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             NodeDeployments nodeDeployments,
             ContractStateRepositoryRoot originalStateRoot,
             ILookaheadBlockPuller puller,
-            CoinView utxoSet,
-            ISmartContractReceiptStorage receiptStorage)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, puller)
+            ISmartContractReceiptStorage receiptStorage,
+            IStakeChain stakeChain,
+            IStakeValidator stakeValidator,
+            CoinView utxoSet)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, puller, stakeChain, stakeValidator)
         {
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;
@@ -45,9 +51,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <inheritdoc />
-        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
+        public override RuleContext CreateRuleContext(Bitcoin.Consensus.ValidationContext validationContext, ChainedHeader consensusTip)
         {
-            return new PowRuleContext(validationContext, this.Network.Consensus, consensusTip, this.DateTimeProvider.GetTimeOffset());
+            return new PosRuleContext(validationContext, this.Network.Consensus, consensusTip, this.DateTimeProvider.GetTimeOffset());
         }
     }
 }

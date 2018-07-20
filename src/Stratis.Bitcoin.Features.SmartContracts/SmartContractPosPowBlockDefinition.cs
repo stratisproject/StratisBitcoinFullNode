@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -17,17 +18,28 @@ using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
-    public sealed class SmartContractBlockDefinition : BlockDefinition
+    /// <summary>
+    /// Defines how a proof of work block will be built on a proof of stake network.
+    /// </summary>
+    public sealed class SmartContractPosPowBlockDefinition : BlockDefinition
     {
+        /// <summary>Instance logger.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>Database of stake related data for the current blockchain.</summary>
+        private readonly IStakeChain stakeChain;
+
+        /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
+        private readonly IStakeValidator stakeValidator;
+
         private uint160 coinbaseAddress;
         private readonly CoinView coinView;
         private readonly ISmartContractExecutorFactory executorFactory;
-        private readonly ILogger logger;
         private readonly List<TxOut> refundOutputs = new List<TxOut>();
         private readonly ContractStateRepositoryRoot stateRoot;
         private ContractStateRepositoryRoot stateSnapshot;
 
-        public SmartContractBlockDefinition(
+        public SmartContractPosPowBlockDefinition(
             CoinView coinView,
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
@@ -36,23 +48,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
             Network network,
+            IStakeChain stakeChain,
+            IStakeValidator stakeValidator,
             ContractStateRepositoryRoot stateRoot)
-            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
+            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, new BlockDefinitionOptions() { IsProofOfStake = false })
         {
             this.coinView = coinView;
             this.executorFactory = executorFactory;
-            this.logger = loggerFactory.CreateLogger(this.GetType());
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.stakeChain = stakeChain;
+            this.stakeValidator = stakeValidator;
             this.stateRoot = stateRoot;
         }
 
-        /// <summary>
-        /// Overrides the <see cref="AddToBlock(TxMempoolEntry)"/> behaviour of <see cref="BlockDefinitionProofOfWork"/>.
-        /// <para>
-        /// Determine whether or not the mempool entry contains smart contract execution 
-        /// code. If not, then add to the block as per normal. Else extract and deserialize 
-        /// the smart contract code from the TxOut's ScriptPubKey.
-        /// </para>
-        /// </summary>
+        /// <inheritdoc/>
         public override void AddToBlock(TxMempoolEntry mempoolEntry)
         {
             this.logger.LogTrace("()");
@@ -96,11 +105,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <inheritdoc/>
-        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKeyIn)
+        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
             this.logger.LogTrace("()");
 
-            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
+            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetAddressFromScript(scriptPubKey);
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-createnewblock", getSenderResult.Error));
 
@@ -110,7 +119,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             this.refundOutputs.Clear();
 
-            base.OnBuild(chainTip, scriptPubKeyIn);
+            base.OnBuild(chainTip, scriptPubKey);
 
             this.coinbase.Outputs.AddRange(this.refundOutputs);
 
@@ -119,19 +128,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             return this.BlockTemplate;
         }
 
-        /// <summary>
-        /// The block header for smart contract blocks is identical to the standard block,
-        /// except it also has a second 32-byte root, the state root. This byte array
-        /// represents the current state of contract code, storage and balances, and can
-        /// be used in conjunction with getSnapshotTo at any time to recreate this state.
-        /// </summary>
+        /// <inheritdoc/>
         public override void UpdateHeaders()
         {
             this.logger.LogTrace("()");
 
-            this.UpdateBaseHeaders();
+            base.UpdateBaseHeaders();
 
-            this.block.Header.Bits = this.block.Header.GetWorkRequired(this.Network, this.ChainTip);
+            this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.Network.Consensus, this.Options.IsProofOfStake);
             ((SmartContractBlockHeader)this.block.Header).HashStateRoot = new uint256(this.stateSnapshot.Root);
 
             this.logger.LogTrace("(-)");

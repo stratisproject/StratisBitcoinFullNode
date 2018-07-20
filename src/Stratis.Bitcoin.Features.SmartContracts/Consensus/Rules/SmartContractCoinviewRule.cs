@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
@@ -21,7 +22,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     public sealed class SmartContractCoinviewRule : CoinViewRule
     {
         private List<Transaction> blockTxsProcessed;
-        private NBitcoin.Consensus consensusParams;
         private Transaction generatedTransaction;
         private uint refundCounter;
         private SmartContractConsensusRules smartContractParent;
@@ -37,7 +37,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             base.Initialize();
 
-            this.consensusParams = this.Parent.Network.Consensus;
             this.generatedTransaction = null;
             this.refundCounter = 1;
             this.smartContractParent = (SmartContractConsensusRules)this.Parent;
@@ -59,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
             // Start state from previous block's root
-            this.smartContractParent.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
+            this.smartContractParent.OriginalStateRoot.SyncToRoot(((SmartContractPowBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
             IContractStateRepository trackedState = this.smartContractParent.OriginalStateRoot.StartTracking();
 
             this.refundCounter = 1;

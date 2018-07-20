@@ -4,6 +4,7 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Networks;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {

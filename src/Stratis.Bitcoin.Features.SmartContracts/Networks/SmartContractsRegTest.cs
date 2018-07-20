@@ -4,6 +4,7 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Networks;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {
@@ -56,7 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999);
 
             this.Genesis = BitcoinMain.CreateBitcoinGenesisBlock(this.Consensus.ConsensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
-            ((SmartContractBlockHeader)this.Genesis.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
+            ((SmartContractPosBlockHeader)this.Genesis.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
             this.Consensus.HashGenesisBlock = this.Genesis.Header.GetHash();
 
             this.Consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.

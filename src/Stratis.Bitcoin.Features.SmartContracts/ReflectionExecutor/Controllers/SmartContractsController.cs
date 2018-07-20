@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             return Json(result);
         }
 
-        private BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
+        public BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
         {
             this.logger.LogTrace(request.ToString());
 
