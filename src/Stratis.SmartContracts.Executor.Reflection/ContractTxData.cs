@@ -3,6 +3,9 @@ using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
+    /// <summary>
+    /// Fields that are serialized and sent as data with a smart contract transaction
+    /// </summary>
     public class ContractTxData : ICreateData, ICallData
     {
         public ContractTxData(int vmVersion, ulong gasPrice, Gas gasLimit, uint160 address,
