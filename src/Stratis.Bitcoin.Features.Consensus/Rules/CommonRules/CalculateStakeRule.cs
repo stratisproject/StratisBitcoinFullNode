@@ -6,13 +6,14 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Checks if <see cref="Block"/> has a valid PoS header and calculate the next block difficulty.
+    /// Calculate the difficulty for a POS network and check that it is correct.
     /// </summary>
-    [PartialValidationRule]
+    [HeaderValidationRule]
     public class CalculateStakeRule : StakeStoreConsensusRule
     {
         /// <inheritdoc />
-        /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoW header.</exception>
+        /// <exception cref="ConsensusErrors.HighHash">Thrown if block doesn't have a valid PoW header.</exception>
+        /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of stake is incorrect.</exception>
         public override Task RunAsync(RuleContext context)
         {
             var posRuleContext = context as PosRuleContext;
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             BlockHeader header = context.ValidationContext.Block.Header;
 
-            // Check proof of work.
+            // Check proof of stake.
             if (header.Bits != context.NextWorkRequired)
             {
                 this.Logger.LogTrace("(-)[BAD_DIFF_BITS]");

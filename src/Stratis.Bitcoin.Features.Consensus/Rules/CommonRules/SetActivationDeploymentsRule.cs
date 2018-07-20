@@ -7,8 +7,8 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Check that the previous block hash is correct.
-    /// </summary>  
+    /// Set the <see cref="RuleContext.Flags"/> property that defines what deplyments have been activated.
+    /// </summary>
     [PartialValidationRule]
     public class SetActivationDeploymentsRule : ConsensusRule
     {

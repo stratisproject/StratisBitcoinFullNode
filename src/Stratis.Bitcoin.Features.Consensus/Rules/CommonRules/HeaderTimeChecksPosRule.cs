@@ -8,13 +8,13 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Checks if <see cref="PosBlock"/> has a valid time stamp.
+    /// Checks if <see cref="PosBlock"/> timestamp is greater than previous block timestamp.
     /// </summary>
     [HeaderValidationRule(CanSkipValidation = true)]
     public class HeaderTimeChecksPosRule : ConsensusRule
     {
         /// <inheritdoc />
-        /// <exception cref="ConsensusErrors.BlockTimestampTooEarly">Thrown if block's version is outdated.</exception>
+        /// <exception cref="ConsensusErrors.BlockTimestampTooEarly">Thrown if block time is equal or behind the previous block.</exception>
         public override Task RunAsync(RuleContext context)
         {
             Guard.NotNull(context.ConsensusTip, nameof(context.ConsensusTip));

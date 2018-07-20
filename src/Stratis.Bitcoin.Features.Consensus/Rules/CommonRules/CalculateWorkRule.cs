@@ -6,9 +6,9 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Checks if <see cref="Block"/> has a valid PoW header and calculate the next block difficulty.
+    /// Calculate the difficulty for a POW network and check that it is correct.   
     /// </summary>
-    [PartialValidationRule]
+    [HeaderValidationRule]
     public class CalculateWorkRule : ConsensusRule
     {
         /// <inheritdoc />
