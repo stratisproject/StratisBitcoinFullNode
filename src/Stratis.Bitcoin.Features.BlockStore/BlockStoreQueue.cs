@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.storeTip != this.chain.Genesis)
                 {
                     this.logger.LogTrace("(-)[REBUILD_REQUIRED]");
-                    throw new BlockStoreException("You need to rebuild the block store database using -reindex-chainstate to change -txindex");
+                    throw new BlockStoreException("You need to rebuild the block store database using -reindex to change -txindex");
                 }
 
                 if (this.storeSettings.TxIndex)
