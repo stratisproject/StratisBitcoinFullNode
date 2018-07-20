@@ -198,8 +198,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.AddOpReturnOutput(context);
             this.AddCoins(context);
             this.AddSecrets(context);
-            if (context.ChangeAddress == null)
-                this.FindChangeAddress(context);
+            this.FindChangeAddress(context);
             this.AddFee(context);
         }
 
@@ -207,7 +206,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Load's all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void AddSecrets(TransactionBuildContext context)
+        protected void AddSecrets(TransactionBuildContext context)
         {
             if (!context.Sign)
                 return;
@@ -251,7 +250,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Find the next available change address.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void FindChangeAddress(TransactionBuildContext context)
+        protected void FindChangeAddress(TransactionBuildContext context)
         {
             // Get an address to send the change to.
             context.ChangeAddress = this.walletManager.GetUnusedChangeAddress(new WalletAccountReference(context.AccountReference.WalletName, context.AccountReference.AccountName));
@@ -263,7 +262,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Then add them to the <see cref="TransactionBuildContext.UnspentOutputs"/>.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void AddCoins(TransactionBuildContext context)
+        protected void AddCoins(TransactionBuildContext context)
         {
             context.UnspentOutputs = this.walletManager.GetSpendableTransactionsInAccount(context.AccountReference, context.MinConfirmations).ToList();
 
@@ -349,7 +348,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Use the <see cref="FeeRate"/> from the <see cref="walletFeePolicy"/>.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void AddFee(TransactionBuildContext context)
+        protected void AddFee(TransactionBuildContext context)
         {
             Money fee;
 
@@ -372,7 +371,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Add extra unspendable output to the transaction if there is anything in OpReturnData.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void AddOpReturnOutput(TransactionBuildContext context)
+        protected void AddOpReturnOutput(TransactionBuildContext context)
         {
             if (string.IsNullOrEmpty(context.OpReturnData)) return;
 

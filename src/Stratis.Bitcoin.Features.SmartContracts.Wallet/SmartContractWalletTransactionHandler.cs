@@ -41,8 +41,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             if (context.ChangeAddress != null)
                 context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
+            else 
+                base.FindChangeAddress(context);
 
-            base.InitializeTransactionBuilder(context);
+            base.AddRecipients(context);
+            base.AddOpReturnOutput(context);
+            base.AddCoins(context);
+            base.AddSecrets(context);
+            base.AddFee(context);
         }
 
         /// <summary>
