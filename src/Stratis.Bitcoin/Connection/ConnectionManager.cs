@@ -340,8 +340,7 @@ namespace Stratis.Bitcoin.Connection
             if (!this.ConnectionSettings.AddNode.Any(p => p.Match(ipEndpoint)))
             {
                 this.ConnectionSettings.AddNode.Add(ipEndpoint);
-                var addNodeConnector = this.PeerConnectors.FirstOrDefault(pc => pc is PeerConnectorAddNode);
-                if (addNodeConnector != null) addNodeConnector.MaxOutboundConnections++;
+                this.PeerConnectors.FirstOrDefault(pc => pc is PeerConnectorAddNode).MaxOutboundConnections++;
             }
             else
                 this.logger.LogTrace("The endpoint already exists in the add node collection.");
@@ -371,9 +370,6 @@ namespace Stratis.Bitcoin.Connection
             this.peerAddressManager.RemovePeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
             List<IPEndPoint> matchingAddNodes = this.ConnectionSettings.AddNode.Where(p => p.Match(ipEndpoint)).ToList();
             matchingAddNodes.ForEach(m => this.ConnectionSettings.AddNode.Remove(m));
-
-            var addNodeConnector = this.PeerConnectors.FirstOrDefault(pc => pc is PeerConnectorAddNode);
-            if (addNodeConnector != null) addNodeConnector.MaxOutboundConnections--;
 
             this.logger.LogTrace("(-)");
         }
