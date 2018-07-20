@@ -1,7 +1,7 @@
 ﻿using System;
 using Stratis.SmartContracts;
 
-[ToDeploy]
+[Deploy]
 public class Token : SmartContract
 {
     public Token(ISmartContractState state)

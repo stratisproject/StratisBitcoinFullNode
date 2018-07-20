@@ -82,13 +82,16 @@ namespace Stratis.SmartContracts.Core.Validation
         {
             var errors = new List<ValidationResult>();
             var visited = new Dictionary<string, List<ValidationResult>>();
-            var contractType = Enumerable.FirstOrDefault<TypeDefinition>(decompilation.ModuleDefinition.Types, x => x.FullName != "<Module>");
+            IEnumerable<TypeDefinition> contractTypes = decompilation.ModuleDefinition.GetDevelopedTypes();
 
-            List<MethodDefinition> userMethods = contractType.Methods.Where(method => method.Body != null).ToList();
-            foreach (MethodDefinition userMethod in userMethods)
+            foreach(TypeDefinition contractType in contractTypes)
             {
-                ValidateUserMethod(errors, visited, userMethod);
-                ValidatedReferencedMethods(errors, visited, userMethods, userMethod);
+                List<MethodDefinition> userMethods = contractType.Methods.Where(method => method.Body != null).ToList();
+                foreach (MethodDefinition userMethod in userMethods)
+                {
+                    ValidateUserMethod(errors, visited, userMethod);
+                    ValidatedReferencedMethods(errors, visited, userMethods, userMethod);
+                }
             }
 
             return new SmartContractValidationResult(errors);

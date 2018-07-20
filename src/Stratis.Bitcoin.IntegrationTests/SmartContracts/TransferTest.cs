@@ -1,6 +1,6 @@
 ﻿using Stratis.SmartContracts;
 
-[ToDeploy]
+[Deploy]
 public class TransferTest : SmartContract
 {
     public TransferTest(ISmartContractState state)

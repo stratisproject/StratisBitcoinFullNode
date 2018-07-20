@@ -1,7 +1,7 @@
 ﻿using System;
 using Stratis.SmartContracts;
 
-[ToDeploy]
+[Deploy]
 public sealed class ContractConstructorInvalid : SmartContract
 {
     public ContractConstructorInvalid(ISmartContractState state)

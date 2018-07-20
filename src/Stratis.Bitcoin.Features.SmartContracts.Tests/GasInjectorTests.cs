@@ -24,7 +24,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private const string TestSource = @"using System;
                                             using Stratis.SmartContracts;   
 
-                                            [ToDeploy]
                                             public class Test : SmartContract
                                             {
                                                 public Test(ISmartContractState state) : base(state) {}
@@ -40,7 +39,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private const string TestSingleConstructorSource = @"using System;
                                             using Stratis.SmartContracts;   
 
-                                            [ToDeploy]
                                             public class Test : SmartContract
                                             {
                                                 public Test(ISmartContractState state) : base(state) 
@@ -64,7 +62,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private const string TestMultipleConstructorSource = @"using System;
                                             using Stratis.SmartContracts;   
                                             
-                                            [ToDeploy]
                                             public class Test : SmartContract
                                             {
                                                 public Test(ISmartContractState state, string ownerName) : base(state) 

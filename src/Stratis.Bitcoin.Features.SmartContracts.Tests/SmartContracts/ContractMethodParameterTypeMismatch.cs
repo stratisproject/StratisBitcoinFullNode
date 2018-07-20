@@ -1,6 +1,6 @@
 ﻿using Stratis.SmartContracts;
 
-[ToDeploy]
+[Deploy]
 public sealed class ContractMethodParameterTypeMismatch : SmartContract
 {
     public ContractMethodParameterTypeMismatch(ISmartContractState state, int orders)

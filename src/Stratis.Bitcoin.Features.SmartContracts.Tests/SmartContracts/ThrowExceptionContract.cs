@@ -1,7 +1,7 @@
 ﻿using System;
 using Stratis.SmartContracts;
 
-[ToDeploy]
+[Deploy]
 public sealed class ThrowExceptionContract : SmartContract
 {
     public ThrowExceptionContract(ISmartContractState state)

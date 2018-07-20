@@ -1,6 +1,6 @@
 ﻿using Stratis.SmartContracts;
 
-[ToDeploy]
+[Deploy]
 public class StorageDemo : SmartContract
 {
     public StorageDemo(ISmartContractState state) : base(state)

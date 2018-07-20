@@ -53,7 +53,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // Decompile the contract execution code and validate it.
             SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(callData.ContractExecutionCode);
-            decompilation.ContractType = decompilation.ModuleDefinition.Types.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.Name == typeof(ToDeployAttribute).Name));
             SmartContractValidationResult validation = this.validator.Validate(decompilation);
 
             // If validation failed, refund the sender any remaining gas.
@@ -63,7 +62,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractValidationException(validation.Errors));
             }
 
-            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(callData.ContractExecutionCode);
+            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(callData.ContractExecutionCode, decompilation.ContractType.Name);
 
             Type contractType = Load(gasInjectedCode, decompilation.ContractType.Name);
             
@@ -150,7 +149,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractDoesNotExistException(callData.MethodName));
             }
 
-            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToContractMethod(contractExecutionCode, callData.MethodName);
+            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToContractMethod(contractExecutionCode, typeName, callData.MethodName);
             
             Type contractType = Load(gasInjectedCode, typeName);
 

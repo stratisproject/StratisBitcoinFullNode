@@ -11,12 +11,6 @@ namespace Stratis.SmartContracts.Core.Validation
     /// </summary>
     public class SmartContractTypeDefinitionValidator : IModuleDefinitionValidator
     {
-        private static readonly HashSet<string> IgnoredInCount = new HashSet<string>
-        {
-            "<Module>", // Part of every module
-            "<PrivateImplementationDetails>" // Added when constructing an array
-        };
-
         private static readonly IEnumerable<ITypeDefinitionValidator> TypeDefinitionValidators = new List<ITypeDefinitionValidator>
         {
             new NestedTypeValidator(),
@@ -31,7 +25,7 @@ namespace Stratis.SmartContracts.Core.Validation
         {
             var errors = new List<ValidationResult>();
 
-            IEnumerable<TypeDefinition> contractTypes = moduleDefinition.Types.Where(x => !IgnoredInCount.Contains(x.FullName)).ToList();
+            IEnumerable<TypeDefinition> contractTypes = moduleDefinition.Types.Where(x => !TypesToIgnoreUtil.Ignore.Contains(x.FullName)).ToList();
 
             foreach(TypeDefinition contractType in contractTypes)
             {

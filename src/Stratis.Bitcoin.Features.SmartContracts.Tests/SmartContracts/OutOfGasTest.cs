@@ -1,6 +1,6 @@
 ﻿using Stratis.SmartContracts;
 
-[ToDeploy]
+[Deploy]
 public class OutOfGasTest : SmartContract
 {
     public OutOfGasTest(ISmartContractState state)

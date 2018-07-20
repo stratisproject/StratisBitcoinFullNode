@@ -1,6 +1,6 @@
 ﻿using Stratis.SmartContracts;
 
-[ToDeploy]
+[Deploy]
 public class CallContract : SmartContract
 {
     public CallContract(ISmartContractState state) : base(state)

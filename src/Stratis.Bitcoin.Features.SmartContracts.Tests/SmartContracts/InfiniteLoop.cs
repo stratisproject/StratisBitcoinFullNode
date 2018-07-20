@@ -1,6 +1,6 @@
 ﻿using Stratis.SmartContracts;
 
-[ToDeploy]
+[Deploy]
 public class InfiniteLoop : SmartContract
 {
     public InfiniteLoop(ISmartContractState smartContractState) : base(smartContractState)

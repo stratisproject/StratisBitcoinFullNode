@@ -1,6 +1,6 @@
 ﻿using Stratis.SmartContracts;
 
-[ToDeploy]
+[Deploy]
 public class MultipleConstructor : SmartContract
 {
     public MultipleConstructor(ISmartContractState smartContractState)
