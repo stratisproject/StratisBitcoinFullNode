@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
@@ -14,9 +15,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Retrieves the block hash of the current tip of the coinview.
         /// </summary>
         /// <returns>Block hash of the current tip of the coinview.</returns>
-        public async Task<uint256> GetBlockHashAsync()
+        public async Task<uint256> GetBlockHashAsync(CancellationToken ct = default(CancellationToken))
         {
-            FetchCoinsResponse response = await this.FetchCoinsAsync(new uint256[0]).ConfigureAwait(false);
+            FetchCoinsResponse response = await this.FetchCoinsAsync(new uint256[0], ct).ConfigureAwait(false);
             return response.BlockHash;
         }
 
@@ -50,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// If the i-th item of <see cref="FetchCoinsResponse.UnspentOutputs"/> is <c>null</c>, it means that there are no unspent outputs in the given transaction.
         /// </para>
         /// </returns>
-        public abstract Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds);
+        public abstract Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken ct = default(CancellationToken));
 
         /// <summary>
         /// Rewinds the coinview to the last saved state.

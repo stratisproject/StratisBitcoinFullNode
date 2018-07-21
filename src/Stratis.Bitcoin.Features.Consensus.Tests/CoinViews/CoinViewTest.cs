@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             {
             }
 
-            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
+            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken ct = default(CancellationToken))
             {
                 var fetchCoinResponse = new FetchCoinsResponse(new UnspentOutputs[0], new uint256(987263876253));
                 return Task.FromResult(fetchCoinResponse);

@@ -201,6 +201,15 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             Assert.False(model.Enabled);
         }
 
+        [Fact]
+        public async Task GenerateBlocksAsync_does_not_use_small_coins()
+        {
+            //todo
+            //build a wallet with coins above and below PosMinting.MinimumStakingCoinValue, make sure that the coins
+            //below the minimum are not used for staking
+            // ... await this.posMinting.GenerateBlocksAsync(null); ...
+        }
+
         // the difficulty tests are ported from: https://github.com/bitcoin/bitcoin/blob/3e1ee310437f4c93113f6121425beffdc94702c2/src/test/blockchain_tests.cpp
         [Fact]
         public void GetDifficulty_VeryLowTarget_ReturnsDifficulty()

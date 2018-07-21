@@ -249,6 +249,12 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Indicates that the stake flag is in progress.</summary>
         public const int StakeInProgress = 1;
 
+        /// <summary>
+        /// We don't take coins that are smaller that 0.1 as described in
+        /// <see cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/1180"/>
+        /// </summary>
+        public const long MinimumStakingCoinValue = 10 * Money.CENT;
+
         /// <summary>a flag that indicates if stake is on/off based on the <see cref="StakeInProgress"/> and <see cref="StakeNotInProgress"/> constants.</summary>
         private int stakeProgressFlag;
 
@@ -509,16 +515,8 @@ namespace Stratis.Bitcoin.Features.Miner
                     return;
                 }
 
-                IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager
-                    .GetSpendableTransactionsInWallet(walletSecret.WalletName, 1)
-                    .Where(t => t != null).ToList();
-
-                FetchCoinsResponse coinset = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).ToArray()).ConfigureAwait(false);
-
-                List<UtxoStakeDescription> utxoStakeDescriptions = GetUtxoStakeDescriptions(walletSecret, spendableTransactions, coinset);
-
-                this.logger.LogTrace("Wallet total staking balance is {0}.", new Money(utxoStakeDescriptions.Sum(d => d.TxOut.Value)));
-
+                List<UtxoStakeDescription> utxoStakeDescriptions = await GetUtxoStakeDescriptions(walletSecret, this.stakeCancellationTokenSource.Token);
+                
                 blockTemplate = blockTemplate ?? this.blockProvider.BuildPosBlock(chainTip, new Script());
                 var posBlock = (PosBlock)blockTemplate.Block;
                 
@@ -545,14 +543,17 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        /// <summary>
-        /// We don't take coins that are smaller that 0.1 as described in
-        /// <see cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/1180"/>>
-        /// </summary>
-        private List<UtxoStakeDescription> GetUtxoStakeDescriptions(WalletSecret walletSecret,
-                IEnumerable<UnspentOutputReference> spendableTransactions, FetchCoinsResponse fetchedCoinSet)
+        private async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptions(WalletSecret walletSecret, CancellationToken ct)
         {
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
+            IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager
+                .GetSpendableTransactionsInWallet(walletSecret.WalletName, 1)
+                .Where(t => t != null).ToList();
+
+            //todo 
+            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).ToArray(), ct).ConfigureAwait(false);
+            if (ct.IsCancellationRequested) return utxoStakeDescriptions;
+
             foreach (UnspentOutputReference outputReference in spendableTransactions)
             {
                 UnspentOutputs coinSet = fetchedCoinSet.UnspentOutputs
@@ -560,7 +561,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (coinSet == null || outputReference.Transaction.Index >= coinSet.Outputs.Length) continue;
 
                 TxOut utxo = coinSet.Outputs[outputReference.Transaction.Index];
-                if (utxo == null || utxo.Value <= 10 * Money.CENT) continue;
+                if (utxo == null || utxo.Value <= MinimumStakingCoinValue) continue;
 
                 uint256 hashBlock = this.chain.GetBlock((int)coinSet.Height)?.HashBlock;
                 if (hashBlock == null) continue;
@@ -577,8 +578,11 @@ namespace Stratis.Bitcoin.Features.Miner
                 utxoStakeDescriptions.Add(utxoStakeDescription);
 
                 this.logger.LogTrace("UTXO '{0}' with value {1} might be available for staking.", utxoStakeDescription.OutPoint, utxo.Value);
+
+                if (ct.IsCancellationRequested) return utxoStakeDescriptions;
             }
 
+            this.logger.LogTrace("Wallet total staking balance is {0}.", new Money(utxoStakeDescriptions.Sum(d => d.TxOut.Value)));
             return utxoStakeDescriptions;
         }
 

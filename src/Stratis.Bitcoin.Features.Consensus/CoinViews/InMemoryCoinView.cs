@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
+using ReaderWriterLock = NBitcoin.ReaderWriterLock;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -33,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
+        public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken ct = default(CancellationToken))
         {
             Guard.NotNull(txIds, nameof(txIds));
 
