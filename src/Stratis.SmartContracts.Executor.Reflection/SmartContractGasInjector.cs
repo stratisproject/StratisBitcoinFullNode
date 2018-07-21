@@ -41,11 +41,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             OpCodes.Callvirt
         };
 
-        //public static TypeDefinition GetContractType(ModuleDefinition moduleDefinition)
-        //{
-        //    return moduleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
-        //}
-
         public static TypeDefinition GetContractBaseType(TypeDefinition typeDefinition)
         {
             return typeDefinition.BaseType.Resolve();
