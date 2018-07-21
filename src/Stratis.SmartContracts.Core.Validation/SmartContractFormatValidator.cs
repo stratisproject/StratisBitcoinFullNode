@@ -54,8 +54,7 @@ namespace Stratis.SmartContracts.Core.Validation
                 .NestedTypeDefValidator(new TypeHasNestedTypesValidator())
                 .NestedTypeDefValidator(new NestedTypesAreValueTypesValidator())
                 .MethodDefValidator(new TryCatchValidator())
-                .MethodParamValidator((m, p) => !MethodParamValidator.IsValidParam(m, p),
-                    (t, m, p) => new MethodParamValidator.MethodParamValidationResult(m, p));
+                .MethodDefValidator(new MethodParamValidator());
         }
     }
 
