@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
 using Stratis.ModuleValidation.Net;
@@ -8,7 +9,7 @@ namespace Stratis.SmartContracts.Core.Validation.Validators.Type
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.TypeDefinition"/>'s constructor has a first param of type <see cref="ISmartContractState"/>
     /// </summary>
-    public class ConstructorParamValidator : ITypeDefValidator
+    public class ConstructorParamValidator : ITypeDefValidator, ITypeDefinitionValidator
     {
         public const string InvalidParamError = "The first constructor argument must be an ISmartContractState object";
 
@@ -37,6 +38,30 @@ namespace Stratis.SmartContracts.Core.Validation.Validators.Type
         private static bool IsSmartContractState(ParameterDefinition firstArg)
         {
             return firstArg.ParameterType.FullName == typeof(ISmartContractState).FullName;
+        }
+
+        IEnumerable<ValidationResult> ITypeDefinitionValidator.Validate(TypeDefinition typeDef)
+        {
+            MethodDefinition constructor = typeDef
+                .GetConstructors()?
+                .FirstOrDefault();
+
+            if (constructor == null)
+            {
+                // Not up to us to validate this here
+                return Enumerable.Empty<ValidationResult>();
+            }
+
+            ParameterDefinition firstArg = constructor.Parameters.FirstOrDefault();
+
+            var valid = firstArg != null && IsSmartContractState(firstArg);
+
+            if (!valid)
+            {
+                return new [] { CreateError(typeDef) };
+            }
+
+            return Enumerable.Empty<ValidationResult>();
         }
     }
 }
