@@ -21,8 +21,8 @@ namespace Stratis.SmartContracts.Core.Validation
         private readonly List<(Func<ModuleDefinition, bool>, Func<ModuleDefinition, ValidationResult>)> moduleDefValidators =
             new List<(Func<ModuleDefinition, bool>, Func<ModuleDefinition, ValidationResult>)>();
 
-        private readonly List<(NestedTypePolicy, Func<TypeDefinition, bool>, Func<TypeDefinition, ValidationResult>)> typeDefValidators =
-            new List<(NestedTypePolicy, Func<TypeDefinition, bool>, Func<TypeDefinition, ValidationResult>)>();
+        private readonly List<(NestedTypePolicy, ITypeDefinitionValidator)> typeDefValidators =
+            new List<(NestedTypePolicy, ITypeDefinitionValidator)>();
 
         private readonly List<(Func<FieldDefinition, bool>, Func<TypeDefinition, FieldDefinition, ValidationResult>)> fieldDefValidators =
             new List<(Func<FieldDefinition, bool>, Func<TypeDefinition, FieldDefinition, ValidationResult>)>();
@@ -67,16 +67,9 @@ namespace Stratis.SmartContracts.Core.Validation
         public IEnumerable<(Func<ModuleDefinition, bool>, Func<ModuleDefinition, ValidationResult>)> ModuleDefValidators =>
             this.moduleDefValidators;
 
-        public ValidationPolicy TypeDefValidator(Func<TypeDefinition, bool> validator, 
-            Func<TypeDefinition, ValidationResult> errorMessageFactory, NestedTypePolicy nestedTypePolicy = NestedTypePolicy.Validate)
+        public ValidationPolicy TypeDefValidator(ITypeDefinitionValidator validator, NestedTypePolicy nestedTypePolicy = NestedTypePolicy.Validate)
         {
-            this.typeDefValidators.Add((nestedTypePolicy, validator, errorMessageFactory));
-            return this;
-        }
-
-        public ValidationPolicy TypeDefValidator(ITypeDefValidator validator, NestedTypePolicy nestedTypePolicy = NestedTypePolicy.Validate)
-        {
-            this.typeDefValidators.Add((nestedTypePolicy, validator.Validate, validator.CreateError));
+            this.typeDefValidators.Add((nestedTypePolicy, validator));
             return this;
         }
 
@@ -85,11 +78,11 @@ namespace Stratis.SmartContracts.Core.Validation
         {
             bool NestedValidator(TypeDefinition t) => t.IsNested && validator(t);
 
-            this.typeDefValidators.Add((NestedTypePolicy.Validate, NestedValidator, errorMessageFactory));
+            //this.typeDefValidators.Add((NestedTypePolicy.Validate, NestedValidator, errorMessageFactory));
             return this;
         }
 
-        public IEnumerable<(NestedTypePolicy, Func<TypeDefinition, bool>, Func<TypeDefinition, ValidationResult>)> TypeDefValidators =>
+        public IEnumerable<(NestedTypePolicy, ITypeDefinitionValidator)> TypeDefValidators =>
             this.typeDefValidators;
 
         public ValidationPolicy FieldDefValidator(Func<FieldDefinition, bool> validator,

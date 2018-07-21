@@ -21,9 +21,7 @@ namespace Stratis.SmartContracts.Core.Validation
 
             return new ValidationPolicy()
                 .WhitelistValidator(whitelistPolicy)
-                .TypeDefValidator(
-                    HasFinalizer,
-                    t => new FinalizerValidator.FinalizerValidationResult(t))
+                .TypeDefValidator(new FinalizerValidator())
                 .InstructionValidator(
                     FloatValidator.IsFloat,
                     (t, m, i) => new FloatValidator.FloatValidationResult(m));

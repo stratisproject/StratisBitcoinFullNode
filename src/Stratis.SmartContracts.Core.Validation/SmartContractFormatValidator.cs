@@ -13,8 +13,6 @@ namespace Stratis.SmartContracts.Core.Validation
 {
     public class FormatPolicyFactory
     {
-        public static Func<TypeDefinition, bool> StaticConstructorValidator = type => type.GetStaticConstructor() != null;
-        public static Func<TypeDefinition, bool> InheritsSmartContract = type => type.BaseType?.FullName != typeof(SmartContract).FullName;
         public static Func<FieldDefinition, bool> DisallowedField = field => !(field.DeclaringType.IsNested && field.DeclaringType.IsValueType) && !field.HasConstant;
         public static Func<MethodDefinition, bool> HasTryCatch = method => method.Body.HasExceptionHandlers;
 
@@ -24,11 +22,7 @@ namespace Stratis.SmartContracts.Core.Validation
 
         public static Func<ModuleDefinition, bool> SingleTypeValidator = module => module.Types.Count(x => !(x.FullName.Contains("<Module>") || x.FullName.Contains("<PrivateImplementationDetails>"))) > 1;
         public static Func<TypeDefinition, bool> NamespaceValidator = type => type != null && type.Namespace != "";
-
-        public static Func<TypeDefinition, bool> MissingConstructorValidator = type => type.GetConstructors() == null || !type.GetConstructors().Any();
-
-        public static Func<TypeDefinition, bool> SingleConstructorValidator = type => type.GetConstructors() != null && type.GetConstructors().Count() > 1;
-
+        
         // System.Runtime forwards to mscorlib, so we can only get its Assembly by name
         // ref. https://github.com/dotnet/corefx/issues/11601
         private static readonly Assembly Runtime = Assembly.Load("System.Runtime");
@@ -52,29 +46,11 @@ namespace Stratis.SmartContracts.Core.Validation
                     SingleTypeValidator,
                     m => new ModuleDefinitionValidationResult("Only the compilation of a single class is allowed.")
                     )
-                .TypeDefValidator(
-                    StaticConstructorValidator,
-                    t => new StaticConstructorValidator.StaticConstructorValidationResult(t), 
-                    NestedTypePolicy.Ignore)
-                .TypeDefValidator(
-                    NamespaceValidator,
-                    t => new TypeDefinitionValidationResult("Class must not have a namespace.")
-                )
-                .TypeDefValidator(
-                    MissingConstructorValidator,
-                    t => new TypeDefinitionValidationResult("Contract must define a constructor"),
-                    NestedTypePolicy.Ignore
-                )
-                .TypeDefValidator(
-                    SingleConstructorValidator,
-                    t => new TypeDefinitionValidationResult("Only a single constructor is allowed"),
-                    NestedTypePolicy.Ignore
-                )
+                .TypeDefValidator(new StaticConstructorValidator(), NestedTypePolicy.Ignore)
+                .TypeDefValidator(new NamespaceValidator())
+                .TypeDefValidator(new SingleConstructorValidator(), NestedTypePolicy.Ignore)
                 .TypeDefValidator(new ConstructorParamValidator(), NestedTypePolicy.Ignore)
-                .TypeDefValidator(
-                    InheritsSmartContract,
-                    t => new TypeDefinitionValidationResult("Contract must implement the SmartContract class."),
-                    NestedTypePolicy.Ignore
+                .TypeDefValidator(new InheritsSmartContractValidator(), NestedTypePolicy.Ignore
                 )
                 .NestedTypeDefValidator(
                     TypeHasMethods,
