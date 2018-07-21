@@ -509,65 +509,77 @@ namespace Stratis.Bitcoin.Features.Miner
                     return;
                 }
 
-                var utxoStakeDescriptions = new List<UtxoStakeDescription>();
-                IEnumerable<UnspentOutputReference> spendable = this.walletManager.GetSpendableTransactionsInWallet(walletSecret.WalletName, 1);
+                IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager
+                    .GetSpendableTransactionsInWallet(walletSecret.WalletName, 1)
+                    .Where(t => t != null).ToList();
 
-                FetchCoinsResponse coinset = await this.coinView.FetchCoinsAsync(spendable.Select(t => t.Transaction.Id).ToArray()).ConfigureAwait(false);
+                FetchCoinsResponse coinset = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).ToArray()).ConfigureAwait(false);
 
-                long totalBalance = 0;
-                foreach (UnspentOutputReference infoTransaction in spendable)
-                {
-                    UnspentOutputs set = coinset.UnspentOutputs.FirstOrDefault(f => f?.TransactionId == infoTransaction.Transaction.Id);
-                    TxOut utxo = (set != null) && (infoTransaction.Transaction.Index < set.Outputs.Length) ? set.Outputs[infoTransaction.Transaction.Index] : null;
-                    uint256 hashBlock = set != null ? this.chain.GetBlock((int)set.Height)?.HashBlock : null;
+                List<UtxoStakeDescription> utxoStakeDescriptions = GetUtxoStakeDescriptions(walletSecret, spendableTransactions, coinset);
 
-                    if ((utxo != null) && (utxo.Value > Money.Zero) && (hashBlock != null))
-                    {
-                        var utxoStakeDescription = new UtxoStakeDescription();
-                        utxoStakeDescription.TxOut = utxo;
-                        utxoStakeDescription.OutPoint = new OutPoint(set.TransactionId, infoTransaction.Transaction.Index);
-                        utxoStakeDescription.Address = infoTransaction.Address;
-                        utxoStakeDescription.HashBlock = hashBlock;
-                        utxoStakeDescription.UtxoSet = set;
-                        utxoStakeDescription.Secret = walletSecret; // Temporary.
-                        utxoStakeDescriptions.Add(utxoStakeDescription);
-                        totalBalance += utxo.Value;
+                this.logger.LogTrace("Wallet total staking balance is {0}.", new Money(utxoStakeDescriptions.Sum(d => d.TxOut.Value)));
 
-                        this.logger.LogTrace("UTXO '{0}' with value {1} might be available for staking.", utxoStakeDescription.OutPoint, utxo.Value);
-                    }
-                }
-
-                this.logger.LogTrace("Wallet contains {0} coins.", new Money(totalBalance));
-
-                if (blockTemplate == null)
-                    blockTemplate = this.blockProvider.BuildPosBlock(chainTip, new Script());
-
-                if (!(blockTemplate.Block is PosBlock block))
-                {
-                    throw new InvalidCastException();
-                }
-
+                blockTemplate = blockTemplate ?? this.blockProvider.BuildPosBlock(chainTip, new Script());
+                var posBlock = (PosBlock)blockTemplate.Block;
+                
                 this.networkWeight = (long)this.GetNetworkWeight();
-                this.rpcGetStakingInfoModel.CurrentBlockSize = block.GetSerializedSize();
-                this.rpcGetStakingInfoModel.CurrentBlockTx = block.Transactions.Count();
+                this.rpcGetStakingInfoModel.CurrentBlockSize = posBlock.GetSerializedSize();
+                this.rpcGetStakingInfoModel.CurrentBlockTx = posBlock.Transactions.Count();
                 this.rpcGetStakingInfoModel.PooledTx = await this.mempoolLock.ReadAsync(() => this.mempool.MapTx.Count).ConfigureAwait(false);
                 this.rpcGetStakingInfoModel.Difficulty = this.GetDifficulty(chainTip);
                 this.rpcGetStakingInfoModel.NetStakeWeight = this.networkWeight;
 
                 // Trying to create coinstake that satisfies the difficulty target, put it into a block and sign the block.
-                if (await this.StakeAndSignBlockAsync(utxoStakeDescriptions, block, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
+                if (await this.StakeAndSignBlockAsync(utxoStakeDescriptions, posBlock, chainTip, blockTemplate.TotalFee, coinstakeTimestamp).ConfigureAwait(false))
                 {
                     this.logger.LogTrace("New POS block created and signed successfully.");
-                    this.CheckStake(block, chainTip);
+                    this.CheckStake(posBlock, chainTip);
 
                     blockTemplate = null;
                 }
                 else
                 {
-                    this.logger.LogTrace("{0} failed, waiting {1} ms for next round...", nameof(this.StakeAndSignBlockAsync), this.minerSleep);
+                    this.logger.LogTrace("{0} failed to create POS block, waiting {1} ms for next round...", nameof(this.StakeAndSignBlockAsync), this.minerSleep);
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
                 }
             }
+        }
+
+        /// <summary>
+        /// We don't take coins that are smaller that 0.1 as described in
+        /// <see cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/1180"/>>
+        /// </summary>
+        private List<UtxoStakeDescription> GetUtxoStakeDescriptions(WalletSecret walletSecret,
+                IEnumerable<UnspentOutputReference> spendableTransactions, FetchCoinsResponse fetchedCoinSet)
+        {
+            var utxoStakeDescriptions = new List<UtxoStakeDescription>();
+            foreach (UnspentOutputReference outputReference in spendableTransactions)
+            {
+                UnspentOutputs coinSet = fetchedCoinSet.UnspentOutputs
+                    .FirstOrDefault(f => f.TransactionId == outputReference.Transaction.Id);
+                if (coinSet == null || outputReference.Transaction.Index >= coinSet.Outputs.Length) continue;
+
+                TxOut utxo = coinSet.Outputs[outputReference.Transaction.Index];
+                if (utxo == null || utxo.Value <= 10 * Money.CENT) continue;
+
+                uint256 hashBlock = this.chain.GetBlock((int)coinSet.Height)?.HashBlock;
+                if (hashBlock == null) continue;
+
+                var utxoStakeDescription = new UtxoStakeDescription
+                           {
+                               TxOut = utxo,
+                               OutPoint = new OutPoint(coinSet.TransactionId, outputReference.Transaction.Index),
+                               Address = outputReference.Address,
+                               HashBlock = hashBlock,
+                               UtxoSet = coinSet,
+                               Secret = walletSecret // Temporary.
+                           };
+                utxoStakeDescriptions.Add(utxoStakeDescription);
+
+                this.logger.LogTrace("UTXO '{0}' with value {1} might be available for staking.", utxoStakeDescription.OutPoint, utxo.Value);
+            }
+
+            return utxoStakeDescriptions;
         }
 
         /// <summary>
