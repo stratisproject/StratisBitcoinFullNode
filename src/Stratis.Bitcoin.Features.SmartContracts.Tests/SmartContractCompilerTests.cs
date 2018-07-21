@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_Compiler_CanCompileMultipleFiles()
         {
-            SmartContractCompilationResult result = SmartContractCompiler.CompileNamespace("SmartContracts", "MultipleFiles");
+            SmartContractCompilationResult result = SmartContractCompiler.CompileDirectory("SmartContracts", "MultipleFiles");
             Assert.True(result.Success);
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(result.Compilation);
             Assert.Contains(decomp.ModuleDefinition.Types, x => x.Name == "MultipleFiles1");

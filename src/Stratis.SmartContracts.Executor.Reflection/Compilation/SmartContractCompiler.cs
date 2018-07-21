@@ -26,13 +26,17 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
         }
 
         /// <summary>
-        /// In a particular directory, compile all of the files within a certain namespace. 
+        /// Compile all of the files in a directory, with the option of compiling a certain namespace.
         /// </summary>
-        public static SmartContractCompilationResult CompileNamespace(string path, string selectedNamespace)
+        public static SmartContractCompilationResult CompileDirectory(string path, string selectedNamespace = null)
         {
             // Get the syntax tree for every file in the given path.
             string[] files = Directory.GetFiles(path, "*.cs", SearchOption.AllDirectories);
             IEnumerable<SyntaxTree> syntaxTrees = files.Select(item => CSharpSyntaxTree.ParseText(File.ReadAllText(item)).WithFilePath(item));
+
+            // If we're not interested in any specific namespace then compile everything in the directory.
+            if (selectedNamespace == null)
+                return Compile(syntaxTrees);
 
             // From all of these, work out which ones contain code in the given namespace.
             List<SyntaxTree> selectedNamespaceTrees = new List<SyntaxTree>();
