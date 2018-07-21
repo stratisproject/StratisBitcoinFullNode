@@ -10,7 +10,7 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
     /// <summary>
     /// Validates an instruction for usages of allowed Types
     /// </summary>
-    public class TypeReferenceValidator
+    public class TypeReferenceValidator : IInstructionValidator
     {
         private readonly WhitelistPolicyFilter whitelistPolicyFilter;
 
@@ -19,7 +19,7 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
             this.whitelistPolicyFilter = whitelistPolicyFilter;
         }
 
-        public IEnumerable<ValidationResult> Validate(Instruction instruction)
+        public IEnumerable<ValidationResult> Validate(Instruction instruction, MethodDefinition method)
         {
             if (!(instruction.Operand is MemberReference reference))
                 return Enumerable.Empty<ValidationResult>();

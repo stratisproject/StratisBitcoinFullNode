@@ -4,6 +4,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Stratis.ModuleValidation.Net;
+using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Policy;
 using Stratis.SmartContracts.Core.Validation.Validators;
@@ -31,8 +32,7 @@ namespace Stratis.SmartContracts.Core.Validation
         private readonly List<(Func<MethodDefinition, bool>, Func<TypeDefinition, MethodDefinition, ValidationResult>)> methodDefValidators =
             new List<(Func<MethodDefinition, bool>, Func<TypeDefinition, MethodDefinition, ValidationResult>)>();
 
-        private readonly List<(Func<Instruction, bool>, Func<TypeDefinition, MethodDefinition, Instruction, ValidationResult>)> instructionValidators =
-            new List<(Func<Instruction, bool>, Func<TypeDefinition, MethodDefinition, Instruction, ValidationResult>)>();
+        private readonly List<IInstructionValidator> instructionValidators = new List<IInstructionValidator>();
 
         private readonly List<(Func<MemberReference, bool>, Func<TypeDefinition, MethodDefinition, MemberReference, ValidationResult>)> memberRefValidators =
             new List<(Func<MemberReference, bool>, Func<TypeDefinition, MethodDefinition, MemberReference, ValidationResult>)>();
@@ -116,28 +116,17 @@ namespace Stratis.SmartContracts.Core.Validation
         public ValidationPolicy WhitelistValidator(WhitelistPolicy policy)
         {
             var typeRefValidator = new TypeReferenceValidator(new WhitelistPolicyFilter(policy));
-
-            this.instructionValidators.Add((
-                i => typeRefValidator.Validate(i).Any(),
-                (t, m, i) =>
-                {
-                    var memberRef = (i.Operand as MemberReference);
-                    return new TypeReferenceValidator.DeniedMemberValidationResult(
-                        m.FullName, "Whitelist", $"{memberRef.FullName} is not allowed");
-                }));
-
+            this.instructionValidators.Add(typeRefValidator);
             return this;
         }
-
-        public ValidationPolicy InstructionValidator(Func<Instruction, bool> validator,
-            Func<TypeDefinition, MethodDefinition, Instruction, ValidationResult> errorMessageFactory)
+        
+        public ValidationPolicy InstructionValidator(FloatValidator validator)
         {
-            this.instructionValidators.Add((validator, errorMessageFactory));
+            this.instructionValidators.Add(validator);
             return this;
         }
-
-        public IEnumerable<(Func<Instruction, bool>, Func<TypeDefinition, MethodDefinition, Instruction, ValidationResult>)> InstructionValidators =>
-            this.instructionValidators;
+        
+        public IEnumerable<IInstructionValidator> InstructionValidators => this.instructionValidators;
 
         public ValidationPolicy MemberReferenceValidator(Func<MemberReference, bool> validator,
             Func<TypeDefinition, MethodDefinition, MemberReference, ValidationResult> errorMessageFactory)

@@ -112,10 +112,9 @@ namespace Stratis.SmartContracts.Core.Validation
             // Validate instructions
             foreach (Instruction instruction in method.Body.Instructions)
             {
-                foreach (var (validate, result) in this.policy.InstructionValidators)
+                foreach (var validator in this.policy.InstructionValidators)
                 {
-                    if (validate(instruction))
-                        results.Add(result(type, method, instruction));
+                    results.AddRange(validator.Validate(instruction, method));
 
                     this.ValidateMemberReferences(results, type, method, instruction);
                 }
