@@ -103,7 +103,7 @@ namespace Stratis.SmartContracts.Core.State
         public string GetContractType(uint160 addr)
         {
             AccountState accountState = this.GetAccountState(addr);
-            return accountState != null ? accountState.TypeName : "";
+            return accountState != null ? accountState.TypeName : string.Empty;
         }
 
         public void SetContractType(uint160 addr, string type)
