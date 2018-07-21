@@ -8,6 +8,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </summary>
     public class ContractTxData : ICreateData, ICallData
     {
+        /// <summary>
+        /// Creates a ContractTxData object for a method invocation
+        /// </summary>
         public ContractTxData(int vmVersion, ulong gasPrice, Gas gasLimit, uint160 address,
             string method, string rawParameters = "", object[] methodParameters = null)
         {
@@ -22,6 +25,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.ContractExecutionCode = new byte[0];
         }
 
+        /// <summary>
+        /// Creates a ContractTxData for contract creation
+        /// </summary>
         public ContractTxData(int vmVersion, ulong gasPrice, Gas gasLimit, byte[] code, string rawParameters = "",
             object[] methodParameters = null)
         {
