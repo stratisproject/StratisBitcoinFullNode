@@ -86,6 +86,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             {
                 var modDefinition = ModuleDefinition.ReadModule(memStream);
                 var decompiler = new CSharpDecompiler(modDefinition, new DecompilerSettings { });
+                // TODO: Update decompiler to display all code, not just this rando FirstOrDefault (given we now allow multiple types)
                 string cSharp = decompiler.DecompileAsString(modDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>"));
 
                 this.logger.LogTrace("(-)");

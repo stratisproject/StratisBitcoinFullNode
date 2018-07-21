@@ -73,6 +73,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var transactionContext = new TransactionContext(uint256.One, 1, address, address, 0);
 
             repository.SetCode(callData.ContractAddress, contractExecutionCode);
+            repository.SetContractType(callData.ContractAddress, "StorageTest");
 
             var result = vm.ExecuteMethod(gasMeter, 
                 repository, 
@@ -115,6 +116,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var transactionContext = new TransactionContext(uint256.One, 1, address, address, value);
 
             repository.SetCode(callData.ContractAddress, contractExecutionCode);
+            repository.SetContractType(callData.ContractAddress, "StorageTestWithParameters");
 
             var result = vm.ExecuteMethod(gasMeter, 
                 repository, 
