@@ -12,7 +12,6 @@ using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
-using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
@@ -57,6 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var callData = new CallData(gasLimit, address, "ThrowException");
             this.repository.SetCode(address, contractCode);
+            this.repository.SetContractType(address, "ThrowExceptionContract");
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
 
             var result = vm.ExecuteMethod(gasMeter, 

@@ -41,19 +41,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
             OpCodes.Callvirt
         };
 
-        public static TypeDefinition GetContractType(ModuleDefinition moduleDefinition)
-        {
-            return moduleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
-        }
-
         public static TypeDefinition GetContractBaseType(TypeDefinition typeDefinition)
         {
             return typeDefinition.BaseType.Resolve();
         }
         
-        public static byte[] AddGasCalculationToConstructor(byte[] contractByteCode)
+        public static byte[] AddGasCalculationToConstructor(byte[] contractByteCode, string typeName)
         {       
-            return AddGasCalculationToContractMethod(contractByteCode, ".ctor");
+            return AddGasCalculationToContractMethod(contractByteCode, typeName, ".ctor");
         }
 
         /// <summary>
@@ -63,12 +58,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <param name="contractByteCode"></param>
         /// <param name="methodName"></param>
         /// <returns></returns>
-        public static byte[] AddGasCalculationToContractMethod(byte[] contractByteCode, string methodName)
+        public static byte[] AddGasCalculationToContractMethod(byte[] contractByteCode, string typeName, string methodName)
         {
             using (ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(contractByteCode)))
             using (var memoryStream = new MemoryStream())
             {
-                TypeDefinition contractType = GetContractType(moduleDefinition);
+                TypeDefinition contractType = moduleDefinition.Types.FirstOrDefault(x => x.Name == typeName);
                 MethodDefinition method = contractType.Methods.FirstOrDefault(m => m.Name == methodName);
 
                 if (method == null)

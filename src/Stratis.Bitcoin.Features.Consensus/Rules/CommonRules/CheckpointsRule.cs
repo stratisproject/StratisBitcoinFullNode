@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -8,11 +9,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that verifies checkpoints, this rules depends on per network override classes.
     /// </summary>
-    [ValidationRule(CanSkipValidation = false)]
+    [PartialValidationRule]
     public class CheckpointsRule : ConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.CheckpointViolation">The block header hash does not match the expected checkpoint value.</exception>
+        [Obsolete("Delete when CM is activated")]
         public override Task RunAsync(RuleContext context)
         {
             int height = context.ConsensusTipHeight + 1;
@@ -26,8 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Check whether to use checkpoint to skip block validation.
-            context.SkipValidation = false;
-            if (this.Parent.ConsensusSettings.UseCheckpoints)
+            if ((context.SkipValidation == false) && this.Parent.ConsensusSettings.UseCheckpoints)
             {
                 int lastCheckpointHeight = this.Parent.Checkpoints.GetLastCheckpointHeight();
                 context.SkipValidation = context.ValidationContext.ChainedHeader.Height <= lastCheckpointHeight;

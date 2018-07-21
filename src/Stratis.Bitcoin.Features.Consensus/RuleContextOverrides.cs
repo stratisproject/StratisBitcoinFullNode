@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 
@@ -10,8 +11,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
         }
 
-        protected UtxoRuleContext(ValidationContext validationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip)
-            : base(validationContext, consensus, consensusTip)
+        protected UtxoRuleContext(ValidationContext validationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip, DateTimeOffset time)
+            : base(validationContext, consensus, consensusTip, time)
         {
         }
 
@@ -35,8 +36,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.BlockStake = blockStake;
         }
 
-        public PosRuleContext(ValidationContext validationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip) 
-            : base(validationContext, consensus, consensusTip)
+        public PosRuleContext(ValidationContext validationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip, DateTimeOffset time) 
+            : base(validationContext, consensus, consensusTip, time)
         {
         }
 
@@ -58,8 +59,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
         }
 
-        public PowRuleContext(ValidationContext validationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip)
-            : base(validationContext, consensus, consensusTip)
+        public PowRuleContext(ValidationContext validationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip, DateTimeOffset time)
+            : base(validationContext, consensus, consensusTip, time)
         {
         }
     }

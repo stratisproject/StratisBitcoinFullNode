@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private const string TestMultipleConstructorSource = @"using System;
                                             using Stratis.SmartContracts;   
-
+                                            
                                             public class Test : SmartContract
                                             {
                                                 public Test(ISmartContractState state, string ownerName) : base(state) 
@@ -140,6 +140,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
 
             this.repository.SetCode(callData.ContractAddress, originalAssemblyBytes);
+            this.repository.SetContractType(callData.ContractAddress, "Test");
 
             var result = vm.ExecuteMethod(gasMeter, 
                 this.repository, 
@@ -170,6 +171,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
 
             this.repository.SetCode(callData.ContractAddress, originalAssemblyBytes);
+            this.repository.SetContractType(callData.ContractAddress, "OutOfGasTest");
 
             var result = vm.ExecuteMethod(gasMeter, this.repository, callData, transactionContext);
 

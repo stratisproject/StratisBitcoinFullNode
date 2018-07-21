@@ -37,7 +37,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.vm = vm;
         }
 
-        ///<inheritdoc/>
+        ///<inheritdoc />
+        public ICreateResult Create<T>(ISmartContractState smartContractState, object[] parameters, ulong amountToTransfer)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        ///<inheritdoc />
         public ITransferResult TransferFunds(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
