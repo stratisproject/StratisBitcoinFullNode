@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
 
             if (callDataDeserializationResult.IsFailure)
             {
-                new ConsensusError("invalid-calldata-format", "Invalid ContractTxData format").Throw();
+                new ConsensusError("invalid-calldata-format", string.Format("Invalid {0} format", typeof(ContractTxData).Name)).Throw();
             }
 
             var callData = callDataDeserializationResult.Value;
