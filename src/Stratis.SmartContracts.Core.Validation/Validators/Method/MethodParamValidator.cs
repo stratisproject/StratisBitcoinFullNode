@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
@@ -34,18 +35,36 @@ namespace Stratis.SmartContracts.Core.Validation
             if (!methodDef.HasParameters)
                 return Enumerable.Empty<MethodDefinitionValidationResult>();
 
-            // Constructor is allowed to have other params
-            if (methodDef.IsConstructor)
-                return Enumerable.Empty<MethodDefinitionValidationResult>();
+
+            bool IsValidParamForThisMethod(ParameterDefinition p) => !IsValidParam(methodDef, p);
 
             return methodDef.Parameters
-                .Where(param => !AllowedTypes.Contains(param.ParameterType.FullName))
-                .Select(paramDef =>
-                    new MethodDefinitionValidationResult(
-                        paramDef.Name,
-                        ErrorType,
-                        $"{methodDef.FullName} is invalid [{ErrorType} {paramDef.ParameterType.FullName}]"
-                    ));
+                .Where(IsValidParamForThisMethod)
+                .Select(paramDef => new MethodParamValidationResult(methodDef, paramDef));
+        }
+
+        public static bool IsValidParam(MethodDefinition methodDefinition, ParameterDefinition param)
+        {
+            if (methodDefinition.IsConstructor)
+            {
+                // Constructor is allowed to have an ISmartContractState param
+                if (param.ParameterType.FullName == typeof(ISmartContractState).FullName)
+                {
+                    return true;
+                }
+            }
+
+            return AllowedTypes.Contains(param.ParameterType.FullName);
+        }
+
+        public class MethodParamValidationResult : MethodDefinitionValidationResult
+        {
+            public MethodParamValidationResult(MethodDefinition method, ParameterDefinition param) 
+                : base(param.Name,
+                    ErrorType,
+                    $"{method.FullName} is invalid [{ErrorType} {param.ParameterType.FullName}]")
+            {
+            }
         }
     }
 }

@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             var persistenceStrategy = new MeteredPersistenceStrategy(this.state, this.gasMeter, this.keyEncodingStrategy);
             this.persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
-            this.validator = new SmartContractValidator(new List<ISmartContractValidator>());
+            this.validator = new SmartContractValidator();
         }
 
         [Fact]

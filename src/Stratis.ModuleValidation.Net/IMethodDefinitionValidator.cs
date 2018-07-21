@@ -3,6 +3,11 @@ using Mono.Cecil;
 
 namespace Stratis.ModuleValidation.Net
 {
+    public interface IFieldDefinitionValidator
+    {
+        IEnumerable<ValidationResult> Validate(FieldDefinition field);
+    }
+
     public interface IMethodDefinitionValidator
     {
         IEnumerable<ValidationResult> Validate(MethodDefinition method);

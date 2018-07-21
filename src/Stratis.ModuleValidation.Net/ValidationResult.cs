@@ -2,6 +2,17 @@
 
 namespace Stratis.ModuleValidation.Net
 {
+    public class InstructionValidationResult : ValidationResult
+    {
+        public InstructionValidationResult(string message) : base(message)
+        {
+        }
+
+        public InstructionValidationResult(string subjectName, string validationType, string message) : base(subjectName, validationType, message)
+        {
+        }
+    }
+
     public class MethodDefinitionValidationResult : ValidationResult 
     {
         public MethodDefinitionValidationResult(string message) 

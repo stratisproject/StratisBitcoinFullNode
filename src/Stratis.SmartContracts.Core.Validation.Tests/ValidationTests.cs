@@ -1,0 +1,638 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
+using Mono.Cecil;
+using Stratis.ModuleValidation.Net;
+using Stratis.ModuleValidation.Net.Format;
+using Stratis.SmartContracts.Core.Validation.Policy;
+using Stratis.SmartContracts.Core.Validation.Validators;
+using Xunit;
+
+namespace Stratis.SmartContracts.Core.Validation.Tests
+{
+    public class ValidationTests
+    {
+        // TypeDefValidator
+
+        [Fact]
+        public void TypeDefValidator_Should_Validate_Method_Allowed_Return_Type()
+        {
+            const string source = @"public class Test {public string A(){return ""a"";}}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var policy = new WhitelistPolicy()
+                .Namespace("System", AccessPolicy.Denied, t =>
+                    t.Type("Object", AccessPolicy.Allowed)
+                      .Type("Void", AccessPolicy.Allowed)
+                      .Type("String", AccessPolicy.Allowed));
+
+            var validationPolicy = new ValidationPolicy()
+                .WhitelistValidator(policy);
+
+            var validator = new TypeDefValidator(validationPolicy);
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void TypeDefValidator_Should_Validate_Method_Denied_Return_Type()
+        {
+            const string source = @"using System; public class Test {public DateTime A(){return new DateTime();}}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var policy = new WhitelistPolicy()
+                .Namespace("System", AccessPolicy.Denied, t =>
+                    t.Type("Object", AccessPolicy.Allowed)
+                        .Type("Void", AccessPolicy.Allowed)
+                        .Type("String", AccessPolicy.Denied));
+
+            var validationPolicy = new ValidationPolicy()
+                .WhitelistValidator(policy);
+
+            var validator = new TypeDefValidator(validationPolicy);
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public void TypeDefValidator_Should_Validate_Method_Using_Denied_MethodReference()
+        {
+            const string source = @"public class Test {public void A(){ var b = GetType();}}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var policy = new WhitelistPolicy()
+                .Namespace("System", AccessPolicy.Denied, t =>
+                    t.Type("Object", AccessPolicy.Allowed)
+                        .Type("Void", AccessPolicy.Allowed)
+                        .Type("String", AccessPolicy.Denied));
+
+            var validationPolicy = new ValidationPolicy()
+                .WhitelistValidator(policy);
+
+            var validator = new TypeDefValidator(validationPolicy);
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public void TypeDefValidator_Should_Validate_Method_Using_Denied_New_Type()
+        {
+            const string source = @"
+using System; 
+public class Test 
+{
+    public void A()
+    { 
+        var b = new DateTime();
+    }
+}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var policy = new WhitelistPolicy()
+                .Namespace("System", AccessPolicy.Denied, t =>
+                    t.Type("Object", AccessPolicy.Allowed)
+                        .Type("Void", AccessPolicy.Allowed)
+                        .Type("String", AccessPolicy.Denied));
+
+            var validationPolicy = new ValidationPolicy()
+                .WhitelistValidator(policy);
+
+            var validator = new TypeDefValidator(validationPolicy);
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public void TypeDefValidator_Should_Validate_Method_Using_Denied_Field()
+        {
+            const string source = @"
+using System; 
+
+public class Test 
+{
+    public void A()
+    { 
+        var b = BitConverter.IsLittleEndian;
+    }
+}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var policy = new WhitelistPolicy()
+                .Namespace("System", AccessPolicy.Denied, t =>
+                    t.Type(nameof(Boolean), AccessPolicy.Allowed)
+                        .Type(nameof(BitConverter), AccessPolicy.Allowed, 
+                            m => m.Member(nameof(BitConverter.IsLittleEndian), AccessPolicy.Denied))
+                        .Type("Object", AccessPolicy.Allowed)
+                        .Type("Void", AccessPolicy.Allowed)
+                        .Type("String", AccessPolicy.Denied));
+
+            var validationPolicy = new ValidationPolicy()
+                .WhitelistValidator(policy);
+
+            var validator = new TypeDefValidator(validationPolicy);
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public void TypeDefValidator_Should_Validate_Method_Using_Denied_Generic()
+        {
+            const string source = @"
+using System; 
+using System.Collections.Generic;
+
+public class Test 
+{
+    public void A()
+    { 
+        var b = new List<string>();
+    }
+}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var policy = new WhitelistPolicy()
+                .Namespace("System", AccessPolicy.Denied, t =>
+                    t.Type(nameof(Boolean), AccessPolicy.Allowed)
+                        .Type("Object", AccessPolicy.Allowed)
+                        .Type("Void", AccessPolicy.Allowed)
+                        .Type("String", AccessPolicy.Denied))
+                .Namespace("System.Collections.Generic", AccessPolicy.Allowed);
+
+            var validationPolicy = new ValidationPolicy()
+                .WhitelistValidator(policy);
+
+            var validator = new TypeDefValidator(validationPolicy);
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public void TypeDefValidator_Should_Validate_Method_Using_Denied_Nested_Generic()
+        {
+            const string source = @"
+using System; 
+using System.Collections.Generic;
+
+public class Test 
+{
+    public void A()
+    { 
+        var b = new List<List<string>>();
+    }
+}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var policy = new WhitelistPolicy()
+                .Namespace("System", AccessPolicy.Denied, t =>
+                    t.Type(nameof(Boolean), AccessPolicy.Allowed)
+                        .Type("Object", AccessPolicy.Allowed)
+                        .Type("Void", AccessPolicy.Allowed)
+                        .Type("String", AccessPolicy.Denied))
+                .Namespace("System.Collections.Generic", AccessPolicy.Allowed);
+
+            var validationPolicy = new ValidationPolicy()
+                .WhitelistValidator(policy);
+
+            var validator = new TypeDefValidator(validationPolicy);
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public void TypeDefValidator_Should_Validate_Method_Using_Denied_Nested_Array_Element()
+        {
+            const string source = @"
+using System; 
+using System.Collections.Generic;
+
+public class Test 
+{
+    public void A()
+    { 
+        var b = new [] { new [] { ""a"" } };
+    }
+}";
+
+            var typeDefinition = CompileToTypeDef(source);            
+
+            var policy = new WhitelistPolicy()
+                .Namespace("System", AccessPolicy.Denied, t =>
+                    t.Type(nameof(Boolean), AccessPolicy.Allowed)
+                        .Type("Object", AccessPolicy.Allowed)
+                        .Type("Void", AccessPolicy.Allowed)
+                        .Type("String", AccessPolicy.Denied))
+                .Namespace("System.Collections.Generic", AccessPolicy.Allowed);
+
+            var validationPolicy = new ValidationPolicy()
+                .WhitelistValidator(policy);
+
+            var validator = new TypeDefValidator(validationPolicy);
+
+            var result = validator.Validate(typeDefinition).ToList();
+            Assert.True(result.All(r => r is TypeReferenceValidator.DeniedMemberValidationResult));
+        }
+
+        [Fact]
+        public void TypeDefValidator_Should_Validate_Nested_Type()
+        {
+            const string source = @"
+using System; 
+
+public class Test 
+{
+    public class C {
+        public void A() {
+            var b = new DateTime();
+        }
+    }
+}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var policy = new WhitelistPolicy()
+                .Namespace("System", AccessPolicy.Denied, t =>
+                    t.Type("Object", AccessPolicy.Allowed)
+                        .Type("Void", AccessPolicy.Allowed)
+                        .Type("String", AccessPolicy.Denied));
+
+            var validationPolicy = new ValidationPolicy()
+                .WhitelistValidator(policy);
+
+            var validator = new TypeDefValidator(validationPolicy);
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public void TypeDefValidator_Should_Allow_References_To_Own_Methods()
+        {
+            const string source = @"
+using System; 
+
+public class Test 
+{
+    public void A() {
+    }
+
+    public void B() {
+        A();
+    }
+}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var policy = new WhitelistPolicy()
+                .Namespace("System", AccessPolicy.Denied, t =>
+                    t.Type("Object", AccessPolicy.Allowed)
+                        .Type("Void", AccessPolicy.Allowed)
+                        .Type("String", AccessPolicy.Denied));
+
+            var validationPolicy = new ValidationPolicy()
+                .WhitelistValidator(policy);
+
+            var validator = new TypeDefValidator(validationPolicy);
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Empty(result);
+        }
+
+        //
+
+        [Fact]
+        public void NestedTypesAreValueTypesValidator_Should_Allow_Nested_Value_Type()
+        {
+            const string source = @"public class Test {public struct A{}}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var validator = new NestedTypesAreValueTypesValidator();
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Empty(result);
+        }
+        
+        [Fact]
+        public void NestedTypesAreValueTypesValidator_Should_Not_Allow_Nested_Reference_Type()
+        {
+            const string source = @"public class Test{class A {} }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var validator = new NestedTypesAreValueTypesValidator();
+           
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+            Assert.IsType<NestedTypesAreValueTypesValidator.NestedTypeIsValueTypeValidationResult>(result.Single());
+        }
+
+        [Fact]
+        public void TypeHasMethodsValidator_Should_Validate_Type_Has_Methods()
+        {
+            const string source = @"public class Test{ int A(){ return 1; } void B(){} string C(){ return ""a"";} }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var validator = new TypeHasMethodsValidator();
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+            Assert.True(result.All(r => r is TypeHasMethodsValidator.TypeHasMethodsValidationResult));
+        }
+
+        [Fact] 
+        public void TypeHasNestedTypesValidator_Should_Validate_Type_Has_Nested_Types_Class()
+        {
+            const string source = @"public class Test{ public class A {} }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var validator = new TypeHasNestedTypesValidator();
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+            Assert.True(result.All(r => r is TypeHasNestedTypesValidator.TypeHasNestedTypesValidationResult));
+        }
+
+        [Fact]
+        public void TypeHasNestedTypesValidator_Should_Validate_Type_Has_Nested_Types_Struct()
+        {
+            const string source = @"public class Test{ public struct A {} }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var validator = new TypeHasNestedTypesValidator();
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+            Assert.True(result.All(r => r is TypeHasNestedTypesValidator.TypeHasNestedTypesValidationResult));
+        }
+
+        [Fact]
+        public void FieldDefinitionValidator_Should_Validate_Type_Has_Fields()
+        {
+            const string source = @"public class Test{ public string A; public int B; private int C; uint D; }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var validator = new FieldDefinitionValidator();
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Equal(4, result.Count);
+            Assert.True(result.All(r => r is FieldDefinitionValidator.FieldDefinitionValidationResult));
+        }
+
+        
+
+        [Fact]
+        public void StaticConstructorValidator_Should_Validate_Static_Constructor()
+        {
+            const string source = @"public class Test { static Test(){} }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var result = new StaticConstructorValidator().Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+            Assert.IsType<StaticConstructorValidator.StaticConstructorValidationResult>(result.Single());
+        }
+
+        [Fact]
+        public void MethodParamValidator_Should_Validate_Allowed_Params()
+        {
+            const string source = @"using Stratis.SmartContracts; public class Test { 
+                                                public void Bool(bool param){}
+                                                public void Byte(byte param){}
+                                                public void ByteArray(byte[] param){}
+                                                public void Char(char param){}
+                                                public void SByte(sbyte param){}
+                                                public void String(string param){}
+                                                public void Int32(int param){}
+                                                public void UInt32(uint param){}
+                                                public void UInt64(ulong param){}
+                                                public void Int64(long param){}
+                                                public void Address1(Address param){}
+            }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var result = new TypeMethodsValidator(new MethodParamValidator()).Validate(typeDefinition).ToList();
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void MethodParamValidator_Should_Validate_Disallowed_Params()
+        {
+            const string source = @"using System; public class Test { 
+                                                public void DateTime1(DateTime param){}
+                                                public void F(float param){}
+            }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var result = new TypeMethodsValidator(new MethodParamValidator()).Validate(typeDefinition).ToList();
+
+            Assert.Equal(2, result.Count);
+            Assert.True(result.All(r => r is MethodParamValidator.MethodParamValidationResult));
+        }
+
+        [Fact]
+        public void NewObjectValidator_NoWhitelist_Should_Validate_Multiple_NewObjects()
+        {
+            const string source = @"public class Test { void TestMethod() { var s = new string('c', 1); var m = new System.Runtime.CompilerServices.TaskAwaiter(); } }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var primitives = new string[]{};
+
+            var result = new NewObjectValidator(primitives).Validate(typeDefinition.Methods.First(m => m.Name == "TestMethod")).ToList();
+
+            Assert.Equal(2, result.Count);
+            Assert.True(result.All(r => r is NewObjectValidator.NewObjectValidationResult));
+        }
+
+        [Fact]
+        public void NewObjectValidator_Whitelist_Should_Validate_NewObject()
+        {
+            const string source = @"public class Test { void TestMethod() { var s = new string('c', 1); var m = new System.Runtime.CompilerServices.TaskAwaiter(); } }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var primitives = new string[] { typeof(string).FullName };
+
+            var result = new NewObjectValidator(primitives).Validate(typeDefinition.Methods.First(m => m.Name == "TestMethod")).ToList();
+
+            Assert.Single(result);
+            Assert.True(result.All(r => r is NewObjectValidator.NewObjectValidationResult));
+        }
+
+
+        [Fact]
+        public void FinalizerValidator_Should_Validate_OverrideFinalizer()
+        {
+            const string source = @"public class Test { ~Test(){} }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var result = new FinalizerValidator().Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+            Assert.IsType<FinalizerValidator.FinalizerValidationResult>(result.Single());
+        }        
+
+        [Fact]
+        public void FinalizerValidator_Should_Validate_MethodFinalizer()
+        {
+            const string source = @"public class Test { void Finalize(){} }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var result = new FinalizerValidator().Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+            Assert.IsType<FinalizerValidator.FinalizerValidationResult>(result.Single());
+        }
+
+        [Fact]
+        public void NestedTypeValidator_Should_Validate_Nested_And_Not_Validate_Parent_Type()
+        {
+            // This test checks that the NestedTypeValidator does not validate the parent Type
+            const string source = @"using System; 
+                                    public class Test
+                                    {
+                                        public struct Nested
+                                        {
+                                            public DateTime Bad()
+                                            {
+                                                return DateTime.Now;
+                                            }
+                                        }
+
+                                        public DateTime BadParent()
+                                        {
+                                            return DateTime.Now;
+                                        }
+                                    }";
+
+            var validator = new NestedTypeValidator(new TypeMethodsValidator(new TestValidator()));
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.Single(result);
+            Assert.Equal("Bad", result.ElementAt(0).SubjectName);
+        }
+
+
+        [Fact]
+        public void MethodReferenceTreeValidator_Should_Validate_Provided_Method_And_All_MethodReferences()
+        {            
+            // This test checks that the MethodReferenceTreeValidator validates the provided method *as well* as its referenced methods
+            var nestedValidator = new MethodReferenceTreeValidator(new TestValidator(), new ReferencedMethodResolver(Enumerable.Empty<string>()));
+
+            string source = @"public class Test
+                                {
+                                    public void TestMethod()
+                                    { 
+                                        TestMethod2(); 
+                                    }
+
+                                    public void TestMethod2()
+                                    { 
+                                        TestMethod3();
+                                    }
+                                    
+                                    public void TestMethod3() { TestMethod(); }
+                                }";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            MethodDefinition methodToValidate = typeDefinition.Methods.FirstOrDefault(m => m.Name == "TestMethod");
+
+            List<ValidationResult> result = nestedValidator.Validate(methodToValidate).ToList();
+
+            // On referenced method that they should be validated
+            Assert.Equal(3, result.Count);
+            Assert.Equal("TestMethod", result.ElementAt(0).SubjectName);
+            Assert.Equal("TestMethod2", result.ElementAt(1).SubjectName);
+            Assert.Equal("TestMethod3", result.ElementAt(2).SubjectName);
+        }
+
+        public TypeDefinition CompileToTypeDef(string source)
+        {
+            var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
+            var smartContracts = MetadataReference.CreateFromFile(typeof(Address).Assembly.Location);
+            var runtime = MetadataReference.CreateFromFile(typeof(System.Runtime.AssemblyTargetedPatchBandAttribute).Assembly.Location);
+
+            SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
+
+            CSharpCompilation compilation = CSharpCompilation.Create(
+                "Test",
+                new[] { syntaxTree },
+                references: new[] { mscorlib, smartContracts, runtime },
+                options: new CSharpCompilationOptions(
+                    OutputKind.DynamicallyLinkedLibrary,
+                    checkOverflow: true));
+
+            using (var dllStream = new MemoryStream())
+            {
+                EmitResult emitResult = compilation.Emit(dllStream);
+                if (!emitResult.Success)
+                    throw new Exception("Compilation Failed");
+
+                var assemblyBytes = dllStream.ToArray();
+
+                var moduleDef = ModuleDefinition.ReadModule(new MemoryStream(assemblyBytes));
+
+                return moduleDef.Types.First(t => !t.Name.Equals("<Module>"));
+            }
+        }
+    }
+
+    public class TestValidator : IMethodDefinitionValidator
+    {
+        public IEnumerable<ValidationResult> Validate(MethodDefinition method)
+        {
+            return new[]
+            {
+                new MethodDefinitionValidationResult(method.Name, "", "")
+            };
+        }
+
+    }
+}
