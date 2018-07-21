@@ -449,9 +449,11 @@ public class Test
 
             var typeDefinition = CompileToTypeDef(source);
 
-            var result = new TypeMethodsValidator(new MethodParamValidator()).Validate(typeDefinition).ToList();
-
-            Assert.Empty(result);
+            foreach (var methodDefinition in typeDefinition.Methods)
+            {
+                var result = new MethodParamValidator().Validate(methodDefinition).ToList();
+                Assert.Empty(result);
+            }
         }
 
         [Fact]
@@ -464,10 +466,11 @@ public class Test
 
             var typeDefinition = CompileToTypeDef(source);
 
-            var result = new TypeMethodsValidator(new MethodParamValidator()).Validate(typeDefinition).ToList();
-
-            Assert.Equal(2, result.Count);
-            Assert.True(result.All(r => r is MethodParamValidator.MethodParamValidationResult));
+            foreach (var methodDefinition in typeDefinition.Methods)
+            {
+                var result = new MethodParamValidator().Validate(methodDefinition).ToList();
+                Assert.True(result.All(r => r is MethodParamValidator.MethodParamValidationResult));
+            }           
         }
 
         [Fact]
