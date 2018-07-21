@@ -20,8 +20,7 @@ namespace Stratis.SmartContracts.Core.Validation
 
     public class ValidationPolicy
     {
-        private readonly List<(Func<ModuleDefinition, bool>, Func<ModuleDefinition, ValidationResult>)> moduleDefValidators =
-            new List<(Func<ModuleDefinition, bool>, Func<ModuleDefinition, ValidationResult>)>();
+        private readonly List<IModuleDefinitionValidator> moduleDefValidators = new List<IModuleDefinitionValidator>();
 
         private readonly List<(NestedTypePolicy, ITypeDefinitionValidator)> typeDefValidators =
             new List<(NestedTypePolicy, ITypeDefinitionValidator)>();
@@ -57,16 +56,9 @@ namespace Stratis.SmartContracts.Core.Validation
 
             return policy;
         }
+        
 
-        public ValidationPolicy ModuleDefValidator(Func<ModuleDefinition, bool> validator,
-            Func<ModuleDefinition, ValidationResult> errorMessageFactory)
-        {
-            this.moduleDefValidators.Add((validator, errorMessageFactory));
-            return this;
-        }
-
-        public IEnumerable<(Func<ModuleDefinition, bool>, Func<ModuleDefinition, ValidationResult>)> ModuleDefValidators =>
-            this.moduleDefValidators;
+        public IEnumerable<IModuleDefinitionValidator> ModuleDefValidators => this.moduleDefValidators;
 
         public ValidationPolicy TypeDefValidator(ITypeDefinitionValidator validator, NestedTypePolicy nestedTypePolicy = NestedTypePolicy.Validate)
         {
@@ -138,9 +130,9 @@ namespace Stratis.SmartContracts.Core.Validation
         public IEnumerable<(Func<MemberReference, bool>, Func<TypeDefinition, MethodDefinition, MemberReference, ValidationResult>)> MemberRefValidators =>
             this.memberRefValidators;
 
-        public ValidationPolicy ModuleDefValidator(AssemblyReferenceValidator validator)
+        public ValidationPolicy ModuleDefValidator(IModuleDefinitionValidator validator)
         {
-            this.moduleDefValidators.Add((v => validator.Validate(v).Any(), m => new TypeDefinitionValidationResult(m.Name)));
+            this.moduleDefValidators.Add(validator);
             return this;
         }
     }
