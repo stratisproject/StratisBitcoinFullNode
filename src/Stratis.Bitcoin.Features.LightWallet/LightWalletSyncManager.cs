@@ -14,9 +14,11 @@ namespace Stratis.Bitcoin.Features.LightWallet
 {
     public class LightWalletSyncManager : IWalletSyncManager
     {
-        /// <summary>The async loops we need to wait upon before we can shut down this manager.</summary>
-        private IAsyncLoop syncFromHeightAsyncLoop;
+        /// <summary>This async loop is used to wait for the chain headers to download. The headers need to at least be downloaded up until the requested sync date.</summary>
         private IAsyncLoop syncFromDateAsyncLoop;
+
+        /// <summary>This async loop waits for the underlying block puller to re-download blocks once a sync height has been supplied.</summary>
+        private IAsyncLoop syncFromHeightAsyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -267,7 +269,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             // Check if the task is already running and don't start another asyncloop call if we are already running one.
             if (this.syncFromDateAsyncLoop != null)
             {
-                this.logger.LogTrace("(-)SYNCFROMDATEASYNCLOOP_NOT_NULL");
+                this.logger.LogTrace("(-)[SYNCFROMDATEASYNCLOOP_NOT_NULL]");
                 return;
             }
 
@@ -286,17 +288,16 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         this.logger.LogTrace("Start syncing from {0} (block: {1}).", this.syncWalletDate, blockHeightAtDate);
                         SyncFromHeight(blockHeightAtDate);
 
-                        //Set the asyncloop to null so that it could be used again
+                        // Set the asyncloop to null so that it can be used again.
                         this.syncFromDateAsyncLoop = null;
                     },
                     (ex) =>
                     {
-                        // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and
-                        // sync from the current height.
+                        // In case of an exception while waiting for the chain to be at a certain height, we just cut our losses and sync from the current height.
                         this.logger.LogError("Exception occurred while waiting for chain to download: {0}.", ex.Message);
                         this.StartSync(this.chain.Tip.Height);
 
-                        //Set the asyncloop to null so that it could be used again
+                        // Set the asyncloop to null so that it could be used again.
                         this.syncFromDateAsyncLoop = null;
                     },
                     TimeSpans.FiveSeconds);
@@ -326,21 +327,21 @@ namespace Stratis.Bitcoin.Features.LightWallet
             // The height passed as parameter is equal or lower than current wallet tip
             if ((this.syncWalletHeight == 0) || (height <= this.walletTip.Height))
             {
-                // This will update the condition within the async loop below
+                // This will update the condition within the async loop below.
                 this.logger.LogTrace("Setting new wallet sync height to {0}; wallet's previous sync height was {1}.", height, this.syncWalletHeight);
                 this.syncWalletHeight = height;
             }
             else
             {
                 this.logger.LogTrace("Ignoring request to sync from block height {0} as the wallet is already syncing from lower block height {1}.", height, this.walletTip.Height);
-                this.logger.LogTrace("(-)ALREADY_SYNCING_LOWER");
+                this.logger.LogTrace("(-)[ALREADY_SYNCING_LOWER]");
                 return;
             }
 
             // Check if the task is already running and don't start another asyncloop call if we are already running one.
             if (this.syncFromHeightAsyncLoop != null)
             {
-                this.logger.LogTrace("(-)ALREADY_RUNNING");
+                this.logger.LogTrace("(-)[ALREADY_RUNNING]");
                 return;
             }
 
@@ -358,17 +359,16 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         this.logger.LogTrace("Start syncing from height {0}.", this.syncWalletHeight);
                         this.StartSync(this.syncWalletHeight);
 
-                        //Set the asyncloop to null so that it could be used again
+                        // Set the asyncloop to null so that it can be used again.
                         this.syncFromHeightAsyncLoop = null;
                     },
                     (ex) =>
                     {
-                        // In case of an exception while waiting for the chain to be at a certain height, we just cut our losses and
-                        // sync from the current height.
-                        this.logger.LogError($"Exception occurred while waiting for chain to download: {ex.Message}");
+                        // In case of an exception while waiting for the chain to be at a certain height, we just cut our losses and sync from the current height.
+                        this.logger.LogError("Exception occurred while waiting for chain to download: {0}.", ex.Message);
                         this.StartSync(this.chain.Tip.Height);
 
-                        //Set the asyncloop to null so that it could be used again
+                        // Set the asyncloop to null so that it can be used again.
                         this.syncFromHeightAsyncLoop = null;
                     },
                     TimeSpans.FiveSeconds);
