@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void DeleteAsyncRemovesBlocksAndTransactions()
         {
             string dir = CreateTestDir(this);
-            Block block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            Block block = Network.Main.CreateBlock();
             block.Transactions.Add(Network.Main.CreateTransaction());
 
             using (var engine = new DBreezeEngine(dir))
@@ -465,10 +465,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void ReIndexAsync_TxIndex_OffToOn()
         {
             string dir = CreateTestDir(this);
-            Block block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            Block block = Network.Main.CreateBlock();
             Transaction transaction = Network.Main.CreateTransaction();
             block.Transactions.Add(transaction);
 
+            // Set up database to mimic that created when TxIndex was off. No transactions stored.
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction dbreezeTransaction = engine.GetTransaction();
@@ -476,6 +477,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 dbreezeTransaction.Commit();
             }
 
+            // Turn TxIndex on and then reindex database, as would happen on node startup if -txindex and -reindex are set.
             using (IBlockRepository repository = this.SetupRepository(Network.Main, dir))
             {
                 Task setIndexTask = repository.SetTxIndexAsync(true);
@@ -485,15 +487,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 reindexTask.Wait();
             }
 
+            // Check that after indexing database, the transaction inside the block is now indexed.
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction dbreezeTransaction = engine.GetTransaction();
                 Dictionary<byte[], Block> blockDict = dbreezeTransaction.SelectDictionary<byte[], Block>("Block");
                 Dictionary<byte[], byte[]> transDict = dbreezeTransaction.SelectDictionary<byte[], byte[]>("Transaction");
 
+                // Block stored as expected.
                 Assert.Single(blockDict);
                 Assert.Equal(block.GetHash(), blockDict.FirstOrDefault().Value.GetHash());
 
+                // Transaction row in database stored as expected.
                 Assert.Single(transDict);
                 KeyValuePair<byte[], byte[]> savedTransactionRow = transDict.FirstOrDefault();
                 Assert.Equal(transaction.GetHash().ToBytes(), savedTransactionRow.Key);
@@ -505,10 +510,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void ReIndexAsync_TxIndex_OnToOff()
         {
             string dir = CreateTestDir(this);
-            Block block = Network.Main.Consensus.ConsensusFactory.CreateBlock();
+            Block block = Network.Main.CreateBlock();
             Transaction transaction = Network.Main.CreateTransaction();
             block.Transactions.Add(transaction);
 
+            // Set up database to mimic that created when TxIndex was on. Transaction from block is stored.
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction dbreezeTransaction = engine.GetTransaction();
@@ -517,6 +523,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 dbreezeTransaction.Commit();
             }
 
+            // Turn TxIndex off and then reindex database, as would happen on node startup if -txindex=0 and -reindex are set.
             using (IBlockRepository repository = this.SetupRepository(Network.Main, dir))
             {
                 Task setIndexTask = repository.SetTxIndexAsync(false);
@@ -526,15 +533,18 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 reindexTask.Wait();
             }
 
+            // Check that after indexing database, the transaction is no longer stored.
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction dbreezeTransaction = engine.GetTransaction();
                 Dictionary<byte[], Block> blockDict = dbreezeTransaction.SelectDictionary<byte[], Block>("Block");
                 Dictionary<byte[], byte[]> transDict = dbreezeTransaction.SelectDictionary<byte[], byte[]>("Transaction");
 
+                // Block still stored as expected.
                 Assert.Single(blockDict);
                 Assert.Equal(block.GetHash(), blockDict.FirstOrDefault().Value.GetHash());
 
+                // No transactions indexed.
                 Assert.Empty(transDict);
             }
         }
