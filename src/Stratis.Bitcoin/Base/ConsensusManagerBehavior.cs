@@ -395,9 +395,8 @@ namespace Stratis.Bitcoin.Base
             }
             catch (ConsensusException exception)
             {
-                this.logger.LogError("Header is invalid. Peer will be banned and disconnected. Exception: '{0}'.", exception);
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds,
-                    "Header is invalid.");
+                this.logger.LogWarning("Header is invalid. Peer will be banned and disconnected. Exception: '{0}'.", exception);
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Invalid header provided.");
             }
 
             this.logger.LogTrace("(-):'{0}'", result);
