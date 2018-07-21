@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(date), date);
 
-            if (this.syncWalletDate == DateTime.MinValue || this.walletTip.Header.BlockTime.LocalDateTime > date)
+            if ((this.syncWalletDate == DateTime.MinValue) || (this.walletTip.Header.BlockTime.LocalDateTime > date))
             {
                 this.logger.LogTrace("Setting new wallet sync from date to {0}; wallet's previous sync from date was {1}.", date, this.syncWalletDate);
                 this.syncWalletDate = date;
@@ -266,7 +266,10 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
             // Check if the task is already running and don't start another asyncloop call if we are already running one.
             if (this.syncFromDateAsyncLoop != null)
+            {
+                this.logger.LogTrace("(-)SYNCFROMDATEASYNCLOOP_NOT_NULL");
                 return;
+            }
 
             // Before we start syncing we need to make sure that the chain is at a certain level.
             // If the chain is behind the date from which we want to sync, we wait for it to catch up, and then we start syncing.
@@ -321,7 +324,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             // Set the syncWalletHeight to the height passed in parameter if one of the conditions is true:
             // The syncWalletHeight is 0 meaning that the it is the first ever call to current method
             // The height passed as parameter is equal or lower than current wallet tip
-            if (this.syncWalletHeight == 0 || height <= this.walletTip.Height)
+            if ((this.syncWalletHeight == 0) || (height <= this.walletTip.Height))
             {
                 // This will update the condition within the async loop below
                 this.logger.LogTrace("Setting new wallet sync height to {0}; wallet's previous sync height was {1}.", height, this.syncWalletHeight);
@@ -330,12 +333,16 @@ namespace Stratis.Bitcoin.Features.LightWallet
             else
             {
                 this.logger.LogTrace("Ignoring request to sync from block height {0} as the wallet is already syncing from lower block height {1}.", height, this.walletTip.Height);
+                this.logger.LogTrace("(-)ALREADY_SYNCING_LOWER");
                 return;
             }
 
             // Check if the task is already running and don't start another asyncloop call if we are already running one.
             if (this.syncFromHeightAsyncLoop != null)
+            {
+                this.logger.LogTrace("(-)ALREADY_RUNNING");
                 return;
+            }
 
             // Before we start syncing we need to make sure that the chain is at a certain level.
             // If the chain is behind the height from which we want to sync, we wait for it to catch up, and then we start syncing.
