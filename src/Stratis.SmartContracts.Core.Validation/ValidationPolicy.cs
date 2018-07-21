@@ -4,6 +4,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Stratis.ModuleValidation.Net;
+using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Policy;
 using Stratis.SmartContracts.Core.Validation.Validators;
 using Stratis.SmartContracts.Core.Validation.Validators.Module;
@@ -73,12 +74,9 @@ namespace Stratis.SmartContracts.Core.Validation
             return this;
         }
 
-        public ValidationPolicy NestedTypeDefValidator(Func<TypeDefinition, bool> validator,
-            Func<TypeDefinition, ValidationResult> errorMessageFactory)
+        public ValidationPolicy NestedTypeDefValidator(ITypeDefinitionValidator validator)
         {
-            bool NestedValidator(TypeDefinition t) => t.IsNested && validator(t);
-
-            //this.typeDefValidators.Add((NestedTypePolicy.Validate, NestedValidator, errorMessageFactory));
+            this.typeDefValidators.Add((NestedTypePolicy.Validate, new NestedValidator(validator)));
             return this;
         }
 
