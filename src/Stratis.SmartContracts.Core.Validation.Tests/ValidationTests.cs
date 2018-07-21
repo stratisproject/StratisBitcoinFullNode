@@ -558,41 +558,6 @@ public class Test
             Assert.Equal("Bad", result.ElementAt(0).SubjectName);
         }
 
-
-        [Fact]
-        public void MethodReferenceTreeValidator_Should_Validate_Provided_Method_And_All_MethodReferences()
-        {            
-            // This test checks that the MethodReferenceTreeValidator validates the provided method *as well* as its referenced methods
-            var nestedValidator = new MethodReferenceTreeValidator(new TestValidator(), new ReferencedMethodResolver(Enumerable.Empty<string>()));
-
-            string source = @"public class Test
-                                {
-                                    public void TestMethod()
-                                    { 
-                                        TestMethod2(); 
-                                    }
-
-                                    public void TestMethod2()
-                                    { 
-                                        TestMethod3();
-                                    }
-                                    
-                                    public void TestMethod3() { TestMethod(); }
-                                }";
-
-            var typeDefinition = CompileToTypeDef(source);
-
-            MethodDefinition methodToValidate = typeDefinition.Methods.FirstOrDefault(m => m.Name == "TestMethod");
-
-            List<ValidationResult> result = nestedValidator.Validate(methodToValidate).ToList();
-
-            // On referenced method that they should be validated
-            Assert.Equal(3, result.Count);
-            Assert.Equal("TestMethod", result.ElementAt(0).SubjectName);
-            Assert.Equal("TestMethod2", result.ElementAt(1).SubjectName);
-            Assert.Equal("TestMethod3", result.ElementAt(2).SubjectName);
-        }
-
         public TypeDefinition CompileToTypeDef(string source)
         {
             var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
