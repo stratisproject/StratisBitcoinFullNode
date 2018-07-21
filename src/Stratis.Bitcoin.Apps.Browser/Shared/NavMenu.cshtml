@@ -1,0 +1,46 @@
+﻿@using Stratis.Bitcoin.Apps.Browser.Dto
+@using Stratis.Bitcoin.Apps.Browser.Interfaces
+@using Stratis.Bitcoin.Apps.Browser.Services
+@using Microsoft.AspNetCore.Blazor.Browser.Http
+@using Microsoft.AspNetCore.Blazor.Browser.Services
+@inject IAppsService appsService
+@inject HttpClient httpClient
+
+<div class="top-row pl-4 navbar navbar-dark">
+    <a class="navbar-brand" href="">Stratis Applications</a>
+    <button class="navbar-toggler" onclick=@ToggleNavMenu>
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</div>
+
+<div class=@(collapseNavMenu ? "collapse" : null) onclick=@ToggleNavMenu>
+    <ul class="nav flex-column">
+        @if (Applications != null)
+        {
+            foreach (var application in Applications)
+            {
+                <li class="nav-item px-3">
+                    <NavLink class="nav-link" href="@application.Address" Match=NavLinkMatch.All>
+                        <span class="oi" aria-hidden="true"></span>@application.DisplayName
+                    </NavLink>
+                </li>
+            }
+        }
+    </ul>
+</div>
+
+@functions {
+    private List<StratisApp> Applications;
+
+    protected override async Task OnInitAsync()
+    {
+        Applications = await appsService.GetApplicationsAsync();
+    }
+
+    bool collapseNavMenu = true;
+
+    void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

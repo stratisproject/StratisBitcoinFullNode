@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    [ExecutionRule]
+    [FullValidationRule]
     public class LoadCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />

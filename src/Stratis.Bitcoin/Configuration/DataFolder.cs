@@ -27,6 +27,7 @@ namespace Stratis.Bitcoin.Configuration
             this.RpcCookieFile = Path.Combine(path, ".cookie");
             this.WalletPath = Path.Combine(path);
             this.LogPath = Path.Combine(path, "Logs");
+            this.ApplicationsPath = Path.Combine(path, "apps");
             this.DnsMasterFilePath = path;
             this.SmartContractStatePath = Path.Combine(path, "contracts");
             this.RootPath = path;
@@ -75,5 +76,8 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Path to the folder with smart contract state database files.</summary>
         public string SmartContractStatePath { get; set; }
+
+        /// <summary>Path to Stratis applications</summary>
+        public string ApplicationsPath { get; internal set; }
     }
 }
