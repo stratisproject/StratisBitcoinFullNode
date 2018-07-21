@@ -527,37 +527,6 @@ public class Test
             Assert.IsType<FinalizerValidator.FinalizerValidationResult>(result.Single());
         }
 
-        [Fact]
-        public void NestedTypeValidator_Should_Validate_Nested_And_Not_Validate_Parent_Type()
-        {
-            // This test checks that the NestedTypeValidator does not validate the parent Type
-            const string source = @"using System; 
-                                    public class Test
-                                    {
-                                        public struct Nested
-                                        {
-                                            public DateTime Bad()
-                                            {
-                                                return DateTime.Now;
-                                            }
-                                        }
-
-                                        public DateTime BadParent()
-                                        {
-                                            return DateTime.Now;
-                                        }
-                                    }";
-
-            var validator = new NestedTypeValidator(new TypeMethodsValidator(new TestValidator()));
-
-            var typeDefinition = CompileToTypeDef(source);
-
-            var result = validator.Validate(typeDefinition).ToList();
-
-            Assert.Single(result);
-            Assert.Equal("Bad", result.ElementAt(0).SubjectName);
-        }
-
         public TypeDefinition CompileToTypeDef(string source)
         {
             var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
