@@ -78,10 +78,9 @@ namespace Stratis.SmartContracts.Core.Validation
 
                 this.ValidateParameters(results, type, method);
 
-                foreach (var (validate, result) in this.policy.MethodDefValidators)
+                foreach (var validator in this.policy.MethodDefValidators)
                 {
-                    if (validate(method))
-                        results.Add(result(type, method));
+                    results.AddRange(validator.Validate(method));
                 }
 
                 this.ValidateInstructions(results, type, method);               

@@ -28,8 +28,7 @@ namespace Stratis.SmartContracts.Core.Validation
         private readonly List<(Func<FieldDefinition, bool>, Func<TypeDefinition, FieldDefinition, ValidationResult>)> fieldDefValidators =
             new List<(Func<FieldDefinition, bool>, Func<TypeDefinition, FieldDefinition, ValidationResult>)>();
 
-        private readonly List<(Func<MethodDefinition, bool>, Func<TypeDefinition, MethodDefinition, ValidationResult>)> methodDefValidators =
-            new List<(Func<MethodDefinition, bool>, Func<TypeDefinition, MethodDefinition, ValidationResult>)>();
+        private readonly List<IMethodDefinitionValidator> methodDefValidators = new List<IMethodDefinitionValidator>();
 
         private readonly List<IInstructionValidator> instructionValidators = new List<IInstructionValidator>();
 
@@ -85,15 +84,13 @@ namespace Stratis.SmartContracts.Core.Validation
         public IEnumerable<(Func<FieldDefinition, bool>, Func<TypeDefinition, FieldDefinition, ValidationResult>)> FieldDefValidators =>
             this.fieldDefValidators;
 
-        public ValidationPolicy MethodDefValidator(Func<MethodDefinition, bool> validator,
-            Func<TypeDefinition, MethodDefinition, ValidationResult> errorMessageFactory)
+        public ValidationPolicy MethodDefValidator(IMethodDefinitionValidator validator)
         {
-            this.methodDefValidators.Add((validator, errorMessageFactory));
+            this.methodDefValidators.Add(validator);
             return this;
         }
 
-        public IEnumerable<(Func<MethodDefinition, bool>, Func<TypeDefinition, MethodDefinition, ValidationResult>)> MethodDefValidators =>
-            this.methodDefValidators;
+        public IEnumerable<IMethodDefinitionValidator> MethodDefValidators => this.methodDefValidators;
 
         public ValidationPolicy MethodParamValidator(Func<MethodDefinition, ParameterDefinition, bool> validator,
             Func<TypeDefinition, MethodDefinition, ParameterDefinition, ValidationResult> errorMessageFactory)

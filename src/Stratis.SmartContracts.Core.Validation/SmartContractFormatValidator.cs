@@ -55,9 +55,7 @@ namespace Stratis.SmartContracts.Core.Validation
                 .FieldDefValidator(
                     DisallowedField,
                     (t, f) => new FieldDefinitionValidator.FieldDefinitionValidationResult(t, f))
-                .MethodDefValidator(
-                    HasTryCatch,
-                    (t, m) => new TryCatchValidator.TryCatchValidationResult(m))
+                .MethodDefValidator(new TryCatchValidator())
                 .MethodParamValidator((m, p) => !MethodParamValidator.IsValidParam(m, p),
                     (t, m, p) => new MethodParamValidator.MethodParamValidationResult(m, p));
         }
