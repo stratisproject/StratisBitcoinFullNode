@@ -11,14 +11,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a ContractTxData object for a method invocation
         /// </summary>
-        public ContractTxData(int vmVersion, ulong gasPrice, Gas gasLimit, uint160 address,
+        public ContractTxData(int vmVersion, ulong gasPrice, Gas gasLimit, uint160 contractAddress,
             string method, string rawParameters = "", object[] methodParameters = null)
         {
             this.OpCodeType = (byte) ScOpcodeType.OP_CALLCONTRACT;
             this.VmVersion = vmVersion;
             this.GasPrice = gasPrice;
             this.GasLimit = gasLimit;
-            this.ContractAddress = address;
+            this.ContractAddress = contractAddress;
             this.MethodName = method;
             this.MethodParametersRaw = rawParameters;            
             this.MethodParameters = methodParameters;
