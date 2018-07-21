@@ -49,12 +49,10 @@ namespace Stratis.SmartContracts.Core.Validation
                 .TypeDefValidator(new ConstructorParamValidator(), NestedTypePolicy.Ignore)
                 .TypeDefValidator(new InheritsSmartContractValidator(), NestedTypePolicy.Ignore
                 )
+                .TypeDefValidator(new FieldDefinitionValidator())
                 .NestedTypeDefValidator(new TypeHasMethodsValidator())
                 .NestedTypeDefValidator(new TypeHasNestedTypesValidator())
                 .NestedTypeDefValidator(new NestedTypesAreValueTypesValidator())
-                .FieldDefValidator(
-                    DisallowedField,
-                    (t, f) => new FieldDefinitionValidator.FieldDefinitionValidationResult(t, f))
                 .MethodDefValidator(new TryCatchValidator())
                 .MethodParamValidator((m, p) => !MethodParamValidator.IsValidParam(m, p),
                     (t, m, p) => new MethodParamValidator.MethodParamValidationResult(m, p));
