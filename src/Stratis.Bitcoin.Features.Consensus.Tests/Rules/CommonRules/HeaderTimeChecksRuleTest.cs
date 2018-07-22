@@ -10,7 +10,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class HeaderTimeChecksRuleTest
     {
-
         [Fact]
         public async Task ChecBlockPreviousTimestamp_ValidationFailAsync()
         {

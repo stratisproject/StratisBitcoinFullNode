@@ -254,8 +254,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 return new List<ConsensusRule>
                 {
+                    new TemporarySetChainHeader(),
+
                     // == Header ==
                     new HeaderTimeChecksRule(),
+                    new CalculateWorkRule(),
                     new BitcoinActivationRule(),
 
                     // == Integrity ==
@@ -265,7 +268,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new SetActivationDeploymentsRule(),
 
                     // rules that are inside the method CheckBlockHeader
-                    new CalculateWorkRule(),
 
                     // rules that are inside the method ContextualCheckBlockHeader
                     new CheckpointsRule(),
@@ -299,10 +301,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 return new List<ConsensusRule>
                 {
+                    new TemporarySetChainHeader(),
+
                     // == Header ==
                     new HeaderTimeChecksRule(),
                     new HeaderTimeChecksPosRule(),
-                    new PosTimeMaskRule(),
                     new StratisBigFixPosFutureDriftRule(),
 
                     new StratisVersionRule(),
@@ -313,9 +316,10 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                     // == Partial ==
                     new SetActivationDeploymentsRule(),
+                    new CalculateStakeRule(),
+                    new PosTimeMaskRule(),
 
                     // rules that are inside the method CheckBlockHeader
-                    new CalculateStakeRule(),
 
                     // rules that are inside the method ContextualCheckBlockHeader
                     new CheckpointsRule(),

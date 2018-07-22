@@ -9,7 +9,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Check that a <see cref="BitcoinMain"/> network block has the correct version the defined active deployments.
+    /// Check that a <see cref="BitcoinMain"/> network block has the correct version according to the defined active deployments.
     /// </summary>
     [HeaderValidationRule]
     public class BitcoinActivationRule : ConsensusRule

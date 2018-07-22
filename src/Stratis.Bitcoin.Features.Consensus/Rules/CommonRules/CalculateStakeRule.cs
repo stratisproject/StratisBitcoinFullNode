@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Calculate the difficulty for a POS network and check that it is correct.
     /// </summary>
-    [HeaderValidationRule]
+    [PartialValidationRule]
     public class CalculateStakeRule : StakeStoreConsensusRule
     {
         /// <inheritdoc />
