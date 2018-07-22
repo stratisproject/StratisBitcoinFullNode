@@ -24,7 +24,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (context.ValidationContext.ChainedHeader.Height + 2 > this.Parent.Network.Consensus.LastPOWBlock)
             {
                 ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
-                Target nextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(chainedHeader, chainedHeader.Previous, chainedHeader.Previous.Previous, context.Consensus.ProofOfStakeLimitV2);
+                BlockHeader first = chainedHeader.Previous.Header;
+                BlockHeader second = chainedHeader.Previous.Previous.Header;
+
+                Target nextWorkRequired = this.PosParent.StakeValidator.CalculateRetarget((int)first.Time, first.Bits, (int)second.Time, context.Consensus.ProofOfStakeLimitV2);
 
                 BlockHeader header = context.ValidationContext.Block.Header;
 

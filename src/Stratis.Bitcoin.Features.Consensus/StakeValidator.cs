@@ -103,16 +103,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             return startChainedHeader;
         }
 
-        public Target GetNextTargetRequired(ChainedHeader chainedHeader, ChainedHeader lastPowPosBlock, ChainedHeader prevLastPowPosBlock, BigInteger targetLimit)
+        public Target CalculateRetarget(int firstBlockTime, Target firstBlockTarget, int secondBlockTime, BigInteger targetLimit)
         {
-            Guard.Assert(chainedHeader != null);
-            Guard.Assert(lastPowPosBlock != null);
-            Guard.Assert(prevLastPowPosBlock != null);
-
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
-
             int targetSpacing = TargetSpacingSeconds;
-            int actualSpacing = (int)(lastPowPosBlock.Header.Time - prevLastPowPosBlock.Header.Time);
+            int actualSpacing = firstBlockTime - secondBlockTime;
             if (actualSpacing < 0)
                 actualSpacing = targetSpacing;
 
@@ -122,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             int targetTimespan = RetargetIntervalMinutes * 60;
             int interval = targetTimespan / targetSpacing;
 
-            BigInteger target = lastPowPosBlock.Header.Bits.ToBigInteger();
+            BigInteger target = firstBlockTarget.ToBigInteger();
 
             long multiplyBy = (interval - 1) * targetSpacing + actualSpacing + actualSpacing;
             target = target.Multiply(BigInteger.ValueOf(multiplyBy));
@@ -136,6 +130,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 target = targetLimit;
 
             var finalTarget = new Target(target);
+
             this.logger.LogTrace("(-):'{0}'", finalTarget);
             return finalTarget;
         }
@@ -183,7 +178,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return lastPowPosBlock.Header.Bits;
             }
 
-            Target finalTarget = this.GetNextTargetRequired(chainedHeader, lastPowPosBlock, prevLastPowPosBlock, targetLimit);
+            Target finalTarget = this.CalculateRetarget((int)lastPowPosBlock.Header.Time, lastPowPosBlock.Header.Bits, (int)prevLastPowPosBlock.Header.Time, targetLimit);
+
             this.logger.LogTrace("(-):'{0}'", finalTarget);
             return finalTarget;
         }
@@ -456,3 +452,4 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
     }
 }
+
