@@ -70,7 +70,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
 
         /// <summary>
-        /// For every block in the database, store the transactions (or don't) according to whether TxIndex is set.
+        /// Iterate over every block in the database. 
+        /// If <see cref="TxIndex"/> is true, we store the block hash alongside the transaction hash in the transaction table, otherwise clear the transaction table.
         /// </summary>
         Task ReIndexAsync();
 
@@ -354,6 +355,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
                 {
+                    dbreezeTransaction.SynchronizeTables(BlockTableName, TransactionTableName);
+
                     if (this.TxIndex)
                     {
                         // Insert transactions to database.
