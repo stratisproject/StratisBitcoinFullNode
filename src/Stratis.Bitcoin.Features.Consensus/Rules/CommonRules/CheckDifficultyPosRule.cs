@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 return;
             }
 
-            if (this.Parent.Network.Consensus.LastPOWBlock + 2 > context.ValidationContext.ChainedHeader.Height)
+            if (context.ValidationContext.ChainedHeader.Height + 2 > this.Parent.Network.Consensus.LastPOWBlock)
             {
                 ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
                 Target nextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(chainedHeader, chainedHeader.Previous, chainedHeader.Previous.Previous, context.Consensus.ProofOfStakeLimitV2);
