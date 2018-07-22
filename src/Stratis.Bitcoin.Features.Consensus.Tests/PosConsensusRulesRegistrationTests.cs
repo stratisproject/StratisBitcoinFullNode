@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             this.rules.ElementAt(5).Should().BeOfType<BlockMerkleRootRule>();
             this.rules.ElementAt(6).Should().BeOfType<PosBlockSignatureRule>();
             this.rules.ElementAt(7).Should().BeOfType<SetActivationDeploymentsRule>();
-            this.rules.ElementAt(8).Should().BeOfType<CalculateStakeRule>();
+            this.rules.ElementAt(8).Should().BeOfType<CheckDifficultyPosRule>();
             this.rules.ElementAt(9).Should().BeOfType<CheckpointsRule>();
             this.rules.ElementAt(10).Should().BeOfType<AssumeValidRule>();
             this.rules.ElementAt(11).Should().BeOfType<TransactionLocktimeActivationRule>();

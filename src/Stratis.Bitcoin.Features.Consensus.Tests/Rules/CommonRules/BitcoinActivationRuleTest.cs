@@ -22,7 +22,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             // set height above bip34
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -40,7 +39,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -59,7 +57,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -78,7 +75,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -97,7 +93,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -116,7 +111,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -135,7 +129,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -154,7 +147,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -173,7 +165,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -192,7 +183,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -211,7 +201,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -230,7 +219,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -249,7 +237,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 2;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -266,7 +253,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 2;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -283,7 +269,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] - 2;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
@@ -300,7 +285,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] + 30;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.NextWorkRequired = new Target(0x1f111115);
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));

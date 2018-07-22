@@ -103,48 +103,13 @@ namespace Stratis.Bitcoin.Features.Consensus
             return startChainedHeader;
         }
 
-        /// <inheritdoc/>
-        public Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, NBitcoin.Consensus consensus, bool proofOfStake)
+        public Target GetNextTargetRequired(ChainedHeader chainedHeader, ChainedHeader lastPowPosBlock, ChainedHeader prevLastPowPosBlock, BigInteger targetLimit)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(chainedHeader), chainedHeader, nameof(proofOfStake), proofOfStake);
+            Guard.Assert(chainedHeader != null);
+            Guard.Assert(lastPowPosBlock != null);
+            Guard.Assert(prevLastPowPosBlock != null);
 
-            // Genesis block.
-            if (chainedHeader == null)
-            {
-                this.logger.LogTrace("(-)[GENESIS]:'{0}'", consensus.PowLimit);
-                return consensus.PowLimit;
-            }
-
-            // Find the last two blocks that correspond to the mining algo
-            // (i.e if this is a POS block we need to find the last two POS blocks).
-            BigInteger targetLimit = proofOfStake
-                ? consensus.ProofOfStakeLimitV2
-                : consensus.PowLimit.ToBigInteger();
-
-            // First block.
-            ChainedHeader lastPowPosBlock = GetLastPowPosChainedBlock(stakeChain, chainedHeader, proofOfStake);
-            if (lastPowPosBlock.Previous == null)
-            {
-                var res = new Target(targetLimit);
-                this.logger.LogTrace("(-)[FIRST_BLOCK]:'{0}'", res);
-                return res;
-            }
-
-            // Second block.
-            ChainedHeader prevLastPowPosBlock = GetLastPowPosChainedBlock(stakeChain, lastPowPosBlock.Previous, proofOfStake);
-            if (prevLastPowPosBlock.Previous == null)
-            {
-                var res = new Target(targetLimit);
-                this.logger.LogTrace("(-)[SECOND_BLOCK]:'{0}'", res);
-                return res;
-            }
-
-            // This is used in tests to allow quickly mining blocks.
-            if (consensus.PowNoRetargeting)
-            {
-                this.logger.LogTrace("(-)[NO_POW_RETARGET]:'{0}'", lastPowPosBlock.Header.Bits);
-                return lastPowPosBlock.Header.Bits;
-            }
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             int targetSpacing = TargetSpacingSeconds;
             int actualSpacing = (int)(lastPowPosBlock.Header.Time - prevLastPowPosBlock.Header.Time);
@@ -171,6 +136,54 @@ namespace Stratis.Bitcoin.Features.Consensus
                 target = targetLimit;
 
             var finalTarget = new Target(target);
+            this.logger.LogTrace("(-):'{0}'", finalTarget);
+            return finalTarget;
+        }
+
+        /// <inheritdoc/>
+        public Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, NBitcoin.Consensus consensus, bool proofOfStake)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(chainedHeader), chainedHeader, nameof(proofOfStake), proofOfStake);
+
+            // Genesis block.
+            if (chainedHeader == null)
+            {
+                this.logger.LogTrace("(-)[GENESIS]:'{0}'", consensus.PowLimit);
+                return consensus.PowLimit;
+            }
+
+            // Find the last two blocks that correspond to the mining algo
+            // (i.e if this is a POS block we need to find the last two POS blocks).
+            BigInteger targetLimit = proofOfStake
+                ? consensus.ProofOfStakeLimitV2
+                : consensus.PowLimit.ToBigInteger();
+
+            // First block.
+            ChainedHeader lastPowPosBlock = this.GetLastPowPosChainedBlock(stakeChain, chainedHeader, proofOfStake);
+            if (lastPowPosBlock.Previous == null)
+            {
+                var res = new Target(targetLimit);
+                this.logger.LogTrace("(-)[FIRST_BLOCK]:'{0}'", res);
+                return res;
+            }
+
+            // Second block.
+            ChainedHeader prevLastPowPosBlock = this.GetLastPowPosChainedBlock(stakeChain, lastPowPosBlock.Previous, proofOfStake);
+            if (prevLastPowPosBlock.Previous == null)
+            {
+                var res = new Target(targetLimit);
+                this.logger.LogTrace("(-)[SECOND_BLOCK]:'{0}'", res);
+                return res;
+            }
+
+            // This is used in tests to allow quickly mining blocks.
+            if (consensus.PowNoRetargeting)
+            {
+                this.logger.LogTrace("(-)[NO_POW_RETARGET]:'{0}'", lastPowPosBlock.Header.Bits);
+                return lastPowPosBlock.Header.Bits;
+            }
+
+            Target finalTarget = this.GetNextTargetRequired(chainedHeader, lastPowPosBlock, prevLastPowPosBlock, targetLimit);
             this.logger.LogTrace("(-):'{0}'", finalTarget);
             return finalTarget;
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using NBitcoin;
+using NBitcoin.BouncyCastle.Math;
 
 namespace Stratis.Bitcoin.Features.Consensus.Interfaces
 {
@@ -76,5 +77,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// </para>
         /// </remarks>
         Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, NBitcoin.Consensus consensus, bool proofOfStake);
+
+        /// <summary>
+        /// TODO:
+        /// </summary>
+        /// <param name="chainedHeader"></param>
+        /// <param name="lastPowPosBlock"></param>
+        /// <param name="prevLastPowPosBlock"></param>
+        /// <param name="targetLimit"></param>
+        /// <returns></returns>
+        Target GetNextTargetRequired(ChainedHeader chainedHeader, ChainedHeader lastPowPosBlock, ChainedHeader prevLastPowPosBlock, BigInteger targetLimit);
     }
 }

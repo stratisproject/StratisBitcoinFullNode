@@ -6,10 +6,10 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Calculate the difficulty for a POS network and check that it is correct.
+    /// Calculate the difficulty of a POS network for both Pow/POS blocks.
     /// </summary>
     [PartialValidationRule]
-    public class CalculateStakeRule : StakeStoreConsensusRule
+    public class CheckDifficultykHybridRule : StakeStoreConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.HighHash">Thrown if block doesn't have a valid PoW header.</exception>
@@ -29,12 +29,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
 
-            context.NextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.ValidationContext.ChainedHeader.Previous, context.Consensus, posRuleContext.BlockStake.IsProofOfStake());
+            Target nextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.ValidationContext.ChainedHeader.Previous, context.Consensus, posRuleContext.BlockStake.IsProofOfStake());
 
             BlockHeader header = context.ValidationContext.Block.Header;
 
             // Check proof of stake.
-            if (header.Bits != context.NextWorkRequired)
+            if (header.Bits != nextWorkRequired)
             {
                 this.Logger.LogTrace("(-)[BAD_DIFF_BITS]");
                 ConsensusErrors.BadDiffBits.Throw();

@@ -22,7 +22,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             context.Time = DateTimeProvider.Default.GetTimeOffset();
 
             // increment the bits.
-            context.NextWorkRequired = context.ValidationContext.ChainedHeader.GetNextWorkRequired(Network.RegTest.Consensus);
             context.ValidationContext.Block.Header.BlockTime = context.ConsensusTip.Header.BlockTime.AddSeconds(-1);
 
             ConsensusErrorException error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
@@ -41,7 +40,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             context.Time = DateTimeProvider.Default.GetTimeOffset();
 
             // increment the bits.
-            context.NextWorkRequired = context.ValidationContext.ChainedHeader.GetNextWorkRequired(Network.RegTest.Consensus);
             context.ValidationContext.Block.Header.BlockTime = context.Time.AddHours(3);
 
             ConsensusErrorException error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));

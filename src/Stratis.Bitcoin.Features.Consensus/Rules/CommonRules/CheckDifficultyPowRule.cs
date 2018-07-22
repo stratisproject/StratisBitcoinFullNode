@@ -8,8 +8,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Calculate the difficulty for a POW network and check that it is correct.   
     /// </summary>
-    [HeaderValidationRule]
-    public class CalculateWorkRule : ConsensusRule
+    [HeaderValidationRule(CanSkipValidation = true)]
+    public class CheckDifficultyPowRule : ConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoS header.</exception>
@@ -18,12 +18,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (!context.MinedBlock && !context.ValidationContext.Block.Header.CheckProofOfWork())
                 ConsensusErrors.HighHash.Throw();
 
-            context.NextWorkRequired = context.ValidationContext.ChainedHeader.GetWorkRequired(context.Consensus);
+            Target nextWorkRequired = context.ValidationContext.ChainedHeader.GetWorkRequired(context.Consensus);
 
             BlockHeader header = context.ValidationContext.Block.Header;
 
             // Check proof of work.
-            if (header.Bits != context.NextWorkRequired)
+            if (header.Bits != nextWorkRequired)
             {
                 this.Logger.LogTrace("(-)[BAD_DIFF_BITS]");
                 ConsensusErrors.BadDiffBits.Throw();
