@@ -15,15 +15,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             var rules = new List<ConsensusRule>
             {
+                new TemporarySetChainHeader(),
+                
+                // == Header ==
+                new HeaderTimeChecksRule(),
+                new CalculateWorkRule(),
+                
+                // == Integrity ==
+                new BlockMerkleRootRule(),
+                
+                // == Partial ==
                 new SetActivationDeploymentsRule(),
 
                 // rules that are inside the method CheckBlockHeader
-                new CalculateWorkRule(),
 
                 // rules that are inside the method ContextualCheckBlockHeader
                 new CheckpointsRule(),
                 new AssumeValidRule(),
-                new HeaderTimeChecksRule(),
 
                 // rules that are inside the method ContextualCheckBlock
                 new TransactionLocktimeActivationRule(), // implements BIP113
@@ -32,10 +40,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new BlockSizeRule(),
 
                 // rules that are inside the method CheckBlock
-                new BlockMerkleRootRule(),
                 new EnsureCoinbaseRule(),
                 new CheckPowTransactionRule(),
                 new CheckSigOpsRule(),
+                
+                // == Full ==
 
                 // rules that require the store to be loaded (coinview)
                 new SmartContractLoadCoinviewRule(),
@@ -45,6 +54,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
                 new SmartContractCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
+                new SmartContractSaveCoinviewRule()
             };
 
             return rules;
