@@ -10,12 +10,12 @@ namespace Stratis.SmartContracts.Core.Validation
     {
         private readonly ValidationPolicy policy;
 
-        private readonly TypePolicyValidator typePolicyValidator;
+        private readonly TypePolicyValidator _typePolicyValidator;
 
         public ModulePolicyValidator(ValidationPolicy policy)
         {
             this.policy = policy;
-            this.typePolicyValidator = new TypePolicyValidator(policy);
+            this._typePolicyValidator = new TypePolicyValidator(policy);
         }
 
         public IEnumerable<ValidationResult> Validate(ModuleDefinition module)
@@ -29,7 +29,7 @@ namespace Stratis.SmartContracts.Core.Validation
 
             if (type == null) return results;
 
-            var result = this.typePolicyValidator.Validate(type);
+            var result = this._typePolicyValidator.Validate(type);
             results.AddRange(result);
 
             return results;
