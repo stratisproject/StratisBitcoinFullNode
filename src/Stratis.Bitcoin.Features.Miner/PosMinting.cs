@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public enum CurrentState
         {
             Idle = -1,
-            Executing = 0
+            Executing = 1
         }
 
         /// <summary>The maximum allowed size for a serialized block, in bytes (network rule).</summary>
@@ -399,10 +399,10 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (Interlocked.CompareExchange(
                     ref this.stopStakingStateFlag,
-                    (int)CurrentState.Idle,
-                    (int)CurrentState.Executing) == (int)CurrentState.Idle)
+                    (int)CurrentState.Executing,
+                    (int)CurrentState.Idle) == (int)CurrentState.Executing)
             {
-                this.logger.LogTrace("(-)[ALREADY_MINING]");
+                this.logger.LogTrace("(-)[MINING_STOPPING]");
                 return;
             }
 
@@ -467,14 +467,14 @@ namespace Stratis.Bitcoin.Features.Miner
                     (int)CurrentState.Executing,
                     (int)CurrentState.Idle) == (int)CurrentState.Executing)
             {
-                this.logger.LogTrace("(-)[MINING_STOPPED]");
+                this.logger.LogTrace("(-)[MINING_STOPPING]");
                 return;
             }
 
             if (Interlocked.CompareExchange(
                     ref this.stakeStateFlag,
-                    (int)CurrentState.Idle,
-                    (int)CurrentState.Executing) == (int)CurrentState.Idle)
+                    (int)CurrentState.Executing,
+                    (int)CurrentState.Idle) == (int)CurrentState.Executing)
             {
                 this.logger.LogTrace("(-)[NOT_MINING]");
                 return;
