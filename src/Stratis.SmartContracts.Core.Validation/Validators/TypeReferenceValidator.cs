@@ -104,12 +104,11 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
             switch (result.Kind)
             {
                 case PolicyValidatorResultKind.DeniedNamespace:
+                    var ns = string.IsNullOrWhiteSpace(type.Namespace) ? "" : type.Namespace;
                     yield return new DeniedNamespaceValidationResult(
                         parent.FullName,
-                        "Whitelist",
-                        string.IsNullOrWhiteSpace(type.Namespace) 
-                            ? "Namespace \"\" is not allowed" 
-                            : $"Namespace {type.Namespace} is not allowed");
+                        "Whitelist", 
+                        $"Type {type.Name} in Namespace {ns} is not allowed");
                     break;
                 case PolicyValidatorResultKind.DeniedType:
                     yield return new DeniedTypeValidationResult(
