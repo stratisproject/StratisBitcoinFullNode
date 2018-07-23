@@ -94,10 +94,9 @@ namespace Stratis.SmartContracts.Core.Validation
             {
                 foreach (var parameter in method.Parameters)
                 {
-                    foreach (var (validate, result) in this.policy.ParameterValidators)
+                    foreach (var validator in this.policy.ParameterValidators)
                     {
-                        if (validate(method, parameter))
-                            results.Add(result(type, method, parameter));
+                        results.AddRange(validator.Validate(parameter));
                     }
                 }
             }
@@ -133,10 +132,9 @@ namespace Stratis.SmartContracts.Core.Validation
             if (!(instruction.Operand is MemberReference reference))
                 return;
 
-            foreach (var (validate, result) in this.policy.MemberRefValidators)
+            foreach (var validator in this.policy.MemberRefValidators)
             {
-                if (validate(reference))
-                    results.Add(result(type, method, reference));
+                results.AddRange(validator.Validate(reference));
             }
         }
 
@@ -157,10 +155,9 @@ namespace Stratis.SmartContracts.Core.Validation
 
             foreach (var field in type.Fields)
             {
-                foreach (var (validate, result) in this.policy.FieldDefValidators)
+                foreach (var validator in this.policy.FieldDefValidators)
                 {
-                    if (validate(field))
-                        results.Add(result(type, field));
+                    results.AddRange(validator.Validate(field));
                 }
             }
         }
