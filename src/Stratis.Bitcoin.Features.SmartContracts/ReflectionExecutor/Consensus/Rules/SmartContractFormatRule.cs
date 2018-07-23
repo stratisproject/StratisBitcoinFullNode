@@ -62,14 +62,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
             }
 
             ICallDataSerializer serializer = CallDataSerializer.Default;
-            Result<CallData> callDataDeserializationResult = serializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
+            Result<ContractTxData> callDataDeserializationResult = serializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
 
             if (callDataDeserializationResult.IsFailure)
             {
                 new ConsensusError("invalid-calldata-format", string.Format("Invalid {0} format", typeof(ContractTxData).Name)).Throw();
             }
 
-            CallData callData = callDataDeserializationResult.Value;
+            var callData = callDataDeserializationResult.Value;
 
             if (callData.GasPrice < GasPriceMinimum)
             {
