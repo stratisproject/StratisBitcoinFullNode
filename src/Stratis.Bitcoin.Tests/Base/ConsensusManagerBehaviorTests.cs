@@ -537,7 +537,10 @@ namespace Stratis.Bitcoin.Tests.Base
             foreach (uint256 sentHash in sentHashes)
             {
                 if (hashesOver50.Contains(sentHash))
+                {
                     contains = true;
+                    break;
+                }
             }
 
             Assert.True(contains);
@@ -564,7 +567,10 @@ namespace Stratis.Bitcoin.Tests.Base
             foreach (uint256 sentHash in sentHashes)
             {
                 if (hashesOver50.Contains(sentHash))
+                {
                     containsHashesOver50 = true;
+                    break;
+                }
             }
 
             Assert.False(containsHashesOver50);
@@ -576,7 +582,10 @@ namespace Stratis.Bitcoin.Tests.Base
             foreach (uint256 sentHash in sentHashes)
             {
                 if (hashesOver30.Contains(sentHash))
+                {
                     containsHashesOver30 = true;
+                    break;
+                }
             }
 
             Assert.True(containsHashesOver30);
@@ -598,14 +607,14 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Initialize <see cref="ConsensusManagerBehavior.BestSentHeader"/> with null.
+        /// Initialize <see cref="ConsensusManagerBehavior.BestSentHeader"/> with <c>null</c>.
         /// Call <see cref="ConsensusManagerBehavior.UpdateBestSentHeader"/> with any header.
         /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> was set.
         /// </summary>
         [Fact]
         public void UpdateBestSentHeader_ChangesIfPreviousValueWasNull()
         {
-            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20], null, null);
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20]);
 
             behavior.UpdateBestSentHeader(this.headers[10]);
 
@@ -648,7 +657,7 @@ namespace Stratis.Bitcoin.Tests.Base
         /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> was set to be 15b.
         /// </summary>
         [Fact]
-        public void UpdateBestSentHeader_()
+        public void UpdateBestSentHeader_ChangedIfHeaderIsInFork()
         {
             ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20], null, this.headers[10]);
 

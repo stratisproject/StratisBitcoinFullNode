@@ -38,6 +38,7 @@ namespace Stratis.Bitcoin.Tests.Base
         /// <summary>Counter that shows how many times <see cref="GetHeadersPayload"/> was sent to the peer.</summary>
         public int GetHeadersPayloadSentTimes { get; private set; }
 
+        /// <summary>Contains all the <see cref="GetHeadersPayload"/> that were sent to the peer.</summary>
         public List<GetHeadersPayload> GetHeadersPayloadsSent { get; private set; }
 
         /// <summary>List of <see cref="HeadersPayload"/> that were sent to the peer.</summary>
@@ -118,10 +119,10 @@ namespace Stratis.Bitcoin.Tests.Base
 
             this.PeerMock.Setup(x => x.SendMessageAsync(It.IsAny<Payload>(), It.IsAny<CancellationToken>())).Returns((Payload payload, CancellationToken token) =>
             {
-                if (payload is GetHeadersPayload getheaderspayload)
+                if (payload is GetHeadersPayload getHeadersPayload)
                 {
                     this.GetHeadersPayloadSentTimes++;
-                    this.GetHeadersPayloadsSent.Add(getheaderspayload);
+                    this.GetHeadersPayloadsSent.Add(getHeadersPayload);
                 }
 
                 if (payload is HeadersPayload headersPayload)
