@@ -138,12 +138,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var contractCarrier = SmartContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
 
                 var contractCreateScript = new Script(contractCarrier.Serialize());
-                var txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
+                var txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
                 {
                     MinConfirmations = maturity,
-                    FeeType = FeeType.High,
-                    DustPrevention = false,
-                    UseAllInputs = false,
+                    FeeType = FeeType.High
                 };
 
                 Transaction transferContractTransaction = scSender.FullNode.WalletTransactionHandler().BuildTransaction(txBuildContext);
@@ -176,11 +174,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.True(compilationResult.Success);
                 contractCarrier = SmartContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
                 contractCreateScript = new Script(contractCarrier.Serialize());
-                txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
+                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
                 {
                     MinConfirmations = maturity,
-                    FeeType = FeeType.High,
-                    DustPrevention = false
+                    FeeType = FeeType.High
                 };
 
                 // Broadcast the token transaction to the network
@@ -210,11 +207,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Create a call contract transaction which will transfer funds
                 contractCarrier = SmartContractCarrier.CallContract(1, tokenContractAddress, "Test", gasPrice, gasLimit);
                 Script contractCallScript = new Script(contractCarrier.Serialize());
-                txBuildContext = new TransactionBuildContext(new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList(), Password)
+                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList(), Password)
                 {
                     MinConfirmations = maturity,
-                    FeeType = FeeType.High,
-                    DustPrevention = false
+                    FeeType = FeeType.High
                 };
 
                 // Broadcast the token transaction to the network
@@ -676,7 +672,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
 
                 SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
-                WalletController senderWalletController = scSender.FullNode.NodeService<WalletController>();
+                SmartContractWalletController senderWalletController = scSender.FullNode.NodeService<SmartContractWalletController>();
                 SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
 

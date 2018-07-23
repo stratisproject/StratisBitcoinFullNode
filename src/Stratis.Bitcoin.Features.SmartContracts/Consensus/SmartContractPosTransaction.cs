@@ -5,7 +5,7 @@ using NBitcoin.Protocol;
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
 {
     /// <summary>A smart contract proof of stake transaction.</summary>
-    public class SmartContractPosTransaction : Transaction
+    public class SmartContractPosTransaction : PosTransaction
     {
         public SmartContractPosTransaction() : base()
         {
