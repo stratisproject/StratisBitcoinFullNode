@@ -4,13 +4,7 @@ using NBitcoin.Protocol;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
 {
-    /// <summary>
-    /// A smart contract proof of stake transaction.
-    /// </summary>
-    /// <remarks>
-    /// TODO: later we can move the POS timestamp field in this class.
-    /// serialization can be refactored to have a common array that will be serialized and each inheritance can add to the array)
-    /// </remarks>
+    /// <summary>A smart contract proof of stake transaction.</summary>
     public class SmartContractPosTransaction : Transaction
     {
         public SmartContractPosTransaction() : base()
