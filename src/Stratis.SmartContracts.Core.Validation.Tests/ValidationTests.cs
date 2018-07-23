@@ -254,7 +254,7 @@ public class Test
             var validator = new TypePolicyValidator(validationPolicy);
 
             var result = validator.Validate(typeDefinition).ToList();
-            Assert.True(result.All(r => r is TypeReferenceValidator.DeniedMemberValidationResult));
+            Assert.True(result.All(r => r is TypeReferenceValidator.DeniedTypeValidationResult));
         }
 
         [Fact]
