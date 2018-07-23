@@ -355,7 +355,7 @@ public class Test2 {
             var result = validator.Validate(decomp);
 
             Assert.False(result.IsValid);
-            Assert.Single(result.Errors);
+            Assert.Equal(2, result.Errors.Count());
         }
 
         /// <summary>
