@@ -273,7 +273,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             if (!this.ModelState.IsValid)
             {
                 this.logger.LogTrace("(-)[MODEL_STATE_INVALID]");
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
