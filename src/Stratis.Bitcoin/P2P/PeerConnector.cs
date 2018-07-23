@@ -292,6 +292,7 @@ namespace Stratis.Bitcoin.P2P
                 if (endPointGroup.SequenceEqual(peerAddressGroup))
                     return true;
             }
+
             return false;
         }
 
