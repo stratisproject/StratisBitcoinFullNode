@@ -7,7 +7,6 @@ using System.Text;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using NBitcoin;
@@ -17,6 +16,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.ModelState.IsValid)
             {
                 this.logger.LogTrace("(-)[MODELSTATE_INVALID]");
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             uint160 addressNumeric = new Address(request.ContractAddress).ToUint160(this.network);
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.ModelState.IsValid)
             {
                 this.logger.LogTrace("(-)[MODELSTATE_INVALID]");
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             uint256 txHashNum = new uint256(txHash);
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         public IActionResult BuildCreateSmartContractTransaction([FromBody] BuildCreateContractTransactionRequest request)
         {
             if (!this.ModelState.IsValid)
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
             return Json(BuildCreateTx(request));
         }
@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         public IActionResult BuildCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
         {
             if (!this.ModelState.IsValid)
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
             return Json(BuildCallTx(request));
         }
@@ -184,13 +184,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         public IActionResult BuildAndSendCreateSmartContractTransaction([FromBody] BuildCreateContractTransactionRequest request)
         {
             if (!this.ModelState.IsValid)
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
             BuildCreateContractTransactionResponse response = BuildCreateTx(request);
             if (!response.Success)
                 return Json(response);
 
-            var transaction = this.network.CreateTransaction(response.Hex);
+            Transaction transaction = this.network.CreateTransaction(response.Hex);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
@@ -202,13 +202,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         public IActionResult BuildAndSendCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
         {
             if (!this.ModelState.IsValid)
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
             BuildCallContractTransactionResponse response = BuildCallTx(request);
             if (!response.Success)
                 return Json(response);
 
-            var transaction = this.network.CreateTransaction(response.Hex);
+            Transaction transaction = this.network.CreateTransaction(response.Hex);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
@@ -260,7 +260,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             HdAddress senderAddress = null;
             if (!string.IsNullOrWhiteSpace(request.Sender))
             {
-                Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
@@ -268,14 +268,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ulong totalFee = (gasPrice * gasLimit) + Money.Parse(request.FeeAmount);
             var walletAccountReference = new WalletAccountReference(request.WalletName, request.AccountName);
             var recipient = new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(carrier.Serialize()) };
-            var context = new TransactionBuildContext(walletAccountReference, new[] { recipient }.ToList(), request.Password)
+            var context = new TransactionBuildContext(this.network, walletAccountReference, new[] { recipient }.ToList(), request.Password)
             {
                 TransactionFee = totalFee,
                 ChangeAddress = senderAddress,
                 SelectedInputs = selectedInputs,
                 MinConfirmations = MinConfirmationsAllChecks,
-                UseAllInputs = false,
-                DustPrevention = false
             };
 
             try
@@ -313,13 +311,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             HdAddress senderAddress = null;
             if (!string.IsNullOrWhiteSpace(request.Sender))
             {
-                Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
 
             ulong totalFee = (gasPrice * gasLimit) + Money.Parse(request.FeeAmount);
-            var context = new TransactionBuildContext(
+            var context = new TransactionBuildContext(this.network,
                 new WalletAccountReference(request.WalletName, request.AccountName),
                 new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(carrier.Serialize()) } }.ToList(),
                 request.Password)
@@ -328,8 +326,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 ChangeAddress = senderAddress,
                 SelectedInputs = selectedInputs,
                 MinConfirmations = MinConfirmationsAllChecks,
-                UseAllInputs = false,
-                DustPrevention = false
             };
 
             try
@@ -370,19 +366,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     return serializer.Deserialize<ulong>(bytes, this.network);
             }
             return null;
-        }
-
-        /// <summary>
-        /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
-        /// </summary>
-        /// <returns>A result containing the errors.</returns>
-        private static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
-        {
-            List<ModelError> errors = modelState.Values.SelectMany(e => e.Errors).ToList();
-            return ErrorHelpers.BuildErrorResponse(
-                HttpStatusCode.BadRequest,
-                string.Join(Environment.NewLine, errors.Select(m => m.ErrorMessage)),
-                string.Join(Environment.NewLine, errors.Select(m => m.Exception?.Message)));
         }
     }
 }

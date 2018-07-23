@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             int customUnusedAddressBuffer = 21;
             var configParameters =
-                new NodeConfigParameters {{"walletaddressbuffer", customUnusedAddressBuffer.ToString()}};
+                new NodeConfigParameters { { "walletaddressbuffer", customUnusedAddressBuffer.ToString() } };
             this.nodeGroup = this.nodeGroupBuilder
                 .StratisPowNode(SendingNodeName).Start().NotInIBD()
                 .WithWallet(SendingWalletName, WalletPassword)
@@ -98,6 +98,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             var recipientAddressBeyondGapLimit = xPublicKey.Derive(new KeyPath("0/20")).PubKey.GetAddress(Network.RegTest);
 
             TransactionBuildContext transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
+                this.sendingStratisBitcoinNode.FullNode.Network,
                 SendingWalletName,
                 AccountZero,
                 WalletPassword,
@@ -122,7 +123,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             ExtKey xPrivKey = this.nodeGroupBuilder.NodeMnemonics[nodeName].DeriveExtKey(WalletPassword);
             Key privateKey = xPrivKey.PrivateKey;
-            ExtPubKey xPublicKey = HdOperations.GetExtendedPublicKey(privateKey, xPrivKey.ChainCode, (int) CoinType.Bitcoin, 0);
+            ExtPubKey xPublicKey = HdOperations.GetExtendedPublicKey(privateKey, xPrivKey.ChainCode, (int)CoinType.Bitcoin, 0);
             return xPublicKey;
         }
 

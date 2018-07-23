@@ -22,8 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
         {
             if (script.IsSmartContractCreate() || script.IsSmartContractCall())
             {
-                var result = this.callDataSerializer.Deserialize(script.ToBytes());
-                
+                var result = this.callDataSerializer.Deserialize(script.ToBytes());               
                 return result.Value.ContractAddress?.ToAddress(network);
             }
 
