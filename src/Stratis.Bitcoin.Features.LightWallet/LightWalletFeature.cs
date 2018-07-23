@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Policy;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.LightWallet.Broadcasting;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Wallet;
@@ -229,6 +231,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         services.AddSingleton<BroadcasterBehavior>();
                         services.AddSingleton<IInitialBlockDownloadState, LightWalletInitialBlockDownloadState>();
                         services.AddSingleton<WalletSettings>();
+                        services.AddSingleton<IScriptAddressReader, ScriptAddressReader>();
+                        services.AddSingleton<StandardTransactionPolicy>();
                     });
             });
 

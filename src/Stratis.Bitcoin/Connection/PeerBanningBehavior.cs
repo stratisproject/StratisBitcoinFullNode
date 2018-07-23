@@ -29,8 +29,8 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance of the <see cref="ChainHeadersBehavior"/> that belongs to the same peer as this behaviour.</summary>
         private ChainHeadersBehavior chainHeadersBehavior;
 
-        /// <summary>Instance of the <see cref="ConnectionManagerBehavior"/> that belongs to the same peer as this behaviour.</summary>
-        private ConnectionManagerBehavior connectionManagerBehavior;
+        /// <summary>Instance of the <see cref="IConnectionManagerBehavior"/> that belongs to the same peer as this behaviour.</summary>
+        private IConnectionManagerBehavior connectionManagerBehavior;
 
         /// <summary><c>true</c> if <see cref="OnMessageReceivedAsync"/> was registered; <c>false</c> otherwise.</summary>
         private bool eventHandlerRegistered;
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Connection
 
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
             this.chainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
-            this.connectionManagerBehavior = this.AttachedPeer.Behaviors.Find<ConnectionManagerBehavior>();
+            this.connectionManagerBehavior = this.AttachedPeer.Behaviors.Find<IConnectionManagerBehavior>();
             this.eventHandlerRegistered = true;
 
             this.logger.LogTrace("(-)");
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         /// <param name="peer">The peers that is sending the message.</param>
         /// <param name="message">The message payload.</param>
-        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message) //TODO this should be removed after the big refactoring activation
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 

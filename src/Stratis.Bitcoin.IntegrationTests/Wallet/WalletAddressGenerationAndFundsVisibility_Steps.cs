@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private CoreNode sendingStratisBitcoinNode;
         private CoreNode receivingStratisBitcoinNode;
         private long walletBalance;
+        private long previousCoinBaseMaturity;
 
         protected override void BeforeTest()
         {
@@ -38,6 +39,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         protected override void AfterTest()
         {
+            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = this.previousCoinBaseMaturity;
+            this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = this.previousCoinBaseMaturity;
+            this.nodeGroupBuilder.Dispose();
         }
 
         public Wallet_address_generation_and_funds_visibility(ITestOutputHelper output) : base(output)
@@ -48,6 +52,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             this.sendingStratisBitcoinNode = this.nodeGroup[SendingNodeName];
             this.receivingStratisBitcoinNode = this.nodeGroup[ReceivingNodeName];
+
+            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity.Should()
+                .Be(this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity);
+            this.previousCoinBaseMaturity = this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity;
 
             var coinbaseMaturity = 1;
 
@@ -76,11 +84,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private void a_gap_limit_of_21()
         {
             int customUnusedAddressBuffer = 21;
-
+            var configParameters =
+                new NodeConfigParameters {{"walletaddressbuffer", customUnusedAddressBuffer.ToString()}};
             this.nodeGroup = this.nodeGroupBuilder
                 .StratisPowNode(SendingNodeName).Start().NotInIBD()
                 .WithWallet(SendingWalletName, WalletPassword)
-                .StratisCustomPowNode(ReceivingNodeName, new[] { $"-walletaddressbuffer={customUnusedAddressBuffer}" }).Start()
+                .StratisCustomPowNode(ReceivingNodeName, configParameters).Start()
                 .WithWallet(ReceivingWalletName, WalletPassword)
                 .WithConnections()
                 .Connect(SendingNodeName, ReceivingNodeName)

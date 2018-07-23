@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getHeadersPayload), getHeadersPayload);
 
             // Ignoring "getheaders" from peers because node is in initial block download unless the peer is whitelisted.
-            if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted)
+            if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<IConnectionManagerBehavior>().Whitelisted)
             {
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
                 return;
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Base
             ChainedHeader consensusTip = this.chainState.ConsensusTip;
             consensusTip = this.chain.GetBlock(consensusTip.HashBlock);
 
-            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocators);
+            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
             if (fork != null)
             {
                 if ((consensusTip == null) || (fork.Height > consensusTip.Height))
@@ -389,7 +389,7 @@ namespace Stratis.Bitcoin.Base
                 {
                     var headersPayload = new GetHeadersPayload()
                     {
-                        BlockLocators = (this.ExpectedPeerTip ?? this.chainState.ConsensusTip ?? this.chain.Tip).GetLocator(),
+                        BlockLocator = (this.ExpectedPeerTip ?? this.chainState.ConsensusTip ?? this.chain.Tip).GetLocator(),
                         HashStop = null
                     };
 

@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NBitcoin;
@@ -39,18 +40,21 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private const string WalletPassword = "wallet_password";
         private const string StratisRegTest = "StratisRegTest";
 
-        private HdAddress receiverAddress;
-        private HttpClient httpClient;
-        private HttpResponseMessage response;
         private IDictionary<string, CoreNode> nodes;
+
+        private HttpResponseMessage response;
+        private string responseText;
+        private HttpResponseMessage postResponse;
+
         private int maturity;
+        private HdAddress receiverAddress;
         private readonly Money transferAmount = Money.COIN * 1;
         private NodeGroupBuilder nodeGroupBuilder;
         private SharedSteps sharedSteps;
-        private string responseText;
         private Transaction transaction;
         private uint256 block;
         private Uri apiUri;
+        private HttpClient httpClient;
 
         public ApiSpecification(ITestOutputHelper output) : base(output)
         {
@@ -60,6 +64,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.sharedSteps = new SharedSteps();
             this.httpClient = new HttpClient();
+            this.httpClient.DefaultRequestHeaders.Accept.Clear();
+            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
+
             this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
 
@@ -78,7 +85,6 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.nodes = this.nodeGroupBuilder.CreateStratisPosApiNode(PosNode)
                 .Start()
-                .WithWallet(PrimaryWalletName, WalletPassword)
                 .Build();
 
             this.nodes[PosNode].FullNode.NodeService<IPosMinting>(true)
@@ -106,8 +112,10 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .WithWallet(PrimaryWalletName, WalletPassword)
                 .Build();
 
-            this.maturity = (int)this.nodes[FirstPowNode].FullNode
-                .Network.Consensus.CoinbaseMaturity;
+            this.maturity = 1;
+
+            this.nodes[FirstPowNode].FullNode
+                .Network.Consensus.CoinbaseMaturity = 1;
 
             this.nodes[FirstPowNode].SetDummyMinerSecret(new BitcoinSecret(new Key(), this.nodes[FirstPowNode].FullNode.Network));
 
@@ -131,12 +139,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void more_blocks_mined_past_maturity_of_original_block()
         {
-            this.sharedSteps.MineBlocks(this.maturity + 10, this.nodes[FirstPowNode], WalletAccountName, PrimaryWalletName, WalletPassword);
+            this.sharedSteps.MineBlocks(this.maturity, this.nodes[FirstPowNode], WalletAccountName, PrimaryWalletName, WalletPassword);
         }
 
         private void a_real_transaction()
         {
-            IActionResult sendTransactionResult = this.SendTransaction(this.BuildTransaction());
+            this.SendTransaction(this.BuildTransaction());
         }
 
         private void the_block_with_the_transaction_is_mined()
@@ -145,14 +153,11 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.nodes[FirstPowNode].GenerateStratisWithMiner(1);
         }
 
-        private void one_more_block_is_mined_to_get_blockid()
-        {
-            this.block = this.nodes[FirstPowNode].GenerateStratisWithMiner(1).Single();
-        }
-
         private void calling_startstaking_via_api()
         {
             var stakingRequest = new StartStakingRequest() { Name = PrimaryWalletName, Password = WalletPassword };
+
+            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName);
 
             var httpRequestContent = new StringContent(stakingRequest.ToString(), Encoding.UTF8, JsonContentType);
             this.response = this.httpClient.PostAsync($"{this.apiUri}api/miner/startstaking", httpRequestContent).GetAwaiter().GetResult();
@@ -172,8 +177,74 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.send_api_get_request("api/rpc/listmethods");
         }
 
+        private void calling_recover_via_extpubkey_for_account_0()
+        {
+            this.RecoverViaExtPubKey(PrimaryWalletName, "xpub6DGguHV1FQFPvZ5Xu7VfeENyiySv4R2bdd6VtvwxWGVTVNnHUmphMNgTRkLe8j2JdAv332ogZcyhqSuz1yUPnN4trJ49cFQXmEhwNQHUqk1", 0);
+        }
+
+        private void attempting_to_add_an_account()
+        {
+            var request = new GetUnusedAccountModel()
+            {
+                WalletName = PrimaryWalletName,
+                Password = WalletPassword
+            };
+
+            this.postResponse = this.httpClient.PostAsJsonAsync($"{this.apiUri}api/Wallet/account", request)
+                .GetAwaiter().GetResult();
+        }
+
+        private void an_extpubkey_only_wallet_with_account_0()
+        {
+            this.RecoverViaExtPubKey(PrimaryWalletName, "xpub6DGguHV1FQFPvZ5Xu7VfeENyiySv4R2bdd6VtvwxWGVTVNnHUmphMNgTRkLe8j2JdAv332ogZcyhqSuz1yUPnN4trJ49cFQXmEhwNQHUqk1", 0);
+        }
+
+        private void calling_recover_via_extpubkey_for_account_1()
+        {
+            //NOTE: use legacy stratis xpub key format for this one to ensure that works too.
+            this.RecoverViaExtPubKey(SecondaryWalletName, "xq5hcJV8uJDLaNytrg6FphHY1vdqxP1rCPhAmp4xZwpxzYyYEscYEujAmNR5NrPfy9vzQ6BajEqtFezcyRe4zcGHH3dR6BKaKov43JHd8UYhBVy", 1);
+        }
+
+        private void RecoverViaExtPubKey(string walletName, string extPubKey, int accountIndex)
+        {
+            var request = new WalletExtPubRecoveryRequest
+            {
+                ExtPubKey = extPubKey,
+                AccountIndex = accountIndex,
+                Name = walletName
+            };
+
+            this.send_api_post_request("api/Wallet/recover-via-extpubkey", request);
+            this.postResponse.StatusCode.Should().Be(StatusCodes.Status200OK);
+        }
+
+        private void send_api_post_request<T>(string url, T request)
+        {
+            this.postResponse = this.httpClient.PostAsJsonAsync($"{this.apiUri}{url}", request)
+                .GetAwaiter().GetResult();
+        }
+
+        private void a_wallet_is_created_without_private_key_for_account_0()
+        {
+            this.CheckAccountExists(PrimaryWalletName, 0);
+        }
+
+        private void a_wallet_is_created_without_private_key_for_account_1()
+        {
+            this.CheckAccountExists(SecondaryWalletName, 1);
+        }
+
+        private void CheckAccountExists(string walletName, int accountIndex)
+        {
+            this.send_api_get_request($"api/Wallet/balance?walletname={walletName}&AccountName=account {accountIndex}");
+
+            this.responseText.Should()
+                .Be("{\"balances\":[{\"accountName\":\"account " + accountIndex + "\",\"accountHdPath\":\"m/44'/105'/" + accountIndex + "'\",\"coinType\":105,\"amountConfirmed\":0,\"amountUnconfirmed\":0}]}");
+        }
+
         private void calling_general_info_via_api()
         {
+            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName);
             this.send_api_get_request($"api/wallet/general-info?name={PrimaryWalletName}");
         }
 
@@ -276,6 +347,11 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .Should().Be(this.transaction.GetHash().ToString());
         }
 
+        private void it_is_rejected_as_forbidden()
+        {
+            this.postResponse.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
+        }
+
         private void the_blockhash_is_returned()
         {
             this.responseText.Should().Be("\"" + Network.RegTest.Consensus.HashGenesisBlock.ToString() + "\"");
@@ -324,7 +400,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             jArrayFeatures.Contains("Stratis.Bitcoin.Features.MemoryPool.MempoolFeature");
             jArrayFeatures.Contains("Stratis.Bitcoin.Features.Miner.MiningFeature");
             jArrayFeatures.Contains("Stratis.Bitcoin.Features.RPC.RPCFeature");
-            jArrayFeatures.Contains("Stratis.Bitcoin.Features.Wallet.WalletFeature");            
+            jArrayFeatures.Contains("Stratis.Bitcoin.Features.Wallet.WalletFeature");
         }
 
         private void general_information_about_the_wallet_and_node_is_returned()
@@ -409,13 +485,11 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 n => TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(nodes.First(), n)));
         }
 
-        private IActionResult SendTransaction(IActionResult transactionResult)
+        private void SendTransaction(IActionResult transactionResult)
         {
             var walletTransactionModel = (WalletBuildTransactionModel)(transactionResult as JsonResult)?.Value;
-            if (walletTransactionModel == null)
-                return null;
             this.transaction = this.nodes[FirstPowNode].FullNode.Network.CreateTransaction(walletTransactionModel.Hex);
-            return this.nodes[FirstPowNode].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
+            this.nodes[FirstPowNode].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(walletTransactionModel.Hex));
         }
 
         private IActionResult BuildTransaction()
@@ -425,6 +499,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 {
                     AccountName = WalletAccountName,
                     AllowUnconfirmed = true,
+                    ShuffleOutputs = false,
                     Amount = this.transferAmount.ToString(),
                     DestinationAddress = this.receiverAddress.Address,
                     FeeType = FeeType.Medium.ToString("D"),

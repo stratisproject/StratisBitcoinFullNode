@@ -75,14 +75,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             this.ruleContext.ConsensusTip = tip;
 
-            this.dateTimeProvider.Setup(d => d.GetTimeOffset())
-                .Returns(new DateTimeOffset(new DateTime(2017, 1, 1, 1, 1, 1)))
-                .Verifiable();
-
             await this.consensusRules.RegisterRule<BlockHeaderRule>().RunAsync(this.ruleContext);
 
             this.dateTimeProvider.Verify();
-            Assert.Equal(new DateTimeOffset(new DateTime(2017, 1, 1, 1, 1, 1)), this.ruleContext.Time);
             Assert.Equal(tip.Height + 1, this.ruleContext.ValidationContext.ChainedHeader.Height);
             Assert.Equal(tip.Header.GetHash(), this.ruleContext.ValidationContext.ChainedHeader.Previous.HashBlock);
         }
