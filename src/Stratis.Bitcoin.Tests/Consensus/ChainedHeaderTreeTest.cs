@@ -2088,7 +2088,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
-            ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[-1]);
+            ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
 
             ctx.SetupPeersForTest(initialChainSize, cht, initialChainTip);
 
@@ -2147,7 +2147,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 foreach (int peerId in tips.Value)
                 {
                     // Ignore local.
-                    if (peerId != -1) 
+                    if (peerId != ChainedHeaderTree.LocalPeerId) 
                     {
                         peerEntryDictionary[peerId] = peerEntryDictionary[peerId]++;
 
@@ -2179,7 +2179,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 Assert.True(false, "ChainHeadersByHash has only reacheble headers");
             }
             //Checking ChainHeader claims LocalPeer.
-            Assert.Equal(consensusTip.ChainedHeader.HashBlock, peerIdsDictionary[-1]);
+            Assert.Equal(consensusTip.ChainedHeader.HashBlock, peerIdsDictionary[ChainedHeaderTree.LocalPeerId]);
         }
 
 
