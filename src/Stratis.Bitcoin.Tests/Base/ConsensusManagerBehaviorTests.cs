@@ -515,5 +515,79 @@ namespace Stratis.Bitcoin.Tests.Base
             Assert.Null(behavior.BestSentHeader);
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
         }
+
+        /// <summary>
+        /// <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is <c>null</c>. Consensus tip is at header 100.
+        /// Simulate that peer state is now <see cref="NetworkPeerState.HandShaked"/>.
+        /// Make sure <see cref="GetHeadersPayload"/> was sent to the peer and it contains some blocks with hashes over header 50.
+        /// </summary>
+        [Fact]
+        public async Task ResyncAsync_SyncsIfStateIsHanshakedAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[100]);
+
+            await this.helper.StateChanged.ExecuteCallbacksAsync(this.helper.PeerMock.Object, NetworkPeerState.Connected);
+
+            Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
+
+            List<uint256> sentHashes = this.helper.GetHeadersPayloadsSent.First().BlockLocator.Blocks;
+            List<uint256> hashesOver50 = this.headers.Skip(51).Select(x => x.HashBlock).ToList();
+
+            bool contains = false;
+            foreach (uint256 sentHash in sentHashes)
+            {
+                if (hashesOver50.Contains(sentHash))
+                    contains = true;
+            }
+
+            Assert.True(contains);
+        }
+
+        /// <summary>
+        /// <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 50. Consensus tip is at header 100.
+        /// Simulate that peer state is now <see cref="NetworkPeerState.HandShaked"/>.
+        /// Make sure <see cref="GetHeadersPayload"/> was sent to the peer and it contains blocks with hashes below header 50 and over header 30, but no blocks over 50.
+        /// </summary>
+        [Fact]
+        public async Task ResyncAsync_SendsProperLocatorAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[100], null, this.headers[50]);
+
+            await this.helper.StateChanged.ExecuteCallbacksAsync(this.helper.PeerMock.Object, NetworkPeerState.Connected);
+
+            Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
+
+            List<uint256> sentHashes = this.helper.GetHeadersPayloadsSent.First().BlockLocator.Blocks;
+            List<uint256> hashesOver50 = this.headers.Skip(51).Select(x => x.HashBlock).ToList();
+
+            bool containsHashesOver50 = false;
+            foreach (uint256 sentHash in sentHashes)
+            {
+                if (hashesOver50.Contains(sentHash))
+                    containsHashesOver50 = true;
+            }
+
+            Assert.False(containsHashesOver50);
+
+            // Make sure contains hashes over 30.
+            List<uint256> hashesOver30 = this.headers.Skip(31).Select(x => x.HashBlock).ToList();
+
+            bool containsHashesOver30 = false;
+            foreach (uint256 sentHash in sentHashes)
+            {
+                if (hashesOver30.Contains(sentHash))
+                    containsHashesOver30 = true;
+            }
+
+            Assert.True(containsHashesOver30);
+        }
+
+        ///// <summary>
+        /////
+        ///// </summary>
+        //[Fact]
+        //public async Task ResyncAsync_()
+        //{
+        //}
     }
 }
