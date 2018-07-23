@@ -13,8 +13,7 @@ namespace Stratis.SmartContracts.Core.Validation
         /// <inheritdoc/>
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var policyFactory = new DeterminismPolicyFactory();
-            var policy = policyFactory.CreatePolicy();
+            var policy = DeterminismPolicyFactory.CreatePolicy();
             var validator = new TypePolicyValidator(policy);
             IEnumerable<TypeDefinition> contractTypes = decompilation.ModuleDefinition.GetDevelopedTypes();
             var validationResults = new List<ValidationResult>();
