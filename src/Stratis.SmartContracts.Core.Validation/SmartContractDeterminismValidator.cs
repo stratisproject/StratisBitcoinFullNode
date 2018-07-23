@@ -15,7 +15,7 @@ namespace Stratis.SmartContracts.Core.Validation
         {
             var policyFactory = new DeterminismPolicyFactory();
             var policy = policyFactory.CreatePolicy();
-            var validator = new TypeDefValidator(policy);
+            var validator = new TypePolicyValidator(policy);
             IEnumerable<TypeDefinition> contractTypes = decompilation.ModuleDefinition.GetDevelopedTypes();
             var validationResults = new List<ValidationResult>();
 

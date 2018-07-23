@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using Stratis.ModuleValidation.Net;
 using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Policy;
 using Stratis.SmartContracts.Core.Validation.Validators;
-using Stratis.SmartContracts.Core.Validation.Validators.Module;
 
 namespace Stratis.SmartContracts.Core.Validation
 {

@@ -6,17 +6,16 @@ using Stratis.ModuleValidation.Net;
 
 namespace Stratis.SmartContracts.Core.Validation
 {
-    // TODO Factor this into a policyvalidator
-    public class ModuleDefValidator : IModuleDefinitionValidator
+    public class ModulePolicyValidator : IModuleDefinitionValidator
     {
         private readonly ValidationPolicy policy;
 
-        private readonly TypeDefValidator typeDefValidator;
+        private readonly TypePolicyValidator _typePolicyValidator;
 
-        public ModuleDefValidator(ValidationPolicy policy)
+        public ModulePolicyValidator(ValidationPolicy policy)
         {
             this.policy = policy;
-            this.typeDefValidator = new TypeDefValidator(policy);
+            this._typePolicyValidator = new TypePolicyValidator(policy);
         }
 
         public IEnumerable<ValidationResult> Validate(ModuleDefinition module)
@@ -30,7 +29,7 @@ namespace Stratis.SmartContracts.Core.Validation
 
             if (type == null) return results;
 
-            var result = this.typeDefValidator.Validate(type);
+            var result = this._typePolicyValidator.Validate(type);
             results.AddRange(result);
 
             return results;
@@ -46,11 +45,11 @@ namespace Stratis.SmartContracts.Core.Validation
 
     }
 
-    public class TypeDefValidator
+    public class TypePolicyValidator : ITypeDefinitionValidator
     {
         private readonly ValidationPolicy policy;
 
-        public TypeDefValidator(ValidationPolicy policy)
+        public TypePolicyValidator(ValidationPolicy policy)
         {
             this.policy = policy;
         }

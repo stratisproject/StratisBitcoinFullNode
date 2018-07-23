@@ -16,7 +16,7 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
 {
     public class ValidationTests
     {
-        // TypeDefValidator
+        // TypePolicyValidator
 
         [Fact]
         public void TypeDefValidator_Should_Validate_Method_Allowed_Return_Type()
@@ -34,7 +34,7 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
             var validationPolicy = new ValidationPolicy()
                 .WhitelistValidator(policy);
 
-            var validator = new TypeDefValidator(validationPolicy);
+            var validator = new TypePolicyValidator(validationPolicy);
 
             var result = validator.Validate(typeDefinition).ToList();
 
@@ -57,7 +57,7 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
             var validationPolicy = new ValidationPolicy()
                 .WhitelistValidator(policy);
 
-            var validator = new TypeDefValidator(validationPolicy);
+            var validator = new TypePolicyValidator(validationPolicy);
 
             var result = validator.Validate(typeDefinition).ToList();
 
@@ -80,7 +80,7 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
             var validationPolicy = new ValidationPolicy()
                 .WhitelistValidator(policy);
 
-            var validator = new TypeDefValidator(validationPolicy);
+            var validator = new TypePolicyValidator(validationPolicy);
 
             var result = validator.Validate(typeDefinition).ToList();
 
@@ -111,7 +111,7 @@ public class Test
             var validationPolicy = new ValidationPolicy()
                 .WhitelistValidator(policy);
 
-            var validator = new TypeDefValidator(validationPolicy);
+            var validator = new TypePolicyValidator(validationPolicy);
 
             var result = validator.Validate(typeDefinition).ToList();
 
@@ -146,7 +146,7 @@ public class Test
             var validationPolicy = new ValidationPolicy()
                 .WhitelistValidator(policy);
 
-            var validator = new TypeDefValidator(validationPolicy);
+            var validator = new TypePolicyValidator(validationPolicy);
 
             var result = validator.Validate(typeDefinition).ToList();
 
@@ -181,7 +181,7 @@ public class Test
             var validationPolicy = new ValidationPolicy()
                 .WhitelistValidator(policy);
 
-            var validator = new TypeDefValidator(validationPolicy);
+            var validator = new TypePolicyValidator(validationPolicy);
 
             var result = validator.Validate(typeDefinition).ToList();
 
@@ -216,7 +216,7 @@ public class Test
             var validationPolicy = new ValidationPolicy()
                 .WhitelistValidator(policy);
 
-            var validator = new TypeDefValidator(validationPolicy);
+            var validator = new TypePolicyValidator(validationPolicy);
 
             var result = validator.Validate(typeDefinition).ToList();
 
@@ -251,7 +251,7 @@ public class Test
             var validationPolicy = new ValidationPolicy()
                 .WhitelistValidator(policy);
 
-            var validator = new TypeDefValidator(validationPolicy);
+            var validator = new TypePolicyValidator(validationPolicy);
 
             var result = validator.Validate(typeDefinition).ToList();
             Assert.True(result.All(r => r is TypeReferenceValidator.DeniedMemberValidationResult));
@@ -283,7 +283,7 @@ public class Test
             var validationPolicy = new ValidationPolicy()
                 .WhitelistValidator(policy);
 
-            var validator = new TypeDefValidator(validationPolicy);
+            var validator = new TypePolicyValidator(validationPolicy);
 
             var result = validator.Validate(typeDefinition).ToList();
 
@@ -317,7 +317,7 @@ public class Test
             var validationPolicy = new ValidationPolicy()
                 .WhitelistValidator(policy);
 
-            var validator = new TypeDefValidator(validationPolicy);
+            var validator = new TypePolicyValidator(validationPolicy);
 
             var result = validator.Validate(typeDefinition).ToList();
 

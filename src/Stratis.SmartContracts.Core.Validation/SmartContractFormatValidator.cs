@@ -56,7 +56,7 @@ namespace Stratis.SmartContracts.Core.Validation
         {
             var policy = new FormatPolicyFactory().CreatePolicy();
 
-            var validator = new ModuleDefValidator(policy);
+            var validator = new ModulePolicyValidator(policy);
 
             var results = validator.Validate(decompilation.ModuleDefinition).ToList();  
 

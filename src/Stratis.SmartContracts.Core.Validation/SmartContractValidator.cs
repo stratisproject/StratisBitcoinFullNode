@@ -9,7 +9,7 @@ namespace Stratis.SmartContracts.Core.Validation
             var determinismPolicy = new DeterminismPolicyFactory().CreatePolicy();
 
             var policy = ValidationPolicy.FromExisting(new[] {formatPolicy, determinismPolicy});
-            var validator = new ModuleDefValidator(policy);
+            var validator = new ModulePolicyValidator(policy);
 
             var results = validator.Validate(decompilation.ModuleDefinition).ToList();
             return new SmartContractValidationResult(results);
