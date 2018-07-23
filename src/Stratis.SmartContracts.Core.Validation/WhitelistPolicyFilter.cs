@@ -26,7 +26,7 @@ namespace Stratis.SmartContracts.Core.Validation
             {
                 return namespaceRule.AccessPolicy == AccessPolicy.Allowed 
                     ? new PolicyValidationResult(PolicyValidatorResultKind.Allowed) 
-                    : new PolicyValidationResult(PolicyValidatorResultKind.DeniedNamespace);
+                    : new PolicyValidationResult(PolicyValidatorResultKind.DeniedType);
             }
             
             if (typeRule.AccessPolicy == AccessPolicy.Denied && !typeRule.Members.Any())

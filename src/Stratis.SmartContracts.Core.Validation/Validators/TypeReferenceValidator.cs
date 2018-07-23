@@ -27,8 +27,8 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
             if (reference is MethodReference m)
             {
                 var r = new List<ValidationResult>();
-                r.AddRange(this.ValidateReference(m.DeclaringType, m.Name));
-                r.AddRange(this.ValidateReference(m.ReturnType));
+                r.AddRange(this.ValidateReference(method, m.DeclaringType, m.Name));
+                r.AddRange(this.ValidateReference(method, m.ReturnType));
 
                 return r;
             }
@@ -36,32 +36,33 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
             if (reference is FieldReference f)
             {
                 var r = new List<ValidationResult>();
-                r.AddRange(this.ValidateReference(f.DeclaringType, f.Name));
-                r.AddRange(this.ValidateReference(f.FieldType));
+                r.AddRange(this.ValidateReference(method, f.DeclaringType, f.Name));
+                r.AddRange(this.ValidateReference(method, f.FieldType));
 
                 return r;
             }
 
             if (reference is TypeReference t)
             {
-                return this.ValidateReference(t);
+                return this.ValidateReference(method, t);
             }
 
             return Enumerable.Empty<ValidationResult>();
         }
 
-        private IEnumerable<ValidationResult> ValidateReference(TypeReference type, string memberName)
+        private IEnumerable<ValidationResult> ValidateReference(MethodDefinition parent, TypeReference type,
+            string memberName)
         {
             var results = new List<ValidationResult>();
 
-            results.AddRange(this.ValidateReference(type));
+            results.AddRange(this.ValidateReference(parent, type));
 
-            results.AddRange(this.ValidateWhitelist(type, memberName));
+            results.AddRange(this.ValidateWhitelist(parent, type, memberName));
 
             return results;
         }
 
-        private IEnumerable<ValidationResult> ValidateReference(TypeReference type)
+        private IEnumerable<ValidationResult> ValidateReference(MethodDefinition parent, TypeReference type)
         {
             var results = new List<ValidationResult>();
 
@@ -70,7 +71,7 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
 
             if (type.IsByReference)
             {
-                results.AddRange(this.ValidateReference(type.GetElementType()));
+                results.AddRange(this.ValidateReference(parent, type.GetElementType()));
 
                 // No further validation required
                 return results;
@@ -78,11 +79,11 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
 
             if (type is GenericInstanceType generic)
             {
-                results.AddRange(this.ValidateReference(generic.ElementType));
+                results.AddRange(this.ValidateReference(parent, generic.ElementType));
 
                 foreach (var argument in generic.GenericArguments)
                 {
-                    results.AddRange(this.ValidateReference(argument));
+                    results.AddRange(this.ValidateReference(parent, argument));
                 }
 
                 return results;
@@ -90,19 +91,18 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
 
             if (type.IsArray)
             {
-                results.AddRange(this.ValidateReference(type.GetElementType()));
+                results.AddRange(this.ValidateReference(parent, type.GetElementType()));
 
                 return results;
             }
 
             // By the time we get here, we should have boiled it down to a base Type
-            results.AddRange(this.ValidateWhitelist(type));
+            results.AddRange(this.ValidateWhitelist(parent, type));
 
             return results;
         }
 
-        private IEnumerable<ValidationResult> ValidateWhitelist(
-            TypeReference type,
+        private IEnumerable<ValidationResult> ValidateWhitelist(MethodDefinition parent, TypeReference type,
             string memberName = null)
         {
             // Allows types from user module, they are Type definitions not Type references
@@ -117,19 +117,21 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
             {
                 case PolicyValidatorResultKind.DeniedNamespace:
                     yield return new DeniedNamespaceValidationResult(
-                        type.FullName,
+                        parent.FullName,
                         "Whitelist",
-                        $"Namespace {type.Namespace} is not allowed");
+                        string.IsNullOrWhiteSpace(type.Namespace) 
+                            ? "Namespace \"\" is not allowed" 
+                            : $"Namespace {type.Namespace} is not allowed");
                     break;
                 case PolicyValidatorResultKind.DeniedType:
                     yield return new DeniedTypeValidationResult(
-                        type.FullName,
+                        parent.FullName,
                         "Whitelist",
                         $"Type {type.FullName} is not allowed");
                     break;
                 case PolicyValidatorResultKind.DeniedMember:
                     yield return new DeniedMemberValidationResult(
-                        type.FullName,
+                        parent.FullName,
                         "Whitelist",
                         $"Member {type.FullName}.{memberName} is not allowed");
                     break;
