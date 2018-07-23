@@ -1,6 +1,7 @@
 ﻿using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Controllers.Models
 {
@@ -38,6 +39,7 @@ namespace Stratis.Bitcoin.Controllers.Models
 
         /// <summary>The block hash of the consensus tip.</summary>
         [JsonProperty(Order = 0, PropertyName = "bestblock")]
+        [JsonConverter(typeof(UInt256JsonConverter))]
         public uint256 BestBlock { get; set; }
 
         /// <summary>The number of confirmations for the unspent output.</summary>
