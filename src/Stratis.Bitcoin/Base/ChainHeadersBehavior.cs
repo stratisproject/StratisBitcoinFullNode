@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getHeadersPayload), getHeadersPayload);
 
             // Ignoring "getheaders" from peers because node is in initial block download unless the peer is whitelisted.
-            if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted)
+            if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<IConnectionManagerBehavior>().Whitelisted)
             {
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
                 return;

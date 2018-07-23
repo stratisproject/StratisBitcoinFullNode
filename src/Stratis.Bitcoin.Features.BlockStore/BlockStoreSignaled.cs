@@ -226,9 +226,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             // Announce the blocks to each of the peers.
-            IEnumerable<BlockStoreBehavior> behaviours = peers.Select(s => s.Behavior<BlockStoreBehavior>());
+            List<BlockStoreBehavior> behaviours = peers.Select(s => s.Behavior<BlockStoreBehavior>())
+                .Where(b => b != null).ToList();
 
-            this.logger.LogTrace("{0} blocks will be sent to {1} peers.", batch.Count, behaviours.Count());
+            this.logger.LogTrace("{0} blocks will be sent to {1} peers.", batch.Count, behaviours.Count);
             foreach (BlockStoreBehavior behaviour in behaviours)
                 await behaviour.AnnounceBlocksAsync(batch).ConfigureAwait(false);
 
