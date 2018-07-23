@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly MemoryCache privateKeyCache;
 
-        public readonly StandardTransactionPolicy TransactionPolicy;
+        protected readonly StandardTransactionPolicy TransactionPolicy;
 
         private readonly IWalletManager walletManager;
 
