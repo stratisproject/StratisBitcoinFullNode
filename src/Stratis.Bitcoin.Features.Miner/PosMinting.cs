@@ -176,6 +176,15 @@ namespace Stratis.Bitcoin.Features.Miner
             public Key Key { get; set; }
         }
 
+        /// <summary>
+        /// Indicates the current state of the staking: in progress, stopped or idle.
+        /// </summary>
+        public enum CurrentState
+        {
+            Idle = -1,
+            Executing = 0
+        }
+
         /// <summary>The maximum allowed size for a serialized block, in bytes (network rule).</summary>
         public const int MaxBlockSize = 1000000;
 
@@ -243,14 +252,11 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Loop in which the node attempts to generate new POS blocks by staking coins from its wallet.</summary>
         private IAsyncLoop stakingLoop;
 
-        /// <summary>Indicates that the stake flag is not in progress.</summary>
-        public const int StakeNotInProgress = -1;
+        /// <summary>a flag that indicates if stake is on/off based on the <see cref="CurrentState"/> enum.</summary>
+        private int stakeStateFlag;
 
-        /// <summary>Indicates that the stake flag is in progress.</summary>
-        public const int StakeInProgress = 1;
-
-        /// <summary>a flag that indicates if stake is on/off based on the <see cref="StakeInProgress"/> and <see cref="StakeNotInProgress"/> constants.</summary>
-        private int stakeProgressFlag;
+        /// <summary>a flag that indicates if stake stopping is on/off based on the <see cref="CurrentState"/> enum.</summary>
+        private int stopStakingStateFlag;
 
         /// <summary>
         /// Target reserved balance that will not participate in staking.
@@ -371,7 +377,8 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
-            this.stakeProgressFlag = StakeNotInProgress;
+            this.stakeStateFlag = (int)CurrentState.Idle;
+            this.stopStakingStateFlag = (int)CurrentState.Idle;
 
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
         }
@@ -381,54 +388,71 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeInProgress, StakeNotInProgress) == StakeInProgress)
+            if (Interlocked.CompareExchange(
+                    ref this.stakeStateFlag,
+                    (int)CurrentState.Executing,
+                    (int)CurrentState.Idle) == (int)CurrentState.Executing)
+            {
+                this.logger.LogTrace("(-)[ALREADY_MINING]");
+                return;
+            }
+
+            if (Interlocked.CompareExchange(
+                    ref this.stopStakingStateFlag,
+                    (int)CurrentState.Idle,
+                    (int)CurrentState.Executing) == (int)CurrentState.Idle)
             {
                 this.logger.LogTrace("(-)[ALREADY_MINING]");
                 return;
             }
 
             this.rpcGetStakingInfoModel.Enabled = true;
-            this.stakeCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
+            this.stakeCancellationTokenSource =
+                CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
 
-            this.stakingLoop = this.asyncLoopFactory.Run("PosMining.Stake", async token =>
-            {
-                this.logger.LogTrace("()");
+            this.stakingLoop = this.asyncLoopFactory.Run(
+                "PosMining.Stake",
+                async token =>
+                {
+                    this.logger.LogTrace("()");
 
-                try
-                {
-                    await this.GenerateBlocksAsync(walletSecret).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    // Application stopping, nothing to do as the loop will be stopped.
-                }
-                catch (MinerException me)
-                {
-                    // Miner exceptions should be ignored. It means that the miner
-                    // possibly mined a block that was not accepted by peers or is even invalid,
-                    // but it should not halted the staking operation.
-                    this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
-                    this.rpcGetStakingInfoModel.Errors = me.Message;
-                }
-                catch (ConsensusErrorException cee)
-                {
-                    // All consensus exceptions should be ignored. It means that the miner
-                    // run into problems while constructing block or verifying it
-                    // but it should not halted the staking operation.
-                    this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
-                    this.rpcGetStakingInfoModel.Errors = cee.Message;
-                }
-                catch
-                {
-                    this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
-                    throw;
-                }
+                    try
+                    {
+                        await this.GenerateBlocksAsync(walletSecret).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                            // Application stopping, nothing to do as the loop will be stopped.
+                        }
+                    catch (MinerException me)
+                    {
+                            // Miner exceptions should be ignored. It means that the miner
+                            // possibly mined a block that was not accepted by peers or is even invalid,
+                            // but it should not halted the staking operation.
+                            this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
+                        this.rpcGetStakingInfoModel.Errors = me.Message;
+                    }
+                    catch (ConsensusErrorException cee)
+                    {
+                            // All consensus exceptions should be ignored. It means that the miner
+                            // run into problems while constructing block or verifying it
+                            // but it should not halted the staking operation.
+                            this.logger.LogDebug(
+                            "Consensus error exception occurred in miner loop: {0}",
+                            cee.ToString());
+                        this.rpcGetStakingInfoModel.Errors = cee.Message;
+                    }
+                    catch
+                    {
+                        this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
+                        throw;
+                    }
 
-                this.logger.LogTrace("(-)");
-            },
-            this.stakeCancellationTokenSource.Token,
-            repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
-            startAfter: TimeSpans.Second);
+                    this.logger.LogTrace("(-)");
+                },
+                this.stakeCancellationTokenSource.Token,
+                repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
+                startAfter: TimeSpans.Second);
 
             this.logger.LogTrace("(-)");
         }
@@ -438,7 +462,19 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeNotInProgress, StakeInProgress) == StakeNotInProgress)
+            if (Interlocked.CompareExchange(
+                    ref this.stopStakingStateFlag,
+                    (int)CurrentState.Executing,
+                    (int)CurrentState.Idle) == (int)CurrentState.Executing)
+            {
+                this.logger.LogTrace("(-)[MINING_STOPPED]");
+                return;
+            }
+
+            if (Interlocked.CompareExchange(
+                    ref this.stakeStateFlag,
+                    (int)CurrentState.Idle,
+                    (int)CurrentState.Executing) == (int)CurrentState.Idle)
             {
                 this.logger.LogTrace("(-)[NOT_MINING]");
                 return;
