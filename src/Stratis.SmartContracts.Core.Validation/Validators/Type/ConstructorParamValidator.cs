@@ -9,7 +9,7 @@ namespace Stratis.SmartContracts.Core.Validation.Validators.Type
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.TypeDefinition"/>'s constructor has a first param of type <see cref="ISmartContractState"/>
     /// </summary>
-    public class ConstructorParamValidator : ITypeDefValidator, ITypeDefinitionValidator
+    public class ConstructorParamValidator : ITypeDefinitionValidator
     {
         public const string InvalidParamError = "The first constructor argument must be an ISmartContractState object";
 
