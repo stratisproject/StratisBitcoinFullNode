@@ -250,8 +250,9 @@ namespace Stratis.Bitcoin.Features.Miner
         public const int StakeInProgress = 1;
 
         /// <summary>
-        /// We don't take coins that are smaller that 0.1 as described in
-        /// <see cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/1180"/>
+        /// We don't stake coins that are smaller than 0.1 in order to save on CPU as these have a very small chance to be used
+        /// to generate a block anyway
+        /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/1180"/>
         /// </summary>
         public const long MinimumStakingCoinValue = 10 * Money.CENT;
 
@@ -402,7 +403,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 try
                 {
-                    await this.GenerateBlocksAsync(walletSecret).ConfigureAwait(false);
+                    await this.GenerateBlocksAsync(walletSecret, this.stakeCancellationTokenSource.Token)
+                        .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -463,20 +465,20 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         ///<inheritdoc/>
-        public async Task GenerateBlocksAsync(WalletSecret walletSecret)
+        public async Task GenerateBlocksAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
             this.logger.LogTrace("()");
 
             BlockTemplate blockTemplate = null;
 
-            while (!this.stakeCancellationTokenSource.Token.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 // Prevent mining if the system time is not in sync with that of other members on the network.
                 if (this.timeSyncBehaviorState.IsSystemTimeOutOfSync)
                 {
                     this.logger.LogError("Staking cannot start, your system time does not match that of other nodes on the network." + Environment.NewLine
                                          + "Please adjust your system time and restart the node.");
-                    await Task.Delay(TimeSpan.FromMilliseconds(this.systemTimeOutOfSyncSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.systemTimeOutOfSyncSleep), cancellationToken).ConfigureAwait(false);
                     continue;
                 }
 
@@ -486,7 +488,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     this.logger.LogTrace("Waiting for synchronization before mining can be started...");
 
-                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), cancellationToken).ConfigureAwait(false);
                     continue;
                 }
 
@@ -515,7 +517,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     return;
                 }
 
-                List<UtxoStakeDescription> utxoStakeDescriptions = await GetUtxoStakeDescriptions(walletSecret, this.stakeCancellationTokenSource.Token);
+                List<UtxoStakeDescription> utxoStakeDescriptions = await GetUtxoStakeDescriptionsAsync(walletSecret, cancellationToken).ConfigureAwait(false);
                 
                 blockTemplate = blockTemplate ?? this.blockProvider.BuildPosBlock(chainTip, new Script());
                 var posBlock = (PosBlock)blockTemplate.Block;
@@ -538,21 +540,20 @@ namespace Stratis.Bitcoin.Features.Miner
                 else
                 {
                     this.logger.LogTrace("{0} failed to create POS block, waiting {1} ms for next round...", nameof(this.StakeAndSignBlockAsync), this.minerSleep);
-                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), this.stakeCancellationTokenSource.Token).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), cancellationToken).ConfigureAwait(false);
                 }
             }
         }
 
-        private async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptions(WalletSecret walletSecret, CancellationToken ct)
+        public async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
-            IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager
+            IList<UnspentOutputReference> spendableTransactions = this.walletManager
                 .GetSpendableTransactionsInWallet(walletSecret.WalletName, 1)
                 .Where(t => t != null).ToList();
 
-            //todo 
-            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).ToArray(), ct).ConfigureAwait(false);
-            if (ct.IsCancellationRequested) return utxoStakeDescriptions;
+            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).ToArray(), cancellationToken).ConfigureAwait(false);
+            if (cancellationToken.IsCancellationRequested) return utxoStakeDescriptions;
 
             foreach (UnspentOutputReference outputReference in spendableTransactions)
             {
@@ -579,7 +580,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 this.logger.LogTrace("UTXO '{0}' with value {1} might be available for staking.", utxoStakeDescription.OutPoint, utxo.Value);
 
-                if (ct.IsCancellationRequested) return utxoStakeDescriptions;
+                if (cancellationToken.IsCancellationRequested) return utxoStakeDescriptions;
             }
 
             this.logger.LogTrace("Wallet total staking balance is {0}.", new Money(utxoStakeDescriptions.Sum(d => d.TxOut.Value)));

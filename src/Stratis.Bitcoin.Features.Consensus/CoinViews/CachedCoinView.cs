@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public override async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken ct = default(CancellationToken))
+        public override async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
         {
             Guard.NotNull(txIds, nameof(txIds));
             this.logger.LogTrace("({0}.{1}:{2})", nameof(txIds), nameof(txIds.Length), txIds.Length);
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             var outputs = new UnspentOutputs[txIds.Length];
             var miss = new List<int>();
             var missedTxIds = new List<uint256>();
-            using (await this.lockobj.LockAsync(ct).ConfigureAwait(false))
+            using (await this.lockobj.LockAsync(cancellationToken).ConfigureAwait(false))
             {
                 for (int i = 0; i < txIds.Length; i++)
                 {
@@ -196,9 +196,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
 
             this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlying CoinView.", missedTxIds.Count);
-            FetchCoinsResponse fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray(), ct).ConfigureAwait(false);
+            FetchCoinsResponse fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray(), cancellationToken).ConfigureAwait(false);
 
-            using (await this.lockobj.LockAsync(ct).ConfigureAwait(false))
+            using (await this.lockobj.LockAsync(cancellationToken).ConfigureAwait(false))
             {
                 uint256 innerblockHash = fetchedCoins.BlockHash;
                 if (this.blockHash == null)
@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <summary>
-        /// Finds all changed records in the cache and persists them to the underlying CoinView.
+        /// Finds all changed records in the cache and persists them to the underlying coinview.
         /// </summary>
         /// <param name="force"><c>true</c> to enforce flush, <c>false</c> to flush only if <see cref="lastCacheFlushTime"/> is older than <see cref="CacheFlushTimeIntervalSeconds"/>.</param>
         /// <remarks>
