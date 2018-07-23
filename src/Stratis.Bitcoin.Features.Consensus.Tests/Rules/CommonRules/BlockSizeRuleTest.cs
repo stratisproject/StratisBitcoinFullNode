@@ -10,11 +10,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class BlockSizeRuleTest : TestConsensusRulesUnitTestBase
     {
-        private PowConsensusOptions options;
+        private ConsensusOptions options;
 
         public BlockSizeRuleTest()
         {
-            this.options = this.network.Consensus.Option<PowConsensusOptions>();
+            this.options = this.network.Consensus.Options;
             this.ruleContext.Consensus = this.network.Consensus;
         }
 
