@@ -29,7 +29,6 @@ namespace Stratis.SmartContracts.Core.Validation
         {
             return new ValidationPolicy()
                 .ModuleDefValidator(new AssemblyReferenceValidator(AllowedAssemblies))
-                .ModuleDefValidator(new SingleTypeValidator())
                 .TypeDefValidator(new StaticConstructorValidator(), NestedTypePolicy.Ignore)
                 .TypeDefValidator(new NamespaceValidator())
                 .TypeDefValidator(new SingleConstructorValidator(), NestedTypePolicy.Ignore)
