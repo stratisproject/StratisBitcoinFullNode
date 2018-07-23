@@ -60,7 +60,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var internalTransaction = this.transferProcessor.Process(
                 this.stateSnapshot,
-                callData,
+                creation ? result.NewContractAddress : callData.ContractAddress,
                 transactionContext,
                 result.InternalTransfers,
                 revert);
@@ -99,9 +99,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return executionResult;
         }
 
-        private static bool IsCreateContract(CallData callData)
+        private static bool IsCreateContract(ContractTxData contractTxData)
         {
-            return callData.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT;
+            return contractTxData.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT;
         }
     }
 }

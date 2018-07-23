@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             //Set the calldata for the transaction----------
-            var callData = new CallData(1, 1, (Gas)5000000, new uint160(1), "StoreData");
+            var callData = new CallData((Gas)5000000, new uint160(1), "StoreData");
             var value = Money.Zero;
             //-------------------------------------------------------
 
@@ -73,6 +73,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var transactionContext = new TransactionContext(uint256.One, 1, address, address, 0);
 
             repository.SetCode(callData.ContractAddress, contractExecutionCode);
+            repository.SetContractType(callData.ContractAddress, "StorageTest");
 
             var result = vm.ExecuteMethod(gasMeter, 
                 repository, 
@@ -97,7 +98,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             
             //Set the calldata for the transaction----------
             var methodParameters = new object[] { (short)5 };
-            var callData = new CallData(1, 1, (Gas)5000000, new uint160(1), "StoreData", "", methodParameters);
+            var callData = new CallData((Gas)5000000, new uint160(1), "StoreData", methodParameters);
             var value = Money.Zero;
             //-------------------------------------------------------
 
@@ -115,6 +116,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var transactionContext = new TransactionContext(uint256.One, 1, address, address, value);
 
             repository.SetCode(callData.ContractAddress, contractExecutionCode);
+            repository.SetContractType(callData.ContractAddress, "StorageTestWithParameters");
 
             var result = vm.ExecuteMethod(gasMeter, 
                 repository, 
@@ -140,7 +142,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             //Set the calldata for the transaction----------
             var methodParameters = new object[] { (ulong)5 };
-            var callData = new CallData(1, 1, (Gas)5000000, contractExecutionCode, "", methodParameters);
+            var callData = new CreateData((Gas)5000000, contractExecutionCode, methodParameters);
             var value = Money.Zero;
             //-------------------------------------------------------            
 

@@ -21,7 +21,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
-using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.SmartContracts.Core;
@@ -100,6 +100,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         // CONTRACT EXECUTION ---------------------------------------------------------------
                         services.AddSingleton<InternalTransactionExecutorFactory>();
                         services.AddSingleton<ISmartContractVirtualMachine, ReflectionVirtualMachine>();
+
+                        services.AddSingleton<SmartContractTransactionPolicy>();
 
                         ICallDataSerializer callDataSerializer = CallDataSerializer.Default;
                         services.AddSingleton(callDataSerializer);
@@ -200,7 +202,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .AddFeature<MiningFeature>()
                     .DependOn<MempoolFeature>()
                     .DependOn<RPCFeature>()
-                    .DependOn<WalletFeature>()
+                    .DependOn<SmartContractWalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
@@ -252,6 +254,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             return fullNodeBuilder;
         }
-
     }
 }

@@ -37,7 +37,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.vm = vm;
         }
 
-        ///<inheritdoc/>
+        ///<inheritdoc />
+        public ICreateResult Create<T>(ISmartContractState smartContractState, object[] parameters, ulong amountToTransfer)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        ///<inheritdoc />
         public ITransferResult TransferFunds(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
@@ -79,7 +85,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             IContractStateRepository track = this.contractStateRepository.StartTracking();
 
-            var callData = new CallData(1, 0, smartContractState.GasMeter.GasLimit, addressTo.ToUint160(this.network), contractDetails.ContractMethodName, "", contractDetails.MethodParameters);
+            var callData = new CallData(smartContractState.GasMeter.GasLimit, addressTo.ToUint160(this.network), contractDetails.ContractMethodName, contractDetails.MethodParameters);
             
             var context = new TransactionContext(
                 this.transactionContext.TransactionHash,
