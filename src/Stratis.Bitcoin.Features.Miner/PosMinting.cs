@@ -177,11 +177,11 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Indicates the current state of the staking: in progress, stopped or idle.
+        /// Indicates the current state: in progress executing (i.e. in progress) or idle.
         /// </summary>
         public enum CurrentState
         {
-            Idle = -1,
+            Idle = 0,
             Executing = 1
         }
 
@@ -252,10 +252,10 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Loop in which the node attempts to generate new POS blocks by staking coins from its wallet.</summary>
         private IAsyncLoop stakingLoop;
 
-        /// <summary>a flag that indicates if stake is on/off based on the <see cref="CurrentState"/> enum.</summary>
+        /// <summary>A flag that indicates if stake is on/off based on the <see cref="CurrentState"/> enum.</summary>
         private int stakeStateFlag;
 
-        /// <summary>a flag that indicates if stake stopping is on/off based on the <see cref="CurrentState"/> enum.</summary>
+        /// <summary>A flag that indicates if stake stopping is on/off based on the <see cref="CurrentState"/> enum.</summary>
         private int stopStakingStateFlag;
 
         /// <summary>
@@ -407,8 +407,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.rpcGetStakingInfoModel.Enabled = true;
-            this.stakeCancellationTokenSource =
-                CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
+            this.stakeCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
 
             this.stakingLoop = this.asyncLoopFactory.Run(
                 "PosMining.Stake",
@@ -426,20 +425,18 @@ namespace Stratis.Bitcoin.Features.Miner
                         }
                     catch (MinerException me)
                     {
-                            // Miner exceptions should be ignored. It means that the miner
-                            // possibly mined a block that was not accepted by peers or is even invalid,
-                            // but it should not halted the staking operation.
-                            this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
+                        // Miner exceptions should be ignored. It means that the miner
+                        // possibly mined a block that was not accepted by peers or is even invalid,
+                        // but it should not halted the staking operation.
+                        this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
                         this.rpcGetStakingInfoModel.Errors = me.Message;
                     }
                     catch (ConsensusErrorException cee)
                     {
-                            // All consensus exceptions should be ignored. It means that the miner
-                            // run into problems while constructing block or verifying it
-                            // but it should not halted the staking operation.
-                            this.logger.LogDebug(
-                            "Consensus error exception occurred in miner loop: {0}",
-                            cee.ToString());
+                        // All consensus exceptions should be ignored. It means that the miner
+                        // run into problems while constructing block or verifying it
+                        // but it should not halted the staking operation.
+                        this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
                         this.rpcGetStakingInfoModel.Errors = cee.Message;
                     }
                     catch
