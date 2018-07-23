@@ -60,6 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             this.Logger.LogTrace("()");
 
             this.blockTxsProcessed = new List<Transaction>();
+            this.refundCounter = 1;
 
             this.CheckAndComputeStake(context);
 

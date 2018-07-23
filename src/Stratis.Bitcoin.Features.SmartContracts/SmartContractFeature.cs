@@ -192,6 +192,35 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// Adds mining to the smart contract node.
         /// <para>We inject <see cref="IPowMining"/> with a smart contract block provider and definition.</para>
         /// </summary>
+        public static IFullNodeBuilder UseSmartContractPowMining(this IFullNodeBuilder fullNodeBuilder)
+        {
+            LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
+
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<MiningFeature>()
+                    .DependOn<MempoolFeature>()
+                    .DependOn<RPCFeature>()
+                    .DependOn<SmartContractWalletFeature>()
+                    .FeatureServices(services =>
+                    {
+                        services.AddSingleton<IPowMining, PowMining>();
+                        services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
+                        services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
+                        services.AddSingleton<MinerController>();
+                        services.AddSingleton<MiningRPCController>();
+                        services.AddSingleton<MinerSettings>();
+                    });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
+        /// Adds mining to the smart contract node.
+        /// <para>We inject <see cref="IPowMining"/> with a smart contract block provider and definition.</para>
+        /// </summary>
         public static IFullNodeBuilder UseSmartContractMining(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
