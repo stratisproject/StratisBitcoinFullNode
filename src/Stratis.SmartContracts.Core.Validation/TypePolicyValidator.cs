@@ -6,6 +6,9 @@ using Stratis.ModuleValidation.Net;
 
 namespace Stratis.SmartContracts.Core.Validation
 {
+    /// <summary>
+    /// Validator for a <see cref="ModuleDefinition"/> using a given <see cref="ValidationPolicy"/>
+    /// </summary>
     public class ModulePolicyValidator : IModuleDefinitionValidator
     {
         private readonly ValidationPolicy policy;
@@ -44,6 +47,9 @@ namespace Stratis.SmartContracts.Core.Validation
 
     }
 
+    /// <summary>
+    /// Validator for a <see cref="TypeDefinition"/> using a given <see cref="ValidationPolicy"/>
+    /// </summary>
     public class TypePolicyValidator : ITypeDefinitionValidator
     {
         private readonly ValidationPolicy policy;

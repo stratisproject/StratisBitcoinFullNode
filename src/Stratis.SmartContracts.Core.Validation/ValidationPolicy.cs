@@ -16,6 +16,9 @@ namespace Stratis.SmartContracts.Core.Validation
         Ignore
     }
 
+    /// <summary>
+    /// Defines a policy for validating a <see cref="ModuleDefinition"/> and its member hierarchy
+    /// </summary>
     public class ValidationPolicy
     {
         private readonly List<IModuleDefinitionValidator> moduleDefValidators = new List<IModuleDefinitionValidator>();
@@ -94,7 +97,7 @@ namespace Stratis.SmartContracts.Core.Validation
 
         public ValidationPolicy WhitelistValidator(WhitelistPolicy policy)
         {
-            var typeRefValidator = new TypeReferenceValidator(new WhitelistPolicyFilter(policy));
+            var typeRefValidator = new WhitelistValidator(new WhitelistPolicyFilter(policy));
             this.instructionValidators.Add(typeRefValidator);
             return this;
         }

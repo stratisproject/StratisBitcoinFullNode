@@ -10,11 +10,11 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
     /// <summary>
     /// Validates an instruction for usages of allowed Types
     /// </summary>
-    public class TypeReferenceValidator : IInstructionValidator
+    public class WhitelistValidator : IInstructionValidator
     {
         private readonly WhitelistPolicyFilter whitelistPolicyFilter;
 
-        public TypeReferenceValidator(WhitelistPolicyFilter whitelistPolicyFilter)
+        public WhitelistValidator(WhitelistPolicyFilter whitelistPolicyFilter)
         {
             this.whitelistPolicyFilter = whitelistPolicyFilter;
         }

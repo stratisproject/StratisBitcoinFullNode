@@ -141,7 +141,7 @@ public class Test : SmartContract
 
             var result = new SmartContractValidator().Validate(decompilation);
 
-            Assert.Contains(result.Errors, e => e is TypeReferenceValidator.WhitelistValidationResult);
+            Assert.Contains(result.Errors, e => e is WhitelistValidator.WhitelistValidationResult);
         }
 
         [Fact]
@@ -164,7 +164,7 @@ public class Test : SmartContract
 
             var result = new SmartContractValidator().Validate(decompilation);
 
-            Assert.Contains(result.Errors, e => e is TypeReferenceValidator.WhitelistValidationResult);
+            Assert.Contains(result.Errors, e => e is WhitelistValidator.WhitelistValidationResult);
         }
 
         [Fact]

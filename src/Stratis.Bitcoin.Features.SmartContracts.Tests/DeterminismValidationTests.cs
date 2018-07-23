@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.IsAssignableFrom<TypeReferenceValidator.WhitelistValidationResult>(result.Errors.Single());
+            Assert.IsAssignableFrom<WhitelistValidator.WhitelistValidationResult>(result.Errors.Single());
         }
 
         #endregion
@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decomp);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.IsAssignableFrom<TypeReferenceValidator.WhitelistValidationResult>(result.Errors.Single());
+            Assert.IsAssignableFrom<WhitelistValidator.WhitelistValidationResult>(result.Errors.Single());
         }
 
         #endregion
@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
             SmartContractValidationResult result = this.validator.Validate(decomp);
             Assert.False(result.IsValid);
-            Assert.True(result.Errors.All(e => e is TypeReferenceValidator.WhitelistValidationResult));
+            Assert.True(result.Errors.All(e => e is WhitelistValidator.WhitelistValidationResult));
             Assert.True(result.Errors.All(e => e.Message.Contains("Decimal")));
         }
 
@@ -332,7 +332,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
             SmartContractValidationResult result = this.validator.Validate(decomp);
             Assert.False(result.IsValid);
-            Assert.True(result.Errors.All(e => e is TypeReferenceValidator.WhitelistValidationResult));
+            Assert.True(result.Errors.All(e => e is WhitelistValidator.WhitelistValidationResult));
             Assert.True(result.Errors.All(e => e.Message.Contains("Decimal")));
         }
 

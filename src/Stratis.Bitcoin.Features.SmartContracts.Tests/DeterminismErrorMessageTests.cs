@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
             SmartContractValidationResult result = this.validator.Validate(decompilation);
             Assert.False(result.IsValid);
-            Assert.True(result.Errors.All(e => e is TypeReferenceValidator.WhitelistValidationResult));
+            Assert.True(result.Errors.All(e => e is WhitelistValidator.WhitelistValidationResult));
         }
 
         [Fact]
