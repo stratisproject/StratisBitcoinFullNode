@@ -582,12 +582,81 @@ namespace Stratis.Bitcoin.Tests.Base
             Assert.True(containsHashesOver30);
         }
 
-        ///// <summary>
-        /////
-        ///// </summary>
-        //[Fact]
-        //public async Task ResyncAsync_()
-        //{
-        //}
+        /// <summary>
+        /// Initialize <see cref="ConsensusManagerBehavior.BestSentHeader"/> with something.
+        /// Call <see cref="ConsensusManagerBehavior.UpdateBestSentHeader"/> with <c>null</c>.
+        /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> didn't change.
+        /// </summary>
+        [Fact]
+        public void UpdateBestSentHeader_DoesntChangeIfArgumentIsNull()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20], null, this.headers[10]);
+
+            behavior.UpdateBestSentHeader(null);
+
+            Assert.Equal(this.headers[10], behavior.BestSentHeader);
+        }
+
+        /// <summary>
+        /// Initialize <see cref="ConsensusManagerBehavior.BestSentHeader"/> with null.
+        /// Call <see cref="ConsensusManagerBehavior.UpdateBestSentHeader"/> with any header.
+        /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> was set.
+        /// </summary>
+        [Fact]
+        public void UpdateBestSentHeader_ChangesIfPreviousValueWasNull()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20], null, null);
+
+            behavior.UpdateBestSentHeader(this.headers[10]);
+
+            Assert.Equal(this.headers[10], behavior.BestSentHeader);
+        }
+
+        /// <summary>
+        /// Initialize <see cref="ConsensusManagerBehavior.BestSentHeader"/> with 10.
+        /// Call <see cref="ConsensusManagerBehavior.UpdateBestSentHeader"/> with header 5.
+        /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> wasn't changed.
+        /// </summary>
+        [Fact]
+        public void UpdateBestSentHeader_DoesntChangeIfCalledWithAncestor()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20], null, this.headers[10]);
+
+            behavior.UpdateBestSentHeader(this.headers[5]);
+
+            Assert.Equal(this.headers[10], behavior.BestSentHeader);
+        }
+
+        /// <summary>
+        /// Initialize <see cref="ConsensusManagerBehavior.BestSentHeader"/> with 10.
+        /// Call <see cref="ConsensusManagerBehavior.UpdateBestSentHeader"/> with header 15.
+        /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> was set to header 15.
+        /// </summary>
+        [Fact]
+        public void UpdateBestSentHeader_IsSetIfChainProlonged()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20], null, this.headers[10]);
+
+            behavior.UpdateBestSentHeader(this.headers[15]);
+
+            Assert.Equal(this.headers[15], behavior.BestSentHeader);
+        }
+
+        /// <summary>
+        /// Initialize <see cref="ConsensusManagerBehavior.BestSentHeader"/> with 10.
+        /// Call <see cref="ConsensusManagerBehavior.UpdateBestSentHeader"/> with header 15b where b is the chain that forks at 8a.
+        /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> was set to be 15b.
+        /// </summary>
+        [Fact]
+        public void UpdateBestSentHeader_()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20], null, this.headers[10]);
+
+            ChainedHeader headerOnChainB = ChainedHeadersHelper.CreateConsecutiveHeaders(7, this.headers[8]).Last();
+
+            behavior.UpdateBestSentHeader(headerOnChainB);
+
+            Assert.Equal(headerOnChainB, behavior.BestSentHeader);
+        }
     }
 }
