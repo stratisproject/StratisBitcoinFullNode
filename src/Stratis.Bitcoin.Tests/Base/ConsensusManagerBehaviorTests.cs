@@ -467,14 +467,17 @@ namespace Stratis.Bitcoin.Tests.Base
                 Assert.Equal(this.headers[i].Header, cached[i - 41]);
         }
 
-        /// <summary>We receive headers message with 2500 headers. Make sure peer was banned.</summary>
+        /// <summary>We receive more headers than max allowed. Make sure peer was banned.</summary>
         [Fact]
         public async Task ProcessHeadersAsync_BanPeerThatViolatedMaxHeadersCountAsync()
         {
             this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
                 (presentedHeaders, triggerDownload) => { throw new ConsensusException(""); });
 
-            List<ChainedHeader> headersToPresent = ChainedHeadersHelper.CreateConsecutiveHeaders(2500, null, true);
+
+            int maxHeaders = typeof(ConsensusManagerBehavior).GetPrivateConstantValue<int>("MaxItemsPerHeadersMessage");
+
+            List<ChainedHeader> headersToPresent = ChainedHeadersHelper.CreateConsecutiveHeaders(maxHeaders + 500, null, true);
 
             await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header).ToArray()));
 
@@ -491,7 +494,8 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             this.helper.CreateAndAttachBehavior(this.headers[10]);
 
-            await this.helper.StateChanged.ExecuteCallbacksAsync(this.helper.PeerMock.Object, NetworkPeerState.HandShaked);
+            // Peer's state is handshaked which is the current state. Calling OnStateChanged with old state which is connected.
+            await this.helper.StateChanged.ExecuteCallbacksAsync(this.helper.PeerMock.Object, NetworkPeerState.Connected);
 
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
         }
@@ -508,6 +512,7 @@ namespace Stratis.Bitcoin.Tests.Base
             await behavior.ResetPeerTipInformationAndSyncAsync();
 
             Assert.Null(behavior.ExpectedPeerTip);
+            Assert.Null(behavior.BestSentHeader);
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
         }
     }
