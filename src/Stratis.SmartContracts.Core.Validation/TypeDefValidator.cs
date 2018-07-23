@@ -6,7 +6,8 @@ using Stratis.ModuleValidation.Net;
 
 namespace Stratis.SmartContracts.Core.Validation
 {
-    public class ModuleDefValidator
+    // TODO Factor this into a policyvalidator
+    public class ModuleDefValidator : IModuleDefinitionValidator
     {
         private readonly ValidationPolicy policy;
 
@@ -44,6 +45,7 @@ namespace Stratis.SmartContracts.Core.Validation
         }
 
     }
+
     public class TypeDefValidator
     {
         private readonly ValidationPolicy policy;
