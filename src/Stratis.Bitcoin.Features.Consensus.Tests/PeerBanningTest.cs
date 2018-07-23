@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var connectionManagerBehavior = new ConnectionManagerBehavior(false, context.ConnectionManager, context.LoggerFactory)
             { Whitelisted = whiteListedPeer };
             var peer = new Mock<INetworkPeer>();
-            peer.Setup(p => p.Behavior<ConnectionManagerBehavior>()).Returns(connectionManagerBehavior);
+            peer.Setup(p => p.Behavior<IConnectionManagerBehavior>()).Returns(connectionManagerBehavior);
 
             context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>())).Returns(peer.Object);
         }
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public async Task PeerBanning_AddingBannedPeerToAddressManagerStoreAsync()
         {
-            // Arrange 
+            // Arrange
             string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public async Task PeerBanning_SavingAndLoadingBannedPeerToAddressManagerStoreAsync()
         {
-            // Arrange 
+            // Arrange
             string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public async Task PeerBanning_ResettingExpiredBannedPeerAsync()
         {
-            // Arrange 
+            // Arrange
             string dataDir = GetTestDirectoryPath(this);
 
             TestChainContext context = await TestChainFactory.CreateAsync(Network.RegTest, dataDir);
@@ -270,7 +270,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var endpoint = new IPEndPoint(ipAddress, 80);
             context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
-            // Act 
+            // Act
             context.PeerBanning.BanAndDisconnectPeer(endpoint, 1, nameof(PeerBanningTest));
             context.PeerAddressManager.SavePeers();
 
