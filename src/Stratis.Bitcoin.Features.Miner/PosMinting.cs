@@ -399,8 +399,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (Interlocked.CompareExchange(
                     ref this.stopStakingStateFlag,
-                    (int)CurrentState.Executing,
-                    (int)CurrentState.Idle) == (int)CurrentState.Executing)
+                    (int)CurrentState.Idle,
+                    (int)CurrentState.Executing) == (int)CurrentState.Executing)
             {
                 this.logger.LogTrace("(-)[MINING_STOPPING]");
                 return;
@@ -468,15 +468,6 @@ namespace Stratis.Bitcoin.Features.Miner
                     (int)CurrentState.Idle) == (int)CurrentState.Executing)
             {
                 this.logger.LogTrace("(-)[MINING_STOPPING]");
-                return;
-            }
-
-            if (Interlocked.CompareExchange(
-                    ref this.stakeStateFlag,
-                    (int)CurrentState.Executing,
-                    (int)CurrentState.Idle) == (int)CurrentState.Executing)
-            {
-                this.logger.LogTrace("(-)[NOT_MINING]");
                 return;
             }
 
