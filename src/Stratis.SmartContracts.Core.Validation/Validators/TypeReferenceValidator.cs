@@ -50,19 +50,7 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
             return Enumerable.Empty<ValidationResult>();
         }
 
-        private IEnumerable<ValidationResult> ValidateReference(MethodDefinition parent, TypeReference type,
-            string memberName)
-        {
-            var results = new List<ValidationResult>();
-
-            results.AddRange(this.ValidateReference(parent, type));
-
-            results.AddRange(this.ValidateWhitelist(parent, type, memberName));
-
-            return results;
-        }
-
-        private IEnumerable<ValidationResult> ValidateReference(MethodDefinition parent, TypeReference type)
+        private IEnumerable<ValidationResult> ValidateReference(MethodDefinition parent, TypeReference type, string memberName = null)
         {
             var results = new List<ValidationResult>();
 
@@ -97,7 +85,7 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
             }
 
             // By the time we get here, we should have boiled it down to a base Type
-            results.AddRange(this.ValidateWhitelist(parent, type));
+            results.AddRange(this.ValidateWhitelist(parent, type, memberName));
 
             return results;
         }
