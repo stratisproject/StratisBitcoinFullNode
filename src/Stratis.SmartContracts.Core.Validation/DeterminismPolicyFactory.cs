@@ -13,8 +13,6 @@ namespace Stratis.SmartContracts.Core.Validation
     /// </summary>
     public class DeterminismPolicyFactory
     {
-        public static Func<TypeDefinition, bool> HasFinalizer = type => type.Methods.Any(m => m.Name == "Finalize");
-
         public ValidationPolicy CreatePolicy()
         {
             WhitelistPolicy whitelistPolicy = this.CreateWhitelistPolicy();
