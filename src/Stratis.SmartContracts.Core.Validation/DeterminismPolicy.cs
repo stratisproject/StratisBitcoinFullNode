@@ -11,25 +11,17 @@ namespace Stratis.SmartContracts.Core.Validation
     /// <summary>
     /// Defines a policy used to evaluate a TypeDefinition for uses of non-deterministic Types
     /// </summary>
-    public static class DeterminismPolicyFactory
+    public static class DeterminismPolicy
     {
-        public static ValidationPolicy CreatePolicy()
-        {
-            WhitelistPolicy whitelistPolicy = CreateWhitelistPolicy();
+        public static WhitelistPolicy WhitelistPolicy = new WhitelistPolicy()
+            .Namespace(nameof(System), AccessPolicy.Denied, SystemPolicy)
+            .Namespace(typeof(RuntimeHelpers).Namespace, AccessPolicy.Denied, CompilerServicesPolicy)
+            .Namespace(typeof(SmartContract).Namespace, AccessPolicy.Allowed, SmartContractsPolicy);
 
-            return new ValidationPolicy()
-                .WhitelistValidator(whitelistPolicy)
-                .TypeDefValidator(new FinalizerValidator())
-                .InstructionValidator(new FloatValidator());
-        }
-
-        public static WhitelistPolicy CreateWhitelistPolicy()
-        {
-            return new WhitelistPolicy()
-                .Namespace(nameof(System), AccessPolicy.Denied, SystemPolicy)
-                .Namespace(typeof(RuntimeHelpers).Namespace, AccessPolicy.Denied, CompilerServicesPolicy)
-                .Namespace(typeof(SmartContract).Namespace, AccessPolicy.Allowed, SmartContractsPolicy);
-        }
+        public static ValidationPolicy Default = new ValidationPolicy()
+            .WhitelistValidator(WhitelistPolicy)
+            .TypeDefValidator(new FinalizerValidator())
+            .InstructionValidator(new FloatValidator());
 
         private static void SystemPolicy(NamespacePolicy policy)
         {

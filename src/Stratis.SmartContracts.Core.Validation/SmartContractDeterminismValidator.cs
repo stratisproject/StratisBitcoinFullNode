@@ -8,7 +8,7 @@
         /// <inheritdoc/>
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var policy = DeterminismPolicyFactory.CreatePolicy();
+            var policy = DeterminismPolicy.Default;
             var validator = new ModulePolicyValidator(policy);
             var validationResults = validator.Validate(decompilation.ModuleDefinition);
 
