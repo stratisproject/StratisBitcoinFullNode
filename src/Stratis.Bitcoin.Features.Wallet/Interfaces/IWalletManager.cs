@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="passphrase">The passphrase used in the seed.</param>
         /// <param name="mnemonic">The user's mnemonic for the wallet.</param>
         /// <returns>A mnemonic defining the wallet's seed used to generate addresses.</returns>
-        Mnemonic CreateWallet(string password, string name, string passphrase = null, string mnemonic = null);
+        Mnemonic CreateWallet(string password, string name, string passphrase = null, Mnemonic mnemonic = null);
 
         /// <summary>
         /// Loads a wallet from a file.
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         Wallet LoadWallet(string password, string name);
 
         /// <summary>
-        /// Recovers a wallet.
+        /// Recovers a wallet using mnemonic and password.
         /// </summary>
         /// <param name="password">The user's password.</param>
         /// <param name="name">The name of the wallet.</param>
@@ -65,6 +65,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="creationTime">The date and time this wallet was created.</param>
         /// <returns>The recovered wallet.</returns>
         Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null);
+
+        /// <summary>
+        /// Recovers a wallet using extended public key and account index.
+        /// </summary>
+        /// <param name="name">The name of the wallet.</param>
+        /// <param name="extPubKey"></param>
+        /// <param name="accountIndex">The account number.</param>
+        /// <param name="creationTime">The date and time this wallet was created.</param>
+        /// <returns></returns>
+        Wallet RecoverWallet(string name, ExtPubKey extPubKey, int accountIndex, DateTime creationTime);
 
         /// <summary>
         /// Deletes a wallet.
@@ -240,7 +250,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns></returns>
         ICollection<uint256> GetFirstWalletBlockLocator();
-        
+
         /// <summary>
         /// Gets the list of the wallet filenames, along with the folder in which they're contained.
         /// </summary>
@@ -278,7 +288,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="walletName">The name of the wallet to remove transactions from.</param>
         /// <param name="transactionsIds">The IDs of transactions to remove.</param>
         /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
-        HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIds(string walletName, IEnumerable<uint256> transactionsIds);
+        HashSet<(uint256, DateTimeOffset)> RemoveTransactionsByIdsLocked(string walletName, IEnumerable<uint256> transactionsIds);
 
         /// <summary>
         /// Removes all the transactions from the wallet and persist it.

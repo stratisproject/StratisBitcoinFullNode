@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
             var mockWalletCreate = new Mock<IWalletManager>();
-            mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(mnemonic);
+            mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Mnemonic>())).Returns(mnemonic);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
@@ -268,9 +268,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void CreateWalletWithInvalidOperationExceptionReturnsConflict()
         {
             string errorMessage = "An error occurred.";
-            var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
             var mockWalletCreate = new Mock<IWalletManager>();
-            mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Mnemonic>()))
                 .Throws(new WalletException(errorMessage));
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -296,9 +295,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void CreateWalletWithNotSupportedExceptionExceptionReturnsBadRequest()
         {
-            var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
             var mockWalletCreate = new Mock<IWalletManager>();
-            mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            mockWalletCreate.Setup(wallet => wallet.CreateWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Mnemonic>()))
                 .Throws(new NotSupportedException("Not supported"));
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletCreate.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -460,6 +458,58 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(400, error.Status);
             Assert.StartsWith("System.FormatException", error.Description);
             Assert.Equal("Formatting failed.", error.Message);
+        }
+
+        [Fact]
+        public void RecoverWalletViaExtPubKeySuccessfullyReturnsWalletModel()
+        {
+            string walletName = "myWallet";
+            string extPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
+
+            this.RecoverWithExtPubAndCheckSuccessfulResponse(walletName, extPubKey);
+        }
+
+        [Fact]
+        public void RecoverWalletViaExtPubKeySupportsStratisLegacyExtpubKey()
+        {
+            string walletName = "myWallet";
+            string extPubKey = "xq5hcJV8uJDLaNytrg6FphHY1vdqxP1rCPhAmp4xZwpxzYyYEscYEujAmNR5NrPfy9vzQ6BajEqtFezcyRe4zcGHH3dR6BKaKov43JHd8UYhBVy";
+
+            this.RecoverWithExtPubAndCheckSuccessfulResponse(walletName, extPubKey);
+        }
+
+        private void RecoverWithExtPubAndCheckSuccessfulResponse(string walletName, string extPubKey)
+        {
+            var wallet = new Wallet
+            {
+                Name = walletName,
+                Network = Network.StratisMain,
+                IsExtPubKeyWallet = true
+            };
+
+            var walletManager = new Mock<IWalletManager>();
+
+            walletManager.Setup(w => w.RecoverWallet(walletName, It.IsAny<ExtPubKey>(), 1, It.IsAny<DateTime>()))
+                .Returns(wallet);
+
+            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object,
+                new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object,
+                It.IsAny<ConnectionManager>(), Network.StratisMain, new Mock<ConcurrentChain>().Object,
+                new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+
+            IActionResult result = controller.RecoverViaExtPubKey(new WalletExtPubRecoveryRequest
+            {
+                Name = walletName,
+                FolderPath = "",
+                ExtPubKey = extPubKey,
+                AccountIndex = 1,
+                Network = wallet.Network.Name
+            });
+
+            walletManager.VerifyAll();
+
+            var viewResult = Assert.IsType<OkResult>(result);
+            Assert.Equal(200, viewResult.StatusCode);
         }
 
         [Fact]
@@ -2109,7 +2159,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var walletManager = new Mock<IWalletManager>();
             var walletSyncManager = new Mock<IWalletSyncManager>();
-            walletManager.Setup(manager => manager.RemoveTransactionsByIds(walletName, new[] { trxId1 })).Returns(resultModel);
+            walletManager.Setup(manager => manager.RemoveTransactionsByIdsLocked(walletName, new[] { trxId1 })).Returns(resultModel);
             walletManager.Setup(manager => manager.GetWallet(walletName)).Returns(wallet);
             walletSyncManager.Setup(manager => manager.SyncFromHeight(It.IsAny<int>()));
             ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.Main);

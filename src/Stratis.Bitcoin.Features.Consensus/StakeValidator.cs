@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chain = chain;
             this.coinView = coinView;
             this.network = network;
-            this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
+            this.consensusOptions = network.Consensus.Options as PosConsensusOptions;
         }
 
         /// <inheritdoc/>
