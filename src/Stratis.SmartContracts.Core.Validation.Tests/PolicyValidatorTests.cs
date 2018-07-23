@@ -39,7 +39,7 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
 
             var result = r.Filter("System", "Object");
 
-            Assert.Equal(PolicyValidatorResultKind.DeniedNamespace, result.Kind);
+            Assert.Equal(PolicyValidatorResultKind.DeniedType, result.Kind);
         }
 
         [Fact]
@@ -52,7 +52,7 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
 
             var result = r.Filter("System", "Object", "ToString");
 
-            Assert.Equal(PolicyValidatorResultKind.DeniedNamespace, result.Kind);
+            Assert.Equal(PolicyValidatorResultKind.DeniedType, result.Kind);
         }
 
         [Fact]
