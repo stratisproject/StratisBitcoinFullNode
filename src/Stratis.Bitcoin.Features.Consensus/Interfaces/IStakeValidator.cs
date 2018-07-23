@@ -86,6 +86,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// And the <c>N</c> determines how strongly will the deviation of the last block time affect the difficulty.
         /// </para>
         /// </remarks>
-        Target CalculateRetarget(int firstBlockTime, Target firstBlockTarget, int secondBlockTime, BigInteger targetLimit);
+        Target CalculateRetarget(uint firstBlockTime, Target firstBlockTarget, uint secondBlockTime, BigInteger targetLimit);
     }
 }

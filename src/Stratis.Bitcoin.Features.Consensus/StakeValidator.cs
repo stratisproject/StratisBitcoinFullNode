@@ -45,10 +45,10 @@ namespace Stratis.Bitcoin.Features.Consensus
     public class StakeValidator : IStakeValidator
     {
         /// <summary>Expected (or target) block time in seconds.</summary>
-        public const int TargetSpacingSeconds = 64;
+        public const uint TargetSpacingSeconds = 64;
 
         /// <summary>Time interval in minutes that is used in the retarget calculation.</summary>
-        private const int RetargetIntervalMinutes = 16;
+        private const uint RetargetIntervalMinutes = 16;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -103,18 +103,17 @@ namespace Stratis.Bitcoin.Features.Consensus
             return startChainedHeader;
         }
 
-        public Target CalculateRetarget(int firstBlockTime, Target firstBlockTarget, int secondBlockTime, BigInteger targetLimit)
+        /// <inheritdoc/>
+        public Target CalculateRetarget(uint firstBlockTime, Target firstBlockTarget, uint secondBlockTime, BigInteger targetLimit)
         {
-            int targetSpacing = TargetSpacingSeconds;
-            int actualSpacing = firstBlockTime - secondBlockTime;
-            if (actualSpacing < 0)
-                actualSpacing = targetSpacing;
+            uint targetSpacing = TargetSpacingSeconds;
+            uint actualSpacing = firstBlockTime > secondBlockTime ? firstBlockTime - secondBlockTime : targetSpacing;
 
             if (actualSpacing > targetSpacing * 10)
                 actualSpacing = targetSpacing * 10;
 
-            int targetTimespan = RetargetIntervalMinutes * 60;
-            int interval = targetTimespan / targetSpacing;
+            uint targetTimespan = RetargetIntervalMinutes * 60;
+            uint interval = targetTimespan / targetSpacing;
 
             BigInteger target = firstBlockTarget.ToBigInteger();
 
@@ -178,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return lastPowPosBlock.Header.Bits;
             }
 
-            Target finalTarget = this.CalculateRetarget((int)lastPowPosBlock.Header.Time, lastPowPosBlock.Header.Bits, (int)prevLastPowPosBlock.Header.Time, targetLimit);
+            Target finalTarget = this.CalculateRetarget(lastPowPosBlock.Header.Time, lastPowPosBlock.Header.Bits, prevLastPowPosBlock.Header.Time, targetLimit);
 
             this.logger.LogTrace("(-):'{0}'", finalTarget);
             return finalTarget;
