@@ -121,7 +121,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Ap
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Apps", "Stratis.Bitcoin.Features.Apps\Stratis.Bitcoin.Features.Apps.csproj", "{FF6DDE2B-CF33-438F-BCC8-B1E109AB2472}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Apps.Browser", "Stratis.Bitcoin.Apps.Browser\Stratis.Bitcoin.Apps.Browser.csproj", "{6A4C72BF-E818-45B1-9DD4-562C7C6F31C8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Apps.Browser", "Stratis.Bitcoin.Apps.Browser\Stratis.Bitcoin.Apps.Browser.csproj", "{6A4C72BF-E818-45B1-9DD4-562C7C6F31C8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{A6FF48E5-310A-4606-B435-D24B6B348F8C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.SmartContracts.Wallet", "Stratis.Bitcoin.Features.SmartContracts.Wallet\Stratis.Bitcoin.Features.SmartContracts.Wallet.csproj", "{3E11D03E-1244-43A8-875B-A547249F5B53}"
 EndProject
@@ -378,6 +380,7 @@ Global
 		{1DA2C3F0-DC7E-4E94-AA29-93090ADBDE42} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{C139889D-F480-4AEE-BA76-81C73B97AD30} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
 		{FF6DDE2B-CF33-438F-BCC8-B1E109AB2472} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
+		{6A4C72BF-E818-45B1-9DD4-562C7C6F31C8} = {A6FF48E5-310A-4606-B435-D24B6B348F8C}
 		{3E11D03E-1244-43A8-875B-A547249F5B53} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
