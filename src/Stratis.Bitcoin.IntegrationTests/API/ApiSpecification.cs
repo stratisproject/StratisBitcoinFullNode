@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Getrawtransaction_verbose_returns_full_transaction()
         {
-            Given(two_connected_pow_nodes_with_api_enabled);	    
+            Given(two_connected_pow_nodes_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
             And(a_real_transaction);
