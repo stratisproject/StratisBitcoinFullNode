@@ -5,7 +5,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -28,7 +27,8 @@ namespace Stratis.Bitcoin.Tests.Base
         /// <summary>
         /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 10).
         /// Cached headers contain nothing. <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6.
-        /// Make sure that <see cref="GetHeadersPayload"/> wasn't sent to the peer, <see cref="ConsensusManager.HeadersPresented"/> wasn't called. Return value is <c>null</c>.
+        /// Make sure that <see cref="GetHeadersPayload"/> wasn't sent to the peer, <see cref="ConsensusManager.HeadersPresented"/> wasn't called.
+        /// Return value is <c>null</c>.
         /// </summary>
         [Fact]
         public async Task ConsensusTipChanged_ConsensusTipAdvancedBuNoCachedHeadersAsync()
@@ -657,7 +657,7 @@ namespace Stratis.Bitcoin.Tests.Base
         /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> was set to be 15b.
         /// </summary>
         [Fact]
-        public void UpdateBestSentHeader_ChangedIfHeaderIsInFork()
+        public void UpdateBestSentHeader_ChangedIfHeaderIsOnFork()
         {
             ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20], null, this.headers[10]);
 
