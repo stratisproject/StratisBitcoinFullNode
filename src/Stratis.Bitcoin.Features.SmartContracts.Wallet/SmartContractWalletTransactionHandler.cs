@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <summary>
         /// Adjusted to allow smart contract transactions with zero value through.
         /// </summary>
-        public override void AddRecipients(TransactionBuildContext context)
+        protected override void AddRecipients(TransactionBuildContext context)
         {
             if (context.Recipients.Any(recipient => recipient.Amount == Money.Zero && !recipient.ScriptPubKey.IsSmartContractExec()))
                 throw new WalletException("No amount specified.");

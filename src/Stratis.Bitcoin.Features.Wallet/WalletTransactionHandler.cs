@@ -332,7 +332,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <remarks>
         /// Add outputs to the <see cref="TransactionBuilder"/> based on the <see cref="Recipient"/> list.
         /// </remarks>
-        public virtual void AddRecipients(TransactionBuildContext context)
+        protected virtual void AddRecipients(TransactionBuildContext context)
         {
             if (context.Recipients.Any(a => a.Amount == Money.Zero))
                 throw new WalletException("No amount specified.");
