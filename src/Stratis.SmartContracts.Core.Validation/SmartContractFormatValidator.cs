@@ -13,16 +13,6 @@ namespace Stratis.SmartContracts.Core.Validation
 {
     public class FormatPolicyFactory
     {
-        public static Func<FieldDefinition, bool> DisallowedField = field => !(field.DeclaringType.IsNested && field.DeclaringType.IsValueType) && !field.HasConstant;
-        public static Func<MethodDefinition, bool> HasTryCatch = method => method.Body.HasExceptionHandlers;
-
-        public static Func<TypeDefinition, bool> TypeHasMethods = type => type.HasMethods;
-        public static Func<TypeDefinition, bool> TypeHasNestedTypes = type => type.HasNestedTypes;
-        public static Func<TypeDefinition, bool> NestedTypesAreValueTypes = type => type.HasNestedTypes && !type.NestedTypes.All(n => n.IsValueType);
-
-        public static Func<ModuleDefinition, bool> SingleTypeValidator = module => module.Types.Count(x => !(x.FullName.Contains("<Module>") || x.FullName.Contains("<PrivateImplementationDetails>"))) > 1;
-        public static Func<TypeDefinition, bool> NamespaceValidator = type => type != null && type.Namespace != "";
-        
         // System.Runtime forwards to mscorlib, so we can only get its Assembly by name
         // ref. https://github.com/dotnet/corefx/issues/11601
         private static readonly Assembly Runtime = Assembly.Load("System.Runtime");
@@ -47,9 +37,8 @@ namespace Stratis.SmartContracts.Core.Validation
                 .TypeDefValidator(new NamespaceValidator())
                 .TypeDefValidator(new SingleConstructorValidator(), NestedTypePolicy.Ignore)
                 .TypeDefValidator(new ConstructorParamValidator(), NestedTypePolicy.Ignore)
-                .TypeDefValidator(new InheritsSmartContractValidator(), NestedTypePolicy.Ignore
-                )
-                .TypeDefValidator(new FieldDefinitionValidator())
+                .TypeDefValidator(new InheritsSmartContractValidator(), NestedTypePolicy.Ignore)
+                .TypeDefValidator(new FieldDefinitionValidator(), NestedTypePolicy.Ignore)
                 .NestedTypeDefValidator(new TypeHasMethodsValidator())
                 .NestedTypeDefValidator(new TypeHasNestedTypesValidator())
                 .NestedTypeDefValidator(new NestedTypesAreValueTypesValidator())
