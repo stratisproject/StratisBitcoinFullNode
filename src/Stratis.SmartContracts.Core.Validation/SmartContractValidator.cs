@@ -5,7 +5,7 @@ namespace Stratis.SmartContracts.Core.Validation
     {
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var formatPolicy = new FormatPolicyFactory().CreatePolicy();
+            var formatPolicy = FormatPolicyFactory.CreatePolicy();
             var determinismPolicy = new DeterminismPolicyFactory().CreatePolicy();
 
             var policy = ValidationPolicy.FromExisting(new[] {formatPolicy, determinismPolicy});

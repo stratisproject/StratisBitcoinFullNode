@@ -8,7 +8,7 @@ using Stratis.SmartContracts.Core.Validation.Validators.Type;
 
 namespace Stratis.SmartContracts.Core.Validation
 {
-    public class FormatPolicyFactory
+    public static class FormatPolicyFactory
     {
         // System.Runtime forwards to mscorlib, so we can only get its Assembly by name
         // ref. https://github.com/dotnet/corefx/issues/11601
@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts.Core.Validation
             typeof(Enumerable).Assembly
         };
 
-        public ValidationPolicy CreatePolicy()
+        public static ValidationPolicy CreatePolicy()
         {
             return new ValidationPolicy()
                 .ModuleDefValidator(new AssemblyReferenceValidator(AllowedAssemblies))
@@ -51,7 +51,7 @@ namespace Stratis.SmartContracts.Core.Validation
     {
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var policy = new FormatPolicyFactory().CreatePolicy();
+            var policy = FormatPolicyFactory.CreatePolicy();
 
             var validator = new ModulePolicyValidator(policy);
 
