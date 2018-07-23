@@ -393,7 +393,11 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogDebug("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
                 this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer presented header that violates a checkpoint.");
             }
-            //TODO catch more exceptions when validator are implemented and CM.HeadersPresented can throw anything else
+            catch (ConsensusException exception)
+            {
+                this.logger.LogWarning("Header is invalid. Peer will be banned and disconnected. Exception: '{0}'.", exception);
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Invalid header provided.");
+            }
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
