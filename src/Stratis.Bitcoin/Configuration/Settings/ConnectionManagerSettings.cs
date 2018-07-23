@@ -164,6 +164,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { (DefaultBlocksOnly ? 1 : 0) }.");
             builder.AppendLine($"#blocksonly={ (DefaultBlocksOnly ? 1 : 0) }");
             builder.AppendLine($"#bantime=<number>");
+            builder.AppendLine($"#Disallow connection to peers in same IP range. Default is true for remote hosts.");
+            builder.AppendLine($"#iprangefiltering=<true or false>");
         }
 
         /// <summary>

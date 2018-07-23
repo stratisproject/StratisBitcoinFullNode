@@ -281,19 +281,18 @@ namespace Stratis.Bitcoin.P2P
 
         private bool PeerIsPartOfExistingGroup(PeerAddress peerAddress)
         {
-            if (this.ConnectorPeers == null)
+            if (this.connectedPeers == null)
                 return false;
 
             byte[] peerAddressGroup = peerAddress.Endpoint.MapToIpv6().Address.GetGroup();
 
-            var endpoints = new List<byte[]>();
-
-            foreach (INetworkPeer endPoint in this.ConnectorPeers)
+            foreach (INetworkPeer endPoint in this.connectedPeers)
             {
-                endpoints.Add(endPoint.PeerEndPoint.MapToIpv6().Address.GetGroup());
+                byte[] endPointGroup = endPoint.PeerEndPoint.MapToIpv6().Address.GetGroup();
+                if (endPointGroup.SequenceEqual(peerAddressGroup))
+                    return true;
             }
-
-            return endpoints.Any(x => x.SequenceEqual(peerAddressGroup));
+            return false;
         }
 
         /// <summary>
