@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var address = TestAddress.ToUint160(this.network);
 
-            var callData = new CallData(1, 1, gasLimit, address, "ThrowException");
+            var callData = new CallData(gasLimit, address, "ThrowException");
             this.repository.SetCode(address, contractCode);
             this.repository.SetContractType(address, "ThrowExceptionContract");
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);

@@ -22,7 +22,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.methodParamSerializer = methodParameterSerializer;
         }
 
-        public Result<CallData> Deserialize(byte[] smartContractBytes)
+        public Result<ContractTxData> Deserialize(byte[] smartContractBytes)
         { 
             var byteCursor = 1;
             var takeLength = 0;
@@ -41,7 +41,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
 
-                var callData = new CallData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw, methodParameters);
+                var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw, methodParameters);
                 return Result.Ok(callData);
             }
 
@@ -52,11 +52,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
 
-                var callData = new CallData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw, methodParameters);
+                var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw, methodParameters);
                 return Result.Ok(callData);
             }
 
-            return Result.Fail<CallData>("Error deserializing calldata");
+            return Result.Fail<ContractTxData>("Error deserializing calldata");
         }
 
         private static bool IsCreateContract(byte type)

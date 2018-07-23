@@ -7,13 +7,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         VmExecutionResult Create(
             IGasMeter gasMeter,
             IContractStateRepository repository,
-            CallData callData,
+            ICreateData createData, 
             ITransactionContext transactionContext);
 
         VmExecutionResult ExecuteMethod(
             IGasMeter gasMeter,
             IContractStateRepository repository,
-            CallData callData,
+            ICallData callData, 
             ITransactionContext transactionContext);
     }
 }

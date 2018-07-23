@@ -41,10 +41,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a new instance of a smart contract by invoking the contract's constructor
         /// </summary>
-        public VmExecutionResult Create(
-            IGasMeter gasMeter,
+        public VmExecutionResult Create(IGasMeter gasMeter,
             IContractStateRepository repository,
-            CallData callData,
+            ICreateData createData,
             ITransactionContext transactionContext)
         {
             this.logger.LogTrace("()");
@@ -52,7 +51,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
             // Decompile the contract execution code and validate it.
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(callData.ContractExecutionCode);
+            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(createData.ContractExecutionCode);
+
             SmartContractValidationResult validation = this.validator.Validate(decompilation);
 
             // If validation failed, refund the sender any remaining gas.
@@ -62,7 +62,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractValidationException(validation.Errors));
             }
 
-            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(callData.ContractExecutionCode, decompilation.ContractType.Name);
+            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(createData.ContractExecutionCode, decompilation.ContractType.Name);
 
             Type contractType = Load(gasInjectedCode, decompilation.ContractType.Name);
             
@@ -90,7 +90,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     contractAddress.ToAddress(this.network),
                     transactionContext.From.ToAddress(this.network),
                     transactionContext.Amount,
-                    callData.GasLimit
+                    createData.GasLimit
                 ),
                 persistentState,
                 gasMeter,
@@ -98,10 +98,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 new InternalHashHelper(),
                 () => balanceState.GetBalance(contractAddress));
 
-            LogExecutionContext(this.logger, contractState.Block, contractState.Message, contractAddress, callData);
+            LogExecutionContext(this.logger, contractState.Block, contractState.Message, contractAddress, createData);
 
             // Invoke the constructor of the provided contract code
-            LifecycleResult result = SmartContractConstructor.Construct(contractType, contractState, callData.MethodParameters);
+            LifecycleResult result = SmartContractConstructor.Construct(contractType, contractState, createData.MethodParameters);
 
             if (!result.Success)
             {
@@ -116,7 +116,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             
             this.logger.LogTrace("(-):{0}={1}, {2}={3}", nameof(contractAddress), contractAddress, nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
 
-            repository.SetCode(contractAddress, callData.ContractExecutionCode);
+            repository.SetCode(contractAddress, createData.ContractExecutionCode);
             repository.SetContractType(contractAddress, contractType.Name);
 
             return VmExecutionResult.CreationSuccess(contractAddress, internalTransferList, gasMeter.GasConsumed, result.Object);
@@ -128,7 +128,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public VmExecutionResult ExecuteMethod(
             IGasMeter gasMeter,
             IContractStateRepository repository,
-            CallData callData,
+            ICallData callData,
             ITransactionContext transactionContext)
         {
             this.logger.LogTrace("(){0}:{1}", nameof(callData.MethodName), callData.MethodName);
@@ -261,14 +261,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return contractAssembly.ExportedTypes.FirstOrDefault(x=>x.Name == typeName);
         }
 
-        internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress,
-            CallData callData)
+        internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress, IBaseContractTransactionData callData)
         {
             var builder = new StringBuilder();
 
             builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
             builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress(this.network)));
-            builder.Append(string.Format("{0}:{1},", nameof(callData.GasPrice), callData.GasPrice));
             builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.GasLimit), message.GasLimit, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
 
             if (callData.MethodParameters != null && callData.MethodParameters.Length > 0)
