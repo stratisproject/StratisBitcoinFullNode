@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Indicates the current state: executing (i.e. in progress) or idle.
+        /// Indicates the current state: idle, staking requested, staking in progress and stop staking requested.
         /// </summary>
         public enum CurrentState
         {
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Loop in which the node attempts to generate new POS blocks by staking coins from its wallet.</summary>
         private IAsyncLoop stakingLoop;
 
-        /// <summary>A flag that indicates if stake is on/off based on the <see cref="CurrentState"/> enum.</summary>
+        /// <summary>A flag that indicates the current state based on the <see cref="CurrentState"/> enum.</summary>
         private int currentState;
 
         /// <summary>
