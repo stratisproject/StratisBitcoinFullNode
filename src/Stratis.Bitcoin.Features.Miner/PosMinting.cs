@@ -413,8 +413,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
                 catch (OperationCanceledException)
                 {
-                        // Application stopping, nothing to do as the loop will be stopped.
-                    }
+                    // Application stopping, nothing to do as the loop will be stopped.
+                }
                 catch (MinerException me)
                 {
                     // Miner exceptions should be ignored. It means that the miner
