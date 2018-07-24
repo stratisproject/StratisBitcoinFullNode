@@ -49,15 +49,17 @@ namespace Stratis.SmartContracts.Core.Validation
         /// </summary>
         public static bool IsValidParam(MethodDefinition methodDefinition, ParameterDefinition param)
         {
-            if (methodDefinition.IsConstructor)
+            if (methodDefinition.IsConstructor && ParameterIsSmartContractState(param))
             {
-                if (param.ParameterType.FullName == typeof(ISmartContractState).FullName)
-                {
-                    return true;
-                }
+                return true;
             }
 
             return AllowedTypes.Contains(param.ParameterType.FullName);
+        }
+
+        private static bool ParameterIsSmartContractState(ParameterDefinition param)
+        {
+            return param.ParameterType.FullName == typeof(ISmartContractState).FullName;
         }
 
         public class MethodParamValidationResult : MethodDefinitionValidationResult
