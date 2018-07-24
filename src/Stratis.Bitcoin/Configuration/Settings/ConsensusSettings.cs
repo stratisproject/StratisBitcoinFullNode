@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             this.logger.LogTrace("(-)");
         }
-
+        
         /// <summary>Prints the help information on how to configure the Consensus settings to the logger.</summary>
         /// <param name="network">The network to use.</param>
         public static void PrintHelp(Network network)

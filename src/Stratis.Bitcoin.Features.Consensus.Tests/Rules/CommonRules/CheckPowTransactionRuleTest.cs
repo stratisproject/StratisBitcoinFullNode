@@ -10,14 +10,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class CheckPowTransactionRuleTest : TestConsensusRulesUnitTestBase
     {
-        private PowConsensusOptions options;
+        private ConsensusOptions options;
 
         private NBitcoin.Consensus consensus;
 
         public CheckPowTransactionRuleTest()
         {
             this.consensus = this.network.Consensus;
-            this.options = this.consensus.Option<PowConsensusOptions>();
+            this.options = this.consensus.Options;
         }
 
         [Fact]
@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
             transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
 
-            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             this.ruleContext.Consensus = this.network.Consensus;
             this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
             this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             var invalidTransaction = new Transaction();
 
-            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             this.ruleContext.Consensus = this.network.Consensus;
             this.ruleContext.ValidationContext.Block.Transactions.Add(validTransaction);
             this.ruleContext.ValidationContext.Block.Transactions.Add(invalidTransaction);

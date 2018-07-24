@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Initializes custom serializers for DBreeze engine.
         /// </summary>
-        public void Initialize(Network network) 
+        public void Initialize(Network network)
         {
             this.Network = network;
             CustomSerializator.ByteArraySerializator = this.Serializer;
@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             var serializable = obj as IBitcoinSerializable;
             if (serializable != null)
-                return serializable.ToBytes(network: this.Network);
+                return serializable.ToBytes(this.Network.Consensus.ConsensusFactory);
 
             var u256 = obj as uint256;
             if (u256 != null)
@@ -92,21 +92,21 @@ namespace Stratis.Bitcoin.Utilities
             if (type == typeof(Coins))
             {
                 var coin = new Coins();
-                coin.ReadWrite(bytes, network: this.Network);
+                coin.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
                 return coin;
             }
 
             if (type == typeof(BlockHeader))
             {
                 BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
-                header.ReadWrite(bytes, network: this.Network);
+                header.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
                 return header;
             }
 
             if (type == typeof(RewindData))
             {
                 var rewind = new RewindData();
-                rewind.ReadWrite(bytes, network: this.Network);
+                rewind.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
                 return rewind;
             }
 
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Utilities
                 return Block.Load(bytes, this.Network);
 
             if (type == typeof(BlockStake))
-                return new BlockStake(bytes);
+                return BlockStake.Load(bytes, this.Network);
 
             throw new NotSupportedException();
         }

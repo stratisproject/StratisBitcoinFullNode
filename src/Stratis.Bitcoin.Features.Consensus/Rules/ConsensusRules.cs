@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
         {
-            return new PowRuleContext(validationContext, this.Network.Consensus, consensusTip);
+            return new PowRuleContext(validationContext, this.Network.Consensus, consensusTip, this.DateTimeProvider.GetTimeOffset());
         }
 
         /// <inheritdoc />
@@ -46,9 +46,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override Task<uint256> RewindAsync()
+        public override async Task<RewindState> RewindAsync()
         {
-            return this.UtxoSet.Rewind();
+            return new RewindState()
+            {
+                BlockHash = await this.UtxoSet.Rewind().ConfigureAwait(false)
+            };
         }
     }
 
@@ -69,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, ILookaheadBlockPuller puller, IStakeChain stakeChain, IStakeValidator stakeValidator) 
+        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, ILookaheadBlockPuller puller, IStakeChain stakeChain, IStakeValidator stakeValidator)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, puller)
         {
             this.StakeChain = stakeChain;
@@ -79,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
         {
-            return new PosRuleContext(validationContext, this.Network.Consensus, consensusTip);
+            return new PosRuleContext(validationContext, this.Network.Consensus, consensusTip, this.DateTimeProvider.GetTimeOffset());
         }
     }
 }

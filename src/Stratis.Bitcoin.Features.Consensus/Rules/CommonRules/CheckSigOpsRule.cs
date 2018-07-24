@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
+    [PartialValidationRule(CanSkipValidation = true)]
     public class CheckSigOpsRule : ConsensusRule
     {
         /// <inheritdoc />
@@ -12,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.Block;
-            var options = context.Consensus.Option<PowConsensusOptions>();
+            ConsensusOptions options = context.Consensus.Options;
 
             long nSigOps = 0;
             foreach (Transaction tx in block.Transactions)

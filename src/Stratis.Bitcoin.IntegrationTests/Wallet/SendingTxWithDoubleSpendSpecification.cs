@@ -1,12 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using FluentAssertions;
-using NBitcoin;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Utilities.JsonErrors;
-using Xunit;
+﻿using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {

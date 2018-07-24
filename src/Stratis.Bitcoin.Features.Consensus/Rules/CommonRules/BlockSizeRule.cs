@@ -8,7 +8,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
     /// This rule will validate the block size and weight.
-    /// </summary>        
+    /// </summary>
+    [PartialValidationRule(CanSkipValidation = true)]
     public class BlockSizeRule : ConsensusRule
     {
         /// <inheritdoc />
@@ -18,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadBlockLength">The block does not contain any transactions.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            var options = context.Consensus.Option<PowConsensusOptions>();
+            var options = context.Consensus.Options;
 
             // After the coinbase witness nonce and commitment are verified,
             // we can check if the block weight passes (before we've checked the
@@ -55,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="block">Block that we get weight of.</param>
         /// <param name="powOptions">The pow options.</param>
         /// <returns>Block weight.</returns>
-        public long GetBlockWeight(Block block, PowConsensusOptions powOptions)
+        public long GetBlockWeight(Block block, ConsensusOptions powOptions)
         {
             return GetSize(this.Parent.Network, block, TransactionOptions.None) * (powOptions.WitnessScaleFactor - 1) + GetSize(this.Parent.Network, block, TransactionOptions.Witness);
         }

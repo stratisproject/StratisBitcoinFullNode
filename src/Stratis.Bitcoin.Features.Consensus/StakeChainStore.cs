@@ -42,11 +42,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.dBreezeCoinView = dBreezeCoinView;
             this.threshold = 5000; // Count of items in memory.
             this.thresholdWindow = Convert.ToInt32(this.threshold * 0.4); // A window threshold.
-            this.genesis = new BlockStake(this.network.GetGenesis())
-            {
-                HashProof = this.network.GenesisHash,
-                Flags = BlockFlag.BLOCK_STAKE_MODIFIER
-            };
+            this.genesis = BlockStake.Load(this.network.GetGenesis());
+            this.genesis.HashProof = this.network.GenesisHash;
+            this.genesis.Flags = BlockFlag.BLOCK_STAKE_MODIFIER;
         }
 
         public async Task LoadAsync()

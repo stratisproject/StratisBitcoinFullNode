@@ -438,12 +438,12 @@ namespace NBitcoin
 
         public virtual bool CanGetScriptCode(Network network)
         {
-                return this._OverrideScriptCode != null || !this.ScriptPubKey.IsPayToScriptHash(network) && !PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(network, this.ScriptPubKey);
+                return this._OverrideScriptCode != null || !this.ScriptPubKey.IsPayToScriptHash(network) && !PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(this.ScriptPubKey);
         }
 
         public virtual HashVersion GetHashVersion(Network network)
         {
-            if(PayToWitTemplate.Instance.CheckScriptPubKey(network, this.ScriptPubKey))
+            if(PayToWitTemplate.Instance.CheckScriptPubKey(this.ScriptPubKey))
                 return HashVersion.Witness;
             return HashVersion.Original;
         }
@@ -575,7 +575,7 @@ namespace NBitcoin
 
         }
 
-        internal ScriptCoin(OutPoint fromOutpoint, TxOut fromTxOut, Script redeem)
+        public ScriptCoin(OutPoint fromOutpoint, TxOut fromTxOut, Script redeem)
             : base(fromOutpoint, fromTxOut)
         {
             this.Redeem = redeem;
@@ -683,7 +683,7 @@ namespace NBitcoin
             }
             if(expectedDestination is ScriptId)
             {
-                if(PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(network, this.Redeem))
+                if(PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(this.Redeem))
                 {
                     throw new ArgumentException("The redeem script provided must be the witness one, not the P2SH one");
                 }
@@ -726,13 +726,13 @@ namespace NBitcoin
 
         public override bool CanGetScriptCode(Network network)
         {
-                return this._OverrideScriptCode != null || !this.IsP2SH || !PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(network, this.Redeem);
+                return this._OverrideScriptCode != null || !this.IsP2SH || !PayToWitScriptHashTemplate.Instance.CheckScriptPubKey(this.Redeem);
         }
 
         public override HashVersion GetHashVersion(Network network)
         {
-            bool isWitness = PayToWitTemplate.Instance.CheckScriptPubKey(network, this.ScriptPubKey) ||
-                            PayToWitTemplate.Instance.CheckScriptPubKey(network, this.Redeem) || this.RedeemType == RedeemType.WitnessV0;
+            bool isWitness = PayToWitTemplate.Instance.CheckScriptPubKey(this.ScriptPubKey) ||
+                            PayToWitTemplate.Instance.CheckScriptPubKey(this.Redeem) || this.RedeemType == RedeemType.WitnessV0;
             return isWitness ? HashVersion.Witness : HashVersion.Original;
         }
 

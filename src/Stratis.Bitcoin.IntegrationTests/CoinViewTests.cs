@@ -24,10 +24,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class CoinViewTests
     {
-        /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
-
-        /// <summary>Provider of binary (de)serialization for data stored in the database.</summary>
+        private readonly Network network;
         private readonly DBreezeSerializer dbreezeSerializer;
 
         /// <summary>
@@ -36,8 +34,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         public CoinViewTests()
         {
             this.loggerFactory = new LoggerFactory();
+            this.network = Network.Main;
             this.dbreezeSerializer = new DBreezeSerializer();
-            this.dbreezeSerializer.Initialize(Network.Main);
+            this.dbreezeSerializer.Initialize(this.network);
         }
 
         [Fact]
@@ -46,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeContext ctx = NodeContext.Create(this))
             {
                 Block genesis = ctx.Network.GetGenesis();
-                var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash ,0);
+                var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash, 0);
                 ChainedHeader chained = this.MakeNext(genesisChainedHeader, ctx.Network);
                 ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock).Wait();
                 Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
@@ -261,23 +260,23 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanSaveChainIncrementally()
         {
-                using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory))
-                {
-                    var chain = new ConcurrentChain(Network.RegTest);
-                    repo.LoadAsync(chain).GetAwaiter().GetResult();
-                    Assert.True(chain.Tip == chain.Genesis);
-                    chain = new ConcurrentChain(Network.RegTest);
-                    ChainedHeader tip = this.AppendBlock(chain);
-                    repo.SaveAsync(chain).GetAwaiter().GetResult();
-                    var newChain = new ConcurrentChain(Network.RegTest);
-                    repo.LoadAsync(newChain).GetAwaiter().GetResult();
-                    Assert.Equal(tip, newChain.Tip);
-                    tip = this.AppendBlock(chain);
-                    repo.SaveAsync(chain).GetAwaiter().GetResult();
-                    newChain = new ConcurrentChain(Network.RegTest);
-                    repo.LoadAsync(newChain).GetAwaiter().GetResult();
-                    Assert.Equal(tip, newChain.Tip);
-                }
+            using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory))
+            {
+                var chain = new ConcurrentChain(Network.RegTest);
+                repo.LoadAsync(chain).GetAwaiter().GetResult();
+                Assert.True(chain.Tip == chain.Genesis);
+                chain = new ConcurrentChain(Network.RegTest);
+                ChainedHeader tip = this.AppendBlock(chain);
+                repo.SaveAsync(chain).GetAwaiter().GetResult();
+                var newChain = new ConcurrentChain(Network.RegTest);
+                repo.LoadAsync(newChain).GetAwaiter().GetResult();
+                Assert.Equal(tip, newChain.Tip);
+                tip = this.AppendBlock(chain);
+                repo.SaveAsync(chain).GetAwaiter().GetResult();
+                newChain = new ConcurrentChain(Network.RegTest);
+                repo.LoadAsync(newChain).GetAwaiter().GetResult();
+                Assert.Equal(tip, newChain.Tip);
+            }
         }
 
         public ChainedHeader AppendBlock(ChainedHeader previous, params ConcurrentChain[] chains)
@@ -286,8 +285,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             uint nonce = RandomUtils.GetUInt32();
             foreach (ConcurrentChain chain in chains)
             {
-                var block = new Block();
-                block.AddTransaction(new Transaction());
+                Block block = this.network.CreateBlock();
+                block.AddTransaction(this.network.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
                 block.Header.Nonce = nonce;
@@ -324,12 +323,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Flags = consensusFlags,
             };
 
-            Network.Main.Consensus.Options = new PowConsensusOptions();
+            Network.Main.Consensus.Options = new ConsensusOptions();
             context.Consensus = Network.Main.Consensus;
             new WitnessCommitmentsRule().RunAsync(context).GetAwaiter().GetResult();
 
             var rule = new CheckPowTransactionRule();
-            var options = Network.Main.Consensus.Option<PowConsensusOptions>();
+            var options = Network.Main.Consensus.Options;
             foreach (Transaction tx in block.Transactions)
                 rule.CheckTransaction(Network.Main, options, tx);
         }

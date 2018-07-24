@@ -10,14 +10,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class CheckPosTransactionRuleTest : TestPosConsensusRulesUnitTestBase
     {
-        public CheckPosTransactionRuleTest()
-        {
-        }
-
         [Fact]
         public void CheckTransaction_TxOutsAreEmpty_TransactionIsCoinBase_DoesNotThrowException()
         {
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(),
@@ -34,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public void CheckTransaction_TxOutsAreEmpty_TransactionIsCoinStake_DoesNotThrowException()
         {
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(new uint256(15), 1),
@@ -52,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public void CheckTransaction_TxOutsAreNotEmptyDoesNotThrowException()
         {
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(new uint256(15), 1),
@@ -68,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public void CheckTransaction_TxOutsArePartiallyEmpty_TransactionNotCoinBaseOrCoinStake_ThrowsBadTransactionEmptyOutputConsensusErrorException()
         {
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(new uint256(15), 1),
@@ -88,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BlockPassesCheckTransaction_DoesNotThrowExceptionAsync()
         {
-            var transaction = new Transaction();
+            var transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(),
@@ -103,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             {
                 ValidationContext = new ValidationContext()
                 {
-                    Block = new Block()
+                    Block = this.network.CreateBlock()
                 }
             };
 
@@ -116,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BlockFailsCheckTransaction_ThrowsBadTransactionEmptyOutputConsensusErrorExceptionAsync()
         {
-            var validTransaction = new Transaction();
+            var validTransaction = this.network.CreateTransaction();
             validTransaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(),
@@ -127,7 +123,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.True(validTransaction.IsCoinBase);
             Assert.True(validTransaction.Outputs.All(t => t.IsEmpty));
 
-            var invalidTransaction = new Transaction();
+            var invalidTransaction = this.network.CreateTransaction();
             invalidTransaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(new uint256(15), 1),
@@ -139,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.False(invalidTransaction.IsCoinBase);
             Assert.False(invalidTransaction.IsCoinStake);
 
-            this.ruleContext.ValidationContext.Block = new Block();
+            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             this.ruleContext.ValidationContext.Block.Transactions.Add(validTransaction);
             this.ruleContext.ValidationContext.Block.Transactions.Add(invalidTransaction);
 

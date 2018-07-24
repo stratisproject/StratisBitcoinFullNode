@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
@@ -15,12 +16,12 @@ namespace Stratis.Bitcoin.Connection
     public interface IPeerBanning
     {
         /// <summary>
-        /// Set a peer as banned.
+        /// Bans and disconnects the peer.
         /// </summary>
         /// <param name="endpoint">The endpoint to set that it was banned.</param>
         /// <param name="banTimeSeconds">The time in seconds this peer should be banned.</param>
         /// <param name="reason">An optional reason for the ban, the 'reason' is only use for tracing.</param>
-        void BanPeer(IPEndPoint endpoint, int banTimeSeconds, string reason = null);
+        void BanAndDisconnectPeer(IPEndPoint endpoint, int banTimeSeconds, string reason = null);
 
         /// <summary>
         /// Check if a peer is banned.
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Functionality of date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Keeps a set of peers discovered on the network in cache and on disk.</summary> 
+        /// <summary>Keeps a set of peers discovered on the network in cache and on disk.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
         public PeerBanning(IConnectionManager connectionManager, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager)
@@ -57,7 +58,7 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <inheritdoc />
-        public void BanPeer(IPEndPoint endpoint, int banTimeSeconds, string reason = null)
+        public void BanAndDisconnectPeer(IPEndPoint endpoint, int banTimeSeconds, string reason = null)
         {
             Guard.NotNull(endpoint, nameof(endpoint));
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(endpoint), endpoint, nameof(reason), reason);
@@ -68,7 +69,7 @@ namespace Stratis.Bitcoin.Connection
 
             if (peer != null)
             {
-                var peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                var peerBehavior = peer.Behavior<IConnectionManagerBehavior>();
                 if (!peerBehavior.Whitelisted)
                 {
                     peer.Disconnect($"The peer was banned, reason: {reason}");

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
@@ -21,7 +20,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private CoreNode stratisSender;
         private CoreNode stratisReceiver;
         private Transaction transaction;
-        private ErrorResult errorResult;
         private MempoolValidationState mempoolValidationState;
         private HdAddress receivingAddress;
 
@@ -64,10 +62,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             var total = this.stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
             total.Should().Equals(Money.COIN * 105 * 50);
- 
+
             // sync both nodes
-            this.stratisSender.CreateRPCClient().AddNode(stratisReceiver.Endpoint, true);
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
+            this.stratisSender.CreateRPCClient().AddNode(this.stratisReceiver.Endpoint, true);
+            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.stratisReceiver, this.stratisSender));
         }
 
         private void coins_first_sent_to_receiving_wallet()
@@ -95,12 +93,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private void receiving_node_attempts_to_double_spend_mempool_doesnotaccept()
         {
             var unusedAddress = this.stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-            var transactionCloned = this.transaction.Clone();
+            var transactionCloned = this.stratisReceiver.FullNode.Network.CreateTransaction(this.transaction.ToBytes());
             transactionCloned.Outputs[1].ScriptPubKey = unusedAddress.ScriptPubKey;
             this.stratisReceiver.FullNode.MempoolManager().Validator.AcceptToMemoryPool(this.mempoolValidationState, transactionCloned).Result.Should().BeFalse();
         }
 
-       private void trx_is_mined_into_a_block_and_removed_from_mempools()
+        private void trx_is_mined_into_a_block_and_removed_from_mempools()
         {
             new SharedSteps().MineBlocks(1, this.stratisSender, "account 0", "mywallet", "123456", 16360L);
 

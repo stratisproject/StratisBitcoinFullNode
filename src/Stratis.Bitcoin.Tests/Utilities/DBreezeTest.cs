@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Block genesis = network.GetGenesis();
             var coins = new Coins(genesis.Transactions[0], 0);
 
-            var result = (Coins)this.dbreezeSerializer.Deserializer(coins.ToBytes(network: Network.StratisRegTest), typeof(Coins));
+            var result = (Coins)this.dbreezeSerializer.Deserializer(coins.ToBytes(Network.StratisRegTest.Consensus.ConsensusFactory), typeof(Coins));
 
             Assert.Equal(coins.CoinBase, result.CoinBase);
             Assert.Equal(coins.Height, result.Height);
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Block genesis = network.GetGenesis();
             BlockHeader blockHeader = genesis.Header;
 
-            var result = (BlockHeader)this.dbreezeSerializer.Deserializer(blockHeader.ToBytes(network: Network.StratisRegTest), typeof(BlockHeader));
+            var result = (BlockHeader)this.dbreezeSerializer.Deserializer(blockHeader.ToBytes(Network.StratisRegTest.Consensus.ConsensusFactory), typeof(BlockHeader));
 
             Assert.Equal(blockHeader.GetHash(), result.GetHash());
         }
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             Network network = Network.StratisRegTest;
             Block block = network.GetGenesis();
 
-            var result = (Block)this.dbreezeSerializer.Deserializer(block.ToBytes(network: Network.StratisRegTest), typeof(Block));
+            var result = (Block)this.dbreezeSerializer.Deserializer(block.ToBytes(Network.StratisRegTest.Consensus.ConsensusFactory), typeof(Block));
 
             Assert.Equal(block.GetHash(), result.GetHash());
         }

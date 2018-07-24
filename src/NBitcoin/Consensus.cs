@@ -24,13 +24,6 @@ namespace NBitcoin
     public class Consensus
     {
         /// <summary>
-        /// An extension to <see cref="Consensus"/> to enable additional options to the consensus data.
-        /// </summary>
-        public class ConsensusOptions
-        {
-        }
-
-        /// <summary>
         /// How many blocks should be on top of a coinbase transaction until its outputs are considered spendable.
         /// </summary>
         public long CoinbaseMaturity { get; set; }
@@ -174,33 +167,5 @@ namespace NBitcoin
         /// A factory that enables overloading base types.
         /// </summary>
         public ConsensusFactory ConsensusFactory { get; set; }
-
-        public virtual Consensus Clone()
-        {
-            return new Consensus
-            {
-                BIP34Hash = this.BIP34Hash,
-                HashGenesisBlock = this.HashGenesisBlock,
-                MajorityEnforceBlockUpgrade = this.MajorityEnforceBlockUpgrade,
-                MajorityRejectBlockOutdated = this.MajorityRejectBlockOutdated,
-                MajorityWindow = this.MajorityWindow,
-                MinerConfirmationWindow = this.MinerConfirmationWindow,
-                PowAllowMinDifficultyBlocks = this.PowAllowMinDifficultyBlocks,
-                PowLimit = this.PowLimit,
-                PowNoRetargeting = this.PowNoRetargeting,
-                PowTargetSpacing = this.PowTargetSpacing,
-                PowTargetTimespan = this.PowTargetTimespan,
-                RuleChangeActivationThreshold = this.RuleChangeActivationThreshold,
-                SubsidyHalvingInterval = this.SubsidyHalvingInterval,
-                MinimumChainWork = this.MinimumChainWork,
-                CoinType = this.CoinType,
-                IsProofOfStake = this.IsProofOfStake,
-                LastPOWBlock = this.LastPOWBlock,
-                ProofOfStakeLimit = this.ProofOfStakeLimit,
-                ProofOfStakeLimitV2 = this.ProofOfStakeLimitV2,
-                DefaultAssumeValid = this.DefaultAssumeValid,
-                ConsensusFactory = this.ConsensusFactory,
-            };
-        }
     }
 }

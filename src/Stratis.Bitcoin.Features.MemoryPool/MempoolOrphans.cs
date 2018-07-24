@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
@@ -281,11 +280,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                             // witness-stripped transactions, as they can have been malleated.
                             // See https://github.com/bitcoin/bitcoin/issues/8279 for details.
 
-                            lock (this.lockObject)
-                            {
-                                this.recentRejects.TryAdd(orphanHash, orphanHash);
-                            }
-                        }
+                            this.AddToRecentRejects(orphanHash);
+                         }
                     }
 
                     // TODO: implement sanity checks.
@@ -302,6 +298,22 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         this.EraseOrphanTxLock(hash);
                     }
                 }
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Adds transaction hash to recent rejects.
+        /// </summary>
+        /// <param name="orphanHash">Hash to add.</param>
+        public void AddToRecentRejects(uint256 orphanHash)
+        {
+            this.logger.LogTrace("{0}:'{1}'", nameof(orphanHash), orphanHash);
+
+            lock (this.lockObject)
+            {
+                this.recentRejects.TryAdd(orphanHash, orphanHash);
             }
 
             this.logger.LogTrace("(-)");
@@ -444,7 +456,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // 100 orphans, each of which is at most 99,999 bytes big is
                 // at most 10 megabytes of orphans and somewhat more byprev index (in the worst case):
                 int sz = MempoolValidator.GetTransactionWeight(tx, this.Validator.ConsensusOptions);
-                if (sz >= this.chain.Network.Consensus.Option<PowConsensusOptions>().MaxStandardTxWeight)
+                if (sz >= this.chain.Network.Consensus.Options.MaxStandardTxWeight)
                 {
                     this.logger.LogInformation("ignoring large orphan tx (size: {0}, hash: {1})", sz, hash);
                     this.logger.LogTrace("(-)[LARGE_ORPH]:false");

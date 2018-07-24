@@ -59,14 +59,17 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>Specification of the network the node runs on.</summary>
         private Network network; // Not readonly because of ValidateAddress
 
+        /// <summary>An interface implementation for the blockstore.</summary>
+        private readonly IBlockStore blockStore;
 
-        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory, 
-            IDateTimeProvider dateTimeProvider, IChainState chainState, 
+        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory,
+            IDateTimeProvider dateTimeProvider, IChainState chainState,
             NodeSettings nodeSettings, IConnectionManager connectionManager,
             ConcurrentChain chain, Network network, IPooledTransaction pooledTransaction = null,
             IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
             IGetUnspentTransaction getUnspentTransaction = null,
-            INetworkDifficulty networkDifficulty = null)
+            INetworkDifficulty networkDifficulty = null,
+            IBlockStore blockStore = null)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(network, nameof(network));
@@ -89,6 +92,7 @@ namespace Stratis.Bitcoin.Controllers
             this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
             this.getUnspentTransaction = getUnspentTransaction;
             this.networkDifficulty = networkDifficulty;
+            this.blockStore = blockStore;
         }
 
         /// <summary>
@@ -99,7 +103,7 @@ namespace Stratis.Bitcoin.Controllers
         [Route("status")]
         public IActionResult Status()
         {
-            // Output has been merged with RPC's GetInfo() since they provided similar functionality. 
+            // Output has been merged with RPC's GetInfo() since they provided similar functionality.
             var model = new StatusModel
             {
                 Version = this.fullNode.Version?.ToString() ?? "0",
@@ -129,14 +133,14 @@ namespace Stratis.Bitcoin.Controllers
             // Add the details of connected nodes.
             foreach (INetworkPeer peer in this.connectionManager.ConnectedPeers)
             {
-                var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                var connectionManagerBehavior = peer.Behavior<IConnectionManagerBehavior>();
                 var chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
 
                 var connectedPeer = new ConnectedPeerModel
                 {
                     Version = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]",
                     RemoteSocketEndpoint = peer.RemoteSocketEndpoint.ToString(),
-                    TipHeight = chainHeadersBehavior.PendingTip != null ? chainHeadersBehavior.PendingTip.Height : peer.PeerVersion?.StartHeight ?? -1,
+                    TipHeight = chainHeadersBehavior.ExpectedPeerTip != null ? chainHeadersBehavior.ExpectedPeerTip.Height : peer.PeerVersion?.StartHeight ?? -1,
                     IsInbound = connectionManagerBehavior.Inbound
                 };
 
@@ -196,8 +200,8 @@ namespace Stratis.Bitcoin.Controllers
         }
 
         /// <summary>
-        /// Gets a raw, possibly pooled, transaction from the full node. 
-        /// API implementation of RPC call. 
+        /// Gets a raw, possibly pooled, transaction from the full node.
+        /// API implementation of RPC call.
         /// </summary>
         /// <param name="trxid">The transaction hash.</param>
         /// <param name="verbose"><c>True if <see cref="TransactionVerboseModel"/> is wanted.</c></param>
@@ -219,12 +223,11 @@ namespace Stratis.Bitcoin.Controllers
                     throw new ArgumentException(nameof(trxid));
                 }
 
-                // First tries to find a pooledTransaction. If can't, will retrieve it from the blockstore if it exists. 
+                // First tries to find a pooledTransaction. If can't, will retrieve it from the blockstore if it exists.
                 Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(txid).ConfigureAwait(false) : null;
                 if (trx == null)
                 {
-                    var blockStore = this.fullNode.NodeFeature<IBlockStore>();
-                    trx = blockStore != null ? await blockStore.GetTrxAsync(txid).ConfigureAwait(false) : null;
+                    trx = this.blockStore != null ? await this.blockStore.GetTrxAsync(txid).ConfigureAwait(false) : null;
                 }
 
                 if (trx == null)
@@ -386,7 +389,7 @@ namespace Stratis.Bitcoin.Controllers
         }
 
         /// <summary>
-        /// Retrieves the difficulty target of the full node's network. 
+        /// Retrieves the difficulty target of the full node's network.
         /// </summary>
         /// <param name="networkDifficulty">The network difficulty interface.</param>
         /// <returns>A network difficulty <see cref="Target"/>. Returns <c>null</c> if fails.</returns>

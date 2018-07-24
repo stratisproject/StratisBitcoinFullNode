@@ -13,6 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that validates witness commitments.
     /// </summary>
+    [PartialValidationRule(CanSkipValidation = true)]
     public class WitnessCommitmentsRule : ConsensusRule
     {
         /// <inheritdoc />
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 int commitpos = this.GetWitnessCommitmentIndex(block);
                 if (commitpos != -1)
                 {
-                    uint256 hashWitness = BlockWitnessMerkleRoot(block, out bool malleated);
+                    uint256 hashWitness = this.BlockWitnessMerkleRoot(block, out bool malleated);
 
                     // The malleation check is ignored; as the transaction tree itself
                     // already does not permit it, it is impossible to trigger in the

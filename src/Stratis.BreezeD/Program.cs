@@ -15,12 +15,7 @@ namespace Stratis.BreezeD
 {
     public class Program
     {
-        public static void Main(string[] args)
-        {
-            MainAsync(args).Wait();
-        }
-
-        public static async Task MainAsync(string[] args)
+        public static async Task Main(string[] args)
         {
             try
             {

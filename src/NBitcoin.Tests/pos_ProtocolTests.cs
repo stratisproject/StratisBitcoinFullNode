@@ -1,5 +1,4 @@
-﻿#if !NOSOCKET
-namespace NBitcoin.Tests
+﻿namespace NBitcoin.Tests
 {
     public class pos_ProtocolTests
     {
@@ -573,5 +572,3 @@ namespace NBitcoin.Tests
 
 */    }
 }
-#endif
-      

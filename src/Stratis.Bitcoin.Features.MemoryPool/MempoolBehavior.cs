@@ -76,6 +76,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         private readonly object lockObject;
 
+        /// <summary>
+        /// If the attached peer is whitelisted for relaying.
+        /// This is turned on if the peer is whitelisted and whitelistrelay mempool option is also on.
+        /// </summary>
+        private bool isPeerWhitelistedForRelay;
+
+        /// <summary>
+        /// Whether the attached peer should only be relayed blocks (no transactions).
+        /// </summary>
+        private bool isBlocksOnlyMode;
+
         public MempoolBehavior(
             IMempoolValidator validator,
             MempoolManager mempoolManager,
@@ -99,10 +110,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.lockObject = new object();
             this.inventoryTxToSend = new HashSet<uint256>();
             this.filterInventoryKnown = new HashSet<uint256>();
+            this.isPeerWhitelistedForRelay = false;
+            this.isBlocksOnlyMode = false;
         }
-        
+
         /// <summary>Time of last memory pool request in unix time.</summary>
-        public long LastMempoolReq { get; private set; } 
+        public long LastMempoolReq { get; private set; }
 
         /// <inheritdoc />
         protected override void AttachCore()
@@ -110,6 +123,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.logger.LogTrace("()");
 
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
+            this.isPeerWhitelistedForRelay = this.AttachedPeer.Behavior<IConnectionManagerBehavior>().Whitelisted && this.mempoolManager.mempoolSettings.WhiteListRelay;
+            this.isBlocksOnlyMode = !this.connectionManager.ConnectionSettings.RelayTxes && !this.isPeerWhitelistedForRelay;
 
             this.logger.LogTrace("(-)");
         }
@@ -293,11 +308,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 return;
             }
 
-            bool blocksOnly = !this.connectionManager.ConnectionSettings.RelayTxes;
-            // Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistrelay is true
-            if (peer.Behavior<ConnectionManagerBehavior>().Whitelisted && this.mempoolManager.mempoolSettings.WhiteListRelay)
-                blocksOnly = false;
-
             //uint32_t nFetchFlags = GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
 
             var send = new GetDataPayload();
@@ -305,7 +315,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 //inv.type |= nFetchFlags;
 
-                if (blocksOnly)
+                // TODO: This is incorrect, in blocks only mode we should just add to known inventory but not relay
+                if (this.isBlocksOnlyMode)
                     this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
 
                 if (await this.orphans.AlreadyHaveAsync(inv.Hash))
@@ -322,7 +333,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 foreach (InventoryVector inventoryVector in send.Inventory)
                 {
-                    this.filterInventoryKnown.Add(inventoryVector.Hash);                    
+                    this.filterInventoryKnown.Add(inventoryVector.Hash);
                 }
             }
 
@@ -375,13 +386,22 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private async Task ProcessTxPayloadAsync(INetworkPeer peer, TxPayload transactionPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(peer), peer.RemoteSocketEndpoint, nameof(transactionPayload), nameof(transactionPayload.Obj), transactionPayload?.Obj?.GetHash());
+
+            // Stop processing the transaction early if we are in blocks only mode.
+            if (this.isBlocksOnlyMode)
+            {
+                this.logger.LogInformation("Transaction sent in violation of protocol from peer '{0}'.", peer.RemoteSocketEndpoint);
+                this.logger.LogTrace("(-)[BLOCKSONLY]");
+                return;
+            }
+
             Transaction trx = transactionPayload.Obj;
             uint256 trxHash = trx.GetHash();
 
             // add to local filter
             lock (this.lockObject)
             {
-                this.filterInventoryKnown.Add(trxHash);                
+                this.filterInventoryKnown.Add(trxHash);
             }
             this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", trxHash);
 
@@ -406,11 +426,34 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             else
             {
-                if (!trx.HasWitness && state.CorruptionPossible)
+                // Do not use rejection cache for witness transactions or
+                // witness-stripped transactions, as they can have been malleated.
+                // See https://github.com/bitcoin/bitcoin/issues/8279 for details.
+                if (!trx.HasWitness && !state.CorruptionPossible)
                 {
+                    this.orphans.AddToRecentRejects(trxHash);
                 }
 
-                // TODO: Implement Processes whitelistforcerelay
+                // Always relay transactions received from whitelisted peers, even
+                // if they were already in the mempool or rejected from it due
+                // to policy, allowing the node to function as a gateway for
+                // nodes hidden behind it.
+                //
+                // Never relay transactions that we would assign a non-zero DoS
+                // score for, as we expect peers to do the same with us in that
+                // case.
+                if (this.isPeerWhitelistedForRelay)
+                {
+                    if (!state.IsInvalid)
+                    {
+                        this.logger.LogInformation("Force relaying transaction ID '{0}' from whitelisted peer '{1}'.", trxHash, peer.RemoteSocketEndpoint);
+                        this.RelayTransaction(trxHash);
+                    }
+                    else
+                    {
+                        this.logger.LogInformation("Not relaying invalid transaction ID '{0}' from whitelisted peer '{1}' ({2}).", trxHash, peer.RemoteSocketEndpoint, state);
+                    }
+                }
             }
 
             if (state.IsInvalid)
@@ -456,7 +499,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 if (!this.filterInventoryKnown.Contains(hash))
                 {
-                    this.inventoryTxToSend.Add(hash);   
+                    this.inventoryTxToSend.Add(hash);
                 }
             }
 
@@ -499,7 +542,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>
         /// Sends transaction inventory to attached peer.
-        /// This is executed on a 10 second loop when MempoolSignaled is constructed.
+        /// This is executed on a 5 second loop when MempoolSignaled is constructed.
         /// </summary>
         public async Task SendTrickleAsync()
         {
@@ -514,13 +557,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             var transactionsToSend = new List<uint256>();
             lock (this.lockObject)
-            { 
+            {
                 if (!this.inventoryTxToSend.Any())
                 {
                     this.logger.LogTrace("(-)[NO_TXS]");
                     return;
                 }
-                            
+
                 this.logger.LogTrace("Creating list of transaction inventory to send.");
 
                 // Determine transactions to relay
@@ -539,7 +582,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         this.logger.LogTrace("Transaction ID '{0}' not added to inventory list, exists in known inventory filter.", hash);
                         continue;
                     }
-                   
+
                     //if (filterrate && txinfo.feeRate.GetFeePerK() < filterrate) // TODO:filterrate
                     //{
                     //  continue;

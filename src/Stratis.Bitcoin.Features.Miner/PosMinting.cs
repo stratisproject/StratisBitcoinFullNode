@@ -644,7 +644,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             var coinstakeContext = new CoinstakeContext();
-            coinstakeContext.CoinstakeTx = this.network.Consensus.ConsensusFactory.CreateTransaction();
+            coinstakeContext.CoinstakeTx = this.network.CreateTransaction();
             coinstakeContext.CoinstakeTx.Time = coinstakeTimestamp;
 
             // Search to current coinstake time.
@@ -783,7 +783,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.logger.LogTrace("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
-            
+
             // Get reward for newly created block.
             long reward = fees + this.consensusLoop.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
             if (reward <= 0)
@@ -872,8 +872,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 // Script of the first coinstake input.
                 Script scriptPubKeyKernel = utxoStakeInfo.TxOut.ScriptPubKey;
-                if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(this.network, scriptPubKeyKernel)
-                    && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(this.network, scriptPubKeyKernel))
+                if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
+                    && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
                 {
                     context.Logger.LogTrace("Kernel type must be P2PK or P2PKH, kernel rejected.");
                     continue;
@@ -913,11 +913,12 @@ namespace Stratis.Bitcoin.Features.Miner
                         continue;
 
                     context.Logger.LogTrace("Trying with transaction time {0}...", txTime);
+
                     try
                     {
                         var prevoutStake = new OutPoint(utxoStakeInfo.UtxoSet.TransactionId, utxoStakeInfo.OutPoint.N);
 
-                        var contextInformation = new PosRuleContext(new BlockStake(block));
+                        var contextInformation = new PosRuleContext(BlockStake.Load(block));
 
                         this.stakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
 
@@ -1029,7 +1030,7 @@ namespace Stratis.Bitcoin.Features.Miner
             var res = new List<UtxoStakeDescription>();
 
             long currentValue = 0;
-            long requiredDepth = this.network.Consensus.Option<PosConsensusOptions>().GetStakeMinConfirmations(chainTip.Height + 1, this.network) - 1;
+            long requiredDepth = (this.network.Consensus.Options as PosConsensusOptions).GetStakeMinConfirmations(chainTip.Height + 1, this.network) - 1;
             foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions.OrderByDescending(x => x.TxOut.Value))
             {
                 int depth = this.GetDepthInMainChain(utxoStakeDescription);
@@ -1100,7 +1101,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ChainedHeader chainedBlock = this.chain.GetBlock(utxoStakeDescription.HashBlock);
 
             if (chainedBlock == null)
-                return this.mempoolLock.ReadAsync(() => this.mempool.Exists(utxoStakeDescription.UtxoSet.TransactionId) ? 0 : -1).GetAwaiter().GetResult(); 
+                return this.mempoolLock.ReadAsync(() => this.mempool.Exists(utxoStakeDescription.UtxoSet.TransactionId) ? 0 : -1).GetAwaiter().GetResult();
 
             return this.chain.Tip.Height - chainedBlock.Height + 1;
         }
@@ -1209,7 +1210,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("({0}:{1})", nameof(utxoCount), utxoCount);
 
             long maturityLimit = this.network.Consensus.CoinbaseMaturity;
-            long coinAgeLimit = this.network.Consensus.Option<PosConsensusOptions>().GetStakeMinConfirmations(chainTip.Height + 1, this.network);
+            long coinAgeLimit = (this.network.Consensus.Options as PosConsensusOptions).GetStakeMinConfirmations(chainTip.Height + 1, this.network);
             long requiredCoinAgeForStaking = Math.Max(maturityLimit, coinAgeLimit);
             this.logger.LogTrace("Required coin age for staking is {0}.", requiredCoinAgeForStaking);
 
