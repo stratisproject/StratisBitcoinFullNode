@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             {
             }
 
-            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken ct = default(CancellationToken))
+            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }

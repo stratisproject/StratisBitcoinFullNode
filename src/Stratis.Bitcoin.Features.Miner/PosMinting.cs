@@ -547,8 +547,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
+            this.logger.LogTrace("()");
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
-            IList<UnspentOutputReference> spendableTransactions = this.walletManager
+            List<UnspentOutputReference> spendableTransactions = this.walletManager
                 .GetSpendableTransactionsInWallet(walletSecret.WalletName, 1)
                 .Where(t => t != null).ToList();
 
@@ -558,7 +559,7 @@ namespace Stratis.Bitcoin.Features.Miner
             foreach (UnspentOutputReference outputReference in spendableTransactions)
             {
                 UnspentOutputs coinSet = fetchedCoinSet.UnspentOutputs
-                    .FirstOrDefault(f => f.TransactionId == outputReference.Transaction.Id);
+                    .FirstOrDefault(f => f?.TransactionId == outputReference.Transaction.Id);
                 if (coinSet == null || outputReference.Transaction.Index >= coinSet.Outputs.Length) continue;
 
                 TxOut utxo = coinSet.Outputs[outputReference.Transaction.Index];
@@ -568,14 +569,14 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (hashBlock == null) continue;
 
                 var utxoStakeDescription = new UtxoStakeDescription
-                           {
-                               TxOut = utxo,
-                               OutPoint = new OutPoint(coinSet.TransactionId, outputReference.Transaction.Index),
-                               Address = outputReference.Address,
-                               HashBlock = hashBlock,
-                               UtxoSet = coinSet,
-                               Secret = walletSecret // Temporary.
-                           };
+                   {
+                       TxOut = utxo,
+                       OutPoint = new OutPoint(coinSet.TransactionId, outputReference.Transaction.Index),
+                       Address = outputReference.Address,
+                       HashBlock = hashBlock,
+                       UtxoSet = coinSet,
+                       Secret = walletSecret // Temporary.
+                   };
                 utxoStakeDescriptions.Add(utxoStakeDescription);
 
                 this.logger.LogTrace("UTXO '{0}' with value {1} might be available for staking.", utxoStakeDescription.OutPoint, utxo.Value);
@@ -584,6 +585,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.logger.LogTrace("Wallet total staking balance is {0}.", new Money(utxoStakeDescriptions.Sum(d => d.TxOut.Value)));
+            this.logger.LogTrace("(-)");
             return utxoStakeDescriptions;
         }
 

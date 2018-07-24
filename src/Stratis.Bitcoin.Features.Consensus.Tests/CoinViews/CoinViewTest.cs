@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             {
             }
 
-            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken ct = default(CancellationToken))
+            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
             {
                 var fetchCoinResponse = new FetchCoinsResponse(new UnspentOutputs[0], new uint256(987263876253));
                 return Task.FromResult(fetchCoinResponse);

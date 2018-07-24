@@ -221,14 +221,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             
             var fetchedUtxos = spendableTransactions
                 .Select(t => new UnspentOutputs(t.Transaction.Id, new Coins()
-                           {
-                               CoinBase = false,
-                               CoinStake = false,
-                               Height = 0,
-                               Outputs = { new TxOut(t.Transaction.Amount ?? Money.Zero, t.Address.ScriptPubKey)},
-                               Time = milliseconds550MinutesAgo,
-                               Version = 1
-                           }))
+                   {
+                       CoinBase = false,
+                       CoinStake = false,
+                       Height = 0,
+                       Outputs = { new TxOut(t.Transaction.Amount ?? Money.Zero, t.Address.ScriptPubKey)},
+                       Time = milliseconds550MinutesAgo,
+                       Version = 1
+                   }))
                 .ToArray();
             var fetchCoinsResponse = new FetchCoinsResponse(fetchedUtxos, this.chain.Tip.HashBlock);
 
@@ -254,14 +254,20 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             utxoStakeDescriptions.Select(d => d.TxOut.Value).Where(v => v >= PosMinting.MinimumStakingCoinValue)
                 .Should().NotBeEmpty("big enough coins should be included");
 
-            //todo: check more precisely the actual content of the utxoStakeDescriptions collection, and make sure we have what we expected
+            var expectedAmounts = spendableTransactions.Select(s => s.Transaction.Amount)
+                .Where(a => a > PosMinting.MinimumStakingCoinValue).ToArray();
+            utxoStakeDescriptions.Count.Should().Be(expectedAmounts.Length);
+
+            utxoStakeDescriptions.Select(d => d.TxOut.Value).Should().Contain(expectedAmounts);
         }
 
         public void AddAccountWithSpendableOutputs(Wallet.Wallet wallet, string password, DateTimeOffset creationTime)
         {
             var account = new HdAccount();
-            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(15), Index = 0, Amount = 10 * Money.CENT } } });
-            account.ExternalAddresses.Add(new HdAddress { Index = 2, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(18), Index = 0, Amount = 2 * Money.COIN } } });
+            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(15), Index = 0, Amount = PosMinting.MinimumStakingCoinValue } } });
+            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(16), Index = 0, Amount = PosMinting.MinimumStakingCoinValue + 1} } });
+            account.ExternalAddresses.Add(new HdAddress { Index = 2, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(17), Index = 0, Amount = 2 * Money.COIN } } });
+            account.ExternalAddresses.Add(new HdAddress { Index = 2, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(18), Index = 0, Amount = 2 * Money.CENT } } });
             account.ExternalAddresses.Add(new HdAddress { Index = 3, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(19), Index = 0, Amount = 1 * Money.NANO } } });
             account.ExternalAddresses.Add(new HdAddress { Index = 4, Transactions = null });
             wallet.AccountsRoot.Add(new AccountRoot(){ Accounts = new [] { account }, CoinType = CoinType.Stratis});

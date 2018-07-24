@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// </para>
         /// </summary>
         /// <param name="walletSecret">Credentials to the wallet with which will be used for staking.</param>
-        Task GenerateBlocksAsync(PosMinting.WalletSecret walletSecret, CancellationToken ct);
+        Task GenerateBlocksAsync(PosMinting.WalletSecret walletSecret, CancellationToken cancellationToken);
 
         /// <summary>
         /// Calculates staking difficulty for a specific block.
