@@ -5,7 +5,7 @@ using Mono.Cecil;
 namespace Stratis.ModuleValidation.Net
 {
     /// <summary>
-    /// Validates that a does not have any methods
+    /// Validates that a <see cref="TypeDefinition"/> does not have any methods
     /// </summary>
     public class TypeHasMethodsValidator : ITypeDefinitionValidator
     {
