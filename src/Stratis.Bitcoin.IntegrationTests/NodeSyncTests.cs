@@ -7,12 +7,11 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
-    using Stratis.Bitcoin.Utilities.Extensions;
-
     public class NodeSyncTests
     {
         [Fact]

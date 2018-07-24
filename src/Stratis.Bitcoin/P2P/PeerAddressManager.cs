@@ -103,6 +103,7 @@ namespace Stratis.Bitcoin.P2P
             this.peers.TryAdd(peerToAdd.Endpoint, peerToAdd);
         }
 
+        /// <inheritdoc/>
         public void RemovePeer(IPEndPoint endPoint, IPAddress source)
         {
             if (!endPoint.Address.IsRoutable(true))

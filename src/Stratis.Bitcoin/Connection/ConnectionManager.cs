@@ -293,6 +293,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         internal void RemoveConnectedPeer(INetworkPeer peer, string reason)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(reason), reason);
@@ -368,8 +369,8 @@ namespace Stratis.Bitcoin.Connection
             }
 
             this.peerAddressManager.RemovePeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
-            List<IPEndPoint> matchingAddNodes = this.ConnectionSettings.AddNode.Where(p => p.Match(ipEndpoint)).ToList();
-            matchingAddNodes.ForEach(m => this.ConnectionSettings.AddNode.Remove(m));
+            IEnumerable<IPEndPoint> matchingAddNodes = this.ConnectionSettings.AddNode.Where(p => p.Match(ipEndpoint));
+            foreach (IPEndPoint m in matchingAddNodes) this.ConnectionSettings.AddNode.Remove(m);
 
             this.logger.LogTrace("(-)");
         }

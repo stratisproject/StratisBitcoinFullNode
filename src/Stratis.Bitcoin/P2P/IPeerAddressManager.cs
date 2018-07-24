@@ -32,7 +32,13 @@
         /// </para>
         /// </summary>
         void AddPeers(IPEndPoint[] endPoints, IPAddress source);
-
+        
+        /// <summary>
+        /// Remove a peer from the <see cref="Peers"/> dictionary.
+        /// <para>
+        /// Only routable IP addresses will be removed since only routable IP addressed can be added. <see cref="IpExtensions.IsRoutable(IPAddress, bool)"/>
+        /// </para>
+        /// </summary>
         void RemovePeer(IPEndPoint endPoint, IPAddress source);
 
         /// <summary> Find a peer by endpoint.</summary>

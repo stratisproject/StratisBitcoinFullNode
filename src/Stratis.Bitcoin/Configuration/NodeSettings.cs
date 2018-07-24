@@ -372,6 +372,7 @@ namespace Stratis.Bitcoin.Configuration
             ConnectionManagerSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             this.LoggerFactory?.Dispose();

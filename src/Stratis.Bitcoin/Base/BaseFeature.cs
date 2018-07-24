@@ -166,11 +166,7 @@ namespace Stratis.Bitcoin.Base
             this.loggerFactory = loggerFactory;
             this.dbreezeSerializer = dbreezeSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.disposableResources = new List<IDisposable>()
-                                           {
-                                               this.loggerFactory,
-                                               this.nodeSettings
-                                           };
+            this.disposableResources = new List<IDisposable>();
         }
 
         /// <inheritdoc />
