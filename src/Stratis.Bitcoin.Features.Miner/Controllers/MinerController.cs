@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Reflection;
 using System.Security;
 using Microsoft.AspNetCore.Mvc;
@@ -34,6 +33,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <summary>The wallet manager.</summary>
         private readonly IWalletManager walletManager;
 
+        /// <summary>Message to return if the call comes from the bitcoin network.</summary>
         private const string BitcoinNotUsedMsg =  "Method not used for Bitcoin";
 
         /// <summary>
