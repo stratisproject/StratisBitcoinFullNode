@@ -52,7 +52,6 @@ namespace Stratis.SmartContracts.Core.Validation
 
             return policy;
         }
-        
 
         public IEnumerable<IModuleDefinitionValidator> ModuleDefValidators => this.moduleDefValidators;
 
