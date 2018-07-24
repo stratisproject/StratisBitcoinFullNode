@@ -40,8 +40,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var options = new BlockDefinitionOptions
             {
-                BlockMaxWeight = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight,
-                BlockMaxSize = testContext.network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize,
+                BlockMaxWeight = testContext.network.Consensus.Options.MaxBlockWeight,
+                BlockMaxSize = testContext.network.Consensus.Options.MaxBlockSerializedSize,
                 BlockMinFeeRate = blockMinFeeRate
             };
 
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 this.entry = new TestMemPoolEntryHelper();
                 this.chain = new ConcurrentChain(this.network);
-                this.network.Consensus.Options = new PowConsensusOptions();
+                this.network.Consensus.Options = new ConsensusOptions();
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
