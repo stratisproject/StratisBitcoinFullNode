@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Microsoft.Extensions.Logging;
+
 using NBitcoin;
 using NBitcoin.Crypto;
 using NBitcoin.Protocol;
+
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
@@ -23,7 +26,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Miner
+namespace Stratis.Bitcoin.Features.Miner.PosMinting
 {
     /// <summary>
     /// <see cref="PosMinting"/> is used in order to generate new blocks. It involves a sort of lottery, similar to proof-of-work,
@@ -62,120 +65,8 @@ namespace Stratis.Bitcoin.Features.Miner
     /// and the new value depends on the kernel, it is hard to predict its value in the future.
     /// </para>
     /// </remarks>
-    public class PosMinting : IPosMinting
+    public partial class PosMinting : IPosMinting
     {
-        /// <summary>
-        /// Information related to UTXO that is required for staking.
-        /// </summary>
-        public class UtxoStakeDescription
-        {
-            /// <summary>Block's hash.</summary>
-            public uint256 HashBlock { get; set; }
-
-            /// <summary>UTXO that participates in staking. It's a part of <see cref="UtxoSet"/>.</summary>
-            public TxOut TxOut { get; set; }
-
-            /// <summary>Information about transaction id and index.</summary>
-            public OutPoint OutPoint { get; set; }
-
-            /// <summary>Address of the transaction that has spendable coins for staking.</summary>
-            public HdAddress Address { get; set; }
-
-            /// <summary>Selected outputs of a transaction.</summary>
-            public UnspentOutputs UtxoSet { get; set; }
-
-            /// <summary>Credentials to wallet that contains the private key for the staking UTXO.</summary>
-            public WalletSecret Secret { get; set; }
-
-            /// <summary>Private key that is needed for spending coins associated with the <see cref="Address"/>.</summary>
-            public Key Key { get; set; }
-        }
-
-        /// <summary>
-        /// Credentials to wallet that contains the private key for the staking UTXO.
-        /// </summary>
-        public class WalletSecret
-        {
-            /// <summary>Wallet's password that is needed for getting wallet's private key which is used for signing generated blocks.</summary>
-            public string WalletPassword { get; set; }
-
-            /// <summary>Name of the wallet which UTXOs are used for staking.</summary>
-            public string WalletName { get; set; }
-        }
-
-        /// <summary>
-        /// Information needed by the coinstake worker for finding the kernel.
-        /// </summary>
-        public class CoinstakeWorkerContext
-        {
-            /// <summary>Worker's ID / index number.</summary>
-            public int Index { get; set; }
-
-            /// <summary>Logger with worker's prefix.</summary>
-            public ILogger Logger { get; set; }
-
-            /// <summary>List of UTXO descriptions that the worker should check.</summary>
-            public List<UtxoStakeDescription> utxoStakeDescriptions { get; set; }
-
-            /// <summary>Information related to coinstake transaction.</summary>
-            public CoinstakeContext CoinstakeContext { get; set; }
-
-            /// <summary>Result shared by all workers. A structure that determines the kernel founder and the kernel UTXO that satisfies the target difficulty.</summary>
-            public CoinstakeWorkerResult Result { get; set; }
-        }
-
-        /// <summary>
-        /// Result of a task of coinstake worker that looks for kernel.
-        /// </summary>
-        public class CoinstakeWorkerResult
-        {
-            /// <summary>Invalid worker index as a sign that kernel was not found.</summary>
-            public const int KernelNotFound = -1;
-
-            /// <summary>Index of the worker that found the index, or <see cref="KernelNotFound"/> if no one found the kernel (yet).</summary>
-            private int kernelFoundIndex;
-
-            /// <summary>Index of the worker that found the index, or <see cref="KernelNotFound"/> if no one found the kernel (yet).</summary>
-            public int KernelFoundIndex
-            {
-                get { return this.kernelFoundIndex; }
-            }
-
-            /// <summary>UTXO that satisfied the target difficulty.</summary>
-            public UtxoStakeDescription KernelCoin { get; set; }
-
-            /// <summary>
-            /// Initializes an instance of the object.
-            /// </summary>
-            public CoinstakeWorkerResult()
-            {
-                this.kernelFoundIndex = KernelNotFound;
-                this.KernelCoin = null;
-            }
-
-            /// <summary>
-            /// Sets the founder of the kernel in thread-safe manner.
-            /// </summary>
-            /// <param name="WorkerIndex">Worker's index to set as the founder of the kernel.</param>
-            /// <returns><c>true</c> if the worker's index was set as the kernel founder, <c>false</c> if another worker index was set earlier.</returns>
-            public bool SetKernelFoundIndex(int WorkerIndex)
-            {
-                return Interlocked.CompareExchange(ref this.kernelFoundIndex, WorkerIndex, KernelNotFound) == KernelNotFound;
-            }
-        }
-
-        /// <summary>
-        /// Information about coinstake transaction and its private key.
-        /// </summary>
-        public class CoinstakeContext
-        {
-            /// <summary>Coinstake transaction being constructed.</summary>
-            public Transaction CoinstakeTx { get; set; }
-
-            /// <summary>If the function succeeds, this is filled with private key for signing the coinstake kernel.</summary>
-            public Key Key { get; set; }
-        }
-
         /// <summary>The maximum allowed size for a serialized block, in bytes (network rule).</summary>
         public const int MaxBlockSize = 1000000;
 
@@ -1228,7 +1119,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("({0}:{1})", nameof(utxoCount), utxoCount);
 
             long maturityLimit = this.network.Consensus.CoinbaseMaturity;
-            long coinAgeLimit = (this.network.Consensus.Options as PosConsensusOptions).GetStakeMinConfirmations(chainTip.Height + 1, this.network);
+            long coinAgeLimit = ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(chainTip.Height + 1, this.network);
             long requiredCoinAgeForStaking = Math.Max(maturityLimit, coinAgeLimit);
             this.logger.LogTrace("Required coin age for staking is {0}.", requiredCoinAgeForStaking);
 
