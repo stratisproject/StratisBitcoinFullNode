@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new HeaderTimeChecksPosRule(),
                     new StratisBigFixPosFutureDriftRule(),
                     new CheckDifficultyPosRule(),
-                    new StratisVersionRule(),
+                    new StratisHeaderVersionRule(),
 
                     // == Integrity ==
                     new BlockMerkleRootRule(),

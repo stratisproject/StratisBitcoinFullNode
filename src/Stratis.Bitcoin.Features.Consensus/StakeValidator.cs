@@ -106,6 +106,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc/>
         public Target CalculateRetarget(uint firstBlockTime, Target firstBlockTarget, uint secondBlockTime, BigInteger targetLimit)
         {
+            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5},{6}:{7})", nameof(firstBlockTime), firstBlockTime, nameof(firstBlockTarget), firstBlockTarget, nameof(secondBlockTime), secondBlockTime, nameof(targetLimit), targetLimit);
+
             uint targetSpacing = TargetSpacingSeconds;
             uint actualSpacing = firstBlockTime > secondBlockTime ? firstBlockTime - secondBlockTime : targetSpacing;
 

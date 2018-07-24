@@ -1,12 +1,11 @@
-﻿using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Calculate the difficulty for a POS network and check that it is correct.
+    /// Calculate the difficulty for a POS block and check that it is correct.
     /// This rule is only activated after the POW epoch is finished according to the value in <see cref="Consensus.LastPOWBlock"/>.
     /// </summary>
     [HeaderValidationRule(CanSkipValidation = true)]
@@ -18,18 +17,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             if (context.Consensus.PowNoRetargeting)
             {
+                this.Logger.LogTrace("(-)[POW_NO_RETARGETING]");
                 return;
             }
 
             // TODO: In the future once we migrated to fully C# network it might be good to consider signaling in the block header the network type.
 
+            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
+
             // In order to calculate difficulty we need to know the if the block type is POW/POS.
             // This is only available when the block is downloaded (on the coinbase).
             // to validate headers before having the block itself the best we can do is
             // validate POS header after POW blocks era is finished.
-            if (context.ValidationContext.ChainedHeader.Height + 2 > this.Parent.Network.Consensus.LastPOWBlock)
+
+            // The check requires the last two blocks be of the same algo type,
+            // thats why we wait for at least 2 bock beyond the last pow block.
+
+            // Both POW and POW blocks will be checked in the partial validation rule CheckDifficultykHybridRule 
+            // this rule will have the full block and can determine the algo type.
+            if (chainedHeader.Height + 2 > this.Parent.Network.Consensus.LastPOWBlock)
             {
-                ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
                 BlockHeader first = chainedHeader.Previous.Header;
                 BlockHeader second = chainedHeader.Previous.Previous.Header;
 

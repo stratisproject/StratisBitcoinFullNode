@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             this.rules.ElementAt(1).Should().BeOfType<HeaderTimeChecksPosRule>();
             this.rules.ElementAt(2).Should().BeOfType<PosTimeMaskRule>();
             this.rules.ElementAt(3).Should().BeOfType<StratisBigFixPosFutureDriftRule>();
-            this.rules.ElementAt(4).Should().BeOfType<StratisVersionRule>();
+            this.rules.ElementAt(4).Should().BeOfType<StratisHeaderVersionRule>();
             this.rules.ElementAt(5).Should().BeOfType<BlockMerkleRootRule>();
             this.rules.ElementAt(6).Should().BeOfType<PosBlockSignatureRule>();
             this.rules.ElementAt(7).Should().BeOfType<SetActivationDeploymentsRule>();

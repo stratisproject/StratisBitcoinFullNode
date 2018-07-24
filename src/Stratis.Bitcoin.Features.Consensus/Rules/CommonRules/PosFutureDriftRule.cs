@@ -39,8 +39,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns><c>true</c> if for this timestamp future drift should be reduced, <c>false</c> otherwise.</returns>
         private static bool IsDriftReduced(long time)
         {
-            // this is a specific Stratis bug fix where the blockchain drifted 24 hour ahead as the protocol allowed that.
-            // the protocol was fixed but historical blocks are still effected.
+            // This is a specific Stratis bug fix where the blockchain drifted 24 hour ahead as the protocol allowed that.
+            // The protocol was fixed but historical blocks are still effected.
             return time > DriftingBugFixTimestamp;
         }
     }

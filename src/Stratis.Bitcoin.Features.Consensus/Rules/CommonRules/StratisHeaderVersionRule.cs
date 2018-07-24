@@ -9,10 +9,10 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Checks if <see cref="StratisMain"/> network block has a valid block header.
+    /// Checks if <see cref="StratisMain"/> network block's header has a valid block version.
     /// </summary>
     [HeaderValidationRule(CanSkipValidation = true)]
-    public class StratisVersionRule : ConsensusRule
+    public class StratisHeaderVersionRule : ConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>

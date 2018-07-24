@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_HeaderVersionBelowMinimalHeaderVersion_ThrowsBadVersionConsensusErrorAsync()
         {
-            var rule = this.CreateRule<StratisVersionRule>();
+            var rule = this.CreateRule<StratisHeaderVersionRule>();
 
             int MinimalHeaderVersion = 7;
             this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.GetBlock(1);
