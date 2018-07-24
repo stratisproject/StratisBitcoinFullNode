@@ -388,19 +388,13 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            if (Interlocked.CompareExchange(
-                    ref this.stakeStateFlag,
-                    (int)CurrentState.Executing,
-                    (int)CurrentState.Idle) == (int)CurrentState.Executing)
+            if (Interlocked.CompareExchange(ref this.stakeStateFlag, (int)CurrentState.Executing, (int)CurrentState.Idle) == (int)CurrentState.Executing)
             {
                 this.logger.LogTrace("(-)[ALREADY_MINING]");
                 return;
             }
 
-            if (Interlocked.CompareExchange(
-                    ref this.stopStakingStateFlag,
-                    (int)CurrentState.Idle,
-                    (int)CurrentState.Executing) == (int)CurrentState.Executing)
+            if (Interlocked.CompareExchange(ref this.stopStakingStateFlag, (int)CurrentState.Idle, (int)CurrentState.Executing) == (int)CurrentState.Executing)
             {
                 this.logger.LogTrace("(-)[MINING_STOPPING]");
                 return;
@@ -409,47 +403,45 @@ namespace Stratis.Bitcoin.Features.Miner
             this.rpcGetStakingInfoModel.Enabled = true;
             this.stakeCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
 
-            this.stakingLoop = this.asyncLoopFactory.Run(
-                "PosMining.Stake",
-                async token =>
+            this.stakingLoop = this.asyncLoopFactory.Run("PosMining.Stake", async token =>
+            {
+                this.logger.LogTrace("()");
+
+                try
                 {
-                    this.logger.LogTrace("()");
+                    await this.GenerateBlocksAsync(walletSecret).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                        // Application stopping, nothing to do as the loop will be stopped.
+                    }
+                catch (MinerException me)
+                {
+                    // Miner exceptions should be ignored. It means that the miner
+                    // possibly mined a block that was not accepted by peers or is even invalid,
+                    // but it should not halted the staking operation.
+                    this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
+                    this.rpcGetStakingInfoModel.Errors = me.Message;
+                }
+                catch (ConsensusErrorException cee)
+                {
+                    // All consensus exceptions should be ignored. It means that the miner
+                    // run into problems while constructing block or verifying it
+                    // but it should not halted the staking operation.
+                    this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
+                    this.rpcGetStakingInfoModel.Errors = cee.Message;
+                }
+                catch
+                {
+                    this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
+                    throw;
+                }
 
-                    try
-                    {
-                        await this.GenerateBlocksAsync(walletSecret).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                            // Application stopping, nothing to do as the loop will be stopped.
-                        }
-                    catch (MinerException me)
-                    {
-                        // Miner exceptions should be ignored. It means that the miner
-                        // possibly mined a block that was not accepted by peers or is even invalid,
-                        // but it should not halted the staking operation.
-                        this.logger.LogDebug("Miner exception occurred in miner loop: {0}", me.ToString());
-                        this.rpcGetStakingInfoModel.Errors = me.Message;
-                    }
-                    catch (ConsensusErrorException cee)
-                    {
-                        // All consensus exceptions should be ignored. It means that the miner
-                        // run into problems while constructing block or verifying it
-                        // but it should not halted the staking operation.
-                        this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
-                        this.rpcGetStakingInfoModel.Errors = cee.Message;
-                    }
-                    catch
-                    {
-                        this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
-                        throw;
-                    }
-
-                    this.logger.LogTrace("(-)");
-                },
-                this.stakeCancellationTokenSource.Token,
-                repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
-                startAfter: TimeSpans.Second);
+                this.logger.LogTrace("(-)");
+            },
+            this.stakeCancellationTokenSource.Token,
+            repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
+            startAfter: TimeSpans.Second);
 
             this.logger.LogTrace("(-)");
         }
@@ -459,10 +451,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            if (Interlocked.CompareExchange(
-                    ref this.stopStakingStateFlag,
-                    (int)CurrentState.Executing,
-                    (int)CurrentState.Idle) == (int)CurrentState.Executing)
+            if (Interlocked.CompareExchange(ref this.stopStakingStateFlag, (int)CurrentState.Executing, (int)CurrentState.Idle) == (int)CurrentState.Executing)
             {
                 this.logger.LogTrace("(-)[MINING_STOPPING]");
                 return;
