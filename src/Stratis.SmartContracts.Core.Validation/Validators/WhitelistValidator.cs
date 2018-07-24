@@ -24,27 +24,27 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
             if (!(instruction.Operand is MemberReference reference))
                 return Enumerable.Empty<ValidationResult>();
 
-            if (reference is MethodReference m)
+            if (reference is MethodReference methodReference)
             {
-                var r = new List<ValidationResult>();
-                r.AddRange(this.ValidateReference(method, m.DeclaringType, m.Name));
-                r.AddRange(this.ValidateReference(method, m.ReturnType));
+                var validationResults = new List<ValidationResult>();
+                validationResults.AddRange(this.ValidateReference(method, methodReference.DeclaringType, methodReference.Name));
+                validationResults.AddRange(this.ValidateReference(method, methodReference.ReturnType));
 
-                return r;
+                return validationResults;
             }
 
-            if (reference is FieldReference f)
+            if (reference is FieldReference fieldReference)
             {
-                var r = new List<ValidationResult>();
-                r.AddRange(this.ValidateReference(method, f.DeclaringType, f.Name));
-                r.AddRange(this.ValidateReference(method, f.FieldType));
+                var validationResults = new List<ValidationResult>();
+                validationResults.AddRange(this.ValidateReference(method, fieldReference.DeclaringType, fieldReference.Name));
+                validationResults.AddRange(this.ValidateReference(method, fieldReference.FieldType));
 
-                return r;
+                return validationResults;
             }
 
-            if (reference is TypeReference t)
+            if (reference is TypeReference typeReference)
             {
-                return this.ValidateReference(method, t);
+                return this.ValidateReference(method, typeReference);
             }
 
             return Enumerable.Empty<ValidationResult>();
