@@ -1,0 +1,11 @@
+{
+    "_appTitle": "City Chain: Developer Reference",
+    "_appFooter": "<a href='https://city-chain.org'>city-chain.org</a> | <a href='https://citychain.foundation'>citychain.foundation</a>",
+    "_appLogoPath": "images/icon.png",
+    "_appFaviconPath": "images/favicon.ico",
+    "_gitContribute": {
+        "repo": "https://github.com/CityChainFoundation/city-chain.git",
+        "branch": "master",
+        "apiSpecFolder": "docs-ref-overwrite"
+    }
+}
