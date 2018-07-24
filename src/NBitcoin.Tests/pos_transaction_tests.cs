@@ -324,7 +324,7 @@ namespace NBitcoin.Tests
             Assert.True(unsigned.Outputs[2].IsTo(aliceKey.PubKey.Hash));
             Assert.True(unsigned.Outputs[2].Value == Money.Parse("0.02"));
 
-            //Alice signs    
+            //Alice signs
             txBuilder = new TransactionBuilder(this.network);
             Transaction aliceSigned = txBuilder
                     .AddCoins(aliceBobCoins)
@@ -569,8 +569,8 @@ namespace NBitcoin.Tests
             repo.Transactions.Put(tx);
 
 
-            //Can swap : 
-            //satoshi wants to send 100 gold to bob 
+            //Can swap :
+            //satoshi wants to send 100 gold to bob
             //bob wants to send 200 silver, 5 gold and 0.9 BTC to satoshi
 
             //Satoshi receive gold
@@ -973,14 +973,14 @@ namespace NBitcoin.Tests
             CanVerifySequenceLockCore(
                 new[]
                 {
-                    new Sequence(smallStep), //MTP(block[11] is +60min) 
+                    new Sequence(smallStep), //MTP(block[11] is +60min)
                 },
                 new[] { 12 }, 13, now, true, new SequenceLock(-1, now + TimeSpan.FromMinutes(60.0) + smallStep - TimeSpan.FromSeconds(1)));
 
             CanVerifySequenceLockCore(
                 new[]
                 {
-                    new Sequence(smallStep), //MTP(block[11] is +60min) 
+                    new Sequence(smallStep), //MTP(block[11] is +60min)
                 },
                 new[] { 12 }, 12, now, false, new SequenceLock(-1, now + TimeSpan.FromMinutes(60.0) + smallStep - TimeSpan.FromSeconds(1)));
         }
@@ -2611,7 +2611,7 @@ namespace NBitcoin.Tests
             dummyPubKey2[0] = 0x02;
             //CBasicKeyStore keystore;
             //CCoinsView coinsDummy;
-            var coins = new CoinsView(this.network);//(coinsDummy);           
+            var coins = new CoinsView(this.network);//(coinsDummy);
             Transaction[] dummyTransactions = SetupDummyInputs(coins);//(keystore, coins);
 
             Transaction t1 = this.network.CreateTransaction();

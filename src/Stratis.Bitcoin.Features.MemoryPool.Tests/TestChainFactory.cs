@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ILoggerFactory loggerFactory = nodeSettings.LoggerFactory;
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
-            network.Consensus.Options = new PowConsensusOptions();
+            network.Consensus.Options = new ConsensusOptions();
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chain = new ConcurrentChain(network);
             var cachedCoinView = new CachedCoinView(new InMemoryCoinView(chain.Tip.HashBlock), DateTimeProvider.Default, loggerFactory);
@@ -230,8 +230,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             var options = new BlockDefinitionOptions
             {
-                BlockMaxWeight = network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight,
-                BlockMaxSize = network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize
+                BlockMaxWeight = network.Consensus.Options.MaxBlockWeight,
+                BlockMaxSize = network.Consensus.Options.MaxBlockSerializedSize
             };
 
             var blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
