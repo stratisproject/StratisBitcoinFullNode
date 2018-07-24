@@ -4,7 +4,7 @@ using System.Net;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Protocol;
 
-namespace NBitcoin.Networks
+namespace NBitcoin.NetworkDefinitions
 {
     public class StratisTest : StratisMain
     {

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
-using NBitcoin.Networks;
+using NBitcoin.NetworkDefinitions;
 using Xunit;
 
 namespace NBitcoin.Tests

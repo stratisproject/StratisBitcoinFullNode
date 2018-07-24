@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Networks;
+using NBitcoin.NetworkDefinitions;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 using Xunit;

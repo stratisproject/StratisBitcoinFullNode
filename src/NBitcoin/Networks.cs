@@ -1,4 +1,4 @@
-using NBitcoin.Networks;
+using NBitcoin.NetworkDefinitions;
 
 namespace NBitcoin
 {
