@@ -49,7 +49,7 @@ namespace Stratis.ModuleValidation.Net.Determinism
         public class FloatValidationResult : MethodDefinitionValidationResult
         {
             public FloatValidationResult(MethodDefinition method) 
-                : base(method.Name,
+                : base(method.FullName,
                     "Float usage",
                     $"Float or double used.")
             {
