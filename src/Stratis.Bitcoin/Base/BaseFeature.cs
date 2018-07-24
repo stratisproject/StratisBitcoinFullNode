@@ -105,9 +105,6 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
-        /// <summary>Selects the best available chain based on tips provided by the peers and switches to it.</summary>
-        private readonly BestChainSelector bestChainSelector;
-
         private readonly IConsensusManager consensusManager;
 
         /// <inheritdoc cref="IFinalizedBlockHeight"/>
@@ -130,7 +127,6 @@ namespace Stratis.Bitcoin.Base
             IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
             IPeerAddressManager peerAddressManager,
-            BestChainSelector bestChainSelector,
             IConsensusManager consensusManager)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -141,7 +137,6 @@ namespace Stratis.Bitcoin.Base
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             this.chain = Guard.NotNull(chain, nameof(chain));
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
-            this.bestChainSelector = bestChainSelector;
             this.consensusManager = consensusManager;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
@@ -337,7 +332,6 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IConnectionManager, ConnectionManager>();
                     services.AddSingleton<ConnectionManagerSettings>();
                     services.AddSingleton<PayloadProvider>(new PayloadProvider().DiscoverPayloads());
-                    services.AddSingleton<BestChainSelector>();
                     services.AddSingleton<IVersionProvider, VersionProvider>();
 
                     // Peer address manager

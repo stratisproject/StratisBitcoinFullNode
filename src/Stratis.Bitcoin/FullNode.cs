@@ -59,9 +59,6 @@ namespace Stratis.Bitcoin
         /// <summary>Component responsible for connections to peers in P2P network.</summary>
         public IConnectionManager ConnectionManager { get; set; }
 
-        /// <summary>Selects the best available chain based on tips provided by the peers and switches to it.</summary>
-        private BestChainSelector bestChainSelector;
-
         /// <summary>Best chain of block headers from genesis.</summary>
         public ConcurrentChain Chain { get; set; }
 
@@ -173,7 +170,6 @@ namespace Stratis.Bitcoin
             this.InitialBlockDownloadState = this.Services.ServiceProvider.GetService<IInitialBlockDownloadState>();
 
             this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
-            this.bestChainSelector = this.Services.ServiceProvider.GetService<BestChainSelector>();
             this.loggerFactory = this.Services.ServiceProvider.GetService<NodeSettings>().LoggerFactory;
 
             this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
@@ -276,7 +272,6 @@ namespace Stratis.Bitcoin
             this.nodeLifetime.StopApplication();
 
             this.ConnectionManager.Dispose();
-            this.bestChainSelector.Dispose();
             this.loggerFactory.Dispose();
 
             foreach (IDisposable disposable in this.Resources)
