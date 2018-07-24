@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Indicates the current state: in progress executing (i.e. in progress) or idle.
+        /// Indicates the current state: executing (i.e. in progress) or idle.
         /// </summary>
         public enum CurrentState
         {
