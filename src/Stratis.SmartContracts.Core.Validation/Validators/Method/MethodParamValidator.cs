@@ -65,7 +65,7 @@ namespace Stratis.SmartContracts.Core.Validation
         public class MethodParamValidationResult : MethodDefinitionValidationResult
         {
             public MethodParamValidationResult(MethodDefinition method, ParameterDefinition param) 
-                : base(param.Name,
+                : base(method.FullName,
                     ErrorType,
                     $"{method.FullName} is invalid [{ErrorType} {param.ParameterType.FullName}]")
             {
