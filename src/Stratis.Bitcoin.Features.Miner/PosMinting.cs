@@ -8,7 +8,6 @@ using NBitcoin;
 using NBitcoin.Crypto;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -209,10 +208,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
-        /// <summary>Provider of information about the node's connection to it's network peers.</summary>
-        /// <remarks>Used to verify that node is connected to network before we start staking.</remarks>
-        private readonly IConnectionManager connection;
-
         /// <summary>Provides date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -316,7 +311,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="consensusLoop">Consumes incoming blocks, validates and executes them.</param>
         /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="connectionManager">Provider of information about the node's connection to it's network peers.</param>
         /// <param name="dateTimeProvider">Provides date time functionality.</param>
         /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
         /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
@@ -334,7 +328,6 @@ namespace Stratis.Bitcoin.Features.Miner
             IConsensusLoop consensusLoop,
             ConcurrentChain chain,
             Network network,
-            IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
             IInitialBlockDownloadState initialBlockDownloadState,
             INodeLifetime nodeLifetime,
@@ -352,7 +345,6 @@ namespace Stratis.Bitcoin.Features.Miner
             this.consensusLoop = consensusLoop;
             this.chain = chain;
             this.network = network;
-            this.connection = connectionManager;
             this.dateTimeProvider = dateTimeProvider;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.nodeLifetime = nodeLifetime;
