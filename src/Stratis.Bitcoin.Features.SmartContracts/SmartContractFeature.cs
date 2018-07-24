@@ -221,7 +221,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// Adds mining to the smart contract node.
         /// <para>We inject <see cref="IPowMining"/> with a smart contract block provider and definition.</para>
         /// </summary>
-        public static IFullNodeBuilder UseSmartContractMining(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UseSmartContractPosPowMining(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
 

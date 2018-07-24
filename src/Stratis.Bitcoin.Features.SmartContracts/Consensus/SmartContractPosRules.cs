@@ -19,9 +19,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
     /// <summary>
     /// Extension of consensus rules that provide access to a PoS store.
     /// </summary>
-    /// <remarks>
-    /// A Proof-Of-Stake blockchain as implemented in this code base represents a hybrid POS/POW consensus model.
-    /// </remarks>
     public sealed class SmartContractPosRules : PosConsensusRules
     {
         public readonly ISmartContractExecutorFactory ExecutorFactory;
@@ -51,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
         }
 
         /// <inheritdoc />
-        public override RuleContext CreateRuleContext(Bitcoin.Consensus.ValidationContext validationContext, ChainedHeader consensusTip)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
         {
             return new PosRuleContext(validationContext, this.Network.Consensus, consensusTip, this.DateTimeProvider.GetTimeOffset());
         }

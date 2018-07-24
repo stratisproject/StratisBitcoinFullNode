@@ -35,8 +35,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractNode();
-                CoreNode scReceiver = builder.CreateSmartContractNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode();
 
                 builder.StartAll();
 
@@ -102,8 +102,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractNode();
-                CoreNode scReceiver = builder.CreateSmartContractNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode();
 
                 builder.StartAll();
 
@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode();
                 builder.StartAll();
 
                 scSender.NotInIBD();
@@ -285,8 +285,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractNode();
-                CoreNode scReceiver = builder.CreateSmartContractNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode();
 
                 builder.StartAll();
 
@@ -458,8 +458,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractNode();
-                CoreNode scReceiver = builder.CreateSmartContractNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode();
 
                 builder.StartAll();
 

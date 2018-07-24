@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisPosApiRunner(this.GetNextDataFolderName()), false, "stratis.conf");
         }
 
-        public CoreNode CreateSmartContractNode()
+        public CoreNode CreateSmartContractPowNode()
         {
             return CreateNode(new StratisSmartContractNode(this.GetNextDataFolderName()), false, "stratis.conf");
         }

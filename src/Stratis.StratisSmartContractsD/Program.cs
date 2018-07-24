@@ -37,7 +37,7 @@ namespace Stratis.StratisSmartContractsD
                         .AddSmartContracts()
                         .UseSmartContractConsensus()
                         .UseSmartContractWallet()
-                        .UseSmartContractMining()
+                        .UseSmartContractPosPowMining()
                         .UseReflectionExecutor()
                     .UseApi()
                     .Build();
