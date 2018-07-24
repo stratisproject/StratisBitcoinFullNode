@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.IsType<SmartContractDoesNotExistException>(result.Exception);
         }
 
-        [Fact(Skip = "The assumptions made in this test are no longer applicable")]
+        [Fact(Skip = "Exception is no longer an allowed Type")]
         public void SME_CreateContract_ConstructorFails_Refund()
         {
             SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/ContractConstructorInvalid.cs");
