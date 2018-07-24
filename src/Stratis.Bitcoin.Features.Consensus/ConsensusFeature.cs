@@ -50,8 +50,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly IRuleRegistration ruleRegistration;
 
-        private readonly NodeSettings nodeSettings;
-
         private readonly ConsensusSettings consensusSettings;
 
         private readonly IConsensusRules consensusRules;
@@ -96,7 +94,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.loggerFactory = loggerFactory;
             this.consensusStats = consensusStats;
             this.ruleRegistration = ruleRegistration;
-            this.nodeSettings = nodeSettings;
             this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
 
