@@ -474,37 +474,6 @@ public class Test
         }
 
         [Fact]
-        public void NewObjectValidator_NoWhitelist_Should_Validate_Multiple_NewObjects()
-        {
-            const string source = @"public class Test { void TestMethod() { var s = new string('c', 1); var m = new System.Runtime.CompilerServices.TaskAwaiter(); } }";
-
-            var typeDefinition = CompileToTypeDef(source);
-
-            var primitives = new string[]{};
-
-            var result = new NewObjectValidator(primitives).Validate(typeDefinition.Methods.First(m => m.Name == "TestMethod")).ToList();
-
-            Assert.Equal(2, result.Count);
-            Assert.True(result.All(r => r is NewObjectValidator.NewObjectValidationResult));
-        }
-
-        [Fact]
-        public void NewObjectValidator_Whitelist_Should_Validate_NewObject()
-        {
-            const string source = @"public class Test { void TestMethod() { var s = new string('c', 1); var m = new System.Runtime.CompilerServices.TaskAwaiter(); } }";
-
-            var typeDefinition = CompileToTypeDef(source);
-
-            var primitives = new string[] { typeof(string).FullName };
-
-            var result = new NewObjectValidator(primitives).Validate(typeDefinition.Methods.First(m => m.Name == "TestMethod")).ToList();
-
-            Assert.Single(result);
-            Assert.True(result.All(r => r is NewObjectValidator.NewObjectValidationResult));
-        }
-
-
-        [Fact]
         public void FinalizerValidator_Should_Validate_OverrideFinalizer()
         {
             const string source = @"public class Test { ~Test(){} }";
