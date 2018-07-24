@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
@@ -23,16 +25,28 @@ namespace Stratis.Bitcoin.Tests.Base
     {
         public bool IsIBD = false;
 
+        public bool IsPeerWhitelisted = false;
+
         public AsyncExecutionEvent<INetworkPeer, NetworkPeerState> StateChanged;
         public AsyncExecutionEvent<INetworkPeer, IncomingMessage> MessageReceived;
 
         public Mock<INetworkPeer> PeerMock;
 
         /// <summary>How many times behavior called the <see cref="ConsensusManager.HeadersPresented"/>.</summary>
-        public int HeadersPresentedCalledTimes;
+        public int HeadersPresentedCalledTimes { get; private set; }
 
         /// <summary>Counter that shows how many times <see cref="GetHeadersPayload"/> was sent to the peer.</summary>
-        public int GetHeadersPayloadSentTimes;
+        public int GetHeadersPayloadSentTimes { get; private set; }
+
+        /// <summary>Contains all the <see cref="GetHeadersPayload"/> that were sent to the peer.</summary>
+        public List<GetHeadersPayload> GetHeadersPayloadsSent { get; private set; }
+
+        /// <summary>List of <see cref="HeadersPayload"/> that were sent to the peer.</summary>
+        public List<HeadersPayload> HeadersPayloadsSent { get; private set; }
+
+        public bool PeerWasBanned => this.testPeerBanning.WasBanningCalled;
+
+        private TestPeerBanning testPeerBanning;
 
         public ConsensusManagerBehaviorTestsHelper()
         {
@@ -74,8 +88,13 @@ namespace Stratis.Bitcoin.Tests.Base
 
             cmMock.Setup(x => x.Tip).Returns(consensusTip);
 
-            var cmBehavior = new ConsensusManagerBehavior(chain, ibdState.Object, cmMock.Object, new Mock<IPeerBanning>().Object,
-                new Mock<IConnectionManager>().Object, this.loggerFactory);
+            this.testPeerBanning = new TestPeerBanning();
+
+            var connectionManagerMock = new Mock<IConnectionManager>();
+            connectionManagerMock.SetupGet(x => x.ConnectionSettings).Returns(new ConnectionManagerSettings(new NodeSettings(Network.StratisMain)));
+
+            var cmBehavior = new ConsensusManagerBehavior(chain, ibdState.Object, cmMock.Object, this.testPeerBanning,
+                connectionManagerMock.Object, this.loggerFactory);
 
             // Peer and behavior
             this.PeerMock = this.CreatePeerMock();
@@ -86,17 +105,28 @@ namespace Stratis.Bitcoin.Tests.Base
             this.PeerMock.Setup(x => x.State).Returns(peerState);
 
             if (expectedPeerTip != null)
+            {
                 cmBehavior.SetPrivatePropertyValue("ExpectedPeerTip", expectedPeerTip);
+                cmBehavior.SetPrivatePropertyValue("BestSentHeader", expectedPeerTip);
+            }
 
             if (cache != null)
                 cmBehavior.SetPrivateVariableValue("cachedHeaders", cache);
 
             this.GetHeadersPayloadSentTimes = 0;
+            this.HeadersPayloadsSent = new List<HeadersPayload>();
+            this.GetHeadersPayloadsSent = new List<GetHeadersPayload>();
 
             this.PeerMock.Setup(x => x.SendMessageAsync(It.IsAny<Payload>(), It.IsAny<CancellationToken>())).Returns((Payload payload, CancellationToken token) =>
             {
-                if (payload is GetHeadersPayload)
+                if (payload is GetHeadersPayload getHeadersPayload)
+                {
                     this.GetHeadersPayloadSentTimes++;
+                    this.GetHeadersPayloadsSent.Add(getHeadersPayload);
+                }
+
+                if (payload is HeadersPayload headersPayload)
+                    this.HeadersPayloadsSent.Add(headersPayload);
 
                 return Task.CompletedTask;
             });
@@ -126,12 +156,57 @@ namespace Stratis.Bitcoin.Tests.Base
             peer.Setup(x => x.StateChanged).Returns(() => this.StateChanged);
             peer.Setup(x => x.MessageReceived).Returns(() => this.MessageReceived);
 
+            var connectionManagerBehaviorMock = new Mock<IConnectionManagerBehavior>();
+            connectionManagerBehaviorMock.Setup(x => x.Whitelisted).Returns(this.IsPeerWhitelisted);
+
+            peer.Setup(x => x.Behavior<IConnectionManagerBehavior>()).Returns(() => connectionManagerBehaviorMock.Object);
+
+            peer.SetupGet(x => x.PeerEndPoint).Returns(new IPEndPoint(1, 1));
+
             return peer;
         }
 
         public List<BlockHeader> GetCachedHeaders(ConsensusManagerBehavior behavior)
         {
             return behavior.GetMemberValue("cachedHeaders") as List<BlockHeader>;
+        }
+
+        /// <summary>Creates <see cref="GetHeadersPayload"/>.</summary>
+        /// <param name="header">Header which is used to create a locator.</param>
+        public GetHeadersPayload CreateGetHeadersPayload(ChainedHeader header, uint256 hashStop = null)
+        {
+            var headersPayload = new GetHeadersPayload()
+            {
+                BlockLocator = header.GetLocator(),
+                HashStop = hashStop
+            };
+
+            return headersPayload;
+        }
+
+        /// <summary>Simulates receiving a payload from peer.</summary>
+        public async Task ReceivePayloadAsync(Payload payload)
+        {
+            var message = new Message();
+            message.Payload = payload;
+
+            // Length of 1 is a bogus value used just to successfully initialize the class.
+            await this.MessageReceived.ExecuteCallbacksAsync(this.PeerMock.Object, new IncomingMessage() {Length = 1, Message = message}).ConfigureAwait(false);
+        }
+
+        private class TestPeerBanning : IPeerBanning
+        {
+            public bool WasBanningCalled = false;
+
+            public void BanAndDisconnectPeer(IPEndPoint endpoint, int banTimeSeconds, string reason = null)
+            {
+                this.WasBanningCalled = true;
+            }
+
+            public bool IsBanned(IPEndPoint endpoint)
+            {
+                return this.WasBanningCalled;
+            }
         }
     }
 }

@@ -114,10 +114,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 .DependOn<SmartContractFeature>()
                 .FeatureServices(services =>
                 {
-                    fullNodeBuilder.Network.Consensus.Options = new PowConsensusOptions();
+                    fullNodeBuilder.Network.Consensus.Options = new ConsensusOptions();
 
                     services.AddSingleton<ICheckpoints, Checkpoints>();
-                    services.AddSingleton<NBitcoin.Consensus.ConsensusOptions, PowConsensusOptions>();
+                    services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<CoinView, CachedCoinView>();
                     services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;

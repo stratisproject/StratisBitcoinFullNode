@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Connection
             IPeerAddressManager peerAddressManager,
             IEnumerable<IPeerConnector> peerConnectors,
             IPeerDiscovery peerDiscovery,
-            ConnectionManagerSettings connectionSettings, 
+            ConnectionManagerSettings connectionSettings,
             IVersionProvider versionProvider)
         {
             this.connectedPeers = new NetworkPeerCollection();
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Connection
 
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
-                var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                var connectionManagerBehavior = peer.Behavior<IConnectionManagerBehavior>();
                 var chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
 
                 string agent = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]";
