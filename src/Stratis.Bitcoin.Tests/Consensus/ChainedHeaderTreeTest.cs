@@ -6,6 +6,7 @@ using FluentAssertions;
 using Moq;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
+using NBitcoin.Networks;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -215,10 +216,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ///                   6b=7b=8b=9b
             ///             3c=4c=5c
             /// </summary>
-            /// <param name="initialChainSize">Initial chain size.</param>
             /// <param name="cht">ChainHeaderTree.</param>
             /// <param name="initialChainTip">Initial chain tip.</param>
-            internal void SetupPeersForTest(int initialChainSize, ChainedHeaderTree cht, ChainedHeader initialChainTip)
+            internal void SetupPeersForTest(ChainedHeaderTree cht, ChainedHeader initialChainTip)
             {
                 int peerAExtension = 4;
                 int peerBExtension = 4;
@@ -239,8 +239,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 cht.ConnectNewHeaders(1, peerBBlockHeaders);
                 cht.ConnectNewHeaders(2, peerCBlockHeaders);
                 cht.ConnectNewHeaders(3, peerDBlockHeaders);
-
-                
             }
 
             internal void SwitchToChain(ChainedHeaderTree cht, ChainedHeader chainTip, ChainedHeader consumedHeader, int extensionSize)
@@ -254,38 +252,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     cht.PartialValidationSucceeded(currentConsumedCh, out bool fullValidationRequired);
                     cht.ConsensusTipChanged(currentConsumedCh);
                 }
-            }
-
-            internal List<BlockHeader> GetListOfAllUniqueBlockHeaders(ChainedHeaderTree cht)
-            {
-                var allBlockHeaders = new List<BlockHeader>();
-
-                ChainedHeader current = cht.GetChainedHeaderBlock(this.Network.GenesisHash).ChainedHeader;
-
-                allBlockHeaders.Add(current.Header);
-                foreach (ChainedHeader t in current.Next)
-                {
-                    allBlockHeaders.AddRange(AddBlockToList(t));
-                }
-
-                List<BlockHeader> AddBlockToList(ChainedHeader header)
-                {
-                    var list = new List<BlockHeader>();
-                    if (header != null)
-                    {
-                        list.Add(header.Header);
-                        if (header.Next.Count > 0)
-                        {
-                            foreach (ChainedHeader t in header.Next)
-                            {
-                                list.AddRange(AddBlockToList(t));
-                            }
-                        }
-                    }
-
-                    return list;
-                }
-                return allBlockHeaders;
             }
         }
 
@@ -418,7 +384,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         /// <summary>
         /// Issue 4 @ Create chained header tree component #1321
-        /// Supply headers where half of them are new and half are old. 
+        /// Supply headers where half of them are new and half are old.
         /// Make sure that ChainedHeader was created for new ones.
         /// </summary>
         [Fact]
@@ -435,7 +401,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader newChainTip = testContext.ExtendAChain(chainExtensionSize, chainTip);
             List<BlockHeader> listOfOldAndNewHeaders = testContext.ChainedHeaderToList(newChainTip, initialChainSize + chainExtensionSize);
 
-            // Supply both old and new headers. 
+            // Supply both old and new headers.
             chainedHeaderTree.ConnectNewHeaders(1, listOfOldAndNewHeaders);
 
             // ChainedHeader tree entries are created for all new BlockHeaders.
@@ -521,7 +487,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         /// <summary>
         /// Issue 6 @ Create chained header tree component #1321
-        /// Make sure checkpoints are off - supply some headers and CHT should return 
+        /// Make sure checkpoints are off - supply some headers and CHT should return
         /// a ToDownload array of the same size as the amount of headers.
         /// </summary>
         [Fact]
@@ -850,7 +816,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 header.BlockValidationState.Should().Be(expectedState);
             }
 
-            // Present headers h16 -> h29 (including first checkpoint but excluding second). 
+            // Present headers h16 -> h29 (including first checkpoint but excluding second).
             List<BlockHeader> unconsumedHeaders = listOfCurrentChainHeaders.Skip(connectNewHeadersResult.Consumed.Height).ToList();
             connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, unconsumedHeaders.SkipLast(1).ToList());
 
@@ -867,7 +833,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 chainedHeader = chainedHeader.Previous;
             }
 
-            // Checking from first checkpoint to second checkpoint (h21 -> h29). 
+            // Checking from first checkpoint to second checkpoint (h21 -> h29).
             chainedHeader = chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(1);
             while (chainedHeader.Height > checkpoint1.Height)
             {
@@ -1065,7 +1031,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfNewChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, extendedChainTip.Height);
 
             // First 5 blocks are presented by peer 1.
-            // DownloadTo should be set to a checkpoint 1. 
+            // DownloadTo should be set to a checkpoint 1.
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfNewChainHeaders.Take(5).ToList());
             result.DownloadTo.HashBlock.Should().Be(checkpoint1.Header.GetHash());
             Assert.True(result.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
@@ -1171,16 +1137,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + extensionChainSize + chainBExtensionSize);
 
             // Chain A is presented by peer 1.
-            // DownloadFrom should be set to header 3. 
-            // DownloadTo should be set to header 8. 
+            // DownloadFrom should be set to header 3.
+            // DownloadTo should be set to header 8.
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfChainABlockHeaders.Skip(2).First().GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfChainABlockHeaders.Last().GetHash());
             Assert.True(result.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
             // Chain B is presented by peer 2.
-            // DownloadFrom should be set to header 5. 
-            // DownloadTo should be set to header 10. 
+            // DownloadFrom should be set to header 5.
+            // DownloadTo should be set to header 10.
             result = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfChainBBlockHeaders[checkpointHeight].GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfChainBBlockHeaders.Last().GetHash());
@@ -1225,8 +1191,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             listOfCurrentChainHeaders = ctx.ChainedHeaderToList(newChainTip, initialChainSize + extensionChainSize + newChainExtensionSize);
 
             // Chain is presented by peer 2.
-            // DownloadFrom should be set to header 3. 
-            // DownloadTo should be set to header 10. 
+            // DownloadFrom should be set to header 3.
+            // DownloadTo should be set to header 10.
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(2, listOfCurrentChainHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfCurrentChainHeaders.Skip(2).First().GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfCurrentChainHeaders.Last().GetHash());
@@ -1236,7 +1202,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// <summary>
         /// Issue 17 @ We advanced consensus tip (CT) and there are some partially validated (PV) headers after the CT.
         /// Now we receive headers that are after the last PV header and include assume valid (AV). Make sure that those
-        /// headers that are before the AV header and after the last PV are all marked as AV. 
+        /// headers that are before the AV header and after the last PV are all marked as AV.
         /// </summary>
         [Fact]
         public void ChainHasPartiallyValidatedAfterConsensusTip_NewHeadersWithAssumeValidPresented_CorrectHeadersAreMarkedAsAssumedValid()
@@ -1455,7 +1421,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 27 @  Checkpoints are disabled. Chain tip is at header 5. Present a chain A with headers equal to max reorg of 500 blocks plus extra 50. 
+        /// Issue 27 @  Checkpoints are disabled. Chain tip is at header 5. Present a chain A with headers equal to max reorg of 500 blocks plus extra 50.
         /// Then start syncing until block 490. Peer 2 presents the alternative chain with 2 headers after fork point at header 5. We then you join the rest of
         /// 60 blocks. ConsensusTipChanged should return identifier of the second peer at block number 506.
         /// </summary>
@@ -1526,9 +1492,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 29 @ Peer presents at least two headers. Those headers will be connected to the tree. 
+        /// Issue 29 @ Peer presents at least two headers. Those headers will be connected to the tree.
         /// Then we save the first such connected block to variable X and simulate block downloaded for both blocks.
-        /// Then the peer is disconnected, which removes its chain from the tree. 
+        /// Then the peer is disconnected, which removes its chain from the tree.
         /// Partial validation succeeded is then called on X. No headers to validate should be returned and
         /// full validation required should be false.
         /// </summary>
@@ -2077,7 +2043,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             consumedHeaders = connectionResult.Consumed.ToArray(listOfChainAHeaders.Count);
             consumedHeaders.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.HeaderOnly).Should().BeTrue();
         }
-      
+
         /// <summary>
         /// Issue 19 @ New peer K claims 10d. Peer K disconnects. Chain shouldn't change.
         /// </summary>
@@ -2090,7 +2056,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader initialChainTip = ctx.InitialChainTip;
             ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
 
-            ctx.SetupPeersForTest(initialChainSize, cht, initialChainTip);
+            ctx.SetupPeersForTest(cht, initialChainTip);
 
             // Additional SetUp for current test.
             ChainedHeader chainDTip = cht.GetPeerTipChainedHeaderByPeerId(3);
@@ -2102,20 +2068,19 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var chainedHeadersWithPeerK = new Dictionary<uint256, ChainedHeader>(cht.GetChainedHeadersByHash());
 
             cht.PeerDisconnected(4);
-            
+
             Dictionary<uint256, ChainedHeader> chainedHeadersWithoutPeerK = cht.GetChainedHeadersByHash();
 
             chainedHeadersWithoutPeerK.Should().BeEquivalentTo(chainedHeadersWithPeerK);
 
-            this.CheckChainedHeaderTreeConsistency(cht, ctx, consensusTip);
+            this.CheckChainedHeaderTreeConsistency(cht, ctx, consensusTip, new HashSet<int>() { 0, 1, 2, 3 });
         }
-
 
         /// <summary>
         /// Basic test for tests 18 to 20, 28.
         /// 1/6 There is no branch which is claimed by no one (PeerTipsByHash have tip of every branch), none of list should be empty.
         /// 2/6 ChainHeadersByHash contains only reachable headers.
-        /// 3/6 ChainHeader claims LocalPeer.
+        /// 3/6 ConsensusTip is claimed by LocalPeer.
         /// 4/6 Each connected peer has exactly 1 entry in PeerIdsByTipHash.
         /// 5/6 CH.Next[i].Prev == CH for every header and every .Next.
         /// 6/6 PeerTipsByPeerId should reflect PeerIdsByHash(except local marker).
@@ -2123,7 +2088,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// <param name="cht">ChainHeaderTree.</param>
         /// <param name="ctx">Test context</param>
         /// <param name="consensusTip">Consensus Tip</param>
-        private void CheckChainedHeaderTreeConsistency(ChainedHeaderTree cht, TestContext ctx, ChainedHeaderBlock consensusTip)
+        /// <param name="connectedPeers">Peer ids of the peers that are expected to be connected.</param>
+        private void CheckChainedHeaderTreeConsistency(ChainedHeaderTree cht, TestContext ctx, ChainedHeaderBlock consensusTip, HashSet<int> connectedPeers)
         {
             bool eachPeerOneEntry = true;
 
@@ -2132,7 +2098,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             Dictionary<uint256, HashSet<int>> tipsDictionary = cht.GetPeerIdsByTipHash();
             Dictionary<int, uint256> peerIdsDictionary = cht.GetPeerTipsByPeerId();
-            IEnumerable<BlockHeader> listOfAllUniqueBlockHeaders = ctx.GetListOfAllUniqueBlockHeaders(cht);
 
             for (int i = 0; i < peerIdsDictionary.Count - 1; i++)
             {
@@ -2140,48 +2105,75 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 peerEntryDictionary.Add(i, 0);
             }
 
+            var tipsLeft = new HashSet<uint256>(cht.GetChainedHeadersByHash().Select(x => x.Value).Where(x => x.Next.Count == 0).Select(x => x.HashBlock));
+
             foreach (KeyValuePair<uint256, HashSet<int>> tips in tipsDictionary)
             {
-                if (tips.Value.Count == 0) Assert.True(false, "There is no branch which is claimed by no one");
+                // There should be no branch which is claimed by no one.
+                Assert.NotEmpty(tips.Value);
+
+                tipsLeft.Remove(tips.Key);
 
                 foreach (int peerId in tips.Value)
                 {
                     // Ignore local.
-                    if (peerId != ChainedHeaderTree.LocalPeerId) 
+                    if (peerId != ChainedHeaderTree.LocalPeerId)
                     {
+                        Assert.Contains(peerId, connectedPeers);
+
                         peerEntryDictionary[peerId] = peerEntryDictionary[peerId]++;
 
-                        if (peerIdsDictionary[peerId] == tips.Key) peerHeaderDictionary[peerId]++;
-                        else Assert.True(false, "PeerTipsByPeerId should reflect PeerIdsByHash(except local marker).");
+                        if (peerIdsDictionary[peerId] == tips.Key)
+                            peerHeaderDictionary[peerId]++;
+                        else
+                            Assert.True(false, "PeerTipsByPeerId should reflect PeerIdsByHash(except local marker).");
                     }
-                    
+
                 }
             }
-            
-            //Checking "Each connected peer has exactly 1 entry in PeertipsByHash". 
+
+            Assert.Empty(tipsLeft);
+
+            // Checking "Each connected peer has exactly 1 entry in PeerIdsByTipHash".
             if (peerEntryDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false;
-            if (peerHeaderDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false; 
+            if (peerHeaderDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false;
             Assert.True(eachPeerOneEntry);
 
             Dictionary<uint256, ChainedHeader> chainHeaders = cht.GetChainedHeadersByHash();
 
-            foreach (ChainedHeader header in chainHeaders.Values.OrderBy(x => x.Height))
+            foreach (ChainedHeader header in chainHeaders.Values)
             {
-                if (header.Next.Any())
+                for (int i = 0; i < header.Next.Count; i++)
                 {
-                    for (int i = 0; i < header.Next.Count; i++)
-                    {
-                        if (header.Next[i].Previous.HashBlock != header.HashBlock) Assert.True(false, "Is Correct Chain Sequence");
-                    }
+                    // Is correct chain sequence.
+                    Assert.Equal(header.Next[i].Previous.HashBlock, header.HashBlock);
                 }
-
-                if (listOfAllUniqueBlockHeaders.Any(x => x.GetHash() == header.HashBlock)) continue;
-                Assert.True(false, "ChainHeadersByHash has only reacheble headers");
             }
-            //Checking ChainHeader claims LocalPeer.
-            Assert.Equal(consensusTip.ChainedHeader.HashBlock, peerIdsDictionary[ChainedHeaderTree.LocalPeerId]);
-        }
 
+            // ConsensusTip is claimed by LocalPeer.
+            Assert.Equal(consensusTip.ChainedHeader.HashBlock, peerIdsDictionary[ChainedHeaderTree.LocalPeerId]);
+
+            // ChainedHeadersByHash contains only reachable headers.
+            var allConnectedHeaders = new List<ChainedHeader>();
+
+            ChainedHeader genesis = cht.GetChainedHeadersByHash()[ctx.Network.GenesisHash];
+            var headersToProcess = new Stack<ChainedHeader>();
+            headersToProcess.Push(genesis);
+
+            while (headersToProcess.Count > 0)
+            {
+                ChainedHeader current = headersToProcess.Pop();
+
+                Assert.True(chainHeaders.ContainsKey(current.HashBlock));
+
+                allConnectedHeaders.Add(current);
+
+                foreach (ChainedHeader next in current.Next)
+                    headersToProcess.Push(next);
+            }
+
+            Assert.Equal(chainHeaders.Count, allConnectedHeaders.Count);
+        }
 
         /// <summary>
         /// Issue 40 @ CT advances after last checkpoint to height LC + MaxReorg + 10. New chain is presented with
@@ -2928,7 +2920,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// Issue 54 @ CT is at 50a.
         /// Finalized height is 40, max reorg is 10.
         /// Some headers are presented (from 20a to 60b, with fork point 40a) by peer 1.
-        /// Peer 2 presents 25a to 55c with fork point at 39a. 
+        /// Peer 2 presents 25a to 55c with fork point at 39a.
         /// Headers from peer 1 should be marked for download(41b to 60b).
         /// When peer 2 presents headers exception on ConnectNewHeaders should be thrown.
         /// </summary>
