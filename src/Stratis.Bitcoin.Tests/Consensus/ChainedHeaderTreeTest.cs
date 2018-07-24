@@ -2077,7 +2077,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             consumedHeaders = connectionResult.Consumed.ToArray(listOfChainAHeaders.Count);
             consumedHeaders.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.HeaderOnly).Should().BeTrue();
         }
-      
+
+        
+
+
         /// <summary>
         /// Issue 19 @ New peer K claims 10d. Peer K disconnects. Chain shouldn't change.
         /// </summary>
@@ -2106,6 +2109,44 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Dictionary<uint256, ChainedHeader> chainedHeadersWithoutPeerK = cht.GetChainedHeadersByHash();
 
             chainedHeadersWithoutPeerK.Should().BeEquivalentTo(chainedHeadersWithPeerK);
+
+            this.CheckChainedHeaderTreeConsistency(cht, ctx, consensusTip);
+        }
+
+        /// <summary>
+        /// Issue 20 @ New peer K is connected, it prolongs D by 2 headers. K is disconnected, only those 2 headers are removed.
+        /// </summary>
+        [Fact]
+        public void NewPeerProlongsByTwoHeaders_PeerDisconnected_NewTwoHeadersRemoved()
+        {
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+            ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
+
+            ctx.SetupPeersForTest(initialChainSize, cht, initialChainTip);
+
+            // Additional SetUp for current test.
+            int peerKExtension = 2;
+            ChainedHeader chainDTip = cht.GetPeerTipChainedHeaderByPeerId(3);
+            ChainedHeader chainKTip = ctx.ExtendAChain(peerKExtension, chainDTip); //peer K prolongs peer D by 2 headers.
+
+            var chainedHeadersBeforePeerKConnected = new Dictionary<uint256, ChainedHeader>(cht.GetChainedHeadersByHash());
+
+            List<BlockHeader> peerKBlockHeaders = ctx.ChainedHeaderToList(chainKTip, chainKTip.Height);
+            cht.ConnectNewHeaders(4, peerKBlockHeaders);
+
+            var chainedHeadersWithPeerK = new Dictionary<uint256, ChainedHeader>(cht.GetChainedHeadersByHash());
+            
+            //Double checking that chained tree has been changed after connecting new peer.
+            chainedHeadersBeforePeerKConnected.Should().NotEqual(chainedHeadersWithPeerK);
+
+            cht.PeerDisconnected(4);
+
+            var chainedHeadersAfterPeerKDisconnected = new Dictionary<uint256, ChainedHeader>(cht.GetChainedHeadersByHash());
+
+            chainedHeadersBeforePeerKConnected.Should().BeEquivalentTo(chainedHeadersAfterPeerKDisconnected);
 
             this.CheckChainedHeaderTreeConsistency(cht, ctx, consensusTip);
         }
