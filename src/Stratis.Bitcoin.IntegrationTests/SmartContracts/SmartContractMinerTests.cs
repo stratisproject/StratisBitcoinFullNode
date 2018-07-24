@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -127,7 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public uint256 hash;
             public TestMemPoolEntryHelper entry;
             public ConcurrentChain chain;
-            public ConsensusLoop consensus;
+            public ConsensusManager consensus;
             public DateTimeProvider date;
             public TxMempool mempool;
             public MempoolSchedulerLock mempoolLock;

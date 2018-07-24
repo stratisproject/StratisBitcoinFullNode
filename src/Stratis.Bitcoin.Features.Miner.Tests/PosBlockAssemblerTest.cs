@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
@@ -26,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     public class PosBlockAssemblerTest : LogsTestBase
     {
         private RuleContext callbackRuleContext = null;
-        private readonly Mock<IConsensusLoop> consensusLoop;
+        private readonly Mock<IConsensusManager> consensusLoop;
         private readonly Mock<IDateTimeProvider> dateTimeProvider;
         private readonly Key key;
         private readonly Mock<ITxMempool> mempool;
@@ -36,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PosBlockAssemblerTest()
         {
-            this.consensusLoop = new Mock<IConsensusLoop>();
+            this.consensusLoop = new Mock<IConsensusManager>();
             this.mempool = new Mock<ITxMempool>();
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.stakeValidator = new Mock<IStakeValidator>();
@@ -148,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 BlockTemplate blockTemplate = posBlockAssembler.Build(chain.Tip, this.key.ScriptPubKey);
 
-                this.consensusLoop.Verify(c => c.ValidateBlock(It.IsAny<RuleContext>()), Times.Exactly(0));
+                this.consensusLoop.Verify(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ValidationContext>(), It.IsAny<ChainedHeader>()), Times.Exactly(0));
                 Assert.Null(this.callbackRuleContext);
                 this.stakeValidator.Verify();
             });
@@ -412,11 +411,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.callbackRuleContext = null;
 
-            this.consensusLoop.Setup(c => c.ValidateBlock(It.IsAny<RuleContext>()))
+            this.consensusLoop.Setup(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ValidationContext>(), It.IsAny<ChainedHeader>()))
                 .Callback<RuleContext>(c =>
                 {
                     this.callbackRuleContext = c;
-                }).Verifiable();
+                });
         }
 
         private void SetupRulesEngine(ConcurrentChain chain)
@@ -430,7 +429,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new ConsensusSettings(new NodeSettings(this.network)),
                 new Checkpoints(),
                 new Mock<CoinView>().Object,
-                new Mock<ILookaheadBlockPuller>().Object,
                 new Mock<IStakeChain>().Object,
                 new Mock<IStakeValidator>().Object);
 
@@ -469,7 +467,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private class PosTestBlockAssembler : PosBlockDefinition
         {
             public PosTestBlockAssembler(
-                IConsensusLoop consensusLoop,
+                IConsensusManager consensusManager,
                 Network network,
                 MempoolSchedulerLock mempoolLock,
                 ITxMempool mempool,
@@ -477,7 +475,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 IStakeChain stakeChain,
                 IStakeValidator stakeValidator,
                 ILoggerFactory loggerFactory)
-                : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, stakeChain, stakeValidator)
+                : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, stakeChain, stakeValidator)
             {
                 base.block = this.BlockTemplate.Block;
             }

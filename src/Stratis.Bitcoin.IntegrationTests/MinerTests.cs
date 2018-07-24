@@ -8,7 +8,6 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -107,7 +106,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             public uint256 hash;
             public TestMemPoolEntryHelper entry;
             public ConcurrentChain chain;
-            public ConsensusLoop consensus;
+            public ConsensusManager consensus;
             public ConsensusRules ConsensusRules;
             public DateTimeProvider DateTimeProvider;
             public TxMempool mempool;

@@ -52,6 +52,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             ConcurrentChain chain = null,
             IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null,
+            IConsensusManager consensusManager = null,
             IBlockStore blockStore = null)
             : base(
                   fullNode: fullNode,
@@ -59,7 +60,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                   network: network,
                   chain: chain,
                   chainState: chainState,
-                  connectionManager: connectionManager)
+                  connectionManager: connectionManager,
+                  consensusManager: consensusManager)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.pooledTransaction = pooledTransaction;
