@@ -30,9 +30,11 @@ namespace Stratis.SmartContracts.Core.Validation
             return results;
         }
 
+        /// <summary>
+        /// Validates the methods within a <see cref="TypeDefinition"/>
+        /// </summary>
         private void ValidateMethods(List<ValidationResult> results, TypeDefinition type)
         {
-            // Validate methods
             foreach (MethodDefinition method in type.Methods)
             {
                 if (!method.HasBody)
@@ -52,26 +54,31 @@ namespace Stratis.SmartContracts.Core.Validation
             }
         }
 
+        /// <summary>
+        /// Validates the parameters within a <see cref="MethodDefinition"/>
+        /// </summary>
         private void ValidateParameters(List<ValidationResult> results, TypeDefinition type, MethodDefinition method)
         {
-            if (this.policy.ParameterValidators.Any())
+            if (!this.policy.ParameterValidators.Any())
+                return;
+
+            foreach (var parameter in method.Parameters)
             {
-                foreach (var parameter in method.Parameters)
+                foreach (var validator in this.policy.ParameterValidators)
                 {
-                    foreach (var validator in this.policy.ParameterValidators)
-                    {
-                        results.AddRange(validator.Validate(parameter));
-                    }
+                    results.AddRange(validator.Validate(parameter));
                 }
             }
         }
 
+        /// <summary>
+        /// Validates instructions in a <see cref="MethodDefinition"/>
+        /// </summary>
         private void ValidateInstructions(List<ValidationResult> results, TypeDefinition type, MethodDefinition method)
         {
             if (!this.policy.InstructionValidators.Any() && !this.policy.MemberRefValidators.Any()) 
                 return;
 
-            // Validate instructions
             foreach (Instruction instruction in method.Body.Instructions)
             {
                 foreach (var validator in this.policy.InstructionValidators)
@@ -83,6 +90,9 @@ namespace Stratis.SmartContracts.Core.Validation
             }
         }
 
+        /// <summary>
+        /// Validate Types referred to by instructions that are member references
+        /// </summary>        
         private void ValidateMemberReferences(
             List<ValidationResult> results, 
             TypeDefinition type,
@@ -92,7 +102,6 @@ namespace Stratis.SmartContracts.Core.Validation
             if (!this.policy.MemberRefValidators.Any())
                 return;
 
-            // Validate member reference instructions
             if (!(instruction.Operand is MemberReference reference))
                 return;
 
@@ -102,18 +111,22 @@ namespace Stratis.SmartContracts.Core.Validation
             }
         }
 
+        /// <summary>
+        /// Recursively validates nested Types
+        /// </summary>
         private void ValidateNestedTypes(List<ValidationResult> results, TypeDefinition type)
         {
-            // Recursively validate any nested Types
             foreach (TypeDefinition nestedType in type.NestedTypes)
             {
                 results.AddRange(Validate(nestedType));
             }
         }
 
+        /// <summary>
+        /// Validates a type definition's fields
+        /// </summary>
         private void ValidateFields(List<ValidationResult> results, TypeDefinition type)
         {
-            // Validate the TypeDef's fields
             if (!this.policy.FieldDefValidators.Any()) 
                 return;
 
@@ -126,9 +139,11 @@ namespace Stratis.SmartContracts.Core.Validation
             }
         }
 
+        /// <summary>
+        /// Validate the type def using TypeDefinition validators
+        /// </summary>
         private void ValidateTypeDef(List<ValidationResult> results, TypeDefinition type)
         {
-            // Validate the type def using TypeDefinition validators
             if (!this.policy.TypeDefValidators.Any()) 
                 return;
 
