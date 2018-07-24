@@ -588,15 +588,22 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}.{5}:{6})", nameof(newTip), newTip, nameof(currentTip), currentTip, nameof(blocksToConnect), nameof(blocksToConnect.Count), blocksToConnect.Count);
 
+            ChainedHeader lastValidatedBlockHeader = null;
+            ConnectBlocksResult connectBlockResult = null;
+
             foreach (ChainedHeaderBlock blockToConnect in blocksToConnect)
             {
-                ConnectBlocksResult connectBlockResult = await this.ConnectBlockAsync(currentTip, blockToConnect).ConfigureAwait(false);
+                connectBlockResult = await this.ConnectBlockAsync(currentTip, blockToConnect).ConfigureAwait(false);
 
                 if (!connectBlockResult.Succeeded)
                 {
+                    connectBlockResult.LastValidatedBlockHeader = lastValidatedBlockHeader;
+
                     this.logger.LogTrace("(-)[FAILED_TO_CONNECT]:'{0}'", connectBlockResult);
                     return connectBlockResult;
                 }
+
+                lastValidatedBlockHeader = blockToConnect.ChainedHeader;
 
                 // Block connected successfully.
                 List<int> peersToResync = this.SetConsensusTip(newTip);
@@ -614,10 +621,8 @@ namespace Stratis.Bitcoin.Consensus
                 this.signals.SignalBlock(blockToConnect.Block);
             }
 
-            var successfullResult = new ConnectBlocksResult(true);
-
-            this.logger.LogTrace("(-):'{0}'", successfullResult);
-            return successfullResult;
+            this.logger.LogTrace("(-):'{0}'", connectBlockResult);
+            return connectBlockResult;
         }
 
         /// <summary>Reconnects the old chain.</summary>
@@ -747,7 +752,6 @@ namespace Stratis.Bitcoin.Consensus
                 }
 
                 var failureResult = new ConnectBlocksResult(false, false, badPeers, validationContext.Error.Message, validationContext.BanDurationSeconds);
-                failureResult.LastValidatedBlockHeader = blockToConnect.ChainedHeader;
 
                 this.logger.LogTrace("(-)[FAILED]:'{0}'", failureResult);
                 return failureResult;
@@ -759,7 +763,6 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             var result = new ConnectBlocksResult(true);
-            result.LastValidatedBlockHeader = blockToConnect.ChainedHeader;
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
