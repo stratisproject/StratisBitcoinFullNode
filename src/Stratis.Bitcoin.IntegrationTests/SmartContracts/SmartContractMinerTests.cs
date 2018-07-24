@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 this.entry = new TestMemPoolEntryHelper();
                 this.chain = new ConcurrentChain(this.network);
-                this.network.Consensus.Options = new PowConsensusOptions();
+                this.network.Consensus.Options = new ConsensusOptions();
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
