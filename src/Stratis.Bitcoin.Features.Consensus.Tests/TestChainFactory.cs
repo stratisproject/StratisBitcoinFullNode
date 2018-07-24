@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.LoggerFactory = testChainContext.NodeSettings.LoggerFactory;
             testChainContext.DateTimeProvider = DateTimeProvider.Default;
 
-            network.Consensus.Options = new PowConsensusOptions();
+            network.Consensus.Options = new ConsensusOptions();
 
             var consensusSettings = new ConsensusSettings(testChainContext.NodeSettings);
             testChainContext.Checkpoints = new Checkpoints();
@@ -230,8 +230,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             var options = new BlockDefinitionOptions
             {
-                BlockMaxWeight = network.Consensus.Option<PowConsensusOptions>().MaxBlockWeight,
-                BlockMaxSize = network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize
+                BlockMaxWeight = network.Consensus.Options.MaxBlockWeight,
+                BlockMaxSize = network.Consensus.Options.MaxBlockSerializedSize
             };
 
             var blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
