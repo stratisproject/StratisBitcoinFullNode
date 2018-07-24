@@ -427,6 +427,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             return connectionManager;
         }
+
         private bool ConnectToPeer(PeerAddressManager peerAddressManager, Mock<INetworkPeerFactory> networkPeerFactoryExisting, ConnectionManagerSettings connectionManagerSettingsExisting, PeerConnectorConnectNode peerConnector, IPEndPoint endpointNode, Mock<IConnectionManager> mockConnectionManager)
         {
             peerAddressManager.AddPeer(endpointNode, IPAddress.Loopback);
