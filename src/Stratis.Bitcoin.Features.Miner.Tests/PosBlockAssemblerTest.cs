@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void ComputeBlockVersion_UsingChainTipAndConsensus_Bip9DeploymentActive_UpdatesHeightAndVersion()
         {
-            NBitcoin.Consensus.ConsensusOptions options = this.network.Consensus.Options;
+            ConsensusOptions options = this.network.Consensus.Options;
             int minerConfirmationWindow = this.network.Consensus.MinerConfirmationWindow;
             int ruleChangeActivationThreshold = this.network.Consensus.RuleChangeActivationThreshold;
             try
@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private void ExecuteWithConsensusOptions(PosConsensusOptions newOptions, Action action)
         {
-            NBitcoin.Consensus.ConsensusOptions options = this.network.Consensus.Options;
+            ConsensusOptions options = this.network.Consensus.Options;
             try
             {
                 this.network.Consensus.Options = newOptions;

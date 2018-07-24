@@ -5,7 +5,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -28,7 +27,8 @@ namespace Stratis.Bitcoin.Tests.Base
         /// <summary>
         /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 10).
         /// Cached headers contain nothing. <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6.
-        /// Make sure that <see cref="GetHeadersPayload"/> wasn't sent to the peer, <see cref="ConsensusManager.HeadersPresented"/> wasn't called. Return value is <c>null</c>.
+        /// Make sure that <see cref="GetHeadersPayload"/> wasn't sent to the peer, <see cref="ConsensusManager.HeadersPresented"/> wasn't called.
+        /// Return value is <c>null</c>.
         /// </summary>
         [Fact]
         public async Task ConsensusTipChanged_ConsensusTipAdvancedBuNoCachedHeadersAsync()
@@ -64,6 +64,7 @@ namespace Stratis.Bitcoin.Tests.Base
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
 
             Assert.Equal(this.headers[12], behavior.ExpectedPeerTip);
+            Assert.Equal(this.headers[12], behavior.BestSentHeader);
             Assert.Empty(this.helper.GetCachedHeaders(behavior));
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
             Assert.Equal(result.Consumed, this.headers[12]);
@@ -94,6 +95,7 @@ namespace Stratis.Bitcoin.Tests.Base
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
 
             Assert.Equal(this.headers[40], behavior.ExpectedPeerTip);
+            Assert.Equal(this.headers[40], behavior.BestSentHeader);
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
             Assert.Equal(result.Consumed, this.headers[40]);
 
@@ -127,6 +129,7 @@ namespace Stratis.Bitcoin.Tests.Base
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
 
             Assert.Equal(this.headers[10], behavior.ExpectedPeerTip);
+            Assert.Equal(this.headers[10], behavior.BestSentHeader);
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
             Assert.Null(result);
             Assert.Empty(this.helper.GetCachedHeaders(behavior));
@@ -302,6 +305,367 @@ namespace Stratis.Bitcoin.Tests.Base
 
             for (int i = 1001; i < 1500; i++)
                 Assert.Equal(this.headers[i].Header, headersSent[i - 1001]);
+        }
+
+        /// <summary>
+        /// Present 0 headers, make sure <inheritdoc cref="IConsensusManager.HeadersPresented"/> wasn't called and
+        /// <see cref="GetHeadersPayload"/> wasn't sent.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_EmptyHeadersMessageReceivedAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[5]);
+
+            await this.helper.ReceivePayloadAsync(new HeadersPayload());
+
+            Assert.Equal(0, this.helper.HeadersPresentedCalledTimes);
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
+        }
+
+        /// <summary>Present non-consecutive headers. Make sure peer was banned.</summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_NonConsecutiveHeadersPresentedAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[5]);
+
+            List<ChainedHeader> headersToPresent = ChainedHeadersHelper.CreateConsecutiveHeaders(5);
+            headersToPresent.AddRange(ChainedHeadersHelper.CreateConsecutiveHeaders(10));
+
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header).ToArray()));
+
+            Assert.True(this.helper.PeerWasBanned);
+        }
+
+        /// <summary>
+        /// Initialize cached headers so it's full. Present some headers.
+        /// Make sure <inheritdoc cref="IConsensusManager.HeadersPresented"/> wasn't called and <see cref="GetHeadersPayload"/> wasn't sent.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_DontSyncAfterCacheIsFullAsync()
+        {
+            int cacheSyncHeadersThreshold = typeof(ConsensusManagerBehavior).GetPrivateConstantValue<int>("CacheSyncHeadersThreshold");
+
+            List<ChainedHeader> cachedHeaders = ChainedHeadersHelper.CreateConsecutiveHeaders(cacheSyncHeadersThreshold + 1);
+
+            this.helper.CreateAndAttachBehavior(this.headers[5], cachedHeaders.Select(x => x.Header).ToList());
+
+            List<ChainedHeader> headersToPresent = ChainedHeadersHelper.CreateConsecutiveHeaders(10, cachedHeaders.Last());
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header).ToArray()));
+
+            Assert.Equal(0, this.helper.HeadersPresentedCalledTimes);
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
+        }
+
+        /// <summary>
+        /// Initialize cached headers with 1 item. Present 10 headers. Make sure cached headers
+        /// now have 11 items and <see cref="GetHeadersPayload"/> wasn't sent.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_DontSyncAfterCacheIsPopulatedAsync()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], new List<BlockHeader>() { this.headers[1].Header });
+
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(2).Take(10).Select(x => x.Header).ToArray()));
+
+            List<BlockHeader> cached = this.helper.GetCachedHeaders(behavior);
+            Assert.Equal(11, cached.Count);
+
+            for (int i = 0; i < 11; i++)
+                Assert.Equal(this.headers[i + 1].Header, cached[i]);
+
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
+        }
+
+        /// <summary>
+        /// Consensus tip is at 10. We are not in IBD. Present headers from 12 to 20. Make sure <see cref="GetHeadersPayload"/> was sent.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_SyncWhenCacheIsEmptyAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) => { throw new ConnectHeaderException(); });
+
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(13).Take(8).Select(x => x.Header).ToArray()));
+
+            Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
+        }
+
+        /// <summary>
+        /// Consensus tip is at 10a. We are not in IBD. Mock consensus manager to throw checkpoints exception. Present some headers.
+        /// Make sure <see cref="GetHeadersPayload"/> wasn't sent and peer was banned.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_PeerThatViolatesCheckpointIsBannedAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) => { throw new CheckpointMismatchException(); });
+
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Take(50).Select(x => x.Header).ToArray()));
+
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
+            Assert.True(this.helper.PeerWasBanned);
+        }
+
+        /// <summary>
+        /// Consensus tip is at 10. We are not in IBD. Present headers 11-15, where one header is invalid.
+        /// Make sure <see cref="GetHeadersPayload"/> wasn't sent and peer was banned.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_PeerThatSentInvalidHeaderIsBannedAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) => { throw new ConsensusException(""); });
+
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header).ToArray()));
+
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
+            Assert.True(this.helper.PeerWasBanned);
+        }
+
+        /// <summary>
+        /// Consensus tip is at 10. We are not in IBD. Present headers 11-15. Make sure <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/>
+        /// is header 15 and <see cref="GetHeadersPayload"/> was sent.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_ConsumeAllHeadersAndAskForMoreAsync()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) =>
+                {
+                    return new ConnectNewHeadersResult() { Consumed = this.headers.Single(x => x.HashBlock == presentedHeaders.Last().GetHash()) };
+                });
+
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header).ToArray()));
+
+            Assert.Equal(this.headers[15], behavior.ExpectedPeerTip);
+            Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
+        }
+
+        /// <summary>
+        /// Consensus tip is at 10. We are not in IBD. Setup <see cref="IConsensusManager"/> in a way that it will consume headers up to header 40.
+        /// Present headers 11-50.  Make sure that <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 40 and
+        /// <see cref="GetHeadersPayload"/> wasn't sent. Cached headers contain headers from 41 to 50.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_DontSyncAfterSomeHeadersConsumedAndSomeCachedAsync()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) =>
+                {
+                    return new ConnectNewHeadersResult() { Consumed = this.headers[40] };
+                });
+
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(40).Select(x => x.Header).ToArray()));
+
+            Assert.Equal(this.headers[40], behavior.ExpectedPeerTip);
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
+
+            List<BlockHeader> cached = this.helper.GetCachedHeaders(behavior);
+            Assert.Equal(10, cached.Count);
+
+            for (int i = 41; i <= 50; i++)
+                Assert.Equal(this.headers[i].Header, cached[i - 41]);
+        }
+
+        /// <summary>We receive more headers than max allowed. Make sure peer was banned.</summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_BanPeerThatViolatedMaxHeadersCountAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) => { throw new ConsensusException(""); });
+
+
+            int maxHeaders = typeof(ConsensusManagerBehavior).GetPrivateConstantValue<int>("MaxItemsPerHeadersMessage");
+
+            List<ChainedHeader> headersToPresent = ChainedHeadersHelper.CreateConsecutiveHeaders(maxHeaders + 500, null, true);
+
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header).ToArray()));
+
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
+            Assert.True(this.helper.PeerWasBanned);
+        }
+
+        /// <summary>
+        /// Simulate that peer state became <see cref="NetworkPeerState.HandShaked"/>.
+        /// Make sure <see cref="GetHeadersPayload"/> was sent.
+        /// </summary>
+        [Fact]
+        public async Task OnStateChangedAsync_SyncOnHandshakeAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[10]);
+
+            // Peer's state is handshaked which is the current state. Calling OnStateChanged with old state which is connected.
+            await this.helper.StateChanged.ExecuteCallbacksAsync(this.helper.PeerMock.Object, NetworkPeerState.Connected);
+
+            Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
+        }
+
+        /// <summary>
+        /// Initialize <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> to be header 5. Call <see cref="ConsensusManagerBehavior.ResetPeerTipInformationAndSyncAsync"/>.
+        /// Make sure <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> became <c>null</c> and <see cref="GetHeadersPayload"/> was sent.
+        /// </summary>
+        [Fact]
+        public async Task ResetPeerTipInformationAndSyncAsync_ResyncsAndResetsAsync()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], null, this.headers[5]);
+
+            await behavior.ResetPeerTipInformationAndSyncAsync();
+
+            Assert.Null(behavior.ExpectedPeerTip);
+            Assert.Null(behavior.BestSentHeader);
+            Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
+        }
+
+        /// <summary>
+        /// <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is <c>null</c>. Consensus tip is at header 100.
+        /// Simulate that peer state is now <see cref="NetworkPeerState.HandShaked"/>.
+        /// Make sure <see cref="GetHeadersPayload"/> was sent to the peer and it contains some blocks with hashes over header 50.
+        /// </summary>
+        [Fact]
+        public async Task ResyncAsync_SyncsIfStateIsHanshakedAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[100]);
+
+            await this.helper.StateChanged.ExecuteCallbacksAsync(this.helper.PeerMock.Object, NetworkPeerState.Connected);
+
+            Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
+
+            List<uint256> sentHashes = this.helper.GetHeadersPayloadsSent.First().BlockLocator.Blocks;
+            List<uint256> hashesOver50 = this.headers.Skip(51).Select(x => x.HashBlock).ToList();
+
+            bool contains = false;
+            foreach (uint256 sentHash in sentHashes)
+            {
+                if (hashesOver50.Contains(sentHash))
+                {
+                    contains = true;
+                    break;
+                }
+            }
+
+            Assert.True(contains);
+        }
+
+        /// <summary>
+        /// <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 50. Consensus tip is at header 100.
+        /// Simulate that peer state is now <see cref="NetworkPeerState.HandShaked"/>.
+        /// Make sure <see cref="GetHeadersPayload"/> was sent to the peer and it contains blocks with hashes below header 50 and over header 30, but no blocks over 50.
+        /// </summary>
+        [Fact]
+        public async Task ResyncAsync_SendsProperLocatorAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[100], null, this.headers[50]);
+
+            await this.helper.StateChanged.ExecuteCallbacksAsync(this.helper.PeerMock.Object, NetworkPeerState.Connected);
+
+            Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
+
+            List<uint256> sentHashes = this.helper.GetHeadersPayloadsSent.First().BlockLocator.Blocks;
+            List<uint256> hashesOver50 = this.headers.Skip(51).Select(x => x.HashBlock).ToList();
+
+            bool containsHashesOver50 = false;
+            foreach (uint256 sentHash in sentHashes)
+            {
+                if (hashesOver50.Contains(sentHash))
+                {
+                    containsHashesOver50 = true;
+                    break;
+                }
+            }
+
+            Assert.False(containsHashesOver50);
+
+            // Make sure contains hashes over 30.
+            List<uint256> hashesOver30 = this.headers.Skip(31).Select(x => x.HashBlock).ToList();
+
+            bool containsHashesOver30 = false;
+            foreach (uint256 sentHash in sentHashes)
+            {
+                if (hashesOver30.Contains(sentHash))
+                {
+                    containsHashesOver30 = true;
+                    break;
+                }
+            }
+
+            Assert.True(containsHashesOver30);
+        }
+
+        /// <summary>
+        /// Initialize <see cref="ConsensusManagerBehavior.BestSentHeader"/> with something.
+        /// Call <see cref="ConsensusManagerBehavior.UpdateBestSentHeader"/> with <c>null</c>.
+        /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> didn't change.
+        /// </summary>
+        [Fact]
+        public void UpdateBestSentHeader_DoesntChangeIfArgumentIsNull()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20], null, this.headers[10]);
+
+            behavior.UpdateBestSentHeader(null);
+
+            Assert.Equal(this.headers[10], behavior.BestSentHeader);
+        }
+
+        /// <summary>
+        /// Initialize <see cref="ConsensusManagerBehavior.BestSentHeader"/> with <c>null</c>.
+        /// Call <see cref="ConsensusManagerBehavior.UpdateBestSentHeader"/> with any header.
+        /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> was set.
+        /// </summary>
+        [Fact]
+        public void UpdateBestSentHeader_ChangesIfPreviousValueWasNull()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20]);
+
+            behavior.UpdateBestSentHeader(this.headers[10]);
+
+            Assert.Equal(this.headers[10], behavior.BestSentHeader);
+        }
+
+        /// <summary>
+        /// Initialize <see cref="ConsensusManagerBehavior.BestSentHeader"/> with 10.
+        /// Call <see cref="ConsensusManagerBehavior.UpdateBestSentHeader"/> with header 5.
+        /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> wasn't changed.
+        /// </summary>
+        [Fact]
+        public void UpdateBestSentHeader_DoesntChangeIfCalledWithAncestor()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20], null, this.headers[10]);
+
+            behavior.UpdateBestSentHeader(this.headers[5]);
+
+            Assert.Equal(this.headers[10], behavior.BestSentHeader);
+        }
+
+        /// <summary>
+        /// Initialize <see cref="ConsensusManagerBehavior.BestSentHeader"/> with 10.
+        /// Call <see cref="ConsensusManagerBehavior.UpdateBestSentHeader"/> with header 15.
+        /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> was set to header 15.
+        /// </summary>
+        [Fact]
+        public void UpdateBestSentHeader_IsSetIfChainProlonged()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20], null, this.headers[10]);
+
+            behavior.UpdateBestSentHeader(this.headers[15]);
+
+            Assert.Equal(this.headers[15], behavior.BestSentHeader);
+        }
+
+        /// <summary>
+        /// Initialize <see cref="ConsensusManagerBehavior.BestSentHeader"/> with 10.
+        /// Call <see cref="ConsensusManagerBehavior.UpdateBestSentHeader"/> with header 15b where b is the chain that forks at 8a.
+        /// Make sure <see cref="ConsensusManagerBehavior.BestSentHeader"/> was set to be 15b.
+        /// </summary>
+        [Fact]
+        public void UpdateBestSentHeader_ChangedIfHeaderIsOnFork()
+        {
+            ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[20], null, this.headers[10]);
+
+            ChainedHeader headerOnChainB = ChainedHeadersHelper.CreateConsecutiveHeaders(7, this.headers[8]).Last();
+
+            behavior.UpdateBestSentHeader(headerOnChainB);
+
+            Assert.Equal(headerOnChainB, behavior.BestSentHeader);
         }
     }
 }

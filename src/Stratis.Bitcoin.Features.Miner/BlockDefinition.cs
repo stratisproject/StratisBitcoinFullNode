@@ -137,10 +137,10 @@ namespace Stratis.Bitcoin.Features.Miner
             this.BlockMaxWeight = (uint)Math.Max(4000, Math.Min(PowMining.DefaultBlockMaxWeight - 4000, this.Options.BlockMaxWeight));
 
             // Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity.
-            this.BlockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000, this.Options.BlockMaxSize));
+            this.BlockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Options.MaxBlockSerializedSize - 1000, this.Options.BlockMaxSize));
 
             // Whether we need to account for byte usage (in addition to weight usage).
-            this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Option<PowConsensusOptions>().MaxBlockSerializedSize - 1000);
+            this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Options.MaxBlockSerializedSize - 1000);
 
             this.Configure();
         }
@@ -514,10 +514,10 @@ namespace Stratis.Bitcoin.Features.Miner
         private bool TestPackage(long packageSize, long packageSigOpsCost)
         {
             // TODO: Switch to weight-based accounting for packages instead of vsize-based accounting.
-            if (this.BlockWeight + this.Network.Consensus.Option<PowConsensusOptions>().WitnessScaleFactor * packageSize >= this.BlockMaxWeight)
+            if (this.BlockWeight + this.Network.Consensus.Options.WitnessScaleFactor * packageSize >= this.BlockMaxWeight)
                 return false;
 
-            if (this.BlockSigOpsCost + packageSigOpsCost >= this.Network.Consensus.Option<PowConsensusOptions>().MaxBlockSigopsCost)
+            if (this.BlockSigOpsCost + packageSigOpsCost >= this.Network.Consensus.Options.MaxBlockSigopsCost)
                 return false;
 
             return true;

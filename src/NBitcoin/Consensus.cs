@@ -24,13 +24,6 @@ namespace NBitcoin
     public class Consensus
     {
         /// <summary>
-        /// An extension to <see cref="Consensus"/> to enable additional options to the consensus data.
-        /// </summary>
-        public class ConsensusOptions
-        {
-        }
-
-        /// <summary>
         /// How many blocks should be on top of a coinbase transaction until its outputs are considered spendable.
         /// </summary>
         public long CoinbaseMaturity { get; set; }

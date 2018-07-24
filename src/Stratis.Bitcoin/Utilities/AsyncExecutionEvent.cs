@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Utilities
             {
                 LinkedListNode<AsyncExecutionEventCallback<TSender, TArg>> node;
                 if (!this.callbackToListNodeMapping.TryGetValue(callbackAsync, out node))
-                    throw new ArgumentException("Trying to unregistered callback that is not registered.");
+                    throw new ArgumentException("Trying to unregister callback that is not registered.");
 
                 this.callbackList.Remove(node);
                 this.callbackToListNodeMapping.Remove(callbackAsync);
