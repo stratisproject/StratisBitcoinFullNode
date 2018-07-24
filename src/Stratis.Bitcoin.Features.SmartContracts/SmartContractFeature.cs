@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
-using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -29,19 +29,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     public sealed class SmartContractFeature : FullNodeFeature
     {
         private readonly ILogger logger;
-        private readonly IConsensusLoop consensusLoop;
+        private readonly IConsensusManager consensusManager;
         private readonly ContractStateRepositoryRoot stateRoot;
 
-        public SmartContractFeature(IConsensusLoop consensusLoop, ILoggerFactory loggerFactory, ContractStateRepositoryRoot stateRoot)
+        public SmartContractFeature(IConsensusManager consensusManager, ILoggerFactory loggerFactory, ContractStateRepositoryRoot stateRoot)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stateRoot = stateRoot;
-            this.consensusLoop = consensusLoop;
+            this.consensusManager = consensusManager;
         }
 
         public override void Initialize()
         {
-            this.stateRoot.SyncToRoot(((SmartContractBlockHeader)this.consensusLoop.Chain.Tip.Header).HashStateRoot.ToBytes());
+            this.stateRoot.SyncToRoot(((SmartContractBlockHeader)this.consensusManager.Tip.Header).HashStateRoot.ToBytes());
             this.logger.LogInformation("Smart Contract Feature Injected.");
         }
     }
@@ -120,10 +120,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<CoinView, CachedCoinView>();
-                    services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
-                    services.AddSingleton<IConsensusLoop, ConsensusLoop>()
-                        .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
-                        .AddSingleton<IGetUnspentTransaction, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop);
                     services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();

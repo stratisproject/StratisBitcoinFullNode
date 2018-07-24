@@ -134,14 +134,14 @@ namespace Stratis.Bitcoin.Controllers
             foreach (INetworkPeer peer in this.connectionManager.ConnectedPeers)
             {
                 var connectionManagerBehavior = peer.Behavior<IConnectionManagerBehavior>();
-                var chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
+                var chainHeadersBehavior = peer.Behavior<ConsensusManagerBehavior>();
 
                 var connectedPeer = new ConnectedPeerModel
                 {
                     Version = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]",
                     RemoteSocketEndpoint = peer.RemoteSocketEndpoint.ToString(),
                     TipHeight = chainHeadersBehavior.ExpectedPeerTip != null ? chainHeadersBehavior.ExpectedPeerTip.Height : peer.PeerVersion?.StartHeight ?? -1,
-                    IsInbound = connectionManagerBehavior.Inbound
+                    IsInbound = peer.Inbound
                 };
 
                 if (connectedPeer.IsInbound)

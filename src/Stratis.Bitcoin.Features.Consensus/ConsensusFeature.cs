@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.BlockPulling2;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -31,8 +31,6 @@ namespace Stratis.Bitcoin.Features.Consensus
     {
         private readonly DBreezeCoinView dBreezeCoinView;
 
-        private readonly LookaheadBlockPuller blockPuller;
-
         private readonly CoinView coinView;
 
         private readonly IChainState chainState;
@@ -41,8 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly Signals.Signals signals;
 
-        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        private readonly IConsensusLoop consensusLoop;
+        private readonly IConsensusManager consensusManager;
 
         private readonly NodeDeployments nodeDeployments;
 
@@ -68,12 +65,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         public ConsensusFeature(
             DBreezeCoinView dBreezeCoinView,
             Network network,
-            LookaheadBlockPuller blockPuller,
             CoinView coinView,
             IChainState chainState,
             IConnectionManager connectionManager,
             Signals.Signals signals,
-            IConsensusLoop consensusLoop,
+            IConsensusManager consensusManager,
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
             ConsensusStats consensusStats,
@@ -84,12 +80,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             StakeChainStore stakeChain = null)
         {
             this.dBreezeCoinView = dBreezeCoinView;
-            this.blockPuller = blockPuller;
             this.coinView = coinView;
             this.chainState = chainState;
             this.connectionManager = connectionManager;
             this.signals = signals;
-            this.consensusLoop = consensusLoop;
+            this.consensusManager = consensusManager;
             this.nodeDeployments = nodeDeployments;
             this.stakeChain = stakeChain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -119,12 +114,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         public override void Initialize()
         {
             this.dBreezeCoinView.InitializeAsync().GetAwaiter().GetResult();
-            this.consensusLoop.StartAsync().GetAwaiter().GetResult();
 
-            this.chainState.ConsensusTip = this.consensusLoop.Tip;
-            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
+            this.chainState.ConsensusTip = this.consensusManager.Tip;
 
-            DeploymentFlags flags = this.nodeDeployments.GetFlags(this.consensusLoop.Tip);
+            DeploymentFlags flags = this.nodeDeployments.GetFlags(this.consensusManager.Tip);
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
 
@@ -157,12 +150,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override void Dispose()
         {
-            // First, we need to wait for the consensus loop to finish.
-            // Only then we can flush our coinview safely.
-            // Otherwise there is a race condition and a new block
-            // may come from the consensus at wrong time.
-            this.consensusLoop.Stop();
-
             var cache = this.coinView as CachedCoinView;
             if (cache != null)
             {
@@ -198,11 +185,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<CoinView, CachedCoinView>();
-                    services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
-                    services.AddSingleton<IConsensusLoop, ConsensusLoop>()
-                        .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
-                        .AddSingleton<IGetUnspentTransaction, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop);
-                    services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
@@ -230,13 +212,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ICheckpoints, Checkpoints>();
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<CoinView, CachedCoinView>();
-                        services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
-                        services.AddSingleton<IConsensusLoop, ConsensusLoop>()
-                            .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
-                            .AddSingleton<IGetUnspentTransaction, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop);
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
-                        services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<ConsensusSettings>();

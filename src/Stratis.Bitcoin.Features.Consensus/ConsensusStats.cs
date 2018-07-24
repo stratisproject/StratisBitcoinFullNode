@@ -3,12 +3,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -23,16 +22,14 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly CoinView bottom;
 
-        private readonly LookaheadBlockPuller lookaheadPuller;
-
         private ConsensusPerformanceSnapshot lastSnapshot;
 
         private BackendPerformanceSnapshot lastSnapshot2;
 
         private CachePerformanceSnapshot lastSnapshot3;
 
-        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        private readonly IConsensusLoop consensusLoop;
+        private readonly IConsensusManager consensusManager;
+        private readonly IConsensusRules consensusRules;
 
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
@@ -49,7 +46,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public ConsensusStats(
             CoinView coinView,
-            IConsensusLoop consensusLoop,
+            IConsensusManager consensusManager,
+            IConsensusRules consensusRules,
             IInitialBlockDownloadState initialBlockDownloadState,
             ConcurrentChain chain,
             IConnectionManager connectionManager,
@@ -61,10 +59,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.dbreeze = stack.Find<DBreezeCoinView>();
             this.bottom = stack.Bottom;
 
-            this.consensusLoop = consensusLoop;
-            this.lookaheadPuller = this.consensusLoop.Puller as LookaheadBlockPuller;
+            this.consensusManager = consensusManager;
+            this.consensusRules = consensusRules;
 
-            this.lastSnapshot = consensusLoop.ConsensusRules.PerformanceCounter.Snapshot();
+            this.lastSnapshot = consensusRules.PerformanceCounter.Snapshot();
             this.lastSnapshot2 = this.dbreeze?.PerformanceCounter.Snapshot();
             this.lastSnapshot3 = this.cache?.PerformanceCounter.Snapshot();
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -78,11 +76,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             var benchLogs = new StringBuilder();
 
-            if (this.lookaheadPuller != null)
+            if (this.consensusManager.BlockPuller != null)
             {
                 benchLogs.AppendLine("======Block Puller======");
-                benchLogs.AppendLine("Lookahead:".PadRight(LoggingConfiguration.ColumnLength) + this.lookaheadPuller.ActualLookahead + " blocks");
-                benchLogs.AppendLine("Downloaded:".PadRight(LoggingConfiguration.ColumnLength) + this.lookaheadPuller.MedianDownloadCount + " blocks");
+                benchLogs.AppendLine("Lookahead:".PadRight(LoggingConfiguration.ColumnLength) + " fix me");// + this.lookaheadPuller.ActualLookahead + " blocks");
+                benchLogs.AppendLine("Downloaded:".PadRight(LoggingConfiguration.ColumnLength) + " fix me"); // + this.lookaheadPuller.MedianDownloadCount + " blocks");
                 benchLogs.AppendLine("==========================");
             }
             benchLogs.AppendLine("Persistent Tip:".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(await this.bottom.GetBlockHashAsync().ConfigureAwait(false))?.Height);
@@ -92,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 benchLogs.AppendLine("Cache entries".PadRight(LoggingConfiguration.ColumnLength) + this.cache.CacheEntryCount);
             }
 
-            ConsensusPerformanceSnapshot snapshot = this.consensusLoop.ConsensusRules.PerformanceCounter.Snapshot();
+            ConsensusPerformanceSnapshot snapshot = this.consensusRules.PerformanceCounter.Snapshot();
             benchLogs.AppendLine((snapshot - this.lastSnapshot).ToString());
             this.lastSnapshot = snapshot;
 

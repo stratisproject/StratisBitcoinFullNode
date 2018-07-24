@@ -8,12 +8,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.BlockPulling2;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
@@ -105,27 +108,11 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Selects the best available chain based on tips provided by the peers and switches to it.</summary>
         private readonly BestChainSelector bestChainSelector;
 
+        private readonly IConsensusManager consensusManager;
+
         /// <inheritdoc cref="IFinalizedBlockHeight"/>
         private readonly IFinalizedBlockHeight finalizedBlockHeight;
 
-        /// <summary>
-        /// Initializes a new instance of the object.
-        /// </summary>
-        /// <param name="nodeSettings">User defined node settings.</param>
-        /// <param name="dataFolder">Locations of important folders and files on disk.</param>
-        /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
-        /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
-        /// <param name="chainState">Information about node's chain.</param>
-        /// <param name="connectionManager">Manager of node's network connections.</param>
-        /// <param name="finalizedBlockHeight"><inheritdoc cref="IFinalizedBlockHeight"/></param>
-        /// <param name="chainRepository">Access to the database of blocks.</param>
-        /// <param name="dateTimeProvider">Provider of time functions.</param>
-        /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
-        /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
-        /// <param name="dbreezeSerializer">Provider of binary (de)serialization for data stored in the database.</param>
-        /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
-        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
-        /// <param name="bestChainSelector">Selects the best available chain based on tips provided by the peers and switches to it.</param>
         public BaseFeature(
             NodeSettings nodeSettings,
             DataFolder dataFolder,
@@ -143,7 +130,8 @@ namespace Stratis.Bitcoin.Base
             IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
             IPeerAddressManager peerAddressManager,
-            BestChainSelector bestChainSelector)
+            BestChainSelector bestChainSelector,
+            IConsensusManager consensusManager)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -154,6 +142,7 @@ namespace Stratis.Bitcoin.Base
             this.chain = Guard.NotNull(chain, nameof(chain));
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
             this.bestChainSelector = bestChainSelector;
+            this.consensusManager = consensusManager;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
@@ -188,8 +177,9 @@ namespace Stratis.Bitcoin.Base
 
             var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
-            connectionParameters.TemplateBehaviors.Add(new ChainHeadersBehavior(this.chain, this.chainState, this.initialBlockDownloadState, this.bestChainSelector, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.connectionManager, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
+            connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.consensusManager.BlockPuller, this.initialBlockDownloadState, this.loggerFactory));
 
             this.StartAddressManager(connectionParameters);
 
@@ -204,6 +194,9 @@ namespace Stratis.Bitcoin.Base
 
             this.disposableResources.Add(this.timeSyncBehaviorState as IDisposable);
             this.disposableResources.Add(this.chainRepository);
+
+            this.consensusManager.InitializeAsync(this.chain.Tip).GetAwaiter().GetResult();
+            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.consensusManager.BlockPuller, this.initialBlockDownloadState, this.loggerFactory));
 
             this.logger.LogTrace("(-)");
         }
@@ -336,10 +329,11 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<ITimeSyncBehaviorState, TimeSyncBehaviorState>();
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
                     services.AddSingleton<NodeDeployments>();
+                    services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
 
                     // Connection
                     services.AddSingleton<INetworkPeerFactory, NetworkPeerFactory>();
-                    services.AddSingleton<NetworkPeerConnectionParameters>(new NetworkPeerConnectionParameters());
+                    services.AddSingleton<NetworkPeerConnectionParameters>();
                     services.AddSingleton<IConnectionManager, ConnectionManager>();
                     services.AddSingleton<ConnectionManagerSettings>();
                     services.AddSingleton<PayloadProvider>(new PayloadProvider().DiscoverPayloads());
@@ -353,6 +347,10 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IPeerConnector, PeerConnectorDiscovery>();
                     services.AddSingleton<IPeerDiscovery, PeerDiscovery>();
                     services.AddSingleton<ISelfEndpointTracker, SelfEndpointTracker>();
+
+                    // Consensus
+                    services.AddSingleton<IConsensusManager, ConsensusManager>();
+                    services.AddSingleton<IConsensusRules, ConsensusRules>();
                 });
             });
 

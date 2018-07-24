@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private readonly ConcurrentChain chain;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        private readonly IConsensusLoop consensusLoop;
+        private readonly IConsensusManager consensusManager;
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public PowMining(
             IAsyncLoopFactory asyncLoopFactory,
             IBlockProvider blockProvider,
-            IConsensusLoop consensusLoop,
+            IConsensusManager consensusManager,
             ConcurrentChain chain,
             IDateTimeProvider dateTimeProvider,
             ITxMempool mempool,
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.asyncLoopFactory = asyncLoopFactory;
             this.blockProvider = blockProvider;
             this.chain = chain;
-            this.consensusLoop = consensusLoop;
+            this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 
-            context.ChainTip = this.consensusLoop.Tip;
+            context.ChainTip = this.consensusManager.Tip;
             if (this.chain.Tip != context.ChainTip)
             {
                 Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
@@ -281,7 +281,9 @@ namespace Stratis.Bitcoin.Features.Miner
         private bool ValidateAndConnectBlock(MineBlockContext context)
         {
             context.ValidationContext = new ValidationContext { Block = context.BlockTemplate.Block };
-            this.consensusLoop.AcceptBlockAsync(context.ValidationContext).GetAwaiter().GetResult();
+
+            throw new NotImplementedException(); // TODO:
+            //this.consensusLoop.AcceptBlockAsync(context.ValidationContext).GetAwaiter().GetResult();
 
             if (context.ValidationContext.ChainedHeader == null)
             {

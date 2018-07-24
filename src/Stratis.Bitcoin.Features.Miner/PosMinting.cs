@@ -200,8 +200,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// but high enough to compensate for tasks' overhead.</remarks>
         private const int UtxoStakeDescriptionsPerCoinstakeWorker = 25;
 
-        /// <summary>Consumes incoming blocks, validates and executes them.</summary>
-        private readonly IConsensusLoop consensusLoop;
+        /// <summary>Consumes manager class.</summary>
+        private readonly IConsensusManager consensusManager;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
@@ -312,7 +312,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Initializes a new instance of the <see cref="PosMinting"/> class.
         /// </summary>
-        /// <param name="consensusLoop">Consumes incoming blocks, validates and executes them.</param>
+        /// <param name="consensusManager">Consumes incoming blocks, validates and executes them.</param>
         /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="connectionManager">Provider of information about the node's connection to it's network peers.</param>
@@ -330,7 +330,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
             IBlockProvider blockProvider,
-            IConsensusLoop consensusLoop,
+            IConsensusManager consensusManager,
             ConcurrentChain chain,
             Network network,
             IConnectionManager connectionManager,
@@ -348,7 +348,7 @@ namespace Stratis.Bitcoin.Features.Miner
             ILoggerFactory loggerFactory)
         {
             this.blockProvider = blockProvider;
-            this.consensusLoop = consensusLoop;
+            this.consensusManager = consensusManager;
             this.chain = chain;
             this.network = network;
             this.connection = connectionManager;
@@ -476,7 +476,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 // Prevent mining if not fully synced.
                 if (this.initialBlockDownloadState.IsInitialBlockDownload() ||
-                    this.consensusLoop.Tip != this.chain.Tip)
+                    this.consensusManager.Tip != this.chain.Tip)
                 {
                     this.logger.LogTrace("Waiting for synchronization before mining can be started...");
 
@@ -485,7 +485,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 }
 
                 ChainedHeader chainTip = this.chain.Tip;
-                if (chainTip != this.consensusLoop.Tip)
+                if (chainTip != this.consensusManager.Tip)
                 {
                     this.logger.LogTrace("(-)[SYNC_OR_REORG]");
                     return;
@@ -596,7 +596,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Validate the block.
             var blockValidationContext = new ValidationContext { Block = block };
-            this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
+
+            throw new NotImplementedException(); // TODO:
+            //this.consensusManager.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
 
             if (blockValidationContext.ChainedHeader == null)
             {
@@ -785,7 +787,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
 
             // Get reward for newly created block.
-            long reward = fees + this.consensusLoop.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
+            long reward = fees + this.consensusManager.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
             if (reward <= 0)
             {
                 // TODO: This can't happen unless we remove reward for mined block.
@@ -1117,7 +1119,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 // Use consensus loop's tip rather than concurrent chain's tip
                 // because consensus loop's tip is guaranteed to have block stake in the database.
-                ChainedHeader tip = this.consensusLoop.Tip;
+                ChainedHeader tip = this.consensusManager.Tip;
                 if (tip == null)
                 {
                     this.logger.LogTrace("(-)[DEFAULT]:{0}", res);
@@ -1161,7 +1163,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Use consensus loop's tip rather than concurrent chain's tip
             // because consensus loop's tip is guaranteed to have block stake in the database.
-            ChainedHeader block = this.consensusLoop.Tip;
+            ChainedHeader block = this.consensusManager.Tip;
             ChainedHeader prevStakeBlock = null;
 
             double res = 0.0;

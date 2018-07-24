@@ -27,6 +27,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>The current tip of the chain that has been validated.</summary>
         ChainedHeader Tip { get; }
 
+        /// <summary>Puller of blocks.</summary>
+        IBlockPuller BlockPuller { get; }
+
+        /// <summary>The collection of rules.</summary>
+        IConsensusRules ConsensusRules { get; }
+
         /// <summary>
         /// Set the tip of <see cref="ConsensusManager"/>, if the given <paramref name="chainTip"/> is not equal to <see cref="Tip"/>
         /// then rewind consensus until a common header is found.
@@ -98,6 +104,12 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <inheritdoc />
         public ChainedHeader Tip { get; private set; }
+
+        /// <inheritdoc />
+        public IBlockPuller BlockPuller => this.blockPuller;
+
+        /// <inheritdoc />
+        public IConsensusRules ConsensusRules => this.consensusRules;
 
         private readonly Dictionary<uint256, List<OnBlockDownloadedCallback>> callbacksByBlocksRequestedHash;
 
