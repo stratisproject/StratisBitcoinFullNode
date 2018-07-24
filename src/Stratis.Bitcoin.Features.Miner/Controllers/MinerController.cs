@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Reflection;
 using System.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -32,6 +34,8 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <summary>The wallet manager.</summary>
         private readonly IWalletManager walletManager;
 
+        private const string BitcoinNotUsedMsg =  "Method not used for Bitcoin";
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -58,6 +62,9 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         [HttpGet]
         public IActionResult GetStakingInfo()
         {
+            if (this.fullNode.Network.IsBitcoin())
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, MethodBase.GetCurrentMethod().Name, BitcoinNotUsedMsg);
+
             try
             {
                 GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetGetStakingInfoModel() : new GetStakingInfoModel();
@@ -80,10 +87,13 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         [HttpPost]
         public IActionResult StartStaking([FromBody]StartStakingRequest request)
         {
+            if (this.fullNode.Network.IsBitcoin())
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, MethodBase.GetCurrentMethod().Name, BitcoinNotUsedMsg);
+
             Guard.NotNull(request, nameof(request));
 
             try
-            {
+            {              
                 if (!this.ModelState.IsValid)
                 {
                     IEnumerable<string> errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
@@ -120,6 +130,9 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         [HttpPost]
         public IActionResult StopStaking()
         {
+            if (this.fullNode.Network.IsBitcoin())
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, MethodBase.GetCurrentMethod().Name, BitcoinNotUsedMsg);
+
             try
             {
                 this.fullNode.NodeFeature<MiningFeature>(true).StopStaking();
