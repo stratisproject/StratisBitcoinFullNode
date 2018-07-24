@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             IStakeChain stakeChain,
             IStakeValidator stakeValidator)
-            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, new BlockDefinitionOptions() { IsProofOfStake = false })
+            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, new BlockDefinitionOptions(network))
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             base.UpdateBaseHeaders();
 
-            this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.Network.Consensus, this.Options.IsProofOfStake);
+            this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.Network.Consensus, this.Network.Consensus.IsProofOfStake);
 
             this.logger.LogTrace("(-)");
         }

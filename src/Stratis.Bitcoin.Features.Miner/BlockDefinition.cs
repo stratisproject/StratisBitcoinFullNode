@@ -4,7 +4,6 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -130,14 +129,14 @@ namespace Stratis.Bitcoin.Features.Miner
             this.MempoolLock = mempoolLock;
             this.Network = network;
 
-            this.Options = options ?? new BlockDefinitionOptions();
+            this.Options = options ?? new BlockDefinitionOptions(network);
             this.BlockMinFeeRate = this.Options.BlockMinFeeRate;
 
-            // Limit weight to between 4K and MAX_BLOCK_WEIGHT-4K for sanity.
-            this.BlockMaxWeight = (uint)Math.Max(4000, Math.Min(PowMining.DefaultBlockMaxWeight - 4000, this.Options.BlockMaxWeight));
+            // Set BlockMaxWeight to value from BlockDefinitionOptions. If outside range of 4K - Consensus MaxBlockWeight, set to highest / lowest allowed.
+            this.BlockMaxWeight = (uint)Math.Max(4000, Math.Min(this.Network.Consensus.Options.MaxBlockWeight, this.Options.BlockMaxWeight));
 
-            // Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity.
-            this.BlockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Options.MaxBlockSerializedSize - 1000, this.Options.BlockMaxSize));
+            // Set BlockMaxSize to value from BlockDefinitionOptions. If outside range of 1K - Consensus MaxBlockSize, set to highest / lowest allowed.
+            this.BlockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Options.MaxBlockSerializedSize, this.Options.BlockMaxSize));
 
             // Whether we need to account for byte usage (in addition to weight usage).
             this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Options.MaxBlockSerializedSize - 1000);
