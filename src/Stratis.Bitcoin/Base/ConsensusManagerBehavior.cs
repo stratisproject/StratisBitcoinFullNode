@@ -393,7 +393,11 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogDebug("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
                 this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer presented header that violates a checkpoint.");
             }
-            //TODO catch more exceptions when validator are implemented and CM.HeadersPresented can throw anything else
+            catch (ConsensusException exception)
+            {
+                this.logger.LogWarning("Header is invalid. Peer will be banned and disconnected. Exception: '{0}'.", exception);
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Invalid header provided.");
+            }
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
@@ -434,24 +438,24 @@ namespace Stratis.Bitcoin.Base
                 return;
             }
 
-            ChainedHeader bestSentHeader = null;
-
             lock (this.bestSentHeaderLock)
             {
                 if (this.BestSentHeader != null)
                 {
-                    ChainedHeader ancestorOrSelf = header.FindAncestorOrSelf(this.BestSentHeader);
+                    ChainedHeader ancestorOrSelf = this.BestSentHeader.FindAncestorOrSelf(header);
 
-                    if (ancestorOrSelf != header)
-                        this.BestSentHeader = header;
+                    if (ancestorOrSelf == header)
+                    {
+                        // Header is on the same chain and is behind or it is the same as the current best header.
+                        this.logger.LogTrace("(-)[HEADER_BEHIND_OR_SAME]");
+                        return;
+                    }
                 }
-                else
-                    this.BestSentHeader = header;
 
-                bestSentHeader = this.BestSentHeader;
+                this.BestSentHeader = header;
             }
 
-            this.logger.LogTrace("(-):{0}='{1}'", nameof(this.BestSentHeader), bestSentHeader);
+            this.logger.LogTrace("(-):{0}='{1}'", nameof(this.BestSentHeader), header);
         }
 
         /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/> in case peer's state is <see cref="NetworkPeerState.HandShaked"/>.</summary>
