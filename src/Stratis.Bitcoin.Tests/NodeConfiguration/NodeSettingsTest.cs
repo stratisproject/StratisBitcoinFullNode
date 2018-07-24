@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
 {
     public class NodeSettingsTest : TestBase
     {
-        public NodeSettingsTest():base(Network.Main)
+        public NodeSettingsTest():base(Networks.Main)
         {
         }
 

@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
     /// </summary>
     public class GivenADnsFeature : TestBase
     {
-        public GivenADnsFeature() : base(Network.Main)
+        public GivenADnsFeature() : base(Networks.Main)
         {
         }
 

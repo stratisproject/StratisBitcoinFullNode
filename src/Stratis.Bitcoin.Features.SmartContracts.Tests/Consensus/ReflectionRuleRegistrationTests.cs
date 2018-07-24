@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
         [Fact]
         public void ReflectionVirtualMachineFeature_OnInitialize_RulesAdded()
         {
-            Network network = Network.StratisRegTest;
+            Network network = NBitcoin.Networks.StratisRegTest;
 
             var chain = new ConcurrentChain(network);
             var contractState = new ContractStateRepositoryRoot();

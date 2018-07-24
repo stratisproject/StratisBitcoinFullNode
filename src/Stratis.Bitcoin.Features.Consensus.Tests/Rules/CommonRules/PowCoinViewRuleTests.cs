@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
         public PowCoinViewRuleTests()
         {
-            this.network = Network.RegTest;
+            this.network = Networks.RegTest;
             this.rule = new PowCoinviewRule();
         }
 
@@ -86,11 +86,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 this.logger = new Mock<ILogger>();
                 rule.Logger = this.logger.Object;
                 rule.Parent = new PowConsensusRules(
-                    Network.RegTest,
+                    Networks.RegTest,
                     new Mock<ILoggerFactory>().Object,
                     new Mock<IDateTimeProvider>().Object,
                     new ConcurrentChain(this.network),
-                    new NodeDeployments(Network.RegTest, new ConcurrentChain(this.network)),
+                    new NodeDeployments(Networks.RegTest, new ConcurrentChain(this.network)),
                     new ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<CoinView>().Object, null);
 
                 rule.Initialize();

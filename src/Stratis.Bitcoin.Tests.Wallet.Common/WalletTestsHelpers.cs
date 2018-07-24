@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             var key = new Key();
             var address = new HdAddress
             {
-                Address = key.PubKey.GetAddress(Network.Main).ToString(),
+                Address = key.PubKey.GetAddress(Networks.Main).ToString(),
                 HdPath = hdPath,
                 ScriptPubKey = key.ScriptPubKey
             };
@@ -146,11 +146,11 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             var walletFile = new Features.Wallet.Wallet
             {
                 Name = name,
-                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, Network.Main).ToWif(),
+                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, Networks.Main).ToWif(),
                 ChainCode = extendedKey.ChainCode,
                 CreationTime = DateTimeOffset.Now,
-                Network = Network.Main,
-                AccountsRoot = new List<AccountRoot> { new AccountRoot() { Accounts = new List<HdAccount>(), CoinType = (CoinType)Network.Main.Consensus.CoinType } },
+                Network = Networks.Main,
+                AccountsRoot = new List<AccountRoot> { new AccountRoot() { Accounts = new List<HdAccount>(), CoinType = (CoinType)Networks.Main.Consensus.CoinType } },
             };
 
             return (walletFile, extendedKey);
@@ -375,10 +375,10 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
 
         public static ConcurrentChain PrepareChainWithBlock()
         {
-            var chain = new ConcurrentChain(Network.StratisMain);
+            var chain = new ConcurrentChain(Networks.StratisMain);
             uint nonce = RandomUtils.GetUInt32();
-            Block block = Network.StratisMain.Consensus.ConsensusFactory.CreateBlock();
-            block.AddTransaction(Network.StratisMain.CreateTransaction());
+            Block block = Networks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
+            block.AddTransaction(Networks.StratisMain.CreateTransaction());
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;
             block.Header.Nonce = nonce;
