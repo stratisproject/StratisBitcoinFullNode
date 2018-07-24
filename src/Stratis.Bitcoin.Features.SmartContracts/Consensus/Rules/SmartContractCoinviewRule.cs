@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
             // Start state from previous block's root
-            this.smartContractParent.OriginalStateRoot.SyncToRoot(((SmartContractPowBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
+            this.smartContractParent.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
             IContractStateRepository trackedState = this.smartContractParent.OriginalStateRoot.StartTracking();
 
             this.refundCounter = 1;
