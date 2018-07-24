@@ -367,6 +367,7 @@ namespace Stratis.Bitcoin.Tests.P2P
                     It.IsAny<NetworkPeerConnectionParameters>(), It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(networkPeer.Object));
             connectionManagerSettingsExisting.AddNode.Add(endpointNode);
             connectionManagerSettingsExisting.Connect.Add(endpointNode);
+            AddMissingPeersToConnectionManager(peerConnector);
             peerConnector.OnConnectAsync().GetAwaiter().GetResult();
             return peerConnector.ConnectorPeers.Select(p => p.PeerEndPoint).Contains(endpointNode);
         }
@@ -434,6 +435,21 @@ namespace Stratis.Bitcoin.Tests.P2P
                 new VersionProvider());
 
             return connectionManager;
+        }
+
+        private static void AddMissingPeersToConnectionManager(PeerConnectorConnectNode peerConnector)
+        {
+            Type type = peerConnector.GetType().BaseType;
+            System.Reflection.FieldInfo f = ((System.Reflection.FieldInfo[])((System.Reflection.TypeInfo)type).DeclaredFields)[3];
+            NetworkPeerCollection connectedPeers = (NetworkPeerCollection)f.GetValue(peerConnector);
+
+            foreach (INetworkPeer peer in peerConnector.ConnectorPeers)
+            {
+                if (!connectedPeers.Contains(peer))
+                    connectedPeers.Add(peer);
+            }
+
+            f.SetValue(peerConnector, (IReadOnlyNetworkPeerCollection)connectedPeers);
         }
     }
 }
