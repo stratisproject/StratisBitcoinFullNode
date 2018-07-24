@@ -4,6 +4,9 @@ using Mono.Cecil;
 
 namespace Stratis.ModuleValidation.Net
 {
+    /// <summary>
+    /// Validates that a <see cref="TypeDefinition"/> contains nested types
+    /// </summary>
     public class TypeHasNestedTypesValidator : ITypeDefinitionValidator 
     {
         public IEnumerable<ValidationResult> Validate(TypeDefinition type)
