@@ -38,12 +38,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public static PowBlockDefinition AssemblerForTest(TestContext testContext)
         {
-            var options = new BlockDefinitionOptions
-            {
-                BlockMaxWeight = testContext.network.Consensus.Options.MaxBlockWeight,
-                BlockMaxSize = testContext.network.Consensus.Options.MaxBlockSerializedSize,
-                BlockMinFeeRate = blockMinFeeRate
-            };
+            var options = new BlockDefinitionOptions(
+                testContext.network.Consensus.Options.MaxBlockWeight,
+                testContext.network.Consensus.Options.MaxBlockSerializedSize,
+                blockMinFeeRate);
 
             return new PowBlockDefinition(testContext.consensus, testContext.DateTimeProvider, new LoggerFactory(), testContext.mempool, testContext.mempoolLock, testContext.network, testContext.ConsensusRules, options);
         }

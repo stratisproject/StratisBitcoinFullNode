@@ -228,14 +228,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// <returns>Proof of work block assembler.</returns>
         private static PowBlockDefinition CreatePowBlockAssembler(IConsensusLoop consensusLoop, IConsensusRules consensusRules, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
         {
-            var options = new BlockDefinitionOptions
-            {
-                BlockMaxWeight = network.Consensus.Options.MaxBlockWeight,
-                BlockMaxSize = network.Consensus.Options.MaxBlockSerializedSize
-            };
-
             var blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
-            options.BlockMinFeeRate = blockMinFeeRate;
+            var options = new BlockDefinitionOptions(network.Consensus.Options.MaxBlockWeight, network.Consensus.Options.MaxBlockSerializedSize, blockMinFeeRate);
 
             return new PowBlockDefinition(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, consensusRules, options);
         }
