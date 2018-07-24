@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CreateNewBlock_WithScript_DoesNotValidateTemplateUsingRuleContext()
         {
-            var newOptions = new PosConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new PosConsensusOptions();
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
@@ -243,7 +243,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void AddTransactions_WithoutTransactionsInMempool_DoesNotAddEntriesToBlock()
         {
-            var newOptions = new PosConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new PosConsensusOptions();
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
@@ -268,7 +268,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void AddTransactions_TransactionNotInblock_AddsTransactionToBlock()
         {
-            var newOptions = new PosConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new PosConsensusOptions();
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void AddTransactions_TransactionAlreadyInInblock_DoesNotAddTransactionToBlock()
         {
-            var newOptions = new PosConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new PosConsensusOptions();
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {

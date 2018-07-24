@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CreateNewBlock_WithScript_ValidatesTemplateUsingRuleContext()
         {
-            var newOptions = new ConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new ConsensusOptions();
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
@@ -132,7 +132,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.True(this.callbackRuleContext.MinedBlock);
                 Assert.Equal(blockTemplate.Block.GetHash(), validationContext.Block.GetHash());
                 Assert.Equal(chain.GetBlock(5).HashBlock, powRuleContext.ConsensusTip.HashBlock);
-                Assert.Equal(1500, this.callbackRuleContext.Consensus.Options.MaxBlockWeight);
                 this.consensusLoop.Verify();
             });
         }
@@ -244,7 +243,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void TestBlockValidity_UsesRuleContextToValidateBlock()
         {
-            var newOptions = new ConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new ConsensusOptions();
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
@@ -265,7 +264,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.True(this.callbackRuleContext.MinedBlock);
                 Assert.Equal(block.GetHash(), validationContext.Block.GetHash());
                 Assert.Equal(chain.GetBlock(5).HashBlock, powRuleContext.ConsensusTip.HashBlock);
-                Assert.Equal(1500, this.callbackRuleContext.Consensus.Options.MaxBlockWeight);
                 this.consensusLoop.Verify();
             });
         }
@@ -273,7 +271,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void AddTransactions_WithoutTransactionsInMempool_DoesNotAddEntriesToBlock()
         {
-            var newOptions = new ConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new ConsensusOptions();
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
@@ -298,7 +296,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void AddTransactions_TransactionNotInblock_AddsTransactionToBlock()
         {
-            var newOptions = new ConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new ConsensusOptions();
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
@@ -324,7 +322,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void AddTransactions_TransactionAlreadyInInblock_DoesNotAddTransactionToBlock()
         {
-            var newOptions = new ConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new ConsensusOptions();
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
