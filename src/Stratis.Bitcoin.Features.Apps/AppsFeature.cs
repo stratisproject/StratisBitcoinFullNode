@@ -1,7 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.Apps.Interfaces;
 
@@ -56,11 +61,22 @@ namespace Stratis.Bitcoin.Features.Apps
                     .AddFeature<AppsFeature>()
                     .FeatureServices(services =>
                     {
+                        TryEnsureAppsFolderExists(services);
+
                         services.AddSingleton<IAppsStore, AppsStore>();                        
                         services.AddSingleton<IAppsHost, AppsHost>();
                         services.AddSingleton<AppsController>();
                     });
             });
+
+            void TryEnsureAppsFolderExists(IServiceCollection services)
+            {
+                ServiceDescriptor descriptor = services.FirstOrDefault(x => x.ServiceType == typeof(DataFolder));
+                if (!(descriptor?.ImplementationInstance is DataFolder)) return;
+                var appsPath = ((DataFolder)descriptor.ImplementationInstance).ApplicationsPath;
+                if (!Directory.Exists(appsPath))
+                    Directory.CreateDirectory(appsPath);
+            }
 
             return fullNodeBuilder;
         }
