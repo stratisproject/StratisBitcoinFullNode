@@ -25,41 +25,44 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
 
-            this.Consensus.ConsensusFactory = new SmartContractConsensusFactory() { Consensus = this.Consensus };
+            var consensus = new NBitcoin.Consensus();
+            consensus.ConsensusFactory = new SmartContractConsensusFactory() { Consensus = consensus };
 
-            this.Consensus.SubsidyHalvingInterval = 150;
-            this.Consensus.MajorityEnforceBlockUpgrade = 750;
-            this.Consensus.MajorityRejectBlockOutdated = 950;
-            this.Consensus.MajorityWindow = 1000;
-            this.Consensus.BuriedDeployments[BuriedDeployments.BIP34] = 100000000;
-            this.Consensus.BuriedDeployments[BuriedDeployments.BIP65] = 100000000;
-            this.Consensus.BuriedDeployments[BuriedDeployments.BIP66] = 100000000;
-            this.Consensus.BIP34Hash = new uint256();
-            this.Consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
-            this.Consensus.MinimumChainWork = uint256.Zero;
-            this.Consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
-            this.Consensus.PowTargetSpacing = TimeSpan.FromSeconds(10 * 60);
-            this.Consensus.PowAllowMinDifficultyBlocks = true;
-            this.Consensus.PowNoRetargeting = true;
-            this.Consensus.RuleChangeActivationThreshold = 108;
-            this.Consensus.MinerConfirmationWindow = 144;
+            consensus.SubsidyHalvingInterval = 150;
+            consensus.MajorityEnforceBlockUpgrade = 750;
+            consensus.MajorityRejectBlockOutdated = 950;
+            consensus.MajorityWindow = 1000;
+            consensus.BuriedDeployments[BuriedDeployments.BIP34] = 100000000;
+            consensus.BuriedDeployments[BuriedDeployments.BIP65] = 100000000;
+            consensus.BuriedDeployments[BuriedDeployments.BIP66] = 100000000;
+            consensus.BIP34Hash = new uint256();
+            consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+            consensus.MinimumChainWork = uint256.Zero;
+            consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
+            consensus.PowTargetSpacing = TimeSpan.FromSeconds(10 * 60);
+            consensus.PowAllowMinDifficultyBlocks = true;
+            consensus.PowNoRetargeting = true;
+            consensus.RuleChangeActivationThreshold = 108;
+            consensus.MinerConfirmationWindow = 144;
 
-            this.Consensus.CoinbaseMaturity = 5;
-            this.Consensus.PremineReward = Money.Zero;
-            this.Consensus.ProofOfWorkReward = Money.Coins(50);
-            this.Consensus.ProofOfStakeReward = Money.Zero;
-            this.Consensus.MaxReorgLength = 500;
-            this.Consensus.MaxMoney = long.MaxValue;
+            consensus.CoinbaseMaturity = 5;
+            consensus.PremineReward = Money.Zero;
+            consensus.ProofOfWorkReward = Money.Coins(50);
+            consensus.ProofOfStakeReward = Money.Zero;
+            consensus.MaxReorgLength = 500;
+            consensus.MaxMoney = long.MaxValue;
 
-            this.Consensus.BIP9Deployments[BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999);
-            this.Consensus.BIP9Deployments[BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999);
-            this.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999);
+            consensus.BIP9Deployments[BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999);
+            consensus.BIP9Deployments[BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999);
+            consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999);
 
-            this.Genesis = BitcoinMain.CreateBitcoinGenesisBlock(this.Consensus.ConsensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
+            this.Genesis = BitcoinMain.CreateBitcoinGenesisBlock(consensus.ConsensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
             ((SmartContractBlockHeader)this.Genesis.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
-            this.Consensus.HashGenesisBlock = this.Genesis.Header.GetHash();
+            consensus.HashGenesisBlock = this.Genesis.Header.GetHash();
 
-            this.Consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
+            consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
+
+            this.Consensus = consensus;
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("93867319cf92c86f957a9652c1fbe7cc8cbe70c53a915ac96ee7c59cb80f94b4"));
 
