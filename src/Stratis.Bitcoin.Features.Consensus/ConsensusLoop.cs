@@ -392,7 +392,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.logger.LogDebug("Block extends best chain tip to '{0}'.", this.Tip);
                     }
 
-                    this.signals.SignalBlock(validationContext.Block);
+                    this.signals.SignalBlockConnected(validationContext.Block);
                 }
             }
 
