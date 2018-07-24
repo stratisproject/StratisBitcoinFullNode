@@ -182,7 +182,9 @@ namespace Stratis.Bitcoin.Features.Miner
         public enum CurrentState
         {
             Idle = 0,
-            Executing = 1
+            StakingRequested = 1,
+            StakingInProgress = 2,
+            StopStakingRequested = 3
         }
 
         /// <summary>The maximum allowed size for a serialized block, in bytes (network rule).</summary>
@@ -253,10 +255,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private IAsyncLoop stakingLoop;
 
         /// <summary>A flag that indicates if stake is on/off based on the <see cref="CurrentState"/> enum.</summary>
-        private int stakeStateFlag;
-
-        /// <summary>A flag that indicates if stake stopping is on/off based on the <see cref="CurrentState"/> enum.</summary>
-        private int stopStakingStateFlag;
+        private int currentState;
 
         /// <summary>
         /// Target reserved balance that will not participate in staking.
@@ -377,8 +376,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
-            this.stakeStateFlag = (int)CurrentState.Idle;
-            this.stopStakingStateFlag = (int)CurrentState.Idle;
+            this.currentState = (int)CurrentState.Idle;
 
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
         }
@@ -388,15 +386,9 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            if (Interlocked.CompareExchange(ref this.stakeStateFlag, (int)CurrentState.Executing, (int)CurrentState.Idle) == (int)CurrentState.Executing)
+            if (Interlocked.CompareExchange(ref this.currentState, (int)CurrentState.StakingRequested, (int)CurrentState.Idle) != (int)CurrentState.Idle)
             {
-                this.logger.LogTrace("(-)[ALREADY_MINING]");
-                return;
-            }
-
-            if (Interlocked.CompareExchange(ref this.stopStakingStateFlag, (int)CurrentState.Idle, (int)CurrentState.Executing) == (int)CurrentState.Executing)
-            {
-                this.logger.LogTrace("(-)[MINING_STOPPING]");
+                this.logger.LogTrace("(-)[NOT_IDLE]");
                 return;
             }
 
@@ -443,6 +435,8 @@ namespace Stratis.Bitcoin.Features.Miner
             repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
             startAfter: TimeSpans.Second);
 
+            Interlocked.CompareExchange(ref this.currentState, (int)CurrentState.StakingInProgress, (int)CurrentState.StakingRequested);
+
             this.logger.LogTrace("(-)");
         }
 
@@ -451,9 +445,9 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            if (Interlocked.CompareExchange(ref this.stopStakingStateFlag, (int)CurrentState.Executing, (int)CurrentState.Idle) == (int)CurrentState.Executing)
+            if (Interlocked.CompareExchange(ref this.currentState, (int)CurrentState.StopStakingRequested, (int)CurrentState.StakingInProgress) != (int)CurrentState.StakingInProgress)
             {
-                this.logger.LogTrace("(-)[MINING_STOPPING]");
+                this.logger.LogTrace("(-)[STAKING_NOT_IN_PROGRESS]");
                 return;
             }
 
@@ -465,6 +459,8 @@ namespace Stratis.Bitcoin.Features.Miner
             this.stakeCancellationTokenSource = null;
             this.rpcGetStakingInfoModel = new Miner.Models.GetStakingInfoModel();
             this.rpcGetStakingInfoModel.Enabled = false;
+
+            Interlocked.CompareExchange(ref this.currentState, (int)CurrentState.Idle, (int)CurrentState.StopStakingRequested);
 
             this.logger.LogTrace("(-)");
         }
