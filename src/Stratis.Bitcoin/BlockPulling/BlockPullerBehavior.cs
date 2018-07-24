@@ -10,7 +10,7 @@ using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.BlockPulling2
+namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>
     /// Relation of the node's puller to a network peer node.

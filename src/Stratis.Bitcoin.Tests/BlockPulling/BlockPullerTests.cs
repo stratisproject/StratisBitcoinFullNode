@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.BlockPulling2;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.BlockPulling2
+namespace Stratis.Bitcoin.Tests.BlockPulling
 {
     public class BlockPullerTests
     {

@@ -1,11 +1,11 @@
 ﻿using System;
 using Moq;
-using Stratis.Bitcoin.BlockPulling2;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Interfaces;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.BlockPulling2
+namespace Stratis.Bitcoin.Tests.BlockPulling
 {
     public class BlockPullerBehaviorTests
     {

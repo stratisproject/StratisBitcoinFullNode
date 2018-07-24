@@ -11,7 +11,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.BlockPulling2
+namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>
     /// Thread-safe block puller which allows downloading blocks from all chains that the node is aware of.

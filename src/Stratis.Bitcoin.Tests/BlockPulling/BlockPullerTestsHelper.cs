@@ -10,7 +10,7 @@ using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.BlockPulling2;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Interfaces;
@@ -21,7 +21,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Tests.BlockPulling2
+namespace Stratis.Bitcoin.Tests.BlockPulling
 {
     public class BlockPullerTestsHelper
     {
