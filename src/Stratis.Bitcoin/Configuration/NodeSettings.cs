@@ -375,7 +375,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <inheritdoc />
         public void Dispose()
         {
-            this.LoggerFactory?.Dispose();
+            this.LoggerFactory.Dispose();
         }
     }
 }

@@ -70,7 +70,7 @@
         ConnectionManagerSettings ConnectionSettings { get; }
         
         /// <summary>
-        /// Remove a peer to the address manager's collection as well as
+        /// Remove a peer from the address manager's collection as well as
         /// the connection manager's add node collection.
         /// </summary>
         void RemoveNodeAddress(IPEndPoint ipEndpoint);
