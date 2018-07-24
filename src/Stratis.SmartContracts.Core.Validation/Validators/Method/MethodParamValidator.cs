@@ -43,11 +43,14 @@ namespace Stratis.SmartContracts.Core.Validation
                 .Select(paramDef => new MethodParamValidationResult(methodDef, paramDef));
         }
 
+        /// <summary>
+        /// Checks that constructor methods contains an allowed parameter. Allowed parameters are <see cref="ISmartContractState"/>
+        /// and the types defined in <see cref="AllowedTypes"/>
+        /// </summary>
         public static bool IsValidParam(MethodDefinition methodDefinition, ParameterDefinition param)
         {
             if (methodDefinition.IsConstructor)
             {
-                // Constructor is allowed to have an ISmartContractState param
                 if (param.ParameterType.FullName == typeof(ISmartContractState).FullName)
                 {
                     return true;
