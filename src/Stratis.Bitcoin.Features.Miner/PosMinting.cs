@@ -550,8 +550,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("()");
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
             List<UnspentOutputReference> spendableTransactions = this.walletManager
-                .GetSpendableTransactionsInWallet(walletSecret.WalletName, 1)
-                .Where(t => t != null).ToList();
+                .GetSpendableTransactionsInWallet(walletSecret.WalletName, 1).ToList();
 
             FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).ToArray(), cancellationToken).ConfigureAwait(false);
             if (cancellationToken.IsCancellationRequested) return utxoStakeDescriptions;
@@ -585,7 +584,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             this.logger.LogTrace("Wallet total staking balance is {0}.", new Money(utxoStakeDescriptions.Sum(d => d.TxOut.Value)));
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-):*.{0}={1}", nameof(utxoStakeDescriptions.Count), utxoStakeDescriptions.Count);
             return utxoStakeDescriptions;
         }
 
