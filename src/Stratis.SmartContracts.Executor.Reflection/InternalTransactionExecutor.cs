@@ -17,23 +17,33 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
+        private readonly ISmartContractVirtualMachine vm;
+        private readonly ITransactionContext transactionContext;
 
-        public InternalTransactionExecutor(
+        public InternalTransactionExecutor(ITransactionContext transactionContext, ISmartContractVirtualMachine vm,
             IContractStateRepository contractStateRepository,
             List<TransferInfo> internalTransferList,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network)
         {
+            this.transactionContext = transactionContext;
             this.contractStateRepository = contractStateRepository;
             this.internalTransferList = internalTransferList;
             this.keyEncodingStrategy = keyEncodingStrategy;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.network = network;
+            this.vm = vm;
         }
 
-        ///<inheritdoc/>
+        ///<inheritdoc />
+        public ICreateResult Create<T>(ISmartContractState smartContractState, object[] parameters, ulong amountToTransfer)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        ///<inheritdoc />
         public ITransferResult TransferFunds(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
@@ -74,22 +84,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
 
             IContractStateRepository track = this.contractStateRepository.StartTracking();
-            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(track, smartContractState.GasMeter, this.keyEncodingStrategy);
-            IPersistentState newPersistentState = new PersistentState(persistenceStrategy, addressTo.ToUint160(this.network), this.network);
 
-            var newMessage = new Message(addressTo, smartContractState.Message.ContractAddress, amountToTransfer, (Gas)(smartContractState.Message.GasLimit - smartContractState.GasMeter.GasConsumed));
+            var callData = new CallData(smartContractState.GasMeter.GasLimit, addressTo.ToUint160(this.network), contractDetails.ContractMethodName, contractDetails.MethodParameters);
+            
+            var context = new TransactionContext(
+                this.transactionContext.TransactionHash,
+                this.transactionContext.BlockHeight,
+                this.transactionContext.Coinbase,
+                smartContractState.Message.ContractAddress.ToUint160(this.network),
+                amountToTransfer);
 
-            ISmartContractExecutionContext newContext = new SmartContractExecutionContext(smartContractState.Block, newMessage, addressTo.ToUint160(this.network), 0, contractDetails.MethodParameters);
-
-            ISmartContractVirtualMachine vm = new ReflectionVirtualMachine(new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network), this.loggerFactory);
-
-            var result = vm.ExecuteMethod(
-                contractCode,
-                contractDetails.ContractMethodName,
-                newContext,
-                smartContractState.GasMeter, 
-                newPersistentState, 
-                track);
+            var result = this.vm.ExecuteMethod(smartContractState.GasMeter, 
+                track, 
+                callData,
+                context);
 
             var revert = result.ExecutionException != null;
 

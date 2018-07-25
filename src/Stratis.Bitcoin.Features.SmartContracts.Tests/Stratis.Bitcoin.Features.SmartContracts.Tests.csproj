@@ -69,6 +69,12 @@
     </Compile>
     <Compile Update="SmartContracts\MultipleConstructor.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="SmartContracts\MultipleFiles1.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="SmartContracts\MultipleFiles2.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>	
     <Compile Update="SmartContracts\OutOfGasTest.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
