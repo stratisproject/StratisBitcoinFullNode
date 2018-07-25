@@ -27,9 +27,28 @@ namespace Stratis.Bitcoin.Networks
             this.RPCPort = 26174;
             this.CoinTicker = "TSTRAT";
 
+            var powLimit = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
+
             var consensusFactory = new PosConsensusFactory();
+
+            // Create the genesis block.
+            this.GenesisTime = 1470467000;
+            this.GenesisNonce = 1831645;
+            this.GenesisBits = 0x1e0fffff;
+            this.GenesisVersion = 1;
+            this.GenesisReward = Money.Zero;
+
+            Block genesisBlock = CreateStratisGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+            
+            genesisBlock.Header.Time = 1493909211;
+            genesisBlock.Header.Nonce = 2433759;
+            genesisBlock.Header.Bits = powLimit;
+
+            this.Genesis = genesisBlock;
+
             var consensus = new Consensus();
             consensus.ConsensusFactory = consensusFactory;
+            consensus.HashGenesisBlock = genesisBlock.GetHash();
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 750;
             consensus.MajorityRejectBlockOutdated = 950;
@@ -57,7 +76,7 @@ namespace Stratis.Bitcoin.Networks
             consensus.MaxMoney = long.MaxValue;
 
             // StratisTest consensus differences
-            consensus.PowLimit = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
+            consensus.PowLimit = powLimit;
             consensus.DefaultAssumeValid = new uint256("0x98fa6ef0bca5b431f15fd79dc6f879dc45b83ed4b1bbe933a383ef438321958e"); // 372652
             consensus.CoinbaseMaturity = 10;
 
@@ -68,6 +87,8 @@ namespace Stratis.Bitcoin.Networks
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000
                 );
+
+            this.Consensus = consensus;
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
@@ -102,21 +123,6 @@ namespace Stratis.Bitcoin.Networks
                 new NetworkAddress(IPAddress.Parse("191.235.85.131"), 3389), // fassa cloud node  
                 new NetworkAddress(IPAddress.Parse("52.232.58.52"), 26178), // neurosploit public node
             };
-
-            // Create the genesis block.
-            this.GenesisTime = 1470467000;
-            this.GenesisNonce = 1831645;
-            this.GenesisBits = 0x1e0fffff;
-            this.GenesisVersion = 1;
-            this.GenesisReward = Money.Zero;
-
-            this.Genesis = CreateStratisGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
-            this.Genesis.Header.Time = 1493909211;
-            this.Genesis.Header.Nonce = 2433759;
-            this.Genesis.Header.Bits = consensus.PowLimit;
-            consensus.HashGenesisBlock = this.Genesis.GetHash();
-
-            this.Consensus = consensus;
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
         }
