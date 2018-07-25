@@ -23,7 +23,7 @@ namespace NBitcoin
         BIP66
     }
 
-    public class Consensus
+    public class Consensus : IConsensus
     {
         /// <summary>
         /// How many blocks should be on top of a coinbase transaction until its outputs are considered spendable.
