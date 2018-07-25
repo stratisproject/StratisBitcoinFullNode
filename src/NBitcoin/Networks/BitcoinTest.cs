@@ -48,6 +48,8 @@ namespace NBitcoin.Networks
             consensus.RuleChangeActivationThreshold = 1512; // 75% for testchains
             consensus.CoinType = 1;
 
+            consensus.Options = new ConsensusOptions(); // Default - set to Bitcoin params.
+
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (239) };
