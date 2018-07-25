@@ -501,7 +501,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     blockTemplate = null;
                 }
 
-                uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~BlockHeaderPosContextualRule.StakeTimestampMask;
+                uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosTimeMaskRule.StakeTimestampMask;
                 if (coinstakeTimestamp <= this.lastCoinStakeSearchTime)
                 {
                     this.logger.LogTrace("Current coinstake time {0} is not greater than last search timestamp {1}.", coinstakeTimestamp, this.lastCoinStakeSearchTime);
@@ -741,7 +741,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // If the time after applying the mask is lower than minimal allowed time,
             // it is simply too early for us to mine, there can't be any valid solution.
-            if ((coinstakeContext.CoinstakeTx.Time & ~BlockHeaderPosContextualRule.StakeTimestampMask) < minimalAllowedTime)
+            if ((coinstakeContext.CoinstakeTx.Time & ~PosTimeMaskRule.StakeTimestampMask) < minimalAllowedTime)
             {
                 this.logger.LogTrace("(-)[TOO_EARLY_TIME_AFTER_LAST_BLOCK]:false");
                 return false;
@@ -909,7 +909,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     if (txTime < minimalAllowedTime)
                         break;
 
-                    if ((txTime & BlockHeaderPosContextualRule.StakeTimestampMask) != 0)
+                    if ((txTime & PosTimeMaskRule.StakeTimestampMask) != 0)
                         continue;
 
                     context.Logger.LogTrace("Trying with transaction time {0}...", txTime);
@@ -1030,7 +1030,7 @@ namespace Stratis.Bitcoin.Features.Miner
             var res = new List<UtxoStakeDescription>();
 
             long currentValue = 0;
-            long requiredDepth = this.network.Consensus.Option<PosConsensusOptions>().GetStakeMinConfirmations(chainTip.Height + 1, this.network) - 1;
+            long requiredDepth = (this.network.Consensus.Options as PosConsensusOptions).GetStakeMinConfirmations(chainTip.Height + 1, this.network) - 1;
             foreach (UtxoStakeDescription utxoStakeDescription in utxoStakeDescriptions.OrderByDescending(x => x.TxOut.Value))
             {
                 int depth = this.GetDepthInMainChain(utxoStakeDescription);
@@ -1185,7 +1185,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             if (stakesTime != 0) res = stakeKernelsAvg / stakesTime;
 
-            res *= BlockHeaderPosContextualRule.StakeTimestampMask + 1;
+            res *= PosTimeMaskRule.StakeTimestampMask + 1;
 
             this.logger.LogTrace("(-):{0}", res);
             return res;
@@ -1210,7 +1210,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.logger.LogTrace("({0}:{1})", nameof(utxoCount), utxoCount);
 
             long maturityLimit = this.network.Consensus.CoinbaseMaturity;
-            long coinAgeLimit = this.network.Consensus.Option<PosConsensusOptions>().GetStakeMinConfirmations(chainTip.Height + 1, this.network);
+            long coinAgeLimit = (this.network.Consensus.Options as PosConsensusOptions).GetStakeMinConfirmations(chainTip.Height + 1, this.network);
             long requiredCoinAgeForStaking = Math.Max(maturityLimit, coinAgeLimit);
             this.logger.LogTrace("Required coin age for staking is {0}.", requiredCoinAgeForStaking);
 

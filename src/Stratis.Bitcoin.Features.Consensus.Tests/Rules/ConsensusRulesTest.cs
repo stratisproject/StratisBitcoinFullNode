@@ -51,25 +51,25 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.loggerFactory.Setup(l => l.CreateLogger(typeof(BlockSizeRule).FullName))
                 .Returns(new Mock<ILogger>().Object)
                 .Verifiable();
-            this.loggerFactory.Setup(l => l.CreateLogger(typeof(BlockHeaderRule).FullName))
+            this.loggerFactory.Setup(l => l.CreateLogger(typeof(SetActivationDeploymentsRule).FullName))
                 .Returns(new Mock<ILogger>().Object)
                 .Verifiable();
             this.ruleRegistrations = new List<ConsensusRule> {
                 new BlockSizeRule(),
-                new BlockHeaderRule()
+                new SetActivationDeploymentsRule()
             };
 
             TestConsensusRules consensusRules = InitializeConsensusRules();
             
             consensusRules = consensusRules.Register(this.ruleRegistration.Object) as TestConsensusRules;
 
-            List<ConsensusRuleDescriptor> rules = consensusRules.Rules.ToList();
+            List<ConsensusRule> rules = consensusRules.Rules.ToList();
             Assert.Equal(2, rules.Count);
-            ConsensusRule rule = rules[0].Rule;
+            ConsensusRule rule = rules[0];
             Assert.Equal(typeof(TestConsensusRules), rule.Parent.GetType());
             Assert.NotNull(rule.Logger);
 
-            rule = rules[1].Rule;
+            rule = rules[1];
             Assert.Equal(typeof(TestConsensusRules), rule.Parent.GetType());
             Assert.NotNull(rule.Logger);
 
@@ -80,18 +80,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public async Task ValidateAsync_RuleWithoutAttributes_GetsRunAsync()
         {
             var rule = new Mock<ConsensusRule>();
-            rule.Setup(r => r.RunAsync(It.Is<RuleContext>(c => c.SkipValidation == false)))
-                .Returns(Task.FromResult(1))
-                .Verifiable();
+            rule.Setup(r => r.RunAsync(It.Is<RuleContext>(c => c.SkipValidation == false)));
 
             this.ruleRegistrations = new List<ConsensusRule> { rule.Object };
 
             TestConsensusRules consensusRules = InitializeConsensusRules();
-            consensusRules.Register(this.ruleRegistration.Object);
 
-            await consensusRules.ValidateAsync(new RuleContext() { SkipValidation = false });
-
-            rule.Verify();
+            Assert.Throws<ConsensusException>(() => { consensusRules.Register(this.ruleRegistration.Object); });
         }
 
         [Fact]
@@ -206,6 +201,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             Assert.Null(blockValidationContext.Error);
         }
 
+        [PartialValidationRule]
+        public class TestRule : ConsensusRule
+        {
+            public override Task RunAsync(RuleContext context)
+            {
+                throw new ConsensusErrorException(ConsensusErrors.BadBlockLength);
+            }
+        }
+
         [Fact]
         public async Task ExecuteAsync_ConsensusErrorException_SetsConsensusErrorOnBlockValidationContextAsync()
         {
@@ -215,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 .Throws(new ConsensusErrorException(consensusError))
                 .Verifiable();
 
-            this.ruleRegistrations = new List<ConsensusRule> { rule.Object };
+            this.ruleRegistrations = new List<ConsensusRule> { new TestRule() };
             var blockValidationContext = new ValidationContext()
             {
                 RuleContext = new RuleContext()
@@ -254,7 +258,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public void TryFindRule_RuleNotFound_ReturnsNull()
         {
             this.ruleRegistrations = new List<ConsensusRule> {
-                new BlockHeaderRule()
+                new SetActivationDeploymentsRule()
             };
 
             TestConsensusRules consensusRules = this.InitializeConsensusRules();
@@ -287,7 +291,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             Assert.Throws<Exception>(() =>
             {
                 this.ruleRegistrations = new List<ConsensusRule> {
-                    new BlockHeaderRule()
+                    new SetActivationDeploymentsRule()
                 };
 
                 TestConsensusRules consensusRules = this.InitializeConsensusRules();
@@ -297,7 +301,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             });
         }
 
-        [ValidationRule]
+        [PartialValidationRule]
         private class ConsensusRuleWithValidationAttribute : ConsensusRule
         {
             public bool RunCalled { get; private set; }
@@ -314,7 +318,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             }
         }
 
-        [ValidationRule(CanSkipValidation = true)]
+        [PartialValidationRule(CanSkipValidation = true)]
         private class ConsensusRuleWithSkipValidationAttribute : ConsensusRule
         {
             public bool RunCalled { get; private set; }
@@ -331,7 +335,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             }
         }
 
-        [ExecutionRule]
+        [FullValidationRule]
         private class ConsensusRuleWithoutNonValidationRuleAttribute : ConsensusRule
         {
             public bool RunCalled { get; private set; }

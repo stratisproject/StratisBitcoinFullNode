@@ -8,11 +8,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Checks if <see cref="Block"/> has a valid PoS header.
     /// </summary>
-    public class BlockHeaderPosContextualRule : StakeStoreConsensusRule
+    [PartialValidationRule(CanSkipValidation = true)]
+    public class PosTimeMaskRule : StakeStoreConsensusRule
     {
         /// <summary>PoS block's timestamp mask.</summary>
         /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
         public const uint StakeTimestampMask = 0x0000000F;
+
+        public PosFutureDriftRule FutureDriftRule { get; set; }
+
+        public override void Initialize()
+        {
+            base.Initialize();
+
+            this.FutureDriftRule = this.Parent.Rules.FindRule<PosFutureDriftRule>();
+        }
 
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block' timestamp too far in the future.</exception>
@@ -27,12 +37,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             var posRuleContext = context as PosRuleContext;
 
-            if (chainedHeader.Header.Version < 7)
-            {
-                this.Logger.LogTrace("(-)[BAD_VERSION]");
-                ConsensusErrors.BadVersion.Throw();
-            }
-
             if (posRuleContext.BlockStake.IsProofOfWork() && (chainedHeader.Height > this.Parent.ConsensusParams.LastPOWBlock))
             {
                 this.Logger.LogTrace("(-)[POW_TOO_HIGH]");
@@ -41,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Check coinbase timestamp.
             uint coinbaseTime = context.ValidationContext.Block.Transactions[0].Time;
-            if (chainedHeader.Header.Time > coinbaseTime + PosFutureDriftRule.GetFutureDrift(coinbaseTime))
+            if (chainedHeader.Header.Time > coinbaseTime + this.FutureDriftRule.GetFutureDrift(coinbaseTime))
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
@@ -53,13 +57,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 this.Logger.LogTrace("(-)[BAD_TIME]");
                 ConsensusErrors.StakeTimeViolation.Throw();
-            }
-
-            // Check timestamp against prev.
-            if (chainedHeader.Header.Time <= chainedHeader.Previous.Header.Time)
-            {
-                this.Logger.LogTrace("(-)[TIME_TOO_EARLY]");
-                ConsensusErrors.BlockTimestampTooEarly.Throw();
             }
 
             return Task.CompletedTask;

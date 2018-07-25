@@ -10,14 +10,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class CheckPowTransactionRuleTest : TestConsensusRulesUnitTestBase
     {
-        private PowConsensusOptions options;
+        private ConsensusOptions options;
 
         private NBitcoin.Consensus consensus;
 
         public CheckPowTransactionRuleTest()
         {
             this.consensus = this.network.Consensus;
-            this.options = this.consensus.Option<PowConsensusOptions>();
+            this.options = this.consensus.Options;
         }
 
         [Fact]

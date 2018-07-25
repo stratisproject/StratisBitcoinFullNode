@@ -14,8 +14,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
         public DateTimeOffset Time { get; set; }
 
-        public Target NextWorkRequired { get; set; }
-
         public ValidationContext ValidationContext { get; set; }
 
         public DeploymentFlags Flags { get; set; }
@@ -36,7 +34,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         {
         }
 
-        public RuleContext(ValidationContext validationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip) : base()
+        public RuleContext(ValidationContext validationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip, DateTimeOffset time) : base()
         {
             Guard.NotNull(validationContext, nameof(validationContext));
             Guard.NotNull(consensus, nameof(consensus));
@@ -45,7 +43,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.Consensus = consensus;
             this.ConsensusTip = consensusTip;
             this.ConsensusTipHeight = consensusTip.Height;
-
+            this.Time = time;
             this.MinedBlock = false;
         }
     }

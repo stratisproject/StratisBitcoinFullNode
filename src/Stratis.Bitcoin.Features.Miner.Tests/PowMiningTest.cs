@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private ConcurrentChain chain;
         private readonly Mock<IConsensusLoop> consensusLoop;
         private readonly Mock<IConsensusRules> consensusRules;
-        private readonly NBitcoin.Consensus.ConsensusOptions initialNetworkOptions;
+        private readonly ConsensusOptions initialNetworkOptions;
         private readonly PowMiningTestFixture fixture;
         private readonly Mock<ITxMempool> mempool;
         private readonly MempoolSchedulerLock mempoolLock;
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.initialNetworkOptions = this.network.Consensus.Options;
             if (this.initialNetworkOptions == null)
-                this.network.Consensus.Options = new PowConsensusOptions();
+                this.network.Consensus.Options = new ConsensusOptions();
 
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 

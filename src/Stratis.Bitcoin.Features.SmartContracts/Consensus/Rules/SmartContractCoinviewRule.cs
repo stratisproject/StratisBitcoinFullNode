@@ -17,13 +17,12 @@ using Stratis.SmartContracts.Core.Util;
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     /// <inheritdoc />
-    [ExecutionRule]
+    [FullValidationRule]
     public sealed class SmartContractCoinviewRule : CoinViewRule
     {
         private List<Transaction> blockTxsProcessed;
         private NBitcoin.Consensus consensusParams;
         private Transaction generatedTransaction;
-        private ILogger logger;
         private uint refundCounter;
         private SmartContractConsensusRules smartContractParent;
 
@@ -40,7 +39,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             this.consensusParams = this.Parent.Network.Consensus;
             this.generatedTransaction = null;
-            this.logger = this.Parent.LoggerFactory.CreateLogger(this.GetType());
             this.refundCounter = 1;
             this.smartContractParent = (SmartContractConsensusRules)this.Parent;
 
@@ -104,7 +102,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     // * p2sh (when P2SH enabled in flags and excludes coinbase),
                     // * witness (when witness enabled in flags and excludes coinbase).
                     sigOpsCost += this.GetTransactionSignatureOperationCost(tx, view, flags);
-                    if (sigOpsCost > this.PowConsensusOptions.MaxBlockSigopsCost)
+                    if (sigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
                         ConsensusErrors.BadBlockSigOps.Throw();
 
                     if (!this.IsProtocolTransaction(tx))
@@ -333,12 +331,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             // For now we don't want it to interrupt execution so put it in a silly large try catch.
             try
             {
-                this.logger.LogTrace("Save Receipt : {0}:{1}", nameof(txContext.TransactionHash), txContext.TransactionHash);
+                this.Logger.LogTrace("Save Receipt : {0}:{1}", nameof(txContext.TransactionHash), txContext.TransactionHash);
                 this.smartContractParent.ReceiptStorage.SaveReceipt(txContext, result);
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred saving contract receipt: {0}", e.Message);
+                this.Logger.LogError("Exception occurred saving contract receipt: {0}", e.Message);
             }
         }
     }

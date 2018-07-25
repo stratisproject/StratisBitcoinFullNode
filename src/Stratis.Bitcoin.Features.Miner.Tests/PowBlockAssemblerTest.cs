@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CreateNewBlock_WithScript_ReturnsBlockTemplate()
         {
-            this.ExecuteWithConsensusOptions(new PowConsensusOptions(), () =>
+            this.ExecuteWithConsensusOptions(new ConsensusOptions(), () =>
             {
                 ConcurrentChain chain = GenerateChainWithHeight(5, this.network, this.key);
                 this.SetupRulesEngine(chain);
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc).ToUnixTimestamp());
                 Transaction transaction = CreateTransaction(this.network, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
                 var txFee = new Money(1000);
-                SetupTxMempool(chain, this.network.Consensus.Options as PowConsensusOptions, txFee, transaction);
+                SetupTxMempool(chain, this.network.Consensus.Options as ConsensusOptions, txFee, transaction);
                 this.consensusRules
                     .Setup(s => s.CreateRuleContext(It.IsAny<ValidationContext>(), It.IsAny<ChainedHeader>()))
                     .Returns(new PowRuleContext());
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CreateNewBlock_WithScript_ValidatesTemplateUsingRuleContext()
         {
-            var newOptions = new PowConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new ConsensusOptions() { MaxBlockWeight = 1500 };
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
@@ -117,9 +117,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 Transaction transaction = CreateTransaction(this.network, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
                 var txFee = new Money(1000);
-                SetupTxMempool(chain, this.network.Consensus.Options as PowConsensusOptions, txFee, transaction);
+                SetupTxMempool(chain, this.network.Consensus.Options as ConsensusOptions, txFee, transaction);
                 ValidationContext validationContext = null;
-                var powRuleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, chain.Tip);
+                var powRuleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, chain.Tip, this.dateTimeProvider.Object.GetTimeOffset());
                 this.consensusRules
                     .Setup(s => s.CreateRuleContext(It.IsAny<ValidationContext>(), It.IsAny<ChainedHeader>())).Callback<ValidationContext, ChainedHeader>((r, s) => validationContext = r)
                     .Returns(powRuleContext);
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.True(this.callbackRuleContext.MinedBlock);
                 Assert.Equal(blockTemplate.Block.GetHash(), validationContext.Block.GetHash());
                 Assert.Equal(chain.GetBlock(5).HashBlock, powRuleContext.ConsensusTip.HashBlock);
-                Assert.Equal(1500, this.callbackRuleContext.Consensus.Option<PowConsensusOptions>().MaxBlockWeight);
+                Assert.Equal(1500, this.callbackRuleContext.Consensus.Options.MaxBlockWeight);
                 this.consensusLoop.Verify();
             });
         }
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void ComputeBlockVersion_UsingChainTipAndConsensus_NoBip9DeploymentActive_UpdatesHeightAndVersion()
         {
-            this.ExecuteWithConsensusOptions(new PowConsensusOptions(), () =>
+            this.ExecuteWithConsensusOptions(new ConsensusOptions(), () =>
             {
                 ConcurrentChain chain = GenerateChainWithHeight(5, this.network, new Key());
 
@@ -157,12 +157,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void ComputeBlockVersion_UsingChainTipAndConsensus_Bip9DeploymentActive_UpdatesHeightAndVersion()
         {
-            NBitcoin.Consensus.ConsensusOptions options = this.network.Consensus.Options;
+            ConsensusOptions options = this.network.Consensus.Options;
             int minerConfirmationWindow = this.network.Consensus.MinerConfirmationWindow;
             int ruleChangeActivationThreshold = this.network.Consensus.RuleChangeActivationThreshold;
             try
             {
-                var newOptions = new PowConsensusOptions();
+                var newOptions = new ConsensusOptions();
                 this.network.Consensus.Options = newOptions;
                 this.network.Consensus.BIP9Deployments[0] = new BIP9DeploymentsParameters(19,
                     new DateTimeOffset(new DateTime(2016, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CreateCoinbase_CreatesCoinbaseTemplateTransaction_AddsToBlockTemplate()
         {
-            this.ExecuteWithConsensusOptions(new PowConsensusOptions(), () =>
+            this.ExecuteWithConsensusOptions(new ConsensusOptions(), () =>
             {
                 ConcurrentChain chain = GenerateChainWithHeight(5, this.network, this.key);
                 this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void UpdateHeaders_UsingChainAndNetwork_PreparesBlockHeaders()
         {
-            this.ExecuteWithConsensusOptions(new PowConsensusOptions(), () =>
+            this.ExecuteWithConsensusOptions(new ConsensusOptions(), () =>
             {
                 this.dateTimeProvider.Setup(d => d.GetTimeOffset()).Returns(new DateTimeOffset(new DateTime(2017, 1, 7, 0, 0, 0, DateTimeKind.Utc)));
 
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void TestBlockValidity_UsesRuleContextToValidateBlock()
         {
-            var newOptions = new PowConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new ConsensusOptions() { MaxBlockWeight = 1500 };
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.consensusLoop.Setup(c => c.Tip).Returns(chain.GetBlock(5));
 
                 ValidationContext validationContext = null;
-                var powRuleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, chain.Tip);
+                var powRuleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, chain.Tip, this.dateTimeProvider.Object.GetTimeOffset());
                 this.consensusRules
                     .Setup(s => s.CreateRuleContext(It.IsAny<ValidationContext>(), It.IsAny<ChainedHeader>())).Callback<ValidationContext, ChainedHeader>((r, s) => validationContext = r)
                     .Returns(powRuleContext);
@@ -265,7 +265,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 Assert.True(this.callbackRuleContext.MinedBlock);
                 Assert.Equal(block.GetHash(), validationContext.Block.GetHash());
                 Assert.Equal(chain.GetBlock(5).HashBlock, powRuleContext.ConsensusTip.HashBlock);
-                Assert.Equal(1500, this.callbackRuleContext.Consensus.Option<PowConsensusOptions>().MaxBlockWeight);
+                Assert.Equal(1500, this.callbackRuleContext.Consensus.Options.MaxBlockWeight);
                 this.consensusLoop.Verify();
             });
         }
@@ -273,7 +273,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void AddTransactions_WithoutTransactionsInMempool_DoesNotAddEntriesToBlock()
         {
-            var newOptions = new PowConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new ConsensusOptions() { MaxBlockWeight = 1500 };
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
@@ -298,7 +298,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void AddTransactions_TransactionNotInblock_AddsTransactionToBlock()
         {
-            var newOptions = new PowConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new ConsensusOptions() { MaxBlockWeight = 1500 };
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
@@ -324,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void AddTransactions_TransactionAlreadyInInblock_DoesNotAddTransactionToBlock()
         {
-            var newOptions = new PowConsensusOptions() { MaxBlockWeight = 1500 };
+            var newOptions = new ConsensusOptions() { MaxBlockWeight = 1500 };
 
             this.ExecuteWithConsensusOptions(newOptions, () =>
             {
@@ -346,9 +346,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             });
         }
 
-        private void ExecuteWithConsensusOptions(PowConsensusOptions newOptions, Action action)
+        private void ExecuteWithConsensusOptions(ConsensusOptions newOptions, Action action)
         {
-            NBitcoin.Consensus.ConsensusOptions options = this.network.Consensus.Options;
+            ConsensusOptions options = this.network.Consensus.Options;
             try
             {
                 this.network.Consensus.Options = newOptions;
@@ -440,7 +440,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.consensusLoop.SetupGet(x => x.ConsensusRules).Returns(powConsensusRules);
         }
 
-        private TxMempoolEntry[] SetupTxMempool(ConcurrentChain chain, PowConsensusOptions newOptions, Money txFee, params Transaction[] transactions)
+        private TxMempoolEntry[] SetupTxMempool(ConcurrentChain chain, ConsensusOptions newOptions, Money txFee, params Transaction[] transactions)
         {
             uint txTime = Utils.DateTimeToUnixTime(chain.Tip.Header.BlockTime.AddSeconds(25));
             var lockPoints = new LockPoints()
