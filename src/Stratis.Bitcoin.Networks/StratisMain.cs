@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 
-namespace NBitcoin.Networks
+namespace Stratis.Bitcoin.Networks
 {
     public class StratisMain : Network
     {

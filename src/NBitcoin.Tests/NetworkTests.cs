@@ -6,12 +6,24 @@ using System.Threading;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Networks;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace NBitcoin.Tests
 {
     public class NetworkTests
     {
+        private readonly StratisMain stratisMain;
+        private readonly StratisTest stratisTest;
+        private readonly StratisRegTest stratisRegTest;
+
+        public NetworkTests()
+        {
+            this.stratisMain = new StratisMain();
+            this.stratisTest = new StratisTest();
+            this.stratisRegTest = new StratisRegTest();
+        }
+
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void CanGetNetworkFromName()
@@ -19,10 +31,6 @@ namespace NBitcoin.Tests
             Network bitcoinMain = Network.Main;
             Network bitcoinTestnet = Network.TestNet;
             Network bitcoinRegtest = Network.RegTest;
-            Network stratisMain = Network.StratisMain;
-            Network stratisTestnet = Network.StratisTest;
-            Network stratisRegtest = Network.StratisRegTest;
-
             Assert.Equal(NetworksContainer.GetNetwork("main"), bitcoinMain);
             Assert.Equal(NetworksContainer.GetNetwork("mainnet"), bitcoinMain);
             Assert.Equal(NetworksContainer.GetNetwork("MainNet"), bitcoinMain);
@@ -30,12 +38,12 @@ namespace NBitcoin.Tests
             Assert.Equal(NetworksContainer.GetNetwork("testnet"), bitcoinTestnet);
             Assert.Equal(NetworksContainer.GetNetwork("regtest"), bitcoinRegtest);
             Assert.Equal(NetworksContainer.GetNetwork("reg"), bitcoinRegtest);
-            Assert.Equal(NetworksContainer.GetNetwork("stratismain"), stratisMain);
-            Assert.Equal(NetworksContainer.GetNetwork("StratisMain"), stratisMain);
-            Assert.Equal(NetworksContainer.GetNetwork("StratisTest"), stratisTestnet);
-            Assert.Equal(NetworksContainer.GetNetwork("stratistest"), stratisTestnet);
-            Assert.Equal(NetworksContainer.GetNetwork("StratisRegTest"), stratisRegtest);
-            Assert.Equal(NetworksContainer.GetNetwork("stratisregtest"), stratisRegtest);
+            Assert.Equal(NetworksContainer.GetNetwork("stratismain"), this.stratisMain);
+            Assert.Equal(NetworksContainer.GetNetwork("StratisMain"), this.stratisMain);
+            Assert.Equal(NetworksContainer.GetNetwork("StratisTest"), this.stratisTest);
+            Assert.Equal(NetworksContainer.GetNetwork("stratistest"), this.stratisTest);
+            Assert.Equal(NetworksContainer.GetNetwork("StratisRegTest"), this.stratisRegTest);
+            Assert.Equal(NetworksContainer.GetNetwork("stratisregtest"), this.stratisRegTest);
             Assert.Null(NetworksContainer.GetNetwork("invalid"));
         }
 
@@ -315,7 +323,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void StratisMainIsInitializedCorrectly()
         {
-            Network network = Network.StratisMain;
+            Network network = this.stratisMain;
 
             Assert.Equal(25, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
@@ -394,7 +402,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void StratisTestnetIsInitializedCorrectly()
         {
-            Network network = Network.StratisTest;
+            Network network = this.stratisTest;
 
             Assert.Equal(10, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
@@ -473,7 +481,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void StratisRegTestIsInitializedCorrectly()
         {
-            Network network = Network.StratisRegTest;
+            Network network = this.stratisRegTest;
 
             Assert.Empty(network.Checkpoints);
             Assert.Empty(network.DNSSeeds);

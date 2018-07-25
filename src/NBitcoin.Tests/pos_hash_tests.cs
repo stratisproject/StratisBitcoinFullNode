@@ -2,6 +2,7 @@
 using HashLib;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 using Hashes = NBitcoin.Crypto.Hashes;
 
@@ -9,6 +10,13 @@ namespace NBitcoin.Tests
 {
     public class pos_hash_tests
     {
+        private readonly Network stratisMain;
+
+        public pos_hash_tests()
+        {
+            this.stratisMain = new StratisMain();
+        }
+
         [Fact]
         [Trait("Core", "Core")]
         public void murmurhash3()
@@ -125,7 +133,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void hash256()
         {
-            Assert.Equal(uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"), Network.StratisMain.GetGenesis().GetHash());
+            Assert.Equal(uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"), this.stratisMain.GetGenesis().GetHash());
         }
 
         [Fact]

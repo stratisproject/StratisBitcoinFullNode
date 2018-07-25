@@ -12,6 +12,7 @@ using NBitcoin.OpenAsset;
 using NBitcoin.Policy;
 using NBitcoin.Stealth;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -23,7 +24,7 @@ namespace NBitcoin.Tests
 
         public Pos_Transaction_Tests()
         {
-            this.network = Network.StratisMain;
+            this.network = new StratisMain();
             this.consensusFactory = this.network.Consensus.ConsensusFactory;
         }
 
@@ -146,7 +147,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanExtractTxOutDestinationEasily()
         {
-            var secret = new BitcoinSecret("VHqBm5xVQvosc7u4dDwMmzbr8mL4KzZBn5VgqjunovgURtXBo5cV", Network.StratisMain);
+            var secret = new BitcoinSecret("VHqBm5xVQvosc7u4dDwMmzbr8mL4KzZBn5VgqjunovgURtXBo5cV", this.network);
 
             Transaction tx = this.network.CreateTransaction();
             var p2pkh = new TxOut(new Money((UInt64)45000000), secret.GetAddress());
@@ -253,15 +254,15 @@ namespace NBitcoin.Tests
             Assert.True(
                 new TransactionBuilder(this.network)
                 {
-                    StandardTransactionPolicy = EasyPolicy
+                    StandardTransactionPolicy = EasyPolicy(this.network)
                 }
-                    .AddCoins(issuanceCoin)
-                    .Verify(aliceSigned));
+                .AddCoins(issuanceCoin)
+                .Verify(aliceSigned));
 
             //In one two one line
 
             var builder = new TransactionBuilder(this.network);
-            builder.StandardTransactionPolicy = RelayPolicy.Clone();
+            builder.StandardTransactionPolicy = RelayPolicy(this.network).Clone();
             builder.StandardTransactionPolicy.CheckFee = false;
             Transaction tx =
                 builder
@@ -427,8 +428,8 @@ namespace NBitcoin.Tests
 
             var coins = new List<ICoin>();
             coins.AddRange(issuanceCoins);
-            var txBuilder = new TransactionBuilder(1, Network.StratisMain);
-            txBuilder.StandardTransactionPolicy = RelayPolicy;
+            var txBuilder = new TransactionBuilder(1, this.network);
+            txBuilder.StandardTransactionPolicy = RelayPolicy(this.network);
             //Can issue gold to satoshi and bob
             Transaction tx = txBuilder
                 .AddCoins(coins.ToArray())
@@ -451,8 +452,8 @@ namespace NBitcoin.Tests
             IEnumerable<ColoredCoin> cc = ColoredCoin.Find(tx, repo);
             for (int i = 0; i < 20; i++)
             {
-                txBuilder = new TransactionBuilder(i, Network.StratisMain);
-                txBuilder.StandardTransactionPolicy = RelayPolicy;
+                txBuilder = new TransactionBuilder(i, this.network);
+                txBuilder.StandardTransactionPolicy = RelayPolicy(this.network);
                 tx = txBuilder
                     .AddCoins(satoshiBTC)
                     .AddCoins(cc)
@@ -517,7 +518,7 @@ namespace NBitcoin.Tests
             var coins = new List<ICoin>();
             coins.AddRange(issuanceCoins);
             var txBuilder = new TransactionBuilder(this.network);
-            txBuilder.StandardTransactionPolicy = RelayPolicy;
+            txBuilder.StandardTransactionPolicy = RelayPolicy(this.network);
             //Can issue gold to satoshi and bob
             Transaction tx = txBuilder
                 .AddCoins(coins.ToArray())
@@ -547,7 +548,7 @@ namespace NBitcoin.Tests
             //Can issue silver to bob, and send some gold to satoshi
             coins.Add(coloredCoins.First(c => c.ScriptPubKey == bob.PubKey.ScriptPubKey));
             txBuilder = new TransactionBuilder(this.network);
-            txBuilder.StandardTransactionPolicy = EasyPolicy;
+            txBuilder.StandardTransactionPolicy = EasyPolicy(this.network);
             tx = txBuilder
                 .AddCoins(coins.ToArray())
                 .AddKeys(silver, bob)
@@ -575,7 +576,7 @@ namespace NBitcoin.Tests
 
             //Satoshi receive gold
             txBuilder = new TransactionBuilder(this.network);
-            txBuilder.StandardTransactionPolicy = RelayPolicy;
+            txBuilder.StandardTransactionPolicy = RelayPolicy(this.network);
             tx = txBuilder
                     .AddKeys(gold)
                     .AddCoins(issuanceCoins)
@@ -599,7 +600,7 @@ namespace NBitcoin.Tests
 
             //Bob receive silver and 2 btc
             txBuilder = new TransactionBuilder(this.network);
-            txBuilder.StandardTransactionPolicy = RelayPolicy;
+            txBuilder.StandardTransactionPolicy = RelayPolicy(this.network);
             tx = txBuilder
                     .AddKeys(silver, gold)
                     .AddCoins(issuanceCoins)
@@ -617,7 +618,7 @@ namespace NBitcoin.Tests
 
             //Bob receive gold
             txBuilder = new TransactionBuilder(this.network);
-            txBuilder.StandardTransactionPolicy = RelayPolicy;
+            txBuilder.StandardTransactionPolicy = RelayPolicy(this.network);
             tx = txBuilder
                     .AddKeys(gold)
                     .AddCoins(issuanceCoins)
@@ -631,7 +632,7 @@ namespace NBitcoin.Tests
             ColoredCoin bobGoldCoin = ColoredCoin.Find(tx, repo).First();
 
             txBuilder = new TransactionBuilder(this.network);
-            txBuilder.StandardTransactionPolicy = RelayPolicy;
+            txBuilder.StandardTransactionPolicy = RelayPolicy(this.network);
             tx = txBuilder
                 .AddCoins(satoshiCoin)
                 .AddCoins(satoshiBTC)
@@ -673,7 +674,7 @@ namespace NBitcoin.Tests
             Transaction funding =
                 new TransactionBuilder(this.network)
                 {
-                    StandardTransactionPolicy = RelayPolicy
+                    StandardTransactionPolicy = RelayPolicy(this.network)
                 }
                 .AddCoins(issuanceCoins)
                 .AddKeys(gold)
@@ -692,7 +693,7 @@ namespace NBitcoin.Tests
                 transfer =
                     new TransactionBuilder(this.network)
                     {
-                        StandardTransactionPolicy = RelayPolicy
+                        StandardTransactionPolicy = RelayPolicy(this.network)
                     }
                     .AddCoins(bobGold)
                     .SendAsset(alice.PubKey.Hash, new AssetMoney(goldId, 40UL))
@@ -705,7 +706,7 @@ namespace NBitcoin.Tests
                 Assert.True(((Money)ex.Missing).Satoshi == 2730);
                 var rate = new FeeRate(Money.Coins(0.0004m));
                 txBuilder = new TransactionBuilder(this.network);
-                txBuilder.StandardTransactionPolicy = RelayPolicy;
+                txBuilder.StandardTransactionPolicy = RelayPolicy(this.network);
                 transfer =
                     txBuilder
                     .AddCoins(bobGold)
@@ -791,7 +792,7 @@ namespace NBitcoin.Tests
 
             //Bob sends money to satoshi
             var builder = new TransactionBuilder(this.network);
-            builder.StandardTransactionPolicy = EasyPolicy;
+            builder.StandardTransactionPolicy = EasyPolicy(this.network);
             Transaction tx =
                 builder
                 .AddCoins(coins)
@@ -806,7 +807,7 @@ namespace NBitcoin.Tests
 
             //Satoshi sends back the money to Bob
             builder = new TransactionBuilder(this.network);
-            builder.StandardTransactionPolicy = EasyPolicy;
+            builder.StandardTransactionPolicy = EasyPolicy(this.network);
             tx =
                 builder
                     .AddCoins(stealthCoin)
@@ -822,7 +823,7 @@ namespace NBitcoin.Tests
             //However, his keys are spread on two machines
             //He partially signs on the 1st machine
             builder = new TransactionBuilder(this.network);
-            builder.StandardTransactionPolicy = EasyPolicy;
+            builder.StandardTransactionPolicy = EasyPolicy(this.network);
             tx =
                 builder
                     .AddCoins(stealthCoin)
@@ -835,7 +836,7 @@ namespace NBitcoin.Tests
 
             //Then he partially signs on the 2nd machine
             builder = new TransactionBuilder(this.network);
-            builder.StandardTransactionPolicy = EasyPolicy;
+            builder.StandardTransactionPolicy = EasyPolicy(this.network);
             tx =
                 builder
                     .AddCoins(stealthCoin)
@@ -987,7 +988,7 @@ namespace NBitcoin.Tests
 
         private void CanVerifySequenceLockCore(Sequence[] sequences, int[] prevHeights, int currentHeight, DateTimeOffset first, bool expected, SequenceLock expectedLock)
         {
-            Network network = Network.StratisMain;
+            Network network = this.network;
             BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
             blockHeader.BlockTime = first;
 
@@ -1035,7 +1036,7 @@ namespace NBitcoin.Tests
             var bobAliceCoins = new ICoin[] { RandomCoin("1.5", bobAlice, false), RandomCoin("0.25", bobAlice, true) };
 
             var builder = new TransactionBuilder(this.network);
-            builder.StandardTransactionPolicy = EasyPolicy;
+            builder.StandardTransactionPolicy = EasyPolicy(this.network);
             Transaction unsigned = builder
                 .AddCoins(aliceCoins)
                 .Send(bobAlice, "1.0")
@@ -1428,8 +1429,8 @@ namespace NBitcoin.Tests
             Coin[] allCoins = coins.Concat(scriptCoins).Concat(witCoins).ToArray();
             BitcoinPubKeyAddress[] destinations = keys.Select(k => k.PubKey.GetAddress(Network.Main)).ToArray();
 
-            var txBuilder = new TransactionBuilder(0, Network.StratisMain);
-            txBuilder.StandardTransactionPolicy = EasyPolicy;
+            var txBuilder = new TransactionBuilder(0, this.network);
+            txBuilder.StandardTransactionPolicy = EasyPolicy(this.network);
             Transaction tx = txBuilder
                 .AddCoins(allCoins)
                 .AddKeys(keys)
@@ -1443,8 +1444,8 @@ namespace NBitcoin.Tests
 
             Assert.Equal(3, tx.Outputs.Count);
 
-            txBuilder = new TransactionBuilder(0, Network.StratisMain);
-            txBuilder.StandardTransactionPolicy = EasyPolicy;
+            txBuilder = new TransactionBuilder(0, this.network);
+            txBuilder.StandardTransactionPolicy = EasyPolicy(this.network);
             tx = txBuilder
                .AddCoins(allCoins)
                .AddKeys(keys)
@@ -1463,8 +1464,8 @@ namespace NBitcoin.Tests
             Assert.True(ex.Group == "test");
             Assert.True((Money)ex.Missing == Money.Parse("0.9999"));
             //Can sign partially
-            txBuilder = new TransactionBuilder(0, Network.StratisMain);
-            txBuilder.StandardTransactionPolicy = EasyPolicy;
+            txBuilder = new TransactionBuilder(0, this.network);
+            txBuilder.StandardTransactionPolicy = EasyPolicy(this.network);
             tx = txBuilder
                     .AddCoins(allCoins)
                     .AddKeys(keys.Skip(2).ToArray())  //One of the multi key missing
@@ -1477,7 +1478,7 @@ namespace NBitcoin.Tests
                     .BuildTransaction(true);
             Assert.False(txBuilder.Verify(tx, "0.0001"));
 
-            txBuilder = new TransactionBuilder(0, Network.StratisMain);
+            txBuilder = new TransactionBuilder(0, this.network);
             tx = txBuilder
                     .AddKeys(keys[0])
                     .AddCoins(allCoins)
@@ -1486,8 +1487,8 @@ namespace NBitcoin.Tests
             Assert.True(txBuilder.Verify(tx));
 
             //Test if signing separatly
-            txBuilder = new TransactionBuilder(0, Network.StratisMain);
-            txBuilder.StandardTransactionPolicy = EasyPolicy;
+            txBuilder = new TransactionBuilder(0, this.network);
+            txBuilder.StandardTransactionPolicy = EasyPolicy(this.network);
             tx = txBuilder
                     .AddCoins(allCoins)
                     .AddKeys(keys.Skip(2).ToArray())  //One of the multi key missing
@@ -1501,7 +1502,7 @@ namespace NBitcoin.Tests
 
             Transaction signed1 = txBuilder.SignTransaction(tx);
 
-            txBuilder = new TransactionBuilder(0, Network.StratisMain);
+            txBuilder = new TransactionBuilder(0, this.network);
             Transaction signed2 = txBuilder
                     .AddKeys(keys[0])
                     .AddCoins(allCoins)
@@ -1510,8 +1511,8 @@ namespace NBitcoin.Tests
             Assert.False(txBuilder.Verify(signed1));
             Assert.False(txBuilder.Verify(signed2));
 
-            txBuilder = new TransactionBuilder(0, Network.StratisMain);
-            txBuilder.StandardTransactionPolicy = EasyPolicy;
+            txBuilder = new TransactionBuilder(0, this.network);
+            txBuilder.StandardTransactionPolicy = EasyPolicy(this.network);
             tx = txBuilder
                 .AddCoins(allCoins)
                 .CombineSignatures(signed1, signed2);
@@ -1525,19 +1526,19 @@ namespace NBitcoin.Tests
                     RandomCoin(Money.Parse("1.0"), keys[1].PubKey.Hash.ScriptPubKey, false)
                 };
 
-            txBuilder = new TransactionBuilder(0, Network.StratisMain);
-            txBuilder.StandardTransactionPolicy = EasyPolicy;
+            txBuilder = new TransactionBuilder(0, this.network);
+            txBuilder.StandardTransactionPolicy = EasyPolicy(this.network);
             tx =
                 txBuilder.AddCoins(allCoins)
                      .Send(destinations[0], Money.Parse("3.0"))
                      .BuildTransaction(false);
 
-            signed1 = new TransactionBuilder(0, Network.StratisMain)
+            signed1 = new TransactionBuilder(0, this.network)
                         .AddCoins(allCoins)
                         .AddKeys(keys[0])
                         .SignTransaction(tx);
 
-            signed2 = new TransactionBuilder(0, Network.StratisMain)
+            signed2 = new TransactionBuilder(0, this.network)
                         .AddCoins(allCoins)
                         .AddKeys(keys[1])
                         .SignTransaction(tx);
@@ -1545,7 +1546,7 @@ namespace NBitcoin.Tests
             Assert.False(txBuilder.Verify(signed1));
             Assert.False(txBuilder.Verify(signed2));
 
-            tx = new TransactionBuilder(0, Network.StratisMain)
+            tx = new TransactionBuilder(0, this.network)
                 .CombineSignatures(signed1, signed2);
 
             Assert.True(txBuilder.Verify(tx));
@@ -1554,7 +1555,7 @@ namespace NBitcoin.Tests
             for (int i = 0; i < 3; i++)
             {
                 txBuilder = new TransactionBuilder(this.network);
-                txBuilder.StandardTransactionPolicy = EasyPolicy;
+                txBuilder.StandardTransactionPolicy = EasyPolicy(this.network);
                 tx =
                     txBuilder
                     .AddCoins(allCoins)
@@ -1590,7 +1591,7 @@ namespace NBitcoin.Tests
             Coin[] coins = tx.Outputs.AsCoins().ToArray();
 
             var builder = new TransactionBuilder(this.network);
-            builder.StandardTransactionPolicy = EasyPolicy.Clone();
+            builder.StandardTransactionPolicy = EasyPolicy(this.network).Clone();
             builder.StandardTransactionPolicy.MinRelayTxFee = new FeeRate(new Money(1000));
 
             Func<Transaction> create = () => builder
@@ -1616,7 +1617,7 @@ namespace NBitcoin.Tests
 
             builder = new TransactionBuilder(this.network);
             builder.DustPrevention = false;
-            builder.StandardTransactionPolicy = EasyPolicy.Clone();
+            builder.StandardTransactionPolicy = EasyPolicy(this.network).Clone();
             builder.StandardTransactionPolicy.MinRelayTxFee = new FeeRate(new Money(1000));
             signed = create();
             Assert.True(signed.Outputs.Count == 4);
@@ -1630,7 +1631,7 @@ namespace NBitcoin.Tests
         //https://gist.github.com/gavinandresen/3966071
         public void CanPartiallySignTransaction()
         {
-            Network network = Network.StratisMain;
+            Network network = this.network;
             Key[] privKeys = new[]{"7R3MeCSVTTzp3w3Ny4g7RWpvMYu7CfuERZJcPqn1VRL3kyV9A2p",
                         "7R41movhhKW2ZencnZvzcoDssFpKfNCv4yRqHnXco85rBLN1C2D",
                         "7Qidst55wkYRJpJN4aEnGjz64Mnf7BrSehVuX2HqWWPpYNEkqQJ"}
@@ -1702,21 +1703,27 @@ namespace NBitcoin.Tests
             }
         }
 
-        private static StandardTransactionPolicy EasyPolicy = new StandardTransactionPolicy(Network.StratisMain)
+        private static StandardTransactionPolicy EasyPolicy(Network network) 
         {
-            MaxTransactionSize = null,
-            MaxTxFee = null,
-            MinRelayTxFee = null,
-            ScriptVerify = ScriptVerify.Standard & ~ScriptVerify.LowS
-        };
+            return new StandardTransactionPolicy(network)
+            {
+                MaxTransactionSize = null,
+                MaxTxFee = null,
+                MinRelayTxFee = null,
+                ScriptVerify = ScriptVerify.Standard & ~ScriptVerify.LowS
+            };
+        }
 
-        private static StandardTransactionPolicy RelayPolicy = new StandardTransactionPolicy(Network.StratisMain)
+        private static StandardTransactionPolicy RelayPolicy(Network network)
         {
-            MaxTransactionSize = null,
-            MaxTxFee = null,
-            MinRelayTxFee = new FeeRate(Money.Satoshis(5000)),
-            ScriptVerify = ScriptVerify.Standard & ~ScriptVerify.LowS
-        };
+            return new StandardTransactionPolicy(network)
+            {
+                MaxTransactionSize = null,
+                MaxTxFee = null,
+                MinRelayTxFee = new FeeRate(Money.Satoshis(5000)),
+                ScriptVerify = ScriptVerify.Standard & ~ScriptVerify.LowS
+            };
+        }
 
         //[Trait("UnitTest", "UnitTest")]
         //[Fact]
@@ -1726,7 +1733,7 @@ namespace NBitcoin.Tests
             Transaction spending = this.network.CreateTransaction("0100000080c3af5701b3436109108f717be2eeaac32482cad8d60944826fe09f97069abafdc4bebaf602000000484730440220284494bd9bbd60857f0936e2fa9673a9c15b5079bb192c88747c874a000f379f02204c6caa1ec9ef4153f670e0959f727001f8576ca4b6c59bca47d079153c7e937001ffffffff03000000000000000000802d1a3d4100000023210379a3e0dba7f8739ce5730a0afd22110d56a24a86114697b4b802c48a937106e0ac802d1a3d4100000023210379a3e0dba7f8739ce5730a0afd22110d56a24a86114697b4b802c48a937106e0ac00000000");
 
             var builder = new TransactionBuilder(this.network);
-            builder.StandardTransactionPolicy = EasyPolicy;
+            builder.StandardTransactionPolicy = EasyPolicy(this.network);
             builder.AddCoins(funding.Outputs.AsCoins());
             Assert.True(builder.Verify(spending));
 
@@ -1804,7 +1811,7 @@ namespace NBitcoin.Tests
 
             TransactionPolicyError[] errors = null;
             var builder = new TransactionBuilder(this.network);
-            builder.StandardTransactionPolicy = EasyPolicy;
+            builder.StandardTransactionPolicy = EasyPolicy(this.network);
             builder.AddKeys(bob);
             builder.AddCoins(funding.Outputs.AsCoins());
             builder.SignTransactionInPlace(spending);
@@ -1833,7 +1840,7 @@ namespace NBitcoin.Tests
         private void CanCheckSegwitSig()
         {
             Transaction tx = this.network.CreateTransaction("010000000001015d896079097272b13ed9cb22acfabeca9ce83f586d98cc15a08ea2f9c558013b0300000000ffffffff01605af40500000000160014a8cbb5eca9af499cecaa08457690ab367f23d95b0247304402200b6baba4287f3321ae4ec6ba66420d9a48c3f3bc331603e7dca6b12ca75cce6102207fa582041b025605c0474b99a2d3ab5080d6ea14ae3a50b7de92596abf40fb4b012102cdfc0f4701e0c8db3a0913de5f635d0ea76663a8f80925567358d558603fae3500000000");
-            CanCheckSegwitSigCore(tx, 0, Money.Coins(1.0m));
+            CanCheckSegwitSigCore(this.network, tx, 0, Money.Coins(1.0m));
 
             Transaction toCheck = this.network.CreateTransaction("01000000000103b019e2344634c5b34aeb867f2cd8b09dbbd95b5bf8c5d56d58be1dd9077f9d3a00000000da0047304402201b2be1016abd4df4ca699e0430b97bc8dcd4c1c90b6a6ee382be75f42956566402205ab38fddace15ba4b2c4dbacc6793bb1f35a371aa8386f1348bd65dfeda9657201483045022100db1dbea1a5d05ff7daf6d106931ab701a29d2dddd8cd7781e9eb7fefd31139790220319eb8a238e6c635ebe2960f5960eeb96371f5a38503cf41aa89a33807c8b6a50147522102a96e9843b846b8cc3277ea54638f1454378219854ef89c81a8a4e9217f1f3ca02103d5feb2e2f2fa1403ede18aaac7631dd2c9a893953a9ab338e7d9fa749d91f03b52aeffffffffb019e2344634c5b34aeb867f2cd8b09dbbd95b5bf8c5d56d58be1dd9077f9d3a01000000db00483045022100aec68f5760337efdf425007387f094df284a576e824492597b0d046e038034100220434cb22f056e97cd823a13751c482a9f2d3fb956abcfa69db4dcd2679379070101483045022100c7ce0a9617cbcaa9308758092d336b228f67d358ad25a786711a87a29e2f72d102203d608bf6a4416e9493a5d89552633da300e9a237811e9affea3cda3320a3257c0147522102c4bd91a554815c73814848b311051c43ad6a75810269e1ff0eb9c13d828fc6fb21031035e69a48e04bc4d6315590620f784ab79d8369d122bd45ad7e77c81ac1cb1c52aeffffffffbcf750fad5ddd1909d8b3e2edda94f7ae3c866952932823763291b9467e3b9580000000023220020e0be53749d09a8e2d3843633cf11133e51e73944334d11a147f1ae53f1c3dfe5ffffffff019cbaf0080000000017a9148d52e4999751ec43c07eb371119f8c45047d26dc870000040047304402205bdc03fac6c3be92309e4fdd1572147ca56210dbb4413539874a4e3b0670ac0b02206422cd069e6078bcdc8f698ff77aed65566b6fa1ff028cc322d14d036d2c192401473044022022fa0bda2e8e21716b9d74499665e4f31cbcf2bf49d0b535188e7e196e8e90d8022076ad55655fbd54637c0cf5bbd7f07905446e23a621f82a940cb07677dab2f8fe0147522102d01cf4abc1b6c22cc0e0e43e5277f1a7fb544eca52244cd4cb88bef5943c5563210284a2ffb3e6b6ac0ac9444b0ecd9856f79b53bbd3100894ec6dc80e6e956edbeb52ae00000000");
 
@@ -1841,14 +1848,14 @@ namespace NBitcoin.Tests
             Assert.True(toCheck.Inputs.AsIndexedInputs().Skip(0).First().VerifyScript(this.network, new Script("OP_HASH160 442afa4f034468652c571202da0bf277cb729def OP_EQUAL"), Money.Satoshis(100000), ScriptVerify.Mandatory, out error));
         }
 
-        private static void CanCheckSegwitSigCore(Transaction tx, int input, Money amount, string scriptCodeHex = null)
+        private static void CanCheckSegwitSigCore(Network network, Transaction tx, int input, Money amount, string scriptCodeHex = null)
         {
             Script scriptCode = null;
             if (scriptCodeHex == null)
             {
-                PayToWitPubkeyHashScriptSigParameters param1 = PayToWitPubKeyHashTemplate.Instance.ExtractWitScriptParameters(Network.StratisMain, tx.Inputs[input].WitScript);
+                PayToWitPubkeyHashScriptSigParameters param1 = PayToWitPubKeyHashTemplate.Instance.ExtractWitScriptParameters(network, tx.Inputs[input].WitScript);
                 Assert.NotNull(param1);
-                WitKeyId param2 = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(Network.StratisMain, param1.PublicKey.GetSegwitAddress(Network.Main).Hash.ScriptPubKey);
+                WitKeyId param2 = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(network, param1.PublicKey.GetSegwitAddress(Network.Main).Hash.ScriptPubKey);
                 Assert.Equal(param1.PublicKey.WitHash, param2);
                 scriptCode = param1.ScriptPubKey;
             }
@@ -1858,7 +1865,7 @@ namespace NBitcoin.Tests
             }
 
             ScriptError err;
-            bool r = Script.VerifyScript(Network.StratisMain, scriptCode, tx, 0, amount, out err);
+            bool r = Script.VerifyScript(network, scriptCode, tx, 0, amount, out err);
             Assert.True(r);
         }
 
@@ -2747,23 +2754,23 @@ namespace NBitcoin.Tests
 
         private bool SignSignature(CKeyStore keystore, Transaction txFrom, Transaction txTo, int nIn)
         {
-            TransactionBuilder builder = CreateBuilder(keystore, txFrom);
+            TransactionBuilder builder = CreateBuilder(this.network, keystore, txFrom);
             builder.SignTransactionInPlace(txTo);
             return builder.Verify(txTo);
         }
 
         private void CombineSignatures(CKeyStore keystore, Transaction txFrom, ref Transaction input1, Transaction input2)
         {
-            TransactionBuilder builder = CreateBuilder(keystore, txFrom);
+            TransactionBuilder builder = CreateBuilder(this.network, keystore, txFrom);
             input1 = builder.CombineSignatures(input1, input2);
         }
 
-        private static TransactionBuilder CreateBuilder(CKeyStore keystore, Transaction txFrom)
+        private static TransactionBuilder CreateBuilder(Network network, CKeyStore keystore, Transaction txFrom)
         {
             Coin[] coins = txFrom.Outputs.AsCoins().ToArray();
-            TransactionBuilder builder = new TransactionBuilder(Network.StratisMain)
+            TransactionBuilder builder = new TransactionBuilder(network)
             {
-                StandardTransactionPolicy = new StandardTransactionPolicy(Network.StratisMain)
+                StandardTransactionPolicy = new StandardTransactionPolicy(network)
                 {
                     CheckFee = false,
                     MinRelayTxFee = null,
@@ -3093,7 +3100,7 @@ namespace NBitcoin.Tests
         //    foreach (var test in tests)
         //    {
         //        var format = (RawFormat)Enum.Parse(typeof(RawFormat), (string)test[0], true);
-        //        var network = ((string)test[1]) == "Main" ? Network.StratisMain : Network.StratisMain;
+        //        var network = ((string)test[1]) == "Main" ? this.network : this.network;
         //        var testData = ((JObject)test[2]).ToString();
 
         //        Transaction raw = Transaction.Parse(testData, format, network);
