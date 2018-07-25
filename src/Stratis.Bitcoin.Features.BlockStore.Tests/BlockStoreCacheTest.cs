@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public BlockStoreCacheTest()
         {
             this.loggerFactory = new LoggerFactory();
-            this.network = Network.StratisMain;
+            this.network = Networks.StratisMain;
             this.blockRepository = new Mock<IBlockRepository>();
 
             this.storeSettings = new StoreSettings();
