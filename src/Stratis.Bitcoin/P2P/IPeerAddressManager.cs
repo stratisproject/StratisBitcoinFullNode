@@ -35,11 +35,8 @@
         
         /// <summary>
         /// Remove a peer from the <see cref="Peers"/> dictionary.
-        /// <para>
-        /// Only routable IP addresses will be removed since only routable IP addressed can be added. <see cref="IpExtensions.IsRoutable(IPAddress, bool)"/>
-        /// </para>
         /// </summary>
-        void RemovePeer(IPEndPoint endPoint, IPAddress source);
+        void RemovePeer(IPEndPoint endPoint);
 
         /// <summary> Find a peer by endpoint.</summary>
         PeerAddress FindPeer(IPEndPoint endPoint);

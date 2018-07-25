@@ -104,13 +104,9 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void RemovePeer(IPEndPoint endPoint, IPAddress source)
+        public void RemovePeer(IPEndPoint endPoint)
         {
-            if (!endPoint.Address.IsRoutable(true))
-                return;
-
-            PeerAddress peer = PeerAddress.Create(endPoint, source);
-            this.peers.TryRemove(peer.Endpoint, out PeerAddress address);
+           this.peers.TryRemove(endPoint.MapToIpv6(), out PeerAddress address);
         }
 
 
