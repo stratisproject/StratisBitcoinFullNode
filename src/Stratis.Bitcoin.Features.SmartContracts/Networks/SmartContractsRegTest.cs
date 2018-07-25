@@ -25,9 +25,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
 
-            var consensus = new NBitcoin.Consensus();
-            consensus.ConsensusFactory = new SmartContractConsensusFactory();
+            var consensusFactory = new SmartContractConsensusFactory();
 
+            Block genesisBlock = BitcoinMain.CreateBitcoinGenesisBlock(consensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
+            ((SmartContractBlockHeader)genesisBlock.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
+
+            this.Genesis = genesisBlock;
+
+            var consensus = new NBitcoin.Consensus();
+            consensus.ConsensusFactory = consensusFactory;
+            consensus.HashGenesisBlock = genesisBlock.Header.GetHash();
             consensus.SubsidyHalvingInterval = 150;
             consensus.MajorityEnforceBlockUpgrade = 750;
             consensus.MajorityRejectBlockOutdated = 950;
@@ -55,11 +62,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             consensus.BIP9Deployments[BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999);
             consensus.BIP9Deployments[BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999);
             consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999);
-
-            this.Genesis = BitcoinMain.CreateBitcoinGenesisBlock(consensus.ConsensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
-            ((SmartContractBlockHeader)this.Genesis.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
-            consensus.HashGenesisBlock = this.Genesis.Header.GetHash();
-
             consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
 
             // Taken from StratisX.
