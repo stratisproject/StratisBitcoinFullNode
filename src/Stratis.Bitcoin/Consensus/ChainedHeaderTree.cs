@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -160,6 +161,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ICheckpoints checkpoints;
         private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
+        private readonly ISignals signals;
         private readonly IFinalizedBlockHeight finalizedBlockHeight;
 
         /// <inheritdoc />
@@ -207,7 +209,8 @@ namespace Stratis.Bitcoin.Consensus
             ICheckpoints checkpoints,
             IChainState chainState,
             IFinalizedBlockHeight finalizedBlockHeight,
-            ConsensusSettings consensusSettings)
+            ConsensusSettings consensusSettings, 
+            ISignals signals)
         {
             this.network = network;
             this.headerValidator = headerValidator;
@@ -216,6 +219,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chainState = chainState;
             this.finalizedBlockHeight = finalizedBlockHeight;
             this.consensusSettings = consensusSettings;
+            this.signals = signals;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.peerTipsByPeerId = new Dictionary<int, uint256>();
@@ -453,7 +457,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
                 this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
-
+                this.signals.SignalReorgedBlock(currentHeader);
                 currentHeader = currentHeader.Previous;
             }
 
@@ -471,6 +475,8 @@ namespace Stratis.Bitcoin.Consensus
                     currentHeader.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
 
                     this.logger.LogTrace("Block data for '{0}' is removed.", currentHeader);
+
+                    this.signals.SignalReorgedBlock(currentHeader);
 
                     currentHeader = currentHeader.Previous;
                 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -15,8 +16,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             var mempoolMock = new Mock<ITxMempool>();
             var mempoolValidatorMock = new Mock<IMempoolValidator>();
-            
-            var subject = new MempoolReorgSignaled(mempoolMock.Object, mempoolValidatorMock.Object, new MempoolSchedulerLock());
+            var loggerFactoryMock = new Mock<ILoggerFactory>();
+            loggerFactoryMock.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
+
+            var subject = new MempoolReorgSignaled(mempoolValidatorMock.Object, new MempoolSchedulerLock(), loggerFactoryMock.Object);
 
             ChainedHeader genesisHeader = ChainedHeadersHelper.CreateGenesisChainedHeader();
 
