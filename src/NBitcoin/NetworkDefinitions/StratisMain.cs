@@ -4,7 +4,7 @@ using System.Linq;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 
-namespace NBitcoin.Networks
+namespace NBitcoin.NetworkDefinitions
 {
     public class StratisMain : Network
     {

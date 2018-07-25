@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             byte[] maxQuantityOfBytes = Enumerable.Range(0, 80).Select(Convert.ToByte).ToArray();
             this.CostlyOpReturnData = Encoding.UTF8.GetString(maxQuantityOfBytes);
 
-            this.network = Network.Main;
+            this.network = Networks.Main;
             this.standardTransactionPolicy = new StandardTransactionPolicy(this.network);
             this.scriptAddressReader = new ScriptAddressReader();
         }
