@@ -7,10 +7,12 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Check that the previous block hash is correct.
-    /// </summary>  
+    /// This rule is temporary until CM is activated.
+    /// </summary>
+    [HeaderValidationRule]
     [PartialValidationRule]
-    public class BlockHeaderRule : ConsensusRule
+    [FullValidationRule]
+    public class TemporarySetChainHeader : ConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.InvalidPrevTip">The tip is invalid because a reorg has been detected.</exception>
@@ -40,6 +42,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 context.ValidationContext.ChainedHeader = this.Parent.Chain.GetBlock(context.ValidationContext.ChainedHeader.HashBlock) ?? context.ValidationContext.ChainedHeader;
             }
 
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// Set the <see cref="RuleContext.Flags"/> property that defines what deployments have been activated.
+    /// </summary>
+    [PartialValidationRule]
+    public class SetActivationDeploymentsRule : ConsensusRule
+    {
+        /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.InvalidPrevTip">The tip is invalid because a reorg has been detected.</exception>
+        public override Task RunAsync(RuleContext context)
+        {
             // Calculate the consensus flags and check they are valid.
             context.Flags = this.Parent.NodeDeployments.GetFlags(context.ValidationContext.ChainedHeader);
 

@@ -12,6 +12,23 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
+    [FullValidationRule]
+    public class SmartContractSaveCoinviewRule : UtxoStoreConsensusRule
+    {
+        /// <inheritdoc />
+        public override async Task RunAsync(RuleContext context)
+        {
+            uint256 oldBlockHash = context.ConsensusTip.HashBlock;
+            uint256 nextBlockHash = context.ValidationContext.ChainedHeader.HashBlock;
+
+            // Persist the changes to the coinview. This will likely only be stored in memory,
+            // unless the coinview treashold is reached.
+            this.Logger.LogTrace("Saving coinview changes.");
+            var utxoRuleContext = context as UtxoRuleContext;
+            await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash).ConfigureAwait(false);
+        }
+    }
+
     [PartialValidationRule]
     public sealed class SmartContractLoadCoinviewRule : UtxoStoreConsensusRule
     {
@@ -19,6 +36,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         public override async Task RunAsync(RuleContext context)
         {
             var utxoRuleContext = context as UtxoRuleContext;
+
+            // Check that the current block has not been reorged.
+            // Catching a reorg at this point will not require a rewind.
+            if (context.ValidationContext.Block.Header.HashPrevBlock != context.ConsensusTip.HashBlock)
+            {
+                this.Logger.LogTrace("Reorganization detected.");
+                ConsensusErrors.InvalidPrevTip.Throw();
+            }
 
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.
