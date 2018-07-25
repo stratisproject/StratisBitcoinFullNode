@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     // * p2sh (when P2SH enabled in flags and excludes coinbase),
                     // * witness (when witness enabled in flags and excludes coinbase).
                     sigOpsCost += this.GetTransactionSignatureOperationCost(tx, view, flags);
-                    if (sigOpsCost > this.PowConsensusOptions.MaxBlockSigopsCost)
+                    if (sigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
                         ConsensusErrors.BadBlockSigOps.Throw();
 
                     if (!this.IsProtocolTransaction(tx))

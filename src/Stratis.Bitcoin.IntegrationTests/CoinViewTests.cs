@@ -317,18 +317,17 @@ namespace Stratis.Bitcoin.IntegrationTests
             var context = new RuleContext
             {
                 ConsensusTipHeight = 10111,
-                NextWorkRequired = block.Header.Bits,
                 Time = DateTimeOffset.UtcNow,
                 ValidationContext = new ValidationContext { Block = block },
                 Flags = consensusFlags,
             };
 
-            Network.Main.Consensus.Options = new PowConsensusOptions();
+            Network.Main.Consensus.Options = new ConsensusOptions();
             context.Consensus = Network.Main.Consensus;
             new WitnessCommitmentsRule().RunAsync(context).GetAwaiter().GetResult();
 
             var rule = new CheckPowTransactionRule();
-            var options = Network.Main.Consensus.Option<PowConsensusOptions>();
+            var options = Network.Main.Consensus.Options;
             foreach (Transaction tx in block.Transactions)
                 rule.CheckTransaction(Network.Main, options, tx);
         }
