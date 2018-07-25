@@ -35,9 +35,14 @@ namespace Stratis.Bitcoin.Features.Miner
         public string WalletPassword { get; set; }
 
         /// <summary>
-        /// The wallet name to select outputs ot stake.
+        /// The wallet name to select outputs to stake.
         /// </summary>
         public string WalletName { get; set; }
+
+        /// <summary>
+        /// Settings for <see cref="BlockDefinition"/>.
+        /// </summary>
+        public BlockDefinitionOptions BlockDefinitionOptions { get; }
 
         /// <summary>
         /// Initializes an instance of the object from the default configuration.
@@ -69,6 +74,15 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.WalletName = config.GetOrDefault<string>("walletname", null, this.logger);
                 this.WalletPassword = config.GetOrDefault<string>("walletpassword", null); // No logging!
             }
+
+            int blockMaxSize = config.GetOrDefault<int>("blockmaxsize", 0, this.logger);
+            blockMaxSize = (blockMaxSize <= 0) 
+                ? nodeSettings.Network.Consensus.Options.MaxBlockSerializedSize 
+                : blockMaxSize;
+            int blockMaxWeight = config.GetOrDefault<int>("blockmaxweight", 0, this.logger);
+            blockMaxWeight = (blockMaxWeight <= 0)
+                ? nodeSettings.Network.Consensus.Options.MaxBlockSerializedSize
+                : blockMaxWeight;
 
             this.logger.LogTrace("(-)");
         }

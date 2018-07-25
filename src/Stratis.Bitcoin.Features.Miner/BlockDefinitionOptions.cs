@@ -23,6 +23,9 @@ namespace Stratis.Bitcoin.Features.Miner
             this.BlockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee); // TODO: Where should this be set, really? Is it per Network? For now just always use a default.
         }
 
+        /// <summary>
+        /// Assign values explicitly.
+        /// </summary>
         public BlockDefinitionOptions(long blockMaxWeight, long blockMaxSize, FeeRate blockMinFeeRate)
         {
             this.BlockMaxWeight = blockMaxWeight;
@@ -30,5 +33,12 @@ namespace Stratis.Bitcoin.Features.Miner
             this.BlockMinFeeRate = blockMinFeeRate;
         }
 
+        /// <summary>
+        /// Get values from NodeSettings.
+        /// </summary>
+        public BlockDefinitionOptions()
+        {
+
+        }
     }
 }

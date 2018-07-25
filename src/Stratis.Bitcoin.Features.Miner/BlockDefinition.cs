@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.BlockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Options.MaxBlockSerializedSize, this.Options.BlockMaxSize));
 
             // Whether we need to account for byte usage (in addition to weight usage).
-            this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Options.MaxBlockSerializedSize - 1000);
+            this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Options.MaxBlockSerializedSize);
 
             this.Configure();
         }
@@ -534,7 +534,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private bool TestPackageTransactions(TxMempool.SetEntries package)
         {
-            long nPotentialBlockSize = this.BlockSize; // only used with needSizeAccounting
             foreach (TxMempoolEntry it in package)
             {
                 if (!it.Transaction.IsFinal(Utils.UnixTimeToDateTime(this.LockTimeCutoff), this.height))
@@ -545,6 +544,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 if (this.NeedSizeAccounting)
                 {
+                    long nPotentialBlockSize = this.BlockSize; // only used with needSizeAccounting
                     int nTxSize = it.Transaction.GetSerializedSize();
                     if (nPotentialBlockSize + nTxSize >= this.BlockMaxSize)
                         return false;
