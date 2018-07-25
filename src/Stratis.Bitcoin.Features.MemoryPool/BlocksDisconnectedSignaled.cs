@@ -7,15 +7,15 @@ using Stratis.Bitcoin.Signals;
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
     /// <summary>
-    /// Mempool observer on reorged block header notifications.
+    /// Mempool observer on disconnected block notifications.
     /// </summary>
-    public class MempoolReorgSignaled : SignalObserver<ChainedHeader>
+    public class BlocksDisconnectedSignaled : SignalObserver<Block>
     {
         private readonly IMempoolValidator mempoolValidator;
         private readonly MempoolSchedulerLock mempoolLock;
         private readonly ILogger logger;
 
-        public MempoolReorgSignaled(IMempoolValidator mempoolValidator,
+        public BlocksDisconnectedSignaled(IMempoolValidator mempoolValidator,
             MempoolSchedulerLock mempoolLock, ILoggerFactory loggerFactory)
         {
             this.mempoolValidator = mempoolValidator;
@@ -23,31 +23,27 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        protected override void OnNextCore(ChainedHeader chainedHeader)
+        protected override void OnNextCore(Block block)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader.HashBlock);
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
-            this.AddBackToMempoolAsync(chainedHeader).GetAwaiter().GetResult();
+            this.AddBackToMempoolAsync(block).GetAwaiter().GetResult();
 
             this.logger.LogTrace("(-)");
         }
 
-        public async Task AddBackToMempoolAsync(ChainedHeader chainedHeader)
+        public async Task AddBackToMempoolAsync(Block block)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader.HashBlock);
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
             var state = new MempoolValidationState(true);
 
             await this.mempoolLock.WriteAsync(async () =>
             {
-                foreach (Transaction transaction in chainedHeader.Block.Transactions)
+                foreach (Transaction transaction in block.Transactions)
                 {
                     bool success = await this.mempoolValidator.AcceptToMemoryPool(state, transaction);
-                    if (!success)
-                    {
-                        this.logger.LogTrace("(-)[REORG_RETURN_TX_TO_MEMPOOL_EXCEPTION]");
-                        throw new ReturnReorgTransactionsToMempoolException(transaction.GetHash());
-                    }
+                    this.logger.LogTrace("[ACCEPT_TO_MEMPOOL]:", success);
                 }
             });
 

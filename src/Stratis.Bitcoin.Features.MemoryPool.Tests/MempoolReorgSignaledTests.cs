@@ -14,12 +14,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         [Fact]
         public void OnNextCore_WhenTransactionsMissingInLongestChain_ReturnsThemToTheMempool()
         {
-            var mempoolMock = new Mock<ITxMempool>();
             var mempoolValidatorMock = new Mock<IMempoolValidator>();
             var loggerFactoryMock = new Mock<ILoggerFactory>();
             loggerFactoryMock.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
 
-            var subject = new MempoolReorgSignaled(mempoolValidatorMock.Object, new MempoolSchedulerLock(), loggerFactoryMock.Object);
+            var subject = new BlocksDisconnectedSignaled(mempoolValidatorMock.Object, new MempoolSchedulerLock(), loggerFactoryMock.Object);
 
             ChainedHeader genesisHeader = ChainedHeadersHelper.CreateGenesisChainedHeader();
 
@@ -34,7 +33,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             nextHeader.Block.Transactions.Add(transaction1);
             nextHeader.Block.Transactions.Add(transaction2);
 
-            subject.OnNext(nextHeader);
+            subject.OnNext(nextHeader.Block);
 
             mempoolValidatorMock.Verify(x => x.AcceptToMemoryPool(It.IsAny<MempoolValidationState>(), transaction1));
             mempoolValidatorMock.Verify(x => x.AcceptToMemoryPool(It.IsAny<MempoolValidationState>(), transaction2));

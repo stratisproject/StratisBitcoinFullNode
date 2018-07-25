@@ -13,13 +13,13 @@ namespace Stratis.Bitcoin.Signals
         /// Notify subscribers about a new block being available.
         /// </summary>
         /// <param name="block">Newly added block.</param>
-        void SignalBlock(Block block);
+        void SignalBlockConnected(Block block);
 
         /// <summary>
-        /// Notify subscribers about a reorged block is removed.
+        /// Notify subscribers about a block being disconnected.
         /// </summary>
-        /// <param name="chainedHeader">Reorged block header.</param>
-        void SignalReorgedBlock(ChainedHeader chainedHeader);
+        /// <param name="block">Block that was disconnected.</param>
+        void SignalBlockDisconnected(Block block);
 
         /// <summary>
         /// Notify subscribers about a new transaction being available.
@@ -32,14 +32,14 @@ namespace Stratis.Bitcoin.Signals
         /// </summary>
         /// <param name="observer">Observer to be subscribed to receive signaler's messages.</param>
         /// <returns>Disposable object to allow observer to unsubscribe from the signaler.</returns>
-        IDisposable SubscribeForBlocks(IObserver<Block> observer);
+        IDisposable SubscribeForBlocksConnected(IObserver<Block> observer);
 
         /// <summary>
-        /// Subscribes to receive notifications when a reorged block is removed.
+        /// Subscribes to receive notifications when a block was disconnected.
         /// </summary>
         /// <param name="observer">Observer to be subscribed to receive signaler's messages.</param>
         /// <returns>Disposable object to allow observer to unsubscribe from the signaler.</returns>
-        IDisposable SubscribeForReorgedBlocks(IObserver<ChainedHeader> observer);
+        IDisposable SubscribeForBlocksDisconnected(IObserver<Block> observer);
 
         /// <summary>
         /// Subscribes to receive notifications when a new transaction is available.
@@ -55,48 +55,49 @@ namespace Stratis.Bitcoin.Signals
         /// <summary>
         /// Initializes the object with newly created instances of signalers.
         /// </summary>
-        public Signals() : this(new Signaler<Block>(), new Signaler<ChainedHeader>(), new Signaler<Transaction>())
+        public Signals() : this(new Signaler<Block>(), new Signaler<Block>(), new Signaler<Transaction>())
         {
         }
 
         /// <summary>
         /// Initializes the object with specific signalers.
         /// </summary>
-        /// <param name="blockSignaler">Signaler providing notifications about newly available blocks to its subscribers.</param>
+        /// <param name="blockConnectedSignaler">Signaler providing notifications about newly available blocks to its subscribers.</param>
+        /// <param name="blockDisonnectedSignaler">Signaler providing notifications about a block being disconnected to its subscribers.</param>
         /// <param name="transactionSignaler">Signaler providing notifications about newly available transactions to its subscribers.</param>
-        public Signals(ISignaler<Block> blockSignaler, ISignaler<ChainedHeader> reorgedBlocksSignaler, ISignaler<Transaction> transactionSignaler)
+        public Signals(ISignaler<Block> blockConnectedSignaler, ISignaler<Block> blockDisonnectedSignaler, ISignaler<Transaction> transactionSignaler)
         {
-            Guard.NotNull(blockSignaler, nameof(blockSignaler));
-            Guard.NotNull(reorgedBlocksSignaler, nameof(blockSignaler));
+            Guard.NotNull(blockConnectedSignaler, nameof(blockConnectedSignaler));
             Guard.NotNull(transactionSignaler, nameof(transactionSignaler));
 
-            this.blocks = blockSignaler;
-            this.reorgedHeaders = reorgedBlocksSignaler;
+            this.blocksConnected = blockConnectedSignaler;
+            this.blocksDisconnected = blockDisonnectedSignaler;
             this.transactions = transactionSignaler;
         }
 
         /// <summary>Signaler providing notifications about newly available blocks to its subscribers.</summary>
-        private ISignaler<Block> blocks { get; }
+        private ISignaler<Block> blocksConnected { get; }
 
-        /// <summary>Signaler providing notifications about reorged block headers to its subscribers.</summary>
-        private ISignaler<ChainedHeader> reorgedHeaders { get; }
+        /// <summary>Signaler providing notifications about blocks being disconnected to its subscribers.</summary>
+        private ISignaler<Block> blocksDisconnected { get; }
 
         /// <summary>Signaler providing notifications about newly available transactions to its subscribers.</summary>
         private ISignaler<Transaction> transactions { get; }
 
         /// <inheritdoc />
-        public void SignalBlock(Block block)
+        public void SignalBlockConnected(Block block)
         {
             Guard.NotNull(block, nameof(block));
 
-            this.blocks.Broadcast(block);
+            this.blocksConnected.Broadcast(block);
         }
 
-        public void SignalReorgedBlock(ChainedHeader chainedHeader)
+        /// <inheritdoc />
+        public void SignalBlockDisconnected(Block block)
         {
-            Guard.NotNull(chainedHeader, nameof(chainedHeader));
+            Guard.NotNull(block, nameof(block));
 
-            this.reorgedHeaders.Broadcast(chainedHeader);
+            this.blocksDisconnected.Broadcast(block);
         }
 
         /// <inheritdoc />
@@ -108,19 +109,19 @@ namespace Stratis.Bitcoin.Signals
         }
 
         /// <inheritdoc />
-        public IDisposable SubscribeForBlocks(IObserver<Block> observer)
+        public IDisposable SubscribeForBlocksConnected(IObserver<Block> observer)
         {
             Guard.NotNull(observer, nameof(observer));
 
-            return this.blocks.Subscribe(observer);
+            return this.blocksConnected.Subscribe(observer);
         }
 
         /// <inheritdoc />
-        public IDisposable SubscribeForReorgedBlocks(IObserver<ChainedHeader> observer)
+        public IDisposable SubscribeForBlocksDisconnected(IObserver<Block> observer)
         {
             Guard.NotNull(observer, nameof(observer));
 
-            return this.reorgedHeaders.Subscribe(observer);
+            return this.blocksDisconnected.Subscribe(observer);
         }
 
         /// <inheritdoc />

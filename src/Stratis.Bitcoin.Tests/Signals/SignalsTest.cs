@@ -8,17 +8,17 @@ namespace Stratis.Bitcoin.Tests.Signals
 {
     public class SignalsTest
     {
-        private readonly Mock<ISignaler<Block>> blockSignaler;
-        private readonly Mock<ISignaler<ChainedHeader>> blockReorgSignaler;
+        private readonly Mock<ISignaler<Block>> blockConnectedSignaler;
+        private readonly Mock<ISignaler<Block>> blockDisconnectedSignaler;
         private readonly Bitcoin.Signals.Signals signals;
         private readonly Mock<ISignaler<Transaction>> transactionSignaler;
 
         public SignalsTest()
         {
-            this.blockSignaler = new Mock<ISignaler<Block>>();
-            this.blockReorgSignaler = new Mock<ISignaler<ChainedHeader>>();
+            this.blockConnectedSignaler = new Mock<ISignaler<Block>>();
+            this.blockDisconnectedSignaler = new Mock<ISignaler<Block>>();
             this.transactionSignaler = new Mock<ISignaler<Transaction>>();
-            this.signals = new Bitcoin.Signals.Signals(this.blockSignaler.Object, this.blockReorgSignaler.Object, this.transactionSignaler.Object);
+            this.signals = new Bitcoin.Signals.Signals(this.blockConnectedSignaler.Object, this.blockDisconnectedSignaler.Object, this.transactionSignaler.Object);
         }
 
         [Fact]
@@ -26,19 +26,19 @@ namespace Stratis.Bitcoin.Tests.Signals
         {
             Block block = Network.StratisMain.CreateBlock();
 
-            this.signals.SignalBlock(block);
+            this.signals.SignalBlockConnected(block);
 
-            this.blockSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));
+            this.blockConnectedSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));
         }
 
         [Fact]
-        public void SignalBlockReorgBroadcastsToBlockSignaler()
+        public void SignalBlockDisconnectedToBlockSignaler()
         {
-            var header = ChainedHeadersHelper.CreateGenesisChainedHeader();
+            Block block = Network.StratisMain.CreateBlock();
 
-            this.signals.SignalReorgedBlock(header);
+            this.signals.SignalBlockDisconnected(block);
 
-            this.blockReorgSignaler.Verify(b => b.Broadcast(header), Times.Exactly(1));
+            this.blockDisconnectedSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));
         }
 
         [Fact]

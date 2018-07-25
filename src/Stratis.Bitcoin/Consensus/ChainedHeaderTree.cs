@@ -457,7 +457,6 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
                 this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
-                this.signals.SignalReorgedBlock(currentHeader);
                 currentHeader = currentHeader.Previous;
             }
 
@@ -475,8 +474,6 @@ namespace Stratis.Bitcoin.Consensus
                     currentHeader.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
 
                     this.logger.LogTrace("Block data for '{0}' is removed.", currentHeader);
-
-                    this.signals.SignalReorgedBlock(currentHeader);
 
                     currentHeader = currentHeader.Previous;
                 }
