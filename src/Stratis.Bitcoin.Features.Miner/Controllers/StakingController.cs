@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     /// Controller providing operations on mining feature.
     /// </summary>
     [Route("api/[controller]")]
-    public class MinerController : Controller
+    public class StakingController : Controller
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -33,9 +33,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <summary>The wallet manager.</summary>
         private readonly IWalletManager walletManager;
 
-        /// <summary>Message to return if the call comes from the bitcoin network.</summary>
-        private const string BitcoinNotUsedMsg =  "Method not used for Bitcoin";
-
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -43,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="walletManager">The wallet manager.</param>
         /// <param name="posMinting">PoS staker or null if PoS staking is not enabled.</param>
-        public MinerController(IFullNode fullNode, ILoggerFactory loggerFactory, IWalletManager walletManager, IPosMinting posMinting = null)
+        public StakingController(IFullNode fullNode, ILoggerFactory loggerFactory, IWalletManager walletManager, IPosMinting posMinting = null)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -62,9 +59,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         [HttpGet]
         public IActionResult GetStakingInfo()
         {
-            if (this.fullNode.Network.IsBitcoin())
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, MethodBase.GetCurrentMethod().Name, BitcoinNotUsedMsg);
-
             try
             {
                 GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetGetStakingInfoModel() : new GetStakingInfoModel();
@@ -87,9 +81,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         [HttpPost]
         public IActionResult StartStaking([FromBody]StartStakingRequest request)
         {
-            if (this.fullNode.Network.IsBitcoin())
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, MethodBase.GetCurrentMethod().Name, BitcoinNotUsedMsg);
-
             Guard.NotNull(request, nameof(request));
 
             try
@@ -130,9 +121,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         [HttpPost]
         public IActionResult StopStaking()
         {
-            if (this.fullNode.Network.IsBitcoin())
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, MethodBase.GetCurrentMethod().Name, BitcoinNotUsedMsg);
-
             try
             {
                 this.fullNode.NodeFeature<MiningFeature>(true).StopStaking();

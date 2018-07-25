@@ -16,16 +16,16 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
 {
-    public class MinerControllerTest : LogsTestBase
+    public class StakingControllerTest : LogsTestBase
     {
-        private MinerController controller;
+        private StakingController controller;
         private Mock<IFullNode> fullNode;
         private Mock<IPosMinting> posMinting;
         private Mock<IWalletManager> walletManager;
         private Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
         private const string BitcoinNotUsedMsg = "Method not used for Bitcoin";
 
-        public MinerControllerTest()
+        public StakingControllerTest()
         {
             this.fullNode = new Mock<IFullNode>();
             this.posMinting = new Mock<IPosMinting>();
@@ -34,13 +34,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
 
             this.fullNode.Setup(f => f.Network).Returns(Network.StratisMain);
 
-            this.controller = new MinerController(this.fullNode.Object, this.LoggerFactory.Object, this.walletManager.Object, this.posMinting.Object);
+            this.controller = new StakingController(this.fullNode.Object, this.LoggerFactory.Object, this.walletManager.Object, this.posMinting.Object);
         }
 
         [Fact]
         public void GetStakingInfo_WithoutPosMinting_ReturnsEmptyStakingInfoModel()
         {
-            this.controller = new MinerController(this.fullNode.Object, this.LoggerFactory.Object, null);
+            this.controller = new StakingController(this.fullNode.Object, this.LoggerFactory.Object, null);
 
             IActionResult response = this.controller.GetStakingInfo();
 
@@ -210,63 +210,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             Assert.Contains("Staking cannot start", error.Message);
 
             this.posMinting.Verify(pm => pm.Stake(It.IsAny<PosMinting.WalletSecret>()), Times.Never);
-        }
-
-        [Fact]
-        public void GetStakingInfo_On_The_BitCoin_Network_ReturnsBadRequest()
-        {
-            this.fullNode.Setup(f => f.Network).Returns(Network.Main);
-
-            this.controller = new MinerController(this.fullNode.Object, this.LoggerFactory.Object, null);
-
-            IActionResult result = this.controller.GetStakingInfo();
-
-            var errorResult = Assert.IsType<ErrorResult>(result);
-            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Single(errorResponse.Errors);
-
-            ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(400, error.Status);
-            Assert.Equal("GetStakingInfo", error.Message);
-            Assert.Equal(BitcoinNotUsedMsg, error.Description);
-        }
-
-        [Fact]
-        public void StartStaking_On_The_BitCoin_Network_ReturnsBadRequest()
-        {
-            this.fullNode.Setup(f => f.Network).Returns(Network.Main);
-
-            this.controller = new MinerController(this.fullNode.Object, this.LoggerFactory.Object, null);
-
-            IActionResult result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
-
-            var errorResult = Assert.IsType<ErrorResult>(result);
-            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Single(errorResponse.Errors);
-
-            ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(400, error.Status);
-            Assert.Equal("StartStaking", error.Message);
-            Assert.Equal(BitcoinNotUsedMsg, error.Description);
-        }
-
-        [Fact]
-        public void StopStaking_On_The_BitCoin_Network_ReturnsBadRequest()
-        {
-            this.fullNode.Setup(f => f.Network).Returns(Network.Main);
-
-            this.controller = new MinerController(this.fullNode.Object, this.LoggerFactory.Object, null);
-
-            IActionResult result = this.controller.StopStaking();
-
-            var errorResult = Assert.IsType<ErrorResult>(result);
-            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Single(errorResponse.Errors);
-
-            ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(400, error.Status);
-            Assert.Equal("StopStaking", error.Message);
-            Assert.Equal(BitcoinNotUsedMsg, error.Description);
         }
     }
 }

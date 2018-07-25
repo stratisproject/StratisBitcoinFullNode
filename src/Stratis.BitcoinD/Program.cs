@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Api;
@@ -28,7 +27,6 @@ namespace Stratis.BitcoinD
                     .UseBlockStore()
                     .UsePowConsensus()
                     .UseMempool()
-                    .AddMining()
                     .AddRPC()
                     .UseWallet()
                     .UseApi()
