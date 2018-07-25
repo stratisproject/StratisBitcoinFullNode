@@ -26,10 +26,29 @@ namespace Stratis.Bitcoin.Networks
             this.MinRelayTxFee = 0;
             this.CoinTicker = "TSTRAT";
 
-            // Taken from StratisMain Consensus options
+            var powLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+
             var consensusFactory = new PosConsensusFactory();
+
+            // Create the genesis block.
+            this.GenesisTime = 1470467000;
+            this.GenesisNonce = 1831645;
+            this.GenesisBits = 0x1e0fffff;
+            this.GenesisVersion = 1;
+            this.GenesisReward = Money.Zero;
+            
+            Block genesisBlock = CreateStratisGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+
+            genesisBlock.Header.Time = 1494909211;
+            genesisBlock.Header.Nonce = 2433759;
+            genesisBlock.Header.Bits = powLimit;
+
+            this.Genesis = genesisBlock;
+
+            // Taken from StratisMain Consensus options
             var consensus = new Consensus();
             consensus.ConsensusFactory = consensusFactory;
+            consensus.HashGenesisBlock = genesisBlock.GetHash();
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 750;
             consensus.MajorityRejectBlockOutdated = 950;
@@ -57,9 +76,10 @@ namespace Stratis.Bitcoin.Networks
             // StratisRegTest differences
             consensus.PowAllowMinDifficultyBlocks = true;
             consensus.PowNoRetargeting = true;
-            consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+            consensus.PowLimit = powLimit;
             consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
             consensus.CoinbaseMaturity = 10;
+            this.Consensus = consensus;
 
             // Taken from StratisX.
             consensus.Options = new PosConsensusOptions(
@@ -76,21 +96,6 @@ namespace Stratis.Bitcoin.Networks
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
-
-            // Create the genesis block.
-            this.GenesisTime = 1470467000;
-            this.GenesisNonce = 1831645;
-            this.GenesisBits = 0x1e0fffff;
-            this.GenesisVersion = 1;
-            this.GenesisReward = Money.Zero;
-
-            this.Genesis = CreateStratisGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
-            this.Genesis.Header.Time = 1494909211;
-            this.Genesis.Header.Nonce = 2433759;
-            this.Genesis.Header.Bits = consensus.PowLimit;
-            consensus.HashGenesisBlock = this.Genesis.GetHash();
-
-            this.Consensus = consensus;
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x93925104d664314f581bc7ecb7b4bad07bcfabd1cfce4256dbd2faddcf53bd1f"));
         }
