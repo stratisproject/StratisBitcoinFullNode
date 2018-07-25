@@ -22,9 +22,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
 
-            var consensus = new NBitcoin.Consensus();
-            consensus.ConsensusFactory = new SmartContractConsensusFactory();
+            var consensusFactory = new SmartContractConsensusFactory();
 
+            Block genesisBlock = BitcoinMain.CreateBitcoinGenesisBlock(consensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
+            ((SmartContractBlockHeader)genesisBlock.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
+            this.Genesis.Header.Nonce = 3; // Incremented 19/06
+
+            this.Genesis = genesisBlock;
+
+            var consensus = new NBitcoin.Consensus();
+            consensus.ConsensusFactory = consensusFactory;
+            consensus.HashGenesisBlock = genesisBlock.Header.GetHash();
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 51;
             consensus.MajorityRejectBlockOutdated = 75;
@@ -57,8 +65,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             consensus.ProofOfStakeReward = Money.Zero;
             consensus.MaxReorgLength = 500;
             consensus.MaxMoney = long.MaxValue;
-
-
 
             // Taken from StratisX.
             consensus.Options = new PosConsensusOptions(
