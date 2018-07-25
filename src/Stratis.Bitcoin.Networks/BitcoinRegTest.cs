@@ -17,10 +17,23 @@ namespace Stratis.Bitcoin.Networks
             this.RPCPort = 18332;
             this.CoinTicker = "TBTC";
 
-            // Taken from BitcoinMain Consensus options
             var consensusFactory = new ConsensusFactory();
+
+            // Create the genesis block.
+            this.GenesisTime = 1296688602;
+            this.GenesisNonce = 2;
+            this.GenesisBits = 0x207fffff;
+            this.GenesisVersion = 1;
+            this.GenesisReward = Money.Coins(50m);
+
+            Block genesisBlock = CreateBitcoinGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+
+            this.Genesis = genesisBlock;
+
+            // Taken from BitcoinMain Consensus options
             var consensus = new Consensus();
             consensus.ConsensusFactory = consensusFactory;
+            consensus.HashGenesisBlock = genesisBlock.GetHash();
             consensus.MajorityEnforceBlockUpgrade = 750;
             consensus.MajorityRejectBlockOutdated = 950;
             consensus.MajorityWindow = 1000;
@@ -50,8 +63,9 @@ namespace Stratis.Bitcoin.Networks
             consensus.BIP9Deployments[BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999);
             consensus.BIP9Deployments[BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999);
             consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999);
-
             consensus.Options = new ConsensusOptions(); // Default - set to Bitcoin params.
+
+            this.Consensus = consensus;
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
@@ -69,18 +83,6 @@ namespace Stratis.Bitcoin.Networks
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
-            
-            // Create the genesis block.
-            this.GenesisTime = 1296688602;
-            this.GenesisNonce = 2;
-            this.GenesisBits = 0x207fffff;
-            this.GenesisVersion = 1;
-            this.GenesisReward = Money.Coins(50m);
-
-            this.Genesis = CreateBitcoinGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
-            consensus.HashGenesisBlock = this.Genesis.GetHash();
-
-            this.Consensus = consensus;
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
         }
