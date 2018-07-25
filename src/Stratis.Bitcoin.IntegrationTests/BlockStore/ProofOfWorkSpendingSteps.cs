@@ -87,6 +87,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             try
             {
                 TransactionBuildContext transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
+                    this.sendingStratisBitcoinNode.FullNode.Network,
                     SendingWalletName,
                     AccountName,
                     WalletPassword,
