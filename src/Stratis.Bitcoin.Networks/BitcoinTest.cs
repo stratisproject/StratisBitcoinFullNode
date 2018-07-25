@@ -18,7 +18,9 @@ namespace Stratis.Bitcoin.Networks
             this.CoinTicker = "TBTC";
 
             // Taken from BitcoinMain Consensus options
+            var consensusFactory = new ConsensusFactory();
             var consensus = new Consensus();
+            consensus.ConsensusFactory = consensusFactory;
             consensus.SubsidyHalvingInterval = 210000;
             consensus.PowLimit = new Target(new uint256("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
             consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
@@ -87,7 +89,7 @@ namespace Stratis.Bitcoin.Networks
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Coins(50m);
 
-            this.Genesis = CreateBitcoinGenesisBlock(consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+            this.Genesis = CreateBitcoinGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
             consensus.HashGenesisBlock = this.Genesis.GetHash();
 
             this.Consensus = consensus;

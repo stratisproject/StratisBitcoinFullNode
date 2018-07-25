@@ -27,7 +27,9 @@ namespace Stratis.Bitcoin.Networks
             this.CoinTicker = "TSTRAT";
 
             // Taken from StratisMain Consensus options
+            var consensusFactory = new PosConsensusFactory();
             var consensus = new Consensus();
+            consensus.ConsensusFactory = consensusFactory;
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 750;
             consensus.MajorityRejectBlockOutdated = 950;
@@ -42,7 +44,6 @@ namespace Stratis.Bitcoin.Networks
             consensus.MinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
             consensus.LastPOWBlock = 12500;
             consensus.IsProofOfStake = true;
-            consensus.ConsensusFactory = new PosConsensusFactory();
             consensus.ProofOfStakeLimit = new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
             consensus.ProofOfStakeLimitV2 = new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
             consensus.CoinType = 105;
@@ -83,7 +84,7 @@ namespace Stratis.Bitcoin.Networks
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
-            this.Genesis = CreateStratisGenesisBlock(consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+            this.Genesis = CreateStratisGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
             this.Genesis.Header.Time = 1494909211;
             this.Genesis.Header.Nonce = 2433759;
             this.Genesis.Header.Bits = consensus.PowLimit;
