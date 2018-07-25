@@ -545,7 +545,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
         }
 
-        public async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
+        internal async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
             this.logger.LogTrace("()");
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
@@ -553,8 +553,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 .GetSpendableTransactionsInWallet(walletSecret.WalletName, 1).ToList();
 
             FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).ToArray(), cancellationToken).ConfigureAwait(false);
-            if (cancellationToken.IsCancellationRequested)
-                return utxoStakeDescriptions;
 
             foreach (UnspentOutputReference outputReference in spendableTransactions)
             {
