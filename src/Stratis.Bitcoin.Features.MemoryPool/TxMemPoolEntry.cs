@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public TxMempoolEntry(Transaction transaction, Money nFee,
             long nTime, double entryPriority, int entryHeight,
             Money inChainInputValue, bool spendsCoinbase,
-            long nSigOpsCost, LockPoints lp, PowConsensusOptions consensusOptions)
+            long nSigOpsCost, LockPoints lp, ConsensusOptions consensusOptions)
         {
             this.Transaction = transaction;
             this.TransactionHash = transaction.GetHash();
