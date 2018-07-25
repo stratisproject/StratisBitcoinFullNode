@@ -129,7 +129,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "City.Chain.Features.SimpleW
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "City.Chain.Features.SimpleWallet.Tests", "City.Chain.Features.SimpleWallet.Tests\City.Chain.Features.SimpleWallet.Tests.csproj", "{7654D5A7-8198-4F87-89EF-8E9EF0420A63}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "City.Chain", "City.Chain\City.Chain.csproj", "{CFBE3B07-524D-4264-8813-7F7C4EE9DF06}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "City.Chain", "City.Chain\City.Chain.csproj", "{CFBE3B07-524D-4264-8813-7F7C4EE9DF06}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "City.Chain.DNS", "City.Chain.DNS\City.Chain.DNS.csproj", "{CEF020AC-C265-49E2-82D8-B9BFAB2806A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -345,6 +347,10 @@ Global
 		{CFBE3B07-524D-4264-8813-7F7C4EE9DF06}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CFBE3B07-524D-4264-8813-7F7C4EE9DF06}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CFBE3B07-524D-4264-8813-7F7C4EE9DF06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CEF020AC-C265-49E2-82D8-B9BFAB2806A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEF020AC-C265-49E2-82D8-B9BFAB2806A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEF020AC-C265-49E2-82D8-B9BFAB2806A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEF020AC-C265-49E2-82D8-B9BFAB2806A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
