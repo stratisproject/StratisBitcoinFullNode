@@ -47,8 +47,21 @@ namespace Stratis.Bitcoin.Networks
             this.CoinTicker = "STRAT";
 
             var consensusFactory = new PosConsensusFactory();
+
+            // Create the genesis block.
+            this.GenesisTime = 1470467000;
+            this.GenesisNonce = 1831645;
+            this.GenesisBits = 0x1e0fffff;
+            this.GenesisVersion = 1;
+            this.GenesisReward = Money.Zero;
+
+            Block genesisBlock = CreateStratisGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+
+            this.Genesis = genesisBlock;
+
             var consensus = new Consensus();
             consensus.ConsensusFactory = consensusFactory;
+            consensus.HashGenesisBlock = genesisBlock.GetHash();
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 750;
             consensus.MajorityRejectBlockOutdated = 950;
@@ -85,6 +98,8 @@ namespace Stratis.Bitcoin.Networks
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000
                 );
+
+            this.Consensus = consensus;
 
             this.Base58Prefixes = new byte[12][];
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (63) };
@@ -144,18 +159,6 @@ namespace Stratis.Bitcoin.Networks
 
             string[] seedNodes = { "101.200.198.155", "103.24.76.21", "104.172.24.79" };
             this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
-
-            // Create the genesis block.
-            this.GenesisTime = 1470467000;
-            this.GenesisNonce = 1831645;
-            this.GenesisBits = 0x1e0fffff;
-            this.GenesisVersion = 1;
-            this.GenesisReward = Money.Zero;
-
-            this.Genesis = CreateStratisGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
-            consensus.HashGenesisBlock = this.Genesis.GetHash();
-
-            this.Consensus = consensus;
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x65a26bc20b0351aebf05829daefa8f7db2f800623439f3c114257c91447f1518"));
