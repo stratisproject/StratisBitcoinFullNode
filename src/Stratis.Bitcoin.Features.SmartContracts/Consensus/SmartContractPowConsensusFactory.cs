@@ -2,7 +2,7 @@
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
 {
-    public class SmartContractConsensusFactory : ConsensusFactory
+    public sealed class SmartContractPowConsensusFactory : ConsensusFactory
     {
         /// <inheritdoc />
         public override BlockHeader CreateBlockHeader()

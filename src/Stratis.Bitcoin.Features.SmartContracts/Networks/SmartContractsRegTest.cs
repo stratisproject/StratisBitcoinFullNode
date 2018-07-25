@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.MinRelayTxFee = 1000;
 
             var consensus = new NBitcoin.Consensus();
-            consensus.ConsensusFactory = new SmartContractConsensusFactory() { Consensus = consensus };
+            consensus.ConsensusFactory = new SmartContractPowConsensusFactory() { Consensus = consensus };
 
             consensus.SubsidyHalvingInterval = 150;
             consensus.MajorityEnforceBlockUpgrade = 750;
