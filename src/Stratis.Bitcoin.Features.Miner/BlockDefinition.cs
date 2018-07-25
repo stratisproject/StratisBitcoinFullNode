@@ -119,8 +119,8 @@ namespace Stratis.Bitcoin.Features.Miner
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
-            Network network,
-            BlockDefinitionOptions options = null)
+            MinerSettings minerSettings,
+            Network network)
         {
             this.ConsensusLoop = consensusLoop;
             this.DateTimeProvider = dateTimeProvider;
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.MempoolLock = mempoolLock;
             this.Network = network;
 
-            this.Options = options ?? new BlockDefinitionOptions(network);
+            this.Options = minerSettings.BlockDefinitionOptions ?? new BlockDefinitionOptions(network);
             this.BlockMinFeeRate = this.Options.BlockMinFeeRate;
 
             // Set BlockMaxWeight to value from BlockDefinitionOptions. If outside range of 4K - Consensus MaxBlockWeight, set to highest / lowest allowed.

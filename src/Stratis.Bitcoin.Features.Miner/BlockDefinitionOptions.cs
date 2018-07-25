@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Miner
         public long BlockMaxWeight { get; }
 
         public long BlockMaxSize { get; }
-
+        
         public FeeRate BlockMinFeeRate { get; }
 
         /// <summary>
@@ -26,19 +26,19 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Assign values explicitly.
         /// </summary>
-        public BlockDefinitionOptions(long blockMaxWeight, long blockMaxSize, FeeRate blockMinFeeRate)
+        public BlockDefinitionOptions(long blockMaxWeight, long blockMaxSize)
         {
             this.BlockMaxWeight = blockMaxWeight;
             this.BlockMaxSize = blockMaxSize;
-            this.BlockMinFeeRate = blockMinFeeRate;
+            this.BlockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee); // TODO: Where should this be set, really?
         }
 
-        /// <summary>
-        /// Get values from NodeSettings.
-        /// </summary>
-        public BlockDefinitionOptions()
-        {
+        ///// <summary>
+        ///// Get values from NodeSettings.
+        ///// </summary>
+        //public BlockDefinitionOptions()
+        //{
 
-        }
+        //}
     }
 }

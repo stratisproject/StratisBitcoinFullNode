@@ -84,6 +84,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 ? nodeSettings.Network.Consensus.Options.MaxBlockSerializedSize
                 : blockMaxWeight;
 
+            this.BlockDefinitionOptions = new BlockDefinitionOptions(blockMaxWeight, blockMaxSize);
+
             this.logger.LogTrace("(-)");
         }
         

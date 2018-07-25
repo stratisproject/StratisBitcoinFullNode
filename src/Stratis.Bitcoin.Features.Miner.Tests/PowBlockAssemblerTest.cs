@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly Mock<IDateTimeProvider> dateTimeProvider;
         private RuleContext callbackRuleContext;
         private readonly Money powReward;
+        private readonly MinerSettings minerSettings;
         private readonly Network network;
         private readonly Key key;
 
