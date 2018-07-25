@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.stakeChain = new Mock<IStakeChain>();
-            this.network = Network.StratisTest;
+            this.network = Networks.StratisTest;
             this.key = new Key();
 
             SetupConsensusLoop();

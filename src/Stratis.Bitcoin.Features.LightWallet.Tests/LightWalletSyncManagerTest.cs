@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
         public LightWalletSyncManagerTest()
         {
-            this.network = Network.StratisMain;
+            this.network = Networks.StratisMain;
 
             this.walletManager = new Mock<IWalletManager>();
             this.chain = new ConcurrentChain(this.network);
@@ -479,7 +479,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         [Fact]
         public void ProcessBlock_NewBlock_PreviousHashSameAsWalletTip_PassesBlockToManagerWithoutReorg()
         {
-            (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, Network.StratisMain);
+            (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, Networks.StratisMain);
             this.chain = result.Chain;
             List<Block> blocks = result.Blocks;
             var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
@@ -502,7 +502,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         [Fact]
         public void ProcessBlock_NewBlock_BlockOnBestChain_WalletTipBeforeNewTip_StartsSyncFromWalletTipWithoutProcessingBlock()
         {
-            (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, Network.StratisMain);
+            (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, Networks.StratisMain);
             this.chain = result.Chain;
             List<Block> blocks = result.Blocks;
             var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
@@ -529,7 +529,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         [Fact]
         public void ProcessBlock_NewBlock_BlockOnBestChain_WalletTipAfterNewTip_StartsSyncFromNewTip()
         {
-            (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, Network.StratisMain);
+            (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, Networks.StratisMain);
             this.chain = result.Chain;
             List<Block> blocks = result.Blocks;
             var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
@@ -555,7 +555,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         [Fact]
         public void ProcessBlock_BlockNotOnBestChain_ReorgWalletTipBeforeNewTip_StartsSyncFromForkPointWithoutProcessingBlock()
         {
-            (ConcurrentChain LeftChain, ConcurrentChain RightChain, List<Block> LeftForkBlocks, List<Block> RightForkBlocks) result = WalletTestsHelpers.GenerateForkedChainAndBlocksWithHeight(5, Network.StratisMain, 2);
+            (ConcurrentChain LeftChain, ConcurrentChain RightChain, List<Block> LeftForkBlocks, List<Block> RightForkBlocks) result = WalletTestsHelpers.GenerateForkedChainAndBlocksWithHeight(5, Networks.StratisMain, 2);
             // left side chain containing the 'old' fork.
             ConcurrentChain leftChain = result.LeftChain;
             // right side chain containing the 'new' fork. Work on this.
@@ -588,7 +588,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         [Fact]
         public void ProcessBlock_BlockNotOnBestChain_ReorgWalletTipAfterNewTip_StartProcessingFromFork()
         {
-            (ConcurrentChain LeftChain, ConcurrentChain RightChain, List<Block> LeftForkBlocks, List<Block> RightForkBlocks) result = WalletTestsHelpers.GenerateForkedChainAndBlocksWithHeight(5, Network.StratisMain, 2);
+            (ConcurrentChain LeftChain, ConcurrentChain RightChain, List<Block> LeftForkBlocks, List<Block> RightForkBlocks) result = WalletTestsHelpers.GenerateForkedChainAndBlocksWithHeight(5, Networks.StratisMain, 2);
             // left side chain containing the 'old' fork.
             ConcurrentChain leftChain = result.LeftChain;
             // right side chain containing the 'new' fork. Work on this.
