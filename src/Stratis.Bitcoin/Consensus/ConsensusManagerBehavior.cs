@@ -459,7 +459,7 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/> in case peer's state is <see cref="NetworkPeerState.HandShaked"/>.</summary>
-        private async Task ResyncAsync()
+        public async Task ResyncAsync()
         {
             this.logger.LogTrace("()");
 

@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -280,22 +281,19 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private bool ValidateAndConnectBlock(MineBlockContext context)
         {
-            context.ValidationContext = new ValidationContext { Block = context.BlockTemplate.Block };
+            ChainedHeaderBlock chainedHeaderBlock = this.consensusManager.BlockMined(context.BlockTemplate.Block).GetAwaiter().GetResult();
 
-            throw new NotImplementedException(); // TODO:
-            //this.consensusLoop.AcceptBlockAsync(context.ValidationContext).GetAwaiter().GetResult();
-
-            if (context.ValidationContext.ChainedHeader == null)
+            if (chainedHeaderBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG-2]");
                 return false;
             }
 
-            if (context.ValidationContext.Error != null && context.ValidationContext.Error != ConsensusErrors.InvalidPrevTip)
-            {
-                this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
-                return false;
-            }
+            //if (context.ValidationContext.Error != null && context.ValidationContext.Error != ConsensusErrors.InvalidPrevTip)
+            //{
+            //    this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
+            //    return false;
+            //}
 
             return true;
         }

@@ -71,6 +71,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="blockHashes">The block hashes to download.</param>
         /// <param name="onBlockDownloadedCallback">The callback that will be called for each downloaded block.</param>
         Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback);
+
+        /// <summary>
+        /// A new block was mined by the node and is attempted to connect to tip. 
+        /// </summary>
+        /// <param name="block">The mined block.</param>
+        Task<ChainedHeaderBlock> BlockMined(Block block);
     }
 
     /// <inheritdoc cref="IConsensusManager"/>
@@ -267,6 +273,12 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public Task<ChainedHeaderBlock> BlockMined(Block block)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>

@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                     new Mock<IDateTimeProvider>().Object,
                     new ConcurrentChain(this.network),
                     new NodeDeployments(Network.RegTest, new ConcurrentChain(this.network)),
-                    new ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<CoinView>().Object, null);
+                    new ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<CoinView>().Object);
 
                 rule.Initialize();
 

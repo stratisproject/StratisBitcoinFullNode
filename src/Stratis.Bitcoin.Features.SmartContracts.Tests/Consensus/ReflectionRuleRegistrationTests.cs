@@ -31,7 +31,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
                 chain, new Mock<ICheckpoints>().Object, new Configuration.Settings.ConsensusSettings(),
                 DateTimeProvider.Default, executorFactory.Object, loggerFactory, network,
                 new Base.Deployments.NodeDeployments(network, chain), contractState,
-                new Mock<ILookaheadBlockPuller>().Object,
                 new Mock<CoinView>().Object, receiptStorage.Object);
 
             var feature = new ReflectionVirtualMachineFeature(consensusRules, loggerFactory);

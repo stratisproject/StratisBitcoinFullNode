@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         public static void TriggerSync(CoreNode node)
         {
             foreach (INetworkPeer connectedPeer in node.FullNode.ConnectionManager.ConnectedPeers)
-                connectedPeer.Behavior<ChainHeadersBehavior>().TrySyncAsync().GetAwaiter().GetResult();
+                connectedPeer.Behavior<ConsensusManagerBehavior>().ResyncAsync().GetAwaiter().GetResult();
         }
 
         public static bool IsNodeConnected(CoreNode node)

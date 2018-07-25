@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IServiceProvider serviceProvider = fullNode.Services.ServiceProvider;
             var network = serviceProvider.GetService<Network>();
             var settings = serviceProvider.GetService<NodeSettings>();
-            var consensusLoop = serviceProvider.GetService<IConsensusLoop>() as ConsensusLoop;
+            var consensusManager = serviceProvider.GetService<IConsensusManager>() as ConsensusManager;
             var chain = serviceProvider.GetService<NBitcoin.ConcurrentChain>();
             var chainState = serviceProvider.GetService<IChainState>() as ChainState;
             var blockStoreManager = serviceProvider.GetService<BlockStoreManager>();
@@ -47,7 +48,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(fullNode);
             Assert.NotNull(network);
             Assert.NotNull(settings);
-            Assert.NotNull(consensusLoop);
+            Assert.NotNull(consensusManager);
             Assert.NotNull(chain);
             Assert.NotNull(chainState);
             Assert.NotNull(blockStoreManager);

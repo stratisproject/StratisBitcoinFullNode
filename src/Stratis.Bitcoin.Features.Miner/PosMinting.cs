@@ -21,6 +21,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner
@@ -595,25 +596,22 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             // Validate the block.
-            var blockValidationContext = new ValidationContext { Block = block };
+            ChainedHeaderBlock chainedHeaderBlock = this.consensusManager.BlockMined(block).GetAwaiter().GetResult();
 
-            throw new NotImplementedException(); // TODO:
-            //this.consensusManager.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
-
-            if (blockValidationContext.ChainedHeader == null)
+            if (chainedHeaderBlock == null)
             {
                 this.logger.LogTrace("(-)[REORG-2]");
                 return;
             }
 
-            if (blockValidationContext.Error != null)
-            {
-                this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
-                return;
-            }
+            //if (blockValidationContext.Error != null)
+            //{
+            //    this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
+            //    return;
+            //}
 
             this.logger.LogInformation("==================================================================");
-            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", blockValidationContext.ChainedHeader.HashBlock, blockValidationContext.ChainedHeader.Height);
+            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock.ChainedHeader.Height);
             this.logger.LogInformation("==================================================================");
         }
 
