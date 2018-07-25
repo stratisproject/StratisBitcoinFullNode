@@ -105,7 +105,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolSignaled.Start();
 
             this.signals.SubscribeForReorgedBlocks(this.mempoolReorgSignaled);
-            this.mempoolReorgSignaled.Start();
         }
 
         /// <summary>
@@ -146,7 +145,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             this.mempoolSignaled?.Stop();
-            this.mempoolReorgSignaled?.Stop();
         }
     }
 

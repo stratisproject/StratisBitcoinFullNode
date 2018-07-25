@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Signals;
@@ -42,16 +41,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     await this.mempoolValidator.AcceptToMemoryPool(state, transaction);
                 }
             });
-        }
-
-        public void Stop()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Start()
-        {
-            throw new NotImplementedException();
         }
     }
 }
