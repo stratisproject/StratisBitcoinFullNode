@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
                         services.AddSingleton<SmartContractBlockDefinition>();
-                        services.AddSingleton<MinerController>();
+                        services.AddSingleton<StakingController>();
                         services.AddSingleton<MiningRPCController>();
                         services.AddSingleton<MinerSettings>();
                     });
