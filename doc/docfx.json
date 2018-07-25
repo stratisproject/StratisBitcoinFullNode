@@ -8,6 +8,7 @@
           ],
           "exclude": [
             "**/*.Test*/**",
+            "**/*.Templates*/**",
             "**/obj/**",
             "**/bin/**",
             "_site/**"

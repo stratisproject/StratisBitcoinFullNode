@@ -11,6 +11,6 @@ It contains the most important information to get started with, and understandin
 [1]: https://ci.appveyor.com/api/projects/status/xs9789ye8ulu29j3/branch/citychain?svg=true
 [2]: https://ci.appveyor.com/project/citychain/city-chain
 
-[Get started here](/articles/intro.html)
+[Get started here](/spec/intro.html)
 
 [Source Code](https://github.com/CityChainFoundation/city-chain)
