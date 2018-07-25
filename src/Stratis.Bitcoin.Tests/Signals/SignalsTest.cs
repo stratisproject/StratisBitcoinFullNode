@@ -1,5 +1,6 @@
 ﻿using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Signals;
 using Xunit;
 
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Tests.Signals
         [Fact]
         public void SignalBlockBroadcastsToBlockSignaler()
         {
-            Block block = Network.StratisMain.CreateBlock();
+            Block block = StratisNetworks.StratisMain.CreateBlock();
 
             this.signals.SignalBlock(block);
 
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Tests.Signals
         [Fact]
         public void SignalTransactionBroadcastsToTransactionSignaler()
         {
-            Transaction transaction = Network.StratisMain.CreateTransaction();
+            Transaction transaction = StratisNetworks.StratisMain.CreateTransaction();
 
             this.signals.SignalTransaction(transaction);
 

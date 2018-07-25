@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Tests.Wallet.Common
 {
@@ -375,10 +376,10 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
 
         public static ConcurrentChain PrepareChainWithBlock()
         {
-            var chain = new ConcurrentChain(Network.StratisMain);
+            var chain = new ConcurrentChain(StratisNetworks.StratisMain);
             uint nonce = RandomUtils.GetUInt32();
-            Block block = Network.StratisMain.Consensus.ConsensusFactory.CreateBlock();
-            block.AddTransaction(Network.StratisMain.CreateTransaction());
+            Block block = StratisNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
+            block.AddTransaction(StratisNetworks.StratisMain.CreateTransaction());
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;
             block.Header.Nonce = nonce;

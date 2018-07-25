@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.LightWallet;
 using Stratis.Bitcoin.Features.Notifications;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.BreezeD
@@ -29,7 +30,7 @@ namespace Stratis.BreezeD
 
                 if (isStratis)
                 {
-                    Network network = isTestNet ? Network.StratisTest : Network.StratisMain;
+                    Network network = isTestNet ? StratisNetworks.StratisTest : StratisNetworks.StratisMain;
                     if (isTestNet)
                         args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack
 

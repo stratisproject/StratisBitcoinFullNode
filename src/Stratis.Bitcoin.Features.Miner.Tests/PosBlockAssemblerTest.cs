@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -41,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.stakeChain = new Mock<IStakeChain>();
-            this.network = Network.StratisTest;
+            this.network = StratisNetworks.StratisTest;
             this.key = new Key();
 
             SetupConsensusLoop();

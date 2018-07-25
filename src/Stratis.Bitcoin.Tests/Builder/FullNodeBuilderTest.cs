@@ -5,6 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -104,7 +105,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         public void BuildWithInitialServicesSetupConfiguresFullNodeUsingConfiguration()
         {
             string dataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
-            var nodeSettings = new NodeSettings(Network.StratisRegTest, args: new string[] { $"-datadir={dataDir}" });
+            var nodeSettings = new NodeSettings(StratisNetworks.StratisRegTest, args: new string[] { $"-datadir={dataDir}" });
 
             this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 

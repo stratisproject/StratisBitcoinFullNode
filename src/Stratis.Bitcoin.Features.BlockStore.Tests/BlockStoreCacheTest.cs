@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -18,7 +19,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public BlockStoreCacheTest()
         {
             this.loggerFactory = new LoggerFactory();
-            this.network = Network.StratisMain;
+            this.network = StratisNetworks.StratisMain;
             this.blockRepository = new Mock<IBlockRepository>();
 
             this.storeSettings = new StoreSettings();

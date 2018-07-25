@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
@@ -48,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public PosMintingTest()
         {
             this.consensusLoop = new Mock<IConsensusLoop>();
-            this.network = Network.StratisTest;
+            this.network = StratisNetworks.StratisTest;
             this.network.Consensus.Options = new ConsensusOptions();
             this.chain = new ConcurrentChain(this.network);
             this.connectionManager = new Mock<IConnectionManager>();
@@ -358,9 +359,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CoinstakeAge_BeforeActivation_Testnet()
         {
-            Assert.True(this.WasUtxoSelectedForStaking(Network.StratisTest, 1000, 1000 - 8)); // utxo depth is 9, mining block at 10
+            Assert.True(this.WasUtxoSelectedForStaking(StratisNetworks.StratisTest, 1000, 1000 - 8)); // utxo depth is 9, mining block at 10
 
-            Assert.False(this.WasUtxoSelectedForStaking(Network.StratisTest, 1000, 1000 - 7)); // utxo depth is 8, mining block at 9
+            Assert.False(this.WasUtxoSelectedForStaking(StratisNetworks.StratisTest, 1000, 1000 - 7)); // utxo depth is 8, mining block at 9
         }
 
         /// <summary>This is a test of coinstake age softfork activation on testnet.</summary>
@@ -371,9 +372,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightTestnet;
             int afterActivationHeight = activationHeight + 1000;
 
-            Assert.True(this.WasUtxoSelectedForStaking(Network.StratisTest, afterActivationHeight, afterActivationHeight - 18));
+            Assert.True(this.WasUtxoSelectedForStaking(StratisNetworks.StratisTest, afterActivationHeight, afterActivationHeight - 18));
 
-            Assert.False(this.WasUtxoSelectedForStaking(Network.StratisTest, afterActivationHeight, afterActivationHeight - 17));
+            Assert.False(this.WasUtxoSelectedForStaking(StratisNetworks.StratisTest, afterActivationHeight, afterActivationHeight - 17));
         }
 
         /// <summary>This is a test of coinstake age softfork activation on testnet.</summary>
@@ -383,11 +384,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightTestnet;
 
-            Assert.True(this.WasUtxoSelectedForStaking(Network.StratisTest, activationHeight - 2, activationHeight - 10)); // mining block before activation
+            Assert.True(this.WasUtxoSelectedForStaking(StratisNetworks.StratisTest, activationHeight - 2, activationHeight - 10)); // mining block before activation
 
-            Assert.True(this.WasUtxoSelectedForStaking(Network.StratisTest, activationHeight - 1, activationHeight - 19)); // mining activation block
+            Assert.True(this.WasUtxoSelectedForStaking(StratisNetworks.StratisTest, activationHeight - 1, activationHeight - 19)); // mining activation block
 
-            Assert.False(this.WasUtxoSelectedForStaking(Network.StratisTest, activationHeight - 1, activationHeight - 18)); // mining activation block
+            Assert.False(this.WasUtxoSelectedForStaking(StratisNetworks.StratisTest, activationHeight - 1, activationHeight - 18)); // mining activation block
         }
 
         /// <summary>This is a test of coinstake age softfork activation on mainnet.</summary>
@@ -395,9 +396,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void CoinstakeAge_BeforeActivation_Mainnet()
         {
-            Assert.True(this.WasUtxoSelectedForStaking(Network.StratisMain, 1000, 1000 - 48)); // utxo depth is 49, mining block at 50
+            Assert.True(this.WasUtxoSelectedForStaking(StratisNetworks.StratisMain, 1000, 1000 - 48)); // utxo depth is 49, mining block at 50
 
-            Assert.False(this.WasUtxoSelectedForStaking(Network.StratisMain, 1000, 1000 - 47)); // utxo depth is 48, mining block at 49
+            Assert.False(this.WasUtxoSelectedForStaking(StratisNetworks.StratisMain, 1000, 1000 - 47)); // utxo depth is 48, mining block at 49
         }
 
         /// <summary>This is a test of coinstake age softfork activation on mainnet.</summary>
@@ -408,9 +409,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightMainnet;
             int afterActivationHeight = activationHeight + 1000;
 
-            Assert.True(this.WasUtxoSelectedForStaking(Network.StratisMain, afterActivationHeight, afterActivationHeight - 498));
+            Assert.True(this.WasUtxoSelectedForStaking(StratisNetworks.StratisMain, afterActivationHeight, afterActivationHeight - 498));
 
-            Assert.False(this.WasUtxoSelectedForStaking(Network.StratisMain, afterActivationHeight, afterActivationHeight - 497));
+            Assert.False(this.WasUtxoSelectedForStaking(StratisNetworks.StratisMain, afterActivationHeight, afterActivationHeight - 497));
         }
 
         /// <summary>This is a test of coinstake age softfork activation on mainnet.</summary>
@@ -420,11 +421,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             int activationHeight = PosConsensusOptions.CoinstakeMinConfirmationActivationHeightMainnet;
 
-            Assert.True(this.WasUtxoSelectedForStaking(Network.StratisMain, activationHeight - 2, activationHeight - 50)); // mining block before activation
+            Assert.True(this.WasUtxoSelectedForStaking(StratisNetworks.StratisMain, activationHeight - 2, activationHeight - 50)); // mining block before activation
 
-            Assert.True(this.WasUtxoSelectedForStaking(Network.StratisMain, activationHeight - 1, activationHeight - 499)); // mining activation block
+            Assert.True(this.WasUtxoSelectedForStaking(StratisNetworks.StratisMain, activationHeight - 1, activationHeight - 499)); // mining activation block
 
-            Assert.False(this.WasUtxoSelectedForStaking(Network.StratisMain, activationHeight - 1, activationHeight - 498)); // mining activation block
+            Assert.False(this.WasUtxoSelectedForStaking(StratisNetworks.StratisMain, activationHeight - 1, activationHeight - 498)); // mining activation block
         }
 
         private bool WasUtxoSelectedForStaking(Network network, int chainTipHeight, int utxoHeight)

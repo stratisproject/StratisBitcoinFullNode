@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         //{
         //    string accountName = "account";
         //    Key key = new Key();
-        //    this.rpcTestFixture.RpcClient.ImportAddress(key.PubKey.GetAddress(Network.StratisMain), accountName, false);
+        //    this.rpcTestFixture.RpcClient.ImportAddress(key.PubKey.GetAddress(StratisNetworks.StratisMain), accountName, false);
         //    BitcoinAddress address = this.rpcTestFixture.RpcClient.GetAccountAddress(accountName);
         //    BitcoinSecret secret = this.rpcTestFixture.RpcClient.DumpPrivKey(address);
         //    BitcoinSecret secret2 = this.rpcTestFixture.RpcClient.GetAccountSecret(accountName);
@@ -304,7 +304,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         //{
         //    string accountName = "account";
         //    Key key = new Key();
-        //    this.rpcTestFixture.RpcClient.ImportAddress(key.PubKey.GetAddress(Network.StratisMain), accountName, false);
+        //    this.rpcTestFixture.RpcClient.ImportAddress(key.PubKey.GetAddress(StratisNetworks.StratisMain), accountName, false);
         //    BitcoinAddress address = this.rpcTestFixture.RpcClient.GetAccountAddress(accountName);
         //    BitcoinSecret secret = this.rpcTestFixture.RpcClient.DumpPrivKey(address);
         //    BitcoinSecret secret2 = this.rpcTestFixture.RpcClient.GetAccountSecret(accountName);

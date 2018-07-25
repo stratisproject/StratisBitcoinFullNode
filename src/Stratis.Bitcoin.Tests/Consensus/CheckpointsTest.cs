@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Consensus
@@ -65,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetLastCheckPointHeight_StratisMainnet_ReturnsLastCheckPointHeight()
         {
-            var checkpoints = new Checkpoints(Network.StratisMain, new ConsensusSettings() { UseCheckpoints = true });
+            var checkpoints = new Checkpoints(StratisNetworks.StratisMain, new ConsensusSettings() { UseCheckpoints = true });
 
             int result = checkpoints.GetLastCheckpointHeight();
 
@@ -75,7 +76,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetLastCheckPointHeight_StratisTestnet_ReturnsLastCheckPointHeight()
         {
-            var checkpoints = new Checkpoints(Network.StratisTest, new ConsensusSettings() { UseCheckpoints = true });
+            var checkpoints = new Checkpoints(StratisNetworks.StratisTest, new ConsensusSettings() { UseCheckpoints = true });
 
             int result = checkpoints.GetLastCheckpointHeight();
 
@@ -85,7 +86,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetLastCheckPointHeight_StratisRegTestNet_DoesNotLoadCheckpoints()
         {
-            var checkpoints = new Checkpoints(Network.StratisRegTest, new ConsensusSettings() { UseCheckpoints = true });
+            var checkpoints = new Checkpoints(StratisNetworks.StratisRegTest, new ConsensusSettings() { UseCheckpoints = true });
 
             int result = checkpoints.GetLastCheckpointHeight();
 
@@ -131,7 +132,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetCheckPoint_CheckpointExists_PoSChain_ReturnsCheckpoint()
         {
-            var checkpoints = new Checkpoints(Network.StratisMain, new ConsensusSettings() { UseCheckpoints = true });
+            var checkpoints = new Checkpoints(StratisNetworks.StratisMain, new ConsensusSettings() { UseCheckpoints = true });
 
             CheckpointInfo result = checkpoints.GetCheckpoint(2);
 
@@ -293,7 +294,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 { 850000, new CheckpointInfo(new uint256("0xc3a249b01795b22858aa00fd0973471fcd769a14f4f9cf0abe6651ac3e6ade19"), new uint256("0x5de8766ed4cfcc3ce9d74f38196596c6f91b9ff62cbd20abbfa991dca54d2bd4")) }
             };
 
-            var checkpoints = new Checkpoints(Network.StratisMain, new ConsensusSettings() { UseCheckpoints = true });
+            var checkpoints = new Checkpoints(StratisNetworks.StratisMain, new ConsensusSettings() { UseCheckpoints = true });
 
             VerifyCheckpoints(checkpoints, verifyableCheckpoints);
         }
@@ -315,7 +316,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 { 400000, new CheckpointInfo(new uint256("0xb6abcb933d3e3590345ca5d3abb697461093313f8886568ac8ae740d223e56f6"), new uint256("0xfaf5fcebee3ec0df5155393a99da43de18b12e620fef5edb111a791ecbfaa63a")) }
             };
 
-            var checkpoints = new Checkpoints(Network.StratisTest, new ConsensusSettings() { UseCheckpoints = true });
+            var checkpoints = new Checkpoints(StratisNetworks.StratisTest, new ConsensusSettings() { UseCheckpoints = true });
 
             VerifyCheckpoints(checkpoints, verifyableCheckpoints);
         }

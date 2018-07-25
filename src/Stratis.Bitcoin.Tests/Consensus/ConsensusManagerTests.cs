@@ -2,7 +2,6 @@
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.BlockPulling2;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -42,7 +41,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             {
                 this.ConsensusManager = new ConsensusManager(this.Network, new ExtendedLoggerFactory(), this.ChainStateMock.Object,
                     this.HeaderValidatorMock.Object, this.IntegrityValidatorMock.Object, this.PartialValidationMock.Object, this.CheckpointsMock.Object, this.ConsensusSettings,
-                    this.ConsensusRulesMock.Object, this.FinalizedBlockMock.Object, new Bitcoin.Signals.Signals(), this.PeerBanningMock.Object, new NodeSettings(this.Network), new DateTimeProvider(), this.ibdStateLock.Object, new ConcurrentChain(Network.StratisMain));
+                    this.ConsensusRulesMock.Object, this.FinalizedBlockMock.Object, new Bitcoin.Signals.Signals(), this.PeerBanningMock.Object, new NodeSettings(this.Network), new DateTimeProvider(), this.ibdStateLock.Object, new ConcurrentChain(this.Network));
 
                 this.ChainedHeaderTree = this.ConsensusManager.GetMemberValue("chainedHeaderTree") as ChainedHeaderTree;
 

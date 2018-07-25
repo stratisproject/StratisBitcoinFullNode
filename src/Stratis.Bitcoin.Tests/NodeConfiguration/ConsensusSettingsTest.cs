@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.NodeConfiguration
@@ -40,11 +41,11 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
         [Fact]
         public void LoadConfigWithDefaultsSetsToNetworkDefault()
         {
-            Network network = Network.StratisMain;
+            Network network = StratisNetworks.StratisMain;
             var settings = new ConsensusSettings(NodeSettings.Default(network));
             Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
 
-            network = Network.StratisTest;
+            network = StratisNetworks.StratisTest;
             settings = new ConsensusSettings(NodeSettings.Default(network));
             Assert.Equal(network.Consensus.DefaultAssumeValid, settings.BlockAssumedValid);
 
