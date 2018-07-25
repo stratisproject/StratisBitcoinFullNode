@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IEnumerable<HdAccount> accounts = this.GetAccountsByCoinType(coinType);
 
             return accounts
-                .SelectMany(x => x.GetSpendableTransactions(currentChainHeight, confirmations));
+                .SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network.Consensus, confirmations));
         }
     }
 
@@ -710,7 +710,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="currentChainHeight">The current height of the chain. Used for calculating the number of confirmations a transaction has.</param>
         /// <param name="confirmations">The minimum number of confirmations required for transactions to be considered.</param>
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, NBitcoin.Consensus consensus, int confirmations = 0, bool includeImmature = false)
         {
             // This will take all the spendable coins that belong to the account and keep the reference to the HDAddress and HDAccount.
             // This is useful so later the private key can be calculated just from a given UTXO.
@@ -728,12 +728,29 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     if (confirmationCount >= confirmations)
                     {
-                        yield return new UnspentOutputReference
+                        if (includeImmature || (!(transactionData.IsCoinStake ?? false)))
                         {
-                            Account = this,
-                            Address = address,
-                            Transaction = transactionData
-                        };
+                            // This output can unconditionally be included in the results.
+
+                            yield return new UnspentOutputReference
+                            {
+                                Account = this,
+                                Address = address,
+                                Transaction = transactionData
+                            };
+                        }
+
+                        if (!includeImmature && (transactionData.IsCoinStake ?? false) && (confirmationCount >= consensus.CoinbaseMaturity))
+                        {
+                            // This output is a CoinStake and has reached maturity.
+
+                            yield return new UnspentOutputReference
+                            {
+                                Account = this,
+                                Address = address,
+                                Transaction = transactionData
+                            };
+                        }
                     }
                 }
             }

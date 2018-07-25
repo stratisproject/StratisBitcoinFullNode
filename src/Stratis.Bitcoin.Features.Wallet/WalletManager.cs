@@ -766,7 +766,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, NBitcoin.Consensus consensus, int confirmations = 0, bool includeImmature = false)
         {
             Guard.NotNull(walletAccountReference, nameof(walletAccountReference));
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletAccountReference), walletAccountReference, nameof(confirmations), confirmations);
@@ -784,7 +784,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         $"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
                 }
 
-                res = account.GetSpendableTransactions(this.chain.Tip.Height, confirmations).ToArray();
+                res = account.GetSpendableTransactions(this.chain.Tip.Height, consensus, confirmations, includeImmature: includeImmature).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", res.Count());
