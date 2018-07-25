@@ -1,8 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Collections.Generic;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
 using NBitcoin.Policy;
+using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -15,14 +16,22 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
+using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -66,7 +75,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
     public static partial class IFullNodeBuilderExtensions
     {
-        public static ISmartContractVmBuilder AddSmartContracts(this IFullNodeBuilder fullNodeBuilder)
+        /// <summary>
+        /// Adds the smart contract feature to the node.
+        /// </summary>
+        public static IFullNodeBuilder AddSmartContracts(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<SmartContractFeature>("smartcontracts");
 
@@ -74,7 +86,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 features
                     .AddFeature<SmartContractFeature>()
-                    .DependOn<MiningFeature>()
                     .FeatureServices(services =>
                     {
                         // STATE ----------------------------------------------------------------------------
@@ -83,25 +94,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<NoDeleteContractStateSource>();
                         services.AddSingleton<ContractStateRepositoryRoot>();
 
-                        // BLOCK BUILDING--------------------------------------------------------------------
-                        services.AddSingleton<IPowMining, PowMining>();
-                        services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
-                        services.AddSingleton<SmartContractBlockDefinition>();
-
                         // CONSENSUS ------------------------------------------------------------------------
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
                         services.AddSingleton<StandardTransactionPolicy, SmartContractTransactionPolicy>();
 
+                        // CONTRACT EXECUTION ---------------------------------------------------------------
                         services.AddSingleton<InternalTransactionExecutorFactory>();
                         services.AddSingleton<ISmartContractVirtualMachine, ReflectionVirtualMachine>();
 
-                        services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), new SmartContractScriptAddressReader(new ScriptAddressReader())));
+                        services.AddSingleton<SmartContractTransactionPolicy>();
+
+                        ICallDataSerializer callDataSerializer = CallDataSerializer.Default;
+                        services.AddSingleton(callDataSerializer);
+                        services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), new SmartContractScriptAddressReader(new ScriptAddressReader(), callDataSerializer)));
                     });
             });
 
-            return new SmartContractVmBuilder(fullNodeBuilder);
+            return fullNodeBuilder;
         }
 
+        /// <summary>
+        /// Configures the node with the smart contract consensus model.
+        /// </summary>
         public static IFullNodeBuilder UseSmartContractConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
@@ -132,6 +146,72 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     services.AddSingleton<IConsensusRules, SmartContractConsensusRules>();
                     services.AddSingleton<IRuleRegistration, SmartContractRuleRegistration>();
                 });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
+        /// Adds mining to the smart contract node.
+        /// <para>We inject <see cref="IPowMining"/> with a smart contract block provider and definition.</para>
+        /// </summary>
+        public static IFullNodeBuilder UseSmartContractMining(this IFullNodeBuilder fullNodeBuilder)
+        {
+            LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
+
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<MiningFeature>()
+                    .DependOn<MempoolFeature>()
+                    .DependOn<RPCFeature>()
+                    .DependOn<SmartContractWalletFeature>()
+                    .FeatureServices(services =>
+                    {
+                        services.AddSingleton<IPowMining, PowMining>();
+                        services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
+                        services.AddSingleton<SmartContractBlockDefinition>();
+                        services.AddSingleton<MinerController>();
+                        services.AddSingleton<MiningRPCController>();
+                        services.AddSingleton<MinerSettings>();
+                    });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
+        /// This node will be configured with the reflection contract executor.
+        /// <para>
+        /// Should we require another executor, we will need to create a separate daemon and network.
+        /// </para>
+        /// </summary>
+        public static IFullNodeBuilder UseReflectionExecutor(this IFullNodeBuilder fullNodeBuilder)
+        {
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<ReflectionVirtualMachineFeature>()
+                    .FeatureServices(services =>
+                    {
+                        // Validator
+                        ISmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
+                        {
+                            new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
+                            new SmartContractDeterminismValidator()
+                        });
+                        services.AddSingleton(validator);
+
+                        // Executor et al.
+                        services.AddSingleton<ISmartContractResultRefundProcessor, SmartContractResultRefundProcessor>();
+                        services.AddSingleton<ISmartContractResultTransferProcessor, SmartContractResultTransferProcessor>();
+                        services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
+                        services.AddSingleton<ISmartContractExecutorFactory, ReflectionSmartContractExecutorFactory>();
+                        services.AddSingleton<IMethodParameterSerializer, MethodParameterSerializer>();
+
+                        // Controllers
+                        services.AddSingleton<SmartContractsController>();
+                    });
             });
 
             return fullNodeBuilder;
