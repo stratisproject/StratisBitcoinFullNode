@@ -97,6 +97,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.lookaheadBlockPuller = new Mock<ILookaheadBlockPuller>();
             this.coinView = new Mock<CoinView>();
         }
+
+        protected T CreateRule<T>() where T : ConsensusRule, new()
+        {
+            return new T()
+            {
+                Logger = this.logger.Object,
+                Parent = new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.lookaheadBlockPuller.Object, this.stakeChain.Object, this.stakeValidator.Object)
+            };
+        }
     }
 
     public class ConsensusRuleUnitTestBase<T> where T : ConsensusRules
@@ -186,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     {
         public TestConsensusRulesUnitTestBase() : base(Network.TestNet)
         {
-            this.network.Consensus.Options = new PowConsensusOptions();
+            this.network.Consensus.Options = new ConsensusOptions();
             this.consensusRules = InitializeConsensusRules();
         }
 

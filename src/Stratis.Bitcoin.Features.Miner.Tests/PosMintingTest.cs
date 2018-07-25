@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.consensusLoop = new Mock<IConsensusLoop>();
             this.network = Network.StratisTest;
-            this.network.Consensus.Options = new PowConsensusOptions();
+            this.network.Consensus.Options = new ConsensusOptions();
             this.chain = new ConcurrentChain(this.network);
             this.connectionManager = new Mock<IConnectionManager>();
             this.dateTimeProvider = new Mock<IDateTimeProvider>();

@@ -102,6 +102,18 @@ namespace Stratis.SmartContracts
         }
 
         /// <summary>
+        /// Creates a new contract
+        /// </summary>
+        /// <typeparam name="T">Contract type to instantiate</typeparam>
+        /// <param name="parameters">Parameters to pass to constructor.</param>
+        /// <param name="value">Amount to send to the new contract during creation.</param>
+        protected ICreateResult Create<T>(object[] parameters = null, ulong value = 0)
+        {
+            return this.internalTransactionExecutor.Create<T>(this.smartContractState, parameters, value);
+        }
+
+
+        /// <summary>
         /// Returns a 32-byte Keccak256 hash of the given bytes.
         /// </summary>
         /// <param name="toHash"></param>

@@ -696,7 +696,7 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         this.logger.LogTrace("Resyncing peer ID {0}.", peerId);
 
-                        Task task = peer.Behavior<ConsensusManagerBehavior>().ResetExpectedPeerTipAndSyncAsync();
+                        Task task = peer.Behavior<ConsensusManagerBehavior>().ResetPeerTipInformationAndSyncAsync();
                         resyncTasks.Add(task);
                     }
                     else
