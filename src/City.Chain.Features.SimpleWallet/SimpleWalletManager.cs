@@ -66,7 +66,7 @@ namespace City.Chain.Features.SimpleWallet
             IBlockNotification blockNotification)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.network = Network.StratisMain;
+            this.network = chain.Network;
             this.chain = chain;
             this.blockNotification = blockNotification;
             this.nodeLifetime = nodeLifetime;

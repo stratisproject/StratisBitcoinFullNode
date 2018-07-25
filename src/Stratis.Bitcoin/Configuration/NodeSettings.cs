@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Configuration
             if (this.DataDir == null)
             {
                 // Create the data directories if they don't exist.
-                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
+                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine(agent, this.Network.RootFolderName), this.Network);
             }
             else
             {

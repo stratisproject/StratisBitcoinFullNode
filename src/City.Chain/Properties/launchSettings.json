@@ -1,0 +1,19 @@
+{
+  "profiles": {
+    "City.Chain": {
+      "commandName": "Project"
+    },
+    "City.Chain (Local Data Dir)": {
+      "commandName": "Project",
+      "commandLineArgs": "-datadir=citynode"
+    },
+    "City.Chain (Test Network)": {
+      "commandName": "Project",
+      "commandLineArgs": "-coin city -network test"
+    },
+    "City.Chain (Test Network with RPC)": {
+      "commandName": "Project",
+      "commandLineArgs": "-coin city -network test -server -rpcpassword=password -rpcuser=user"
+    }
+  }
+}

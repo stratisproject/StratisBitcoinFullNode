@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
@@ -30,7 +31,10 @@ namespace City.Chain.DNS
         {
             try
             {
-                var nodeSettings = new NodeSettings(protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                var nodeSettings = new NodeSettings(
+                    network: Networks.CityTest,
+                    protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, 
+                    args: args);
 
                 var dnsSettings = new DnsSettings(nodeSettings);
 
@@ -60,8 +64,8 @@ namespace City.Chain.DNS
                     node = new FullNodeBuilder()
                         .UseNodeSettings(nodeSettings)
                         .UsePosConsensus()
-                        .UseApi()
-                        .AddRPC()
+                        //.UseApi()
+                        //.AddRPC()
                         .UseDns()
                         .Build();
                 }

@@ -23,13 +23,13 @@ namespace City.Chain.Features.SimpleWallet
 
         private readonly IServiceProvider serviceProvider;
 
-        public SimpleWalletService(ILoggerFactory loggerFactory, IServiceProvider serviceProvider)
+        public SimpleWalletService(ILoggerFactory loggerFactory, ConcurrentChain chain, IServiceProvider serviceProvider)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.serviceProvider = serviceProvider;
 
-            this.network = Network.StratisMain;
+            this.network = chain.Network;
         }
 
         public ISimpleWalletManager Create(string name, string version, DateTimeOffset? created)
