@@ -560,11 +560,11 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 UnspentOutputs coinSet = fetchedCoinSet.UnspentOutputs
                     .FirstOrDefault(f => f?.TransactionId == outputReference.Transaction.Id);
-                if (coinSet == null || outputReference.Transaction.Index >= coinSet.Outputs.Length)
+                if ((coinSet == null) || (outputReference.Transaction.Index >= coinSet.Outputs.Length))
                     continue;
 
                 TxOut utxo = coinSet.Outputs[outputReference.Transaction.Index];
-                if (utxo == null || utxo.Value <= MinimumStakingCoinValue)
+                if ((utxo == null) || (utxo.Value <= MinimumStakingCoinValue))
                     continue;
 
                 uint256 hashBlock = this.chain.GetBlock((int)coinSet.Height)?.HashBlock;
