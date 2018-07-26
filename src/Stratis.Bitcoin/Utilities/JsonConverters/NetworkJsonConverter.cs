@@ -29,13 +29,13 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
                 return null;
 
             if (network.Equals("MainNet", StringComparison.OrdinalIgnoreCase) || network.Equals("main", StringComparison.OrdinalIgnoreCase))
-                return NBitcoin.Networks.Main;
+                return Networks.Main;
 
             if (network.Equals("TestNet", StringComparison.OrdinalIgnoreCase) || network.Equals("test", StringComparison.OrdinalIgnoreCase))
-                return NBitcoin.Networks.TestNet;
+                return Networks.TestNet;
 
             if (network.Equals("RegTest", StringComparison.OrdinalIgnoreCase) || network.Equals("reg", StringComparison.OrdinalIgnoreCase))
-                return NBitcoin.Networks.RegTest;
+                return Networks.RegTest;
 
             Network net = NetworksContainer.GetNetwork(network);
             if(net != null)
@@ -51,11 +51,11 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 
             string str = null;
 
-            if(network == NBitcoin.Networks.Main)
+            if(network == Networks.Main)
                 str = "MainNet";
-            else if(network == NBitcoin.Networks.TestNet)
+            else if(network == Networks.TestNet)
                 str = "TestNet";
-            else if(network == NBitcoin.Networks.RegTest)
+            else if(network == Networks.RegTest)
                 str = "RegTest";
             else if(network != null)
                 str = network.ToString();
