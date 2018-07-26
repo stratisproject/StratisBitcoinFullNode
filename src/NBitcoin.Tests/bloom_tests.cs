@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace NBitcoin.Tests

@@ -23,6 +23,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -282,7 +283,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void calling_getblockheader_via_api()
         {
-            this.send_api_get_request($"api/Node/getblockheader?hash={NBitcoin.Networks.RegTest.Consensus.HashGenesisBlock.ToString()}");
+            this.send_api_get_request($"api/Node/getblockheader?hash={NetworkContainer.RegTest.Consensus.HashGenesisBlock.ToString()}");
         }
 
         private void calling_status_via_api()
@@ -354,7 +355,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void the_blockhash_is_returned()
         {
-            this.responseText.Should().Be("\"" + NBitcoin.Networks.RegTest.Consensus.HashGenesisBlock.ToString() + "\"");
+            this.responseText.Should().Be("\"" + NetworkContainer.RegTest.Consensus.HashGenesisBlock.ToString() + "\"");
         }
 
         private void a_full_list_of_available_commands_is_returned()

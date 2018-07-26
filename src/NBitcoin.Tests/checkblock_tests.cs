@@ -1,11 +1,19 @@
 ﻿using System.IO;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace NBitcoin.Tests
 {
-    public class checkblock_tests
+    public class Checkblock_Tests
     {
+        private readonly Network networkMain;
+
+        public Checkblock_Tests()
+        {
+            this.networkMain = NetworkContainer.Main;
+        }
+
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void CanCalculateMerkleRoot()

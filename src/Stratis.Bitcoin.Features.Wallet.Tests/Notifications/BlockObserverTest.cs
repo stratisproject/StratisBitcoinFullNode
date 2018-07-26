@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests.Notifications
         {
             var walletSyncManager = new Mock<IWalletSyncManager>();
             var observer = new BlockObserver(walletSyncManager.Object);
-            var block = StratisNetworks.StratisMain.CreateBlock();
+            var block = NetworkContainer.StratisMain.CreateBlock();
 
             observer.OnNext(block);
 

@@ -93,12 +93,12 @@ namespace Stratis.Bitcoin.Cli
                 if (networkName.Contains("stratis"))
                 {
                     defaultRestApiPort = 37221;
-                    network = StratisNetworks.StratisMain;
+                    network = NetworkContainer.StratisMain;
                 }
                 else
                 {
                     defaultRestApiPort = 37220;
-                    network = NBitcoin.Networks.Main;
+                    network = NetworkContainer.Main;
                 }
 
                 // API calls require both the contoller name and the method name separated by "/".

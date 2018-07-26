@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using NBitcoin.DataEncoders;
 using NBitcoin.OpenAsset;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace NBitcoin.Tests

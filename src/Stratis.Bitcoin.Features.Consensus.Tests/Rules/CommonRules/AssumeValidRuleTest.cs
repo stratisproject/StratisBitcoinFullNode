@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
@@ -10,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         private readonly AssumeValidRule rule;
 
-        public AssumeValidRuleTest() : base(NBitcoin.Networks.TestNet)
+        public AssumeValidRuleTest() : base(NetworkContainer.TestNet)
         {
             this.network.Consensus.Options = new ConsensusOptions();
             AddBlocksToChain(this.concurrentChain, 5);

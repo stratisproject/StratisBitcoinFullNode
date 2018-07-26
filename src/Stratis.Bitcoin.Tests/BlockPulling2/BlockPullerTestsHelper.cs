@@ -55,14 +55,14 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         {
             var peer = new Mock<INetworkPeer>();
 
-            var connection = new NetworkPeerConnection(StratisNetworks.StratisMain, peer.Object, new TcpClient(), this.currentPeerId, (message, token) => Task.CompletedTask,
+            var connection = new NetworkPeerConnection(NetworkContainer.StratisMain, peer.Object, new TcpClient(), this.currentPeerId, (message, token) => Task.CompletedTask,
                 new DateTimeProvider(), this.loggerFactory, new PayloadProvider());
 
             this.currentPeerId++;
             peer.SetupGet(networkPeer => networkPeer.Connection).Returns(connection);
 
             var connectionParameters = new NetworkPeerConnectionParameters();
-            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), StratisNetworks.StratisMain, new DateTimeProvider().GetTimeOffset());
+            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), NetworkContainer.StratisMain, new DateTimeProvider().GetTimeOffset());
 
             if (notSupportedVersion)
                 version.Version = ProtocolVersion.NOBLKS_VERSION_START;
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         /// <summary>Creates a new block with mocked serialized size.</summary>
         public Block GenerateBlock(long size)
         {
-            Block block = StratisNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
+            Block block = NetworkContainer.StratisMain.Consensus.ConsensusFactory.CreateBlock();
 
             block.SetPrivatePropertyValue("BlockSize", size);
 

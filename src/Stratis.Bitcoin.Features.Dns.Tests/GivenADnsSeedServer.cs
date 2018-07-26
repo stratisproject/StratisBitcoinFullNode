@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
     /// </summary>
     public class GivenADnsSeedServer : TestBase
     {
-        public GivenADnsSeedServer() : base(NBitcoin.Networks.Main)
+        public GivenADnsSeedServer() : base(NetworkContainer.Main)
         {
         }
 

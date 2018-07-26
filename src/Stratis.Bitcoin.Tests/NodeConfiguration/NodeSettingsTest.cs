@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -7,7 +8,7 @@ namespace Stratis.Bitcoin.Tests.NodeConfiguration
 {
     public class NodeSettingsTest : TestBase
     {
-        public NodeSettingsTest():base(NBitcoin.Networks.Main)
+        public NodeSettingsTest():base(NetworkContainer.Main)
         {
         }
 

@@ -3,6 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -14,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
         public HeaderTimeChecksRuleTest()
         {
-            this.network = NBitcoin.Networks.RegTest;
+            this.network = NetworkContainer.RegTest;
         }
 
         [Fact]

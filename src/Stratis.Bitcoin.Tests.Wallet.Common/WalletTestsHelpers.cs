@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             var key = new Key();
             var address = new HdAddress
             {
-                Address = key.PubKey.GetAddress(NBitcoin.Networks.Main).ToString(),
+                Address = key.PubKey.GetAddress(NetworkContainer.Main).ToString(),
                 HdPath = hdPath,
                 ScriptPubKey = key.ScriptPubKey
             };
@@ -149,11 +149,11 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             var walletFile = new Features.Wallet.Wallet
             {
                 Name = name,
-                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, NBitcoin.Networks.Main).ToWif(),
+                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, NetworkContainer.Main).ToWif(),
                 ChainCode = extendedKey.ChainCode,
                 CreationTime = DateTimeOffset.Now,
-                Network = NBitcoin.Networks.Main,
-                AccountsRoot = new List<AccountRoot> { new AccountRoot() { Accounts = new List<HdAccount>(), CoinType = (CoinType)NBitcoin.Networks.Main.Consensus.CoinType } },
+                Network = NetworkContainer.Main,
+                AccountsRoot = new List<AccountRoot> { new AccountRoot() { Accounts = new List<HdAccount>(), CoinType = (CoinType)NetworkContainer.Main.Consensus.CoinType } },
             };
 
             return (walletFile, extendedKey);
@@ -378,10 +378,10 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
 
         public static ConcurrentChain PrepareChainWithBlock()
         {
-            var chain = new ConcurrentChain(StratisNetworks.StratisMain);
+            var chain = new ConcurrentChain(NetworkContainer.StratisMain);
             uint nonce = RandomUtils.GetUInt32();
-            Block block = StratisNetworks.StratisMain.CreateBlock();
-            block.AddTransaction(StratisNetworks.StratisMain.CreateTransaction());
+            Block block = NetworkContainer.StratisMain.CreateBlock();
+            block.AddTransaction(NetworkContainer.StratisMain.CreateTransaction());
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;
             block.Header.Nonce = nonce;

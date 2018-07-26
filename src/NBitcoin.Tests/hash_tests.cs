@@ -1,12 +1,20 @@
 ﻿using System.Diagnostics;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace NBitcoin.Tests
 {
-    public class hash_tests
+    public class Hash_Tests
     {
+        private readonly Network networkMain;
+
+        public Hash_Tests()
+        {
+            this.networkMain = NetworkContainer.Main;
+        }
+
         [Fact]
         [Trait("Core", "Core")]
         public void murmurhash3()

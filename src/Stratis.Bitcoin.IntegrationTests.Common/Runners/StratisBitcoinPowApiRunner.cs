@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public StratisBitcoinPowApiRunner(string dataDir)
             : base(dataDir)
         {
-            this.Network = NBitcoin.Networks.RegTest;
+            this.Network = NetworkContainer.RegTest;
         }
 
         public override void BuildNode()

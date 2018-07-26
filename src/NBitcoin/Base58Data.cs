@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using NBitcoin.DataEncoders;
+using NBitcoin.Networks;
 
 namespace NBitcoin
 {
@@ -48,7 +49,7 @@ namespace NBitcoin
         {
             if(this._Network == null)
             {
-                this._Network = NetworksContainer.GetNetworkFromBase58Data(base64, this.Type);
+                this._Network = NetworkRegistration.GetNetworkFromBase58Data(base64, this.Type);
                 if(this._Network == null)
                     throw new FormatException("Invalid " + GetType().Name);
             }

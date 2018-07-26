@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
     {
         public class TestContext
         {
-            public readonly Network Network = NBitcoin.Networks.RegTest;
+            public readonly Network Network = NetworkContainer.RegTest;
             public Mock<IHeaderValidator> HeaderValidatorMock = new Mock<IHeaderValidator>();
             public Mock<IIntegrityValidator> IntegrityValidatorMock = new Mock<IIntegrityValidator>();
             public readonly Mock<IPartialValidation> PartialValidationMock = new Mock<IPartialValidation>();
@@ -30,7 +31,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public readonly Mock<IConsensusRules> ConsensusRulesMock = new Mock<IConsensusRules>();
 
             public readonly Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
-            public readonly ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(NBitcoin.Networks.RegTest));
+            public readonly ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(NetworkContainer.RegTest));
             public readonly Mock<IInitialBlockDownloadState> ibdStateLock = new Mock<IInitialBlockDownloadState>();
 
             internal ChainedHeaderTree ChainedHeaderTree;

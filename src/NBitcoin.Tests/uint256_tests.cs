@@ -2,12 +2,20 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace NBitcoin.Tests
 {
     public class uint256_tests
     {
+        private readonly Network networkMain;
+
+        public uint256_tests()
+        {
+            this.networkMain = NetworkContainer.Main;
+        }
+
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void uintTests()

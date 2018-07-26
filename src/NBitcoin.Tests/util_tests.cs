@@ -7,6 +7,7 @@ using System.Text;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
+using NBitcoin.Networks;
 using NBitcoin.OpenAsset;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Networks;
@@ -568,7 +569,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void NetworksAreValid()
         {
-            foreach(Network network in NetworkContainer.GetNetworks())
+            foreach(Network network in NetworkRegistration.GetNetworks())
             {
                 Assert.NotNull(network);
             }
@@ -805,7 +806,7 @@ namespace NBitcoin.Tests
 
                     if(test.Network != null)
                     {
-                        foreach(Network network in NetworkContainer.GetNetworks())
+                        foreach(Network network in NetworkRegistration.GetNetworks())
                         {
                             if(network == test.Network)
                                 break;

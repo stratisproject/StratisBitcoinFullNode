@@ -9,9 +9,11 @@ using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.Networks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -184,7 +186,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
             if (address != null && network == null)
             {
-                network = NetworksContainer.GetNetworks().FirstOrDefault(n => n.RPCPort == address.Port);
+                network = NetworkRegistration.GetNetworks().FirstOrDefault(n => n.RPCPort == address.Port);
                 if (network == null)
                     throw new ArgumentNullException("network");
             }
@@ -231,26 +233,26 @@ namespace Stratis.Bitcoin.Features.RPC
                 string bitcoinFolder = Path.Combine(home, ".bitcoin");
 
                 string mainnet = Path.Combine(bitcoinFolder, ".cookie");
-                RegisterDefaultCookiePath(NBitcoin.Networks.Main, mainnet);
+                RegisterDefaultCookiePath(NetworkContainer.Main, mainnet);
 
                 string testnet = Path.Combine(bitcoinFolder, "testnet3", ".cookie");
-                RegisterDefaultCookiePath(NBitcoin.Networks.TestNet, testnet);
+                RegisterDefaultCookiePath(NetworkContainer.TestNet, testnet);
 
                 string regtest = Path.Combine(bitcoinFolder, "regtest", ".cookie");
-                RegisterDefaultCookiePath(NBitcoin.Networks.RegTest, regtest);
+                RegisterDefaultCookiePath(NetworkContainer.RegTest, regtest);
             }
             else if (!string.IsNullOrEmpty(localAppData))
             {
                 string bitcoinFolder = Path.Combine(localAppData, "Bitcoin");
 
                 string mainnet = Path.Combine(bitcoinFolder, ".cookie");
-                RegisterDefaultCookiePath(NBitcoin.Networks.Main, mainnet);
+                RegisterDefaultCookiePath(NetworkContainer.Main, mainnet);
 
                 string testnet = Path.Combine(bitcoinFolder, "testnet3", ".cookie");
-                RegisterDefaultCookiePath(NBitcoin.Networks.TestNet, testnet);
+                RegisterDefaultCookiePath(NetworkContainer.TestNet, testnet);
 
                 string regtest = Path.Combine(bitcoinFolder, "regtest", ".cookie");
-                RegisterDefaultCookiePath(NBitcoin.Networks.RegTest, regtest);
+                RegisterDefaultCookiePath(NetworkContainer.RegTest, regtest);
             }
         }
 

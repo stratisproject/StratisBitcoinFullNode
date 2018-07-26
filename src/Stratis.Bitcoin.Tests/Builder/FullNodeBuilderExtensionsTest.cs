@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder
@@ -51,14 +52,14 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.Equal(nodeSettings.ConfigurationFile, this.fullNodeBuilder.NodeSettings.ConfigurationFile);
             Assert.Equal(nodeSettings.DataDir, this.fullNodeBuilder.NodeSettings.DataDir);
             Assert.NotNull(this.fullNodeBuilder.Network);
-            Assert.Equal(NBitcoin.Networks.Main, this.fullNodeBuilder.Network);
+            Assert.Equal(NetworkContainer.Main, this.fullNodeBuilder.Network);
             Assert.Single(this.serviceCollectionDelegates);
         }
 
         [Fact]
         public void UseNodeSettingsUsingTestNetConfiguresNodeBuilderWithTestnetSettings()
         {
-            var nodeSettings = new NodeSettings(NBitcoin.Networks.TestNet, args:new string[] {
+            var nodeSettings = new NodeSettings(NetworkContainer.TestNet, args:new string[] {
                 "-datadir=TestData/FullNodeBuilder/UseNodeSettings" });
 
             FullNodeBuilderNodeSettingsExtension.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
@@ -67,14 +68,14 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.Equal(nodeSettings.ConfigurationFile, this.fullNodeBuilder.NodeSettings.ConfigurationFile);
             Assert.Equal(nodeSettings.DataDir, this.fullNodeBuilder.NodeSettings.DataDir);
             Assert.NotNull(this.fullNodeBuilder.Network);
-            Assert.Equal(NBitcoin.Networks.TestNet, this.fullNodeBuilder.Network);
+            Assert.Equal(NetworkContainer.TestNet, this.fullNodeBuilder.Network);
             Assert.Single(this.serviceCollectionDelegates);
         }
 
         [Fact]
         public void UseNodeSettingsUsingRegTestNetConfiguresNodeBuilderWithRegTestNet()
         {
-            var nodeSettings = new NodeSettings(NBitcoin.Networks.RegTest, args:new string[] {
+            var nodeSettings = new NodeSettings(NetworkContainer.RegTest, args:new string[] {
                 "-datadir=TestData/FullNodeBuilder/UseNodeSettings" });
 
             FullNodeBuilderNodeSettingsExtension.UseNodeSettings(this.fullNodeBuilder, nodeSettings);
@@ -83,7 +84,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.Equal(nodeSettings.ConfigurationFile, this.fullNodeBuilder.NodeSettings.ConfigurationFile);
             Assert.Equal(nodeSettings.DataDir, this.fullNodeBuilder.NodeSettings.DataDir);
             Assert.NotNull(this.fullNodeBuilder.Network);
-            Assert.Equal(NBitcoin.Networks.RegTest, this.fullNodeBuilder.Network);
+            Assert.Equal(NetworkContainer.RegTest, this.fullNodeBuilder.Network);
             Assert.Single(this.serviceCollectionDelegates);
         }
     }

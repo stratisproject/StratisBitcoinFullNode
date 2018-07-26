@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
         public NotificationsControllerTest()
         {
-            this.network = StratisNetworks.StratisMain;
+            this.network = NetworkContainer.StratisMain;
         }
 
         [Theory]

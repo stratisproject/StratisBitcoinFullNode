@@ -31,6 +31,13 @@ namespace NBitcoin.Tests
             }
         }
 
+        private readonly Network networkMain;
+
+        public base58_tests()
+        {
+            this.networkMain = NetworkContainer.Main;
+        }
+
         [Fact]
         public void ShouldEncodeProperly()
         {

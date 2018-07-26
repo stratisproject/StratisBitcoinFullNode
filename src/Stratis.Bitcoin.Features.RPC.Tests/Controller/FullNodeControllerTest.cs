@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.fullNode = new Mock<IFullNode>();
             this.chainState = new Mock<IChainState>();
             this.connectionManager = new Mock<IConnectionManager>();
-            this.network = NBitcoin.Networks.TestNet;
+            this.network = NetworkContainer.TestNet;
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, this.network);
             this.nodeSettings = new NodeSettings();
             this.pooledTransaction = new Mock<IPooledTransaction>();
@@ -438,7 +439,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         [Fact]
         public void GetInfo_MainNet_ReturnsInfoModel()
         {
-            this.network = NBitcoin.Networks.Main;
+            this.network = NetworkContainer.Main;
 
             this.controller = new FullNodeController(this.LoggerFactory.Object, this.pooledTransaction.Object, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.consensusLoop.Object, this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object);
@@ -580,7 +581,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         public void ValidateAddress_ValidAddressOfDifferentNetwork_ReturnsFalse()
         {
             // P2PKH
-            BitcoinPubKeyAddress address = new Key().PubKey.GetAddress(NBitcoin.Networks.Main);
+            BitcoinPubKeyAddress address = new Key().PubKey.GetAddress(NetworkContainer.Main);
 
             ValidatedAddress result = this.controller.ValidateAddress(address.ToString());
 

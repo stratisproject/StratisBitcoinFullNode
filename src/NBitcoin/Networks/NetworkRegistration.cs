@@ -5,26 +5,14 @@ using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 
-namespace Stratis.Bitcoin.Networks
+namespace NBitcoin.Networks
 {
     /// <summary>
     /// A container for storing/retrieving known networks
     /// </summary>
-    public static class NetworkContainer
+    public static class NetworkRegistration
     {
         private static readonly ConcurrentDictionary<string, Network> registeredNetworks = new ConcurrentDictionary<string, Network>();
-
-        public static Network Main => GetNetwork("Main") ?? Register(new BitcoinMain());
-
-        public static Network TestNet => GetNetwork("TestNet") ?? Register(new BitcoinTest());
-
-        public static Network RegTest => GetNetwork("RegTest") ?? Register(new BitcoinRegTest());
-
-        public static Network StratisMain => GetNetwork("StratisMain") ?? Register(new StratisMain());
-
-        public static Network StratisTest => GetNetwork("StratisTest") ?? Register(new StratisTest());
-
-        public static Network StratisRegTest => GetNetwork("StratisRegTest") ?? Register(new StratisRegTest());
 
         /// <summary>
         /// Register an immutable <see cref="Network"/> instance so it is queryable through <see cref="GetNetwork"/> and <see cref="GetNetworks"/>.

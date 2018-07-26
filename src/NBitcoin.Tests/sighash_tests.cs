@@ -7,6 +7,13 @@ namespace NBitcoin.Tests
 {
     public class sighash_tests
     {
+        private readonly Network networkMain;
+
+        public sighash_tests()
+        {
+            this.networkMain = NetworkContainer.Main;
+        }
+
         private static Random rand = new Random();
 
         private static Script RandomScript()
