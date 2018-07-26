@@ -14,7 +14,6 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -167,9 +166,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private static BlockTemplate CreateBlockTemplate(TestChainContext testChainContext, Script scriptPubKey,
             TxMempool mempool, MempoolSchedulerLock mempoolLock)
         {
-            PowBlockDefinition blockAssembler = CreatePowBlockAssembler(testChainContext.Consensus, testChainContext.ConsensusRules,
+            PowBlockDefinition blockAssembler = new PowBlockDefinition(testChainContext.Consensus,
                 testChainContext.DateTimeProvider, testChainContext.LoggerFactory as LoggerFactory, mempool, mempoolLock,
-                testChainContext.Network);
+                new MinerSettings(testChainContext.NodeSettings), testChainContext.Network, testChainContext.ConsensusRules);
 
             BlockTemplate newBlock = blockAssembler.Build(testChainContext.Chain.Tip, scriptPubKey);
 
@@ -216,20 +215,5 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             Assert.Null(context.Error);
         }
 
-        /// <summary>
-        /// Creates a proof of work block assembler.
-        /// </summary>
-        /// <param name="network">Network running on.</param>
-        /// <param name="consensusLoop">Consensus loop.</param>
-        /// <param name="chain">Block chain.</param>
-        /// <param name="mempoolLock">Async lock for memory pool.</param>
-        /// <param name="mempool">Memory pool for transactions.</param>
-        /// <param name="consensusRules">The rules.</param>
-        /// <param name="dateTimeProvider">Date and time provider.</param>
-        /// <returns>Proof of work block assembler.</returns>
-        private static PowBlockDefinition CreatePowBlockAssembler(IConsensusLoop consensusLoop, IConsensusRules consensusRules, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
-        {
-            return new PowBlockDefinition(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, new MinerSettings(), network, consensusRules);
-        }
     }
 }
