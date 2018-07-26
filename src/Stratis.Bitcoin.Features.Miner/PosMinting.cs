@@ -587,9 +587,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 utxoStakeDescriptions.Add(utxoStakeDescription);
 
                 this.logger.LogTrace("UTXO '{0}' with value {1} might be available for staking.", utxoStakeDescription.OutPoint, utxo.Value);
-
-                if (cancellationToken.IsCancellationRequested)
-                    return utxoStakeDescriptions;
             }
 
             this.logger.LogTrace("Wallet total staking balance is {0}.", new Money(utxoStakeDescriptions.Sum(d => d.TxOut.Value)));
