@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public RPCClient CreateRPCClient()
         {
-            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.RpcPort + "/"), Network.RegTest);
+            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.RpcPort + "/"), Networks.RegTest);
         }
 
         public INetworkPeer CreateNetworkPeerClient()
@@ -438,7 +438,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public bool AddToStratisMempool(Transaction trx)
         {
             var state = new MempoolValidationState(true);
-            return this.FullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
+            return this.runner.FullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
         }
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)

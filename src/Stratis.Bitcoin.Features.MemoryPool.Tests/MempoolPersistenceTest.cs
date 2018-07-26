@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 Directory.CreateDirectory(this.dir);
             }
 
-            this.network = Network.Main;
+            this.network = Networks.Main;
         }
 
         public void Dispose()
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MempoolManager mempoolManager = CreateTestMempool(settings, out txMemPool);
             Money fee = Money.Satoshis(0.00001m);
 
-            txMemPool.AddUnchecked(tx1_parent.GetHash(), new TxMempoolEntry(tx1_parent, fee, 0, 0.0, 0, tx1_parent.TotalOut + fee, false, 0, null, new PowConsensusOptions()));
+            txMemPool.AddUnchecked(tx1_parent.GetHash(), new TxMempoolEntry(tx1_parent, fee, 0, 0.0, 0, tx1_parent.TotalOut + fee, false, 0, null, new ConsensusOptions()));
             long expectedTx1FeeDelta = 123;
 
             // age of tx = 5 hours
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             MempoolManager mempoolManager = CreateTestMempool(settings, out txMemPool);
             Money fee = Money.Satoshis(0.00001m);
 
-            txMemPool.AddUnchecked(tx1_parent.GetHash(), new TxMempoolEntry(tx1_parent, fee, 0, 0.0, 0, tx1_parent.TotalOut + fee, false, 0, null, new PowConsensusOptions()));
+            txMemPool.AddUnchecked(tx1_parent.GetHash(), new TxMempoolEntry(tx1_parent, fee, 0, 0.0, 0, tx1_parent.TotalOut + fee, false, 0, null, new ConsensusOptions()));
             long expectedTx1FeeDelta = 123;
 
             // age of tx = 5 hours past expiry
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             {
                 int amountSat = 10 * i;
                 Transaction tx = this.MakeRandomTx(amountSat);
-                var entry = new TxMempoolEntry(tx, Money.FromUnit(0.1m, MoneyUnit.MilliBTC), DateTimeOffset.Now.ToUnixTimeSeconds(), i * 100, i, amountSat, i == 0, 10, null, new PowConsensusOptions());
+                var entry = new TxMempoolEntry(tx, Money.FromUnit(0.1m, MoneyUnit.MilliBTC), DateTimeOffset.Now.ToUnixTimeSeconds(), i * 100, i, amountSat, i == 0, 10, null, new ConsensusOptions());
                 entry.UpdateFeeDelta(numTx - i);
                 entries.Add(entry);
             }
@@ -282,10 +282,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings), loggerFactory, nodeSettings);
             var mempoolLock = new MempoolSchedulerLock();
             var coins = new InMemoryCoinView(settings.Network.GenesisHash);
-            var chain = new ConcurrentChain(Network.Main);
+            var chain = new ConcurrentChain(Networks.Main);
             var mempoolPersistence = new MempoolPersistence(settings, loggerFactory);
-            Network.Main.Consensus.Options = new PosConsensusOptions();
-            ConsensusRules consensusRules = new PowConsensusRules(Network.Main, loggerFactory, dateTimeProvider, chain, new NodeDeployments(Network.Main, chain), consensusSettings, new Checkpoints(), new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            Networks.Main.Consensus.Options = new PosConsensusOptions();
+            ConsensusRules consensusRules = new PowConsensusRules(Networks.Main, loggerFactory, dateTimeProvider, chain, new NodeDeployments(Networks.Main, chain), consensusSettings, new Checkpoints(), new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
             var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coins, loggerFactory, settings, consensusRules);
             return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory, settings.Network);
         }

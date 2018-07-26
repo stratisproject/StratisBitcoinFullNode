@@ -62,9 +62,9 @@ namespace NBitcoin
 
         public static IEnumerable<Network> GetNetworks()
         {
-            yield return Network.Main;
-            yield return Network.TestNet;
-            yield return Network.RegTest;
+            yield return NBitcoin.Networks.Main;
+            yield return NBitcoin.Networks.TestNet;
+            yield return NBitcoin.Networks.RegTest;
 
             if (Networks.Any())
             {

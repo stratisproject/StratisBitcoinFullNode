@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private ConcurrentChain chain;
         private readonly Mock<IConsensusLoop> consensusLoop;
         private readonly Mock<IConsensusRules> consensusRules;
-        private readonly NBitcoin.Consensus.ConsensusOptions initialNetworkOptions;
+        private readonly ConsensusOptions initialNetworkOptions;
         private readonly PowMiningTestFixture fixture;
         private readonly Mock<ITxMempool> mempool;
         private readonly MempoolSchedulerLock mempoolLock;
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.initialNetworkOptions = this.network.Consensus.Options;
             if (this.initialNetworkOptions == null)
-                this.network.Consensus.Options = new PowConsensusOptions();
+                this.network.Consensus.Options = new ConsensusOptions();
 
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
@@ -322,7 +322,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
                 blockTemplate.Block.Header.Nonce = 0;
-                blockTemplate.Block.Header.Bits = Network.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
+                blockTemplate.Block.Header.Bits = Networks.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
 
                 this.chain.SetTip(this.chain.GetBlock(0));
 
@@ -604,7 +604,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PowMiningTestFixture()
         {
-            this.Network = Network.RegTest; // fast mining so use regtest
+            this.Network = Networks.RegTest; // fast mining so use regtest
             this.Chain = new ConcurrentChain(this.Network);
             this.Key = new Key();
             this.ReserveScript = new ReserveScript(this.Key.ScriptPubKey);

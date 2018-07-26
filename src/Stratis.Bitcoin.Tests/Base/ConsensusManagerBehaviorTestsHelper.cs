@@ -38,6 +38,9 @@ namespace Stratis.Bitcoin.Tests.Base
         /// <summary>Counter that shows how many times <see cref="GetHeadersPayload"/> was sent to the peer.</summary>
         public int GetHeadersPayloadSentTimes { get; private set; }
 
+        /// <summary>Contains all the <see cref="GetHeadersPayload"/> that were sent to the peer.</summary>
+        public List<GetHeadersPayload> GetHeadersPayloadsSent { get; private set; }
+
         /// <summary>List of <see cref="HeadersPayload"/> that were sent to the peer.</summary>
         public List<HeadersPayload> HeadersPayloadsSent { get; private set; }
 
@@ -65,7 +68,7 @@ namespace Stratis.Bitcoin.Tests.Base
             Func<List<BlockHeader>, bool, ConnectNewHeadersResult> connectNewHeadersMethod = null)
         {
             // Chain
-            var chain = new ConcurrentChain(Network.StratisMain);
+            var chain = new ConcurrentChain(Networks.StratisMain);
             chain.SetTip(consensusTip);
 
             // Ibd
@@ -88,7 +91,7 @@ namespace Stratis.Bitcoin.Tests.Base
             this.testPeerBanning = new TestPeerBanning();
 
             var connectionManagerMock = new Mock<IConnectionManager>();
-            connectionManagerMock.SetupGet(x => x.ConnectionSettings).Returns(new ConnectionManagerSettings(new NodeSettings(Network.StratisMain)));
+            connectionManagerMock.SetupGet(x => x.ConnectionSettings).Returns(new ConnectionManagerSettings(new NodeSettings(Networks.StratisMain)));
 
             var cmBehavior = new ConsensusManagerBehavior(chain, ibdState.Object, cmMock.Object, this.testPeerBanning,
                 connectionManagerMock.Object, this.loggerFactory);
@@ -112,11 +115,15 @@ namespace Stratis.Bitcoin.Tests.Base
 
             this.GetHeadersPayloadSentTimes = 0;
             this.HeadersPayloadsSent = new List<HeadersPayload>();
+            this.GetHeadersPayloadsSent = new List<GetHeadersPayload>();
 
             this.PeerMock.Setup(x => x.SendMessageAsync(It.IsAny<Payload>(), It.IsAny<CancellationToken>())).Returns((Payload payload, CancellationToken token) =>
             {
-                if (payload is GetHeadersPayload)
+                if (payload is GetHeadersPayload getHeadersPayload)
+                {
                     this.GetHeadersPayloadSentTimes++;
+                    this.GetHeadersPayloadsSent.Add(getHeadersPayload);
+                }
 
                 if (payload is HeadersPayload headersPayload)
                     this.HeadersPayloadsSent.Add(headersPayload);
@@ -131,13 +138,13 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             var peer = new Mock<INetworkPeer>();
 
-            var connection = new NetworkPeerConnection(Network.StratisMain, peer.Object, new TcpClient(), 0, (message, token) => Task.CompletedTask,
+            var connection = new NetworkPeerConnection(Networks.StratisMain, peer.Object, new TcpClient(), 0, (message, token) => Task.CompletedTask,
                 new DateTimeProvider(), this.loggerFactory, new PayloadProvider());
 
             peer.SetupGet(networkPeer => networkPeer.Connection).Returns(connection);
 
             var connectionParameters = new NetworkPeerConnectionParameters();
-            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), Network.StratisMain, new DateTimeProvider().GetTimeOffset());
+            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), Networks.StratisMain, new DateTimeProvider().GetTimeOffset());
             version.Services = NetworkPeerServices.Network;
 
             peer.SetupGet(x => x.PeerVersion).Returns(version);
