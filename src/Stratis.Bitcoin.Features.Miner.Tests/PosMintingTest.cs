@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -30,7 +29,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly Mock<IConsensusLoop> consensusLoop;
         private ConcurrentChain chain;
         private Network network;
-        private readonly Mock<IConnectionManager> connectionManager;
         private readonly Mock<IDateTimeProvider> dateTimeProvider;
         private readonly Mock<IInitialBlockDownloadState> initialBlockDownloadState;
         private readonly Mock<INodeLifetime> nodeLifetime;
@@ -51,7 +49,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.network = Networks.StratisTest;
             this.network.Consensus.Options = new ConsensusOptions();
             this.chain = new ConcurrentChain(this.network);
-            this.connectionManager = new Mock<IConnectionManager>();
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.initialBlockDownloadState = new Mock<IInitialBlockDownloadState>();
             this.nodeLifetime = new Mock<INodeLifetime>();
@@ -535,7 +532,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.consensusLoop.Object,
                 this.chain,
                 this.network,
-                this.connectionManager.Object,
                 this.dateTimeProvider.Object,
                 this.initialBlockDownloadState.Object,
                 this.nodeLifetime.Object,
