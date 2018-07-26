@@ -11,15 +11,15 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanCalculatePowCorrectly()
         {
-            var chain = new ConcurrentChain(Network.Main);
+            var chain = new ConcurrentChain(Networks.Main);
             EnsureDownloaded("MainChain.dat", "https://aois.blob.core.windows.net/public/MainChain.dat");
             chain.Load(File.ReadAllBytes("MainChain.dat"));
             foreach(ChainedHeader block in chain.EnumerateAfter(chain.Genesis))
             {
-                Target thisWork = block.GetWorkRequired(Network.Main);
-                Target thisWork2 = block.Previous.GetNextWorkRequired(Network.Main);
+                Target thisWork = block.GetWorkRequired(Networks.Main);
+                Target thisWork2 = block.Previous.GetNextWorkRequired(Networks.Main);
                 Assert.Equal(thisWork, thisWork2);
-                Assert.True(block.CheckProofOfWorkAndTarget(Network.Main));
+                Assert.True(block.CheckProofOfWorkAndTarget(Networks.Main));
             }
         }
 

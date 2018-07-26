@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             this.extendedLoggerFactory.AddConsoleWithFilters();
 
             this.asyncLoopFactory = new AsyncLoopFactory(this.extendedLoggerFactory);
-            this.network = Network.Main;
+            this.network = Networks.Main;
             this.networkPeerParameters = new NetworkPeerConnectionParameters();
 
             this.nodeLifetime = new NodeLifetime();
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(endpointAddNode, IPAddress.Loopback);
             peerAddressManager.AddPeer(endpointDiscoveredNode, IPAddress.Loopback);
 
-            var nodeSettings = new NodeSettings(Network.Main, args: new[] { "-IpRangeFiltering=false" });
+            var nodeSettings = new NodeSettings(Networks.Main, args: new[] { "-IpRangeFiltering=false" });
 
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
             connectionManagerSettings.AddNode.Add(endpointAddNode);
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(endpointConnectNode, IPAddress.Loopback);
             peerAddressManager.AddPeer(endpointDiscoveredNode, IPAddress.Loopback);
 
-            var nodeSettings = new NodeSettings(Network.Main, args: new[] { "-IpRangeFiltering=false" });
+            var nodeSettings = new NodeSettings(Networks.Main, args: new[] { "-IpRangeFiltering=false" });
 
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
             connectionManagerSettings.Connect.Add(endpointConnectNode);
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.AddPeer(endpointConnectNode, IPAddress.Loopback);
             peerAddressManager.AddPeer(endpointDiscoveredNode, IPAddress.Loopback);
 
-            var nodeSettings = new NodeSettings(Network.Main, args: new[] { "-IpRangeFiltering=false" });
+            var nodeSettings = new NodeSettings(Networks.Main, args: new[] { "-IpRangeFiltering=false" });
 
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
             connectionManagerSettings.AddNode.Add(endpointAddNode);
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         [Fact]
         public void PeerConnectorDiscovery_ConnectsTo_NodeInSameNetworkGroup_WithIpRangeFilteringDisabled()
         {
-            Network mainNetwork = Network.Main;
+            Network mainNetwork = Networks.Main;
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
 
@@ -270,7 +270,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         [Fact]
         public void PeerConnectorDiscovery_DoesNotConnectTo_NodeInSameNetworkGroup_WithIpRangeFilteringEnabled()
         {
-            Network mainNetwork = Network.Main;
+            Network mainNetwork = Networks.Main;
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
 
@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         public void PeerConnectorDiscovery_ConnectsTo_LocalNodes_IpRangeFilteringEnabled()
         {
             // Setup.
-            Network mainNetwork = Network.Main;
+            Network mainNetwork = Networks.Main;
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
             var nodeSettings = new NodeSettings(mainNetwork, args: new[] { string.Empty }); // Ip range filtering enabled by default.

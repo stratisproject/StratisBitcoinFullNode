@@ -6,7 +6,6 @@ using FluentAssertions;
 using Moq;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Networks;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -80,13 +79,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         public class TestContext
         {
-            public Network Network = Network.RegTest;
+            public Network Network = Networks.RegTest;
             public Mock<IHeaderValidator> HeaderValidatorMock = new Mock<IHeaderValidator>();
             public Mock<IIntegrityValidator> IntegrityValidatorMock = new Mock<IIntegrityValidator>();
             public Mock<ICheckpoints> CheckpointsMock = new Mock<ICheckpoints>();
             public Mock<IChainState> ChainStateMock = new Mock<IChainState>();
             public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
-            public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(Network.RegTest));
+            public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(Networks.RegTest));
 
             private static int nonceValue;
 

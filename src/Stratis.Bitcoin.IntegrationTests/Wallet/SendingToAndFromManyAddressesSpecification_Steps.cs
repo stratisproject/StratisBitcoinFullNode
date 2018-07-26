@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Amount = Money.COIN
             }).ToList();
 
-            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, 101);
+            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(this.nodes[NodeOne].FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, 101);
 
             Transaction transaction = this.nodes[NodeOne].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
 
@@ -110,6 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             HdAddress sendToNodeOne = this.nodes[NodeOne].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccountName));
 
             this.transactionBuildContext = new TransactionBuildContext(
+                this.nodes[NodeOne].FullNode.Network,
                 new WalletAccountReference(WalletName, WalletAccountName),
                 new[]
                 {

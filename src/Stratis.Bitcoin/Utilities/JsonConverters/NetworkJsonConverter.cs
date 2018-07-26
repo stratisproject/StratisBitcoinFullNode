@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
     /// <summary>
     /// Converter used to convert the name of a network in JSON to the corresponding <see cref="Network"/>.
     /// </summary>
-    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
+    /// <seealso cref="JsonConverter" />
     public class NetworkJsonConverter : JsonConverter
     {
         /// <inheritdoc />
@@ -29,13 +29,13 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
                 return null;
 
             if (network.Equals("MainNet", StringComparison.OrdinalIgnoreCase) || network.Equals("main", StringComparison.OrdinalIgnoreCase))
-                return Network.Main;
+                return NBitcoin.Networks.Main;
 
             if (network.Equals("TestNet", StringComparison.OrdinalIgnoreCase) || network.Equals("test", StringComparison.OrdinalIgnoreCase))
-                return Network.TestNet;
+                return NBitcoin.Networks.TestNet;
 
             if (network.Equals("RegTest", StringComparison.OrdinalIgnoreCase) || network.Equals("reg", StringComparison.OrdinalIgnoreCase))
-                return Network.RegTest;
+                return NBitcoin.Networks.RegTest;
 
             Network net = NetworksContainer.GetNetwork(network);
             if(net != null)
@@ -51,11 +51,11 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 
             string str = null;
 
-            if(network == Network.Main)
+            if(network == NBitcoin.Networks.Main)
                 str = "MainNet";
-            else if(network == Network.TestNet)
+            else if(network == NBitcoin.Networks.TestNet)
                 str = "TestNet";
-            else if(network == Network.RegTest)
+            else if(network == NBitcoin.Networks.RegTest)
                 str = "RegTest";
             else if(network != null)
                 str = network.ToString();

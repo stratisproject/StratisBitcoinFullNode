@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
     public class TestConsensusRulesUnitTestBase : ConsensusRuleUnitTestBase<TestConsensusRules>
     {
-        public TestConsensusRulesUnitTestBase() : base(Network.TestNet)
+        public TestConsensusRulesUnitTestBase() : base(NBitcoin.Networks.TestNet)
         {
             this.network.Consensus.Options = new ConsensusOptions();
             this.consensusRules = InitializeConsensusRules();

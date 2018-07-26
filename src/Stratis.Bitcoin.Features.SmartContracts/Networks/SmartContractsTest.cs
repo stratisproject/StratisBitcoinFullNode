@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using NBitcoin.Networks;
+using NBitcoin.NetworkDefinitions;
 using NBitcoin.Protocol;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
@@ -12,8 +12,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
         public SmartContractsTest()
         {
             this.Name = "SmartContractsTestNet";
-            this.RootFolderName = "stratis";
-            this.DefaultConfigFilename = "stratis.conf";
+            this.RootFolderName = NBitcoin.NetworkDefinitions.StratisMain.StratisRootFolderName;
+            this.DefaultConfigFilename = NBitcoin.NetworkDefinitions.StratisMain.StratisDefaultConfigFilename;
             this.Magic = 0x0709110E; // Incremented 19/06
             this.DefaultPort = 18333;
             this.RPCPort = 18332;
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.MinRelayTxFee = 1000;
 
             var consensus = new NBitcoin.Consensus();
-            consensus.ConsensusFactory = new SmartContractConsensusFactory() { Consensus = consensus };
+            consensus.ConsensusFactory = new SmartContractConsensusFactory();
 
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 51;

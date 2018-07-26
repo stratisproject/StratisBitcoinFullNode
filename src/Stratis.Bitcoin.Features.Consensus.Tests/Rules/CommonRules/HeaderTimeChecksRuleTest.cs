@@ -10,14 +10,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class HeaderTimeChecksRuleTest
     {
+        private readonly Network network;
+
+        public HeaderTimeChecksRuleTest()
+        {
+            this.network = NBitcoin.Networks.RegTest;
+        }
+
         [Fact]
         public async Task ChecBlockPreviousTimestamp_ValidationFailAsync()
         {
-            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             var rule = testContext.CreateRule<HeaderTimeChecksRule>();
 
-            RuleContext context = new PowRuleContext(new ValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
-            context.ValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
+            RuleContext context = new PowRuleContext(new ValidationContext(), this.network.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
+            context.ValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, testContext.Chain);
             context.ValidationContext.ChainedHeader = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), context.ConsensusTip);
             context.Time = DateTimeProvider.Default.GetTimeOffset();
 
@@ -31,11 +38,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task ChecBlockFutureTimestamp_ValidationFailAsync()
         {
-            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             var rule = testContext.CreateRule<HeaderTimeChecksRule>();
 
-            RuleContext context = new PowRuleContext(new ValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
-            context.ValidationContext.Block = TestRulesContextFactory.MineBlock(Network.RegTest, testContext.Chain);
+            RuleContext context = new PowRuleContext(new ValidationContext(), this.network.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
+            context.ValidationContext.Block = TestRulesContextFactory.MineBlock(this.network, testContext.Chain);
             context.ValidationContext.ChainedHeader = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), context.ConsensusTip);
             context.Time = DateTimeProvider.Default.GetTimeOffset();
 

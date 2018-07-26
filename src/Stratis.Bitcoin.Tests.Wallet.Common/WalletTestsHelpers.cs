@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             var key = new Key();
             var address = new HdAddress
             {
-                Address = key.PubKey.GetAddress(Network.Main).ToString(),
+                Address = key.PubKey.GetAddress(Networks.Main).ToString(),
                 HdPath = hdPath,
                 ScriptPubKey = key.ScriptPubKey
             };
@@ -113,10 +113,12 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return (last, block);
         }
 
-        public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,
+        public static TransactionBuildContext CreateContext(Network network, WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
         {
-            return new TransactionBuildContext(accountReference,
+            return new TransactionBuildContext(
+                network,
+                accountReference,
                 new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), password)
             {
                 MinConfirmations = minConfirmations,
@@ -147,11 +149,11 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             var walletFile = new Features.Wallet.Wallet
             {
                 Name = name,
-                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, Network.Main).ToWif(),
+                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, Networks.Main).ToWif(),
                 ChainCode = extendedKey.ChainCode,
                 CreationTime = DateTimeOffset.Now,
-                Network = Network.Main,
-                AccountsRoot = new List<AccountRoot> { new AccountRoot() { Accounts = new List<HdAccount>(), CoinType = (CoinType)Network.Main.Consensus.CoinType } },
+                Network = Networks.Main,
+                AccountsRoot = new List<AccountRoot> { new AccountRoot() { Accounts = new List<HdAccount>(), CoinType = (CoinType)Networks.Main.Consensus.CoinType } },
             };
 
             return (walletFile, extendedKey);
@@ -378,7 +380,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
         {
             var chain = new ConcurrentChain(StratisNetworks.StratisMain);
             uint nonce = RandomUtils.GetUInt32();
-            Block block = StratisNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
+            Block block = StratisNetworks.StratisMain.CreateBlock();
             block.AddTransaction(StratisNetworks.StratisMain.CreateTransaction());
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;

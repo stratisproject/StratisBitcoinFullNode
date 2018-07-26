@@ -780,7 +780,7 @@ namespace NBitcoin.Tests
             Key[] stealthKeys = Enumerable.Range(0, 3).Select(_ => new Key()).ToArray();
             var scanKey = new Key();
 
-            var darkSatoshi = new BitcoinStealthAddress(scanKey.PubKey, stealthKeys.Select(k => k.PubKey).ToArray(), 2, new BitField(3, 5), Network.Main);
+            var darkSatoshi = new BitcoinStealthAddress(scanKey.PubKey, stealthKeys.Select(k => k.PubKey).ToArray(), 2, new BitField(3, 5), Networks.Main);
 
             var bob = new Key();
             var coins = new Coin[] {
@@ -1071,7 +1071,7 @@ namespace NBitcoin.Tests
         }
         private Coin RandomCoin(Money amount, Key receiver)
         {
-            return RandomCoin(amount, receiver.PubKey.GetAddress(Network.Main));
+            return RandomCoin(amount, receiver.PubKey.GetAddress(Networks.Main));
         }
         private Coin RandomCoin(Money amount, IDestination receiver)
         {
@@ -1354,15 +1354,15 @@ namespace NBitcoin.Tests
         {
             Script redeem = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, new Key().PubKey, new Key().PubKey, new Key().PubKey);
             var transactionBuilder = new TransactionBuilder(this.network);
-            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 1), new TxOut("0.00010000", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Network.Main))).ToScriptCoin(redeem));
-            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 2), new TxOut("0.00091824", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Network.Main))).ToScriptCoin(redeem));
-            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 3), new TxOut("0.00100000", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Network.Main))).ToScriptCoin(redeem));
-            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 4), new TxOut("0.00100000", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Network.Main))).ToScriptCoin(redeem));
-            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 5), new TxOut("0.00246414", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Network.Main))).ToScriptCoin(redeem));
-            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 6), new TxOut("0.00250980", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Network.Main))).ToScriptCoin(redeem));
-            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 7), new TxOut("0.01000000", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Network.Main))).ToScriptCoin(redeem));
-            transactionBuilder.Send(new Key().PubKey.GetAddress(Network.Main), "0.01000000");
-            transactionBuilder.SetChange(new Key().PubKey.GetAddress(Network.Main));
+            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 1), new TxOut("0.00010000", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Networks.Main))).ToScriptCoin(redeem));
+            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 2), new TxOut("0.00091824", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Networks.Main))).ToScriptCoin(redeem));
+            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 3), new TxOut("0.00100000", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Networks.Main))).ToScriptCoin(redeem));
+            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 4), new TxOut("0.00100000", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Networks.Main))).ToScriptCoin(redeem));
+            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 5), new TxOut("0.00246414", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Networks.Main))).ToScriptCoin(redeem));
+            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 6), new TxOut("0.00250980", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Networks.Main))).ToScriptCoin(redeem));
+            transactionBuilder.AddCoins(new Coin(new OutPoint(uint256.Parse("75425c904289f21feef0cffab2081ba22030b633623115adf0780edad443e6c7"), 7), new TxOut("0.01000000", PayToScriptHashTemplate.Instance.GenerateScriptPubKey(redeem).GetDestinationAddress(Networks.Main))).ToScriptCoin(redeem));
+            transactionBuilder.Send(new Key().PubKey.GetAddress(Networks.Main), "0.01000000");
+            transactionBuilder.SetChange(new Key().PubKey.GetAddress(Networks.Main));
 
             var feeRate = new FeeRate((long)32563);
             Money estimatedFeeBefore = transactionBuilder.EstimateFees(feeRate);
@@ -1427,7 +1427,7 @@ namespace NBitcoin.Tests
                 )).ToList();
             Money a = witCoins.Select(c => c.Amount).Sum();
             Coin[] allCoins = coins.Concat(scriptCoins).Concat(witCoins).ToArray();
-            BitcoinPubKeyAddress[] destinations = keys.Select(k => k.PubKey.GetAddress(Network.Main)).ToArray();
+            BitcoinPubKeyAddress[] destinations = keys.Select(k => k.PubKey.GetAddress(Networks.Main)).ToArray();
 
             var txBuilder = new TransactionBuilder(0, this.network);
             txBuilder.StandardTransactionPolicy = EasyPolicy(this.network);
@@ -1855,7 +1855,7 @@ namespace NBitcoin.Tests
             {
                 PayToWitPubkeyHashScriptSigParameters param1 = PayToWitPubKeyHashTemplate.Instance.ExtractWitScriptParameters(network, tx.Inputs[input].WitScript);
                 Assert.NotNull(param1);
-                WitKeyId param2 = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(network, param1.PublicKey.GetSegwitAddress(Network.Main).Hash.ScriptPubKey);
+                WitKeyId param2 = PayToWitPubKeyHashTemplate.Instance.ExtractScriptPubKeyParameters(network, param1.PublicKey.GetSegwitAddress(Networks.Main).Hash.ScriptPubKey);
                 Assert.Equal(param1.PublicKey.WitHash, param2);
                 scriptCode = param1.ScriptPubKey;
             }
@@ -2133,7 +2133,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void TestSigHashes()
         {
-            var secret = new BitcoinSecret("L5AQtV2HDm4xGsseLokK2VAT2EtYKcTm3c7HwqnJBFt9LdaQULsM", Network.Main);
+            var secret = new BitcoinSecret("L5AQtV2HDm4xGsseLokK2VAT2EtYKcTm3c7HwqnJBFt9LdaQULsM", Networks.Main);
             Key key = secret.PrivateKey;
             var output = new StringBuilder();
             foreach (bool segwit in new[] { false, true })
@@ -2667,9 +2667,9 @@ namespace NBitcoin.Tests
 
             dummyTransactions[1].Outputs.AddRange(Enumerable.Range(0, 2).Select(_ => new TxOut()));
             dummyTransactions[1].Outputs[0].Value = 21 * Money.CENT;
-            dummyTransactions[1].Outputs[0].ScriptPubKey = key[2].PubKey.GetAddress(Network.Main).ScriptPubKey;
+            dummyTransactions[1].Outputs[0].ScriptPubKey = key[2].PubKey.GetAddress(Networks.Main).ScriptPubKey;
             dummyTransactions[1].Outputs[1].Value = 22 * Money.CENT;
-            dummyTransactions[1].Outputs[1].ScriptPubKey = key[3].PubKey.GetAddress(Network.Main).ScriptPubKey;
+            dummyTransactions[1].Outputs[1].ScriptPubKey = key[3].PubKey.GetAddress(Networks.Main).ScriptPubKey;
             coinsRet.AddTransaction(this.network.Consensus, dummyTransactions[1], 0);
 
 

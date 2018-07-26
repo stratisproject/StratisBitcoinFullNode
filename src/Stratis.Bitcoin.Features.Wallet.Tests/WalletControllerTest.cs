@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
         public WalletControllerTest()
         {
-            this.network = Network.Main;
+            this.network = Networks.Main;
             this.chain = new ConcurrentChain(this.network);
         }
 
@@ -650,7 +650,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 AccountsRoot = new List<AccountRoot> {
                     new AccountRoot()
                     {
-                        CoinType = (CoinType)Network.Main.Consensus.CoinType,
+                        CoinType = (CoinType)Networks.Main.Consensus.CoinType,
                         LastBlockSyncedHeight = 15
                     }
                 }
@@ -1231,14 +1231,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(2, model.AccountsBalances.Count);
 
             AccountBalanceModel resultingBalance = model.AccountsBalances[0];
-            Assert.Equal(Network.Main.Consensus.CoinType, (int)resultingBalance.CoinType);
+            Assert.Equal(Networks.Main.Consensus.CoinType, (int)resultingBalance.CoinType);
             Assert.Equal(account.Name, resultingBalance.Name);
             Assert.Equal(account.HdPath, resultingBalance.HdPath);
             Assert.Equal(new Money(130000), resultingBalance.AmountConfirmed);
             Assert.Equal(new Money(35000), resultingBalance.AmountUnconfirmed);
 
             resultingBalance = model.AccountsBalances[1];
-            Assert.Equal(Network.Main.Consensus.CoinType, (int)resultingBalance.CoinType);
+            Assert.Equal(Networks.Main.Consensus.CoinType, (int)resultingBalance.CoinType);
             Assert.Equal(account2.Name, resultingBalance.Name);
             Assert.Equal(account2.HdPath, resultingBalance.HdPath);
             Assert.Equal(new Money(108000), resultingBalance.AmountConfirmed);
@@ -1332,7 +1332,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var model = viewResult.Value as AddressBalanceModel;
 
             Assert.NotNull(model);
-            Assert.Equal(Network.Main.Consensus.CoinType, (int)model.CoinType);
+            Assert.Equal(Networks.Main.Consensus.CoinType, (int)model.CoinType);
             Assert.Equal(accountAddress.Address, model.Address);
             Assert.Equal(new Money(75000), model.AmountConfirmed);
             Assert.Equal(new Money(500000), model.AmountUnconfirmed);
@@ -1398,7 +1398,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 AccountName = "Account 1",
                 AllowUnconfirmed = true,
                 Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(Network.Main).ToString(),
+                DestinationAddress = key.PubKey.GetAddress(Networks.Main).ToString(),
                 FeeType = "105",
                 Password = "test",
                 WalletName = "myWallet"
@@ -1428,7 +1428,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 AccountName = "Account 1",
                 AllowUnconfirmed = true,
                 Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(Network.Main).ToString(),
+                DestinationAddress = key.PubKey.GetAddress(Networks.Main).ToString(),
                 FeeType = "105",
                 FeeAmount = "0.1234",
                 Password = "test",
@@ -1458,7 +1458,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 AccountName = "Account 1",
                 AllowUnconfirmed = true,
                 Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(Network.Main).ToString(),
+                DestinationAddress = key.PubKey.GetAddress(Networks.Main).ToString(),
 
                 FeeAmount = "0.1234",
                 Password = "test",
@@ -1488,7 +1488,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 AccountName = "Account 1",
                 AllowUnconfirmed = false,
                 Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(Network.Main).ToString(),
+                DestinationAddress = key.PubKey.GetAddress(Networks.Main).ToString(),
                 FeeType = "105",
                 Password = "test",
                 WalletName = "myWallet"
@@ -1539,7 +1539,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 AccountName = "Account 1",
                 AllowUnconfirmed = false,
                 Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(Network.Main).ToString(),
+                DestinationAddress = key.PubKey.GetAddress(Networks.Main).ToString(),
                 FeeType = "105",
                 Password = "test",
                 WalletName = "myWallet"
@@ -2053,7 +2053,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 AccountName = "Account 1",
                 Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(Network.Main).ToString(),
+                DestinationAddress = key.PubKey.GetAddress(Networks.Main).ToString(),
                 FeeType = "105",
                 WalletName = "myWallet"
             });
@@ -2083,7 +2083,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Setup(manager => manager.RemoveAllTransactions(walletName)).Returns(resultModel);
             walletManager.Setup(manager => manager.GetWallet(walletName)).Returns(wallet);
             walletSyncManager.Setup(manager => manager.SyncFromHeight(It.IsAny<int>()));
-            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.Main);
+            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Networks.Main);
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), this.network, chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             var requestModel = new RemoveTransactionsModel
@@ -2122,7 +2122,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletManager = new Mock<IWalletManager>();
             var walletSyncManager = new Mock<IWalletSyncManager>();
             walletManager.Setup(manager => manager.RemoveAllTransactions(walletName)).Returns(resultModel);
-            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.Main);
+            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Networks.Main);
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), this.network, chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             var requestModel = new RemoveTransactionsModel
@@ -2163,7 +2163,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.Setup(manager => manager.RemoveTransactionsByIdsLocked(walletName, new[] { trxId1 })).Returns(resultModel);
             walletManager.Setup(manager => manager.GetWallet(walletName)).Returns(wallet);
             walletSyncManager.Setup(manager => manager.SyncFromHeight(It.IsAny<int>()));
-            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.Main);
+            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Networks.Main);
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), this.network, chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
             var requestModel = new RemoveTransactionsModel
