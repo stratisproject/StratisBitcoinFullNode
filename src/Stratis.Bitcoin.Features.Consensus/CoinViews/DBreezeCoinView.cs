@@ -121,16 +121,16 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             {
                 this.logger.LogTrace("()");
 
+                uint256 tipHash;
+
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    transaction.SynchronizeTables("BlockHash", "Coins");
                     transaction.ValuesLazyLoadingIsOn = false;
-
-                    uint256 tipHash = this.GetTipHash(transaction);
-
-                    this.logger.LogTrace("(-):'{0}'", tipHash);
-                    return tipHash;
+                    tipHash = this.GetTipHash(transaction);
                 }
+
+                this.logger.LogTrace("(-):'{0}'", tipHash);
+                return tipHash;
             }, cancellationToken);
 
             return task;

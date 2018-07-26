@@ -161,25 +161,20 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            Task<uint256> task = Task.Run(async () =>
+            this.logger.LogTrace("()");
+
+            if (this.blockHash == null)
             {
-                this.logger.LogTrace("()");
+                FetchCoinsResponse response = await this.FetchCoinsAsync(new uint256[0], cancellationToken).ConfigureAwait(false);
 
-                if (this.blockHash == null)
-                {
-                    FetchCoinsResponse response = await this.FetchCoinsAsync(new uint256[0], cancellationToken).ConfigureAwait(false);
+                this.innerBlockHash = response.BlockHash;
+                this.blockHash = this.innerBlockHash;
+            }
 
-                    this.innerBlockHash = response.BlockHash;
-                    this.blockHash = this.innerBlockHash;
-                }
-
-                this.logger.LogTrace("(-):'{0}'", this.blockHash);
-                return this.blockHash;
-            }, cancellationToken);
-
-            return task;
+            this.logger.LogTrace("(-):'{0}'", this.blockHash);
+            return this.blockHash;
         }
 
         /// <inheritdoc />

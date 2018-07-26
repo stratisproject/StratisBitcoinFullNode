@@ -54,6 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     if (result[i] != null)
                         result[i] = result[i].Clone();
                 }
+
                 return Task.FromResult(new FetchCoinsResponse(result, this.tipHash));
             }
         }
