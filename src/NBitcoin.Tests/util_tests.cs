@@ -15,10 +15,11 @@ using Xunit;
 
 namespace NBitcoin.Tests
 {
-    public class util_tests
+    public class Util_Tests
     {
         private readonly Network networkMain;
         private readonly Network networkTestNet;
+        private readonly Network networkRegTest;
 
         private static byte[] ParseHex_expected = new byte[]{
     0x04, 0x67, 0x8a, 0xfd, 0xb0, 0xfe, 0x55, 0x48, 0x27, 0x19, 0x67, 0xf1, 0xa6, 0x71, 0x30, 0xb7,
@@ -27,15 +28,16 @@ namespace NBitcoin.Tests
     0xde, 0x5c, 0x38, 0x4d, 0xf7, 0xba, 0x0b, 0x8d, 0x57, 0x8a, 0x4c, 0x70, 0x2b, 0x6b, 0xf1, 0x1d,
     0x5f};
 
-        public util_tests()
+        public Util_Tests()
         {
             this.networkMain = NetworkContainer.Main;
             this.networkTestNet = NetworkContainer.TestNet;
+            this.networkRegTest = NetworkContainer.RegTest;
         }
 
         [Fact]
         [Trait("Core", "Core")]
-        public void util_ParseHex()
+        public void Util_ParseHex()
         {
             // Basic test vector
             byte[] result = Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0EA1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
@@ -52,14 +54,14 @@ namespace NBitcoin.Tests
         public void CanAddEntropyToRandom()
         {
             RandomUtils.AddEntropy(new byte[] { 1, 2, 3 });
-            for(int i = 0; i < 100; i++)
+            for (int i = 0; i < 100; i++)
             {
                 Assert.Equal(50, RandomUtils.GetBytes(50).Length);
             }
         }
         [Fact]
         [Trait("Core", "Core")]
-        public void util_HexStr()
+        public void Util_HexStr()
         {
             AssertEx.Equal(
       new HexEncoder().EncodeData(ParseHex_expected),
@@ -195,7 +197,7 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("Core", "Core")]
-        public void util_FormatMoney()
+        public void Util_FormatMoney()
         {
             AssertEx.Equal(new Money(0).ToString(false), "0.00");
             AssertEx.Equal(new Money((Money.COIN / 10000) * 123456789).ToString(false), "12345.6789");
@@ -260,7 +262,7 @@ namespace NBitcoin.Tests
                 new object[]{ 1.23456789m, MoneyUnit.BTC, 1.23456789m, MoneyUnit.BTC  },
             };
 
-            foreach(object[] test in tests)
+            foreach (object[] test in tests)
             {
                 decimal inputAmount = (decimal)test[0];
                 var inputUnit = (MoneyUnit)test[1];
@@ -281,10 +283,10 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("Core", "Core")]
-        public void util_ParseMoney()
+        public void Util_ParseMoney()
         {
             Money ret;
-            foreach(string prefix in new string[] { "", "+", "-" })
+            foreach (string prefix in new string[] { "", "+", "-" })
             {
                 int multiplier = prefix == "-" ? -1 : 1;
                 Assert.True(Money.TryParse(prefix + "0.0", out ret));
@@ -525,7 +527,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanRoundTripBigIntegerToBytes()
         {
-            foreach(int expected in Enumerable.Range(-100, 100))
+            foreach (int expected in Enumerable.Range(-100, 100))
             {
                 byte[] bytes = Utils.BigIntegerToBytes(BigInteger.ValueOf(expected));
                 BigInteger actual = Utils.BytesToBigInteger(bytes);
@@ -561,7 +563,7 @@ namespace NBitcoin.Tests
         private void CanConvertBigIntegerToBytesCore(BigInteger b, byte[] bbytes, bool testByteSerialization = true)
         {
             Assert.Equal(b, Utils.BytesToBigInteger(bbytes));
-            if(testByteSerialization)
+            if (testByteSerialization)
                 Assert.True(Utils.BigIntegerToBytes(b).SequenceEqual(bbytes));
         }
 
@@ -569,7 +571,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void NetworksAreValid()
         {
-            foreach(Network network in NetworkRegistration.GetNetworks())
+            foreach (Network network in NetworkRegistration.GetNetworks())
             {
                 Assert.NotNull(network);
             }
@@ -601,7 +603,7 @@ namespace NBitcoin.Tests
                     ExpectedSecret = "7fcfa754a40ceaabee5cd3df1a99ee2e5d2c027fdcbd8e437d9be757ea58708f"
                 }
             };
-            foreach(var test in tests)
+            foreach (var test in tests)
             {
                 var pubKey = new PubKey(test.Pubkey);
                 var key = new Key(Encoders.Hex.DecodeData(test.Private));
@@ -790,9 +792,9 @@ namespace NBitcoin.Tests
                     }
                 };
 
-            foreach(var test in tests)
+            foreach (var test in tests)
             {
-                if(test.ExpectedType == null)
+                if (test.ExpectedType == null)
                 {
                     Assert.Throws<FormatException>(() => Network.Parse(test.Base58, null));
                 }
@@ -800,15 +802,15 @@ namespace NBitcoin.Tests
                 {
                     IBitcoinString result = Network.Parse(test.Base58, null);
                     Assert.True(test.ExpectedType == result.GetType());
-                    if(test.Network != null)
+                    if (test.Network != null)
                         Assert.Equal(test.Network, result.Network);
                     Network.Parse(test.Base58, test.Network);
 
-                    if(test.Network != null)
+                    if (test.Network != null)
                     {
-                        foreach(Network network in NetworkRegistration.GetNetworks())
+                        foreach (Network network in NetworkRegistration.GetNetworks())
                         {
-                            if(network == test.Network)
+                            if (network == test.Network)
                                 break;
                             Assert.Throws<FormatException>(() => Network.Parse(test.Base58, network));
                         }
