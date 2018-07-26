@@ -4,7 +4,7 @@ using NBitcoin;
 namespace Stratis.Bitcoin.Features.Miner
 {
     /// <summary>
-    /// Immutable settings to be used by <see cref="BlockDefinition"/>.
+    /// Semi- immutable settings to be used by <see cref="BlockDefinition"/>.
     /// </summary>
     public sealed class BlockDefinitionOptions
     {

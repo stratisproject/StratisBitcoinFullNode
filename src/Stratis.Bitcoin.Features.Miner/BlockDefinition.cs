@@ -81,6 +81,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         protected bool IncludeWitness;
 
+        // TODO: Reference parameters from this.Options instead.
         protected uint BlockMaxWeight, BlockMaxSize;
 
         protected bool NeedSizeAccounting;
@@ -131,12 +132,8 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.Options = minerSettings.BlockDefinitionOptions;
             this.BlockMinFeeRate = this.Options.BlockMinFeeRate;
-
-            // Set BlockMaxWeight to value from BlockDefinitionOptions. If outside range of 4K - Consensus MaxBlockWeight, set to highest / lowest allowed.
-            this.BlockMaxWeight = this.Options.BlockMaxWeight; //(uint)Math.Max(4000, Math.Min(this.Network.Consensus.Options.MaxBlockWeight, this.Options.BlockMaxWeight));
-
-            // Set BlockMaxSize to value from BlockDefinitionOptions. If outside range of 1K - Consensus MaxBlockSize, set to highest / lowest allowed.
-            this.BlockMaxSize = this.Options.BlockMaxSize; //(uint)Math.Max(1000, Math.Min(network.Consensus.Options.MaxBlockSerializedSize, this.Options.BlockMaxSize));
+            this.BlockMaxWeight = this.Options.BlockMaxWeight;
+            this.BlockMaxSize = this.Options.BlockMaxSize;
 
             // Whether we need to account for byte usage (in addition to weight usage).
             this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Options.MaxBlockSerializedSize);
