@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 
-namespace NBitcoin.Networks
+namespace NBitcoin.NetworkDefinitions
 {
     public class BitcoinRegTest : BitcoinMain
     {

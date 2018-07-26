@@ -18,15 +18,15 @@ namespace Stratis.Bitcoin.Tests.Utilities
             CanSerializeInJsonCore(new byte[] { 1, 2, 3 });
             CanSerializeInJsonCore(k);
             CanSerializeInJsonCore(Money.Coins(5.0m));
-            CanSerializeInJsonCore(k.PubKey.GetAddress(Network.Main));
+            CanSerializeInJsonCore(k.PubKey.GetAddress(Networks.Main));
             CanSerializeInJsonCore(new KeyPath("1/2"));
-            CanSerializeInJsonCore(Network.Main);
+            CanSerializeInJsonCore(Networks.Main);
             CanSerializeInJsonCore(new uint256(RandomUtils.GetBytes(32)));
             CanSerializeInJsonCore(new uint160(RandomUtils.GetBytes(20)));
             CanSerializeInJsonCore(new AssetId(k.PubKey));
             CanSerializeInJsonCore(k.PubKey.ScriptPubKey);
-            CanSerializeInJsonCore(new Key().PubKey.WitHash.GetAddress(Network.Main));
-            CanSerializeInJsonCore(new Key().PubKey.WitHash.ScriptPubKey.GetWitScriptAddress(Network.Main));
+            CanSerializeInJsonCore(new Key().PubKey.WitHash.GetAddress(Networks.Main));
+            CanSerializeInJsonCore(new Key().PubKey.WitHash.ScriptPubKey.GetWitScriptAddress(Networks.Main));
             ECDSASignature sig = k.Sign(new uint256(RandomUtils.GetBytes(32)));
             CanSerializeInJsonCore(sig);
             CanSerializeInJsonCore(new TransactionSignature(sig, SigHash.All));
@@ -43,14 +43,14 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void CanSerializeRandomClass()
         {
-            string str = Serializer.ToString(new DummyClass() { ExtPubKey = new ExtKey().Neuter().GetWif(Network.RegTest) }, Network.RegTest);
-            Assert.NotNull(Serializer.ToObject<DummyClass>(str, Network.RegTest));
+            string str = Serializer.ToString(new DummyClass() { ExtPubKey = new ExtKey().Neuter().GetWif(Networks.RegTest) }, Networks.RegTest);
+            Assert.NotNull(Serializer.ToObject<DummyClass>(str, Networks.RegTest));
         }
 
         private T CanSerializeInJsonCore<T>(T value)
         {
             string str = Serializer.ToString(value);
-            T obj2 = Serializer.ToObject<T>(str, Network.Main);
+            T obj2 = Serializer.ToObject<T>(str, Networks.Main);
             Assert.Equal(str, Serializer.ToString(obj2));
             return obj2;
         }
