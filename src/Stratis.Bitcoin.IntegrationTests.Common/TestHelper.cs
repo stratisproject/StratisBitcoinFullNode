@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.P2P.Peer;
 
