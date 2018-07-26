@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Tests.Models
 
         public TransactionModelsTest()
         {
-            var network = Network.Main;
+            var network = Networks.Main;
             this.txBlock10CoinbaseModelBrief = new TransactionBriefModel(network.CreateTransaction(TxBlock10Hex));
             this.txBlock460373CoinbaseModelVerbose = new TransactionVerboseModel(network.CreateTransaction(TxBlock460373CoinbaseHex), network);
             this.txTwoInTwoOutModelVerbose = new TransactionVerboseModel(network.CreateTransaction(TxTwoInTwoOutHex), network);

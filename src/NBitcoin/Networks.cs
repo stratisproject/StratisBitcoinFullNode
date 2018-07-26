@@ -1,8 +1,8 @@
-using NBitcoin.Networks;
+using NBitcoin.NetworkDefinitions;
 
 namespace NBitcoin
 {
-    public partial class Network
+    public static class Networks
     {
         public static Network Main => NetworksContainer.GetNetwork("Main") ?? NetworksContainer.Register(new BitcoinMain());
 

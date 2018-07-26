@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_CheckPow_ValidPow_SetsStake_SetsNextWorkRequiredAsync()
         {
-            this.network = Network.RegTest;
+            this.network = Networks.RegTest;
             this.concurrentChain = MineChainWithHeight(2, this.network);
             this.consensusRules = this.InitializeConsensusRules();
 

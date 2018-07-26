@@ -17,8 +17,8 @@ namespace Stratis.Bitcoin.Tests.Base
         public BestChainSelectorTest()
         {
             this.chainedHeaders = new List<ChainedHeader>();
-            var chain = new ConcurrentChain(Network.StratisMain);
-            this.network = Network.StratisMain;
+            var chain = new ConcurrentChain(Networks.StratisMain);
+            this.network = Networks.StratisMain;
 
             for (int i = 0; i < 20; ++i)
             {

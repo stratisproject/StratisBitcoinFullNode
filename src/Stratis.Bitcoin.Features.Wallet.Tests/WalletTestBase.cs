@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var key = new Key();
             var address = new HdAddress
             {
-                Address = key.PubKey.GetAddress(Network.Main).ToString(),
+                Address = key.PubKey.GetAddress(Networks.Main).ToString(),
                 HdPath = hdPath,
                 ScriptPubKey = key.ScriptPubKey
             };

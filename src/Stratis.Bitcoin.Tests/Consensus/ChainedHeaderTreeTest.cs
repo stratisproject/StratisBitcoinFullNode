@@ -79,13 +79,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         public class TestContext
         {
-            public Network Network = Network.RegTest;
+            public Network Network = Networks.RegTest;
             public Mock<IHeaderValidator> HeaderValidatorMock = new Mock<IHeaderValidator>();
             public Mock<IIntegrityValidator> IntegrityValidatorMock = new Mock<IIntegrityValidator>();
             public Mock<ICheckpoints> CheckpointsMock = new Mock<ICheckpoints>();
             public Mock<IChainState> ChainStateMock = new Mock<IChainState>();
             public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
-            public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(Network.RegTest));
+            public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(Networks.RegTest));
 
             private static int nonceValue;
 
@@ -215,10 +215,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ///                   6b=7b=8b=9b
             ///             3c=4c=5c
             /// </summary>
-            /// <param name="initialChainSize">Initial chain size.</param>
             /// <param name="cht">ChainHeaderTree.</param>
             /// <param name="initialChainTip">Initial chain tip.</param>
-            internal void SetupPeersForTest(int initialChainSize, ChainedHeaderTree cht, ChainedHeader initialChainTip)
+            internal void SetupPeersForTest(ChainedHeaderTree cht, ChainedHeader initialChainTip)
             {
                 int peerAExtension = 4;
                 int peerBExtension = 4;
@@ -239,6 +238,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 cht.ConnectNewHeaders(1, peerBBlockHeaders);
                 cht.ConnectNewHeaders(2, peerCBlockHeaders);
                 cht.ConnectNewHeaders(3, peerDBlockHeaders);
+            }
 
                 
             }
@@ -418,7 +418,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         /// <summary>
         /// Issue 4 @ Create chained header tree component #1321
-        /// Supply headers where half of them are new and half are old. 
+        /// Supply headers where half of them are new and half are old.
         /// Make sure that ChainedHeader was created for new ones.
         /// </summary>
         [Fact]
@@ -435,7 +435,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader newChainTip = testContext.ExtendAChain(chainExtensionSize, chainTip);
             List<BlockHeader> listOfOldAndNewHeaders = testContext.ChainedHeaderToList(newChainTip, initialChainSize + chainExtensionSize);
 
-            // Supply both old and new headers. 
+            // Supply both old and new headers.
             chainedHeaderTree.ConnectNewHeaders(1, listOfOldAndNewHeaders);
 
             // ChainedHeader tree entries are created for all new BlockHeaders.
@@ -521,7 +521,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         /// <summary>
         /// Issue 6 @ Create chained header tree component #1321
-        /// Make sure checkpoints are off - supply some headers and CHT should return 
+        /// Make sure checkpoints are off - supply some headers and CHT should return
         /// a ToDownload array of the same size as the amount of headers.
         /// </summary>
         [Fact]
@@ -850,7 +850,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 header.BlockValidationState.Should().Be(expectedState);
             }
 
-            // Present headers h16 -> h29 (including first checkpoint but excluding second). 
+            // Present headers h16 -> h29 (including first checkpoint but excluding second).
             List<BlockHeader> unconsumedHeaders = listOfCurrentChainHeaders.Skip(connectNewHeadersResult.Consumed.Height).ToList();
             connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, unconsumedHeaders.SkipLast(1).ToList());
 
@@ -867,7 +867,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 chainedHeader = chainedHeader.Previous;
             }
 
-            // Checking from first checkpoint to second checkpoint (h21 -> h29). 
+            // Checking from first checkpoint to second checkpoint (h21 -> h29).
             chainedHeader = chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(1);
             while (chainedHeader.Height > checkpoint1.Height)
             {
@@ -1065,7 +1065,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfNewChainHeaders = ctx.ChainedHeaderToList(extendedChainTip, extendedChainTip.Height);
 
             // First 5 blocks are presented by peer 1.
-            // DownloadTo should be set to a checkpoint 1. 
+            // DownloadTo should be set to a checkpoint 1.
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfNewChainHeaders.Take(5).ToList());
             result.DownloadTo.HashBlock.Should().Be(checkpoint1.Header.GetHash());
             Assert.True(result.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
@@ -1171,16 +1171,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listOfChainBBlockHeaders = ctx.ChainedHeaderToList(chainBTip, initialChainSize + extensionChainSize + chainBExtensionSize);
 
             // Chain A is presented by peer 1.
-            // DownloadFrom should be set to header 3. 
-            // DownloadTo should be set to header 8. 
+            // DownloadFrom should be set to header 3.
+            // DownloadTo should be set to header 8.
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, listOfChainABlockHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfChainABlockHeaders.Skip(2).First().GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfChainABlockHeaders.Last().GetHash());
             Assert.True(result.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired));
 
             // Chain B is presented by peer 2.
-            // DownloadFrom should be set to header 5. 
-            // DownloadTo should be set to header 10. 
+            // DownloadFrom should be set to header 5.
+            // DownloadTo should be set to header 10.
             result = cht.ConnectNewHeaders(2, listOfChainBBlockHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfChainBBlockHeaders[checkpointHeight].GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfChainBBlockHeaders.Last().GetHash());
@@ -1225,8 +1225,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             listOfCurrentChainHeaders = ctx.ChainedHeaderToList(newChainTip, initialChainSize + extensionChainSize + newChainExtensionSize);
 
             // Chain is presented by peer 2.
-            // DownloadFrom should be set to header 3. 
-            // DownloadTo should be set to header 10. 
+            // DownloadFrom should be set to header 3.
+            // DownloadTo should be set to header 10.
             ConnectNewHeadersResult result = cht.ConnectNewHeaders(2, listOfCurrentChainHeaders);
             result.DownloadFrom.HashBlock.Should().Be(listOfCurrentChainHeaders.Skip(2).First().GetHash());
             result.DownloadTo.HashBlock.Should().Be(listOfCurrentChainHeaders.Last().GetHash());
@@ -1236,7 +1236,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// <summary>
         /// Issue 17 @ We advanced consensus tip (CT) and there are some partially validated (PV) headers after the CT.
         /// Now we receive headers that are after the last PV header and include assume valid (AV). Make sure that those
-        /// headers that are before the AV header and after the last PV are all marked as AV. 
+        /// headers that are before the AV header and after the last PV are all marked as AV.
         /// </summary>
         [Fact]
         public void ChainHasPartiallyValidatedAfterConsensusTip_NewHeadersWithAssumeValidPresented_CorrectHeadersAreMarkedAsAssumedValid()
@@ -1455,7 +1455,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 27 @  Checkpoints are disabled. Chain tip is at header 5. Present a chain A with headers equal to max reorg of 500 blocks plus extra 50. 
+        /// Issue 27 @  Checkpoints are disabled. Chain tip is at header 5. Present a chain A with headers equal to max reorg of 500 blocks plus extra 50.
         /// Then start syncing until block 490. Peer 2 presents the alternative chain with 2 headers after fork point at header 5. We then you join the rest of
         /// 60 blocks. ConsensusTipChanged should return identifier of the second peer at block number 506.
         /// </summary>
@@ -1526,9 +1526,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 29 @ Peer presents at least two headers. Those headers will be connected to the tree. 
+        /// Issue 29 @ Peer presents at least two headers. Those headers will be connected to the tree.
         /// Then we save the first such connected block to variable X and simulate block downloaded for both blocks.
-        /// Then the peer is disconnected, which removes its chain from the tree. 
+        /// Then the peer is disconnected, which removes its chain from the tree.
         /// Partial validation succeeded is then called on X. No headers to validate should be returned and
         /// full validation required should be false.
         /// </summary>
@@ -2969,7 +2969,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// Issue 54 @ CT is at 50a.
         /// Finalized height is 40, max reorg is 10.
         /// Some headers are presented (from 20a to 60b, with fork point 40a) by peer 1.
-        /// Peer 2 presents 25a to 55c with fork point at 39a. 
+        /// Peer 2 presents 25a to 55c with fork point at 39a.
         /// Headers from peer 1 should be marked for download(41b to 60b).
         /// When peer 2 presents headers exception on ConnectNewHeaders should be thrown.
         /// </summary>

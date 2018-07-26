@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.Single(this.featureCollectionDelegates);
             Assert.Empty(this.serviceProviderDelegates);
             Assert.Single(this.serviceCollectionDelegates);
-            Assert.Equal(Network.Main, this.fullNodeBuilder.Network);
+            Assert.Equal(Networks.Main, this.fullNodeBuilder.Network);
             Assert.Equal(settings, this.fullNodeBuilder.NodeSettings);
         }
 
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         public void BuildWithInitialServicesSetupConfiguresFullNodeUsingConfiguration()
         {
             string dataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
-            var nodeSettings = new NodeSettings(Network.StratisRegTest, args: new string[] { $"-datadir={dataDir}" });
+            var nodeSettings = new NodeSettings(Networks.StratisRegTest, args: new string[] { $"-datadir={dataDir}" });
 
             this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 
@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         public void WhenNodeSettingsIsNullUseDefault()
         {
             var builder = new FullNodeBuilder(null);
-            Assert.Equal(Network.Main, builder.Network);
+            Assert.Equal(Networks.Main, builder.Network);
         }
     }
 }
