@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
-            this.AddBackToMempoolAsync(block).GetAwaiter().GetResult();
+            this.AddBackToMempoolAsync(block).ConfigureAwait(false).GetAwaiter().GetResult();
 
             this.logger.LogTrace("(-)");
         }
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             await this.mempoolLock.WriteAsync(async () =>
             {
-                this.logger.LogTrace("(-)");
+                this.logger.LogTrace("()");
 
                 foreach (Transaction transaction in block.Transactions)
                 {
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
 
                 this.logger.LogTrace("(-)");
-            });
+            }).ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
         }
