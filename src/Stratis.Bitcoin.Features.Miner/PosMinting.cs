@@ -556,6 +556,12 @@ namespace Stratis.Bitcoin.Features.Miner
 
             foreach (UnspentOutputReference outputReference in spendableTransactions)
             {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    this.logger.LogTrace("(-)[CANCELLATION]");
+                    throw new OperationCanceledException(cancellationToken);
+                }
+
                 UnspentOutputs coinSet = fetchedCoinSet.UnspentOutputs
                     .FirstOrDefault(f => f?.TransactionId == outputReference.Transaction.Id);
                 if ((coinSet == null) || (outputReference.Transaction.Index >= coinSet.Outputs.Length))
