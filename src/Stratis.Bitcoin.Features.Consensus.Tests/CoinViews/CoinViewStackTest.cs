@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -115,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             {
             }
 
-            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
+            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
@@ -144,7 +145,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             public int OutputCount { get; }
             public CoinView Inner => this.inner;
 
-            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
+            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken ct = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
@@ -173,7 +174,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             public int OutputCount { get; }
             public CoinView Inner => this.inner;
 
-            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
+            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken ct = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }

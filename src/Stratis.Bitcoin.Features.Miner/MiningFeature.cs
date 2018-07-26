@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.logger.LogInformation("Staking enabled on wallet '{0}'.", walletName);
 
-                this.posMinting.Stake(new PosMinting.WalletSecret
+                this.posMinting.Stake(new PosMinting.PosMinting.WalletSecret
                 {
                     WalletPassword = walletPassword,
                     WalletName = walletName
@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
-                        services.AddSingleton<IPosMinting, PosMinting>();
+                        services.AddSingleton<IPosMinting, PosMinting.PosMinting>();
                         services.AddSingleton<IBlockProvider, BlockProvider>();
                         services.AddSingleton<BlockDefinition, PowBlockDefinition>();
                         services.AddSingleton<BlockDefinition, PosBlockDefinition>();

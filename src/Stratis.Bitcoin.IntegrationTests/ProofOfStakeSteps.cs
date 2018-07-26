@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using static Stratis.Bitcoin.Features.Miner.PosMinting;
+using static Stratis.Bitcoin.Features.Miner.PosMinting.PosMinting;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
