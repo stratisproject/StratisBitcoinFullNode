@@ -32,8 +32,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             this.walletManager = new Mock<IWalletManager>();
             this.timeSyncBehaviorState = new Mock<ITimeSyncBehaviorState>();
 
-            this.fullNode.Setup(f => f.Network).Returns(Network.StratisMain);
-
             this.controller = new StakingController(this.fullNode.Object, this.LoggerFactory.Object, this.walletManager.Object, this.posMinting.Object);
         }
 
