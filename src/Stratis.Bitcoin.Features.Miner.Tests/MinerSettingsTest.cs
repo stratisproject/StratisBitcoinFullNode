@@ -3,7 +3,7 @@ using Stratis.Bitcoin.Tests.Common.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests
-{	
+{
     public class MinerSettingsTest : LogsTestBase	
     {	
         [Fact]	
@@ -65,6 +65,23 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             Assert.Null(minersettings.WalletName);	
             Assert.Null(minersettings.WalletPassword);	
             Assert.Equal("TFE7R2FSAgAeJxt1fgW2YVCh9Zc448f3ms", minersettings.MineAddress);
-        }	
+        }
+
+        //[Fact]
+        //public void Load_MiningEnabled_BlockSizeSet()
+        //{
+        //    var nodeSettings = new NodeSettings(args: new string[] {
+        //        "-mine=true",
+        //        "-blockmaxsize"
+        //    });
+
+        //    var minersettings = new MinerSettings(nodeSettings);
+
+        //    Assert.True(minersettings.Mine);
+        //    Assert.True(minersettings.Stake);
+        //    Assert.Equal("mytestwallet", minersettings.WalletName);
+        //    Assert.Equal("test", minersettings.WalletPassword);
+        //    Assert.Equal("TFE7R2FSAgAeJxt1fgW2YVCh9Zc448f3ms", minersettings.MineAddress);
+        //}
     }	
 } 

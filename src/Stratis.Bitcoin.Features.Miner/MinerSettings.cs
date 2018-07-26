@@ -75,16 +75,16 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.WalletPassword = config.GetOrDefault<string>("walletpassword", null); // No logging!
             }
 
-            int blockMaxSize = config.GetOrDefault<int>("blockmaxsize", 0, this.logger);
-            blockMaxSize = (blockMaxSize <= 0) 
-                ? nodeSettings.Network.Consensus.Options.MaxBlockSerializedSize 
-                : blockMaxSize;
-            int blockMaxWeight = config.GetOrDefault<int>("blockmaxweight", 0, this.logger);
-            blockMaxWeight = (blockMaxWeight <= 0)
-                ? nodeSettings.Network.Consensus.Options.MaxBlockSerializedSize
-                : blockMaxWeight;
+            uint blockMaxSize = config.GetOrDefault("blockmaxsize", nodeSettings.Network.Consensus.Options.MaxBlockSerializedSize, this.logger);
+            //blockMaxSize = (blockMaxSize <= 0) 
+            //    ? nodeSettings.Network.Consensus.Options.MaxBlockSerializedSize 
+            //    : blockMaxSize;
+            uint blockMaxWeight = config.GetOrDefault("blockmaxweight", nodeSettings.Network.Consensus.Options.MaxBlockWeight, this.logger);
+            //blockMaxWeight = (blockMaxWeight <= 0)
+            //    ? nodeSettings.Network.Consensus.Options.MaxBlockWeight
+            //    : blockMaxWeight;
 
-            this.BlockDefinitionOptions = new BlockDefinitionOptions(blockMaxWeight, blockMaxSize);
+            this.BlockDefinitionOptions = new BlockDefinitionOptions(blockMaxWeight, blockMaxSize).RestrictForNetwork(nodeSettings.Network);
 
             this.logger.LogTrace("(-)");
         }

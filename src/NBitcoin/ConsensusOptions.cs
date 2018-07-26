@@ -12,13 +12,13 @@
         public const int SerializeTransactionNoWitness = 0x40000000;
 
         /// <summary>Maximum size for a block in bytes. </summary>
-        public int MaxBlockBaseSize { get; set; }
+        public uint MaxBlockBaseSize { get; set; }
 
         /// <summary>The maximum allowed weight for a block, see BIP 141 (network rule)</summary>
-        public int MaxBlockWeight { get; set; }
+        public uint MaxBlockWeight { get; set; }
 
         /// <summary>The maximum allowed size for a serialized block, in bytes (only for buffer size limits). </summary>
-        public int MaxBlockSerializedSize { get; set; }
+        public uint MaxBlockSerializedSize { get; set; }
 
         /// <summary>Scale of witness vs other transaction data. e.g. if set to 4, then witnesses have 1/4 the weight per byte of other transaction data. </summary>
         public int WitnessScaleFactor { get; set; }
@@ -58,9 +58,9 @@
         /// Initializes all values. Used by networks that use block weight rules.
         /// </summary>
         public ConsensusOptions(
-            int maxBlockBaseSize,
-            int maxBlockWeight,
-            int maxBlockSerializedSize,
+            uint maxBlockBaseSize,
+            uint maxBlockWeight,
+            uint maxBlockSerializedSize,
             int witnessScaleFactor,
             int maxStandardVersion,
             int maxStandardTxWeight,
@@ -79,7 +79,7 @@
         /// Initializes values for networks that use block size rules.
         /// </summary>
         public ConsensusOptions(
-            int maxBlockBaseSize,
+            uint maxBlockBaseSize,
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost)
@@ -125,9 +125,9 @@
         /// Initializes all values. Used by networks that use block weight rules.
         /// </summary>
         public PosConsensusOptions(
-            int maxBlockBaseSize,
-            int maxBlockWeight,
-            int maxBlockSerializedSize,
+            uint maxBlockBaseSize,
+            uint maxBlockWeight,
+            uint maxBlockSerializedSize,
             int witnessScaleFactor,
             int maxStandardVersion,
             int maxStandardTxWeight,
@@ -139,7 +139,7 @@
         /// Initializes values for networks that use block size rules.
         /// </summary>
         public PosConsensusOptions(
-            int maxBlockBaseSize,
+            uint maxBlockBaseSize,
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)

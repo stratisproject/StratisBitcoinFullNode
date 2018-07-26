@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Miner
 {
@@ -7,38 +8,36 @@ namespace Stratis.Bitcoin.Features.Miner
     /// </summary>
     public sealed class BlockDefinitionOptions
     {
-        public long BlockMaxWeight { get; }
+        /// <summary>Minimum block size in bytes. Could be set per network in future.</summary>
+        private const uint MinBlockSize = 1000;
 
-        public long BlockMaxSize { get; }
-        
-        public FeeRate BlockMinFeeRate { get; }
+        /// <summary>Maximum block weight (in weight units) for the blocks created by miner.</summary>
+        public uint BlockMaxWeight { get; private set; }
 
-        /// <summary>
-        /// Use the defaults from a network. No user settings.
-        /// </summary>
-        public BlockDefinitionOptions(Network network)
-        {
-            this.BlockMaxWeight = network.Consensus.Options.MaxBlockWeight;
-            this.BlockMaxSize = network.Consensus.Options.MaxBlockBaseSize;
-            this.BlockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee); // TODO: Where should this be set, really? Is it per Network? For now just always use a default.
-        }
+        /// <summary>Maximum block size (in bytes) for the blocks created by miner.</summary>
+        public uint BlockMaxSize { get; private set; }
 
-        /// <summary>
-        /// Assign values explicitly.
-        /// </summary>
-        public BlockDefinitionOptions(long blockMaxWeight, long blockMaxSize)
+        /// <summary>Minimum fee rate for transactions to be included in blocks created by miner.</summary>
+        public FeeRate BlockMinFeeRate { get; private set; }
+
+        public BlockDefinitionOptions(uint blockMaxWeight, uint blockMaxSize)
         {
             this.BlockMaxWeight = blockMaxWeight;
             this.BlockMaxSize = blockMaxSize;
             this.BlockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee); // TODO: Where should this be set, really?
         }
 
-        ///// <summary>
-        ///// Get values from NodeSettings.
-        ///// </summary>
-        //public BlockDefinitionOptions()
-        //{
+        /// <summary>
+        /// Restrict the options to within those allowed by network consensus rules.
+        /// If set values are outside those allowed by consensus, set to nearest allowed value (minimum or maximum).
+        /// </summary>
+        public BlockDefinitionOptions RestrictForNetwork(Network network)
+        {
+            uint minAllowedBlockWeight = MinBlockSize * (uint) network.Consensus.Options.WitnessScaleFactor;
+            this.BlockMaxWeight = Math.Max(minAllowedBlockWeight, Math.Min(network.Consensus.Options.MaxBlockWeight, this.BlockMaxWeight));
+            this.BlockMaxSize = Math.Max(MinBlockSize, Math.Min(network.Consensus.Options.MaxBlockSerializedSize, this.BlockMaxSize));
 
-        //}
+            return this;
+        }
     }
 }

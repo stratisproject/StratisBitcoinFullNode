@@ -129,14 +129,14 @@ namespace Stratis.Bitcoin.Features.Miner
             this.MempoolLock = mempoolLock;
             this.Network = network;
 
-            this.Options = minerSettings.BlockDefinitionOptions ?? new BlockDefinitionOptions(network);
+            this.Options = minerSettings.BlockDefinitionOptions;
             this.BlockMinFeeRate = this.Options.BlockMinFeeRate;
 
             // Set BlockMaxWeight to value from BlockDefinitionOptions. If outside range of 4K - Consensus MaxBlockWeight, set to highest / lowest allowed.
-            this.BlockMaxWeight = (uint)Math.Max(4000, Math.Min(this.Network.Consensus.Options.MaxBlockWeight, this.Options.BlockMaxWeight));
+            this.BlockMaxWeight = this.Options.BlockMaxWeight; //(uint)Math.Max(4000, Math.Min(this.Network.Consensus.Options.MaxBlockWeight, this.Options.BlockMaxWeight));
 
             // Set BlockMaxSize to value from BlockDefinitionOptions. If outside range of 1K - Consensus MaxBlockSize, set to highest / lowest allowed.
-            this.BlockMaxSize = (uint)Math.Max(1000, Math.Min(network.Consensus.Options.MaxBlockSerializedSize, this.Options.BlockMaxSize));
+            this.BlockMaxSize = this.Options.BlockMaxSize; //(uint)Math.Max(1000, Math.Min(network.Consensus.Options.MaxBlockSerializedSize, this.Options.BlockMaxSize));
 
             // Whether we need to account for byte usage (in addition to weight usage).
             this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Options.MaxBlockSerializedSize);
