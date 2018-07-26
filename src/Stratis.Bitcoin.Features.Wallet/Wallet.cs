@@ -728,7 +728,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     if (confirmationCount >= confirmations)
                     {
-                        if (includeImmature || (!(transactionData.IsCoinStake ?? false)))
+                        if (includeImmature || (!(transactionData.IsCoinBase ?? false) && !(transactionData.IsCoinStake ?? false)))
                         {
                             // This output can unconditionally be included in the results.
 
@@ -740,9 +740,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                             };
                         }
 
-                        if (!includeImmature && (transactionData.IsCoinStake ?? false) && (confirmationCount >= consensus.CoinbaseMaturity))
+                        if (!includeImmature && ((transactionData.IsCoinBase ?? false) || (transactionData.IsCoinStake ?? false)) && (confirmationCount >= consensus.CoinbaseMaturity))
                         {
-                            // This output is a CoinStake and has reached maturity.
+                            // This output is a CoinBase or CoinStake and has reached maturity.
 
                             yield return new UnspentOutputReference
                             {
