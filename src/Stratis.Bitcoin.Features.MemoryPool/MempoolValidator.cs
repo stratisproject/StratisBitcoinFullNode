@@ -389,7 +389,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             return tx.GetSerializedSize(
                        (ProtocolVersion)
                        ((uint)ProtocolVersion.PROTOCOL_VERSION | ConsensusOptions.SerializeTransactionNoWitness),
-                       SerializationType.Network) * ( (int) consensusOptions.WitnessScaleFactor - 1) +
+                       SerializationType.Network) * (consensusOptions.WitnessScaleFactor - 1) +
                    tx.GetSerializedSize(ProtocolVersion.PROTOCOL_VERSION, SerializationType.Network);
         }
 
