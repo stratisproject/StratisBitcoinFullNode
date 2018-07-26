@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Networks
 
             this.Genesis = genesisBlock;
 
-            var consensus = new Consensus();
+            var consensus = new MutableConsensus();
             consensus.ConsensusFactory = consensusFactory;
             consensus.HashGenesisBlock = genesisBlock.GetHash();
             consensus.SubsidyHalvingInterval = 210000;
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Networks
                 maxBlockSigopsCost: 20_000
                 );
 
-            this.Consensus = consensus;
+            this.Consensus = new Consensus(consensus);
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };

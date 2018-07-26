@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             this.Genesis = genesisBlock;
 
-            var consensus = new NBitcoin.Consensus();
+            var consensus = new MutableConsensus();
             consensus.ConsensusFactory = consensusFactory;
             consensus.HashGenesisBlock = genesisBlock.Header.GetHash();
             consensus.SubsidyHalvingInterval = 150;
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 maxBlockSigopsCost: 20_000
                 );
 
-            this.Consensus = consensus;
+            this.Consensus = new NBitcoin.Consensus(consensus);
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("93867319cf92c86f957a9652c1fbe7cc8cbe70c53a915ac96ee7c59cb80f94b4"));
 

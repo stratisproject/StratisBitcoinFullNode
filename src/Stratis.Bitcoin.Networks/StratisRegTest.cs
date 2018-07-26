@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Networks
             this.Genesis = genesisBlock;
 
             // Taken from StratisMain Consensus options
-            var consensus = new Consensus();
+            var consensus = new MutableConsensus();
             consensus.ConsensusFactory = consensusFactory;
             consensus.HashGenesisBlock = genesisBlock.GetHash();
             consensus.SubsidyHalvingInterval = 210000;
@@ -79,7 +79,6 @@ namespace Stratis.Bitcoin.Networks
             consensus.PowLimit = powLimit;
             consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
             consensus.CoinbaseMaturity = 10;
-            this.Consensus = consensus;
 
             // Taken from StratisX.
             consensus.Options = new PosConsensusOptions(
@@ -88,6 +87,8 @@ namespace Stratis.Bitcoin.Networks
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000
                 );
+
+            this.Consensus = new Consensus(consensus);
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };

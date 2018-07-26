@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             this.Genesis = genesisBlock;
 
-            var consensus = new NBitcoin.Consensus();
+            var consensus = new MutableConsensus();
             consensus.ConsensusFactory = consensusFactory;
             consensus.HashGenesisBlock = genesisBlock.Header.GetHash();
             consensus.SubsidyHalvingInterval = 210000;
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.Genesis.Header.Nonce = 3; // Incremented 19/06
             consensus.HashGenesisBlock = this.Genesis.Header.GetHash();
 
-            this.Consensus = consensus;
+            this.Consensus = new NBitcoin.Consensus(consensus);
 
             this.Base58Prefixes = new byte[12][];
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };

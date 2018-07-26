@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Networks
 
             this.Genesis = genesisBlock;
 
-            var consensus = new Consensus();
+            var consensus = new MutableConsensus();
             consensus.ConsensusFactory = consensusFactory;
             consensus.HashGenesisBlock = genesisBlock.GetHash();
             consensus.SubsidyHalvingInterval = 210000;
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Networks
             consensus.MaxMoney = 21000000 * Money.COIN;
             consensus.Options = new ConsensusOptions(); // Default - set to Bitcoin parameters.
 
-            this.Consensus = consensus;
+            this.Consensus = new Consensus(consensus);
 
             this.Base58Prefixes = new byte[12][];
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (0) };
