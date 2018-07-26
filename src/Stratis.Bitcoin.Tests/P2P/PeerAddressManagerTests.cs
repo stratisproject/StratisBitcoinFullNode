@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
+using FluentAssertions;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Tests.Common.Logging;
@@ -167,6 +169,48 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.Null(savedPeer.LastConnectionHandshake);
             Assert.Null(savedPeer.LastSeen);
             Assert.Equal("127.0.0.1", savedPeer.Loopback.ToString());
+        }
+
+        [Fact]
+        public void PeerAddressManager_AddPeer_then_RemovePeer_works_with_IPV4_and_IPV6()
+        {
+            DataFolder peerFolder = CreateDataFolder(this);
+
+            var source = new IPEndPoint(IPAddress.Parse("124.54.54.2"), 22);
+
+            var ipV4Addresses = new []
+            {
+                IPAddress.Parse("21.23.0.1"),
+                IPAddress.Parse("143.12.0.1"),
+                IPAddress.Parse("99.87.44.1"),
+                IPAddress.Parse("192.168.0.1"),
+            };
+            var ipV4Endpoints = ipV4Addresses.Select((a,i) => new IPEndPoint(a, i)).ToArray();
+
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker());
+            addressManager.AddPeers(ipV4Endpoints, source.Address);
+            addressManager.Peers.Select(a => a.Endpoint.Address.MapToIPv6())
+                .Distinct().Count().Should().Be(4);
+
+            var ipV6Addresses = new[]
+            {
+                IPAddress.Parse("1050:1:0:0:5:600:300c:326b"),
+                IPAddress.Parse("23d1:1:34b5:0:5:600:300c:326b"),
+                ipV4Addresses[3].MapToIPv6(),
+            };
+            var ipV6Endpoints = ipV6Addresses.Select((a, i) => new IPEndPoint(a, i)).ToArray();
+            addressManager.AddPeers(ipV6Endpoints, source.Address);
+
+            addressManager.Peers.Select(a => a.Endpoint.Address.MapToIPv6())
+                .Distinct().Count().Should().Be(6);
+
+            addressManager.RemovePeer(ipV4Endpoints[0]);
+            addressManager.Peers.Select(a => a.Endpoint.Address.MapToIPv6())
+                .Distinct().Count().Should().Be(5);
+
+            addressManager.RemovePeer(ipV6Endpoints[1]);
+            addressManager.Peers.Select(a => a.Endpoint.Address.MapToIPv6())
+                .Distinct().Count().Should().Be(4);
         }
     }
 }
