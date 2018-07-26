@@ -175,6 +175,17 @@ namespace Stratis.Bitcoin.Features.Miner
             public Key Key { get; set; }
         }
 
+        /// <summary>
+        /// Indicates the current state: idle, staking requested, staking in progress and stop staking requested.
+        /// </summary>
+        public enum CurrentState
+        {
+            Idle = 0,
+            StakingRequested = 1,
+            StakingInProgress = 2,
+            StopStakingRequested = 3
+        }
+
         /// <summary>The maximum allowed size for a serialized block, in bytes (network rule).</summary>
         public const int MaxBlockSize = 1000000;
 
@@ -238,11 +249,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Loop in which the node attempts to generate new POS blocks by staking coins from its wallet.</summary>
         private IAsyncLoop stakingLoop;
 
-        /// <summary>Indicates that the stake flag is not in progress.</summary>
-        public const int StakeNotInProgress = -1;
-
-        /// <summary>Indicates that the stake flag is in progress.</summary>
-        public const int StakeInProgress = 1;
+        /// <summary>A flag that indicates the current state based on the <see cref="CurrentState"/> enum.</summary>
+        private int currentState;
 
         /// <summary>
         /// We don't stake coins that are smaller than 0.1 in order to save on CPU as these have a very small chance to be used
@@ -250,9 +258,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/1180"/>
         /// </summary>
         public const long MinimumStakingCoinValue = 10 * Money.CENT;
-
-        /// <summary>a flag that indicates if stake is on/off based on the <see cref="StakeInProgress"/> and <see cref="StakeNotInProgress"/> constants.</summary>
-        private int stakeProgressFlag;
 
         /// <summary>
         /// Target reserved balance that will not participate in staking.
@@ -371,7 +376,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
             this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
-            this.stakeProgressFlag = StakeNotInProgress;
+            this.currentState = (int)CurrentState.Idle;
 
             this.rpcGetStakingInfoModel = new Models.GetStakingInfoModel();
         }
@@ -381,9 +386,9 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeInProgress, StakeNotInProgress) == StakeInProgress)
+            if (Interlocked.CompareExchange(ref this.currentState, (int)CurrentState.StakingRequested, (int)CurrentState.Idle) != (int)CurrentState.Idle)
             {
-                this.logger.LogTrace("(-)[ALREADY_MINING]");
+                this.logger.LogTrace("(-)[NOT_IDLE]");
                 return;
             }
 
@@ -431,6 +436,8 @@ namespace Stratis.Bitcoin.Features.Miner
             repeatEvery: TimeSpan.FromMilliseconds(this.minerSleep),
             startAfter: TimeSpans.Second);
 
+            Interlocked.CompareExchange(ref this.currentState, (int)CurrentState.StakingInProgress, (int)CurrentState.StakingRequested);
+
             this.logger.LogTrace("(-)");
         }
 
@@ -439,9 +446,9 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            if (Interlocked.CompareExchange(ref this.stakeProgressFlag, StakeNotInProgress, StakeInProgress) == StakeNotInProgress)
+            if (Interlocked.CompareExchange(ref this.currentState, (int)CurrentState.StopStakingRequested, (int)CurrentState.StakingInProgress) != (int)CurrentState.StakingInProgress)
             {
-                this.logger.LogTrace("(-)[NOT_MINING]");
+                this.logger.LogTrace("(-)[STAKING_NOT_IN_PROGRESS]");
                 return;
             }
 
@@ -453,6 +460,8 @@ namespace Stratis.Bitcoin.Features.Miner
             this.stakeCancellationTokenSource = null;
             this.rpcGetStakingInfoModel = new Models.GetStakingInfoModel();
             this.rpcGetStakingInfoModel.Enabled = false;
+
+            Interlocked.CompareExchange(ref this.currentState, (int)CurrentState.Idle, (int)CurrentState.StopStakingRequested);
 
             this.logger.LogTrace("(-)");
         }
