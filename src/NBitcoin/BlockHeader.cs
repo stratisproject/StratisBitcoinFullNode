@@ -28,8 +28,7 @@ namespace NBitcoin
         public uint Time { get { return this.time; } set { this.time = value; } }
 
         private uint bits;
-        public Target Bits { get { return this.bits; } set {
-                this.bits = value; } }
+        public Target Bits { get { return this.bits; } set { this.bits = value; } }
 
         protected int version;
 
