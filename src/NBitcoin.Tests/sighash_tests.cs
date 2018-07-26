@@ -74,12 +74,12 @@ namespace NBitcoin.Tests
                 sigHashHex = (string)test[4];
 
 
-                tx.ReadWrite(ParseHex(raw_tx), Network.Main.Consensus.ConsensusFactory);
+                tx.ReadWrite(ParseHex(raw_tx), Networks.Main.Consensus.ConsensusFactory);
 
                 byte[] raw = ParseHex(raw_script);
                 scriptCode = new Script(raw);
 
-                uint256 sh = Script.SignatureHash(Network.Main, scriptCode, tx, nIn, (SigHash)nHashType);
+                uint256 sh = Script.SignatureHash(Networks.Main, scriptCode, tx, nIn, (SigHash)nHashType);
                 Assert.True(sh.ToString() == sigHashHex, strTest);
             }
         }

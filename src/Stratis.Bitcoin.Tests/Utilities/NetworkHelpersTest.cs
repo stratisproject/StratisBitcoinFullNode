@@ -10,46 +10,46 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void GetMainNetworkReturnsNetworkMain()
         {
-            Network main = Network.Main;
+            Network main = Networks.Main;
             Network network = NetworkHelpers.GetNetwork("main");
-            Assert.Equal(Network.Main, network);
+            Assert.Equal(Networks.Main, network);
         }
 
         [Fact]
         public void GetMainNetNetworkReturnsNetworkMain()
         {
-            Network main = Network.Main;
+            Network main = Networks.Main;
             Network network = NetworkHelpers.GetNetwork("mainnet");
-            Assert.Equal(Network.Main, network);
+            Assert.Equal(Networks.Main, network);
         }
 
         [Fact]
         public void GetTestNetworkReturnsNetworkTest()
         {
-            Network test = Network.TestNet;
+            Network test = Networks.TestNet;
             Network network = NetworkHelpers.GetNetwork("test");
-            Assert.Equal(Network.TestNet, network);
+            Assert.Equal(Networks.TestNet, network);
         }
 
         [Fact]
         public void GetTestNetNetworkReturnsNetworkTest()
         {
-            Network test = Network.TestNet;
+            Network test = Networks.TestNet;
             Network network = NetworkHelpers.GetNetwork("testnet");
-            Assert.Equal(Network.TestNet, network);
+            Assert.Equal(Networks.TestNet, network);
         }
 
         [Fact]
         public void GetNetworkIsCaseInsensitive()
         {
-            Network test = Network.TestNet;
-            Network main = Network.Main;
+            Network test = Networks.TestNet;
+            Network main = Networks.Main;
 
             Network testNetwork = NetworkHelpers.GetNetwork("Test");
-            Assert.Equal(Network.TestNet, testNetwork);
+            Assert.Equal(Networks.TestNet, testNetwork);
 
             Network mainNetwork = NetworkHelpers.GetNetwork("MainNet");
-            Assert.Equal(Network.Main, mainNetwork);
+            Assert.Equal(Networks.Main, mainNetwork);
         }
 
         [Fact]

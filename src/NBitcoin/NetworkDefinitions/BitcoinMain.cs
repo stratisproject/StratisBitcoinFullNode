@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin.DataEncoders;
 
-namespace NBitcoin.Networks
+namespace NBitcoin.NetworkDefinitions
 {
     public class BitcoinMain : Network
     {

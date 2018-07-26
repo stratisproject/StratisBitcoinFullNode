@@ -14,8 +14,8 @@ namespace NBitcoin.Tests
 
         public ChainTests()
         {
-            this.network = Network.Main;
-            this.testNetwork = Network.TestNet;
+            this.network = Networks.Main;
+            this.testNetwork = Networks.TestNet;
         }
 
         [Fact]

@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
                 .Returns(this.walletManager.Object);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(Network.Main, new MinerSettings(Configuration.NodeSettings.Default()), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
+                .Returns(new MiningFeature(Networks.Main, new MinerSettings(Configuration.NodeSettings.Default()), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
 
             IActionResult result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
 
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             this.timeSyncBehaviorState.Setup(ts => ts.IsSystemTimeOutOfSync).Returns(true);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(Network.Main, new MinerSettings(Configuration.NodeSettings.Default()), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
+                .Returns(new MiningFeature(Networks.Main, new MinerSettings(Configuration.NodeSettings.Default()), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
 
             IActionResult result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
 

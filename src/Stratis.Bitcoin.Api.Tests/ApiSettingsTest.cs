@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Api.Tests
     /// </summary>
     public class ApiSettingsTest : TestBase
     {
-        public ApiSettingsTest() : base(Network.Main)
+        public ApiSettingsTest() : base(Networks.Main)
         {
         }
 
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenNoApiSettingsAreProvided_AndOnBitcoinNetwork_ThenDefaultSettingAreUsed()
         {
             // Arrange.
-            Network network = Network.Main;
+            Network network = Networks.Main;
             var nodeSettings = new NodeSettings(network);
 
             // Act.
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenNoApiSettingsAreProvided_AndOnStratisNetwork_ThenDefaultSettingAreUsed()
         {
             // Arrange.
-            Network network = Network.StratisMain;
+            Network network = Networks.StratisMain;
             var nodeSettings = new NodeSettings(network);
 
             // Act.
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             // Arrange.
             string customApiUri = "http://0.0.0.0";
-            Network network = Network.Main;
+            Network network = Networks.Main;
             var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
 
             // Act.
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             // Arrange.
             string customApiUri = "http://0.0.0.0";
-            Network network = Network.StratisMain;
+            Network network = Networks.StratisMain;
             var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
 
             // Act.
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Api.Tests
             // Arrange.
             string customApiUri = "http://0.0.0.0";
             int customPort = 55555;
-            Network network = Network.Main;
+            Network network = Networks.Main;
             var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-apiport={customPort}" });
 
             // Act.
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Api.Tests
             // Arrange.
             int customPort = 5522;
             string customApiUri = $"http://0.0.0.0:{customPort}";
-            Network network = Network.Main;
+            Network network = Networks.Main;
             var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
 
             // Act.
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenBitcoinMain_ThenUseTheCorrectPort()
         {
             // Arrange.
-            NodeSettings nodeSettings = NodeSettings.Default(Network.Main);
+            NodeSettings nodeSettings = NodeSettings.Default(Networks.Main);
 
             // Act.
             var settings = new FullNodeBuilder()
@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenBitcoinTestnet_ThenUseTheCorrectPort()
         {
             // Arrange.
-            NodeSettings nodeSettings = NodeSettings.Default(Network.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(Networks.TestNet);
 
             // Act.
             var settings = new FullNodeBuilder()
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenStratisMainnet_ThenUseTheCorrectPort()
         {
             // Arrange.
-            NodeSettings nodeSettings = NodeSettings.Default(Network.StratisMain);
+            NodeSettings nodeSettings = NodeSettings.Default(Networks.StratisMain);
 
             // Act.
             var settings = new FullNodeBuilder()
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenStratisTestnet_ThenUseTheCorrectPort()
         {
             // Arrange.
-            NodeSettings nodeSettings = NodeSettings.Default(Network.StratisTest);
+            NodeSettings nodeSettings = NodeSettings.Default(Networks.StratisTest);
 
             // Act.
             var settings = new FullNodeBuilder()
