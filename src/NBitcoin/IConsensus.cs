@@ -74,6 +74,7 @@ namespace NBitcoin
         uint256 MinimumChainWork { get; }
 
         int MinerConfirmationWindow { get; set; }
+
         int RuleChangeActivationThreshold { get; set; }
 
         /// <summary>
