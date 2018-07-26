@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Cli
                 else
                 {
                     defaultRestApiPort = 37220;
-                    network = Networks.Main;
+                    network = NBitcoin.Networks.Main;
                 }
 
                 // API calls require both the contoller name and the method name separated by "/".
