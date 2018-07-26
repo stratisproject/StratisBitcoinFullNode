@@ -240,9 +240,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 cht.ConnectNewHeaders(3, peerDBlockHeaders);
             }
 
-                
-            }
-
             internal void SwitchToChain(ChainedHeaderTree cht, ChainedHeader chainTip, ChainedHeader consumedHeader, int extensionSize)
             {
                 ChainedHeader[] consumedHeaders = consumedHeader.ToArray(extensionSize);
@@ -2093,7 +2090,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader initialChainTip = ctx.InitialChainTip;
             ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
 
-            ctx.SetupPeersForTest(initialChainSize, cht, initialChainTip);
+            ctx.SetupPeersForTest(cht, initialChainTip);
 
             // Additional SetUp for current test.
             ChainedHeader chainDTip = cht.GetPeerTipChainedHeaderByPeerId(3);
@@ -2125,7 +2122,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader initialChainTip = ctx.InitialChainTip;
             ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
 
-            ctx.SetupPeersForTest(initialChainSize, cht, initialChainTip);
+            ctx.SetupPeersForTest(cht, initialChainTip);
 
             // Additional SetUp for current test.
             int peerKExtension = 2;
