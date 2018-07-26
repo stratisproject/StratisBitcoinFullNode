@@ -10,46 +10,46 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void GetMainNetworkReturnsNetworkMain()
         {
-            Network main = Networks.Main;
+            Network main = NBitcoin.Networks.Main;
             Network network = NetworkHelpers.GetNetwork("main");
-            Assert.Equal(Networks.Main, network);
+            Assert.Equal(NBitcoin.Networks.Main, network);
         }
 
         [Fact]
         public void GetMainNetNetworkReturnsNetworkMain()
         {
-            Network main = Networks.Main;
+            Network main = NBitcoin.Networks.Main;
             Network network = NetworkHelpers.GetNetwork("mainnet");
-            Assert.Equal(Networks.Main, network);
+            Assert.Equal(NBitcoin.Networks.Main, network);
         }
 
         [Fact]
         public void GetTestNetworkReturnsNetworkTest()
         {
-            Network test = Networks.TestNet;
+            Network test = NBitcoin.Networks.TestNet;
             Network network = NetworkHelpers.GetNetwork("test");
-            Assert.Equal(Networks.TestNet, network);
+            Assert.Equal(NBitcoin.Networks.TestNet, network);
         }
 
         [Fact]
         public void GetTestNetNetworkReturnsNetworkTest()
         {
-            Network test = Networks.TestNet;
+            Network test = NBitcoin.Networks.TestNet;
             Network network = NetworkHelpers.GetNetwork("testnet");
-            Assert.Equal(Networks.TestNet, network);
+            Assert.Equal(NBitcoin.Networks.TestNet, network);
         }
 
         [Fact]
         public void GetNetworkIsCaseInsensitive()
         {
-            Network test = Networks.TestNet;
-            Network main = Networks.Main;
+            Network test = NBitcoin.Networks.TestNet;
+            Network main = NBitcoin.Networks.Main;
 
             Network testNetwork = NetworkHelpers.GetNetwork("Test");
-            Assert.Equal(Networks.TestNet, testNetwork);
+            Assert.Equal(NBitcoin.Networks.TestNet, testNetwork);
 
             Network mainNetwork = NetworkHelpers.GetNetwork("MainNet");
-            Assert.Equal(Networks.Main, mainNetwork);
+            Assert.Equal(NBitcoin.Networks.Main, mainNetwork);
         }
 
         [Fact]

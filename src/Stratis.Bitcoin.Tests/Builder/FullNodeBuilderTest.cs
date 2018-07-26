@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.Single(this.featureCollectionDelegates);
             Assert.Empty(this.serviceProviderDelegates);
             Assert.Single(this.serviceCollectionDelegates);
-            Assert.Equal(Networks.Main, this.fullNodeBuilder.Network);
+            Assert.Equal(NBitcoin.Networks.Main, this.fullNodeBuilder.Network);
             Assert.Equal(settings, this.fullNodeBuilder.NodeSettings);
         }
 
@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         public void WhenNodeSettingsIsNullUseDefault()
         {
             var builder = new FullNodeBuilder(null);
-            Assert.Equal(Networks.Main, builder.Network);
+            Assert.Equal(NBitcoin.Networks.Main, builder.Network);
         }
     }
 }

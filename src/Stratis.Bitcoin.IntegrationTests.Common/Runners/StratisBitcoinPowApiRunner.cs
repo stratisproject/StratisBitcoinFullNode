@@ -1,6 +1,4 @@
-﻿using NBitcoin;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin.Builder;
+﻿using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -17,7 +15,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public StratisBitcoinPowApiRunner(string dataDir)
             : base(dataDir)
         {
-            this.Network = Networks.RegTest;
+            this.Network = NBitcoin.Networks.RegTest;
         }
 
         public override void BuildNode()

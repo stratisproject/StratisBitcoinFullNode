@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.IO;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
@@ -13,7 +12,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             : base(dataDir)
         {
             this.bitcoinDPath = bitcoinDPath;
-            this.Network = Networks.RegTest;
+            this.Network = NBitcoin.Networks.RegTest;
         }
 
         public new bool IsDisposed
