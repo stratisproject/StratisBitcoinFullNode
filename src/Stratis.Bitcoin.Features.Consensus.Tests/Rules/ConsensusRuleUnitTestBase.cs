@@ -88,14 +88,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IStakeChain> stakeChain;
         protected Mock<IStakeValidator> stakeValidator;
         protected Mock<ILookaheadBlockPuller> lookaheadBlockPuller;
-        protected Mock<CoinView> coinView;
+        protected Mock<ICoinView> coinView;
 
         public PosConsensusRuleUnitTestBase() : base(Networks.StratisTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.lookaheadBlockPuller = new Mock<ILookaheadBlockPuller>();
-            this.coinView = new Mock<CoinView>();
+            this.coinView = new Mock<ICoinView>();
         }
 
         protected T CreateRule<T>() where T : ConsensusRule, new()
@@ -210,14 +210,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IStakeChain> stakeChain;
         protected Mock<IStakeValidator> stakeValidator;
         protected Mock<ILookaheadBlockPuller> lookaheadBlockPuller;
-        protected Mock<CoinView> coinView;
+        protected Mock<ICoinView> coinView;
 
         public TestPosConsensusRulesUnitTestBase() : base(Networks.StratisTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.lookaheadBlockPuller = new Mock<ILookaheadBlockPuller>();
-            this.coinView = new Mock<CoinView>();
+            this.coinView = new Mock<ICoinView>();
             this.consensusRules = InitializeConsensusRules();
         }
 
