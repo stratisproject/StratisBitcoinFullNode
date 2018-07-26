@@ -5,24 +5,6 @@ using NBitcoin.Rules;
 
 namespace NBitcoin
 {
-    public enum BuriedDeployments
-    {
-        /// <summary>
-        /// Height in coinbase.
-        /// </summary>
-        BIP34,
-
-        /// <summary>
-        /// Height in OP_CLTV.
-        /// </summary>
-        BIP65,
-
-        /// <summary>
-        /// Strict DER signature.
-        /// </summary>
-        BIP66
-    }
-
     public class Consensus : IConsensus
     {
         /// <inheritdoc />
@@ -47,38 +29,6 @@ namespace NBitcoin
         public long MaxMoney { get; }
 
         public ConsensusOptions Options { get; set; }
-
-        public class BuriedDeploymentsArray
-        {
-            private readonly int[] heights;
-
-            public BuriedDeploymentsArray()
-            {
-                this.heights = new int[Enum.GetValues(typeof(BuriedDeployments)).Length];
-            }
-
-            public int this[BuriedDeployments index]
-            {
-                get => this.heights[(int)index];
-                set => this.heights[(int)index] = value;
-            }
-        }
-
-        public class BIP9DeploymentsArray
-        {
-            private readonly BIP9DeploymentsParameters[] parameters;
-
-            public BIP9DeploymentsArray()
-            {
-                this.parameters = new BIP9DeploymentsParameters[Enum.GetValues(typeof(BIP9Deployments)).Length];
-            }
-
-            public BIP9DeploymentsParameters this[BIP9Deployments index]
-            {
-                get => this.parameters[(int)index];
-                set => this.parameters[(int)index] = value;
-            }
-        }
 
         public Consensus(IConsensus consensus)
         {

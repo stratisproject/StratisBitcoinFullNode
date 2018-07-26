@@ -10,8 +10,8 @@ namespace NBitcoin
     {
         public MutableConsensus()
         {
-            this.BuriedDeployments = new Consensus.BuriedDeploymentsArray();
-            this.BIP9Deployments = new Consensus.BIP9DeploymentsArray();
+            this.BuriedDeployments = new BuriedDeploymentsArray();
+            this.BIP9Deployments = new BIP9DeploymentsArray();
         }
 
         public long CoinbaseMaturity { get; set; }
@@ -22,8 +22,8 @@ namespace NBitcoin
         public uint MaxReorgLength { get; set; }
         public long MaxMoney { get; set; }
         public ConsensusOptions Options { get; set; }
-        public Consensus.BuriedDeploymentsArray BuriedDeployments { get; set; }
-        public Consensus.BIP9DeploymentsArray BIP9Deployments { get; set; }
+        public BuriedDeploymentsArray BuriedDeployments { get; set; }
+        public BIP9DeploymentsArray BIP9Deployments { get; set; }
         public int SubsidyHalvingInterval { get; set; }
         public int MajorityEnforceBlockUpgrade { get; set; }
         public int MajorityRejectBlockOutdated { get; set; }

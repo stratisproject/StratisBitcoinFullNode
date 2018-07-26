@@ -44,9 +44,9 @@ namespace NBitcoin
 
         ConsensusOptions Options { get; set; }
 
-        Consensus.BuriedDeploymentsArray BuriedDeployments { get; }
+        BuriedDeploymentsArray BuriedDeployments { get; }
 
-        Consensus.BIP9DeploymentsArray BIP9Deployments { get; }
+        BIP9DeploymentsArray BIP9Deployments { get; }
 
         int SubsidyHalvingInterval { get; }
 
