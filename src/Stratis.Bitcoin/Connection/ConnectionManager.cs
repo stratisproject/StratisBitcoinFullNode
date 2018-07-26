@@ -370,7 +370,8 @@ namespace Stratis.Bitcoin.Connection
 
             this.peerAddressManager.RemovePeer(ipEndpoint);
             IEnumerable<IPEndPoint> matchingAddNodes = this.ConnectionSettings.AddNode.Where(p => p.Match(ipEndpoint));
-            foreach (IPEndPoint m in matchingAddNodes) this.ConnectionSettings.AddNode.Remove(m);
+            foreach (IPEndPoint m in matchingAddNodes)
+                this.ConnectionSettings.AddNode.Remove(m);
 
             this.logger.LogTrace("(-)");
         }
