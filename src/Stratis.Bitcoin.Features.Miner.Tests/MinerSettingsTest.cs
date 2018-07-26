@@ -117,7 +117,5 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             Assert.Equal(nodeSettings.Network.Consensus.Options.MaxBlockSerializedSize, minersettings.BlockDefinitionOptions.BlockMaxSize);
             Assert.Equal(nodeSettings.Network.Consensus.Options.MaxBlockWeight, minersettings.BlockDefinitionOptions.BlockMaxWeight);
         }
-
-
     }	
 } 
