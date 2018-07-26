@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
     /// </summary>
     public abstract class BaseRPCControllerTest : TestBase
     {
-        protected BaseRPCControllerTest() : base(NetworkContainer.Main)
+        protected BaseRPCControllerTest() : base(KnownNetworks.Main)
         {
         }
 

@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
     public class RPCSettingsTest : TestBase	
     {	
-        public RPCSettingsTest() : base(NetworkContainer.Main)
+        public RPCSettingsTest() : base(KnownNetworks.Main)
         {	
         }	
 	

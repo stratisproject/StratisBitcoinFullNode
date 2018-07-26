@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Networks;
 using NBitcoin.Protocol;
 using NLog.Extensions.Logging;
 using Stratis.Bitcoin.Builder.Feature;
@@ -149,9 +150,9 @@ namespace Stratis.Bitcoin.Configuration
                     throw new ConfigurationException("Invalid combination of regtest and testnet.");
 
                 if (protocolVersion == ProtocolVersion.ALT_PROTOCOL_VERSION)
-                    this.Network = testNet ? NetworkContainer.StratisTest : regTest ? NetworkContainer.StratisRegTest : NetworkContainer.StratisMain;
+                    this.Network = testNet ? NetworkRegistration.Register(new StratisTest()) : regTest ? NetworkRegistration.Register(new StratisRegTest()) : NetworkRegistration.Register(new StratisMain());
                 else
-                    this.Network = testNet ? NetworkContainer.TestNet : regTest ? NetworkContainer.RegTest : NetworkContainer.Main;
+                    this.Network = testNet ? NetworkRegistration.Register(new BitcoinTest()) : regTest ? NetworkRegistration.Register(new BitcoinRegTest()) : NetworkRegistration.Register(new BitcoinMain());
 
                 this.Logger.LogDebug("Network set to '{0}'.", this.Network.Name);
             }

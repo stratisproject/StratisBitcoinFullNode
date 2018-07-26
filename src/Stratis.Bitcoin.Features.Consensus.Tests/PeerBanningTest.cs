@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
     {
         private static readonly Script MinerScriptPubKey;
 
-        public PeerBanningTest() : base(NetworkContainer.RegTest)
+        public PeerBanningTest() : base(KnownNetworks.RegTest)
         {
         }
 
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            TestChainContext context = await TestChainFactory.CreateAsync(NetworkContainer.RegTest, dataDir);
+            TestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, dataDir);
             var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
             context.PeerAddressManager.AddPeer(peerEndPoint, peerEndPoint.Address.MapToIPv6());
 
@@ -221,7 +221,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             // Arrange
             string dataDir = GetTestDirectoryPath(this);
 
-            TestChainContext context = await TestChainFactory.CreateAsync(NetworkContainer.RegTest, dataDir);
+            TestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, dataDir);
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
             context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             // Arrange
             string dataDir = GetTestDirectoryPath(this);
 
-            TestChainContext context = await TestChainFactory.CreateAsync(NetworkContainer.RegTest, dataDir);
+            TestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, dataDir);
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
             context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
@@ -266,7 +266,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             // Arrange
             string dataDir = GetTestDirectoryPath(this);
 
-            TestChainContext context = await TestChainFactory.CreateAsync(NetworkContainer.RegTest, dataDir);
+            TestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, dataDir);
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
             context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());

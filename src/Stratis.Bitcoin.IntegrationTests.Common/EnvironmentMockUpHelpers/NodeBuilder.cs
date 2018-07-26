@@ -16,7 +16,6 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
@@ -92,16 +91,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public CoreNode CreateStratisCustomPowNode(NodeConfigParameters configParameters, bool start = false)
         {
-            var callback = new Action<IFullNodeBuilder>( builder => builder
-                .UseBlockStore()
-                .UsePowConsensus()
-                .UseMempool()
-                .AddMining()
-                .UseWallet()
-                .AddRPC()
-                .MockIBD());
+            var callback = new Action<IFullNodeBuilder>(builder => builder
+               .UseBlockStore()
+               .UsePowConsensus()
+               .UseMempool()
+               .AddMining()
+               .UseWallet()
+               .AddRPC()
+               .MockIBD());
 
-            return CreateCustomNode(start, callback, NetworkContainer.RegTest, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
+            return CreateCustomNode(start, callback, KnownNetworks.RegTest, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
         }
 
         public CoreNode CreateStratisPowApiNode(bool start = false)

@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Tests.Base
             Func<List<BlockHeader>, bool, ConnectNewHeadersResult> connectNewHeadersMethod = null)
         {
             // Chain
-            var chain = new ConcurrentChain(NetworkContainer.StratisMain);
+            var chain = new ConcurrentChain(KnownNetworks.StratisMain);
             chain.SetTip(consensusTip);
 
             // Ibd
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Tests.Base
             this.testPeerBanning = new TestPeerBanning();
 
             var connectionManagerMock = new Mock<IConnectionManager>();
-            connectionManagerMock.SetupGet(x => x.ConnectionSettings).Returns(new ConnectionManagerSettings(new NodeSettings(NetworkContainer.StratisMain)));
+            connectionManagerMock.SetupGet(x => x.ConnectionSettings).Returns(new ConnectionManagerSettings(new NodeSettings(KnownNetworks.StratisMain)));
 
             var cmBehavior = new ConsensusManagerBehavior(chain, ibdState.Object, cmMock.Object, this.testPeerBanning,
                 connectionManagerMock.Object, this.loggerFactory);
@@ -139,13 +139,13 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             var peer = new Mock<INetworkPeer>();
 
-            var connection = new NetworkPeerConnection(NetworkContainer.StratisMain, peer.Object, new TcpClient(), 0, (message, token) => Task.CompletedTask,
+            var connection = new NetworkPeerConnection(KnownNetworks.StratisMain, peer.Object, new TcpClient(), 0, (message, token) => Task.CompletedTask,
                 new DateTimeProvider(), this.loggerFactory, new PayloadProvider());
 
             peer.SetupGet(networkPeer => networkPeer.Connection).Returns(connection);
 
             var connectionParameters = new NetworkPeerConnectionParameters();
-            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), NetworkContainer.StratisMain, new DateTimeProvider().GetTimeOffset());
+            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), KnownNetworks.StratisMain, new DateTimeProvider().GetTimeOffset());
             version.Services = NetworkPeerServices.Network;
 
             peer.SetupGet(x => x.PeerVersion).Returns(version);

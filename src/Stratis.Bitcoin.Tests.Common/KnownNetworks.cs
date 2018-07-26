@@ -1,9 +1,10 @@
 ﻿using NBitcoin;
 using NBitcoin.Networks;
+using Stratis.Bitcoin.Networks;
 
-namespace Stratis.Bitcoin.Networks
+namespace Stratis.Bitcoin.Tests.Common
 {
-    public static class NetworkContainer
+    public static class KnownNetworks
     {
         public static Network Main => NetworkRegistration.GetNetwork("Main") ?? NetworkRegistration.Register(new BitcoinMain());
 

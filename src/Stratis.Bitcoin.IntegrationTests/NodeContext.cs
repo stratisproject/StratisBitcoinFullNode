@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests
        
         public NodeContext(object caller, string name, Network network, bool clean)
         {
-            network = network ?? NetworkContainer.RegTest;
+            network = network ?? KnownNetworks.RegTest;
             this.loggerFactory = new LoggerFactory();
             this.Network = network;
             this.FolderName = TestBase.CreateTestDir(caller, name);

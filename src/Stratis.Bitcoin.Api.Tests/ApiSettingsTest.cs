@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Api.Tests
     /// </summary>
     public class ApiSettingsTest : TestBase
     {
-        public ApiSettingsTest() : base(NetworkContainer.Main)
+        public ApiSettingsTest() : base(KnownNetworks.Main)
         {
         }
 
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenNoApiSettingsAreProvided_AndOnBitcoinNetwork_ThenDefaultSettingAreUsed()
         {
             // Arrange.
-            Network network = NetworkContainer.Main;
+            Network network = KnownNetworks.Main;
             var nodeSettings = new NodeSettings(network);
 
             // Act.
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenNoApiSettingsAreProvided_AndOnStratisNetwork_ThenDefaultSettingAreUsed()
         {
             // Arrange.
-            Network network = NetworkContainer.StratisMain;
+            Network network = KnownNetworks.StratisMain;
             var nodeSettings = new NodeSettings(network);
 
             // Act.
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             // Arrange.
             string customApiUri = "http://0.0.0.0";
-            Network network = NetworkContainer.Main;
+            Network network = KnownNetworks.Main;
             var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
 
             // Act.
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             // Arrange.
             string customApiUri = "http://0.0.0.0";
-            Network network = NetworkContainer.StratisMain;
+            Network network = KnownNetworks.StratisMain;
             var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
 
             // Act.
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Api.Tests
             // Arrange.
             string customApiUri = "http://0.0.0.0";
             int customPort = 55555;
-            Network network = NetworkContainer.Main;
+            Network network = KnownNetworks.Main;
             var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-apiport={customPort}" });
 
             // Act.
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Api.Tests
             // Arrange.
             int customPort = 5522;
             string customApiUri = $"http://0.0.0.0:{customPort}";
-            Network network = NetworkContainer.Main;
+            Network network = KnownNetworks.Main;
             var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
 
             // Act.
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenBitcoinMain_ThenUseTheCorrectPort()
         {
             // Arrange.
-            NodeSettings nodeSettings = NodeSettings.Default(NetworkContainer.Main);
+            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.Main);
 
             // Act.
             var settings = new FullNodeBuilder()
@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenBitcoinTestnet_ThenUseTheCorrectPort()
         {
             // Arrange.
-            NodeSettings nodeSettings = NodeSettings.Default(NetworkContainer.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
 
             // Act.
             var settings = new FullNodeBuilder()
@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenStratisMainnet_ThenUseTheCorrectPort()
         {
             // Arrange.
-            NodeSettings nodeSettings = NodeSettings.Default(NetworkContainer.StratisMain);
+            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.StratisMain);
 
             // Act.
             var settings = new FullNodeBuilder()
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenStratisTestnet_ThenUseTheCorrectPort()
         {
             // Arrange.
-            NodeSettings nodeSettings = NodeSettings.Default(NetworkContainer.StratisTest);
+            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.StratisTest);
 
             // Act.
             var settings = new FullNodeBuilder()

@@ -36,8 +36,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         public CoinViewTests()
         {
             this.loggerFactory = new LoggerFactory();
-            this.network = NetworkContainer.Main;
-            this.network = NetworkContainer.RegTest;
+            this.network = KnownNetworks.Main;
+            this.network = KnownNetworks.RegTest;
             this.dbreezeSerializer = new DBreezeSerializer();
             this.dbreezeSerializer.Initialize(this.network);
         }

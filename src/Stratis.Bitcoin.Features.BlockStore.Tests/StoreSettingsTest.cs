@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 {
     public class StoreSettingsTest : TestBase	
     {	
-        public StoreSettingsTest() : base(NetworkContainer.Main)
+        public StoreSettingsTest() : base(KnownNetworks.Main)
         {	
         }	
 	

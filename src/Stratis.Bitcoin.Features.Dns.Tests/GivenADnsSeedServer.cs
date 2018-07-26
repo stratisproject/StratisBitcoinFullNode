@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
     /// </summary>
     public class GivenADnsSeedServer : TestBase
     {
-        public GivenADnsSeedServer() : base(NetworkContainer.Main)
+        public GivenADnsSeedServer() : base(KnownNetworks.Main)
         {
         }
 

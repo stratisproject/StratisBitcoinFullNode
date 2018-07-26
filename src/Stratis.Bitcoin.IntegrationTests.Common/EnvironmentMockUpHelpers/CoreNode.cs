@@ -16,10 +16,10 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public RPCClient CreateRPCClient()
         {
-            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.RpcPort + "/"), NetworkContainer.RegTest);
+            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.RpcPort + "/"), KnownNetworks.RegTest);
         }
 
         public INetworkPeer CreateNetworkPeerClient()
