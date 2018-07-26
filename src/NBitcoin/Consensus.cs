@@ -96,15 +96,11 @@ namespace NBitcoin
             }
         }
 
-        public Consensus()
+        public Consensus(IConsensus consensus)
         {
             this.BuriedDeployments = new BuriedDeploymentsArray();
             this.BIP9Deployments = new BIP9DeploymentsArray();
             this.Rules = new List<IConsensusRule>();
-        }
-
-        public Consensus(IConsensus consensus) : this()
-        {
             this.CoinbaseMaturity = consensus.CoinbaseMaturity;
             this.PremineReward = consensus.PremineReward;
             this.PremineHeight = consensus.PremineHeight;
