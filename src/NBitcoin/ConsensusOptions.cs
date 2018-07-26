@@ -102,12 +102,10 @@
     /// Extension to ConsensusOptions for PoS-related parameters.
     /// 
     /// TODO: When moving rules to be part of consensus for network, move this class to the appropriate project too.
-    /// Doesn't make much sense for it to be in NBitcoin.
+    /// Doesn't make much sense for it to be in NBitcoin. Also remove the CoinstakeMinConfirmation consts and set CointakeMinConfirmation in Network building.
     /// </summary>
     public class PosConsensusOptions : ConsensusOptions
     {
-        // TODO: Remove these 2 properties and set CointakeMinConfirmation in Network.
-
         /// <summary>Coinstake minimal confirmations softfork activation height for the mainnet.</summary>
         public const int CoinstakeMinConfirmationActivationHeightMainnet = 1005000;
 
