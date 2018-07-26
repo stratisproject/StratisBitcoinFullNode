@@ -4,7 +4,8 @@ using NBitcoin.BouncyCastle.Math;
 namespace NBitcoin
 {
     /// <summary>
-    /// Used to create a Mutable version of the <see cref="Consensus"/> object during configuration
+    /// Used to create a mutable version of the <see cref="Consensus"/> object to be used
+    /// during configuration
     /// </summary>
     public class MutableConsensus : IConsensus
     {
