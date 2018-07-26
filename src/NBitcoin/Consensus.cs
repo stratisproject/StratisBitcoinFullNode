@@ -34,33 +34,33 @@ namespace NBitcoin
         /// Amount of coins mined when a new network is bootstrapped.
         /// Set to Money.Zero when there is no premine.
         /// </summary>
-        public Money PremineReward { get; set; }
+        public Money PremineReward { get; }
 
         /// <summary>
         /// The height of the block in which the pre-mined coins should be.
         /// Set to 0 when there is no premine.
         /// </summary>
-        public long PremineHeight { get; set; }
+        public long PremineHeight { get; }
 
         /// <summary>
         /// The reward that goes to the miner when a block is mined using proof-of-work.
         /// </summary>
-        public Money ProofOfWorkReward { get; set; }
+        public Money ProofOfWorkReward { get; }
 
         /// <summary>
         /// The reward that goes to the miner when a block is mined using proof-of-stake.
         /// </summary>
-        public Money ProofOfStakeReward { get; set; }
+        public Money ProofOfStakeReward { get; }
 
         /// <summary>
         /// Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.
         /// </summary>
-        public uint MaxReorgLength { get; set; }
+        public uint MaxReorgLength { get; }
 
         /// <summary>
         /// The maximum amount of coins in any transaction.
         /// </summary>
-        public long MaxMoney { get; set; }
+        public long MaxMoney { get; }
 
         public ConsensusOptions Options { get; set; }
 
@@ -144,34 +144,34 @@ namespace NBitcoin
             this.ConsensusFactory = consensus.ConsensusFactory;
         }
 
-        public BuriedDeploymentsArray BuriedDeployments { get; set; }
+        public BuriedDeploymentsArray BuriedDeployments { get; }
 
-        public BIP9DeploymentsArray BIP9Deployments { get; set; }
+        public BIP9DeploymentsArray BIP9Deployments { get; }
 
-        public int SubsidyHalvingInterval { get; set; }
+        public int SubsidyHalvingInterval { get; }
 
-        public int MajorityEnforceBlockUpgrade { get; set; }
+        public int MajorityEnforceBlockUpgrade { get; }
 
-        public int MajorityRejectBlockOutdated { get; set; }
+        public int MajorityRejectBlockOutdated { get; }
 
-        public int MajorityWindow { get; set; }
+        public int MajorityWindow { get; }
 
-        public uint256 BIP34Hash { get; set; }
+        public uint256 BIP34Hash { get; }
 
-        public Target PowLimit { get; set; }
+        public Target PowLimit { get; }
 
-        public TimeSpan PowTargetTimespan { get; set; }
+        public TimeSpan PowTargetTimespan { get; }
 
-        public TimeSpan PowTargetSpacing { get; set; }
+        public TimeSpan PowTargetSpacing { get; }
 
-        public bool PowAllowMinDifficultyBlocks { get; set; }
+        public bool PowAllowMinDifficultyBlocks { get; }
 
-        public bool PowNoRetargeting { get; set; }
+        public bool PowNoRetargeting { get; }
 
-        public uint256 HashGenesisBlock { get; set; }
+        public uint256 HashGenesisBlock { get; }
 
         /// <summary> The minimum amount of work the best chain should have. </summary>
-        public uint256 MinimumChainWork { get; set; }
+        public uint256 MinimumChainWork { get; }
 
         public long DifficultyAdjustmentInterval
         {
@@ -185,11 +185,11 @@ namespace NBitcoin
         /// <summary>
         /// Specify the BIP44 coin type for this network
         /// </summary>
-        public int CoinType { get; set; }
+        public int CoinType { get; }
 
-        public BigInteger ProofOfStakeLimit { get; set; }
+        public BigInteger ProofOfStakeLimit { get; }
 
-        public BigInteger ProofOfStakeLimitV2 { get; set; }
+        public BigInteger ProofOfStakeLimitV2 { get; }
 
         /// <summary>PoW blocks are not accepted after block with height <see cref="Consensus.LastPOWBlock"/>.</summary>
         public int LastPOWBlock { get; set; }
@@ -197,15 +197,15 @@ namespace NBitcoin
         /// <summary>
         /// An indicator whether this is a Proof Of Stake network.
         /// </summary>
-        public bool IsProofOfStake { get; set; }
+        public bool IsProofOfStake { get; }
 
         /// <summary>The default hash to use for assuming valid blocks.</summary>
-        public uint256 DefaultAssumeValid { get; set; }
+        public uint256 DefaultAssumeValid { get; }
 
         /// <summary>
         /// A factory that enables overloading base types.
         /// </summary>
-        public ConsensusFactory ConsensusFactory { get; set; }
+        public ConsensusFactory ConsensusFactory { get; }
 
         /// <summary>
         /// Rules specific to the given network.
