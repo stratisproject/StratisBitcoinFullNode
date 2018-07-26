@@ -1,5 +1,4 @@
-﻿using NBitcoin;
-using Stratis.Bitcoin.Builder;
+﻿using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
@@ -14,7 +13,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
     /// </summary>
     public abstract class BaseRPCControllerTest : TestBase
     {
-        protected BaseRPCControllerTest() : base(Networks.Main)
+        protected BaseRPCControllerTest() : base(NBitcoin.Networks.Main)
         {
         }
 

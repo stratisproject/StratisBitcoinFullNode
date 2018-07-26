@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 {
     public class RPCControllerTest : LogsTestBase
     {
-        private readonly Network network;
+        private readonly Network testNetwork;
         private readonly Mock<IFullNode> fullNode;
         private readonly RpcSettings rpcSettings;
         private readonly RPCController controller;
@@ -40,12 +40,12 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
         public RPCControllerTest()
         {
-            this.network = Networks.TestNet;
+            this.testNetwork = NBitcoin.Networks.TestNet;
             this.fullNode = new Mock<IFullNode>();
             this.fullNode.Setup(f => f.Network)
-                .Returns(this.network);
+                .Returns(this.testNetwork);
             this.rpcHost = new Mock<IWebHost>();
-            this.rpcSettings = new RpcSettings(new NodeSettings(this.network));
+            this.rpcSettings = new RpcSettings(new NodeSettings(this.testNetwork));
             this.serviceProvider = new Mock<IServiceProvider>();
             this.rpcClientFactory = new Mock<IRPCClientFactory>();
             this.actionDescriptorCollectionProvider = new Mock<IActionDescriptorCollectionProvider>();
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 this.rpcClient.Verify();
                 var jsonResult = Assert.IsType<JsonResult>(controllerResult);
                 var result = jsonResult.Value as JToken;
-                Assert.Equal(Networks.TestNet.GenesisHash.ToString(), result["hashPrevBlock"].ToString());
+                Assert.Equal(this.testNetwork.GenesisHash.ToString(), result["hashPrevBlock"].ToString());
             }
         }
 
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             public BlockHeaderObject result = new BlockHeaderObject()
             {
-                hashPrevBlock = Networks.TestNet.GenesisHash.ToString()
+                hashPrevBlock = NBitcoin.Networks.TestNet.GenesisHash.ToString()
             };
 
             public RPCErrorObject error = new RPCErrorObject()

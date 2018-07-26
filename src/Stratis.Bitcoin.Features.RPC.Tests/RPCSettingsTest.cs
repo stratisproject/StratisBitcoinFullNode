@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -9,7 +8,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 {
     public class RPCSettingsTest : TestBase
     {
-        public RPCSettingsTest() : base(Networks.TestNet)
+        public RPCSettingsTest() : base(NBitcoin.Networks.TestNet)
         {
         }
 
@@ -30,7 +29,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
             WriteConfigurationToFile(confFile, configLines);
 
-            var nodeSettings = new NodeSettings(Networks.TestNet, args:new string[] { "-conf=" + confFile });
+            var nodeSettings = new NodeSettings(this.Network, args:new string[] { "-conf=" + confFile });
 
             var rpcSettings = new RpcSettings(nodeSettings);
 
@@ -54,7 +53,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             var configLines = new List<string>() { "" };
             WriteConfigurationToFile(confFile, configLines);
 
-            var nodeSettings = new NodeSettings(Networks.TestNet, args:new string[] { "-conf=" + confFile });
+            var nodeSettings = new NodeSettings(this.Network, args:new string[] { "-conf=" + confFile });
 
             var rpcSettings = new RpcSettings(nodeSettings);
 
@@ -82,7 +81,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
                 WriteConfigurationToFile(confFile, configLines);
 
-                var nodeSettings = new NodeSettings(Networks.TestNet, args:new string[] { "-conf=" + confFile });
+                var nodeSettings = new NodeSettings(this.Network, args:new string[] { "-conf=" + confFile });
 
                 var rpcSettings = new RpcSettings(nodeSettings);
             });
@@ -103,7 +102,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
                 WriteConfigurationToFile(confFile, configLines);
 
-                var nodeSettings = new NodeSettings(Networks.TestNet, args:new string[] { "-conf=" + confFile });
+                var nodeSettings = new NodeSettings(this.Network, args:new string[] { "-conf=" + confFile });
 
                 var rpcSettings = new RpcSettings(nodeSettings);
             });
@@ -127,7 +126,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
                 WriteConfigurationToFile(confFile, configLines);
 
-                var nodeSettings = new NodeSettings(Networks.TestNet, args:new string[] { "-conf=" + confFile });
+                var nodeSettings = new NodeSettings(this.Network, args:new string[] { "-conf=" + confFile });
 
                 var rpcSettings = new RpcSettings(nodeSettings);
             });
@@ -151,7 +150,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
                 WriteConfigurationToFile(confFile, configLines);
 
-                var nodeSettings = new NodeSettings(Networks.TestNet, args:new string[] { "-conf=" + confFile });
+                var nodeSettings = new NodeSettings(this.Network, args:new string[] { "-conf=" + confFile });
 
                 var rpcSettings = new RpcSettings(nodeSettings);
             });
@@ -174,7 +173,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
             WriteConfigurationToFile(confFile, configLines);
 
-            var nodeSettings = new NodeSettings(Networks.TestNet, args:new string[] { "-conf=" + confFile });
+            var nodeSettings = new NodeSettings(this.Network, args:new string[] { "-conf=" + confFile });
 
             var rpcSettings = new RpcSettings(nodeSettings);
             string[] urls = rpcSettings.GetUrls();
@@ -195,7 +194,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
             WriteConfigurationToFile(confFile, configLines);
 
-            var nodeSettings = new NodeSettings(Networks.TestNet, args:new string[] { "-conf=" + confFile });
+            var nodeSettings = new NodeSettings(this.Network, args:new string[] { "-conf=" + confFile });
 
             var rpcSettings = new RpcSettings(new NodeSettings());
             string[] urls = rpcSettings.GetUrls();

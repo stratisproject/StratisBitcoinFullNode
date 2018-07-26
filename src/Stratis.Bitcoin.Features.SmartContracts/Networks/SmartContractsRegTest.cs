@@ -15,8 +15,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
         public SmartContractsRegTest()
         {
             this.Name = "SmartContractsRegTest";
-            this.RootFolderName = NBitcoin.NetworkDefinitions.StratisMain.StratisRootFolderName;
-            this.DefaultConfigFilename = NBitcoin.NetworkDefinitions.StratisMain.StratisDefaultConfigFilename;
+            this.RootFolderName = "stratis";
+            this.DefaultConfigFilename = "stratis.conf";
             this.Magic = 0xDAB5BFFA;
             this.DefaultPort = 18444;
             this.RPCPort = 18332;
