@@ -230,10 +230,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// <returns>Proof of work block assembler.</returns>
         private static PowBlockDefinition CreatePowBlockAssembler(IConsensusLoop consensusLoop, IConsensusRules consensusRules, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
         {
-            var blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
-            var options = new BlockDefinitionOptions(network.Consensus.Options.MaxBlockWeight, network.Consensus.Options.MaxBlockSerializedSize, blockMinFeeRate);
-
-            return new PowBlockDefinition(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, consensusRules, options);
+            return new PowBlockDefinition(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, new MinerSettings(), network, consensusRules);
         }
     }
 }

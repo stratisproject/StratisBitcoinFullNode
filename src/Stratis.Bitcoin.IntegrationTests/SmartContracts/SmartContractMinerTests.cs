@@ -62,6 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 new LoggerFactory(),
                 testContext.mempool,
                 testContext.mempoolLock,
+                new MinerSettings(),
                 testContext.network,
                 testContext.stateRoot);
         }
