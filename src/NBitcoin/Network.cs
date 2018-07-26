@@ -37,11 +37,6 @@ namespace NBitcoin
     {
         protected Block Genesis;
 
-        protected Network()
-        {
-            this.Consensus = new Consensus();
-        }
-
         /// <summary>
         /// Maximal value for the calculated time offset.
         /// If the value is over this limit, the time syncing feature will be switched off.
