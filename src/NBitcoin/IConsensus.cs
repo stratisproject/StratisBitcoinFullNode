@@ -43,18 +43,31 @@ namespace NBitcoin
         long MaxMoney { get; }
 
         ConsensusOptions Options { get; set; }
+
         Consensus.BuriedDeploymentsArray BuriedDeployments { get; }
+
         Consensus.BIP9DeploymentsArray BIP9Deployments { get; }
+
         int SubsidyHalvingInterval { get; }
+
         int MajorityEnforceBlockUpgrade { get; }
+
         int MajorityRejectBlockOutdated { get; }
+
         int MajorityWindow { get; }
+
         uint256 BIP34Hash { get; }
+
         Target PowLimit { get; }
+
         TimeSpan PowTargetTimespan { get; }
+
         TimeSpan PowTargetSpacing { get; }
+
         bool PowAllowMinDifficultyBlocks { get; }
+
         bool PowNoRetargeting { get; }
+
         uint256 HashGenesisBlock { get; }
 
         /// <summary> The minimum amount of work the best chain should have. </summary>
@@ -69,6 +82,7 @@ namespace NBitcoin
         int CoinType { get; }
 
         BigInteger ProofOfStakeLimit { get; }
+
         BigInteger ProofOfStakeLimitV2 { get; }
 
         /// <summary>PoW blocks are not accepted after block with height <see cref="Consensus.LastPOWBlock"/>.</summary>

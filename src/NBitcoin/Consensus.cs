@@ -25,41 +25,25 @@ namespace NBitcoin
 
     public class Consensus : IConsensus
     {
-        /// <summary>
-        /// How many blocks should be on top of a coinbase transaction until its outputs are considered spendable.
-        /// </summary>
+        /// <inheritdoc />
         public long CoinbaseMaturity { get; set; }
 
-        /// <summary>
-        /// Amount of coins mined when a new network is bootstrapped.
-        /// Set to Money.Zero when there is no premine.
-        /// </summary>
+        /// <inheritdoc />
         public Money PremineReward { get; }
 
-        /// <summary>
-        /// The height of the block in which the pre-mined coins should be.
-        /// Set to 0 when there is no premine.
-        /// </summary>
+        /// <inheritdoc />
         public long PremineHeight { get; }
 
-        /// <summary>
-        /// The reward that goes to the miner when a block is mined using proof-of-work.
-        /// </summary>
+        /// <inheritdoc />
         public Money ProofOfWorkReward { get; }
 
-        /// <summary>
-        /// The reward that goes to the miner when a block is mined using proof-of-stake.
-        /// </summary>
+        /// <inheritdoc />
         public Money ProofOfStakeReward { get; }
 
-        /// <summary>
-        /// Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.
-        /// </summary>
+        /// <inheritdoc />
         public uint MaxReorgLength { get; }
 
-        /// <summary>
-        /// The maximum amount of coins in any transaction.
-        /// </summary>
+        /// <inheritdoc />
         public long MaxMoney { get; }
 
         public ConsensusOptions Options { get; set; }
@@ -170,7 +154,7 @@ namespace NBitcoin
 
         public uint256 HashGenesisBlock { get; }
 
-        /// <summary> The minimum amount of work the best chain should have. </summary>
+        /// <inheritdoc />
         public uint256 MinimumChainWork { get; }
 
         public long DifficultyAdjustmentInterval
@@ -182,29 +166,23 @@ namespace NBitcoin
 
         public int RuleChangeActivationThreshold { get; set; }
 
-        /// <summary>
-        /// Specify the BIP44 coin type for this network
-        /// </summary>
+        /// <inheritdoc />
         public int CoinType { get; }
 
         public BigInteger ProofOfStakeLimit { get; }
 
         public BigInteger ProofOfStakeLimitV2 { get; }
 
-        /// <summary>PoW blocks are not accepted after block with height <see cref="Consensus.LastPOWBlock"/>.</summary>
+        /// <inheritdoc />        
         public int LastPOWBlock { get; set; }
 
-        /// <summary>
-        /// An indicator whether this is a Proof Of Stake network.
-        /// </summary>
+        /// <inheritdoc />
         public bool IsProofOfStake { get; }
 
-        /// <summary>The default hash to use for assuming valid blocks.</summary>
+        /// <inheritdoc />
         public uint256 DefaultAssumeValid { get; }
 
-        /// <summary>
-        /// A factory that enables overloading base types.
-        /// </summary>
+        /// <inheritdoc />
         public ConsensusFactory ConsensusFactory { get; }
 
         /// <summary>
