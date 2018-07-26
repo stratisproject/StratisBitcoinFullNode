@@ -31,15 +31,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TransferProcessor_NoBalance_NoTransfers()
         {
             // Scenario where contract was sent 0, doesn't yet have any UTXO assigned, and no transfers were made.
-            var carrierSkeleton = SmartContractCarrier.CallContract(1, new uint160(1), "Test", 1, (Gas) 100_000);
-            var transaction = new Transaction();
-            transaction.AddOutput(0, new Script(carrierSkeleton.Serialize()));
-            var carrier = SmartContractCarrier.Deserialize(transaction);
             var stateMock = new Mock<IContractStateRepository>();
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
             var txContextMock = new Mock<ISmartContractTransactionContext>();
+            txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
             var result = new SmartContractExecutionResult();
-            this.transferProcessor.Process(carrier, stateMock.Object, txContextMock.Object, new List<TransferInfo>(), false);
+            this.transferProcessor.Process(stateMock.Object, uint160.One, txContextMock.Object, new List<TransferInfo>(), false);
 
             // Ensure no state changes were made and no transaction has been added
             Assert.Null(result.InternalTransaction);
@@ -49,15 +46,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TransferProcessor_NoBalance_ReceivedFunds()
         {
             // Scenario where contract was sent some funds, doesn't yet have any UTXO assigned, and no transfers were made.
-            var carrierSkeleton = SmartContractCarrier.CallContract(1, new uint160(1), "Test", 1, (Gas)100_000);
-            var transaction = new Transaction();
-            transaction.AddOutput(100, new Script(carrierSkeleton.Serialize()));
-            var carrier = SmartContractCarrier.Deserialize(transaction);
             var stateMock = new Mock<IContractStateRepository>();
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
             var txContextMock = new Mock<ISmartContractTransactionContext>();
+            txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
             var result = new SmartContractExecutionResult();
-            this.transferProcessor.Process(carrier, stateMock.Object, txContextMock.Object, new List<TransferInfo>(), false);
+
+            this.transferProcessor.Process(stateMock.Object, uint160.One, txContextMock.Object, new List<TransferInfo>(), false);
             
             // Ensure unspent was saved, but no condensing transaction was generated.
             Assert.Null(result.InternalTransaction);

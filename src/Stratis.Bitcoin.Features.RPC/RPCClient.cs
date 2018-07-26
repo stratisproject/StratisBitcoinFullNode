@@ -231,26 +231,26 @@ namespace Stratis.Bitcoin.Features.RPC
                 string bitcoinFolder = Path.Combine(home, ".bitcoin");
 
                 string mainnet = Path.Combine(bitcoinFolder, ".cookie");
-                RegisterDefaultCookiePath(Network.Main, mainnet);
+                RegisterDefaultCookiePath(Networks.Main, mainnet);
 
                 string testnet = Path.Combine(bitcoinFolder, "testnet3", ".cookie");
-                RegisterDefaultCookiePath(Network.TestNet, testnet);
+                RegisterDefaultCookiePath(Networks.TestNet, testnet);
 
                 string regtest = Path.Combine(bitcoinFolder, "regtest", ".cookie");
-                RegisterDefaultCookiePath(Network.RegTest, regtest);
+                RegisterDefaultCookiePath(Networks.RegTest, regtest);
             }
             else if (!string.IsNullOrEmpty(localAppData))
             {
                 string bitcoinFolder = Path.Combine(localAppData, "Bitcoin");
 
                 string mainnet = Path.Combine(bitcoinFolder, ".cookie");
-                RegisterDefaultCookiePath(Network.Main, mainnet);
+                RegisterDefaultCookiePath(Networks.Main, mainnet);
 
                 string testnet = Path.Combine(bitcoinFolder, "testnet3", ".cookie");
-                RegisterDefaultCookiePath(Network.TestNet, testnet);
+                RegisterDefaultCookiePath(Networks.TestNet, testnet);
 
                 string regtest = Path.Combine(bitcoinFolder, "regtest", ".cookie");
-                RegisterDefaultCookiePath(Network.RegTest, regtest);
+                RegisterDefaultCookiePath(Networks.RegTest, regtest);
             }
         }
 

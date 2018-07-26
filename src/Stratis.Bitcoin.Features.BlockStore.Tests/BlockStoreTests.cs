@@ -35,9 +35,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public BlockStoreTests()
         {
             this.listOfSavedBlocks = new Dictionary<uint256, Block>();
-            this.listOfSavedBlocks.Add(uint256.One, Block.Parse(this.testBlockHex, Network.StratisMain));
+            this.listOfSavedBlocks.Add(uint256.One, Block.Parse(this.testBlockHex, Networks.StratisMain));
 
-            this.network = Network.StratisMain;
+            this.network = Networks.StratisMain;
 
             this.chain = this.CreateChain(10);
             this.consensusTip = null;
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public async Task BatchIsSavedAfterSizeThresholdReachedAsync()
         {
-            Block block = Block.Load(Encoders.Hex.DecodeData(this.testBlockHex), Network.StratisMain);
+            Block block = Block.Load(Encoders.Hex.DecodeData(this.testBlockHex), Networks.StratisMain);
             int blockSize = block.GetSerializedSize();
             this.consensusTip = null;
 

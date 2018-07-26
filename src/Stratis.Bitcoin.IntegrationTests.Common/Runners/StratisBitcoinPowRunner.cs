@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public StratisBitcoinPowRunner(string dataDir)
             : base(dataDir)
         {
-            this.Network = Network.RegTest;
+            this.Network = Networks.RegTest;
         }
 
         public override void BuildNode()
