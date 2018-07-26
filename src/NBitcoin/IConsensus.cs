@@ -60,7 +60,6 @@ namespace NBitcoin
         /// <summary> The minimum amount of work the best chain should have. </summary>
         uint256 MinimumChainWork { get; }
 
-        long DifficultyAdjustmentInterval { get; }
         int MinerConfirmationWindow { get; set; }
         int RuleChangeActivationThreshold { get; set; }
 

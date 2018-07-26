@@ -36,7 +36,6 @@ namespace NBitcoin
         public bool PowNoRetargeting { get; set; }
         public uint256 HashGenesisBlock { get; set; }
         public uint256 MinimumChainWork { get; set; }
-        public long DifficultyAdjustmentInterval { get; }
         public int MinerConfirmationWindow { get; set; }
         public int RuleChangeActivationThreshold { get; set; }
         public int CoinType { get; set; }
