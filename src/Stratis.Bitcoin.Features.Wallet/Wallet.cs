@@ -864,7 +864,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         public Money Amount { get; set; }
 
         /// <summary>
-        /// A value indicating whether this is a coin stake transaction or not.
+        /// A value indicating whether this is a coinbase transaction or not.
+        /// </summary>
+        [JsonProperty(PropertyName = "isCoinBase", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsCoinBase { get; set; }
+
+        /// <summary>
+        /// A value indicating whether this is a coinstake transaction or not.
         /// </summary>
         [JsonProperty(PropertyName = "isCoinStake", NullValueHandling = NullValueHandling.Ignore)]
         public bool? IsCoinStake { get; set; }

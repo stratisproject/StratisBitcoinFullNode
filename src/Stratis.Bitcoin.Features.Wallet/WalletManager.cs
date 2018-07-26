@@ -985,6 +985,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var newTransaction = new TransactionData
                 {
                     Amount = amount,
+                    IsCoinBase = transaction.IsCoinBase == false ? (bool?)null : true,
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true,
                     BlockHeight = blockHeight,
                     BlockHash = block?.GetHash(),
