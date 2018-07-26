@@ -80,8 +80,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var minersettings = new MinerSettings(nodeSettings);
 
             // Values assigned as configured
-            Assert.Equal( (uint) 150000, minersettings.BlockDefinitionOptions.BlockMaxSize);
-            Assert.Equal( (uint) 300000, minersettings.BlockDefinitionOptions.BlockMaxWeight);
+            Assert.Equal((uint)150000, minersettings.BlockDefinitionOptions.BlockMaxSize);
+            Assert.Equal((uint)300000, minersettings.BlockDefinitionOptions.BlockMaxWeight);
         }
 
         [Fact]
