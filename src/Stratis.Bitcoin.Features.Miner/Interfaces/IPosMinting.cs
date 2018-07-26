@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
-
 using Stratis.Bitcoin.Features.Miner.Staking;
 
 namespace Stratis.Bitcoin.Features.Miner.Interfaces
@@ -23,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeContext">Information about coinstake transaction and its private key that is to be filled when the kernel is found.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        Task<bool> CreateCoinstakeAsync(List<UtxoStakeDescription> utxoStakeDescriptions, Block block, ChainedHeader chainTip, long searchInterval, long fees, Staking.CoinstakeContext coinstakeContext);
+        Task<bool> CreateCoinstakeAsync(List<UtxoStakeDescription> utxoStakeDescriptions, Block block, ChainedHeader chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext);
 
         /// <summary>
         /// Attempts to stake new blocks in a loop.

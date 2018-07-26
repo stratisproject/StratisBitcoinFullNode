@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         public void Stake(WalletSecret walletSecret)
         {
             Guard.NotNull(walletSecret, nameof(walletSecret));
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(walletSecret), nameof(walletSecret.WalletName));
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(walletSecret), nameof(walletSecret.WalletName), walletSecret.WalletName);
 
             if (Interlocked.CompareExchange(ref this.currentState, (int)CurrentState.StakingRequested, (int)CurrentState.Idle) != (int)CurrentState.Idle)
             {
@@ -360,7 +360,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         public async Task GenerateBlocksAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
             Guard.NotNull(walletSecret, nameof(walletSecret));
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(walletSecret), nameof(walletSecret.WalletName));
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(walletSecret), nameof(walletSecret.WalletName), walletSecret.WalletName);
 
             BlockTemplate blockTemplate = null;
 
@@ -440,7 +440,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
         internal async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(walletSecret), nameof(walletSecret.WalletName));
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(walletSecret), nameof(walletSecret.WalletName), walletSecret.WalletName);
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
             List<UnspentOutputReference> spendableTransactions = this.walletManager
                 .GetSpendableTransactionsInWallet(walletSecret.WalletName, 1).ToList();

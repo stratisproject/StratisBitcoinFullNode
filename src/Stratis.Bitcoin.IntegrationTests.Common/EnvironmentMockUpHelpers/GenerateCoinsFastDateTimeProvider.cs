@@ -1,7 +1,5 @@
 ﻿using System;
 using NBitcoin;
-
-using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
