@@ -1,5 +1,6 @@
 ﻿using System;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -74,12 +75,12 @@ namespace NBitcoin.Tests
                 sigHashHex = (string)test[4];
 
 
-                tx.ReadWrite(ParseHex(raw_tx), Networks.Main.Consensus.ConsensusFactory);
+                tx.ReadWrite(ParseHex(raw_tx), this.networkMain.Consensus.ConsensusFactory);
 
                 byte[] raw = ParseHex(raw_script);
                 scriptCode = new Script(raw);
 
-                uint256 sh = Script.SignatureHash(Networks.Main, scriptCode, tx, nIn, (SigHash)nHashType);
+                uint256 sh = Script.SignatureHash(NetworkContainer.Main, scriptCode, tx, nIn, (SigHash)nHashType);
                 Assert.True(sh.ToString() == sigHashHex, strTest);
             }
         }

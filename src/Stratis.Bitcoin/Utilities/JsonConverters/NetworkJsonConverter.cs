@@ -2,6 +2,7 @@
 using System.Reflection;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Utilities.JsonConverters
 {
@@ -29,15 +30,15 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
                 return null;
 
             if (network.Equals("MainNet", StringComparison.OrdinalIgnoreCase) || network.Equals("main", StringComparison.OrdinalIgnoreCase))
-                return Networks.Main;
+                return NetworkContainer.Main;
 
             if (network.Equals("TestNet", StringComparison.OrdinalIgnoreCase) || network.Equals("test", StringComparison.OrdinalIgnoreCase))
-                return Networks.TestNet;
+                return NetworkContainer.TestNet;
 
             if (network.Equals("RegTest", StringComparison.OrdinalIgnoreCase) || network.Equals("reg", StringComparison.OrdinalIgnoreCase))
-                return Networks.RegTest;
+                return NetworkContainer.RegTest;
 
-            Network net = NetworksContainer.GetNetwork(network);
+            Network net = NetworkContainer.GetNetwork(network);
             if(net != null)
                 return net;
 
@@ -51,11 +52,11 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 
             string str = null;
 
-            if(network == Networks.Main)
+            if(network == NetworkContainer.Main)
                 str = "MainNet";
-            else if(network == Networks.TestNet)
+            else if(network == NetworkContainer.TestNet)
                 str = "TestNet";
-            else if(network == Networks.RegTest)
+            else if(network == NetworkContainer.RegTest)
                 str = "RegTest";
             else if(network != null)
                 str = network.ToString();

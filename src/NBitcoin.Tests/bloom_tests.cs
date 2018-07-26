@@ -13,7 +13,7 @@ namespace NBitcoin.Tests
 
         public Bloom_Tests()
         {
-            this.network = Networks.Main;
+            this.network = NetworkContainer.Main;
         }
 
         [Fact]

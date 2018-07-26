@@ -332,7 +332,7 @@ namespace NBitcoin
             throw new FormatException("Invalid Base58 version");
         }
 
-        internal Base58Type? GetBase58Type(string base58)
+        public Base58Type? GetBase58Type(string base58)
         {
             byte[] bytes = Encoders.Base58Check.DecodeData(base58);
             for (int i = 0; i < this.Base58Prefixes.Length; i++)

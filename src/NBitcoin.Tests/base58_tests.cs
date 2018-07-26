@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -89,9 +90,9 @@ namespace NBitcoin.Tests
                 bool isPrivkey = (bool)test.GetDynamic(2).isPrivkey;
                 bool isTestnet = (bool)test.GetDynamic(2).isTestnet;
                 if(isTestnet)
-                    network = Networks.TestNet;
+                    network = NetworkContainer.TestNet;
                 else
-                    network = Networks.Main;
+                    network = NetworkContainer.Main;
 
                 if(isPrivkey)
                 {
@@ -151,9 +152,9 @@ namespace NBitcoin.Tests
                 bool isTestnet = (bool)metadata.isTestnet;
 
                 if(isTestnet)
-                    network = Networks.TestNet;
+                    network = NetworkContainer.TestNet;
                 else
-                    network = Networks.Main;
+                    network = NetworkContainer.Main;
                 if(isPrivkey)
                 {
                     bool isCompressed = metadata.isCompressed;
@@ -195,7 +196,7 @@ namespace NBitcoin.Tests
                         BitcoinAddress addrOut = dest.GetAddress(network);
                         Assert.True(addrOut.ToString() == exp_base58string, "mismatch: " + strTest);
                         Assert.True(addrOut.ScriptPubKey == dest.ScriptPubKey);
-                        Assert.True(dest.ScriptPubKey.GetDestination(Networks.Main) == dest);
+                        Assert.True(dest.ScriptPubKey.GetDestination(NetworkContainer.Main) == dest);
                     }
                     catch(ArgumentException)
                     {
@@ -222,8 +223,8 @@ namespace NBitcoin.Tests
             {
                 string data = (string)i[0];
                 // must be invalid as public and as private key
-                Assert.Throws<FormatException>(() => Networks.Main.CreateBitcoinAddress(data));
-                Assert.Throws<FormatException>(() => Networks.Main.CreateBitcoinSecret(data));
+                Assert.Throws<FormatException>(() => this.networkMain.CreateBitcoinAddress(data));
+                Assert.Throws<FormatException>(() => this.networkMain.CreateBitcoinSecret(data));
             }
         }
     }
