@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         /// <summary>
         /// We don't stake coins that are smaller than 0.1 in order to save on CPU as these have a very small chance to be used
-        /// to generate a block anyway
+        /// to generate a block anyway.
         /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/1180"/>
         /// </summary>
         public const long MinimumStakingCoinValue = 10 * Money.CENT;
@@ -384,7 +384,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <inheritdoc/>
         public void Stake(WalletSecret walletSecret)
         {
-            this.logger.LogTrace("()");
+            Guard.NotNull(walletSecret, nameof(walletSecret));
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(walletSecret), nameof(walletSecret.WalletName));
 
             if (Interlocked.CompareExchange(ref this.currentState, (int)CurrentState.StakingRequested, (int)CurrentState.Idle) != (int)CurrentState.Idle)
             {
@@ -469,7 +470,8 @@ namespace Stratis.Bitcoin.Features.Miner
         ///<inheritdoc/>
         public async Task GenerateBlocksAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
-            this.logger.LogTrace("()");
+            Guard.NotNull(walletSecret, nameof(walletSecret));
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(walletSecret), nameof(walletSecret.WalletName));
 
             BlockTemplate blockTemplate = null;
 
@@ -519,7 +521,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     return;
                 }
 
-                List<UtxoStakeDescription> utxoStakeDescriptions = await GetUtxoStakeDescriptionsAsync(walletSecret, cancellationToken).ConfigureAwait(false);
+                List<UtxoStakeDescription> utxoStakeDescriptions = await this.GetUtxoStakeDescriptionsAsync(walletSecret, cancellationToken).ConfigureAwait(false);
                 
                 blockTemplate = blockTemplate ?? this.blockProvider.BuildPosBlock(chainTip, new Script());
                 var posBlock = (PosBlock)blockTemplate.Block;
@@ -549,7 +551,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         internal async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(walletSecret), nameof(walletSecret.WalletName));
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
             List<UnspentOutputReference> spendableTransactions = this.walletManager
                 .GetSpendableTransactionsInWallet(walletSecret.WalletName, 1).ToList();
