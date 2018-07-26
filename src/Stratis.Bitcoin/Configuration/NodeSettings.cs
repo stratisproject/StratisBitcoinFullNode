@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Configuration
     /// <summary>
     /// Node configuration complied from both the application command line arguments and the configuration file.
     /// </summary>
-    public class NodeSettings
+    public class NodeSettings : IDisposable
     {
         /// <summary>Version of the protocol the current implementation supports.</summary>
         public const ProtocolVersion SupportedProtocolVersion = ProtocolVersion.SENDHEADERS_VERSION;
@@ -371,6 +371,12 @@ namespace Stratis.Bitcoin.Configuration
             builder.AppendLine();
 
             ConnectionManagerSettings.BuildDefaultConfigurationFile(builder, network);
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.LoggerFactory.Dispose();
         }
     }
 }

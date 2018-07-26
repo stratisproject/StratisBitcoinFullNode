@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -52,19 +53,21 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNode.NotInIBD();
 
                 Block tip = coreNode.FindBlock(10).Last();
-                stratisNode.CreateRPCClient().AddNode(coreNode.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
-                uint256 bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
+                RPCClient stratisNodeRpcClient = stratisNode.CreateRPCClient();
+                stratisNodeRpcClient.AddNode(coreNode.Endpoint, true);
+                RPCClient coreNodeRpcClient = coreNode.CreateRPCClient();
+                TestHelper.WaitLoop(() => stratisNodeRpcClient.GetBestBlockHash() == coreNodeRpcClient.GetBestBlockHash());
+                uint256 bestBlockHash = stratisNodeRpcClient.GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
 
-                //Now check if Core connect to stratis
-                stratisNode.CreateRPCClient().RemoveNode(coreNode.Endpoint);
-                TestHelper.WaitLoop(() => coreNode.CreateRPCClient().GetPeersInfo().Length == 0);
+                stratisNodeRpcClient.RemoveNode(coreNode.Endpoint);
+                TestHelper.WaitLoop(() => coreNodeRpcClient.GetPeersInfo()
+                    .All(pi => pi.Address.MapToIpv6().ToString() != coreNode.Endpoint.MapToIpv6().ToString()));
 
                 tip = coreNode.FindBlock(10).Last();
-                coreNode.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
-                bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
+                coreNodeRpcClient.AddNode(stratisNode.Endpoint);
+                TestHelper.WaitLoop(() => stratisNodeRpcClient.GetBestBlockHash() == coreNodeRpcClient.GetBestBlockHash());
+                bestBlockHash = stratisNodeRpcClient.GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
             }
         }
