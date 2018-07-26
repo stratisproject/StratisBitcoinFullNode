@@ -40,7 +40,7 @@
         public int MaxBlockSigopsCost { get; set; }
 
         /// <summary>
-        /// Initializes the default values. Currently only used for testing.
+        /// Initializes the default values. Currently only used for initialising Bitcoin networks and testing.
         /// </summary>
         public ConsensusOptions()
         {
