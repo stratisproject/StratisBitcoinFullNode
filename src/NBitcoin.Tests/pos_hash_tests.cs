@@ -2,19 +2,19 @@
 using HashLib;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 using Hashes = NBitcoin.Crypto.Hashes;
 
 namespace NBitcoin.Tests
 {
-    public class pos_hash_tests
+    public class Pos_hash_tests
     {
         private readonly Network stratisMain;
 
-        public pos_hash_tests()
+        public Pos_hash_tests()
         {
-            this.stratisMain = NetworkContainer.StratisMain;
+            this.stratisMain = KnownNetworks.StratisMain;
         }
 
         [Fact]

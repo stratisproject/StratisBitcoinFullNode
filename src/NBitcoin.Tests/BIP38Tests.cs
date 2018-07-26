@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Security;
 using System.Threading.Tasks;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -13,7 +13,7 @@ namespace NBitcoin.Tests
 
         public BIP38Tests()
         {
-            this.networkMain = NetworkContainer.Main;
+            this.networkMain = KnownNetworks.Main;
         }
 
         [Fact]
@@ -68,7 +68,7 @@ namespace NBitcoin.Tests
         //Encrypted keys base58 string do not have network information
         public void DoNotThrowFormatExceptionIfNetworkInformationNotPresentInBase58()
         {
-            Network network = NetworkContainer.TestNet;
+            Network network = KnownNetworks.TestNet;
             string encryptedPrivateKey = new Key().GetEncryptedBitcoinSecret("abc123", network).ToString();
             Key key = Key.Parse(encryptedPrivateKey, "abc123", network);
         }

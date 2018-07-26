@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -15,8 +15,8 @@ namespace NBitcoin.Tests
 
         public ChainTests()
         {
-            this.network = NetworkContainer.Main;
-            this.networkTest = NetworkContainer.TestNet;
+            this.network = KnownNetworks.Main;
+            this.networkTest = KnownNetworks.TestNet;
         }
 
         [Fact]

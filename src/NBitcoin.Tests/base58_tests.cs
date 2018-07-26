@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -35,13 +35,13 @@ namespace NBitcoin.Tests
 
         public base58_tests()
         {
-            this.networkMain = NetworkContainer.Main;
+            this.networkMain = KnownNetworks.Main;
         }
 
         [Fact]
         public void ShouldEncodeProperly()
         {
-            foreach(object[] i in DataSet)
+            foreach (object[] i in DataSet)
             {
                 string data = (string)i[0];
                 string encoded = (string)i[1];
@@ -53,7 +53,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void ShouldDecodeProperly()
         {
-            foreach(object[] i in DataSet)
+            foreach (object[] i in DataSet)
             {
                 string data = (string)i[0];
                 string encoded = (string)i[1];
@@ -82,10 +82,10 @@ namespace NBitcoin.Tests
         {
             TestCase[] tests = TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid.json"));
             Network network;
-            foreach(TestCase test in tests)
+            foreach (TestCase test in tests)
             {
                 string strTest = test.ToString();
-                if(test.Count < 3) // Allow for extra stuff (useful for comments)
+                if (test.Count < 3) // Allow for extra stuff (useful for comments)
                 {
                     Assert.True(false, "Bad test " + strTest);
                     continue;
@@ -96,12 +96,12 @@ namespace NBitcoin.Tests
                 //const Object &metadata = test[2].get_obj();
                 bool isPrivkey = (bool)test.GetDynamic(2).isPrivkey;
                 bool isTestnet = (bool)test.GetDynamic(2).isTestnet;
-                if(isTestnet)
-                    network = NetworkContainer.TestNet;
+                if (isTestnet)
+                    network = KnownNetworks.TestNet;
                 else
-                    network = NetworkContainer.Main;
+                    network = KnownNetworks.Main;
 
-                if(isPrivkey)
+                if (isPrivkey)
                 {
                     bool isCompressed = (bool)test.GetDynamic(2).isCompressed;
 
@@ -124,9 +124,9 @@ namespace NBitcoin.Tests
                     BitcoinAddress addr = network.CreateBitcoinAddress(exp_base58string);
                     Assert.True((addr is BitcoinScriptAddress) == (exp_addrType == "script"), "isScript mismatch" + strTest);
 
-                    if(exp_addrType == "script")
+                    if (exp_addrType == "script")
                         Assert.True(addr.GetType() == typeof(BitcoinScriptAddress));
-                    if(exp_addrType == "pubkey")
+                    if (exp_addrType == "pubkey")
                         Assert.True(addr.GetType() == typeof(BitcoinPubKeyAddress));
 
                     Assert.Throws<FormatException>(() => network.CreateBitcoinSecret(exp_base58string));
@@ -144,10 +144,10 @@ namespace NBitcoin.Tests
             tests = tests.Concat(TestCase.read_json(TestDataLocations.GetFileFromDataFolder("base58_keys_valid2.json"))).ToArray();
             Network network = null;
 
-            foreach(TestCase test in tests)
+            foreach (TestCase test in tests)
             {
                 string strTest = test.ToString();
-                if(test.Count < 3) // Allow for extra stuff (useful for comments)
+                if (test.Count < 3) // Allow for extra stuff (useful for comments)
                 {
                     Assert.False(true, "Bad test: " + strTest);
                     continue;
@@ -158,11 +158,11 @@ namespace NBitcoin.Tests
                 bool isPrivkey = (bool)metadata.isPrivkey;
                 bool isTestnet = (bool)metadata.isTestnet;
 
-                if(isTestnet)
-                    network = NetworkContainer.TestNet;
+                if (isTestnet)
+                    network = KnownNetworks.TestNet;
                 else
-                    network = NetworkContainer.Main;
-                if(isPrivkey)
+                    network = KnownNetworks.Main;
+                if (isPrivkey)
                 {
                     bool isCompressed = metadata.isCompressed;
                     var key = new Key(exp_payload, fCompressedIn: isCompressed);
@@ -173,23 +173,23 @@ namespace NBitcoin.Tests
                 {
                     string exp_addrType = (string)metadata.addrType;
                     TxDestination dest;
-                    if(exp_addrType == "pubkey")
+                    if (exp_addrType == "pubkey")
                     {
                         dest = new KeyId(new uint160(exp_payload));
                     }
-                    else if(exp_addrType == "script")
+                    else if (exp_addrType == "script")
                     {
                         dest = new ScriptId(new uint160(exp_payload));
                     }
-                    else if(exp_addrType == "p2wpkh")
+                    else if (exp_addrType == "p2wpkh")
                     {
                         dest = new WitKeyId(new uint160(exp_payload));
                     }
-                    else if(exp_addrType == "p2wsh")
+                    else if (exp_addrType == "p2wsh")
                     {
                         dest = new WitScriptId(exp_payload);
                     }
-                    else if(exp_addrType == "none")
+                    else if (exp_addrType == "none")
                     {
                         continue;
                     }
@@ -203,9 +203,9 @@ namespace NBitcoin.Tests
                         BitcoinAddress addrOut = dest.GetAddress(network);
                         Assert.True(addrOut.ToString() == exp_base58string, "mismatch: " + strTest);
                         Assert.True(addrOut.ScriptPubKey == dest.ScriptPubKey);
-                        Assert.True(dest.ScriptPubKey.GetDestination(NetworkContainer.Main) == dest);
+                        Assert.True(dest.ScriptPubKey.GetDestination(KnownNetworks.Main) == dest);
                     }
-                    catch(ArgumentException)
+                    catch (ArgumentException)
                     {
                         Assert.True(dest.GetType() == typeof(TxDestination));
                     }
@@ -226,7 +226,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void base58_keys_invalid()
         {
-            foreach(object[] i in InvalidKeys)
+            foreach (object[] i in InvalidKeys)
             {
                 string data = (string)i[0];
                 // must be invalid as public and as private key

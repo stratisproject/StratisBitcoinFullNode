@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -11,7 +11,7 @@ namespace NBitcoin.Tests
 
         public Checkblock_Tests()
         {
-            this.networkMain = NetworkContainer.Main;
+            this.networkMain = KnownNetworks.Main;
         }
 
         [Fact]

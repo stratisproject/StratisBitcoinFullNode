@@ -1,5 +1,5 @@
 ﻿using System;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -11,10 +11,10 @@ namespace NBitcoin.Tests
         public void ShouldThrowBase58Exception()
         {
             string key = "";
-            Assert.Throws<FormatException>(() => BitcoinAddress.Create(key, NetworkContainer.Main));
+            Assert.Throws<FormatException>(() => BitcoinAddress.Create(key, KnownNetworks.Main));
 
             key = null;
-            Assert.Throws<ArgumentNullException>(() => BitcoinAddress.Create(key, NetworkContainer.Main));
+            Assert.Throws<ArgumentNullException>(() => BitcoinAddress.Create(key, KnownNetworks.Main));
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -12,7 +12,7 @@ namespace NBitcoin.Tests
 
         public Hash_Tests()
         {
-            this.networkMain = NetworkContainer.Main;
+            this.networkMain = KnownNetworks.Main;
         }
 
         [Fact]

@@ -3,6 +3,7 @@ using System.Linq;
 using NBitcoin.DataEncoders;
 using NBitcoin.Stealth;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -157,7 +158,7 @@ namespace NBitcoin.Tests
                 var scanSecret = new Key(TestUtils.ParseHex(test.ScanSecret));
                 AssertEx.CollectionEquals(scanSecret.PubKey.ToBytes(), TestUtils.ParseHex(test.ScanPubKey));
 
-                var stealth = new BitcoinStealthAddress(test.StealthAddress, NetworkContainer.Main);
+                var stealth = new BitcoinStealthAddress(test.StealthAddress, KnownNetworks.Main);
                 Assert.Equal(test.RequiredSignature, stealth.SignatureCount);
                 Assert.Equal(test.PrefixLength, stealth.Prefix.BitCount);
                 AssertEx.CollectionEquals(stealth.Prefix.GetRawForm(), TestUtils.ParseHex(test.PrefixValue));
@@ -226,10 +227,10 @@ namespace NBitcoin.Tests
                 Key ephem = AssertKeys(test.EphemSecret, test.EphemPubKey);
                 Key stealth = AssertKeys(test.StealthSecret, test.StealthPubKey);
 
-                BitcoinStealthAddress address = spend.PubKey.CreateStealthAddress(scan.PubKey, NetworkContainer.Main);
+                BitcoinStealthAddress address = spend.PubKey.CreateStealthAddress(scan.PubKey, KnownNetworks.Main);
                 Assert.Equal(test.StealthAddress, address.ToString());
                 //Try roundtrip
-                address = new BitcoinStealthAddress(address.ToBytes(), NetworkContainer.Main);
+                address = new BitcoinStealthAddress(address.ToBytes(), KnownNetworks.Main);
                 Assert.Equal(test.StealthAddress, address.ToString());
 
                 StealthPayment payment = address.CreatePayment(ephem);
@@ -335,7 +336,7 @@ namespace NBitcoin.Tests
                 data.ScanPubKey = ToString(scan.PubKey);
                 data.EphemSecret = ToString(ephem);
                 data.EphemPubKey = ToString(ephem.PubKey);
-                data.StealthAddress = spend.PubKey.CreateStealthAddress(scan.PubKey, NetworkContainer.Main).ToString();
+                data.StealthAddress = spend.PubKey.CreateStealthAddress(scan.PubKey, KnownNetworks.Main).ToString();
                 yield return data;
             }
         }

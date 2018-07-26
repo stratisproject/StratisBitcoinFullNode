@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -31,7 +31,7 @@ namespace NBitcoin.Tests
 
         public key_tests()
         {
-            this.networkMain = NetworkContainer.Main;
+            this.networkMain = KnownNetworks.Main;
 
             this.addr1 = (BitcoinPubKeyAddress)this.networkMain.CreateBitcoinAddress("1QFqqMUD55ZV3PJEJZtaKCsQmjLT6JkjvJ");
             this.addr2 = (BitcoinPubKeyAddress)this.networkMain.CreateBitcoinAddress("1F5y5E5FMc5YzdJtB9hLaUe43GDxEKXENJ");
@@ -155,7 +155,7 @@ namespace NBitcoin.Tests
                 var address = (BitcoinPubKeyAddress)this.networkMain.CreateBitcoinAddress(test.Address);
                 Assert.Equal(new KeyId(test.Hash160), address.Hash);
                 Assert.Equal(new KeyId(test.Hash160), secret.PrivateKey.PubKey.Hash);
-                Assert.Equal(address.Hash, secret.PrivateKey.PubKey.GetAddress(NetworkContainer.Main).Hash);
+                Assert.Equal(address.Hash, secret.PrivateKey.PubKey.GetAddress(KnownNetworks.Main).Hash);
 
                 BitcoinSecret compressedSec = secret.Copy(true);
 
@@ -294,7 +294,7 @@ namespace NBitcoin.Tests
             var privateKey = new Byte[32] { 0xE9, 0x87, 0x3D, 0x79, 0xC6, 0xD8, 0x7D, 0xC0, 0xFB, 0x6A, 0x57, 0x78, 0x63, 0x33, 0x89, 0xF4, 0x45, 0x32, 0x13, 0x30, 0x3D, 0xA6, 0x1F, 0x20, 0xBD, 0x67, 0xFC, 0x23, 0x3A, 0xA3, 0x32, 0x62 };
             var key1 = new Key(privateKey, -1, false);
 
-            ISecret wifKey = key1.GetWif(NetworkContainer.Main);
+            ISecret wifKey = key1.GetWif(KnownNetworks.Main);
 
             //Example wif private key taken from https://en.bitcoin.it/wiki/Private_key
             const String expected = "5Kb8kLf9zgWQnogidDA76MzPL6TsZZY36hWXMssSzNydYXYB9KF";
