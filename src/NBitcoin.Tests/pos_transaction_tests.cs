@@ -24,7 +24,7 @@ namespace NBitcoin.Tests
 
         public Pos_Transaction_Tests()
         {
-            this.stratisMain = new StratisMain();
+            this.stratisMain = NetworkContainer.StratisMain;
             this.consensusFactory = this.stratisMain.Consensus.ConsensusFactory;
         }
 
@@ -1631,7 +1631,6 @@ namespace NBitcoin.Tests
         //https://gist.github.com/gavinandresen/3966071
         public void CanPartiallySignTransaction()
         {
-            Network network = this.stratisMain;
             Key[] privKeys = new[]{"7R3MeCSVTTzp3w3Ny4g7RWpvMYu7CfuERZJcPqn1VRL3kyV9A2p",
                         "7R41movhhKW2ZencnZvzcoDssFpKfNCv4yRqHnXco85rBLN1C2D",
                         "7Qidst55wkYRJpJN4aEnGjz64Mnf7BrSehVuX2HqWWPpYNEkqQJ"}
@@ -1639,7 +1638,7 @@ namespace NBitcoin.Tests
 
             //First: combine the three keys into a multisig address
             Script redeem = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, privKeys.Select(k => k.PubKey).ToArray());
-            BitcoinAddress scriptAddress = redeem.Hash.GetAddress(network);
+            BitcoinAddress scriptAddress = redeem.Hash.GetAddress(this.stratisMain);
             Assert.Equal("sgs9e5cF7ykb3ZXRztgwMhiGwjRF7hRkvn", scriptAddress.ToString());
 
             // Next, create a transaction to send funds into that multisig. Transaction d6f72... is
@@ -1665,7 +1664,6 @@ namespace NBitcoin.Tests
 
             Transaction partiallySigned = this.stratisMain.CreateTransaction(spendTransaction.ToBytes());
             //... Now I can partially sign it using one private key:
-
             partiallySigned.Sign(this.stratisMain, privKeys[0], true);
 
             //the other private keys (note the "hex" result getting longer):
@@ -1703,7 +1701,7 @@ namespace NBitcoin.Tests
             }
         }
 
-        private static StandardTransactionPolicy EasyPolicy(Network network) 
+        private static StandardTransactionPolicy EasyPolicy(Network network)
         {
             return new StandardTransactionPolicy(network)
             {

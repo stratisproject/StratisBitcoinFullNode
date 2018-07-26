@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace NBitcoin.Tests
 {
-    public class bip32_tests
+    public class Bip32_Tests
     {
         private readonly Network networkMain;
 
-        public bip32_tests()
+        public Bip32_Tests()
         {
-            this.networkMain = this.networkMain;
+            this.networkMain = NetworkContainer.Main;
         }
 
         private class TestDerivation

@@ -14,7 +14,7 @@ namespace NBitcoin.Tests
 
         public pos_hash_tests()
         {
-            this.stratisMain = new StratisMain();
+            this.stratisMain = NetworkContainer.StratisMain;
         }
 
         [Fact]
@@ -83,7 +83,7 @@ namespace NBitcoin.Tests
         {
             var hasher = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
             Assert.Equal(0x726fdb47dd0e0e31UL, hasher.Finalize());
-            var t0 = new byte[]{ 0 };
+            var t0 = new byte[] { 0 };
             hasher.Write(t0);
             Assert.Equal(0x74f839c593dc67fdUL, hasher.Finalize());
             var t1 = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
@@ -97,7 +97,7 @@ namespace NBitcoin.Tests
             var t3 = new byte[] { 18, 19, 20, 21, 22, 23, 24, 25, 26 };
             hasher.Write(t3);
             Assert.Equal(0x2f2e6163076bcfadUL, hasher.Finalize());
-            var t4 = new byte[]{ 27, 28, 29, 30, 31 };
+            var t4 = new byte[] { 27, 28, 29, 30, 31 };
             hasher.Write(t4);
             Assert.Equal(0x7127512f72f27cceUL, hasher.Finalize());
             hasher.Write(0x2726252423222120UL);
@@ -109,14 +109,14 @@ namespace NBitcoin.Tests
 
             // Check test vectors from spec, one byte at a time
             var hasher2 = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
-            for(byte x = 0; x < this.siphash_4_2_testvec.Length; ++x)
+            for (byte x = 0; x < this.siphash_4_2_testvec.Length; ++x)
             {
                 Assert.Equal(hasher2.Finalize(), this.siphash_4_2_testvec[x]);
                 hasher2.Write(new byte[] { x });
             }
             // Check test vectors from spec, eight bytes at a time
             var hasher3 = new Hashes.SipHasher(0x0706050403020100UL, 0x0F0E0D0C0B0A0908UL);
-            for(int x = 0; x < this.siphash_4_2_testvec.Length; x += 8)
+            for (int x = 0; x < this.siphash_4_2_testvec.Length; x += 8)
             {
                 Assert.Equal(hasher3.Finalize(), this.siphash_4_2_testvec[x]);
                 hasher3.Write(uint64_t(x) | (uint64_t(x + 1) << 8) | (uint64_t(x + 2) << 16) | (uint64_t(x + 3) << 24) |
