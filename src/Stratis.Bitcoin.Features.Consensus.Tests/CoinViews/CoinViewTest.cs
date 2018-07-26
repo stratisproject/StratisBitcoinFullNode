@@ -39,9 +39,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             }
 
             /// <inheritdoc />
-            public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
+            public async Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
             {
-                throw new NotImplementedException();
+                FetchCoinsResponse response = await this.FetchCoinsAsync(new uint256[0], cancellationToken).ConfigureAwait(false);
+
+                return response.BlockHash;
             }
 
             public Task<uint256> Rewind()
