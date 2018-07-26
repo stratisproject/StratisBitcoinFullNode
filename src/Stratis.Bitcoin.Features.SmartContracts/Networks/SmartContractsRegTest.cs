@@ -62,6 +62,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
 
+            // Taken from StratisX.
+            this.Consensus.Options = new PosConsensusOptions(1_000_000, 2, 100_000, 20_000);
+
             this.Consensus = consensus;
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("93867319cf92c86f957a9652c1fbe7cc8cbe70c53a915ac96ee7c59cb80f94b4"));
