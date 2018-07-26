@@ -1,6 +1,6 @@
-using NBitcoin.NetworkDefinitions;
+using NBitcoin;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.Networks
 {
     public static class Networks
     {
