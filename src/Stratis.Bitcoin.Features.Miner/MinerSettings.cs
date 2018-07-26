@@ -76,13 +76,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             uint blockMaxSize = (uint) config.GetOrDefault<int>("blockmaxsize", (int) nodeSettings.Network.Consensus.Options.MaxBlockSerializedSize, this.logger);
-            //blockMaxSize = (blockMaxSize <= 0) 
-            //    ? nodeSettings.Network.Consensus.Options.MaxBlockSerializedSize 
-            //    : blockMaxSize;
             uint blockMaxWeight = (uint) config.GetOrDefault<int>("blockmaxweight", (int) nodeSettings.Network.Consensus.Options.MaxBlockWeight, this.logger);
-            //blockMaxWeight = (blockMaxWeight <= 0)
-            //    ? nodeSettings.Network.Consensus.Options.MaxBlockWeight
-            //    : blockMaxWeight;
 
             this.BlockDefinitionOptions = new BlockDefinitionOptions(blockMaxWeight, blockMaxSize).RestrictForNetwork(nodeSettings.Network);
 
