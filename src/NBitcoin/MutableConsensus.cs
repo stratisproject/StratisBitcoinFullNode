@@ -8,6 +8,12 @@ namespace NBitcoin
     /// </summary>
     public class MutableConsensus : IConsensus
     {
+        public MutableConsensus()
+        {
+            this.BuriedDeployments = new Consensus.BuriedDeploymentsArray();
+            this.BIP9Deployments = new Consensus.BIP9DeploymentsArray();
+        }
+
         public long CoinbaseMaturity { get; set; }
         public Money PremineReward { get; set; }
         public long PremineHeight { get; set; }
