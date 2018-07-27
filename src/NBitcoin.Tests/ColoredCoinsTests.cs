@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using NBitcoin.DataEncoders;
+using NBitcoin.Networks;
 using NBitcoin.OpenAsset;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Tests.Common;
@@ -94,6 +95,8 @@ namespace NBitcoin.Tests
 
         public ColoredCoinsTests()
         {
+            NetworkRegistration.Clear();
+
             this.network = KnownNetworks.Main;
             this.networkTest = KnownNetworks.TestNet;
             this.networkRegTest = KnownNetworks.RegTest;

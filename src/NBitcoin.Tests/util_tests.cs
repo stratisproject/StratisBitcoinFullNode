@@ -30,6 +30,8 @@ namespace NBitcoin.Tests
 
         public Util_Tests()
         {
+            NetworkRegistration.Clear();
+
             this.networkMain = KnownNetworks.Main;
             this.networkTestNet = KnownNetworks.TestNet;
             this.networkRegTest = KnownNetworks.RegTest;

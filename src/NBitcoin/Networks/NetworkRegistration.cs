@@ -8,7 +8,7 @@ using NBitcoin.DataEncoders;
 namespace NBitcoin.Networks
 {
     /// <summary>
-    /// A container for storing/retrieving known networks
+    /// A container for storing/retrieving known networks.
     /// </summary>
     public static class NetworkRegistration
     {
@@ -17,7 +17,7 @@ namespace NBitcoin.Networks
         /// <summary>
         /// Register an immutable <see cref="Network"/> instance so it is queryable through <see cref="GetNetwork"/> and <see cref="GetNetworks"/>.
         /// <para>
-        /// Performs a series of checks before registering the network to the list of available networks.
+        /// If the network already exists, the already registered instance will be returned from the <see cref="registeredNetworks"/> collection.
         /// </para>
         /// </summary>
         public static Network Register(Network network)
@@ -46,10 +46,18 @@ namespace NBitcoin.Networks
         }
 
         /// <summary>
+        /// Clears the <see cref="registeredNetworks"/> collection.
+        /// </summary>
+        public static void Clear()
+        {
+            registeredNetworks.Clear();
+        }
+
+        /// <summary>
         /// Get network from name
         /// </summary>
         /// <param name="name">main,mainnet,testnet,test,testnet3,reg,regtest,seg,segnet</param>
-        /// <returns>The network or null of the name does not match any network</returns>
+        /// <returns>The network or null of the name does not match any network.</returns>
         public static Network GetNetwork(string name)
         {
             if (!registeredNetworks.Any())
