@@ -32,9 +32,9 @@ namespace NBitcoin.Tests
         {
             NetworkRegistration.Clear();
 
-            this.networkMain = KnownNetworks.Main;
             this.networkTestNet = KnownNetworks.TestNet;
             this.networkRegTest = KnownNetworks.RegTest;
+            this.networkMain = KnownNetworks.Main;
         }
 
         [Fact]
@@ -668,7 +668,7 @@ namespace NBitcoin.Tests
             Assert.True(result.Network == KnownNetworks.RegTest);
 
             result = Network.Parse(address.Base58, null);
-            Assert.True(result.Network == KnownNetworks.TestNet);
+            Assert.Contains(result.Network, new[] { KnownNetworks.RegTest, KnownNetworks.TestNet });
         }
 
         [Fact]
@@ -804,18 +804,34 @@ namespace NBitcoin.Tests
                 {
                     IBitcoinString result = Network.Parse(test.Base58, null);
                     Assert.True(test.ExpectedType == result.GetType());
-                    if (test.Network != null)
-                        Assert.Equal(test.Network, result.Network);
-                    Network.Parse(test.Base58, test.Network);
 
                     if (test.Network != null)
                     {
-                        foreach (Network network in NetworkRegistration.GetNetworks())
+                        if (test.Network.Name.ToLowerInvariant().Contains("test"))
+                            Assert.Contains(result.Network, new[] { KnownNetworks.RegTest, KnownNetworks.TestNet });
+                        else
+                            Assert.Equal(test.Network, result.Network);
+                    }
+
+                    Network.Parse(test.Base58, test.Network);
+
+                    if (test.Network == null)
+                        continue;
+
+                    foreach (Network network in NetworkRegistration.GetNetworks())
+                    {
+                        if (test.Network.Name.ToLowerInvariant().Contains("test"))
+                        {
+                            Assert.Contains(result.Network, new[] { KnownNetworks.RegTest, KnownNetworks.TestNet });
+                            break;
+                        }
+                        else
                         {
                             if (network == test.Network)
                                 break;
-                            Assert.Throws<FormatException>(() => Network.Parse(test.Base58, network));
                         }
+
+                        Assert.Throws<FormatException>(() => Network.Parse(test.Base58, network));
                     }
                 }
             }

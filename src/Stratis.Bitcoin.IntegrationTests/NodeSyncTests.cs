@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .All(pi => pi.Address.MapToIpv6().ToString() != coreNode.Endpoint.MapToIpv6().ToString()));
 
                 tip = coreNode.FindBlock(10).Last();
-                coreNodeRpcClient.AddNode(stratisNode.Endpoint);
+                coreNodeRpcClient.AddNode(stratisNode.Endpoint, true);
                 TestHelper.WaitLoop(() => stratisNodeRpcClient.GetBestBlockHash() == coreNodeRpcClient.GetBestBlockHash());
                 bestBlockHash = stratisNodeRpcClient.GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
