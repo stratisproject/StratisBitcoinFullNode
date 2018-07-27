@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using NBitcoin;
+using NBitcoin.Networks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -26,7 +27,7 @@ namespace Stratis.StratisSmartContractsD
         {
             try
             {
-                Network network = NetworksContainer.Register(new SmartContractsTest());
+                Network network = NetworkRegistration.Register(new SmartContractsTest());
                 NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, "StratisSC", args: args);
 
                 Bitcoin.IFullNode node = new FullNodeBuilder()

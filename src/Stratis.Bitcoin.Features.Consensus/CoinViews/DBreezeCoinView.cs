@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
@@ -16,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     /// <summary>
     /// Persistent implementation of coinview using DBreeze database.
     /// </summary>
-    public class DBreezeCoinView : CoinView, IDisposable
+    public class DBreezeCoinView : ICoinView, IDisposable
     {
         /// <summary>Database key under which the block hash of the coin view's current tip is stored.</summary>
         private static readonly byte[] blockHashKey = new byte[0];
@@ -97,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     transaction.ValuesLazyLoadingIsOn = false;
                     transaction.SynchronizeTables("BlockHash");
 
-                    if (this.GetCurrentHash(transaction) == null)
+                    if (this.GetTipHash(transaction) == null)
                     {
                         this.SetBlockHash(transaction, genesis.GetHash());
 
@@ -114,7 +115,29 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
+        public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            Task<uint256> task = Task.Run(() =>
+            {
+                this.logger.LogTrace("()");
+
+                uint256 tipHash;
+
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                {
+                    transaction.ValuesLazyLoadingIsOn = false;
+                    tipHash = this.GetTipHash(transaction);
+                }
+
+                this.logger.LogTrace("(-):'{0}'", tipHash);
+                return tipHash;
+            }, cancellationToken);
+
+            return task;
+        }
+
+        /// <inheritdoc />
+        public Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
         {
             Task<FetchCoinsResponse> task = Task.Run(() =>
             {
@@ -128,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                     using (new StopwatchDisposable(o => this.PerformanceCounter.AddQueryTime(o)))
                     {
-                        uint256 blockHash = this.GetCurrentHash(transaction);
+                        uint256 blockHash = this.GetTipHash(transaction);
                         var result = new UnspentOutputs[txIds.Length];
                         this.PerformanceCounter.AddQueriedEntities(txIds.Length);
 
@@ -146,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 this.logger.LogTrace("(-):*.{0}='{1}',*.{2}.{3}={4}", nameof(res.BlockHash), res.BlockHash, nameof(res.UnspentOutputs), nameof(res.UnspentOutputs.Length), res.UnspentOutputs.Length);
                 return res;
-            });
+            }, cancellationToken);
 
             return task;
         }
@@ -156,7 +179,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         /// <param name="transaction">Open DBreeze transaction.</param>
         /// <returns>Block header hash of the coinview's current tip.</returns>
-        private uint256 GetCurrentHash(DBreeze.Transactions.Transaction transaction)
+        private uint256 GetTipHash(DBreeze.Transactions.Transaction transaction)
         {
             if (this.blockHash == null)
             {
@@ -184,7 +207,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+        public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
         {
             this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:'{5}',{6}:'{7}')", nameof(unspentOutputs), unspentOutputs?.Count(), nameof(originalOutputs), originalOutputs?.Count(), nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
 
@@ -218,7 +241,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                     using (new StopwatchDisposable(o => this.PerformanceCounter.AddInsertTime(o)))
                     {
-                        uint256 current = this.GetCurrentHash(transaction);
+                        uint256 current = this.GetTipHash(transaction);
                         if (current != oldBlockHash)
                         {
                             this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
@@ -292,7 +315,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public override Task<uint256> Rewind()
+        public Task<uint256> Rewind()
         {
             Task<uint256> task = Task.Run(() =>
             {

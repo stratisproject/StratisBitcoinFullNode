@@ -46,7 +46,6 @@
     <ProjectReference Include="..\Stratis.Bitcoin.Tests.Common\Stratis.Bitcoin.Tests.Common.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj" />
-    <ProjectReference Include="..\Stratis.SmartContracts.Standards\Stratis.SmartContracts.Standards.csproj" />
   </ItemGroup>
 
   <ItemGroup>
