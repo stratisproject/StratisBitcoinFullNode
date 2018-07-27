@@ -22,6 +22,10 @@ namespace NBitcoin.Networks
         /// </summary>
         public static Network Register(Network network)
         {
+            Network existing = GetNetwork(network.Name);
+            if(existing != null)
+                return existing;
+
             IEnumerable<string> networkNames = network.AdditionalNames != null ? new[] { network.Name }.Concat(network.AdditionalNames) : new[] { network.Name };
 
             foreach (string networkName in networkNames)
