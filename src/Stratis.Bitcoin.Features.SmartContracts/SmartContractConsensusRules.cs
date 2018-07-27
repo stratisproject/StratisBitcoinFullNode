@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <inheritdoc />
-        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext)
         {
             return new PowRuleContext(validationContext, this.DateTimeProvider.GetTimeOffset());
         }

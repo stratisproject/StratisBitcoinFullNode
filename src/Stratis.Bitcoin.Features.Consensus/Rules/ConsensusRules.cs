@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext)
         {
             return new PowRuleContext(validationContext, this.DateTimeProvider.GetTimeOffset());
         }
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext)
         {
             return new PosRuleContext(validationContext, this.DateTimeProvider.GetTimeOffset());
         }

@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             TestConsensusRules consensusRules = InitializeConsensusRules();
             consensusRules.Register(this.ruleRegistration.Object);
 
-            await consensusRules.PartialValidationAsync(new ValidationContext(), consensusRules.Chain.Tip);
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.True(rule.RunCalled);
         }
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             TestConsensusRules consensusRules = InitializeConsensusRules();
             consensusRules.Register(this.ruleRegistration.Object);
 
-            await consensusRules.PartialValidationAsync(new ValidationContext(), consensusRules.Chain.Tip);
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.False(rule.RunCalled);
         }
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             TestConsensusRules consensusRules = InitializeConsensusRules();
             consensusRules.Register(this.ruleRegistration.Object);
 
-            await consensusRules.PartialValidationAsync(new ValidationContext(), consensusRules.Chain.Tip);
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.True(rule.RunCalled);
             Assert.Null(blockValidationContext.Error);
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             TestConsensusRules consensusRules = InitializeConsensusRules();
             consensusRules.Register(this.ruleRegistration.Object);
 
-            await consensusRules.PartialValidationAsync(new ValidationContext(), consensusRules.Chain.Tip);
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.True(rule.RunCalled);
             Assert.Null(blockValidationContext.Error);
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             TestConsensusRules consensusRules = InitializeConsensusRules();
             consensusRules.Register(this.ruleRegistration.Object);
 
-            await consensusRules.PartialValidationAsync(new ValidationContext(), consensusRules.Chain.Tip);
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.True(rule.RunCalled);
             Assert.Null(blockValidationContext.Error);
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             consensusRules.Register(this.ruleRegistration.Object);
 
-            await consensusRules.PartialValidationAsync(new ValidationContext(), consensusRules.Chain.Tip);
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.False(rule.RunCalled);
             Assert.Null(blockValidationContext.Error);
@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             TestConsensusRules consensusRules = InitializeConsensusRules();
             consensusRules.Register(this.ruleRegistration.Object);
 
-            await consensusRules.PartialValidationAsync(new ValidationContext(), consensusRules.Chain.Tip);
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.NotNull(blockValidationContext.Error);
             Assert.Equal(consensusError.Message, blockValidationContext.Error.Message);

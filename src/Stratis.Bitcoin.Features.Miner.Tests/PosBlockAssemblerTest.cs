@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 BlockTemplate blockTemplate = posBlockAssembler.Build(chain.Tip, this.key.ScriptPubKey);
 
-                this.consensusLoop.Verify(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ValidationContext>(), It.IsAny<ChainedHeader>()), Times.Exactly(0));
+                this.consensusLoop.Verify(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ValidationContext>()), Times.Exactly(0));
                 Assert.Null(this.callbackRuleContext);
                 this.stakeValidator.Verify();
             });
@@ -412,7 +412,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.callbackRuleContext = null;
 
-            this.consensusLoop.Setup(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ValidationContext>(), It.IsAny<ChainedHeader>()))
+            this.consensusLoop.Setup(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ValidationContext>()))
                 .Callback<RuleContext>(c =>
                 {
                     this.callbackRuleContext = c;

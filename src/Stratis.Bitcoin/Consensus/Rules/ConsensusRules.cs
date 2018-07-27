@@ -157,41 +157,41 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <inheritdoc/>
-        public void HeaderValidation(ValidationContext validationContext, ChainedHeader tip)
+        public void HeaderValidation(ValidationContext validationContext)
         {
             Guard.NotNull(validationContext, nameof(validationContext));
 
-            RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
+            RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             this.ExecuteRules(this.headerValidationRules, ruleContext);
         }
 
         /// <inheritdoc/>
-        public void IntegrityValidation(ValidationContext validationContext, ChainedHeader tip)
+        public void IntegrityValidation(ValidationContext validationContext)
         {
             Guard.NotNull(validationContext, nameof(validationContext));
 
-            RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
+            RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             this.ExecuteRules(this.integrityValidationRules, ruleContext);
         }
 
         /// <inheritdoc/>
-        public async Task FullValidationAsync(ValidationContext validationContext, ChainedHeader tip)
+        public async Task FullValidationAsync(ValidationContext validationContext)
         {
             Guard.NotNull(validationContext, nameof(validationContext));
 
-            RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
+            RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public async Task PartialValidationAsync(ValidationContext validationContext, ChainedHeader tip)
+        public async Task PartialValidationAsync(ValidationContext validationContext)
         {
             Guard.NotNull(validationContext, nameof(validationContext));
 
-            RuleContext ruleContext = this.CreateRuleContext(validationContext, tip);
+            RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
         }
@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public abstract RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip);
+        public abstract RuleContext CreateRuleContext(ValidationContext validationContext);
 
         /// <inheritdoc />
         public abstract Task<uint256> GetBlockHashAsync();

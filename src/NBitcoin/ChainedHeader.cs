@@ -119,6 +119,12 @@ namespace NBitcoin
             if (previous != null)
                 this.Height = previous.Height + 1;
 
+            if (this.Height == 0)
+            {
+                this.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
+                this.BlockValidationState = ValidationState.FullyValidated;
+            }
+
             this.Previous = previous;
 
             if (previous == null)
@@ -132,10 +138,10 @@ namespace NBitcoin
                     throw new ArgumentException("The previous block does not have the expected hash");
 
                 // Calculates the location of the skip block for this block.
-                this.Skip = this.Previous.GetAncestor(GetSkipHeight(this.Height));
+                this.Skip = this.Previous.GetAncestor(this.GetSkipHeight(this.Height));
             }
 
-            CalculateChainWork();
+            this.CalculateChainWork();
         }
 
         /// <summary>
@@ -147,7 +153,7 @@ namespace NBitcoin
         public ChainedHeader(BlockHeader header, uint256 headerHash, int height) : this(header, headerHash)
         {
             this.Height = height;
-            CalculateChainWork();
+            this.CalculateChainWork();
 
             if (height == 0)
             {

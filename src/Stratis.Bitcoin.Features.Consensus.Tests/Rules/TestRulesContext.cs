@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             return rule;
         }
 
-        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader tip)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext)
         {
             return this.RuleContext ?? new PowRuleContext();
         }

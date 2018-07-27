@@ -14,9 +14,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public IEnumerable<ConsensusRule> GetRules()
         {
             var rules = new List<ConsensusRule>
-            {
-                new TemporarySetChainHeader(),
-                
+            {                
                 // == Header ==
                 new HeaderTimeChecksRule(),
                 new CheckDifficultyPowRule(),

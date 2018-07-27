@@ -203,8 +203,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 return new List<ConsensusRule>
                 {
-                    new TemporarySetChainHeader(),
-
                     // == Header ==
                     new HeaderTimeChecksRule(),
                     new CheckDifficultyPowRule(),
@@ -250,8 +248,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 return new List<ConsensusRule>
                 {
-                    new TemporarySetChainHeader(),
-
                     // == Header ==
                     new HeaderTimeChecksRule(),
                     new HeaderTimeChecksPosRule(),

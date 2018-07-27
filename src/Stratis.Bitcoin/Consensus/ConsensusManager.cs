@@ -757,10 +757,10 @@ namespace Stratis.Bitcoin.Consensus
                     throw new ConsensusException("Block must be partially or fully validated.");
                 }
 
-                var validationContext = new ValidationContext() { Block = nextChainedHeaderBlock.Block };
+                var validationContext = new ValidationContext() { Block = nextChainedHeaderBlock.Block, ChainedHeader = chainTipToExtand};
 
                 // Call the validation engine.
-                await this.consensusRules.FullValidationAsync(validationContext, chainTipToExtand).ConfigureAwait(false);
+                await this.consensusRules.FullValidationAsync(validationContext).ConfigureAwait(false);
 
                 if (validationContext.Error != null)
                 {

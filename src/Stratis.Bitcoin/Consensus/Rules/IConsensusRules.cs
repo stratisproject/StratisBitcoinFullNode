@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <remarks>
         /// Each network type can specify it's own <see cref="RuleContext"/>.
         /// </remarks>
-        RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip);
+        RuleContext CreateRuleContext(ValidationContext validationContext);
 
         /// <summary>
         /// Retrieves the block hash of the current tip of the chain.
@@ -69,29 +69,25 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// Execute rules that are marked with the <see cref="HeaderValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
-        /// <param name="tip">The current tip.</param>
-        void HeaderValidation(ValidationContext validationContext, ChainedHeader tip);
+        void HeaderValidation(ValidationContext validationContext);
 
         /// <summary>
         /// Execute rules that are marked with the <see cref="IntegrityValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
-        /// <param name="tip">The current tip.</param>
-        void IntegrityValidation(ValidationContext validationContext, ChainedHeader tip);
+        void IntegrityValidation(ValidationContext validationContext);
 
         /// <summary>
         /// Execute rules that are marked with the <see cref="PartialValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
-        /// <param name="tip">The current tip.</param>
-        Task PartialValidationAsync(ValidationContext validationContext, ChainedHeader tip);
+        Task PartialValidationAsync(ValidationContext validationContext);
 
         /// <summary>
         /// Execute rules that are marked with the <see cref="FullValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
-        /// <param name="tip">The current tip.</param>
-        Task FullValidationAsync(ValidationContext validationContext, ChainedHeader tip);
+        Task FullValidationAsync(ValidationContext validationContext);
     }
 
     /// <summary>
