@@ -3,6 +3,10 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
+    /// <summary>
+    /// Options object to be passed to <see cref="WalletTransactionHandler"/>.
+    /// TODO: Order semantically / alphabetical
+    /// </summary>
     public class TransactionBuildOptions
     {
         // required
@@ -28,10 +32,21 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public List<OutPoint> SelectedInputs { get; set; }
 
+        public FeeRate OverrideFeeRate { get; set; }
+
         public TransactionBuildOptions(WalletAccountReference wallet, string password, List<Recipient> recipients)
         {
             this.WalletAccountReference = wallet;
             this.WalletPassword = password;
+            this.Recipients = recipients;
+        }
+
+        /// <summary>
+        /// When estimating, don't need password.
+        /// </summary>
+        public TransactionBuildOptions(WalletAccountReference wallet, List<Recipient> recipients)
+        {
+            this.WalletAccountReference = wallet;
             this.Recipients = recipients;
         }
 

@@ -39,6 +39,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <param name="context">The context that is used to build a new transaction.</param>
         /// <returns>The estimated fee.</returns>
-        Money EstimateFee(TransactionBuildContext context);
+        Money EstimateFee(TransactionBuildOptions options);
     }
 }

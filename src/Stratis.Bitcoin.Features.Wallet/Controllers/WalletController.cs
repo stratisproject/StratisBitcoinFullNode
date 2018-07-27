@@ -666,8 +666,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
-                var context = new TransactionBuildContext(
-                    this.network,
+                var options = new TransactionBuildOptions(
                     new WalletAccountReference(request.WalletName, request.AccountName),
                     new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList())
                 {
@@ -675,7 +674,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
                 };
 
-                return this.Json(this.walletTransactionHandler.EstimateFee(context));
+                return this.Json(this.walletTransactionHandler.EstimateFee(options));
             }
             catch (Exception e)
             {

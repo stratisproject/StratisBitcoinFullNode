@@ -186,13 +186,18 @@ namespace Stratis.Bitcoin.Features.Wallet
             return (maxSpendableAmount - fee, fee);
         }
 
-        /// <inheritdoc />
-        public Money EstimateFee(TransactionBuildContext context)
+        public Money EstimateFee(TransactionBuildOptions options)
         {
-            this.InitializeTransactionBuilder(context);
-
-            return context.TransactionFee;
+            throw new NotImplementedException();
         }
+
+        /// <inheritdoc />
+        //public Money EstimateFee(TransactionBuildContext context)
+        //{
+        //    this.InitializeTransactionBuilder(context);
+
+        //    return context.TransactionFee;
+        //}
 
         /// <summary>
         /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.

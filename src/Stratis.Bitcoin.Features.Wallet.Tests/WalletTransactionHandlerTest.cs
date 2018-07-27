@@ -375,21 +375,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Single(fundTransaction.Inputs); // 4 inputs
 
             Transaction fundTransactionClone = this.network.CreateTransaction(fundTransaction.ToBytes());
-            var fundContext = new TransactionBuildContext(this.network, walletReference, new List<Recipient>(), "password")
+            var fundOptions = new TransactionBuildOptions(walletReference, "password", new List<Recipient>())
             {
                 MinConfirmations = 0,
                 FeeType = FeeType.Low
             };
 
-            fundContext.OverrideFeeRate = overrideFeeRate;
-            walletTransactionHandler.FundTransaction(fundContext, fundTransaction);
+            fundOptions.OverrideFeeRate = overrideFeeRate;
+            walletTransactionHandler.FundTransaction(fundOptions, fundTransaction);
 
             foreach (TxIn input in fundTransactionClone.Inputs) // all original inputs are still in the trx
                 Assert.Contains(fundTransaction.Inputs, a => a.PrevOut == input.PrevOut);
 
             Assert.Equal(4, fundTransaction.Inputs.Count); // we expect 4 inputs
             Assert.Equal(4, fundTransaction.Outputs.Count); // we expect 4 outputs
-            Assert.Equal(new Money(200, MoneyUnit.BTC) - fundContext.TransactionFee, fundTransaction.TotalOut);
+            Assert.Equal(new Money(200, MoneyUnit.BTC) - fundOptions.TransactionFee, fundTransaction.TotalOut);
 
             Assert.Contains(fundTransaction.Outputs, a => a.ScriptPubKey == destinationKeys1.PubKey.ScriptPubKey);
             Assert.Contains(fundTransaction.Outputs, a => a.ScriptPubKey == destinationKeys2.PubKey.ScriptPubKey);
@@ -570,14 +570,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
 
             // Context to build requires password in order to sign transaction.
-            TransactionBuildContext buildContext = CreateOptions(this.network, walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
-            walletTransactionHandler.BuildTransaction(buildContext);
+            TransactionBuildOptions buildOptions = CreateOptions(this.network, walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
+            walletTransactionHandler.BuildTransaction(buildOptions);
 
             // Context for estimate does not need password.
-            TransactionBuildContext estimateContext = CreateOptions(this.network, walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
-            Money fee = walletTransactionHandler.EstimateFee(estimateContext);
+            TransactionBuildOptions estimateOptions = CreateOptions(this.network, walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
+            Money fee = walletTransactionHandler.EstimateFee(estimateOptions);
 
-            Assert.Equal(fee, buildContext.TransactionFee);
+            Assert.Equal(fee, buildOptions.TransactionFee);
         }
 
         /// <summary>
