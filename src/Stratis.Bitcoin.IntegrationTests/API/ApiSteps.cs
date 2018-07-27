@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.RPC.Models;
@@ -427,10 +428,10 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             List<string> transactionList = JArray.Parse(this.responseText).ToObject<List<string>>();
             transactionList[0].Should().Be(this.transaction.GetHash().ToString());
         }
-
+        
         private void staking_is_enabled_but_nothing_is_staked()
         {
-            var miningRpcController = this.nodes[PosNode].FullNode.NodeService<MiningRPCController>();
+            var miningRpcController = this.nodes[PosNode].FullNode.NodeService<StakingRpcController>();
             GetStakingInfoModel stakingInfo = miningRpcController.GetStakingInfo();
             stakingInfo.Should().NotBeNull();
             stakingInfo.Enabled.Should().BeTrue();

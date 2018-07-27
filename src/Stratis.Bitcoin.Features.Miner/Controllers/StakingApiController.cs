@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     /// Controller providing operations on mining feature.
     /// </summary>
     [Route("api/[controller]")]
-    public class MinerController : Controller
+    public class StakingApiController : Controller
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -39,10 +39,11 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="walletManager">The wallet manager.</param>
         /// <param name="posMinting">PoS staker or null if PoS staking is not enabled.</param>
-        public MinerController(IFullNode fullNode, ILoggerFactory loggerFactory, IWalletManager walletManager, IPosMinting posMinting = null)
+        public StakingApiController(IFullNode fullNode, ILoggerFactory loggerFactory, IWalletManager walletManager, IPosMinting posMinting = null)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(walletManager, nameof(walletManager));
 
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -83,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             Guard.NotNull(request, nameof(request));
 
             try
-            {
+            {              
                 if (!this.ModelState.IsValid)
                 {
                     IEnumerable<string> errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
@@ -103,6 +104,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                 }
             
                 this.fullNode.NodeFeature<MiningFeature>(true).StartStaking(request.Name, request.Password);
+
                 return this.Ok();
             }
             catch (Exception e)
