@@ -1,10 +1,9 @@
 ﻿using System;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Standards;
 
 namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 {
-    public class StandardToken : SmartContract, IStandardToken, IMintableToken
+    public class StandardToken : SmartContract
     {
         public StandardToken(ISmartContractState smartContractState, ulong totalSupply) : base(smartContractState)
         {
