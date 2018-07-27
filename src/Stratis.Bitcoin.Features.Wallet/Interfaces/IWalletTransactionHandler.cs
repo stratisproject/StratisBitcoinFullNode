@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <param name="context">The context that is used to build a new transaction.</param>
         /// <returns>The new transaction.</returns>
-        Transaction BuildTransaction(TransactionBuildContext context);
+        Transaction BuildTransaction(TransactionBuildOptions options);
 
         /// <summary>
         /// Adds inputs to a transaction until it has enough in value to meet its out value.
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// The inputs added may be signed depending on <see cref="TransactionBuildContext.Sign"/>, use signrawtransaction for that.
         /// Note that all existing inputs must have their previous output transaction be in the wallet.
         /// </remarks>
-        void FundTransaction(TransactionBuildContext context, Transaction transaction);
+        void FundTransaction(TransactionBuildOptions options, Transaction transaction);
 
         /// <summary>
         /// Calculates the maximum amount a user can spend in a single transaction, taking into account the fees required.

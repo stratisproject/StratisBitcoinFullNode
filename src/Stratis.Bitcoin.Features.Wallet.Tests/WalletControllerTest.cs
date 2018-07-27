@@ -1388,7 +1388,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
             var key = new Key();
             var sentTrx = new Transaction();
-            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildOptions>()))
                 .Returns(sentTrx);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -1418,7 +1418,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
             var key = new Key();
             var sentTrx = new Transaction();
-            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildOptions>()))
                 .Returns(sentTrx);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -1448,7 +1448,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
             var key = new Key();
             var sentTrx = new Transaction();
-            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildOptions>()))
                 .Returns(sentTrx);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -1478,7 +1478,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
             var key = new Key();
             var sentTrx = new Transaction();
-            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildOptions>()))
                 .Returns(sentTrx);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
@@ -1529,7 +1529,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletTransactionHandler = new Mock<IWalletTransactionHandler>();
 
             var key = new Key();
-            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildContext>()))
+            mockWalletTransactionHandler.Setup(m => m.BuildTransaction(It.IsAny<TransactionBuildOptions>()))
                 .Throws(new InvalidOperationException("Issue building transaction."));
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
