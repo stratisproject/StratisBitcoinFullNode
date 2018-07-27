@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
+using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -146,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             });
 
             Assert.Contains("Staking cannot start", exception.Message);
-            this.posMinting.Verify(pm => pm.Stake(It.IsAny<PosMinting.WalletSecret>()), Times.Never);
+            this.posMinting.Verify(pm => pm.Stake(It.IsAny<WalletSecret>()), Times.Never);
         }
 
         [Fact]
@@ -161,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             bool result = this.controller.StartStaking("myWallet", "password1");
 
             Assert.True(result);
-            this.posMinting.Verify(p => p.Stake(It.Is<PosMinting.WalletSecret>(s => s.WalletName == "myWallet" && s.WalletPassword == "password1")), Times.Exactly(1));
+            this.posMinting.Verify(p => p.Stake(It.Is<WalletSecret>(s => s.WalletName == "myWallet" && s.WalletPassword == "password1")), Times.Exactly(1));
         }
 
         [Fact]
