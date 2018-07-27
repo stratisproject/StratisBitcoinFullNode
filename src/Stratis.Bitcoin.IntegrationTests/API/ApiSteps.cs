@@ -13,7 +13,7 @@ using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.Api;
-using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.RPC.Models;
@@ -431,8 +431,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void staking_is_enabled_but_nothing_is_staked()
         {
-            var miningRpcController = this.nodes[PosNode].FullNode.NodeService<MiningRPCController>();
-            GetStakingInfoModel stakingInfo = miningRpcController.GetStakingInfo();
+            var stakingRpcController = this.nodes[PosNode].FullNode.NodeService<StakingRpcController>();
+            GetStakingInfoModel stakingInfo = stakingRpcController.GetStakingInfo();
 
             stakingInfo.Should().NotBeNull();
             stakingInfo.Enabled.Should().BeTrue();

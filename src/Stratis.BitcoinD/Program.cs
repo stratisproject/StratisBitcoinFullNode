@@ -32,7 +32,7 @@ namespace Stratis.BitcoinD
                     .AddRPC()
                     .UseWallet()
                     .UseApi()
-                    .UseApps()
+                    .UseApps()                    
                     .Build();
 
                 if (node != null)

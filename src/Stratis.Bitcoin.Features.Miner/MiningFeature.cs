@@ -221,15 +221,15 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<IBlockProvider, BlockProvider>();
                         services.AddSingleton<BlockDefinition, PowBlockDefinition>();
-                        services.AddSingleton<StakingController>();
-                        services.AddSingleton<MiningRPCController>();
+                        services.AddSingleton<MiningRpcController>();
+                        services.AddSingleton<MiningApiController>();
                         services.AddSingleton<MinerSettings>();
                     });
             });
 
             return fullNodeBuilder;
         }
-
+        
         /// <summary>
         /// Adds POW and POS miner components to the node, so that it can mine or stake.
         /// </summary>
@@ -255,8 +255,10 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<BlockDefinition, PowBlockDefinition>();
                         services.AddSingleton<BlockDefinition, PosBlockDefinition>();
                         services.AddSingleton<BlockDefinition, PosPowBlockDefinition>();
-                        services.AddSingleton<StakingController>();
-                        services.AddSingleton<MiningRPCController>();
+                        services.AddSingleton<StakingRpcController>();
+                        services.AddSingleton<StakingApiController>();
+                        services.AddSingleton<MiningRpcController>();
+                        services.AddSingleton<MiningApiController>();
                         services.AddSingleton<MinerSettings>();
                     });
             });
