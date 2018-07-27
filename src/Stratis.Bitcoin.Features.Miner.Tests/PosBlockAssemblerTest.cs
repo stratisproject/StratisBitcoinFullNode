@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -430,7 +431,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new Checkpoints(),
                 new Mock<CoinView>().Object,
                 new Mock<IStakeChain>().Object,
-                new Mock<IStakeValidator>().Object);
+                new Mock<IStakeValidator>().Object,
+                new Mock<IChainState>().Object);
 
             posConsensusRules.Register(new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration());
 

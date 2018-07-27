@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 // Check that the current block has not been reorged.
                 // Catching a reorg at this point will not require a rewind.
-                if (context.ValidationContext.Block.Header.HashPrevBlock != context.ConsensusTip.HashBlock)
+                if (context.ValidationContext.Block.Header.HashPrevBlock != this.Parent.ChainState.ConsensusTip.HashBlock)
                 {
                     this.Logger.LogTrace("Reorganization detected.");
                     ConsensusErrors.InvalidPrevTip.Throw();
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 // we ask the chain headers for its version (also to prevent memory leaks).
                 context.ValidationContext.ChainedHeader = new ChainedHeader(context.ValidationContext.Block.Header,
                     context.ValidationContext.Block.Header.GetHash(),
-                    context.ConsensusTip);
+                    this.Parent.ChainState.ConsensusTip);
 
                 // Liberate from memory the block created above if possible.
                 context.ValidationContext.ChainedHeader = this.Parent.Chain.GetBlock(context.ValidationContext.ChainedHeader.HashBlock) ?? context.ValidationContext.ChainedHeader;

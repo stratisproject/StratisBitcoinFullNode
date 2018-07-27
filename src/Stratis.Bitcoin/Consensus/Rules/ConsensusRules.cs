@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -44,6 +45,9 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <summary>Provider of block header hash checkpoints.</summary>
         public ICheckpoints Checkpoints { get; }
 
+        /// <summary>State of the current chain that hold consensus tip.</summary>
+        public IChainState ChainState { get; }
+
         /// <inheritdoc />
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
@@ -67,14 +71,9 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// </summary>
         private readonly List<ConsensusRuleDescriptor> headerValidationRules;
 
-
-        /// <inheritdoc />
         public IEnumerable<ConsensusRule> Rules => this.consensusRules.Values;
 
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
-        protected ConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
+        protected ConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, IChainState chainState)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -83,10 +82,12 @@ namespace Stratis.Bitcoin.Consensus.Rules
             Guard.NotNull(nodeDeployments, nameof(nodeDeployments));
             Guard.NotNull(consensusSettings, nameof(consensusSettings));
             Guard.NotNull(checkpoints, nameof(checkpoints));
+            Guard.NotNull(chainState, nameof(chainState));
 
             this.Network = network;
             this.DateTimeProvider = dateTimeProvider;
             this.Chain = chain;
+            this.ChainState = chainState;
             this.NodeDeployments = nodeDeployments;
             this.loggerFactory = loggerFactory;
             this.ConsensusSettings = consensusSettings;
@@ -100,7 +101,12 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.headerValidationRules = new List<ConsensusRuleDescriptor>();
             this.fullValidationRules = new List<ConsensusRuleDescriptor>();
             this.integrityValidationRules = new List<ConsensusRuleDescriptor>();
+        }
 
+        /// <inheritdoc />
+        public virtual Task Initialize()
+        {
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -148,59 +154,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
             // an error handler rule that is unique to the current blockchain.
             // future sidechains may have additional handling of errors that
             // extend or replace the default current error handling code.
-        }
-
-        /// <inheritdoc/>
-        [Obsolete("Delete when CM activates")]
-        public async Task AcceptBlockAsync(ValidationContext validationContext, ChainedHeader tip)
-        {
-            Guard.NotNull(validationContext, nameof(validationContext));
-
-            validationContext.RuleContext = this.CreateRuleContext(validationContext, tip);
-
-            try
-            {
-                await this.ValidateAndExecuteAsync(validationContext.RuleContext);
-            }
-            catch (ConsensusErrorException ex)
-            {
-                validationContext.Error = ex.ConsensusError;
-            }
-        }
-
-        /// <inheritdoc />
-        [Obsolete("Delete when CM activates")]
-        public async Task ValidateAndExecuteAsync(RuleContext ruleContext)
-        {
-            await this.ValidateAsync(ruleContext);
-
-            using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
-            {
-                foreach (ConsensusRuleDescriptor ruleDescriptor in this.fullValidationRules)
-                {
-                    await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
-                }
-            }
-        }
-
-        /// <inheritdoc />
-        [Obsolete("Delete when CM activates")]
-        public async Task ValidateAsync(RuleContext ruleContext)
-        {
-            using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
-            {
-                foreach (ConsensusRuleDescriptor ruleDescriptor in this.partialValidationRules)
-                {
-                    if (ruleContext.SkipValidation && ruleDescriptor.RuleAttribute.CanSkipValidation)
-                    {
-                        this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.ConsensusTip?.Height);
-                    }
-                    else
-                    {
-                        await ruleDescriptor.Rule.RunAsync(ruleContext).ConfigureAwait(false);
-                    }
-                }
-            }
         }
 
         /// <inheritdoc/>
@@ -255,7 +208,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
                     {
                         if (ruleContext.SkipValidation && ruleDescriptor.RuleAttribute.CanSkipValidation)
                         {
-                            this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.ConsensusTip?.Height);
+                            this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor.Rule), ruleContext.ValidationContext.ChainedHeader.Height);
                         }
                         else
                         {
@@ -282,7 +235,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
                     {
                         if (ruleContext.SkipValidation && ruleDescriptor.RuleAttribute.CanSkipValidation)
                         {
-                            this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor), ruleContext.ConsensusTip?.Height);
+                            this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor.Rule), ruleContext.ValidationContext.ChainedHeader?.Height);
                         }
                         else
                         {

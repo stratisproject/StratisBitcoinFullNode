@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of stake is incorrect.</exception>
         public override void Run(RuleContext context)
         {
-            if (context.Consensus.PowNoRetargeting)
+            if (this.Parent.Network.Consensus.PowNoRetargeting)
             {
                 this.Logger.LogTrace("(-)[POW_NO_RETARGETING]");
                 return;
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 BlockHeader first = chainedHeader.Previous.Header;
                 BlockHeader second = chainedHeader.Previous.Previous.Header;
 
-                Target nextWorkRequired = this.PosParent.StakeValidator.CalculateRetarget(first.Time, first.Bits, second.Time, context.Consensus.ProofOfStakeLimitV2);
+                Target nextWorkRequired = this.PosParent.StakeValidator.CalculateRetarget(first.Time, first.Bits, second.Time, this.Parent.Network.Consensus.ProofOfStakeLimitV2);
 
                 BlockHeader header = context.ValidationContext.Block.Header;
 

@@ -18,8 +18,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Guard.NotNull(context.ConsensusTip, nameof(context.ConsensusTip));
-
             BlockHeader header = context.ValidationContext.ChainedHeader.Header;
 
             int height = context.ConsensusTipHeight + 1;

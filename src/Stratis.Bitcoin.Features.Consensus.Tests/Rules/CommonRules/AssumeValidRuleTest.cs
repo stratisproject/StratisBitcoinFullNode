@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             return new AssumeValidRule()
             {
                 Logger = this.logger.Object,
-                Parent = new TestConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object)
+                Parent = new TestConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.chainState.Object)
             };
         }
     }

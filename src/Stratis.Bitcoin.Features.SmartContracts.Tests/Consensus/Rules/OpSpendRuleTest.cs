@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
 
-            var context = new RuleContext(new ValidationContext(), this.network.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
+            var context = new RuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
 
             context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
             context.ValidationContext.Block.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
 
-            var context = new RuleContext(new ValidationContext(), this.network.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
+            var context = new RuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
             context.ValidationContext.Block.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
             context.ValidationContext.Block.Transactions = new List<Transaction>
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
 
-            var context = new RuleContext(new ValidationContext(), this.network.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
+            var context = new RuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
             context.ValidationContext.Block.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
             context.ValidationContext.Block.Transactions = new List<Transaction>

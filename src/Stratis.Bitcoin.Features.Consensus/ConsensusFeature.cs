@@ -43,16 +43,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly NodeDeployments nodeDeployments;
 
-        private readonly StakeChainStore stakeChain;
-
-        private readonly IRuleRegistration ruleRegistration;
-
-        private readonly NodeSettings nodeSettings;
-
-        private readonly ConsensusSettings consensusSettings;
-
-        private readonly IConsensusRules consensusRules;
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -72,12 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             IConsensusManager consensusManager,
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
-            ConsensusStats consensusStats,
-            IRuleRegistration ruleRegistration,
-            IConsensusRules consensusRules,
-            NodeSettings nodeSettings,
-            ConsensusSettings consensusSettings,
-            StakeChainStore stakeChain = null)
+            ConsensusStats consensusStats)
         {
             this.dBreezeCoinView = dBreezeCoinView;
             this.coinView = coinView;
@@ -86,14 +71,9 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.signals = signals;
             this.consensusManager = consensusManager;
             this.nodeDeployments = nodeDeployments;
-            this.stakeChain = stakeChain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.consensusStats = consensusStats;
-            this.ruleRegistration = ruleRegistration;
-            this.nodeSettings = nodeSettings;
-            this.consensusSettings = consensusSettings;
-            this.consensusRules = consensusRules;
 
             this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
         }
@@ -113,19 +93,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override void Initialize()
         {
-            this.dBreezeCoinView.InitializeAsync().GetAwaiter().GetResult();
-
-            this.chainState.ConsensusTip = this.consensusManager.Tip;
-
             DeploymentFlags flags = this.nodeDeployments.GetFlags(this.consensusManager.Tip);
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
 
-            this.stakeChain?.LoadAsync().GetAwaiter().GetResult();
-
             this.signals.SubscribeForBlocks(this.consensusStats);
-
-            this.consensusRules.Register(this.ruleRegistration);
         }
 
         /// <summary>

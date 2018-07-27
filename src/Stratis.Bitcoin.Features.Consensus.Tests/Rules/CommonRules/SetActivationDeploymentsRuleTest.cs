@@ -32,7 +32,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.Block = block;
             this.ruleContext.ValidationContext.ChainedHeader = this.concurrentChain.Tip;
-            this.ruleContext.ConsensusTip = this.concurrentChain.Tip;
 
             await this.consensusRules.RegisterRule<SetActivationDeploymentsRule>().RunAsync(this.ruleContext);
 

@@ -25,37 +25,16 @@ namespace Stratis.Bitcoin.Consensus.Rules
         ConsensusPerformanceCounter PerformanceCounter { get; }
 
         /// <summary>
+        /// Initialize the rules engine.
+        /// </summary>
+        Task Initialize();
+
+        /// <summary>
         /// Register a new rule to the engine
         /// </summary>
         /// <param name="ruleRegistration">A container of rules to register.</param>
         /// <returns></returns>
         ConsensusRules Register(IRuleRegistration ruleRegistration);
-
-        /// <summary>
-        /// A method that will accept a new block to the node.
-        /// The block will be validated and the <see cref="CoinView"/> db will be updated.
-        /// If it's a new block that was mined or staked it will extend the chain and the new block will set <see cref="ConcurrentChain.Tip"/>.
-        /// </summary>
-        /// <param name="validationContext">Information about the block to validate.</param>
-        /// <param name="tip">The current tip.</param>
-        [Obsolete("Delete when CM activates")]
-        Task AcceptBlockAsync(ValidationContext validationContext, ChainedHeader tip);
-
-        /// <summary>
-        /// Execute the consensus rule engine.
-        /// </summary>
-        /// <param name="ruleContext">A context that holds information about the current validated block.</param>
-        /// <returns>The processing task.</returns>
-        [Obsolete("Delete when CM activates")]
-        Task ValidateAndExecuteAsync(RuleContext ruleContext);
-
-        /// <summary>
-        /// Execute the consensus rule engine in validation mode only, no state will be changed.
-        /// </summary>
-        /// <param name="ruleContext">A context that holds information about the current validated block.</param>
-        /// <returns>The processing task.</returns>
-        [Obsolete("Delete when CM activates")]
-        Task ValidateAsync(RuleContext ruleContext);
 
         /// <summary>
         /// Gets the consensus rule that is assignable to the supplied generic type.

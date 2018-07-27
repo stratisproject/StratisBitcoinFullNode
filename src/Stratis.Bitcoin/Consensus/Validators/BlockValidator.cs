@@ -9,7 +9,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Consensus.Validators
 {
     /// <summary>
-    /// A callback that is invoked when <see cref="IPartialValidation.StartPartialValidation"/> completes validation of a block.
+    /// A callback that is invoked when <see cref="IPartialValidator.StartPartialValidation"/> completes validation of a block.
     /// </summary>
     /// <param name="validationResult">Result of the validation including information about banning if necessary.</param>
     public delegate Task OnPartialValidationCompletedAsyncCallback(PartialValidationResult validationResult);
@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         void ValidateHeader(ChainedHeader chainedHeader);
     }
 
-    public interface IPartialValidation
+    public interface IPartialValidator
     {
         /// <summary>
         /// Schedules a block for background partial validation.
@@ -102,13 +102,13 @@ namespace Stratis.Bitcoin.Consensus.Validators
     }
 
     /// <inheritdoc />
-    public class PartialValidation : IPartialValidation
+    public class PartialValidator : IPartialValidator
     {
         private readonly IConsensusRules consensusRules;
         private readonly AsyncQueue<PartialValidationItem> asyncQueue;
         private readonly ILogger logger;
 
-        public PartialValidation(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
+        public PartialValidator(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
         {
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

@@ -14,7 +14,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             this.options = this.network.Consensus.Options;
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
-            this.ruleContext.Consensus = this.network.Consensus;
         }
 
         [Fact]

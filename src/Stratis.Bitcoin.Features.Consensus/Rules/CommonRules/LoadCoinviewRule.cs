@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
-            uint256 oldBlockHash = context.ConsensusTip.HashBlock;
+            uint256 oldBlockHash = context.ValidationContext.ChainedHeader.Previous.HashBlock;
             uint256 nextBlockHash = context.ValidationContext.ChainedHeader.HashBlock;
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             // Check that the current block has not been reorged.
             // Catching a reorg at this point will not require a rewind.
-            if (context.ValidationContext.Block.Header.HashPrevBlock != context.ConsensusTip.HashBlock)
+            if (context.ValidationContext.Block.Header.HashPrevBlock != this.Parent.ChainState.ConsensusTip.HashBlock)
             {
                 this.Logger.LogTrace("Reorganization detected.");
                 ConsensusErrors.InvalidPrevTip.Throw();

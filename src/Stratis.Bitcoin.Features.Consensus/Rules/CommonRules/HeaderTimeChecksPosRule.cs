@@ -16,8 +16,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BlockTimestampTooEarly">Thrown if block time is equal or behind the previous block.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Guard.NotNull(context.ConsensusTip, nameof(context.ConsensusTip));
-
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
 
             // Check timestamp against prev.

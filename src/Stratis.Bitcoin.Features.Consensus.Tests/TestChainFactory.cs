@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public IntegrityValidator IntegrityValidator { get; set; }
 
-        public PartialValidation PartialValidation { get; set; }
+        public PartialValidator PartialValidator { get; set; }
     }
 
     /// <summary>
@@ -121,15 +121,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.PeerBanning = new PeerBanning(testChainContext.ConnectionManager, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.PeerAddressManager);
             var deployments = new NodeDeployments(testChainContext.Network, testChainContext.Chain);
             testChainContext.ConsensusRules = new PowConsensusRules(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider,
-                testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints, cachedCoinView)
+                testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints, cachedCoinView, testChainContext.ChainState)
                 .Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
 
             testChainContext.HeaderValidator = new HeaderValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
             testChainContext.IntegrityValidator = new IntegrityValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
-            testChainContext.PartialValidation = new PartialValidation(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
+            testChainContext.PartialValidator = new PartialValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
 
             testChainContext.Consensus = new ConsensusManager(network, testChainContext.LoggerFactory, testChainContext.ChainState, testChainContext.HeaderValidator, testChainContext.IntegrityValidator, 
-                testChainContext.PartialValidation, testChainContext.Checkpoints, consensusSettings, testChainContext.ConsensusRules, testChainContext.FinalizedBlockHeight, new Signals.Signals(), 
+                testChainContext.PartialValidator, testChainContext.Checkpoints, consensusSettings, testChainContext.ConsensusRules, testChainContext.FinalizedBlockHeight, new Signals.Signals(), 
                 testChainContext.PeerBanning, testChainContext.NodeSettings, testChainContext.DateTimeProvider, testChainContext.InitialBlockDownloadState, testChainContext.Chain, null);
 
 

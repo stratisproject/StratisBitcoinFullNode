@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(Network.RegTest);
             var blockHeaderRule = testContext.CreateRule<SetActivationDeploymentsRule>();
 
-            var context = new PowRuleContext(new ValidationContext(), Network.RegTest.Consensus, testContext.Chain.Tip, testContext.DateTimeProvider.GetTimeOffset());
+            var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = Network.RegTest.Consensus.ConsensusFactory.CreateBlock();
             context.ValidationContext.Block.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
             context.ValidationContext.ChainedHeader = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), 0);
@@ -22,7 +22,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             await blockHeaderRule.RunAsync(context);
 
             Assert.NotNull(context.ValidationContext.ChainedHeader);
-            Assert.NotNull(context.ConsensusTip);
             Assert.NotNull(context.Flags);
         }
     }

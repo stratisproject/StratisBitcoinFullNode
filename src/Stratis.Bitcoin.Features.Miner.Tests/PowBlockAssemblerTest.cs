@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -118,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var txFee = new Money(1000);
                 SetupTxMempool(chain, this.network.Consensus.Options as ConsensusOptions, txFee, transaction);
                 ValidationContext validationContext = null;
-                var powRuleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, chain.Tip, this.dateTimeProvider.Object.GetTimeOffset());
+                var powRuleContext = new PowRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
                 this.consensusRules
                     .Setup(s => s.CreateRuleContext(It.IsAny<ValidationContext>(), It.IsAny<ChainedHeader>())).Callback<ValidationContext, ChainedHeader>((r, s) => validationContext = r)
                     .Returns(powRuleContext);
@@ -130,8 +131,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 Assert.True(this.callbackRuleContext.MinedBlock);
                 Assert.Equal(blockTemplate.Block.GetHash(), validationContext.Block.GetHash());
-                Assert.Equal(chain.GetBlock(5).HashBlock, powRuleContext.ConsensusTip.HashBlock);
-                Assert.Equal(1500, this.callbackRuleContext.Consensus.Options.MaxBlockWeight);
+                Assert.Equal(1500, this.network.Consensus.Options.MaxBlockWeight);
                 this.consensusLoop.Verify();
             });
         }
@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.consensusLoop.Setup(c => c.Tip).Returns(chain.GetBlock(5));
 
                 ValidationContext validationContext = null;
-                var powRuleContext = new PowRuleContext(new ValidationContext(), this.network.Consensus, chain.Tip, this.dateTimeProvider.Object.GetTimeOffset());
+                var powRuleContext = new PowRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
                 this.consensusRules
                     .Setup(s => s.CreateRuleContext(It.IsAny<ValidationContext>(), It.IsAny<ChainedHeader>())).Callback<ValidationContext, ChainedHeader>((r, s) => validationContext = r)
                     .Returns(powRuleContext);
@@ -263,8 +263,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 Assert.True(this.callbackRuleContext.MinedBlock);
                 Assert.Equal(block.GetHash(), validationContext.Block.GetHash());
-                Assert.Equal(chain.GetBlock(5).HashBlock, powRuleContext.ConsensusTip.HashBlock);
-                Assert.Equal(1500, this.callbackRuleContext.Consensus.Options.MaxBlockWeight);
+                Assert.Equal(1500, this.network.Consensus.Options.MaxBlockWeight);
                 this.consensusLoop.Verify();
             });
         }
@@ -433,7 +432,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var powConsensusRules = new PowConsensusRules(this.network,
                     this.LoggerFactory.Object, this.dateTimeProvider.Object, chain,
                     new NodeDeployments(this.network, chain), new ConsensusSettings(new NodeSettings(this.network)), new Checkpoints(),
-                    new Mock<CoinView>().Object);
+                    new Mock<CoinView>().Object, new Mock<IChainState>().Object);
 
             powConsensusRules.Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
             this.consensusLoop.SetupGet(x => x.ConsensusRules).Returns(powConsensusRules);

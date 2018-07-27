@@ -20,20 +20,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        public IConsensusManager ConsensusManager { get; private set; }
-
         public ConsensusController(ILoggerFactory loggerFactory, IChainState chainState,
             IConsensusManager consensusManager, ConcurrentChain chain)
             : base(chainState: chainState, chain: chain)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(ConsensusManager, nameof(ConsensusManager));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(chainState, nameof(chainState));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.ConsensusManager = consensusManager;
         }
 
         /// <summary>

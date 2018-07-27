@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
@@ -106,6 +107,8 @@ namespace Stratis.Bitcoin.Base
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         private readonly IConsensusManager consensusManager;
+        private readonly IConsensusRules consensusRules;
+        private readonly IRuleRegistration ruleRegistration;
 
         /// <inheritdoc cref="IFinalizedBlockHeight"/>
         private readonly IFinalizedBlockHeight finalizedBlockHeight;
@@ -127,7 +130,9 @@ namespace Stratis.Bitcoin.Base
             IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
             IPeerAddressManager peerAddressManager,
-            IConsensusManager consensusManager)
+            IConsensusManager consensusManager,
+            IConsensusRules consensusRules,
+            IRuleRegistration ruleRegistration)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -138,6 +143,8 @@ namespace Stratis.Bitcoin.Base
             this.chain = Guard.NotNull(chain, nameof(chain));
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
             this.consensusManager = consensusManager;
+            this.consensusRules = consensusRules;
+            this.ruleRegistration = ruleRegistration;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
@@ -190,8 +197,13 @@ namespace Stratis.Bitcoin.Base
             this.disposableResources.Add(this.timeSyncBehaviorState as IDisposable);
             this.disposableResources.Add(this.chainRepository);
 
+            this.consensusRules.Initialize().GetAwaiter().GetResult();
+            this.consensusRules.Register(this.ruleRegistration);
+
             this.consensusManager.InitializeAsync(this.chain.Tip).GetAwaiter().GetResult();
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.consensusManager.BlockPuller, this.initialBlockDownloadState, this.loggerFactory));
+
+            this.chainState.ConsensusTip = this.consensusManager.Tip;
 
             this.logger.LogTrace("(-)");
         }
@@ -344,7 +356,9 @@ namespace Stratis.Bitcoin.Base
 
                     // Consensus
                     services.AddSingleton<IConsensusManager, ConsensusManager>();
-                    services.AddSingleton<IConsensusRules, ConsensusRules>();
+                    services.AddSingleton<IHeaderValidator, HeaderValidator>();
+                    services.AddSingleton<IIntegrityValidator, IntegrityValidator>();
+                    services.AddSingleton<IPartialValidator, PartialValidator>();
                 });
             });
 

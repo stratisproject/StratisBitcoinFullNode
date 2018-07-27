@@ -10,8 +10,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// </summary>
     public class RuleContext
     {
-        public NBitcoin.Consensus Consensus { get; set; }
-
         public DateTimeOffset Time { get; set; }
 
         public ValidationContext ValidationContext { get; set; }
@@ -24,9 +22,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
         public bool SkipValidation { get; set; }
 
-        /// <summary>The current tip of the chain that has been validated.</summary>
-        public ChainedHeader ConsensusTip { get; set; }
-
         /// <summary>The height of the consensus tip.</summary>
         public int ConsensusTipHeight { get; set; }
 
@@ -34,15 +29,11 @@ namespace Stratis.Bitcoin.Consensus.Rules
         {
         }
 
-        public RuleContext(ValidationContext validationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip, DateTimeOffset time) : base()
+        public RuleContext(ValidationContext validationContext, DateTimeOffset time) : base()
         {
             Guard.NotNull(validationContext, nameof(validationContext));
-            Guard.NotNull(consensus, nameof(consensus));
 
             this.ValidationContext = validationContext;
-            this.Consensus = consensus;
-            this.ConsensusTip = consensusTip;
-            this.ConsensusTipHeight = consensusTip.Height;
             this.Time = time;
             this.MinedBlock = false;
         }

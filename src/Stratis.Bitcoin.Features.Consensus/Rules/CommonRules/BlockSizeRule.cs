@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadBlockLength">The block does not contain any transactions.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            var options = context.Consensus.Options;
+            var options = this.Parent.Network.Consensus.Options;
 
             // After the coinbase witness nonce and commitment are verified,
             // we can check if the block weight passes (before we've checked the

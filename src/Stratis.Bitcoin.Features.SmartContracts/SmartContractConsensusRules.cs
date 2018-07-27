@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
@@ -34,8 +35,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             NodeDeployments nodeDeployments,
             ContractStateRepositoryRoot originalStateRoot,
             CoinView utxoSet,
-            ISmartContractReceiptStorage receiptStorage)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet)
+            ISmartContractReceiptStorage receiptStorage,
+            IChainState chainState)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState)
         {
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;
@@ -45,7 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <inheritdoc />
         public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
         {
-            return new PowRuleContext(validationContext, this.Network.Consensus, consensusTip, this.DateTimeProvider.GetTimeOffset());
+            return new PowRuleContext(validationContext, this.DateTimeProvider.GetTimeOffset());
         }
     }
 }

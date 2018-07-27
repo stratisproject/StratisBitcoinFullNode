@@ -141,11 +141,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             
             // Throw if block store was initialized after the consensus.
             // This is needed in order to rewind consensus in case it is initialized ahead of the block store.
-            if (this.chainState.ConsensusTip != null)
+            if (this.chainState.ConsensusTip.Height > this.storeTip.Height)
             {
-                this.logger.LogCritical("Block store initialized after the consensus!");
+                this.logger.LogCritical("Block store tip is behind consensus!");
                 this.logger.LogTrace("(-)[INITIALIZATION_ERROR]");
-                throw new BlockStoreException("Block store initialized after consensus!");
+                throw new BlockStoreException("BlBlock store tip is behind consensus!");
             }
 
             // Start dequeuing.

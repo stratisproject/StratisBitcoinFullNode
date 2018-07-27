@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Start enforcing BIP113 (Median Time Past) using versionbits logic.
             DateTimeOffset nLockTimeCutoff = deploymentFlags.LockTimeFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast) ?
-                context.ConsensusTip.GetMedianTimePast() :
+                context.ValidationContext.ChainedHeader.Previous.GetMedianTimePast() :
                 block.Header.BlockTime;
 
             // Check that all transactions are finalized.

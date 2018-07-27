@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ILogger logger;
         private readonly IChainedHeaderTree chainedHeaderTree;
         private readonly IChainState chainState;
-        private readonly IPartialValidation partialValidation;
+        private readonly IPartialValidator partialValidator;
         private readonly ConsensusSettings consensusSettings;
         private readonly IBlockPuller blockPuller;
         private readonly IConsensusRules consensusRules;
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Consensus
             IChainState chainState,
             IHeaderValidator headerValidator,
             IIntegrityValidator integrityValidator,
-            IPartialValidation partialValidation,
+            IPartialValidator partialValidator,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
             IConsensusRules consensusRules,
@@ -164,7 +164,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.network = network;
             this.chainState = chainState;
-            this.partialValidation = partialValidation;
+            this.partialValidator = partialValidator;
             this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
             this.signals = signals;
@@ -321,7 +321,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             if (partialValidationRequired)
-                this.partialValidation.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);
+                this.partialValidator.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);
 
             this.logger.LogTrace("(-)");
         }
@@ -422,7 +422,7 @@ namespace Stratis.Bitcoin.Consensus
                 // Start validating all next blocks that come after the current block,
                 // all headers in this list have the blocks present in the header.
                 foreach (ChainedHeaderBlock toValidate in chainedHeaderBlocksToValidate)
-                    this.partialValidation.StartPartialValidation(toValidate, this.OnPartialValidationCompletedCallbackAsync);
+                    this.partialValidator.StartPartialValidation(toValidate, this.OnPartialValidationCompletedCallbackAsync);
             }
 
             this.logger.LogTrace("(-)");

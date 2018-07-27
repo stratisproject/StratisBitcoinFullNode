@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
@@ -22,8 +23,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public PowConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
+        public PowConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, IChainState chainState)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, chainState)
         {
             this.UtxoSet = utxoSet;
         }
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
         {
-            return new PowRuleContext(validationContext, this.Network.Consensus, consensusTip, this.DateTimeProvider.GetTimeOffset());
+            return new PowRuleContext(validationContext, this.DateTimeProvider.GetTimeOffset());
         }
 
         /// <inheritdoc />
@@ -47,6 +48,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             {
                 BlockHash = await this.UtxoSet.Rewind().ConfigureAwait(false)
             };
+        }
+
+        /// <inheritdoc />
+        public override Task Initialize()
+        {
+            return ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner).InitializeAsync();
         }
     }
 
@@ -67,8 +74,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, IStakeChain stakeChain, IStakeValidator stakeValidator)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet)
+        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, IStakeChain stakeChain, IStakeValidator stakeValidator, IChainState chainState)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState)
         {
             this.StakeChain = stakeChain;
             this.StakeValidator = stakeValidator;
@@ -77,7 +84,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
         {
-            return new PosRuleContext(validationContext, this.Network.Consensus, consensusTip, this.DateTimeProvider.GetTimeOffset());
+            return new PosRuleContext(validationContext, this.DateTimeProvider.GetTimeOffset());
+        }
+
+        /// <inheritdoc />
+        public override async Task Initialize()
+        {
+            await base.Initialize().ConfigureAwait(false);
+
+            await this.StakeChain.LoadAsync();
         }
     }
 }
