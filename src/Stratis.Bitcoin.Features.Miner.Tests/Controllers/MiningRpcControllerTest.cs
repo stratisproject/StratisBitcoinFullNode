@@ -16,7 +16,7 @@ using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.Miner.Tests
+namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
 {
     public class MiningRpcControllerTest : LogsTestBase, IClassFixture<MiningRPCControllerFixture>
     {
