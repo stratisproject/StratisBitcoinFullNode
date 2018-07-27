@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -14,6 +13,7 @@ using Stratis.Bitcoin.BlockPulling2;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -55,14 +55,14 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         {
             var peer = new Mock<INetworkPeer>();
 
-            var connection = new NetworkPeerConnection(Networks.StratisMain, peer.Object, new TcpClient(), this.currentPeerId, (message, token) => Task.CompletedTask,
+            var connection = new NetworkPeerConnection(KnownNetworks.StratisMain, peer.Object, new TcpClient(), this.currentPeerId, (message, token) => Task.CompletedTask,
                 new DateTimeProvider(), this.loggerFactory, new PayloadProvider());
 
             this.currentPeerId++;
             peer.SetupGet(networkPeer => networkPeer.Connection).Returns(connection);
 
             var connectionParameters = new NetworkPeerConnectionParameters();
-            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), Networks.StratisMain, new DateTimeProvider().GetTimeOffset());
+            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), KnownNetworks.StratisMain, new DateTimeProvider().GetTimeOffset());
 
             if (notSupportedVersion)
                 version.Version = ProtocolVersion.NOBLKS_VERSION_START;
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         /// <summary>Creates a new block with mocked serialized size.</summary>
         public Block GenerateBlock(long size)
         {
-            Block block = Networks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
+            Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
 
             block.SetPrivatePropertyValue("BlockSize", size);
 

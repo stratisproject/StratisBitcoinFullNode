@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
@@ -60,7 +61,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
+        public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
         {
             throw new NotImplementedException();
         }

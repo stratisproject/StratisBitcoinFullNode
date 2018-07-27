@@ -13,6 +13,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -268,7 +269,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 })
                 .Verifiable();
 
-            Network network = Networks.StratisTest;
+            Network network = KnownNetworks.StratisTest;
             var nodeSettings = new NodeSettings(network, args:args);
             DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
@@ -355,7 +356,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 })
                 .Verifiable();
 
-            Network network = Networks.StratisTest;
+            Network network = KnownNetworks.StratisTest;
             var nodeSettings = new NodeSettings(network, args:args);
             DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsFullNode = true;

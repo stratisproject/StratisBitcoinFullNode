@@ -325,7 +325,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     continue;
                 }
 
-                send.Inventory.Add(inv);
+                send.Inventory.Add(new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), inv.Hash));
             }
 
             // add to known inventory
@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (peer.IsConnected)
             {
-                this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
+                this.logger.LogTrace("Asking for transaction data from peer '{0}'.", peer.RemoteSocketEndpoint);
                 await peer.SendMessageAsync(send).ConfigureAwait(false);
             }
 
