@@ -12,6 +12,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that will validate the signature of a PoS block.
     /// </summary>
+    [PartialValidationRule(CanSkipValidation = false)]
+    [IntegrityValidationRule]
     public class PosBlockSignatureRule : StakeStoreConsensusRule
     {
         /// <inheritdoc />
@@ -60,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             TxOut txout = block.Transactions[1].Outputs[1];
 
-            if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(this.Parent.Network, txout.ScriptPubKey))
+            if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(txout.ScriptPubKey))
             {
                 PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(txout.ScriptPubKey);
                 bool res = pubKey.Verify(block.GetHash(), new ECDSASignature(block.BlockSignature.Signature));

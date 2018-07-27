@@ -360,8 +360,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     this.Chain.SetTip(this.Tip);
                     this.logger.LogTrace("Chain reverted back to block '{0}'.", this.Tip);
 
-                    bool peerShouldGetBanned =
-                        validationContext.BanDurationSeconds != ValidationContext.BanDurationNoBan;
+                    bool peerShouldGetBanned = validationContext.BanDurationSeconds != ValidationContext.BanDurationNoBan;
                     if ((validationContext.Peer != null) && peerShouldGetBanned)
                     {
                         int banDuration = validationContext.BanDurationSeconds == ValidationContext.BanDurationDefaultBan ? this.connectionManager.ConnectionSettings.BanTimeSeconds : validationContext.BanDurationSeconds;
@@ -434,12 +433,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("()");
 
             await this.ConsensusRules.ValidateAndExecuteAsync(context);
-
-            // Persist the changes to the coinview. This will likely only be stored in memory,
-            // unless the coinview treashold is reached.
-            this.logger.LogTrace("Saving coinview changes.");
-            var utxoRuleContext = context as UtxoRuleContext;
-            await this.UTXOSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.UTXOSet), null, this.Tip.HashBlock, context.ValidationContext.ChainedHeader.HashBlock).ConfigureAwait(false);
 
             // Set the new tip.
             this.Tip = context.ValidationContext.ChainedHeader;

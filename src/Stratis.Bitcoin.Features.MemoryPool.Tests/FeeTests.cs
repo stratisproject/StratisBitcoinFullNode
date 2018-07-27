@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 { // For each fee
                     for (int k = 0; k < 4; k++)
                     { // add 4 fee txs
-                        Transaction tx = Transaction.Load(txf.ToHex(Network.Main), Network.Main);
+                        Transaction tx = Networks.Main.CreateTransaction(txf.ToHex());
                         tx.Inputs[0].PrevOut.N = (uint)(10000 * blocknum + 100 * j + k); // make transaction unique
                         uint256 hash = tx.GetHash();
                         mpool.AddUnchecked(hash, entry.Fee(feeV[j]).Time(dateTimeSet.GetTime()).Priority(0).Height(blocknum).FromTx(tx, mpool));
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 { // For each fee multiple
                     for (int k = 0; k < 4; k++)
                     { // add 4 fee txs
-                        Transaction tx = Transaction.Load(txf.ToHex(Network.Main), Network.Main);
+                        Transaction tx = Networks.Main.CreateTransaction(txf.ToHex());
                         tx.Inputs[0].PrevOut.N = (uint)(10000 * blocknum + 100 * j + k);
                         uint256 hash = tx.GetHash();
                         mpool.AddUnchecked(hash, entry.Fee(feeV[j]).Time(dateTimeSet.GetTime()).Priority(0).Height(blocknum).FromTx(tx, mpool));
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 { // For each fee multiple
                     for (int k = 0; k < 4; k++)
                     { // add 4 fee txs
-                        Transaction tx = Transaction.Load(txf.ToHex(Network.Main), Network.Main);
+                        Transaction tx = Networks.Main.CreateTransaction(txf.ToHex());
                         tx.Inputs[0].PrevOut.N = (uint)(10000 * blocknum + 100 * j + k);
                         uint256 hash = tx.GetHash();
                         mpool.AddUnchecked(hash, entry.Fee(feeV[j]).Time(dateTimeSet.GetTime()).Priority(0).Height(blocknum).FromTx(tx, mpool));

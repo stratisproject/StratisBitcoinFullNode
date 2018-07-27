@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using NBitcoin;
-using NBitcoin.RPC;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC;
@@ -93,12 +92,12 @@ namespace Stratis.Bitcoin.Cli
                 if (networkName.Contains("stratis"))
                 {
                     defaultRestApiPort = 37221;
-                    network = Network.StratisMain;
+                    network = Networks.StratisMain;
                 }
                 else
                 {
                     defaultRestApiPort = 37220;
-                    network = Network.Main;
+                    network = Networks.Main;
                 }
 
 

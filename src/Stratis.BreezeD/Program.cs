@@ -15,12 +15,7 @@ namespace Stratis.BreezeD
 {
     public class Program
     {
-        public static void Main(string[] args)
-        {
-            MainAsync(args).Wait();
-        }
-
-        public static async Task MainAsync(string[] args)
+        public static async Task Main(string[] args)
         {
             try
             {
@@ -34,7 +29,7 @@ namespace Stratis.BreezeD
 
                 if (isStratis)
                 {
-                    Network network = isTestNet ? Network.StratisTest : Network.StratisMain;
+                    Network network = isTestNet ? Networks.StratisTest : Networks.StratisMain;
                     if (isTestNet)
                         args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack
 

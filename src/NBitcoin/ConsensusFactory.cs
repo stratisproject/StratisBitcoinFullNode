@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using NBitcoin.DataEncoders;
 
 namespace NBitcoin
 {
@@ -72,12 +73,6 @@ namespace NBitcoin
         {
             return IsAssignable<T>(this.transactionType, this.isAssignableFromTransaction);
         }
-
-        /// <summary>
-        /// Represents the parent of this class.
-        /// For simplicity (and migration from NBitcoin) I made this a property however this design can be revised later.
-        /// </summary>
-        public Consensus Consensus { get; set; }
 
         /// <summary>
         /// Check weather a type is assignable within the collection of types in the give dictionary.
@@ -169,6 +164,26 @@ namespace NBitcoin
         public virtual Transaction CreateTransaction()
         {
             return new Transaction();
+        }
+
+        /// <summary>
+        /// Create a <see cref="Transaction"/> instance from a hex string representation.
+        /// </summary>
+        public virtual Transaction CreateTransaction(string hex)
+        {
+            var transaction = new Transaction();
+            transaction.FromBytes(Encoders.Hex.DecodeData(hex));
+            return transaction;
+        }
+
+        /// <summary>
+        /// Create a <see cref="Transaction"/> instance from a byte array representation.
+        /// </summary>
+        public virtual Transaction CreateTransaction(byte[] bytes)
+        {
+            var transaction = new Transaction();
+            transaction.FromBytes(bytes);
+            return transaction;
         }
     }
 

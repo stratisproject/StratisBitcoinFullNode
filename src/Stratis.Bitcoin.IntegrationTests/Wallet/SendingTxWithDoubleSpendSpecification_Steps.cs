@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
-using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
@@ -20,7 +19,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private CoreNode stratisSender;
         private CoreNode stratisReceiver;
         private Transaction transaction;
-        private ErrorResult errorResult;
         private MempoolValidationState mempoolValidationState;
         private HdAddress receivingAddress;
 
@@ -65,15 +63,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             total.Should().Equals(Money.COIN * 105 * 50);
 
             // sync both nodes
-            this.stratisSender.CreateRPCClient().AddNode(stratisReceiver.Endpoint, true);
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
+            this.stratisSender.CreateRPCClient().AddNode(this.stratisReceiver.Endpoint, true);
+            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.stratisReceiver, this.stratisSender));
         }
 
         private void coins_first_sent_to_receiving_wallet()
         {
             this.receivingAddress = this.stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
 
-            this.transaction = this.stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(WalletTests.CreateContext(
+            this.transaction = this.stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(WalletTests.CreateContext(this.stratisSender.FullNode.Network,
                 new WalletAccountReference("mywallet", "account 0"), "123456", this.receivingAddress.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
             this.stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
@@ -94,7 +92,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private void receiving_node_attempts_to_double_spend_mempool_doesnotaccept()
         {
             var unusedAddress = this.stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-            var transactionCloned = Transaction.Load(this.transaction.ToBytes(this.stratisReceiver.FullNode.Network.Consensus.ConsensusFactory), this.stratisReceiver.FullNode.Network);
+            var transactionCloned = this.stratisReceiver.FullNode.Network.CreateTransaction(this.transaction.ToBytes());
             transactionCloned.Outputs[1].ScriptPubKey = unusedAddress.ScriptPubKey;
             this.stratisReceiver.FullNode.MempoolManager().Validator.AcceptToMemoryPool(this.mempoolValidationState, transactionCloned).Result.Should().BeFalse();
         }

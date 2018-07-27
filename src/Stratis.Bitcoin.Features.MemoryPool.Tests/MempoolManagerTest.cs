@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     i.AcceptToMemoryPoolWithTime(It.IsAny<MempoolValidationState>(), It.IsAny<Transaction>()))
                         .ReturnsAsync((MempoolValidationState state, Transaction tx) =>
                         {
-                            var consensusOptions = new PowConsensusOptions();
+                            var consensusOptions = new ConsensusOptions();
                             mempool.MapTx.Add(new TxMempoolEntry(tx, Money.Zero, 0, 0, 0, Money.Zero, false, 0, null, consensusOptions));
                             return true;
                         }

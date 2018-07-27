@@ -13,38 +13,36 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
     public class BlockStoreTests
     {
-        /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
+        private readonly Network network;
 
-        /// <summary>
-        /// Initializes logger factory for tests in this class.
-        /// </summary>
         public BlockStoreTests()
         {
             this.loggerFactory = new LoggerFactory();
+            this.network = Networks.Main;
             var serializer = new DBreezeSerializer();
-            serializer.Initialize(Network.Main);
+            serializer.Initialize(this.network);
         }
 
         [Fact]
         public void BlockRepositoryPutBatch()
         {
-            using (var blockRepository = new BlockRepository(Network.Main, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
+            using (var blockRepository = new BlockRepository(this.network, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
             {
                 blockRepository.SetTxIndexAsync(true).Wait();
 
                 var blocks = new List<Block>();
                 for (int i = 0; i < 5; i++)
                 {
-                    var block = new Block();
-                    block.AddTransaction(new Transaction());
-                    block.AddTransaction(new Transaction());
+                    Block block = this.network.CreateBlock();
+                    block.AddTransaction(this.network.CreateTransaction());
+                    block.AddTransaction(this.network.CreateTransaction());
                     block.Transactions[0].AddInput(new TxIn(Script.Empty));
                     block.Transactions[0].AddOutput(Money.COIN + i * 2, Script.Empty);
                     block.Transactions[1].AddInput(new TxIn(Script.Empty));
                     block.Transactions[1].AddOutput(Money.COIN + i * 2 + 1, Script.Empty);
                     block.UpdateMerkleRoot();
-                    block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : Network.Main.GenesisHash;
+                    block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : this.network.GenesisHash;
                     blocks.Add(block);
                 }
 
@@ -74,12 +72,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         [Fact]
         public void BlockRepositoryBlockHash()
         {
-            using (var blockRepo = new BlockRepository(Network.Main, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
+            using (var blockRepo = new BlockRepository(this.network, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
             {
                 blockRepo.InitializeAsync().GetAwaiter().GetResult();
 
-                Assert.Equal(Network.Main.GenesisHash, blockRepo.BlockHash);
-                uint256 hash = new Block().GetHash();
+                Assert.Equal(this.network.GenesisHash, blockRepo.BlockHash);
+                uint256 hash = this.network.CreateBlock().GetHash();
                 blockRepo.SetBlockHashAsync(hash).GetAwaiter().GetResult();
                 Assert.Equal(hash, blockRepo.BlockHash);
             }

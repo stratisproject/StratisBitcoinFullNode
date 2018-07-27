@@ -20,16 +20,16 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 {
     public class PowMiningTest : LogsTestBase, IClassFixture<PowMiningTestFixture>
     {
-        private Mock<IAsyncLoopFactory> asyncLoopFactory;
+        private readonly Mock<IAsyncLoopFactory> asyncLoopFactory;
         private ConcurrentChain chain;
-        private Mock<IConsensusLoop> consensusLoop;
-        private Mock<IConsensusRules> consensusRules;
-        private NBitcoin.Consensus.ConsensusOptions initialNetworkOptions;
-        private PowMiningTestFixture fixture;
-        private Mock<ITxMempool> mempool;
-        private MempoolSchedulerLock mempoolLock;
-        private Network network;
-        private Mock<INodeLifetime> nodeLifetime;
+        private readonly Mock<IConsensusLoop> consensusLoop;
+        private readonly Mock<IConsensusRules> consensusRules;
+        private readonly ConsensusOptions initialNetworkOptions;
+        private readonly PowMiningTestFixture fixture;
+        private readonly Mock<ITxMempool> mempool;
+        private readonly MempoolSchedulerLock mempoolLock;
+        private readonly Network network;
+        private readonly Mock<INodeLifetime> nodeLifetime;
 
         public PowMiningTest(PowMiningTestFixture fixture)
         {
@@ -38,12 +38,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.initialNetworkOptions = this.network.Consensus.Options;
             if (this.initialNetworkOptions == null)
-                this.network.Consensus.Options = new PowConsensusOptions();
+                this.network.Consensus.Options = new ConsensusOptions();
 
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
             this.consensusLoop = new Mock<IConsensusLoop>();
             this.consensusLoop.SetupGet(c => c.Tip).Returns(() => this.chain.Tip);
+            this.consensusRules = new Mock<IConsensusRules>();
 
             this.mempool = new Mock<ITxMempool>();
             this.mempool.SetupGet(mp => mp.MapTx).Returns(new TxMempool.IndexedTransactionSet());
@@ -321,7 +322,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
                 blockTemplate.Block.Header.Nonce = 0;
-                blockTemplate.Block.Header.Bits = Network.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
+                blockTemplate.Block.Header.Bits = Networks.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
 
                 this.chain.SetTip(this.chain.GetBlock(0));
 
@@ -512,7 +513,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     this.mempool.Object,
                     this.mempoolLock,
                     this.network,
-                    this.consensusRules, 
+                    this.consensusRules.Object,
                     null);
         }
 
@@ -530,7 +531,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             for (int i = 0; i < blockAmount; i++)
             {
                 Block block = network.Consensus.ConsensusFactory.CreateBlock();
-                block.AddTransaction(network.Consensus.ConsensusFactory.CreateTransaction());
+                block.AddTransaction(network.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
                 block.Header.HashPrevBlock = prevBlockHash;
@@ -603,7 +604,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PowMiningTestFixture()
         {
-            this.Network = Network.RegTest; // fast mining so use regtest
+            this.Network = Networks.RegTest; // fast mining so use regtest
             this.Chain = new ConcurrentChain(this.Network);
             this.Key = new Key();
             this.ReserveScript = new ReserveScript(this.Key.ScriptPubKey);
@@ -622,7 +623,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
             block.Header.HashPrevBlock = prevBlock.HashBlock;
 
-            Transaction transaction = this.Network.Consensus.ConsensusFactory.CreateTransaction();
+            Transaction transaction = this.Network.CreateTransaction();
             transaction.AddInput(TxIn.CreateCoinbase(newHeight));
             transaction.AddOutput(new TxOut(new Money(1, MoneyUnit.BTC), ScriptPubKey));
             block.Transactions.Add(transaction);

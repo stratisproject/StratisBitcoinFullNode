@@ -14,7 +14,7 @@ namespace NBitcoin
     /// </summary>
     public class BlockHeader : IBitcoinSerializable
     {
-        internal const int Size = 80;
+        public const int Size = 80;
 
         /// <summary>Current header version.</summary>
         public virtual int CurrentVersion => 3;
@@ -56,7 +56,8 @@ namespace NBitcoin
             }
         }
 
-        internal BlockHeader()
+        [Obsolete("Please use the Load method outside of consensus.")]
+        public BlockHeader()
         {
             this.version = this.CurrentVersion;
             this.hashPrevBlock = 0;

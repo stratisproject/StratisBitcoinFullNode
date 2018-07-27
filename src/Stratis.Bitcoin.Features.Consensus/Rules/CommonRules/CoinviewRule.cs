@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public abstract class CoinViewRule : ConsensusRule
     {
         /// <summary>Consensus options.</summary>
-        public PowConsensusOptions PowConsensusOptions { get; private set; }
+        public ConsensusOptions ConsensusOptions { get; private set; }
 
         /// <summary>The consensus.</summary>
         private NBitcoin.Consensus Consensus { get; set; }
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.Logger.LogTrace("()");
 
             this.Consensus = this.Parent.Network.Consensus;
-            this.PowConsensusOptions = this.Parent.Network.Consensus.Option<PowConsensusOptions>();
+            this.ConsensusOptions = this.Parent.Network.Consensus.Options;
 
             this.Logger.LogTrace("(-)");
         }
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     // * p2sh (when P2SH enabled in flags and excludes coinbase),
                     // * witness (when witness enabled in flags and excludes coinbase).
                     sigOpsCost += this.GetTransactionSignatureOperationCost(tx, view, flags);
-                    if (sigOpsCost > this.PowConsensusOptions.MaxBlockSigopsCost)
+                    if (sigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
                     {
                         this.Logger.LogTrace("(-)[BAD_BLOCK_SIG_OPS]");
                         ConsensusErrors.BadBlockSigOps.Throw();
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="coins">UTXOs to check the maturity of.</param>
         /// <param name="spendHeight">Height at which coins are attempted to be spent.</param>
         /// <exception cref="ConsensusErrors.BadTransactionPrematureCoinbaseSpending">Thrown if transaction tries to spend coins that are not mature.</exception>
-        internal void CheckCoinbaseMaturity(UnspentOutputs coins, int spendHeight)
+        public void CheckCoinbaseMaturity(UnspentOutputs coins, int spendHeight)
         {
             this.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
 
@@ -292,14 +292,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns>Signature operation cost for all transaction's inputs.</returns>
         public long GetTransactionSignatureOperationCost(Transaction transaction, UnspentOutputSet inputs, DeploymentFlags flags)
         {
-            long signatureOperationCost = this.GetLegacySignatureOperationsCount(transaction) * this.PowConsensusOptions.WitnessScaleFactor;
+            long signatureOperationCost = this.GetLegacySignatureOperationsCount(transaction) * this.ConsensusOptions.WitnessScaleFactor;
 
             if (transaction.IsCoinBase)
                 return signatureOperationCost;
 
             if (flags.ScriptFlags.HasFlag(ScriptVerify.P2SH))
             {
-                signatureOperationCost += this.GetP2SHSignatureOperationsCount(transaction, inputs) * this.PowConsensusOptions.WitnessScaleFactor;
+                signatureOperationCost += this.GetP2SHSignatureOperationsCount(transaction, inputs) * this.ConsensusOptions.WitnessScaleFactor;
             }
 
             for (int i = 0; i < transaction.Inputs.Count; i++)
@@ -403,7 +403,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public long GetBlockWeight(Block block)
         {
             return this.GetSize(block, TransactionOptions.None)
-                   * (this.PowConsensusOptions.WitnessScaleFactor - 1)
+                   * (this.ConsensusOptions.WitnessScaleFactor - 1)
                    + this.GetSize(block, TransactionOptions.Witness);
         }
 

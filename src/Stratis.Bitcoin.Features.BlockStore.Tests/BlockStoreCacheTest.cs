@@ -13,10 +13,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private readonly Mock<IBlockRepository> blockRepository;
         private readonly ILoggerFactory loggerFactory;
         private readonly StoreSettings storeSettings;
+        private readonly Network network;
 
         public BlockStoreCacheTest()
         {
             this.loggerFactory = new LoggerFactory();
+            this.network = Networks.StratisMain;
             this.blockRepository = new Mock<IBlockRepository>();
 
             this.storeSettings = new StoreSettings();
@@ -27,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public void GetBlockAsyncBlockInCacheReturnsBlock()
         {
-            var block = new Block();
+            Block block = this.network.CreateBlock();
             block.Header.Version = 1513;
             this.blockStoreCache.AddToCache(block);
 
@@ -41,10 +43,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public void GetBlockAsyncBlockNotInCacheQueriesRepositoryStoresBlockInCacheAndReturnsBlock()
         {
             var blockId = new uint256(2389704);
-            var repositoryBlock = new Block();
+            Block repositoryBlock = this.network.CreateBlock();
             repositoryBlock.Header.Version = 1451;
-            this.blockRepository.Setup(b => b.GetAsync(blockId))
-                .Returns(Task.FromResult(repositoryBlock));
+            this.blockRepository.Setup(b => b.GetAsync(blockId)).Returns(Task.FromResult(repositoryBlock));
 
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.storeSettings);
 

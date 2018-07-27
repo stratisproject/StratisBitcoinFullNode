@@ -24,10 +24,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class CoinViewTests
     {
-        /// <summary>Factory for creating loggers.</summary>
         protected readonly ILoggerFactory loggerFactory;
-
-        /// <summary>Provider of binary (de)serialization for data stored in the database.</summary>
+        private readonly Network network;
         private readonly DBreezeSerializer dbreezeSerializer;
 
         /// <summary>
@@ -36,8 +34,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         public CoinViewTests()
         {
             this.loggerFactory = new LoggerFactory();
+            this.network = Networks.Main;
             this.dbreezeSerializer = new DBreezeSerializer();
-            this.dbreezeSerializer.Initialize(Network.Main);
+            this.dbreezeSerializer.Initialize(this.network);
         }
 
         [Fact]
@@ -46,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeContext ctx = NodeContext.Create(this))
             {
                 Block genesis = ctx.Network.GetGenesis();
-                var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash ,0);
+                var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash, 0);
                 ChainedHeader chained = this.MakeNext(genesisChainedHeader, ctx.Network);
                 ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock).Wait();
                 Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
@@ -261,23 +260,23 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanSaveChainIncrementally()
         {
-                using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory))
-                {
-                    var chain = new ConcurrentChain(Network.RegTest);
-                    repo.LoadAsync(chain).GetAwaiter().GetResult();
-                    Assert.True(chain.Tip == chain.Genesis);
-                    chain = new ConcurrentChain(Network.RegTest);
-                    ChainedHeader tip = this.AppendBlock(chain);
-                    repo.SaveAsync(chain).GetAwaiter().GetResult();
-                    var newChain = new ConcurrentChain(Network.RegTest);
-                    repo.LoadAsync(newChain).GetAwaiter().GetResult();
-                    Assert.Equal(tip, newChain.Tip);
-                    tip = this.AppendBlock(chain);
-                    repo.SaveAsync(chain).GetAwaiter().GetResult();
-                    newChain = new ConcurrentChain(Network.RegTest);
-                    repo.LoadAsync(newChain).GetAwaiter().GetResult();
-                    Assert.Equal(tip, newChain.Tip);
-                }
+            using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory))
+            {
+                var chain = new ConcurrentChain(Networks.RegTest);
+                repo.LoadAsync(chain).GetAwaiter().GetResult();
+                Assert.True(chain.Tip == chain.Genesis);
+                chain = new ConcurrentChain(Networks.RegTest);
+                ChainedHeader tip = this.AppendBlock(chain);
+                repo.SaveAsync(chain).GetAwaiter().GetResult();
+                var newChain = new ConcurrentChain(Networks.RegTest);
+                repo.LoadAsync(newChain).GetAwaiter().GetResult();
+                Assert.Equal(tip, newChain.Tip);
+                tip = this.AppendBlock(chain);
+                repo.SaveAsync(chain).GetAwaiter().GetResult();
+                newChain = new ConcurrentChain(Networks.RegTest);
+                repo.LoadAsync(newChain).GetAwaiter().GetResult();
+                Assert.Equal(tip, newChain.Tip);
+            }
         }
 
         public ChainedHeader AppendBlock(ChainedHeader previous, params ConcurrentChain[] chains)
@@ -286,8 +285,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             uint nonce = RandomUtils.GetUInt32();
             foreach (ConcurrentChain chain in chains)
             {
-                var block = new Block();
-                block.AddTransaction(new Transaction());
+                Block block = this.network.CreateBlock();
+                block.AddTransaction(this.network.CreateTransaction());
                 block.UpdateMerkleRoot();
                 block.Header.HashPrevBlock = previous == null ? chain.Tip.HashBlock : previous.HashBlock;
                 block.Header.Nonce = nonce;
@@ -306,7 +305,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanCheckBlockWithWitness()
         {
-            Block block = Block.Load(Encoders.Hex.DecodeData("000000202f6f6a130549473222411b5c6f54150d63b32aadf10e57f7d563cfc7010000001e28204471ef9ef11acd73543894a96a3044932b85e99889e731322a8ec28a9f9ae9fc56ffff011d0011b40202010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff2c028027266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779010effffffff0250b5062a0100000023210263ed47e995cbbf1bc560101e3b76c6bdb1b094a185450cea533781ce598ff2b6ac0000000000000000266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779012000000000000000000000000000000000000000000000000000000000000000000000000001000000000101cecd90cd38ac6858c47f2fe9f28145d6e18f9c5abc7ef1a41e2f19e6fe0362580100000000ffffffff0130b48d06000000001976a91405481b7f1d90c5a167a15b00e8af76eb6984ea5988ac0247304402206104c335e4adbb920184957f9f710b09de17d015329fde6807b9d321fd2142db02200b24ad996b4aa4ff103000348b5ad690abfd9fddae546af9e568394ed4a83113012103a65786c1a48d4167aca08cf6eb8eed081e13f45c02dc6000fd8f3bb16242579a00000000"), Network.Main);
+            Block block = Block.Load(Encoders.Hex.DecodeData("000000202f6f6a130549473222411b5c6f54150d63b32aadf10e57f7d563cfc7010000001e28204471ef9ef11acd73543894a96a3044932b85e99889e731322a8ec28a9f9ae9fc56ffff011d0011b40202010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff2c028027266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779010effffffff0250b5062a0100000023210263ed47e995cbbf1bc560101e3b76c6bdb1b094a185450cea533781ce598ff2b6ac0000000000000000266a24aa21a9ed09154465f26a2a4144739eba3e83b3e9ae6a1f69566eae7dc3747d48f1183779012000000000000000000000000000000000000000000000000000000000000000000000000001000000000101cecd90cd38ac6858c47f2fe9f28145d6e18f9c5abc7ef1a41e2f19e6fe0362580100000000ffffffff0130b48d06000000001976a91405481b7f1d90c5a167a15b00e8af76eb6984ea5988ac0247304402206104c335e4adbb920184957f9f710b09de17d015329fde6807b9d321fd2142db02200b24ad996b4aa4ff103000348b5ad690abfd9fddae546af9e568394ed4a83113012103a65786c1a48d4167aca08cf6eb8eed081e13f45c02dc6000fd8f3bb16242579a00000000"), Networks.Main);
 
             var consensusFlags = new DeploymentFlags
             {
@@ -318,20 +317,19 @@ namespace Stratis.Bitcoin.IntegrationTests
             var context = new RuleContext
             {
                 ConsensusTipHeight = 10111,
-                NextWorkRequired = block.Header.Bits,
                 Time = DateTimeOffset.UtcNow,
                 ValidationContext = new ValidationContext { Block = block },
                 Flags = consensusFlags,
             };
 
-            Network.Main.Consensus.Options = new PowConsensusOptions();
-            context.Consensus = Network.Main.Consensus;
+            Networks.Main.Consensus.Options = new ConsensusOptions();
+            context.Consensus = Networks.Main.Consensus;
             new WitnessCommitmentsRule().RunAsync(context).GetAwaiter().GetResult();
 
             var rule = new CheckPowTransactionRule();
-            var options = Network.Main.Consensus.Option<PowConsensusOptions>();
+            var options = Networks.Main.Consensus.Options;
             foreach (Transaction tx in block.Transactions)
-                rule.CheckTransaction(Network.Main, options, tx);
+                rule.CheckTransaction(Networks.Main, options, tx);
         }
     }
 }
