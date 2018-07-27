@@ -35,6 +35,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
                 result.ContractType = developedTypes.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.Name == typeof(DeployAttribute).Name));
             }
 
+            // If contract type wasn't set yet, set the first.
+            result.ContractType = result.ContractType ?? developedTypes.FirstOrDefault();
+
             return result;
         }
     }

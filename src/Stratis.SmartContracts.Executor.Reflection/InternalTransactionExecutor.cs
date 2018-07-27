@@ -40,6 +40,34 @@ namespace Stratis.SmartContracts.Executor.Reflection
         ///<inheritdoc />
         public ICreateResult Create<T>(ISmartContractState smartContractState, object[] parameters, ulong amountToTransfer)
         {
+            // Expend any neccessary costs.
+            // TODO
+
+            // Check balance.
+            var balance = smartContractState.GetBalance();
+            if (balance < amountToTransfer)
+            {
+                this.logger.LogTrace("(-)[INSUFFICIENT_BALANCE]:{0}={1}", nameof(balance), balance);
+                throw new InsufficientBalanceException();
+            }
+
+            // Build objects for VM
+            byte[] contractCode = this.contractStateRepository.GetCode(smartContractState.Message.ContractAddress.ToUint160(this.network)); // TODO: Fix this when calling from constructor.
+
+            var callData = new CallData(1, 0, smartContractState.GasMeter.GasLimit, , "", parameters);
+
+                , addressTo.ToUint160(this.network), contractDetails.ContractMethodName, "", contractDetails.MethodParameters);
+
+
+            // do create
+
+            // Store account details to state.
+
+            // return result
+
+
+
+            this.vm.Create()
             throw new System.NotImplementedException();
         }
 
