@@ -15,7 +15,6 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -37,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             this.loggerFactory = new LoggerFactory();
             this.network = KnownNetworks.Main;
-            this.network = KnownNetworks.RegTest;
+            this.regTest = KnownNetworks.RegTest;
             this.dbreezeSerializer = new DBreezeSerializer();
             this.dbreezeSerializer.Initialize(this.network);
         }
