@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
+using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
@@ -85,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Returns(asyncLoop)
                 .Verifiable();
 
-            this.posMinting.Stake(new PosMinting.WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
+            this.posMinting.Stake(new WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
 
             this.nodeLifetime.Verify();
             this.asyncLoopFactory.Verify();
@@ -118,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     throw new InvalidOperationException("End the loop");
                 });
 
-            this.posMinting.Stake(new PosMinting.WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
+            this.posMinting.Stake(new WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
             asyncLoop.Run();
 
             GetStakingInfoModel model = this.posMinting.GetGetStakingInfoModel();
@@ -152,7 +153,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     throw new InvalidOperationException("End the loop");
                 });
 
-            this.posMinting.Stake(new PosMinting.WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
+            this.posMinting.Stake(new WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
             asyncLoop.Run();
 
             GetStakingInfoModel model = this.posMinting.GetGetStakingInfoModel();
@@ -193,7 +194,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     throw new InvalidOperationException("End the loop");
                 });
 
-            this.posMinting.Stake(new PosMinting.WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
+            this.posMinting.Stake(new WalletSecret() { WalletName = "wallet1", WalletPassword = "myPassword" });
             stakingLoopFunction(stakingLoopToken);
             stakingLoopFunction(stakingLoopToken);
 
@@ -207,10 +208,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public async Task GenerateBlocksAsync_does_not_use_small_coins()
         {
-            var walletSecret = new PosMinting.WalletSecret(){WalletName = "wallet", WalletPassword = "password"};
+            var walletSecret = new WalletSecret(){WalletName = "wallet", WalletPassword = "password"};
             var wallet = new Wallet.Wallet();
             var milliseconds550MinutesAgo = (uint)Math.Max(this.chain.Tip.Header.Time - TimeSpan.FromMinutes(550).Milliseconds, 0);
-            this.AddAccountWithSpendableOutputs(wallet, walletSecret.WalletPassword, DateTimeOffset.FromUnixTimeMilliseconds(milliseconds550MinutesAgo));
+            this.AddAccountWithSpendableOutputs(wallet);
             var spendableTransactions = wallet.GetAllSpendableTransactions(CoinType.Stratis, this.chain.Tip.Height, 0).ToList();
 
             this.walletManager.Setup(w => w.GetSpendableTransactionsInWallet(It.IsAny<string>(), It.IsAny<int>()))
@@ -218,14 +219,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             var fetchedUtxos = spendableTransactions
                 .Select(t => new UnspentOutputs(t.Transaction.Id, new Coins()
-                   {
-                       CoinBase = false,
-                       CoinStake = false,
-                       Height = 0,
-                       Outputs = { new TxOut(t.Transaction.Amount ?? Money.Zero, t.Address.ScriptPubKey)},
-                       Time = milliseconds550MinutesAgo,
-                       Version = 1
-                   }))
+                {
+                    CoinBase = false,
+                    CoinStake = false,
+                    Height = 0,
+                    Outputs = { new TxOut(t.Transaction.Amount ?? Money.Zero, t.Address.ScriptPubKey)},
+                    Time = milliseconds550MinutesAgo,
+                    Version = 1
+                }))
                 .ToArray();
             var fetchCoinsResponse = new FetchCoinsResponse(fetchedUtxos, this.chain.Tip.HashBlock);
 
@@ -258,7 +259,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             utxoStakeDescriptions.Select(d => d.TxOut.Value).Should().Contain(expectedAmounts);
         }
 
-        public void AddAccountWithSpendableOutputs(Wallet.Wallet wallet, string password, DateTimeOffset creationTime)
+        private void AddAccountWithSpendableOutputs(Wallet.Wallet wallet)
         {
             var account = new HdAccount();
             account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(15), Index = 0, Amount = PosMinting.MinimumStakingCoinValue } } });
@@ -508,9 +509,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             chainTip.SetPrivatePropertyValue("Height", chainTipHeight);
             chainTip.Previous.SetPrivatePropertyValue("Height", utxoHeight);
 
-            var descriptions = new List<PosMinting.UtxoStakeDescription>();
+            var descriptions = new List<UtxoStakeDescription>();
 
-            var utxoDescription = new PosMinting.UtxoStakeDescription();
+            var utxoDescription = new UtxoStakeDescription();
             utxoDescription.TxOut = new TxOut(new Money(100), new Mock<IDestination>().Object);
             utxoDescription.OutPoint = new OutPoint(uint256.One, 0);
             utxoDescription.HashBlock = chainTip.Previous.HashBlock;
@@ -520,7 +521,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             descriptions.Add(utxoDescription);
 
-            List<PosMinting.UtxoStakeDescription> suitableCoins = miner.GetUtxoStakeDescriptionsSuitableForStaking(descriptions, chainTip, chainTip.Header.Time + 64, long.MaxValue);
+            List<UtxoStakeDescription> suitableCoins = miner.GetUtxoStakeDescriptionsSuitableForStaking(descriptions, chainTip, chainTip.Header.Time + 64, long.MaxValue);
             return suitableCoins.Count == 1;
         }
 

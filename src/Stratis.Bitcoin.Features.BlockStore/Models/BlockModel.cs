@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using NBitcoin;
+using Newtonsoft.Json;
+using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Models
 {
@@ -10,6 +12,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Models
         public int Size { get; set; }
         public int Version { get; set; }
         public string Bits { get; set; }
+        [JsonConverter(typeof(DateTimeOffsetConverter))]
         public DateTimeOffset Time { get; set; }
         public string[] Transactions { get; set; }
         public double Difficulty { get; set; }
@@ -17,7 +20,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Models
         public string PreviousBlockHash { get; set; }
         public uint Nonce { get; set; }
 
-        public  BlockModel(Block block)
+        public BlockModel(Block block)
         {
             this.Hash = block.GetHash().ToString();
             this.Size = block.ToBytes().Length;
@@ -30,7 +33,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Models
             this.Difficulty = block.Header.Bits.Difficulty;
             this.Transactions = block.Transactions.Select(t => t.GetHash().ToString()).ToArray();
         }
-    }
 
-    
+        /// <summary>
+        /// Creates a block model
+        /// Used for deserializing from Json
+        /// </summary>
+        public BlockModel()
+        {
+        }
+    }
 }
