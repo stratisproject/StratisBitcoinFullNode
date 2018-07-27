@@ -21,14 +21,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
 {
     public class MiningRpcControllerTest : LogsTestBase, IClassFixture<MiningRPCControllerFixture>
     {
-        private MiningRpcController miningRpcController;
+        private readonly MiningRpcController miningRpcController;
         private StakingRpcController stakingRpcController;
-        private Mock<IFullNode> fullNode;
-        private Mock<IPosMinting> posMinting;
-        private Mock<IWalletManager> walletManager;
-        private Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
-        private MiningRPCControllerFixture fixture;
-        private Mock<IPowMining> powMining;
+        private readonly Mock<IFullNode> fullNode;
+        private readonly Mock<IPosMinting> posMinting;
+        private readonly Mock<IWalletManager> walletManager;
+        private readonly Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
+        private readonly MiningRPCControllerFixture fixture;
+        private readonly Mock<IPowMining> powMining;
 
         public MiningRpcControllerTest(MiningRPCControllerFixture fixture)
         {

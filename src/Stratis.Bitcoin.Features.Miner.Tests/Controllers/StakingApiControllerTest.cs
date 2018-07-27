@@ -20,10 +20,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
     public class StakingApiControllerTest : LogsTestBase
     {
         private StakingApiController apiController;
-        private Mock<IFullNode> fullNode;
-        private Mock<IPosMinting> posMinting;
-        private Mock<IWalletManager> walletManager;
-        private Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
+        private readonly Mock<IFullNode> fullNode;
+        private readonly Mock<IPosMinting> posMinting;
+        private readonly Mock<IWalletManager> walletManager;
+        private readonly Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
 
         public StakingApiControllerTest()
         {
