@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
     /// </remarks>
     public class PosMinting : IPosMinting
     {
-        
+
         /// <summary>
         /// Indicates the current state: idle, staking requested, staking in progress and stop staking requested.
         /// </summary>
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Consensus' view of UTXO set.</summary>
-        private readonly CoinView coinView;
+        private readonly ICoinView coinView;
 
         /// <summary>Database of stake related data for the current blockchain.</summary>
         private readonly IStakeChain stakeChain;
@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             IDateTimeProvider dateTimeProvider,
             IInitialBlockDownloadState initialBlockDownloadState,
             INodeLifetime nodeLifetime,
-            CoinView coinView,
+            ICoinView coinView,
             IStakeChain stakeChain,
             IStakeValidator stakeValidator,
             MempoolSchedulerLock mempoolLock,
@@ -411,10 +411,10 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 }
 
                 List<UtxoStakeDescription> utxoStakeDescriptions = await this.GetUtxoStakeDescriptionsAsync(walletSecret, cancellationToken).ConfigureAwait(false);
-                
+
                 blockTemplate = blockTemplate ?? this.blockProvider.BuildPosBlock(chainTip, new Script());
                 var posBlock = (PosBlock)blockTemplate.Block;
-                
+
                 this.networkWeight = (long)this.GetNetworkWeight();
                 this.rpcGetStakingInfoModel.CurrentBlockSize = posBlock.GetSerializedSize();
                 this.rpcGetStakingInfoModel.CurrentBlockTx = posBlock.Transactions.Count();

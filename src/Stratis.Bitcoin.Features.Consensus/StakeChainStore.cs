@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            uint256 hash = await this.dBreezeCoinView.GetBlockHashAsync().ConfigureAwait(false);
+            uint256 hash = await this.dBreezeCoinView.GetTipHashAsync().ConfigureAwait(false);
             ChainedHeader next = this.chain.GetBlock(hash);
             var load = new List<StakeItem>();
 

@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly Mock<IDateTimeProvider> dateTimeProvider;
         private readonly Mock<IInitialBlockDownloadState> initialBlockDownloadState;
         private readonly Mock<INodeLifetime> nodeLifetime;
-        private readonly Mock<CoinView> coinView;
+        private readonly Mock<ICoinView> coinView;
         private readonly Mock<IStakeChain> stakeChain;
         private readonly List<uint256> powBlocks;
         private readonly Mock<IStakeValidator> stakeValidator;
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.initialBlockDownloadState = new Mock<IInitialBlockDownloadState>();
             this.nodeLifetime = new Mock<INodeLifetime>();
-            this.coinView = new Mock<CoinView>();
+            this.coinView = new Mock<ICoinView>();
             this.stakeChain = new Mock<IStakeChain>();
             this.powBlocks = new List<uint256>();
             this.SetupStakeChain();
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.walletManager.Setup(w => w.GetSpendableTransactionsInWallet(It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(spendableTransactions);
-            
+
             var fetchedUtxos = spendableTransactions
                 .Select(t => new UnspentOutputs(t.Transaction.Id, new Coins()
                 {
@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(fetchCoinsResponse));
-            
+
             this.consensusLoop.Setup(c => c.Tip).Returns(this.chain.Tip);
             this.dateTimeProvider.Setup(c => c.GetAdjustedTimeAsUnixTimestamp())
                 .Returns(this.chain.Tip.Header.Time + 16);
@@ -414,7 +414,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void GetNetworkWeight_UsesLast73Blocks_CalculatedNetworkWeightUsingLatestBlocks()
         {
             this.chain = GenerateChainWithBlockTimeAndHeight(5, this.network, 60, 0x12345678);
-            // only the last 72 blocks should be included. 
+            // only the last 72 blocks should be included.
             // it skips the first block because it cannot determine it for a single block so we need to add 73.
             AddBlockToChainWithBlockTimeAndDifficulty(this.chain, 73, 60, 0x1df88f6f, this.network);
             this.InitializePosMinting();

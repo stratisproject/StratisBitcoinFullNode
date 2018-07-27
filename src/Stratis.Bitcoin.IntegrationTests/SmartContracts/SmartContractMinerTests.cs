@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 this.refundProcessor = new SmartContractResultRefundProcessor(loggerFactory);
                 this.transferProcessor = new SmartContractResultTransferProcessor(loggerFactory, this.network);
-                
+
                 this.serializer = CallDataSerializer.Default;
                 this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
 
@@ -843,7 +843,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         private readonly Dictionary<Type, object> registered;
 
         public MockServiceProvider(
-            CoinView coinView,
+            ICoinView coinView,
             ISmartContractExecutorFactory executorFactory,
             ContractStateRepositoryRoot stateRoot,
             ILoggerFactory loggerFactory,
@@ -851,7 +851,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             this.registered = new Dictionary<Type, object>
             {
-                { typeof(CoinView), coinView },
+                { typeof(ICoinView), coinView },
                 { typeof(ISmartContractExecutorFactory), executorFactory },
                 { typeof(ContractStateRepositoryRoot), stateRoot },
                 { typeof(ILoggerFactory), loggerFactory },
