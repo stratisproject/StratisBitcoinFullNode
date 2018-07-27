@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
@@ -26,8 +26,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
         public RpcBitcoinMutableTests()
         {
-            this.regTest = NetworkContainer.RegTest;
-            this.testNet = NetworkContainer.TestNet;
+            this.regTest = KnownNetworks.RegTest;
+            this.testNet = KnownNetworks.TestNet;
         }
 
         /// <summary>

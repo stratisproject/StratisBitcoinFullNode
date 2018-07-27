@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
         [Fact]
         public void ReflectionVirtualMachineFeature_OnInitialize_RulesAdded()
         {
-            Network network = NetworkContainer.StratisRegTest;
+            Network network = KnownNetworks.StratisRegTest;
 
             var chain = new ConcurrentChain(network);
             var contractState = new ContractStateRepositoryRoot();

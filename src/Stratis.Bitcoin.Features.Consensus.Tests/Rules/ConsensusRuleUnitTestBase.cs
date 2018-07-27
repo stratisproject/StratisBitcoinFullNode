@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<ILookaheadBlockPuller> lookaheadBlockPuller;
         protected Mock<CoinView> coinView;
 
-        public PosConsensusRuleUnitTestBase() : base(NetworkContainer.StratisTest)
+        public PosConsensusRuleUnitTestBase() : base(KnownNetworks.StratisTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
     public class TestConsensusRulesUnitTestBase : ConsensusRuleUnitTestBase<TestConsensusRules>
     {
-        public TestConsensusRulesUnitTestBase() : base(NetworkContainer.TestNet)
+        public TestConsensusRulesUnitTestBase() : base(KnownNetworks.TestNet)
         {
             this.network.Consensus.Options = new ConsensusOptions();
             this.consensusRules = InitializeConsensusRules();
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<ILookaheadBlockPuller> lookaheadBlockPuller;
         protected Mock<CoinView> coinView;
 
-        public TestPosConsensusRulesUnitTestBase() : base(NetworkContainer.StratisTest)
+        public TestPosConsensusRulesUnitTestBase() : base(KnownNetworks.StratisTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();

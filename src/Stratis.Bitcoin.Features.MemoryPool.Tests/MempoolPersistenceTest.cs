@@ -16,7 +16,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 Directory.CreateDirectory(this.dir);
             }
 
-            this.network = NetworkContainer.Main;
+            this.network = KnownNetworks.Main;
         }
 
         public void Dispose()

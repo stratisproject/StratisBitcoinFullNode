@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using NBitcoin;
+using NBitcoin.Networks;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC;
@@ -93,12 +94,12 @@ namespace Stratis.Bitcoin.Cli
                 if (networkName.Contains("stratis"))
                 {
                     defaultRestApiPort = 37221;
-                    network = NetworkContainer.StratisMain;
+                    network = NetworkRegistration.Register(new StratisMain());
                 }
                 else
                 {
                     defaultRestApiPort = 37220;
-                    network = NetworkContainer.Main;
+                    network = NetworkRegistration.Register(new BitcoinMain());
                 }
 
                 // API calls require both the contoller name and the method name separated by "/".

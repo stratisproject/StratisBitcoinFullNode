@@ -19,7 +19,7 @@ using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.RPC.Models;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
         public RPCControllerTest()
         {
-            this.testNetwork = NetworkContainer.TestNet;
+            this.testNetwork = KnownNetworks.TestNet;
             this.fullNode = new Mock<IFullNode>();
             this.fullNode.Setup(f => f.Network)
                 .Returns(this.testNetwork);
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             public BlockHeaderObject result = new BlockHeaderObject()
             {
-                hashPrevBlock = NetworkContainer.TestNet.GenesisHash.ToString()
+                hashPrevBlock = KnownNetworks.TestNet.GenesisHash.ToString()
             };
 
             public RPCErrorObject error = new RPCErrorObject()

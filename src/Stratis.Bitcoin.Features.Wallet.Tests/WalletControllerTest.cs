@@ -11,8 +11,8 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
@@ -482,7 +482,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var wallet = new Wallet
             {
                 Name = walletName,
-                Network = NetworkContainer.StratisMain,
+                Network = KnownNetworks.StratisMain,
                 IsExtPubKeyWallet = true
             };
 
@@ -493,7 +493,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object,
                 new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object,
-                It.IsAny<ConnectionManager>(), NetworkContainer.StratisMain, new Mock<ConcurrentChain>().Object,
+                It.IsAny<ConnectionManager>(), KnownNetworks.StratisMain, new Mock<ConcurrentChain>().Object,
                 new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.RecoverViaExtPubKey(new WalletExtPubRecoveryRequest

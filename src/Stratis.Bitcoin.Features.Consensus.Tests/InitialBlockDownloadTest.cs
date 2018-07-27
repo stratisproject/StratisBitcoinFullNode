@@ -3,7 +3,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public InitialBlockDownloadTest()
         {
-            this.network = NetworkContainer.Main;
+            this.network = KnownNetworks.Main;
             this.consensusSettings = new ConsensusSettings(new NodeSettings(this.network));
             this.checkpoints = new Checkpoints(this.network, this.consensusSettings);
             this.chainState = new ChainState(new InvalidBlockHashStore(DateTimeProvider.Default));

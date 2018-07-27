@@ -29,9 +29,6 @@ namespace NBitcoin.Networks
                 if (string.IsNullOrEmpty(networkName))
                     throw new InvalidOperationException("A network name needs to be provided.");
 
-                if (GetNetwork(networkName) != null)
-                    throw new InvalidOperationException("The network " + networkName + " is already registered.");
-
                 if (network.GetGenesis() == null)
                     throw new InvalidOperationException("A genesis block needs to be provided.");
 

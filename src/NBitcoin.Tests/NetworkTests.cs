@@ -52,11 +52,11 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void RegisterNetworkTwiceFails()
+        public void RegisterNetworkTwiceReturnsSameNetwork()
         {
             Network main = KnownNetworks.Main;
-            InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => NetworkRegistration.Register(main));
-            Assert.Contains("is already registered", error.Message);
+            Network reregistered = NetworkRegistration.Register(main);
+            Assert.Equal(main, reregistered);
         }
 
         [Fact]

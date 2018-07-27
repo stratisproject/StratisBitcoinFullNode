@@ -90,11 +90,13 @@ namespace NBitcoin.Tests
 
         private readonly Network network;
         private readonly Network networkTest;
+        private readonly Network networkRegTest;
 
         public ColoredCoinsTests()
         {
             this.network = KnownNetworks.Main;
             this.networkTest = KnownNetworks.TestNet;
+            this.networkRegTest = KnownNetworks.RegTest;
         }
 
         [Fact]
