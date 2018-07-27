@@ -12,7 +12,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Miner.Controllers
 {
     /// <summary>
-    /// RPC controller for calls related to PoW mining and PoS minting.
+    /// RPC controller for calls related to PoS minting.
     /// </summary>
     [Controller]
     public class StakingRpcController : FeatureController
