@@ -62,7 +62,7 @@ namespace Stratis.SmartContracts
         /// </summary>
         private readonly ISmartContractState smartContractState;
 
-        protected SmartContract(ISmartContractState smartContractState)
+        public SmartContract(ISmartContractState smartContractState)
         {
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
 
@@ -107,7 +107,7 @@ namespace Stratis.SmartContracts
         /// <typeparam name="T">Contract type to instantiate</typeparam>
         /// <param name="parameters">Parameters to pass to constructor.</param>
         /// <param name="value">Amount to send to the new contract during creation.</param>
-        protected ICreateResult Create<T>(object[] parameters = null, ulong value = 0)
+        protected ICreateResult Create<T>(object[] parameters = null, ulong value = 0) where T : SmartContract
         {
             return this.internalTransactionExecutor.Create<T>(this.smartContractState, parameters, value);
         }
