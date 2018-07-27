@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Protocol;
 
-namespace NBitcoin.NetworkDefinitions
+namespace Stratis.Bitcoin.Networks
 {
     public class StratisRegTest : StratisMain
     {

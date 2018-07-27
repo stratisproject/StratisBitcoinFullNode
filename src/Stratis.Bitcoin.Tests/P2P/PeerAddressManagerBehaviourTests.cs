@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using Moq;
-using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.P2P;
@@ -16,7 +15,6 @@ namespace Stratis.Bitcoin.Tests.P2P
     public sealed class PeerAddressManagerBehaviourTests : LogsTestBase
     {
         private readonly ExtendedLoggerFactory extendedLoggerFactory;
-        private readonly Network network;
         private readonly INetworkPeerFactory networkPeerFactory;
 
         public PeerAddressManagerBehaviourTests()
@@ -24,8 +22,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             this.extendedLoggerFactory = new ExtendedLoggerFactory();
             this.extendedLoggerFactory.AddConsoleWithFilters();
 
-            this.network = Networks.Main;
-            this.networkPeerFactory = new NetworkPeerFactory(this.network, DateTimeProvider.Default, this.extendedLoggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
+            this.networkPeerFactory = new NetworkPeerFactory(this.Network, DateTimeProvider.Default, this.extendedLoggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
         }
 
         [Fact]
@@ -54,7 +51,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var incomingMessage = new IncomingMessage();
             incomingMessage.Message = new Message(new PayloadProvider().DiscoverPayloads())
             {
-                Magic = this.network.Magic,
+                Magic = this.Network.Magic,
                 Payload = new PingPayload(),
             };
 
@@ -91,7 +88,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var incomingMessage = new IncomingMessage();
             incomingMessage.Message = new Message(new PayloadProvider().DiscoverPayloads())
             {
-                Magic = this.network.Magic,
+                Magic = this.Network.Magic,
                 Payload = new PingPayload(),
             };
 
