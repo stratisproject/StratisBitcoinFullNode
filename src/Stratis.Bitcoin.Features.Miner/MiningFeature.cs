@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Mining;
@@ -113,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.logger.LogInformation("Staking enabled on wallet '{0}'.", walletName);
 
-                this.posMinting.Stake(new PosMinting.WalletSecret
+                this.posMinting.Stake(new WalletSecret
                 {
                     WalletPassword = walletPassword,
                     WalletName = walletName
