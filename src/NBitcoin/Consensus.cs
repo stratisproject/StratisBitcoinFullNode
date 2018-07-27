@@ -99,10 +99,7 @@ namespace NBitcoin
             this.BuriedDeployments = new BuriedDeploymentsArray();
             this.BIP9Deployments = new BIP9DeploymentsArray();
 
-            this.ConsensusFactory = new ConsensusFactory()
-            {
-                Consensus = this
-            };
+            this.ConsensusFactory = new ConsensusFactory();
         }
 
         public BuriedDeploymentsArray BuriedDeployments { get; set; }

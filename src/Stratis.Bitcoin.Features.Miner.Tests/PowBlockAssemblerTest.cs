@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.txMempool = new Mock<ITxMempool>();
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.powReward = Money.Coins(50);
-            this.network = Network.TestNet;
+            this.network = Networks.TestNet;
             this.key = new Key();
 
             SetupConsensusLoop();

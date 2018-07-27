@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated)
         {
-            Network.Main.Consensus.Options = new PosConsensusOptions();
+            Networks.Main.Consensus.Options = new PosConsensusOptions();
             return BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
         }
     }

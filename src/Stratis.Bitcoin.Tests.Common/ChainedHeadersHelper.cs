@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Tests.Common
         public static List<ChainedHeader> CreateConsecutiveHeaders(int count, ChainedHeader prevBlock = null, bool includePrevBlock = false)
         {
             var chainedHeaders = new List<ChainedHeader>();
-            Network network = Network.StratisMain;
+            Network network = Networks.StratisMain;
 
             ChainedHeader tip = prevBlock;
 
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Tests.Common
         /// <summary>Creates genesis header for stratis mainnet.</summary>
         public static ChainedHeader CreateGenesisChainedHeader()
         {
-            return new ChainedHeader(Network.StratisMain.GetGenesis().Header, Network.StratisMain.GenesisHash, 0);
+            return new ChainedHeader(Networks.StratisMain.GetGenesis().Header, Networks.StratisMain.GenesisHash, 0);
         }
     }
 }
