@@ -9,9 +9,11 @@ using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using NBitcoin.Networks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -184,7 +186,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
             if (address != null && network == null)
             {
-                network = NetworksContainer.GetNetworks().FirstOrDefault(n => n.RPCPort == address.Port);
+                network = NetworkRegistration.GetNetworks().FirstOrDefault(n => n.RPCPort == address.Port);
                 if (network == null)
                     throw new ArgumentNullException("network");
             }
@@ -231,26 +233,26 @@ namespace Stratis.Bitcoin.Features.RPC
                 string bitcoinFolder = Path.Combine(home, ".bitcoin");
 
                 string mainnet = Path.Combine(bitcoinFolder, ".cookie");
-                RegisterDefaultCookiePath(Networks.Main, mainnet);
+                RegisterDefaultCookiePath(NetworkRegistration.Register(new BitcoinMain()), mainnet);
 
                 string testnet = Path.Combine(bitcoinFolder, "testnet3", ".cookie");
-                RegisterDefaultCookiePath(Networks.TestNet, testnet);
+                RegisterDefaultCookiePath(NetworkRegistration.Register(new BitcoinTest()), testnet);
 
                 string regtest = Path.Combine(bitcoinFolder, "regtest", ".cookie");
-                RegisterDefaultCookiePath(Networks.RegTest, regtest);
+                RegisterDefaultCookiePath(NetworkRegistration.Register(new BitcoinRegTest()), regtest);
             }
             else if (!string.IsNullOrEmpty(localAppData))
             {
                 string bitcoinFolder = Path.Combine(localAppData, "Bitcoin");
 
                 string mainnet = Path.Combine(bitcoinFolder, ".cookie");
-                RegisterDefaultCookiePath(Networks.Main, mainnet);
+                RegisterDefaultCookiePath(NetworkRegistration.Register(new BitcoinMain()), mainnet);
 
                 string testnet = Path.Combine(bitcoinFolder, "testnet3", ".cookie");
-                RegisterDefaultCookiePath(Networks.TestNet, testnet);
+                RegisterDefaultCookiePath(NetworkRegistration.Register(new BitcoinTest()), testnet);
 
                 string regtest = Path.Combine(bitcoinFolder, "regtest", ".cookie");
-                RegisterDefaultCookiePath(Networks.RegTest, regtest);
+                RegisterDefaultCookiePath(NetworkRegistration.Register(new BitcoinRegTest()), regtest);
             }
         }
 
@@ -473,7 +475,7 @@ namespace Stratis.Bitcoin.Features.RPC
         }
 
         private async Task SendBatchAsyncCoreAsync(List<Tuple<RPCRequest, TaskCompletionSource<RPCResponse>>> requests)
-        {           
+        {
             var writer = new StringWriter();
             writer.Write("[");
 
@@ -527,7 +529,7 @@ namespace Stratis.Bitcoin.Features.RPC
                         var rpcResponse = new RPCResponse(jobj);
                         requests[responseIndex].Item2.TrySetResult(rpcResponse);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         requests[responseIndex].Item2.TrySetException(ex);
                     }
@@ -597,7 +599,7 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 return await SendCommandAsyncCoreAsync(request, throwIfRPCError).ConfigureAwait(false);
             }
-            catch(WebException ex)
+            catch (WebException ex)
             {
                 if (!IsUnauthorized(ex))
                     throw;
@@ -726,7 +728,7 @@ namespace Stratis.Bitcoin.Features.RPC
             return ms;
         }
 
-#region P2P Networking
+        #region P2P Networking
         public PeerInfo[] GetPeersInfo()
         {
             PeerInfo[] peers = null;
@@ -775,7 +777,7 @@ namespace Stratis.Bitcoin.Features.RPC
                     Inflight = peer["inflight"].Select(x => uint.Parse((string)x)).ToArray()
                 };
             }
-        
+
             return result;
         }
 
@@ -911,15 +913,15 @@ namespace Stratis.Bitcoin.Features.RPC
             }
             catch (RPCException ex)
             {
-                if(ex.RPCCode == RPCErrorCode.RPC_CLIENT_NODE_NOT_ADDED)
+                if (ex.RPCCode == RPCErrorCode.RPC_CLIENT_NODE_NOT_ADDED)
                     return null;
                 throw;
             }
         }
 
-#endregion
+        #endregion
 
-#region Block chain and UTXO
+        #region Block chain and UTXO
 
         public uint256 GetBestBlockHash()
         {
@@ -1091,13 +1093,13 @@ namespace Stratis.Bitcoin.Features.RPC
             return GetTransactions(GetBlockHash(height));
         }
 
-#endregion
+        #endregion
 
-#region Coin generation
+        #region Coin generation
 
-#endregion
+        #endregion
 
-#region Raw Transaction
+        #region Raw Transaction
 
         public Transaction DecodeRawTransaction(string rawHex)
         {
@@ -1168,9 +1170,9 @@ namespace Stratis.Bitcoin.Features.RPC
             return SendCommandAsync(RPCOperations.sendrawtransaction, Encoders.Hex.EncodeData(bytes));
         }
 
-#endregion
+        #endregion
 
-#region Utility functions
+        #region Utility functions
         /// <summary>
         /// Returns information about a base58 or bech32 Bitcoin address
         /// </summary>
@@ -1180,7 +1182,7 @@ namespace Stratis.Bitcoin.Features.RPC
         {
             RPCResponse res = SendCommand(RPCOperations.validateaddress, address.ToString());
             return JsonConvert.DeserializeObject<ValidatedAddress>(res.Result.ToString());
-       }
+        }
 
         /// <summary>
         /// Get the estimated fee per kb for being confirmed in nblock
@@ -1331,7 +1333,7 @@ namespace Stratis.Bitcoin.Features.RPC
             return SendCommand(RPCOperations.settxfee, new[] { feeRate.FeePerK.ToString() }).Result.ToString() == "true";
         }
 
-#endregion
+        #endregion
 
         public async Task<uint256[]> GenerateAsync(int nBlocks)
         {

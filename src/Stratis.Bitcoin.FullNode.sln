@@ -107,12 +107,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Core
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Executor.Reflection", "Stratis.SmartContracts.Executor.Reflection\Stratis.SmartContracts.Executor.Reflection.csproj", "{246B2AEE-EC8B-4BCA-A6AC-959F5651AE4F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Standards", "Stratis.SmartContracts.Standards\Stratis.SmartContracts.Standards.csproj", "{E7648C62-2D8D-4AFF-BB80-29AA19A68495}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Templates", "Stratis.SmartContracts.Templates\Stratis.SmartContracts.Templates.csproj", "{23A4582D-D384-4529-929B-DD2C347DF283}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Templates.VSIX", "Stratis.SmartContracts.Templates.VSIX\Stratis.SmartContracts.Templates.VSIX.csproj", "{904931EE-66E1-42D6-916F-F6CA0771D852}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Tools.Sct", "Stratis.SmartContracts.Tools.Sct\Stratis.SmartContracts.Tools.Sct.csproj", "{10764B6E-B0D5-4C7C-BDAE-C0EB8CBCEA2A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.ModuleValidation.Net", "Stratis.ModuleValidation.Net\Stratis.ModuleValidation.Net.csproj", "{1DA2C3F0-DC7E-4E94-AA29-93090ADBDE42}"
@@ -124,6 +118,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Apps.Browser", "Stratis.Bitcoin.Apps.Browser\Stratis.Bitcoin.Apps.Browser.csproj", "{6A4C72BF-E818-45B1-9DD4-562C7C6F31C8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{A6FF48E5-310A-4606-B435-D24B6B348F8C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Networks", "Stratis.Bitcoin.Networks\Stratis.Bitcoin.Networks.csproj", "{C1D739B1-79CB-4D42-8147-3A31D1B84868}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.SmartContracts.Wallet", "Stratis.Bitcoin.Features.SmartContracts.Wallet\Stratis.Bitcoin.Features.SmartContracts.Wallet.csproj", "{3E11D03E-1244-43A8-875B-A547249F5B53}"
 EndProject
@@ -301,14 +297,6 @@ Global
 		{246B2AEE-EC8B-4BCA-A6AC-959F5651AE4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{246B2AEE-EC8B-4BCA-A6AC-959F5651AE4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{246B2AEE-EC8B-4BCA-A6AC-959F5651AE4F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E7648C62-2D8D-4AFF-BB80-29AA19A68495}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E7648C62-2D8D-4AFF-BB80-29AA19A68495}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E7648C62-2D8D-4AFF-BB80-29AA19A68495}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E7648C62-2D8D-4AFF-BB80-29AA19A68495}.Release|Any CPU.Build.0 = Release|Any CPU
-		{23A4582D-D384-4529-929B-DD2C347DF283}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{23A4582D-D384-4529-929B-DD2C347DF283}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{904931EE-66E1-42D6-916F-F6CA0771D852}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{904931EE-66E1-42D6-916F-F6CA0771D852}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{10764B6E-B0D5-4C7C-BDAE-C0EB8CBCEA2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{10764B6E-B0D5-4C7C-BDAE-C0EB8CBCEA2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{10764B6E-B0D5-4C7C-BDAE-C0EB8CBCEA2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -333,6 +321,10 @@ Global
 		{3E11D03E-1244-43A8-875B-A547249F5B53}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E11D03E-1244-43A8-875B-A547249F5B53}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E11D03E-1244-43A8-875B-A547249F5B53}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1D739B1-79CB-4D42-8147-3A31D1B84868}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1D739B1-79CB-4D42-8147-3A31D1B84868}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1D739B1-79CB-4D42-8147-3A31D1B84868}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1D739B1-79CB-4D42-8147-3A31D1B84868}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -373,9 +365,6 @@ Global
 		{979B426B-1083-48EC-902D-462DEE8127F8} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{143DEC12-3B3E-421A-A724-D00BE552D546} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{246B2AEE-EC8B-4BCA-A6AC-959F5651AE4F} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
-		{E7648C62-2D8D-4AFF-BB80-29AA19A68495} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
-		{23A4582D-D384-4529-929B-DD2C347DF283} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
-		{904931EE-66E1-42D6-916F-F6CA0771D852} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{10764B6E-B0D5-4C7C-BDAE-C0EB8CBCEA2A} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{1DA2C3F0-DC7E-4E94-AA29-93090ADBDE42} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{C139889D-F480-4AEE-BA76-81C73B97AD30} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
