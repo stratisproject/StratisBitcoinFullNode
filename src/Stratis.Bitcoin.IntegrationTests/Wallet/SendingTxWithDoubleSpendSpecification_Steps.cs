@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.stratisSender));
 
             var total = this.stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
-            total.Should().Equals(Money.COIN * 105 * 50);
+            total.Should().Equals(Money.COIN * (105 - maturity + 1) * 50);
 
             // sync both nodes
             this.stratisSender.CreateRPCClient().AddNode(this.stratisReceiver.Endpoint, true);

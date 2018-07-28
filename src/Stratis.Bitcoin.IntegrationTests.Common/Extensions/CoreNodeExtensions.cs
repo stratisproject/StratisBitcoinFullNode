@@ -15,17 +15,30 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public static class CoreNodeExtensions
     {
-        public static Money GetProofOfWorkRewardForMinedBlocks(this CoreNode node, int numberOfBlocks)
+        public static Money GetProofOfWorkRewardForMinedBlocks(this CoreNode node, int numberOfBlocks, bool considerMaturity = false)
         {
             var coinviewRule = node.FullNode.NodeService<IConsensusRules>().GetRule<CoinViewRule>();
 
             int startBlock = node.FullNode.Chain.Height - numberOfBlocks + 1;
 
-            return Enumerable.Range(startBlock, numberOfBlocks)
-                .Sum(p => coinviewRule.GetProofOfWorkReward(p));
+            int maturity = (int)node.FullNode.Network.Consensus.CoinbaseMaturity;
+
+            if (considerMaturity)
+            {
+                if (numberOfBlocks == 1 && maturity > 1)
+                    return 0;
+
+                return Enumerable.Range(startBlock,
+                        ((numberOfBlocks - maturity + 1) >= startBlock ? (numberOfBlocks - maturity + 1) : startBlock))
+                    .Sum(p => coinviewRule.GetProofOfWorkReward(p));
+            }
+            else
+            {
+                return Enumerable.Range(startBlock, numberOfBlocks)
+                    .Sum(p => coinviewRule.GetProofOfWorkReward(p));
+            }
         }
-
-
+        
         public static Money WalletBalance(this CoreNode node, string walletName)
         {
             return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Sum(s => s.Transaction.Amount);

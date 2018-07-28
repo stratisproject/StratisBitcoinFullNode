@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // the mining should add coins to the wallet
                 long total = stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * 105 * 50, total);
+                Assert.Equal(Money.COIN * (105 - maturity + 1) * 50, total);
 
                 // sync both nodes
                 stratisSender.CreateRPCClient().AddNode(stratisReceiver.Endpoint, true);
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // the mining should add coins to the wallet
                 long total = stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * currentBestHeight * 50, total);
+                Assert.Equal(Money.COIN * (currentBestHeight - maturity + 1) * 50, total);
 
                 // sync all nodes
                 stratisReceiver.CreateRPCClient().AddNode(stratisSender.Endpoint, true);
