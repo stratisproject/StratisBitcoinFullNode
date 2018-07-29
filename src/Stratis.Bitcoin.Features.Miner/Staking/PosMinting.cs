@@ -711,36 +711,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 return false;
             }
 
-            // Input to coinstake transaction.
-            UtxoStakeDescription coinstakeInput = workersResult.KernelCoin;
+            UtxoStakeDescription coinstakeInput = AddCoinStakeOutput(chainTip, coinstakeContext, workersResult, reward, stakingUtxoDescriptions, ourWeight);
 
-            // Total amount of input values in coinstake transaction.
-            long coinstakeInputValue = coinstakeInput.TxOut.Value + reward;
-
-            // Split stake if above threshold.
-            const int SplitFactor = 8;
-            bool shouldSplitStake = this.ShouldSplitStake(stakingUtxoDescriptions.Count, ourWeight, coinstakeInputValue, SplitFactor, chainTip);
-            if (shouldSplitStake)
-            {
-                this.logger.LogTrace("Coinstake UTXO of value {0} will be split into {1}.", coinstakeInputValue, SplitFactor);
-                long splitValue = coinstakeInputValue / SplitFactor;
-                for (int i = 1; i < SplitFactor; i++)
-                {
-                    var split = new TxOut(splitValue, coinstakeContext.CoinstakeTx.Outputs[i].ScriptPubKey);
-                    coinstakeContext.CoinstakeTx.Outputs.Add(split);
-                }
-
-                long remainder = coinstakeInputValue - (SplitFactor - 1) * splitValue;
-                coinstakeContext.CoinstakeTx.Outputs.Add(
-                    new TxOut(remainder, coinstakeContext.CoinstakeTx.Outputs[SplitFactor].ScriptPubKey));
-                this.logger.LogTrace("Coinstake output value has been split into {0} outputs of {1} and a remainder of {2}.", SplitFactor - 1, splitValue, remainder);
-            }
-            else
-            {
-                coinstakeContext.CoinstakeTx.Outputs[1].Value = coinstakeInputValue;
-                this.logger.LogTrace("Coinstake output value is {0}.", coinstakeContext.CoinstakeTx.Outputs[1].Value);
-            }
-            
             // Sign.
             if (!this.SignTransactionInput(coinstakeInput, coinstakeContext.CoinstakeTx))
             {
@@ -760,6 +732,56 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             // Successfully generated coinstake.
             this.logger.LogTrace("(-):true");
             return true;
+        }
+
+        internal UtxoStakeDescription AddCoinStakeOutput(
+            ChainedHeader chainTip,
+            CoinstakeContext coinstakeContext,
+            CoinstakeWorkerResult workersResult,
+            long reward,
+            List<UtxoStakeDescription> stakingUtxoDescriptions,
+            long ourWeight)
+        {
+            // Input to coinstake transaction.
+            UtxoStakeDescription coinstakeInput = workersResult.KernelCoin;
+
+            // Total amount of input values in coinstake transaction.
+            long coinstakeInputValue = coinstakeInput.TxOut.Value + reward;
+
+            // Split stake if above threshold.
+            const int SplitFactor = 8;
+            bool shouldSplitStake = this.ShouldSplitStake(
+                stakingUtxoDescriptions.Count,
+                ourWeight,
+                coinstakeInputValue,
+                SplitFactor,
+                chainTip);
+            if (shouldSplitStake)
+            {
+                this.logger.LogTrace("Coinstake UTXO of value {0} will be split into {1}.", coinstakeInputValue, SplitFactor);
+                long splitValue = coinstakeInputValue / SplitFactor;
+                for (int i = 1; i < SplitFactor; i++)
+                {
+                    var split = new TxOut(splitValue, coinstakeContext.CoinstakeTx.Outputs[i].ScriptPubKey);
+                    coinstakeContext.CoinstakeTx.Outputs.Add(split);
+                }
+
+                long remainder = coinstakeInputValue - (SplitFactor - 1) * splitValue;
+                coinstakeContext.CoinstakeTx.Outputs.Add(
+                    new TxOut(remainder, coinstakeContext.CoinstakeTx.Outputs[SplitFactor].ScriptPubKey));
+                this.logger.LogTrace(
+                    "Coinstake output value has been split into {0} outputs of {1} and a remainder of {2}.",
+                    SplitFactor - 1,
+                    splitValue,
+                    remainder);
+            }
+            else
+            {
+                coinstakeContext.CoinstakeTx.Outputs[1].Value = coinstakeInputValue;
+                this.logger.LogTrace("Coinstake output value is {0}.", coinstakeContext.CoinstakeTx.Outputs[1].Value);
+            }
+
+            return coinstakeInput;
         }
 
         private UtxoStakeDescription BuildCoinstakeTransaction(
