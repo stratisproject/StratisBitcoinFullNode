@@ -11,21 +11,21 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// Checks if <see cref="StratisMain"/> network block's header has a valid block version.
+    /// Checks if <see cref="BitcoinMain"/> network block's header has a valid block version.
     /// </summary>
     [HeaderValidationRule(CanSkipValidation = true)]
-    public class StratisHeaderVersionRule : HeaderVersionRule
+    public class BitcoinHeaderVersionRule : HeaderVersionRule
     {
         /// <inheritdoc />
-        /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
+        /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated or otherwise invalid.</exception>
         public override Task RunAsync(RuleContext context)
         {
             Guard.NotNull(context.ConsensusTip, nameof(context.ConsensusTip));
 
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
 
-            // TODO: Incorporate ComputeBlockVersion so that Stratis network gets proper BIP9 support with validation
-            if (chainedHeader.Header.Version < 7)
+            // TODO: Need to check if BIP9 is actually active & use ComputeBlockVersion logic
+            if (chainedHeader.Header.Version < 0x20000000)
             {
                 this.Logger.LogTrace("(-)[BAD_VERSION]");
                 ConsensusErrors.BadVersion.Throw();
