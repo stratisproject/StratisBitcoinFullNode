@@ -784,16 +784,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             return coinstakeInput;
         }
 
-        private UtxoStakeDescription BuildCoinstakeTransaction(
-            ChainedHeader chainTip,
-            CoinstakeContext coinstakeContext,
-            CoinstakeWorkerResult workersResult,
-            long reward,
-            List<UtxoStakeDescription> stakingUtxoDescriptions,
-            long ourWeight)
-        {
-        }
-
         /// <summary>
         /// Worker method that tries to find coinstake kernel within a small list of UTXOs.
         /// <para>
