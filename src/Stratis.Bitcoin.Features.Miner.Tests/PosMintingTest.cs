@@ -32,10 +32,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 {
     public class PosMintingTest : LogsTestBase
     {
-        private PosMinting posMinting;
+        protected PosMinting posMinting;
         private readonly Mock<IConsensusLoop> consensusLoop;
         private ConcurrentChain chain;
-        private Network network;
+        protected Network network;
         private readonly Mock<IDateTimeProvider> dateTimeProvider;
         private readonly Mock<IInitialBlockDownloadState> initialBlockDownloadState;
         private readonly Mock<INodeLifetime> nodeLifetime;

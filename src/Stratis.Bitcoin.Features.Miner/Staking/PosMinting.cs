@@ -461,7 +461,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     continue;
 
                 TxOut utxo = coinSet.Outputs[outputReference.Transaction.Index];
-                if ((utxo == null) || (utxo.Value <= MinimumStakingCoinValue))
+                if ((utxo == null) || (utxo.Value < MinimumStakingCoinValue))
                     continue;
 
                 uint256 hashBlock = this.chain.GetBlock((int)coinSet.Height)?.HashBlock;
@@ -711,10 +711,16 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 return false;
             }
 
-            UtxoStakeDescription coinstakeInput = AddCoinStakeOutput(chainTip, coinstakeContext, workersResult, reward, stakingUtxoDescriptions, ourWeight);
+            // Input to coinstake transaction.
+            UtxoStakeDescription coinstakeInput = workersResult.KernelCoin;
+
+            // Total amount of input values in coinstake transaction.
+            long coinstakeInputValue = workersResult.KernelCoin.TxOut.Value + reward;
+
+            Transaction coinstakeTx = this.PrepareCoinStakeTransaction(chainTip.Height, coinstakeContext, workersResult, coinstakeInputValue, stakingUtxoDescriptions, ourWeight);
 
             // Sign.
-            if (!this.SignTransactionInput(coinstakeInput, coinstakeContext.CoinstakeTx))
+            if (!this.SignTransactionInput(coinstakeInput, coinstakeTx))
             {
                 this.logger.LogTrace("(-)[SIGN_FAILED]:false");
                 return false;
@@ -734,20 +740,14 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             return true;
         }
 
-        internal UtxoStakeDescription AddCoinStakeOutput(
-            ChainedHeader chainTip,
+        internal Transaction PrepareCoinStakeTransaction(
+            int currentChainHeight,
             CoinstakeContext coinstakeContext,
             CoinstakeWorkerResult workersResult,
-            long reward,
+            long coinstakeInputValue,
             List<UtxoStakeDescription> stakingUtxoDescriptions,
             long ourWeight)
         {
-            // Input to coinstake transaction.
-            UtxoStakeDescription coinstakeInput = workersResult.KernelCoin;
-
-            // Total amount of input values in coinstake transaction.
-            long coinstakeInputValue = coinstakeInput.TxOut.Value + reward;
-
             // Split stake if above threshold.
             const int SplitFactor = 8;
             bool shouldSplitStake = this.ShouldSplitStake(
@@ -755,33 +755,33 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 ourWeight,
                 coinstakeInputValue,
                 SplitFactor,
-                chainTip);
-            if (shouldSplitStake)
-            {
-                this.logger.LogTrace("Coinstake UTXO of value {0} will be split into {1}.", coinstakeInputValue, SplitFactor);
-                long splitValue = coinstakeInputValue / SplitFactor;
-                for (int i = 1; i < SplitFactor; i++)
-                {
-                    var split = new TxOut(splitValue, coinstakeContext.CoinstakeTx.Outputs[i].ScriptPubKey);
-                    coinstakeContext.CoinstakeTx.Outputs.Add(split);
-                }
+                currentChainHeight);
 
-                long remainder = coinstakeInputValue - (SplitFactor - 1) * splitValue;
-                coinstakeContext.CoinstakeTx.Outputs.Add(
-                    new TxOut(remainder, coinstakeContext.CoinstakeTx.Outputs[SplitFactor].ScriptPubKey));
-                this.logger.LogTrace(
-                    "Coinstake output value has been split into {0} outputs of {1} and a remainder of {2}.",
-                    SplitFactor - 1,
-                    splitValue,
-                    remainder);
-            }
-            else
+            if (!shouldSplitStake)
             {
                 coinstakeContext.CoinstakeTx.Outputs[1].Value = coinstakeInputValue;
                 this.logger.LogTrace("Coinstake output value is {0}.", coinstakeContext.CoinstakeTx.Outputs[1].Value);
+                return coinstakeContext.CoinstakeTx;
             }
 
-            return coinstakeInput;
+            this.logger.LogTrace("Coinstake UTXO of value {0} will be split into {1}.", coinstakeInputValue, SplitFactor);
+            long splitValue = coinstakeInputValue / SplitFactor;
+            long remainder = coinstakeInputValue - (SplitFactor - 1) * splitValue;
+            coinstakeContext.CoinstakeTx.Outputs[1].Value = remainder;
+
+            for (int i = 1; i < SplitFactor; i++)
+            {
+                var split = new TxOut(splitValue, coinstakeContext.CoinstakeTx.Outputs[1].ScriptPubKey);
+                coinstakeContext.CoinstakeTx.Outputs.Add(split);
+            }
+
+            this.logger.LogTrace(
+                "Coinstake output value has been split into {0} outputs of {1} and a remainder of {2}.",
+                SplitFactor - 1,
+                splitValue,
+                remainder);
+
+            return coinstakeContext.CoinstakeTx;
         }
 
         /// <summary>
@@ -1146,29 +1146,30 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <param name="amountStaked">Total amount currently at stake</param>
         /// <param name="coinValue">Value of the coin we are considering to split</param>
         /// <param name="splitFactor">number of time we want to split the coin</param>
-        /// <param name="chainTip">The chain tip</param>
+        /// <param name="chainHeight">Current height of the chain</param>
         /// <returns><c>true</c> if the coinstake should be split, <c>false</c> otherwise.</returns>
         /// <remarks>The coinstake is split if the number of non-empty UTXOs we have in the wallet is under the given threshold, or if amount is above a certain value.</remarks>
         /// <seealso cref="CoinstakeSplitLimitMultiplier"/>
-        internal bool ShouldSplitStake(int stakedUtxosCount, long amountStaked, long coinValue, int splitFactor, ChainedHeader chainTip)
+        internal bool ShouldSplitStake(int stakedUtxosCount, long amountStaked, long coinValue, int splitFactor, int chainHeight)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5},{6}:{7})", nameof(stakedUtxosCount), stakedUtxosCount, nameof(amountStaked), amountStaked, 
                 nameof(coinValue), coinValue, nameof(splitFactor), splitFactor);
             
-            long coinAgeLimit = ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(chainTip.Height + 1, this.network);
+            long coinAgeLimit = ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(chainHeight + 1, this.network);
             long requiredCoinAgeForStaking = Math.Max(this.network.Consensus.CoinbaseMaturity, coinAgeLimit);
             this.logger.LogTrace("Required coin age for staking is {0}.", requiredCoinAgeForStaking);
 
             long targetCoinDistributionSize = (requiredCoinAgeForStaking + 1) * CoinstakeSplitLimitMultiplier;
 
-            bool utxosCanStillBeSplitted = stakedUtxosCount < targetCoinDistributionSize;
             bool coinAboveMaxValue = coinValue > splitFactor * 100 * Money.COIN;
-            bool coinAboveAverage = coinValue > amountStaked / stakedUtxosCount;
+            bool utxosCanStillBeSplitted = stakedUtxosCount < targetCoinDistributionSize;
+            bool coinAboveTargetAverage = coinValue > amountStaked / targetCoinDistributionSize;
 
-            bool shouldSplitCoin = coinAboveMaxValue || coinAboveAverage || utxosCanStillBeSplitted;
+            bool shouldSplitCoin = coinAboveMaxValue 
+                                   && utxosCanStillBeSplitted 
+                                   && coinAboveTargetAverage;
 
             this.logger.LogTrace("(-):{0}", shouldSplitCoin);
-
 
             return shouldSplitCoin;
         }
