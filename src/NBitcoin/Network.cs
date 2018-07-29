@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using NBitcoin.DataEncoders;
+using NBitcoin.Networks;
 using NBitcoin.Protocol;
 using NBitcoin.Stealth;
 
@@ -332,7 +333,7 @@ namespace NBitcoin
             throw new FormatException("Invalid Base58 version");
         }
 
-        internal Base58Type? GetBase58Type(string base58)
+        public Base58Type? GetBase58Type(string base58)
         {
             byte[] bytes = Encoders.Base58Check.DecodeData(base58);
             for (int i = 0; i < this.Base58Prefixes.Length; i++)
@@ -368,7 +369,7 @@ namespace NBitcoin
             if (str == null)
                 throw new ArgumentNullException("str");
 
-            IEnumerable<Network> networks = expectedNetwork == null ? NetworksContainer.GetNetworks() : new[] { expectedNetwork };
+            IEnumerable<Network> networks = expectedNetwork == null ? NetworkRegistration.GetNetworks() : new[] { expectedNetwork };
             bool maybeb58 = true;
             for (int i = 0; i < str.Length; i++)
             {

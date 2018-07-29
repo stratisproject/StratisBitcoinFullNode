@@ -271,22 +271,22 @@ namespace Stratis.Bitcoin.Controllers
                 var res = new ValidatedAddress();
                 res.IsValid = false;
                 // P2WPKH
-                if (BitcoinWitPubKeyAddress.IsValid(address, ref this.network, out Exception _))
+                if (BitcoinWitPubKeyAddress.IsValid(address, this.network, out Exception _))
                 {
                     res.IsValid = true;
                 }
                 // P2WSH
-                else if (BitcoinWitScriptAddress.IsValid(address, ref this.network, out Exception _))
+                else if (BitcoinWitScriptAddress.IsValid(address, this.network, out Exception _))
                 {
                     res.IsValid = true;
                 }
                 // P2PKH
-                else if (BitcoinPubKeyAddress.IsValid(address, ref this.network))
+                else if (BitcoinPubKeyAddress.IsValid(address, this.network))
                 {
                     res.IsValid = true;
                 }
                 // P2SH
-                else if (BitcoinScriptAddress.IsValid(address, ref this.network))
+                else if (BitcoinScriptAddress.IsValid(address, this.network))
                 {
                     res.IsValid = true;
                 }
