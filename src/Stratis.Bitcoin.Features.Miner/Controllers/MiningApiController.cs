@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         private WalletAccountReference GetAccount()
         {
             const string noWalletMessage = "No wallet found";
-            const string noAAccountMessage = "No account found on wallet";
+            const string noAccountMessage = "No account found on wallet";
 
             this.logger.LogTrace("()");
 
@@ -116,8 +116,8 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
             if (account == null)
             {
-                this.logger.LogError(ExceptionOccurredMessage, noAAccountMessage);
-                throw new Exception(noAAccountMessage);
+                this.logger.LogError(ExceptionOccurredMessage, noAccountMessage);
+                throw new Exception(noAccountMessage);
             }
 
             var res = new WalletAccountReference(walletName, account.Name);
