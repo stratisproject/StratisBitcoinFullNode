@@ -7,7 +7,7 @@
     public class ConsensusOptions
     {
         /// <summary>
-        /// Flag used to detect SegWit transactions.
+        /// Flag used to detect SegWit transactions. 
         /// </summary>
         public const int SerializeTransactionNoWitness = 0x40000000;
 
