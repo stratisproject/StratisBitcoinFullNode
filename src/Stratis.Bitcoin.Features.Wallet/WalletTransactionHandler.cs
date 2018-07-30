@@ -86,7 +86,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public void FundTransaction(TransactionBuildOptions options, Transaction transaction)
         {
-            throw new NotImplementedException();
+            var context = new TransactionBuildContext(this.Network, options);
+            FundTransaction(context, transaction);
         }
 
         private void FundTransaction(TransactionBuildContext context, Transaction transaction)
@@ -141,7 +142,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public Money EstimateFee(TransactionBuildOptions options)
         {
-            throw new NotImplementedException();
+            var context = new TransactionBuildContext(this.Network, options);
+            return context.TransactionFee;
         }
 
         
@@ -177,11 +179,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Here we try to create a transaction that contains all the spendable coins, leaving no room for the fee.
                 // When the transaction builder throws an exception informing us that we have insufficient funds,
                 // we use the amount we're missing as the fee.
-                var context = new TransactionBuildContext(this.Network, accountReference, recipients, null)
+                var options = new TransactionBuildOptions(accountReference, recipients)
                 {
                     FeeType = feeType,
                     MinConfirmations = allowUnconfirmed ? 0 : 1
                 };
+                var context = new TransactionBuildContext(this.Network, options);
 
                 this.AddRecipients(context);
                 this.AddCoins(context);
