@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Tests.Signals
         [Fact]
         public void SignalBlockBroadcastsToBlockSignaler()
         {
-            Block block = Network.StratisMain.CreateBlock();
+            Block block = KnownNetworks.StratisMain.CreateBlock();
 
             this.signals.SignalBlockConnected(block);
 
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Tests.Signals
         [Fact]
         public void SignalBlockDisconnectedToBlockSignaler()
         {
-            Block block = Network.StratisMain.CreateBlock();
+            Block block = KnownNetworks.StratisMain.CreateBlock();
 
             this.signals.SignalBlockDisconnected(block);
 
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.Signals
         [Fact]
         public void SignalTransactionBroadcastsToTransactionSignaler()
         {
-            Transaction transaction = Network.StratisMain.CreateTransaction();
+            Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
 
             this.signals.SignalTransaction(transaction);
 

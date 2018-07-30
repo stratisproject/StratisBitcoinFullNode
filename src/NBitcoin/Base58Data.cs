@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using NBitcoin.DataEncoders;
+using NBitcoin.Networks;
 
 namespace NBitcoin
 {
@@ -44,16 +45,16 @@ namespace NBitcoin
             SetData(rawBytes);
         }
 
-        private void SetString(string psz)
+        private void SetString(string base64)
         {
             if(this._Network == null)
             {
-                this._Network = NetworksContainer.GetNetworkFromBase58Data(psz, this.Type);
+                this._Network = NetworkRegistration.GetNetworkFromBase58Data(base64, this.Type);
                 if(this._Network == null)
                     throw new FormatException("Invalid " + GetType().Name);
             }
 
-            byte[] vchTemp = Encoders.Base58Check.DecodeData(psz);
+            byte[] vchTemp = Encoders.Base58Check.DecodeData(base64);
             byte[] expectedVersion = this._Network.GetVersionBytes(this.Type, true);
 
 
@@ -62,7 +63,7 @@ namespace NBitcoin
                 throw new FormatException("The version prefix does not match the expected one " + String.Join(",", expectedVersion));
 
             this.vchData = vchTemp.SafeSubarray(expectedVersion.Length);
-            this.wifData = psz;
+            this.wifData = base64;
 
             if(!this.IsValid)
                 throw new FormatException("Invalid " + GetType().Name);

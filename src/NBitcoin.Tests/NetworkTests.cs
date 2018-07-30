@@ -6,58 +6,69 @@ using System.Threading;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Networks;
+using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
 {
     public class NetworkTests
     {
-        [Fact]
-        [Trait("UnitTest", "UnitTest")]
-        public void CanGetNetworkFromName()
-        {
-            Network bitcoinMain = Network.Main;
-            Network bitcoinTestnet = Network.TestNet;
-            Network bitcoinRegtest = Network.RegTest;
-            Network stratisMain = Network.StratisMain;
-            Network stratisTestnet = Network.StratisTest;
-            Network stratisRegtest = Network.StratisRegTest;
+        private readonly Network networkMain;
+        private readonly Network stratisMain;
+        private readonly Network stratisTest;
+        private readonly Network stratisRegTest;
 
-            Assert.Equal(NetworksContainer.GetNetwork("main"), bitcoinMain);
-            Assert.Equal(NetworksContainer.GetNetwork("mainnet"), bitcoinMain);
-            Assert.Equal(NetworksContainer.GetNetwork("MainNet"), bitcoinMain);
-            Assert.Equal(NetworksContainer.GetNetwork("test"), bitcoinTestnet);
-            Assert.Equal(NetworksContainer.GetNetwork("testnet"), bitcoinTestnet);
-            Assert.Equal(NetworksContainer.GetNetwork("regtest"), bitcoinRegtest);
-            Assert.Equal(NetworksContainer.GetNetwork("reg"), bitcoinRegtest);
-            Assert.Equal(NetworksContainer.GetNetwork("stratismain"), stratisMain);
-            Assert.Equal(NetworksContainer.GetNetwork("StratisMain"), stratisMain);
-            Assert.Equal(NetworksContainer.GetNetwork("StratisTest"), stratisTestnet);
-            Assert.Equal(NetworksContainer.GetNetwork("stratistest"), stratisTestnet);
-            Assert.Equal(NetworksContainer.GetNetwork("StratisRegTest"), stratisRegtest);
-            Assert.Equal(NetworksContainer.GetNetwork("stratisregtest"), stratisRegtest);
-            Assert.Null(NetworksContainer.GetNetwork("invalid"));
+        public NetworkTests()
+        {
+            this.networkMain = KnownNetworks.Main;
+            this.stratisMain = KnownNetworks.StratisMain;
+            this.stratisTest = KnownNetworks.StratisTest;
+            this.stratisRegTest = KnownNetworks.StratisRegTest;
         }
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void RegisterNetworkTwiceFails()
+        public void CanGetNetworkFromName()
         {
-            Network main = Network.Main;
-            var error = Assert.Throws<InvalidOperationException>(() => NetworksContainer.Register(main));
-            Assert.Contains("is already registered", error.Message);
+            Network bitcoinMain = KnownNetworks.Main;
+            Network bitcoinTestnet = KnownNetworks.TestNet;
+            Network bitcoinRegtest = KnownNetworks.RegTest;
+            Assert.Equal(NetworkRegistration.GetNetwork("main"), bitcoinMain);
+            Assert.Equal(NetworkRegistration.GetNetwork("mainnet"), bitcoinMain);
+            Assert.Equal(NetworkRegistration.GetNetwork("MainNet"), bitcoinMain);
+            Assert.Equal(NetworkRegistration.GetNetwork("test"), bitcoinTestnet);
+            Assert.Equal(NetworkRegistration.GetNetwork("testnet"), bitcoinTestnet);
+            Assert.Equal(NetworkRegistration.GetNetwork("regtest"), bitcoinRegtest);
+            Assert.Equal(NetworkRegistration.GetNetwork("reg"), bitcoinRegtest);
+            Assert.Equal(NetworkRegistration.GetNetwork("stratismain"), this.stratisMain);
+            Assert.Equal(NetworkRegistration.GetNetwork("StratisMain"), this.stratisMain);
+            Assert.Equal(NetworkRegistration.GetNetwork("StratisTest"), this.stratisTest);
+            Assert.Equal(NetworkRegistration.GetNetwork("stratistest"), this.stratisTest);
+            Assert.Equal(NetworkRegistration.GetNetwork("StratisRegTest"), this.stratisRegTest);
+            Assert.Equal(NetworkRegistration.GetNetwork("stratisregtest"), this.stratisRegTest);
+            Assert.Null(NetworkRegistration.GetNetwork("invalid"));
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void RegisterNetworkTwiceReturnsSameNetwork()
+        {
+            Network main = KnownNetworks.Main;
+            Network reregistered = NetworkRegistration.Register(main);
+            Assert.Equal(main, reregistered);
         }
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void ReadMagicByteWithFirstByteDuplicated()
         {
-            List<byte> bytes = Network.Main.MagicBytes.ToList();
+            List<byte> bytes = this.networkMain.MagicBytes.ToList();
             bytes.Insert(0, bytes.First());
 
             using (var memstrema = new MemoryStream(bytes.ToArray()))
             {
-                bool found = Network.Main.ReadMagic(memstrema, new CancellationToken());
+                bool found = this.networkMain.ReadMagic(memstrema, new CancellationToken());
                 Assert.True(found);
             }
         }
@@ -66,83 +77,81 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void BitcoinMainnetIsInitializedCorrectly()
         {
-            Network network = Network.Main;
+            Assert.Equal(15, this.networkMain.Checkpoints.Count);
+            Assert.Equal(6, this.networkMain.DNSSeeds.Count);
+            Assert.Equal(512, this.networkMain.SeedNodes.Count);
 
-            Assert.Equal(15, network.Checkpoints.Count);
-            Assert.Equal(6, network.DNSSeeds.Count);
-            Assert.Equal(512, network.SeedNodes.Count);
+            Assert.Equal(NetworkRegistration.GetNetwork("main"), this.networkMain);
+            Assert.Equal(NetworkRegistration.GetNetwork("mainnet"), this.networkMain);
 
-            Assert.Equal(NetworksContainer.GetNetwork("main"), network);
-            Assert.Equal(NetworksContainer.GetNetwork("mainnet"), network);
+            Assert.Equal("Main", this.networkMain.Name);
+            Assert.Equal(BitcoinMain.BitcoinRootFolderName, this.networkMain.RootFolderName);
+            Assert.Equal(BitcoinMain.BitcoinDefaultConfigFilename, this.networkMain.DefaultConfigFilename);
+            Assert.Equal(0xD9B4BEF9, this.networkMain.Magic);
+            Assert.Equal(8333, this.networkMain.DefaultPort);
+            Assert.Equal(8332, this.networkMain.RPCPort);
+            Assert.Equal(BitcoinMain.BitcoinMaxTimeOffsetSeconds, this.networkMain.MaxTimeOffsetSeconds);
+            Assert.Equal(BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds, this.networkMain.MaxTipAge);
+            Assert.Equal(1000, this.networkMain.MinTxFee);
+            Assert.Equal(20000, this.networkMain.FallbackFee);
+            Assert.Equal(1000, this.networkMain.MinRelayTxFee);
+            Assert.Equal("BTC", this.networkMain.CoinTicker);
 
-            Assert.Equal("Main", network.Name);
-            Assert.Equal(BitcoinMain.BitcoinRootFolderName, network.RootFolderName);
-            Assert.Equal(BitcoinMain.BitcoinDefaultConfigFilename, network.DefaultConfigFilename);
-            Assert.Equal(0xD9B4BEF9, network.Magic);
-            Assert.Equal(8333, network.DefaultPort);
-            Assert.Equal(8332, network.RPCPort);
-            Assert.Equal(BitcoinMain.BitcoinMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
-            Assert.Equal(BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds, network.MaxTipAge);
-            Assert.Equal(1000, network.MinTxFee);
-            Assert.Equal(20000, network.FallbackFee);
-            Assert.Equal(1000, network.MinRelayTxFee);
-            Assert.Equal("BTC", network.CoinTicker);
+            Assert.Equal(2, this.networkMain.Bech32Encoders.Length);
+            Assert.Equal(new Bech32Encoder("bc").ToString(), this.networkMain.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
+            Assert.Equal(new Bech32Encoder("bc").ToString(), this.networkMain.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
 
-            Assert.Equal(2, network.Bech32Encoders.Length);
-            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS].ToString());
-            Assert.Equal(new Bech32Encoder("bc").ToString(), network.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS].ToString());
+            Assert.Equal(12, this.networkMain.Base58Prefixes.Length);
+            Assert.Equal(new byte[] { 0 }, this.networkMain.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
+            Assert.Equal(new byte[] { (5) }, this.networkMain.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
+            Assert.Equal(new byte[] { (128) }, this.networkMain.Base58Prefixes[(int)Base58Type.SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x01, 0x42 }, this.networkMain.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC]);
+            Assert.Equal(new byte[] { 0x01, 0x43 }, this.networkMain.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC]);
+            Assert.Equal(new byte[] { (0x04), (0x88), (0xB2), (0x1E) }, this.networkMain.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY]);
+            Assert.Equal(new byte[] { (0x04), (0x88), (0xAD), (0xE4) }, this.networkMain.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY]);
+            Assert.Equal(new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 }, this.networkMain.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE]);
+            Assert.Equal(new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A }, this.networkMain.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE]);
+            Assert.Equal(new byte[] { 0x2a }, this.networkMain.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS]);
+            Assert.Equal(new byte[] { 23 }, this.networkMain.Base58Prefixes[(int)Base58Type.ASSET_ID]);
+            Assert.Equal(new byte[] { 0x13 }, this.networkMain.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS]);
 
-            Assert.Equal(12, network.Base58Prefixes.Length);
-            Assert.Equal(new byte[] { 0 }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
-            Assert.Equal(new byte[] { (5) }, network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
-            Assert.Equal(new byte[] { (128) }, network.Base58Prefixes[(int)Base58Type.SECRET_KEY]);
-            Assert.Equal(new byte[] { 0x01, 0x42 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC]);
-            Assert.Equal(new byte[] { 0x01, 0x43 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC]);
-            Assert.Equal(new byte[] { (0x04), (0x88), (0xB2), (0x1E) }, network.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY]);
-            Assert.Equal(new byte[] { (0x04), (0x88), (0xAD), (0xE4) }, network.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY]);
-            Assert.Equal(new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 }, network.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE]);
-            Assert.Equal(new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A }, network.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE]);
-            Assert.Equal(new byte[] { 0x2a }, network.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS]);
-            Assert.Equal(new byte[] { 23 }, network.Base58Prefixes[(int)Base58Type.ASSET_ID]);
-            Assert.Equal(new byte[] { 0x13 }, network.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS]);
+            Assert.Equal(210000, this.networkMain.Consensus.SubsidyHalvingInterval);
+            Assert.Equal(750, this.networkMain.Consensus.MajorityEnforceBlockUpgrade);
+            Assert.Equal(950, this.networkMain.Consensus.MajorityRejectBlockOutdated);
+            Assert.Equal(1000, this.networkMain.Consensus.MajorityWindow);
+            Assert.Equal(227931, this.networkMain.Consensus.BuriedDeployments[BuriedDeployments.BIP34]);
+            Assert.Equal(388381, this.networkMain.Consensus.BuriedDeployments[BuriedDeployments.BIP65]);
+            Assert.Equal(363725, this.networkMain.Consensus.BuriedDeployments[BuriedDeployments.BIP66]);
+            Assert.Equal(new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"), this.networkMain.Consensus.BIP34Hash);
+            Assert.Equal(new Target(new uint256("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), this.networkMain.Consensus.PowLimit);
+            Assert.Equal(new uint256("0x0000000000000000000000000000000000000000002cb971dd56d1c583c20f90"), this.networkMain.Consensus.MinimumChainWork);
+            Assert.Equal(TimeSpan.FromSeconds(14 * 24 * 60 * 60), this.networkMain.Consensus.PowTargetTimespan);
+            Assert.Equal(TimeSpan.FromSeconds(10 * 60), this.networkMain.Consensus.PowTargetSpacing);
+            Assert.False(this.networkMain.Consensus.PowAllowMinDifficultyBlocks);
+            Assert.False(this.networkMain.Consensus.PowNoRetargeting);
+            Assert.Equal(1916, this.networkMain.Consensus.RuleChangeActivationThreshold);
+            Assert.Equal(2016, this.networkMain.Consensus.MinerConfirmationWindow);
+            Assert.Equal(28, this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].Bit);
+            Assert.Equal(Utils.UnixTimeToDateTime(1199145601), this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].StartTime);
+            Assert.Equal(Utils.UnixTimeToDateTime(1230767999), this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].Timeout);
+            Assert.Equal(0, this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.CSV].Bit);
+            Assert.Equal(Utils.UnixTimeToDateTime(1462060800), this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.CSV].StartTime);
+            Assert.Equal(Utils.UnixTimeToDateTime(1493596800), this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.CSV].Timeout);
+            Assert.Equal(1, this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.Segwit].Bit);
+            Assert.Equal(Utils.UnixTimeToDateTime(1479168000), this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.Segwit].StartTime);
+            Assert.Equal(Utils.UnixTimeToDateTime(1510704000), this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.Segwit].Timeout);
+            Assert.Equal(0, this.networkMain.Consensus.CoinType);
+            Assert.False(this.networkMain.Consensus.IsProofOfStake);
+            Assert.Equal(new uint256("0x000000000000000000174f783cc20c1415f90c4d17c9a5bcd06ba67207c9bc80"), this.networkMain.Consensus.DefaultAssumeValid);
+            Assert.Equal(100, this.networkMain.Consensus.CoinbaseMaturity);
+            Assert.Equal(0, this.networkMain.Consensus.PremineReward);
+            Assert.Equal(0, this.networkMain.Consensus.PremineHeight);
+            Assert.Equal(Money.Coins(50), this.networkMain.Consensus.ProofOfWorkReward);
+            Assert.Equal(Money.Zero, this.networkMain.Consensus.ProofOfStakeReward);
+            Assert.Equal((uint)0, this.networkMain.Consensus.MaxReorgLength);
+            Assert.Equal(21000000 * Money.COIN, this.networkMain.Consensus.MaxMoney);
 
-            Assert.Equal(210000, network.Consensus.SubsidyHalvingInterval);
-            Assert.Equal(750, network.Consensus.MajorityEnforceBlockUpgrade);
-            Assert.Equal(950, network.Consensus.MajorityRejectBlockOutdated);
-            Assert.Equal(1000, network.Consensus.MajorityWindow);
-            Assert.Equal(227931, network.Consensus.BuriedDeployments[BuriedDeployments.BIP34]);
-            Assert.Equal(388381, network.Consensus.BuriedDeployments[BuriedDeployments.BIP65]);
-            Assert.Equal(363725, network.Consensus.BuriedDeployments[BuriedDeployments.BIP66]);
-            Assert.Equal(new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"), network.Consensus.BIP34Hash);
-            Assert.Equal(new Target(new uint256("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), network.Consensus.PowLimit);
-            Assert.Equal(new uint256("0x0000000000000000000000000000000000000000002cb971dd56d1c583c20f90"), network.Consensus.MinimumChainWork);
-            Assert.Equal(TimeSpan.FromSeconds(14 * 24 * 60 * 60), network.Consensus.PowTargetTimespan);
-            Assert.Equal(TimeSpan.FromSeconds(10 * 60), network.Consensus.PowTargetSpacing);
-            Assert.False(network.Consensus.PowAllowMinDifficultyBlocks);
-            Assert.False(network.Consensus.PowNoRetargeting);
-            Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
-            Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Equal(28, network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].Bit);
-            Assert.Equal(Utils.UnixTimeToDateTime(1199145601), network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].StartTime);
-            Assert.Equal(Utils.UnixTimeToDateTime(1230767999), network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].Timeout);
-            Assert.Equal(0, network.Consensus.BIP9Deployments[BIP9Deployments.CSV].Bit);
-            Assert.Equal(Utils.UnixTimeToDateTime(1462060800), network.Consensus.BIP9Deployments[BIP9Deployments.CSV].StartTime);
-            Assert.Equal(Utils.UnixTimeToDateTime(1493596800), network.Consensus.BIP9Deployments[BIP9Deployments.CSV].Timeout);
-            Assert.Equal(1, network.Consensus.BIP9Deployments[BIP9Deployments.Segwit].Bit);
-            Assert.Equal(Utils.UnixTimeToDateTime(1479168000), network.Consensus.BIP9Deployments[BIP9Deployments.Segwit].StartTime);
-            Assert.Equal(Utils.UnixTimeToDateTime(1510704000), network.Consensus.BIP9Deployments[BIP9Deployments.Segwit].Timeout);
-            Assert.Equal(0, network.Consensus.CoinType);
-            Assert.False(network.Consensus.IsProofOfStake);
-            Assert.Equal(new uint256("0x000000000000000000174f783cc20c1415f90c4d17c9a5bcd06ba67207c9bc80"), network.Consensus.DefaultAssumeValid);
-            Assert.Equal(100, network.Consensus.CoinbaseMaturity);
-            Assert.Equal(0, network.Consensus.PremineReward);
-            Assert.Equal(0, network.Consensus.PremineHeight);
-            Assert.Equal(Money.Coins(50), network.Consensus.ProofOfWorkReward);
-            Assert.Equal(Money.Zero, network.Consensus.ProofOfStakeReward);
-            Assert.Equal((uint)0, network.Consensus.MaxReorgLength);
-            Assert.Equal(21000000 * Money.COIN, network.Consensus.MaxMoney);
-
-            Block genesis = network.GetGenesis();
+            Block genesis = this.networkMain.GetGenesis();
             Assert.Equal(uint256.Parse("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"), genesis.GetHash());
             Assert.Equal(uint256.Parse("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"), genesis.Header.HashMerkleRoot);
         }
@@ -151,7 +160,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void BitcoinTestnetIsInitializedCorrectly()
         {
-            Network network = Network.TestNet;
+            Network network = KnownNetworks.TestNet;
 
             Assert.Equal(2, network.Checkpoints.Count);
             Assert.Equal(3, network.DNSSeeds.Count);
@@ -233,7 +242,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void BitcoinRegTestIsInitializedCorrectly()
         {
-            Network network = Network.RegTest;
+            Network network = KnownNetworks.RegTest;
 
             Assert.Empty(network.Checkpoints);
             Assert.Empty(network.DNSSeeds);
@@ -315,7 +324,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void StratisMainIsInitializedCorrectly()
         {
-            Network network = Network.StratisMain;
+            Network network = this.stratisMain;
 
             Assert.Equal(25, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
@@ -394,7 +403,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void StratisTestnetIsInitializedCorrectly()
         {
-            Network network = Network.StratisTest;
+            Network network = this.stratisTest;
 
             Assert.Equal(10, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
@@ -473,7 +482,7 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void StratisRegTestIsInitializedCorrectly()
         {
-            Network network = Network.StratisRegTest;
+            Network network = this.stratisRegTest;
 
             Assert.Empty(network.Checkpoints);
             Assert.Empty(network.DNSSeeds);
