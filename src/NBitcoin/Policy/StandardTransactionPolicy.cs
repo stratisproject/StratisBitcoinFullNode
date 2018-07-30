@@ -43,8 +43,6 @@ namespace NBitcoin.Policy
         /// </summary>
         public bool CheckFee { get; set; }
 
-        public bool UseConsensusLib { get; set; }
-
         /// <summary>
         /// Check the standardness of scriptPubKey.
         /// </summary>
@@ -73,8 +71,6 @@ namespace NBitcoin.Policy
 
             var errors = new List<TransactionPolicyError>();
 
-
-
             foreach (IndexedTxIn input in transaction.Inputs.AsIndexedInputs())
             {
                 ICoin coin = spentCoins.FirstOrDefault(s => s.Outpoint == input.PrevOut);
@@ -82,8 +78,7 @@ namespace NBitcoin.Policy
                 {
                     if (this.ScriptVerify != null)
                     {
-                        ScriptError error;
-                        if (!VerifyScript(input, coin.TxOut.ScriptPubKey, coin.TxOut.Value, this.ScriptVerify.Value, out error))
+                        if(!input.VerifyScript(this.network, coin.TxOut.ScriptPubKey, coin.TxOut.Value, this.ScriptVerify.Value, out ScriptError error))
                         {
                             errors.Add(new ScriptPolicyError(input, error, this.ScriptVerify.Value, coin.TxOut.ScriptPubKey));
                         }
@@ -189,28 +184,7 @@ namespace NBitcoin.Policy
         {
             return bytes.Length > 0 && bytes[0] == (byte)OpcodeType.OP_RETURN;
         }
-
-        private bool VerifyScript(IndexedTxIn input, Script scriptPubKey, Money value, ScriptVerify scriptVerify, out ScriptError error)
-        {
-            if (!this.UseConsensusLib)
-                return input.VerifyScript(this.network, scriptPubKey, value, scriptVerify, out error);
-            else
-            {
-                bool ok = Script.VerifyScriptConsensus(scriptPubKey, input.Transaction, input.Index, scriptVerify);
-                if (!ok)
-                {
-                    if (input.VerifyScript(this.network, scriptPubKey, scriptVerify, out error))
-                        error = ScriptError.UnknownError;
-                    return false;
-                }
-                else
-                {
-                    error = ScriptError.OK;
-                }
-                return true;
-            }
-        }
-
+        
         public StandardTransactionPolicy Clone()
         {
             return new StandardTransactionPolicy(this.network)
@@ -219,7 +193,6 @@ namespace NBitcoin.Policy
                 MaxTxFee = this.MaxTxFee,
                 MinRelayTxFee = this.MinRelayTxFee,
                 ScriptVerify = this.ScriptVerify,
-                UseConsensusLib = this.UseConsensusLib,
                 CheckMalleabilitySafe = this.CheckMalleabilitySafe,
                 CheckScriptPubKey = this.CheckScriptPubKey,
                 CheckFee = this.CheckFee

@@ -2772,7 +2772,6 @@ namespace NBitcoin.Tests
                 {
                     CheckFee = false,
                     MinRelayTxFee = null,
-                    UseConsensusLib = false,
                     CheckScriptPubKey = false
                 }
             }
