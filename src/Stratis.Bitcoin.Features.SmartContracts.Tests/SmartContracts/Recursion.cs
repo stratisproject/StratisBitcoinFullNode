@@ -1,6 +1,9 @@
 ﻿using System;
 using Stratis.SmartContracts;
 
+// Note this contract is non-deterministic and will fail to be deployed.
+// For internal testing purposes only.
+
 [Deploy]
 public class Recursion : SmartContract
 {

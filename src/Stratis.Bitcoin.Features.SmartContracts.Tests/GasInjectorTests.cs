@@ -15,7 +15,6 @@ using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
-using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
@@ -268,7 +267,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
 
-            var address = TestAddress.ToUint160(this.network);
+            uint160 address = TestAddress.ToUint160(this.network);
 
             var callData = new CallData(gasLimit, address, nameof(Recursion.DoRecursion));
 
@@ -277,7 +276,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.repository.SetCode(callData.ContractAddress, originalAssemblyBytes);
             this.repository.SetContractType(callData.ContractAddress, nameof(Recursion));
 
-            var result = vm.ExecuteMethod(gasMeter, this.repository, callData, transactionContext);
+            VmExecutionResult result = vm.ExecuteMethod(gasMeter, this.repository, callData, transactionContext);
 
             Assert.Null(result.ExecutionException);
             Assert.True(result.GasConsumed > 0);
