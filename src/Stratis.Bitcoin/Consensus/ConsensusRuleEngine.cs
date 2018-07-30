@@ -6,14 +6,14 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Consensus.Rules
+namespace Stratis.Bitcoin.Consensus
 {
     /// <inheritdoc />
-    public abstract class ConsensusRules : IConsensusRules
+    public abstract class ConsensusRuleEngine : IConsensusRuleEngine
     {
         /// <summary>A factory to creates logger instances for each rule.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -73,7 +73,16 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
         public IEnumerable<ConsensusRule> Rules => this.consensusRules.Values;
 
-        protected ConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, IChainState chainState)
+        protected ConsensusRuleEngine(
+            Network network,
+            ILoggerFactory loggerFactory,
+            IDateTimeProvider dateTimeProvider,
+            ConcurrentChain chain,
+            NodeDeployments nodeDeployments,
+            ConsensusSettings
+            consensusSettings,
+            ICheckpoints checkpoints,
+            IChainState chainState)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -110,7 +119,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public ConsensusRules Register(IRuleRegistration ruleRegistration)
+        public ConsensusRuleEngine Register(IRuleRegistration ruleRegistration)
         {
             Guard.NotNull(ruleRegistration, nameof(ruleRegistration));
 
@@ -124,7 +133,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
                 List<RuleAttribute> ruleAttributes = Attribute.GetCustomAttributes(consensusRule.GetType()).OfType<RuleAttribute>().ToList();
 
-                if(!ruleAttributes.Any())
+                if (!ruleAttributes.Any())
                     throw new ConsensusException($"The rule {consensusRule.GetType().FullName} must have at least one {nameof(RuleAttribute)}");
 
                 foreach (RuleAttribute ruleAttribute in ruleAttributes)

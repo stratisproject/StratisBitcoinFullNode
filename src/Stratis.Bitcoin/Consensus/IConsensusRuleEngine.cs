@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 
-namespace Stratis.Bitcoin.Consensus.Rules
+namespace Stratis.Bitcoin.Consensus
 {
     /// <summary>
     /// An engine that enforce the execution and validation of consensus rule. 
@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// In order for a block to be valid it has to successfully pass the rules checks.
     /// A block  that is not valid will result in the <see cref="ValidationContext.Error"/> as not <c>null</c>.
     /// </remarks>
-    public interface IConsensusRules
+    public interface IConsensusRuleEngine
     {
         /// <summary>
         /// Collection of all the rules that are registered with the engine.
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// </summary>
         /// <param name="ruleRegistration">A container of rules to register.</param>
         /// <returns></returns>
-        ConsensusRules Register(IRuleRegistration ruleRegistration);
+        ConsensusRuleEngine Register(IRuleRegistration ruleRegistration);
 
         /// <summary>
         /// Gets the consensus rule that is assignable to the supplied generic type.

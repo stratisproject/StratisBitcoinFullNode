@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             {
                 this.logger = new Mock<ILogger>();
                 rule.Logger = this.logger.Object;
-                rule.Parent = new PowConsensusRules(
+                rule.Parent = new PowConsensusRuleEngine(
                     Network.RegTest,
                     new Mock<ILoggerFactory>().Object,
                     new Mock<IDateTimeProvider>().Object,

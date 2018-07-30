@@ -16,7 +16,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
@@ -107,7 +106,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         private readonly IConsensusManager consensusManager;
-        private readonly IConsensusRules consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
         private readonly IRuleRegistration ruleRegistration;
 
         /// <inheritdoc cref="IFinalizedBlockHeight"/>
@@ -131,7 +130,7 @@ namespace Stratis.Bitcoin.Base
             IPeerBanning peerBanning,
             IPeerAddressManager peerAddressManager,
             IConsensusManager consensusManager,
-            IConsensusRules consensusRules,
+            IConsensusRuleEngine consensusRules,
             IRuleRegistration ruleRegistration)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -198,7 +197,6 @@ namespace Stratis.Bitcoin.Base
             this.disposableResources.Add(this.chainRepository);
 
             this.consensusRules.Initialize().GetAwaiter().GetResult();
-            this.consensusRules.Register(this.ruleRegistration);
 
             this.consensusManager.InitializeAsync(this.chain.Tip).GetAwaiter().GetResult();
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.consensusManager.BlockPuller, this.initialBlockDownloadState, this.loggerFactory));

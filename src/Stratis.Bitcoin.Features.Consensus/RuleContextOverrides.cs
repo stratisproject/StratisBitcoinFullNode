@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     }
 
     /// <summary>
-    /// A context that is used by the <see cref="IConsensusRules"/> for the PoS network type.
+    /// A context that is used by the <see cref="IConsensusRuleEngine"/> for the PoS network type.
     /// </summary>
     public class PosRuleContext : UtxoRuleContext
     {
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     }
 
     /// <summary>
-    /// A context that is used by the <see cref="IConsensusRules"/> for the PoW network type.
+    /// A context that is used by the <see cref="IConsensusRuleEngine"/> for the PoW network type.
     /// </summary>
     public class PowRuleContext : UtxoRuleContext
     {

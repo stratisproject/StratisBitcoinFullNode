@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private CachePerformanceSnapshot lastSnapshot3;
 
         private readonly IConsensusManager consensusManager;
-        private readonly IConsensusRules consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
 
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public ConsensusStats(
             CoinView coinView,
             IConsensusManager consensusManager,
-            IConsensusRules consensusRules,
+            IConsensusRuleEngine consensusRules,
             IInitialBlockDownloadState initialBlockDownloadState,
             ConcurrentChain chain,
             IConnectionManager connectionManager,

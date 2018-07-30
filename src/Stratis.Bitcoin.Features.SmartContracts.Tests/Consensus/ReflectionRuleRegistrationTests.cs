@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
             var loggerFactory = new ExtendedLoggerFactory();
             var receiptStorage = new Mock<ISmartContractReceiptStorage>();
 
-            var consensusRules = new SmartContractConsensusRules(
+            var consensusRules = new SmartContractConsensusRuleEngine(
                 chain, new Mock<ICheckpoints>().Object, new Configuration.Settings.ConsensusSettings(),
                 DateTimeProvider.Default, executorFactory.Object, loggerFactory, network,
                 new Base.Deployments.NodeDeployments(network, chain), contractState,

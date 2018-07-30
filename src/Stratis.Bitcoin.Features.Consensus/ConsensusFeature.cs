@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
-                    services.AddSingleton<IConsensusRules, PowConsensusRules>();
+                    services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>();
                     services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
                 });
             });
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<ConsensusSettings>();
-                        services.AddSingleton<IConsensusRules, PosConsensusRules>();
+                        services.AddSingleton<IConsensusRuleEngine, PosConsensusRuleEngine>();
                         services.AddSingleton<IRuleRegistration, PosConsensusRulesRegistration>();
                     });
             });

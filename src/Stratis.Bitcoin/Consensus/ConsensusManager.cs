@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Consensus
         IBlockPuller BlockPuller { get; }
 
         /// <summary>The collection of rules.</summary>
-        IConsensusRules ConsensusRules { get; }
+        IConsensusRuleEngine ConsensusRules { get; }
 
         /// <summary>
         /// Set the tip of <see cref="ConsensusManager"/>, if the given <paramref name="chainTip"/> is not equal to <see cref="Tip"/>
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IPartialValidator partialValidator;
         private readonly ConsensusSettings consensusSettings;
         private readonly IBlockPuller blockPuller;
-        private readonly IConsensusRules consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
         private readonly Signals.Signals signals;
         private readonly IPeerBanning peerBanning;
         private readonly IBlockStore blockStore;
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Consensus
         public IBlockPuller BlockPuller => this.blockPuller;
 
         /// <inheritdoc />
-        public IConsensusRules ConsensusRules => this.consensusRules;
+        public IConsensusRuleEngine ConsensusRules => this.consensusRules;
 
         private readonly Dictionary<uint256, List<OnBlockDownloadedCallback>> callbacksByBlocksRequestedHash;
 
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Consensus
             IPartialValidator partialValidator,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
-            IConsensusRules consensusRules,
+            IConsensusRuleEngine consensusRules,
             IFinalizedBlockHeight finalizedBlockHeight,
             Signals.Signals signals,
             IPeerBanning peerBanning,

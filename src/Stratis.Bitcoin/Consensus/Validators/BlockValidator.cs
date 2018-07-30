@@ -52,10 +52,10 @@ namespace Stratis.Bitcoin.Consensus.Validators
     /// <inheritdoc />
     public class HeaderValidator : IHeaderValidator
     {
-        private readonly IConsensusRules consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
         private readonly ILogger logger;
 
-        public HeaderValidator(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
+        public HeaderValidator(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
         {
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -77,10 +77,10 @@ namespace Stratis.Bitcoin.Consensus.Validators
     /// <inheritdoc />
     public class IntegrityValidator : IIntegrityValidator
     {
-        private readonly IConsensusRules consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
         private readonly ILogger logger;
 
-        public IntegrityValidator(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
+        public IntegrityValidator(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
         {
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -102,11 +102,11 @@ namespace Stratis.Bitcoin.Consensus.Validators
     /// <inheritdoc />
     public class PartialValidator : IPartialValidator
     {
-        private readonly IConsensusRules consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
         private readonly AsyncQueue<PartialValidationItem> asyncQueue;
         private readonly ILogger logger;
 
-        public PartialValidator(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
+        public PartialValidator(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
         {
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

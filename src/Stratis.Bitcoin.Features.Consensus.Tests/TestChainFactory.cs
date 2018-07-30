@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public ConsensusManager Consensus { get; set; }
 
-        public ConsensusRules ConsensusRules { get; set; }
+        public ConsensusRuleEngine ConsensusRules { get; set; }
 
         public PeerBanning PeerBanning { get; set; }
 
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             testChainContext.PeerBanning = new PeerBanning(testChainContext.ConnectionManager, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.PeerAddressManager);
             var deployments = new NodeDeployments(testChainContext.Network, testChainContext.Chain);
-            testChainContext.ConsensusRules = new PowConsensusRules(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider,
+            testChainContext.ConsensusRules = new PowConsensusRuleEngine(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider,
                 testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints, cachedCoinView, testChainContext.ChainState)
                 .Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
 
@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// <summary>
         /// Creates a proof of work block assembler.
         /// </summary>
-        private static PowBlockDefinition CreatePowBlockAssembler(IConsensusManager consensusManager, IConsensusRules consensusRules, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
+        private static PowBlockDefinition CreatePowBlockAssembler(IConsensusManager consensusManager, IConsensusRuleEngine consensusRules, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
         {
             var options = new BlockDefinitionOptions
             {

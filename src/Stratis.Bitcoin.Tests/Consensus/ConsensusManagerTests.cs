@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public readonly Mock<IPeerBanning> PeerBanningMock = new Mock<IPeerBanning>();
 
             public readonly Mock<IChainState> ChainStateMock = new Mock<IChainState>();
-            public readonly Mock<IConsensusRules> ConsensusRulesMock = new Mock<IConsensusRules>();
+            public readonly Mock<IConsensusRuleEngine> ConsensusRulesMock = new Mock<IConsensusRuleEngine>();
 
             public readonly Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
             public readonly ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(Network.RegTest));

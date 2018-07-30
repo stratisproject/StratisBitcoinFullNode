@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         }
     }
 
-    public class ConsensusRuleUnitTestBase<T> where T : ConsensusRules
+    public class ConsensusRuleUnitTestBase<T> where T : ConsensusRuleEngine
     {
         protected Network network;
         protected Mock<ILoggerFactory> loggerFactory;

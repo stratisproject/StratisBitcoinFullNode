@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private NBitcoin.Consensus consensusParams;
         private Transaction generatedTransaction;
         private uint refundCounter;
-        private SmartContractConsensusRules smartContractParent;
+        private SmartContractConsensusRuleEngine smartContractParent;
 
         public SmartContractCoinviewRule()
         {
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.consensusParams = this.Parent.Network.Consensus;
             this.generatedTransaction = null;
             this.refundCounter = 1;
-            this.smartContractParent = (SmartContractConsensusRules)this.Parent;
+            this.smartContractParent = (SmartContractConsensusRuleEngine)this.Parent;
 
             this.Logger.LogTrace("(-)");
         }

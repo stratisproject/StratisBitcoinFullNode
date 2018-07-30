@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             base.Initialize();
 
             this.consensus = this.Parent.Network.Consensus;
-            var consensusRules = (PosConsensusRules)this.Parent;
+            var consensusRules = (PosConsensusRuleEngine)this.Parent;
 
             this.stakeValidator = consensusRules.StakeValidator;
             this.stakeChain = consensusRules.StakeChain;

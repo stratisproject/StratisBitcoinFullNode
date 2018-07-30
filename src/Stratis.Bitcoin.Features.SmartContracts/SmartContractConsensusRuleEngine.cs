@@ -18,13 +18,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     /// <summary>
     /// Extension of consensus rules that provide access to a store based on UTXO (Unspent transaction outputs).
     /// </summary>
-    public sealed class SmartContractConsensusRules : PowConsensusRules
+    public sealed class SmartContractConsensusRuleEngine : PowConsensusRuleEngine
     {
         public readonly ISmartContractExecutorFactory ExecutorFactory;
         public readonly ContractStateRepositoryRoot OriginalStateRoot;
         public readonly ISmartContractReceiptStorage ReceiptStorage;
 
-        public SmartContractConsensusRules(
+        public SmartContractConsensusRuleEngine(
             ConcurrentChain chain,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,

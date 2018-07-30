@@ -421,7 +421,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private void SetupRulesEngine(ConcurrentChain chain)
         {
-            var posConsensusRules = new PosConsensusRules(
+            var posConsensusRules = new PosConsensusRuleEngine(
                 this.network,
                 this.LoggerFactory.Object,
                 this.dateTimeProvider.Object,

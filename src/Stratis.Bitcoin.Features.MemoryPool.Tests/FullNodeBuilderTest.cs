@@ -6,11 +6,8 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
@@ -37,11 +34,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var network = serviceProvider.GetService<Network>();
             var settings = serviceProvider.GetService<NodeSettings>();
             var consensusManager = serviceProvider.GetService<IConsensusManager>() as ConsensusManager;
-            var chain = serviceProvider.GetService<NBitcoin.ConcurrentChain>();
+            var chain = serviceProvider.GetService<ConcurrentChain>();
             var chainState = serviceProvider.GetService<IChainState>() as ChainState;
             var blockStoreManager = serviceProvider.GetService<BlockStoreManager>();
-            var consensusRules = serviceProvider.GetService<IConsensusRules>();
-            consensusRules.Register(serviceProvider.GetService<IRuleRegistration>());
+            var consensusRuleEngine = serviceProvider.GetService<IConsensusRuleEngine>();
+            var ruleRegistration = serviceProvider.GetService<IRuleRegistration>();
             var mempoolManager = serviceProvider.GetService<MempoolManager>();
             var connectionManager = serviceProvider.GetService<IConnectionManager>() as ConnectionManager;
 
@@ -51,6 +48,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(consensusManager);
             Assert.NotNull(chain);
             Assert.NotNull(chainState);
+            Assert.NotNull(consensusRuleEngine);
+            Assert.NotNull(ruleRegistration);
             Assert.NotNull(blockStoreManager);
             Assert.NotNull(mempoolManager);
             Assert.NotNull(connectionManager);

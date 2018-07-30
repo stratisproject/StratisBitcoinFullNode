@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     public class PowBlockAssemblerTest : LogsTestBase
     {
         private readonly Mock<IConsensusManager> consensusLoop;
-        private readonly Mock<IConsensusRules> consensusRules;
+        private readonly Mock<IConsensusRuleEngine> consensusRules;
 
         private readonly Mock<ITxMempool> txMempool;
         private readonly Mock<IDateTimeProvider> dateTimeProvider;
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public PowBlockAssemblerTest()
         {
             this.consensusLoop = new Mock<IConsensusManager>();
-            this.consensusRules = new Mock<IConsensusRules>();
+            this.consensusRules = new Mock<IConsensusRuleEngine>();
             this.txMempool = new Mock<ITxMempool>();
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.powReward = Money.Coins(50);
@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private void SetupRulesEngine(ConcurrentChain chain)
         {
-            var powConsensusRules = new PowConsensusRules(this.network,
+            var powConsensusRules = new PowConsensusRuleEngine(this.network,
                     this.LoggerFactory.Object, this.dateTimeProvider.Object, chain,
                     new NodeDeployments(this.network, chain), new ConsensusSettings(new NodeSettings(this.network)), new Checkpoints(),
                     new Mock<CoinView>().Object, new Mock<IChainState>().Object);
@@ -473,7 +473,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 ITxMempool mempool,
                 MempoolSchedulerLock mempoolLock,
                 Network network,
-                IConsensusRules consensusRules,
+                IConsensusRuleEngine consensusRules,
                 BlockDefinitionOptions options = null)
                 : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, consensusRules)
             {

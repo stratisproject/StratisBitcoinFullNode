@@ -48,10 +48,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
     public sealed class ReflectionVirtualMachineFeature : FullNodeFeature
     {
-        private readonly IConsensusRules consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
         private readonly ILogger logger;
 
-        public ReflectionVirtualMachineFeature(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
+        public ReflectionVirtualMachineFeature(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
         {
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
 
-                    services.AddSingleton<IConsensusRules, SmartContractConsensusRules>();
+                    services.AddSingleton<IConsensusRuleEngine, SmartContractConsensusRuleEngine>();
                     services.AddSingleton<IRuleRegistration, SmartContractRuleRegistration>();
                 });
             });
