@@ -12,7 +12,7 @@ namespace NBitcoin
 
         /// <summary>
         /// Amount of coins mined when a new network is bootstrapped.
-        /// Set to Money.Zero when there is no premine.
+        /// Set to <see cref="Money.Zero"/> when there is no premine.
         /// </summary>
         Money PremineReward { get; }
 
