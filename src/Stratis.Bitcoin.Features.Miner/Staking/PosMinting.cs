@@ -717,7 +717,12 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             // Total amount of input values in coinstake transaction.
             long coinstakeInputValue = workersResult.KernelCoin.TxOut.Value + reward;
 
-            Transaction coinstakeTx = this.PrepareCoinStakeTransaction(chainTip.Height, coinstakeContext, workersResult, coinstakeInputValue, stakingUtxoDescriptions, ourWeight);
+            Transaction coinstakeTx = this.PrepareCoinStakeTransactions(
+                currentChainHeight: chainTip.Height, 
+                coinstakeContext: coinstakeContext, 
+                coinstakeInputValue: coinstakeInputValue, 
+                utxosCount: stakingUtxoDescriptions.Count, 
+                amountStaked: ourWeight);
 
             // Sign.
             if (!this.SignTransactionInput(coinstakeInput, coinstakeTx))
@@ -740,19 +745,18 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             return true;
         }
 
-        internal Transaction PrepareCoinStakeTransaction(
+        internal Transaction PrepareCoinStakeTransactions(
             int currentChainHeight,
             CoinstakeContext coinstakeContext,
-            CoinstakeWorkerResult workersResult,
             long coinstakeInputValue,
-            List<UtxoStakeDescription> stakingUtxoDescriptions,
-            long ourWeight)
+            int utxosCount,
+            long amountStaked)
         {
-            // Split stake if above threshold.
+            // Split stake into SplitFactor utxos if above threshold.
             const int SplitFactor = 8;
             bool shouldSplitStake = this.ShouldSplitStake(
-                stakingUtxoDescriptions.Count,
-                ourWeight,
+                utxosCount,
+                amountStaked,
                 coinstakeInputValue,
                 SplitFactor,
                 currentChainHeight);

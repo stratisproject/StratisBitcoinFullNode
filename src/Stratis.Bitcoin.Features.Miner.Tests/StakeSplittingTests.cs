@@ -93,57 +93,139 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         }
 
         [Fact]
-        public void Given_A_Coin_That_Needs_Splitting_CoinstakeTx_Should_Have_SplitFactorPlus1_Outputs()
+        public void Given_A_Coin_That_Needs_Splitting_CoinstakeTx_Should_Have_SplitFactor_Non_Zero_Outputs()
         {
             var amounts = Enumerable.Repeat(100_000, 3)
                 .Select(a => new Money(a, MoneyUnit.BTC))
                 .ToList();
 
+            var coinStakeContext = BuildNewCoinstakeContext();
+
+            var expectToSplit = true;
+            (long coinstakeInputValue, Transaction transaction) =
+                GetCoinstakeTransaction(amounts, coinStakeContext, expectToSplit);
+
+            var nonZeroOutputs = transaction.Outputs.Skip(1).ToList();
+
+            nonZeroOutputs.Count().Should().Be(SplitFactor);
+            nonZeroOutputs.Sum(t => t.Value)
+                .Should().Be(coinstakeInputValue);
+            nonZeroOutputs.Select(o => o.ScriptPubKey)
+                .Distinct().Single().Should().Be(coinStakeContext.CoinstakeTx.Outputs[1].ScriptPubKey);
+        }
+
+        [Fact]
+        public void Given_A_Coin_That_Does_Not_Need_Splitting_CoinstakeTx_Should_Have_One_Non_Zero_Outputs()
+        {
+            var amounts = Enumerable.Repeat(50, 2000)
+                .Select(a => new Money(a, MoneyUnit.BTC))
+                .ToList();
+
+            var coinStakeContext = BuildNewCoinstakeContext();
+
+            var expectToSplit = false;
+            (long coinstakeInputValue, Transaction transaction) = 
+                GetCoinstakeTransaction(amounts, coinStakeContext, expectToSplit);
+
+            var nonZeroOutputs = transaction.Outputs.Skip(1).ToList();
+
+            nonZeroOutputs.Count().Should().Be(1);
+            nonZeroOutputs.Sum(t => t.Value)
+                .Should().Be(coinstakeInputValue);
+            nonZeroOutputs.Select(o => o.ScriptPubKey)
+                .Distinct().Single().Should().Be(coinStakeContext.CoinstakeTx.Outputs[1].ScriptPubKey);
+        }
+
+        private (long coinstakeInputValue, Transaction transaction) GetCoinstakeTransaction(List<Money> amounts, CoinstakeContext coinStakeContext, bool expectToSplit)
+        {
+            long amountStaked = amounts.Sum(u => u.Satoshi);
             this.posMinting.ShouldSplitStake(
                 stakedUtxosCount: amounts.Count,
-                amountStaked: amounts.Sum(u => u.Satoshi),
+                amountStaked: amountStaked,
                 coinValue: amounts.Last(),
                 splitFactor: SplitFactor,
-                chainHeight: ChainHeight).Should().BeTrue();
+                chainHeight: ChainHeight).Should().Be(expectToSplit);
 
-            //TODO: finish test where we make sure we have SplitFactor outputs and that their sum is expected reward + coin
-            //var scriptPubKey = new Script();
-            //var coinStakeContext = new CoinstakeContext()
-            //   {
-            //        CoinstakeTx = new Transaction() { Outputs =
-            //        {
-            //            new TxOut(Money.Zero, new Script()),
-            //            new TxOut(Money.Zero, scriptPubKey)
-            //        }}
-            //   }
+            var reward = 1.2M * Money.COIN;
+            var coinstakeInputValue = amounts.Last().Satoshi + (long)reward;
 
-            //this.posMinting.PrepareCoinStakeTransaction(
-            //    currentChainHeight: ChainHeight,
-            //    coinstakeContext: coinStakeContext,
-            //    new CoinstakeWorkerResult(){new UtxoStakeDescription(){}}, 
-                
-            //    )
+            var transaction = this.posMinting.PrepareCoinStakeTransactions(
+                currentChainHeight: ChainHeight,
+                coinstakeContext: coinStakeContext,
+                coinstakeInputValue: coinstakeInputValue,
+                utxosCount: amounts.Count,
+                amountStaked: amountStaked);
+            return (coinstakeInputValue, transaction);
         }
 
         [Fact]
         public void Given_A_Wallet_With_Big_Coins_Then_Splitting_Should_End_When_Target_Reached()
         {
-            //target value around 4700
             var amounts = Enumerable.Repeat(100_000, 3)
                 .Select(a => new Money(a, MoneyUnit.BTC))
                 .ToList();
+            var chainHeight = ChainHeight;
 
+            //only a rough calculation to prevent infinite loop later in the test
+            var targetSplitCoinValue = amounts.Sum(u => u.Satoshi) / (500 + 1) * 3;
+            var maxIterations = Math.Ceiling((Math.Log(amounts.Last().Satoshi, SplitFactor) 
+                                       - Math.Log(targetSplitCoinValue, SplitFactor))) + 1;
+
+            var iterations = 0;
             while (this.posMinting.ShouldSplitStake(
                 stakedUtxosCount: amounts.Count,
                 amountStaked: amounts.Sum(u => u.Satoshi),
                 coinValue: amounts.Last(),
                 splitFactor: SplitFactor,
-                chainHeight: ChainHeight))
+                chainHeight: ChainHeight) && iterations < maxIterations)
             {
-                //amounts.RemoveAt(amounts.Count-1);
-                //todo: make the last utxo a winner on each transaction and make sure this loops ends when target is reached
-                break;
+                iterations++;
+                chainHeight++;
+
+                var transaction = GetCoinstakeTransaction(amounts);
+
+                //replace coins in 'amounts' with the new split ones
+                amounts.RemoveAt(amounts.Count - 1);
+                amounts.AddRange(transaction.Outputs
+                    .Select(a => a.Value).Where(a => a > 0).ToList());
             }
+
+            iterations.Should().BeLessThan((int)maxIterations, "the loop should end when we don't need to split anymore");
+            amounts.Reverse();
+            amounts.Take(SplitFactor).All(a => a.Satoshi < targetSplitCoinValue)
+                .Should().BeTrue();
+        }
+
+        private Transaction GetCoinstakeTransaction(List<Money> amounts)
+        {
+            var coinStakeContext = BuildNewCoinstakeContext();
+
+            var reward = 1.2M * Money.COIN;
+            var coinstakeInputValue = amounts.Last().Satoshi + (long)reward;
+
+            var transaction = this.posMinting.PrepareCoinStakeTransactions(
+                currentChainHeight: ChainHeight,
+                coinstakeContext: coinStakeContext,
+                coinstakeInputValue: coinstakeInputValue,
+                utxosCount: amounts.Count,
+                amountStaked: amounts.Sum(u => u.Satoshi));
+            return transaction;
+        }
+
+        private CoinstakeContext BuildNewCoinstakeContext()
+        {
+            var scriptPubKey = new Script();
+            var coinStakeContext = new CoinstakeContext()
+            {
+                CoinstakeTx = new Transaction()
+                {
+                    Outputs = {
+                        new TxOut(Money.Zero, new Script()),
+                        new TxOut(Money.Zero, scriptPubKey)
+                    }
+                }
+            };
+            return coinStakeContext;
         }
     }
 }
