@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
@@ -21,11 +19,13 @@ namespace Stratis.Bitcoin.Features.Apps
         private readonly ILogger logger;
         private readonly IAppsStore appsStore;
         private readonly IAppsHost appsHost;
+        private readonly DataFolder dataFolder;
 
-        public AppsFeature(ILoggerFactory loggerFactory, IAppsStore appsStore, IAppsHost appsHost)
+        public AppsFeature(ILoggerFactory loggerFactory, IAppsStore appsStore, IAppsHost appsHost, DataFolder dataFolder)
         {
             this.appsStore = appsStore;
             this.appsHost = appsHost;
+            this.dataFolder = dataFolder;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -33,7 +33,22 @@ namespace Stratis.Bitcoin.Features.Apps
         {
             this.logger.LogInformation("Initializing {0}", nameof(AppsFeature));
 
+            this.AppsFolderCheck();
+
             this.appsHost.Host(this.appsStore.Applications);
+        }
+
+        private void AppsFolderCheck()
+        {
+            try
+            {
+                if (!Directory.Exists(this.dataFolder.ApplicationsPath))
+                    Directory.CreateDirectory(this.dataFolder.ApplicationsPath);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError($"Failed to create apps folder '{this.dataFolder.ApplicationsPath}' : {e.Message}");
+            }
         }
 
         public override void Dispose()
@@ -61,22 +76,11 @@ namespace Stratis.Bitcoin.Features.Apps
                     .AddFeature<AppsFeature>()
                     .FeatureServices(services =>
                     {
-                        TryEnsureAppsFolderExists(services);
-
                         services.AddSingleton<IAppsStore, AppsStore>();                        
                         services.AddSingleton<IAppsHost, AppsHost>();
                         services.AddSingleton<AppsController>();
                     });
             });
-
-            void TryEnsureAppsFolderExists(IServiceCollection services)
-            {
-                ServiceDescriptor descriptor = services.FirstOrDefault(x => x.ServiceType == typeof(DataFolder));
-                if (!(descriptor?.ImplementationInstance is DataFolder)) return;
-                var appsPath = ((DataFolder)descriptor.ImplementationInstance).ApplicationsPath;
-                if (!Directory.Exists(appsPath))
-                    Directory.CreateDirectory(appsPath);
-            }
 
             return fullNodeBuilder;
         }
