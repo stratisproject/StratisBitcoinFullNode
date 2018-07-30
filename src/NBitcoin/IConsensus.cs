@@ -6,7 +6,7 @@ namespace NBitcoin
     public interface IConsensus
     {
         /// <summary>
-        /// How many blocks should be on top of a coinbase transaction until its outputs are considered spendable.
+        /// How many blocks should be on top of a block that includes a coinbase transaction until its outputs are considered spendable.
         /// </summary>
         long CoinbaseMaturity { get; set; }
 
