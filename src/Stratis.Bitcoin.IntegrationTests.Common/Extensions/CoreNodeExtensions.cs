@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             if (considerMaturity)
             {
-                if (numberOfBlocks == 1 && maturity > 1)
+                if ((numberOfBlocks == 1) && (maturity > 1))
                     return 0;
 
                 return Enumerable.Range(startBlock,

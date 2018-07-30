@@ -68,10 +68,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
             this.WaitForNodeToSync(node);
 
-            IEnumerable<UnspentOutputReference> spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName);
+            IEnumerable<UnspentOutputReference> spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName, includeImmature: true);
 
             // The premine and other block rewards are not mature yet.
-            Money amountShouldBe = 0;
+            Money amountShouldBe = node.FullNode.Network.Consensus.PremineReward + node.FullNode.Network.Consensus.ProofOfWorkReward;
 
             spendable.Sum(s => s.Transaction.Amount).Should().Be(amountShouldBe);
         }
