@@ -33,14 +33,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly IStakeValidator stakeValidator;
 
         private uint160 coinbaseAddress;
-        private readonly CoinView coinView;
+        private readonly ICoinView coinView;
         private readonly ISmartContractExecutorFactory executorFactory;
         private readonly List<TxOut> refundOutputs = new List<TxOut>();
         private readonly ContractStateRepositoryRoot stateRoot;
         private ContractStateRepositoryRoot stateSnapshot;
 
         public SmartContractPosPowBlockDefinition(
-            CoinView coinView,
+            ICoinView coinView,
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
             ISmartContractExecutorFactory executorFactory,

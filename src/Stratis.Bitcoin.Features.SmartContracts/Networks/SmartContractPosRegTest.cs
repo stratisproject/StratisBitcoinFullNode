@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
-using NBitcoin.Networks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {
@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
         public SmartContractPosRegTest()
         {
             this.CoinTicker = "TSTRAT";
-            this.DefaultConfigFilename = NBitcoin.Networks.StratisMain.StratisDefaultConfigFilename;
+            this.DefaultConfigFilename = StratisMain.StratisDefaultConfigFilename;
             this.DefaultPort = 18555;
             this.FallbackFee = 20000;
             this.Name = "SmartContractPosRegTest";
@@ -22,10 +22,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.MaxTipAge = BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds;
             this.MinRelayTxFee = 1000;
             this.MinTxFee = 1000;
-            this.RootFolderName = NBitcoin.Networks.StratisMain.StratisRootFolderName;
+            this.RootFolderName = StratisMain.StratisRootFolderName;
             this.RPCPort = 185556;
 
-            this.Consensus.ConsensusFactory = new SmartContractPosConsensusFactory() { Consensus = this.Consensus };
+            this.Consensus.ConsensusFactory = new SmartContractPosConsensusFactory();
             this.Consensus.IsProofOfStake = true;
 
             this.Consensus.BIP34Hash = new uint256();
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
 
-            this.Genesis = NBitcoin.Networks.StratisMain.CreateStratisGenesisBlock(this.Consensus.ConsensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
+            this.Genesis = StratisMain.CreateStratisGenesisBlock(this.Consensus.ConsensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
             ((SmartContractBlockHeader)this.Genesis.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
             this.Genesis.Header.Nonce = 1;
             this.Consensus.HashGenesisBlock = this.Genesis.Header.GetHash();

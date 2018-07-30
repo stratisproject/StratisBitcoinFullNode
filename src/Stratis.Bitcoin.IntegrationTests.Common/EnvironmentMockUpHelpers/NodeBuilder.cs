@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                .AddRPC()
                .MockIBD());
 
-            return CreateCustomNode(start, callback, Network.RegTest, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
+            return CreateCustomNode(start, callback, KnownNetworks.RegTest, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
         }
 
         public CoreNode CreateStratisPowApiNode(bool start = false)

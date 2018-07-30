@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Protocol;
 
-namespace NBitcoin.Networks
+namespace Stratis.Bitcoin.Networks
 {
     public class StratisTest : StratisMain
     {
@@ -25,7 +26,7 @@ namespace NBitcoin.Networks
             this.DefaultPort = 26178;
             this.RPCPort = 26174;
             this.CoinTicker = "TSTRAT";
-            
+
             var consensus = new Consensus();
             consensus.SubsidyHalvingInterval = 210000;
             consensus.MajorityEnforceBlockUpgrade = 750;
@@ -43,7 +44,7 @@ namespace NBitcoin.Networks
             consensus.MinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
             consensus.LastPOWBlock = 12500;
             consensus.IsProofOfStake = true;
-            consensus.ConsensusFactory = new PosConsensusFactory() { Consensus = consensus };
+            consensus.ConsensusFactory = new PosConsensusFactory();
             consensus.ProofOfStakeLimit = new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
             consensus.ProofOfStakeLimitV2 = new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
             consensus.CoinType = 105;

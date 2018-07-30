@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
-using NBitcoin.Networks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {
@@ -14,8 +14,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
         public SmartContractPosTest()
         {
             this.Name = "SmartContractsPosTestNet";
-            this.RootFolderName = NBitcoin.Networks.StratisMain.StratisRootFolderName;
-            this.DefaultConfigFilename = NBitcoin.Networks.StratisMain.StratisDefaultConfigFilename;
+            this.RootFolderName = StratisMain.StratisRootFolderName;
+            this.DefaultConfigFilename = StratisMain.StratisDefaultConfigFilename;
             this.Magic = 0x0709110E; // Incremented 19/06
             this.DefaultPort = 18333;
             this.RPCPort = 18332;
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
 
-            this.Consensus.ConsensusFactory = new SmartContractPosConsensusFactory() { Consensus = this.Consensus };
+            this.Consensus.ConsensusFactory = new SmartContractPosConsensusFactory();
             this.Consensus.IsProofOfStake = true;
 
             this.Consensus.BIP34Hash = new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8");
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
 
-            this.Genesis = NBitcoin.Networks.StratisMain.CreateStratisGenesisBlock(this.Consensus.ConsensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
+            this.Genesis = StratisMain.CreateStratisGenesisBlock(this.Consensus.ConsensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
             ((SmartContractBlockHeader)this.Genesis.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
             this.Genesis.Header.Nonce = 3; // Incremented 19/06
             this.Consensus.HashGenesisBlock = this.Genesis.Header.GetHash();

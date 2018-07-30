@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder));
 
                 this.refundProcessor = new SmartContractResultRefundProcessor(loggerFactory);
-                this.transferProcessor = new SmartContractResultTransferProcessor(dateTimeProvider, loggerFactory, this.network);
+                this.transferProcessor = new SmartContractResultTransferProcessor(loggerFactory, this.network);
 
                 this.serializer = CallDataSerializer.Default;
                 this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
 
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
-                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, Network.Main, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
+                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
                 var connectionSettings = new ConnectionManagerSettings(nodeSettings);
                 var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, connectionSettings, new SmartContractVersionProvider());
 
@@ -844,7 +844,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         private readonly Dictionary<Type, object> registered;
 
         public MockServiceProvider(
-            CoinView coinView,
+            ICoinView coinView,
             ISmartContractExecutorFactory executorFactory,
             ContractStateRepositoryRoot stateRoot,
             ILoggerFactory loggerFactory,
@@ -852,7 +852,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             this.registered = new Dictionary<Type, object>
             {
-                { typeof(CoinView), coinView },
+                { typeof(ICoinView), coinView },
                 { typeof(ISmartContractExecutorFactory), executorFactory },
                 { typeof(ContractStateRepositoryRoot), stateRoot },
                 { typeof(ILoggerFactory), loggerFactory },
