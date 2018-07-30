@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.stakeChain?.LoadAsync().GetAwaiter().GetResult();
 
-            this.signals.SubscribeForBlocks(this.consensusStats);
+            this.signals.SubscribeForBlocksConnected(this.consensusStats);
 
             this.consensusRules.Register(this.ruleRegistration);
         }

@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolManager.LoadPoolAsync().GetAwaiter().GetResult();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);
-            this.signals.SubscribeForBlocks(this.mempoolSignaled);
+            this.signals.SubscribeForBlocksConnected(this.mempoolSignaled);
             this.mempoolSignaled.Start();
         }
 
