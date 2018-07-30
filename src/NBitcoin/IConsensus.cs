@@ -78,7 +78,7 @@ namespace NBitcoin
         int RuleChangeActivationThreshold { get; set; }
 
         /// <summary>
-        /// Specify the BIP44 coin type for this network
+        /// Specify the BIP44 coin type for this network.
         /// </summary>
         int CoinType { get; }
 
