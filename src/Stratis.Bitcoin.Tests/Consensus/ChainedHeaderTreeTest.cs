@@ -2206,6 +2206,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 foreach (ChainedHeader next in current.Next)
                     headersToProcess.Push(next);
             }
+
             Assert.Equal(chainHeaders.Count, allConnectedHeaders.Count);
         }
 
