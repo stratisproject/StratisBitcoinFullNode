@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.LightWallet.Tests
@@ -66,18 +67,18 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         public void MinTxFee_OnStratisNetwork_IsStratisDefault()
         {
             ILoggerFactory loggerFactory = new LoggerFactory();
-            var nodeSettings = new NodeSettings(Network.StratisTest);
+            var nodeSettings = new NodeSettings(KnownNetworks.StratisTest);
             var policy = new LightWalletFixedFeePolicy(loggerFactory, nodeSettings);
-            Assert.Equal(new FeeRate(Network.StratisTest.FallbackFee), policy.FallbackTxFeeRate);
+            Assert.Equal(new FeeRate(KnownNetworks.StratisTest.FallbackFee), policy.FallbackTxFeeRate);
         }
 
         [Fact]
         public void MinTxFee_OnBitcoinNetwork_IsBitcoinDefault()
         {
             ILoggerFactory loggerFactory = new LoggerFactory();
-            var nodeSettings = new NodeSettings(Network.TestNet);
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet);
             var policy = new LightWalletFixedFeePolicy(loggerFactory, nodeSettings);
-            Assert.Equal(new FeeRate(Network.TestNet.FallbackFee), policy.FallbackTxFeeRate);
+            Assert.Equal(new FeeRate(KnownNetworks.TestNet.FallbackFee), policy.FallbackTxFeeRate);
         }
     }
 }

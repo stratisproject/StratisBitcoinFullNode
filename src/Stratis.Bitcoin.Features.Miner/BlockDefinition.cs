@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Configures (resets) the builder to its default state 
+        /// Configures (resets) the builder to its default state
         /// before constructing a new block.
         /// </summary>
         private void Configure()
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <summary>
-        /// Constructs a block template which will be passed to consensus. 
+        /// Constructs a block template which will be passed to consensus.
         /// </summary>
         /// <param name="chainTip">Tip of the chain that this instance will work with without touching any shared chain resources.</param>
         /// <param name="scriptPubKey">Script that explains what conditions must be met to claim ownership of a coin.</param>

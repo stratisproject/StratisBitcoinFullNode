@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using NBitcoin;
 using NBitcoin.DataEncoders;
 
-namespace NBitcoin.Networks
+namespace Stratis.Bitcoin.Networks
 {
     public class BitcoinMain : Network
     {

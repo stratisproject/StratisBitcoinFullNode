@@ -160,7 +160,7 @@ namespace NBitcoin.BitcoinCore
                 // coinbase height
                 stream.ReadWriteAsVarInt(ref this.nHeight);
 
-                if (stream.ConsensusFactory.Consensus.IsProofOfStake)
+                if (stream.ConsensusFactory is PosConsensusFactory)
                 {
                     stream.ReadWrite(ref this.fCoinStake);
                     stream.ReadWrite(ref this.nTime);
@@ -215,7 +215,7 @@ namespace NBitcoin.BitcoinCore
                 //// coinbase height
                 stream.ReadWriteAsVarInt(ref this.nHeight);
 
-                if (stream.ConsensusFactory.Consensus.IsProofOfStake)
+                if (stream.ConsensusFactory is PosConsensusFactory)
                 {
                     stream.ReadWrite(ref this.fCoinStake);
                     stream.ReadWrite(ref this.nTime);

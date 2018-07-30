@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -44,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             var stack = new CoinViewStack(backedCoinView1);
 
-            List<CoinView> coinViews = stack.GetElements().ToList();
+            List<ICoinView> coinViews = stack.GetElements().ToList();
 
             Assert.Equal(3, coinViews.Count);
             Assert.True(coinViews[0] is BackedCoinView1);
@@ -60,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             var stack = new CoinViewStack(backedCoinView1);
 
-            List<CoinView> coinViews = stack.GetElements().ToList();
+            List<ICoinView> coinViews = stack.GetElements().ToList();
 
             Assert.Equal(2, coinViews.Count);
             Assert.True(coinViews[0] is BackedCoinView1);
@@ -109,81 +110,99 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             Assert.Null(coinView);
         }
 
-        private class NonBackedCoinView : CoinView
+        private class NonBackedCoinView : ICoinView
         {
             public NonBackedCoinView()
             {
             }
 
-            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
+            /// <inheritdoc />
+            public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
-            public override Task<uint256> Rewind()
+            public Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
-            public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+            public Task<uint256> Rewind()
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
             {
                 throw new NotImplementedException();
             }
         }
 
-        private class BackedCoinView1 : CoinView, IBackedCoinView
+        private class BackedCoinView1 : ICoinView, IBackedCoinView
         {
             private BackedCoinView2 inner;
 
-            public BackedCoinView1(BackedCoinView2 inner, int outputCount = 0) 
+            public BackedCoinView1(BackedCoinView2 inner, int outputCount = 0)
             {
                 this.inner = inner;
                 this.OutputCount = outputCount;
             }
 
             public int OutputCount { get; }
-            public CoinView Inner => this.inner;
+            public ICoinView Inner => this.inner;
 
-            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
+            /// <inheritdoc />
+            public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
-            public override Task<uint256> Rewind()
+            public Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
-            public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+            public Task<uint256> Rewind()
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
             {
                 throw new NotImplementedException();
             }
         }
 
-        private class BackedCoinView2 : CoinView, IBackedCoinView
+        private class BackedCoinView2 : ICoinView, IBackedCoinView
         {
             private NonBackedCoinView inner;
 
-            public BackedCoinView2(NonBackedCoinView inner, int outputCount = 0) 
+            public BackedCoinView2(NonBackedCoinView inner, int outputCount = 0)
             {
                 this.inner = inner;
                 this.OutputCount = outputCount;
             }
 
             public int OutputCount { get; }
-            public CoinView Inner => this.inner;
+            public ICoinView Inner => this.inner;
 
-            public override Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds)
+            /// <inheritdoc />
+            public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
-            public override Task<uint256> Rewind()
+            public Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
-            public override Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+            public Task<uint256> Rewind()
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
             {
                 throw new NotImplementedException();
             }
