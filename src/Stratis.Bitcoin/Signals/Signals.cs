@@ -68,6 +68,7 @@ namespace Stratis.Bitcoin.Signals
         public Signals(ISignaler<Block> blockConnectedSignaler, ISignaler<Block> blockDisonnectedSignaler, ISignaler<Transaction> transactionSignaler)
         {
             Guard.NotNull(blockConnectedSignaler, nameof(blockConnectedSignaler));
+            Guard.NotNull(blockDisonnectedSignaler, nameof(blockDisonnectedSignaler));
             Guard.NotNull(transactionSignaler, nameof(transactionSignaler));
 
             this.blocksConnected = blockConnectedSignaler;
