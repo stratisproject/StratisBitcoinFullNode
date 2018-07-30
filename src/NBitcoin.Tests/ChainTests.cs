@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -10,12 +11,12 @@ namespace NBitcoin.Tests
     public class ChainTests
     {
         readonly Network network;
-        readonly Network testNetwork;
+        readonly Network networkTest;
 
         public ChainTests()
         {
-            this.network = Networks.Main;
-            this.testNetwork = Networks.TestNet;
+            this.network = KnownNetworks.Main;
+            this.networkTest = KnownNetworks.TestNet;
         }
 
         [Fact]
@@ -72,7 +73,7 @@ namespace NBitcoin.Tests
             Assert.Equal(cchain.Tip, chain.Tip);
             Assert.NotNull(cchain.GetBlock(0));
 
-            cchain = new ConcurrentChain(this.testNetwork);
+            cchain = new ConcurrentChain(this.networkTest);
             cchain.Load(cchain.ToBytes());
             Assert.NotNull(cchain.GetBlock(0));
         }
@@ -177,7 +178,7 @@ namespace NBitcoin.Tests
             ChainedHeader tip = this.AppendBlock(chain);
 
             this.AssertFork(chain, chain2, chain.Genesis);
-            chain2 = new ConcurrentChain(this.testNetwork);
+            chain2 = new ConcurrentChain(this.networkTest);
             this.AssertFork(chain, chain2, null);
             chain2 = new ConcurrentChain(this.network);
             chain2.SetTip(fork);

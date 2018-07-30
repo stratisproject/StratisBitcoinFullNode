@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -66,7 +65,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .All(pi => pi.Address.MapToIpv6().ToString() != coreNode.Endpoint.MapToIpv6().ToString()));
 
                 tip = coreNode.FindBlock(10).Last();
-                coreNodeRpcClient.AddNode(stratisNode.Endpoint);
+                coreNodeRpcClient.AddNode(stratisNode.Endpoint, true);
                 TestHelper.WaitLoop(() => stratisNodeRpcClient.GetBestBlockHash() == coreNodeRpcClient.GetBestBlockHash());
                 bestBlockHash = stratisNodeRpcClient.GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
@@ -141,8 +140,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
-            // Temporary fix so the Network static initialize will not break.
-            Network m = Networks.Main;
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode stratisMiner = builder.CreateStratisPosNode();
@@ -227,8 +224,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void PullerVsMinerRaceCondition()
         {
-            // Temporary fix so the Network static initialize will not break.
-            Network m = Networks.Main;
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // This represents local node.

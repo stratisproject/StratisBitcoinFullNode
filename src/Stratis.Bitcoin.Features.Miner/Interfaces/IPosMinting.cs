@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Miner.Staking;
 
 namespace Stratis.Bitcoin.Features.Miner.Interfaces
 {
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// <param name="fees">Transaction fees from the transactions included in the block if we mine it.</param>
         /// <param name="coinstakeContext">Information about coinstake transaction and its private key that is to be filled when the kernel is found.</param>
         /// <returns><c>true</c> if the function succeeds, <c>false</c> otherwise.</returns>
-        Task<bool> CreateCoinstakeAsync(List<PosMinting.UtxoStakeDescription> utxoStakeDescriptions, Block block, ChainedHeader chainTip, long searchInterval, long fees, PosMinting.CoinstakeContext coinstakeContext);
+        Task<bool> CreateCoinstakeAsync(List<UtxoStakeDescription> utxoStakeDescriptions, Block block, ChainedHeader chainTip, long searchInterval, long fees, CoinstakeContext coinstakeContext);
 
         /// <summary>
         /// Attempts to stake new blocks in a loop.
@@ -30,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// </para>
         /// </summary>
         /// <param name="walletSecret">Credentials to the wallet with which will be used for staking.</param>
-        Task GenerateBlocksAsync(PosMinting.WalletSecret walletSecret, CancellationToken cancellationToken);
+        Task GenerateBlocksAsync(WalletSecret walletSecret, CancellationToken cancellationToken);
 
         /// <summary>
         /// Calculates staking difficulty for a specific block.
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// </summary>
         /// <param name="utxoStakeDescriptions">Description of coins in the wallet that will be used for staking.</param>
         /// <returns>Total balance from all UTXOs in the wallet that are mature.</returns>
-        Money GetMatureBalance(List<PosMinting.UtxoStakeDescription> utxoStakeDescriptions);
+        Money GetMatureBalance(List<UtxoStakeDescription> utxoStakeDescriptions);
 
         /// <summary>
         /// Estimates the total staking weight of the network.
@@ -77,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// Starts the main POS staking loop.
         /// </summary>
         /// <param name="walletSecret">Credentials to the wallet with which will be used for staking.</param>
-        void Stake(PosMinting.WalletSecret walletSecret);
+        void Stake(WalletSecret walletSecret);
 
         /// <summary>
         /// Stop the main POS staking loop.

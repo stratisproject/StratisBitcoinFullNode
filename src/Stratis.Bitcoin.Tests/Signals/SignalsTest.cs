@@ -1,37 +1,50 @@
 ﻿using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Signals
 {
     public class SignalsTest
     {
-        private readonly Mock<ISignaler<Block>> blockSignaler;
+        private readonly Mock<ISignaler<Block>> blockConnectedSignaler;
+        private readonly Mock<ISignaler<Block>> blockDisconnectedSignaler;
         private readonly Bitcoin.Signals.Signals signals;
         private readonly Mock<ISignaler<Transaction>> transactionSignaler;
 
         public SignalsTest()
         {
-            this.blockSignaler = new Mock<ISignaler<Block>>();
+            this.blockConnectedSignaler = new Mock<ISignaler<Block>>();
+            this.blockDisconnectedSignaler = new Mock<ISignaler<Block>>();
             this.transactionSignaler = new Mock<ISignaler<Transaction>>();
-            this.signals = new Bitcoin.Signals.Signals(this.blockSignaler.Object, this.transactionSignaler.Object);
+            this.signals = new Bitcoin.Signals.Signals(this.blockConnectedSignaler.Object, this.blockDisconnectedSignaler.Object, this.transactionSignaler.Object);
         }
 
         [Fact]
         public void SignalBlockBroadcastsToBlockSignaler()
         {
-            Block block = Networks.StratisMain.CreateBlock();
+            Block block = KnownNetworks.StratisMain.CreateBlock();
 
-            this.signals.SignalBlock(block);
+            this.signals.SignalBlockConnected(block);
 
-            this.blockSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));
+            this.blockConnectedSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));
+        }
+
+        [Fact]
+        public void SignalBlockDisconnectedToBlockSignaler()
+        {
+            Block block = KnownNetworks.StratisMain.CreateBlock();
+
+            this.signals.SignalBlockDisconnected(block);
+
+            this.blockDisconnectedSignaler.Verify(b => b.Broadcast(block), Times.Exactly(1));
         }
 
         [Fact]
         public void SignalTransactionBroadcastsToTransactionSignaler()
         {
-            Transaction transaction = Networks.StratisMain.CreateTransaction();
+            Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
 
             this.signals.SignalTransaction(transaction);
 
