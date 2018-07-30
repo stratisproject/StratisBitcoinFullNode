@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Tests.Signals
         [Fact]
         public void SignalBlockDisconnectedToBlockSignaler()
         {
-            Block block = Networks.StratisMain.CreateBlock();
+            Block block = KnownNetworks.StratisMain.CreateBlock();
 
             this.signals.SignalBlockDisconnected(block);
 
