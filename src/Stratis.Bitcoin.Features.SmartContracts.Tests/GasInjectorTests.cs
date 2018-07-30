@@ -253,5 +253,34 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Storage: 150
             Assert.Equal((Gas)1177, result.GasConsumed);
         }
+
+        [Fact]
+        public void TestGasInjector_ContractMethodWithRecursion_GasInjectionSucceeds()
+        {
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/Recursion.cs");
+            Assert.True(compilationResult.Success);
+
+            byte[] originalAssemblyBytes = compilationResult.Compilation;
+
+            var gasLimit = (Gas)500000;
+            var gasMeter = new GasMeter(gasLimit);
+            var internalTxExecutorFactory =
+                new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
+            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
+
+            var address = TestAddress.ToUint160(this.network);
+
+            var callData = new CallData(gasLimit, address, nameof(Recursion.DoRecursion));
+
+            var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
+
+            this.repository.SetCode(callData.ContractAddress, originalAssemblyBytes);
+            this.repository.SetContractType(callData.ContractAddress, nameof(Recursion));
+
+            var result = vm.ExecuteMethod(gasMeter, this.repository, callData, transactionContext);
+
+            Assert.Null(result.ExecutionException);
+            Assert.True(result.GasConsumed > 0);
+        }
     }
 }
