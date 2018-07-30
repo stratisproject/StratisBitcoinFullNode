@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -87,6 +88,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public Mock<IChainState> ChainStateMock = new Mock<IChainState>();
             public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
             public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(KnownNetworks.RegTest));
+            public Mock<ISignals> Signals = new Mock<ISignals>();
 
             private static int nonceValue;
 
@@ -104,7 +106,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     this.CheckpointsMock.Object,
                     this.ChainStateMock.Object,
                     this.FinalizedBlockMock.Object,
-                    this.ConsensusSettings);
+                    this.ConsensusSettings,
+                    this.Signals.Object);
             }
 
             internal Target ChangeDifficulty(ChainedHeader header, int difficultyAdjustmentDivisor)
