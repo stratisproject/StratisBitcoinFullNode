@@ -38,7 +38,7 @@ namespace City.Chain
         }
 
         /// <summary>
-        /// City.Chain daemon can be launched with options to specify coin and network, using the parameters -coin and -network. It defaults to City main network.
+        /// City.Chain daemon can be launched with options to specify coin and network, using the parameters -chain and -testnet. It defaults to City main network.
         /// </summary>
         /// <example>
         /// dotnet city.chain.dll -coin bitcoin -network regtest
@@ -50,24 +50,40 @@ namespace City.Chain
         {
             try
             {
-                var coinIndex = Array.IndexOf(args, "-coin");
-                var coinValue = (coinIndex > -1) ? args[coinIndex + 1] : "city";
+                // To avoid modifying Stratis source, we'll parse the arguments and set some hard-coded defaults for City Chain, like the ports.
+                var configReader = new TextFileConfiguration(args ?? new string[] { });
+                
+                var networkIdentifier = "main";
 
-                var networkIndex = Array.IndexOf(args, "-network");
-                var networkValue = (networkIndex > -1) ? args[networkIndex + 1] : "";
-
-                var network = GetNetwork(coinValue, networkValue);
-
-                if (network == null)
+                if (configReader.GetOrDefault<bool>("testnet", false))
                 {
-                    throw new ArgumentNullException($"The supplied coin ({coinValue}) and network ({networkValue}) parameters did not result in a valid network.");
+                    networkIdentifier = "testnet";
                 }
+                else if (configReader.GetOrDefault<bool>("regtest", false))
+                {
+                    networkIdentifier = "regtest";
+                }
+
+                // City Chain daemon supports multiple networks, supply the chain parameter to change it.
+                // Example: -chain=bitcoin
+                var chain = configReader.GetOrDefault<string>("chain", "city");
+
+                var networkConfiguration = new NetworkConfigurations().GetNetwork(networkIdentifier, chain);
+
+                if (networkConfiguration == null)
+                {
+                    throw new ArgumentException($"The supplied chain ({chain}) and network ({networkIdentifier}) parameters did not result in a valid network.");
+                }
+
+                var network = GetNetwork(networkConfiguration.Identifier, networkConfiguration.Chain);
 
                 if (args.Contains("-generate"))
                 {
                     GenerateAddressKeyPair(network);
                     return;
                 }
+
+                args = args.Append("-apiport=" + networkConfiguration.ApiPort).Append("-wsport=" + networkConfiguration.WsPort).ToArray();
 
                 var nodeSettings = new NodeSettings(
                     args: args,
@@ -99,15 +115,15 @@ namespace City.Chain
             }
         }
 
-        public static Network GetNetwork(string coin, string network)
+        public static Network GetNetwork(string network, string chain)
         {
-            if (coin == "city")
+            if (chain == "city")
             {
-                if (network == "")
+                if (network == "main")
                 {
                     return Networks.CityMain;
                 }
-                else if (network == "test")
+                else if (network == "testnet")
                 {
                     return Networks.CityTest;
                 }
@@ -116,13 +132,13 @@ namespace City.Chain
                     return Networks.CityRegTest;
                 }
             }
-            else if (coin == "bitcoin")
+            else if (chain == "bitcoin")
             {
-                if (network == "")
+                if (network == "main")
                 {
                     return Networks.Main;
                 }
-                else if (network == "test")
+                else if (network == "testnet")
                 {
                     return Networks.TestNet;
                 }
@@ -131,13 +147,13 @@ namespace City.Chain
                     return Networks.RegTest;
                 }
             }
-            else if (coin == "stratis")
+            else if (chain == "stratis")
             {
-                if (network == "")
+                if (network == "main")
                 {
                     return Networks.StratisMain;
                 }
-                else if (network == "test")
+                else if (network == "testnet")
                 {
                     return Networks.StratisTest;
                 }

@@ -135,7 +135,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "City.Chain", "City.Chain\Ci
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "City.Chain.DNS", "City.Chain.DNS\City.Chain.DNS.csproj", "{823DFC41-BE0F-43E0-91EE-3675BF3D1348}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "City.Chain.Tests", "City.Chain.Tests\City.Chain.Tests.csproj", "{575C08F7-C789-4604-AB76-A53D329AF236}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "City.Chain.Tests", "City.Chain.Tests\City.Chain.Tests.csproj", "{575C08F7-C789-4604-AB76-A53D329AF236}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "City", "City\City.csproj", "{FB0B01EE-0190-431B-B9E0-3E6653928BFB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -363,6 +365,10 @@ Global
 		{575C08F7-C789-4604-AB76-A53D329AF236}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{575C08F7-C789-4604-AB76-A53D329AF236}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{575C08F7-C789-4604-AB76-A53D329AF236}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB0B01EE-0190-431B-B9E0-3E6653928BFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB0B01EE-0190-431B-B9E0-3E6653928BFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB0B01EE-0190-431B-B9E0-3E6653928BFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB0B01EE-0190-431B-B9E0-3E6653928BFB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

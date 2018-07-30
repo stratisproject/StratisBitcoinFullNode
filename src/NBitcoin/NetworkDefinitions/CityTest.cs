@@ -82,10 +82,10 @@ namespace NBitcoin.NetworkDefinitions
             };
 
             string[] seedNodes = {
-                "10.0.0.122", // city-chain.org (node3)
-                "10.0.0.192", // citychain.foundation (node3)
-                "10.0.0.122", // City 1 Node #1
-                "10.0.0.192" // City 2 Node #1
+                "10.0.0.192:24333", // city-chain.org (node3)
+                "10.0.0.192:25333", // citychain.foundation (node3)
+                "10.0.0.192:26333", // City 1 Node #1
+                "10.0.0.192:27333" // City 2 Node #1
                 // As more cities are included in the City Chain, consider adding their official nodes to the seeds.
             };
             this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
