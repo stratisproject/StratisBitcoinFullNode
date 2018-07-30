@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             MempoolSettings.PrintHelp(network);
         }
-        
+
         /// <summary>
         /// Get the default configuration.
         /// </summary>
@@ -128,22 +128,21 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public override void Dispose()
         {
-            if (this.mempoolManager != null)
-            {
-                this.mempoolLogger.LogInformation("Saving Memory Pool...");
+            if (this.mempoolManager == null) return;
 
-                MemPoolSaveResult result = this.mempoolManager.SavePool();
-                if (result.Succeeded)
-                {
-                    this.mempoolLogger.LogInformation($"...Memory Pool Saved {result.TrxSaved} transactions");
-                }
-                else
-                {
-                    this.mempoolLogger.LogWarning("...Memory Pool Not Saved!");
-                }
+            this.mempoolLogger.LogInformation("Saving Memory Pool...");
+
+            MemPoolSaveResult result = this.mempoolManager.SavePool();
+            if (result.Succeeded)
+            {
+                this.mempoolLogger.LogInformation($"...Memory Pool Saved {result.TrxSaved} transactions");
+            }
+            else
+            {
+                this.mempoolLogger.LogWarning("...Memory Pool Not Saved!");
             }
 
-            this.mempoolSignaled?.Stop();
+            this.mempoolSignaled.Stop();
         }
     }
 
