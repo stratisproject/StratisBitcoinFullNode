@@ -725,31 +725,34 @@ namespace Stratis.Bitcoin.Features.Wallet
                     if (transactionData.BlockHeight != null)
                         confirmationCount = countFrom >= transactionData.BlockHeight ? countFrom - transactionData.BlockHeight : 0;
 
-                    if (confirmationCount >= confirmations)
+                    if (confirmationCount < confirmations)
+                        continue;
+
+                    bool isCoinBase = transactionData.IsCoinBase ?? false;
+                    bool isCoinStake = transactionData.IsCoinStake ?? false;
+
+                    if (includeImmature || (!isCoinBase && !isCoinStake))
                     {
-                        if (includeImmature || (!(transactionData.IsCoinBase ?? false) && !(transactionData.IsCoinStake ?? false)))
+                        // This output can unconditionally be included in the results.
+
+                        yield return new UnspentOutputReference
                         {
-                            // This output can unconditionally be included in the results.
+                            Account = this,
+                            Address = address,
+                            Transaction = transactionData
+                        };
+                    }
 
-                            yield return new UnspentOutputReference
-                            {
-                                Account = this,
-                                Address = address,
-                                Transaction = transactionData
-                            };
-                        }
+                    if (!includeImmature && (isCoinBase || isCoinStake) && (confirmationCount >= consensus.CoinbaseMaturity))
+                    {
+                        // This output is a CoinBase or CoinStake and has reached maturity.
 
-                        if (!includeImmature && ((transactionData.IsCoinBase ?? false) || (transactionData.IsCoinStake ?? false)) && (confirmationCount >= consensus.CoinbaseMaturity))
+                        yield return new UnspentOutputReference
                         {
-                            // This output is a CoinBase or CoinStake and has reached maturity.
-
-                            yield return new UnspentOutputReference
-                            {
-                                Account = this,
-                                Address = address,
-                                Transaction = transactionData
-                            };
-                        }
+                            Account = this,
+                            Address = address,
+                            Transaction = transactionData
+                        };
                     }
                 }
             }
