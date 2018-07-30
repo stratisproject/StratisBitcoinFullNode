@@ -34,9 +34,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
+            MinerSettings minerSettings,
             Network network,
             ContractStateRepositoryRoot stateRoot)
-            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
+            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.coinView = coinView;
             this.executorFactory = executorFactory;

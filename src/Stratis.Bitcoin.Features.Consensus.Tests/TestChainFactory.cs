@@ -191,9 +191,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private static BlockTemplate CreateBlockTemplate(TestChainContext testChainContext, Script scriptPubKey,
             TxMempool mempool, MempoolSchedulerLock mempoolLock)
         {
-            PowBlockDefinition blockAssembler = CreatePowBlockAssembler(testChainContext.Consensus, testChainContext.ConsensusRules,
+            PowBlockDefinition blockAssembler = new PowBlockDefinition(testChainContext.Consensus,
                 testChainContext.DateTimeProvider, testChainContext.LoggerFactory as LoggerFactory, mempool, mempoolLock,
-                testChainContext.Network);
+                new MinerSettings(testChainContext.NodeSettings), testChainContext.Network, testChainContext.ConsensusRules);
 
             BlockTemplate newBlock = blockAssembler.Build(testChainContext.Chain.Tip, scriptPubKey);
 
@@ -239,21 +239,5 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             Assert.NotNull(res);
         }
 
-        /// <summary>
-        /// Creates a proof of work block assembler.
-        /// </summary>
-        private static PowBlockDefinition CreatePowBlockAssembler(IConsensusManager consensusManager, IConsensusRuleEngine consensusRules, IDateTimeProvider dateTimeProvider, LoggerFactory loggerFactory, TxMempool mempool, MempoolSchedulerLock mempoolLock, Network network)
-        {
-            var options = new BlockDefinitionOptions
-            {
-                BlockMaxWeight = network.Consensus.Options.MaxBlockWeight,
-                BlockMaxSize = network.Consensus.Options.MaxBlockSerializedSize
-            };
-
-            var blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
-            options.BlockMinFeeRate = blockMinFeeRate;
-
-            return new PowBlockDefinition(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, consensusRules, options);
-        }
     }
 }

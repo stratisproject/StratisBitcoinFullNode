@@ -21,10 +21,11 @@ namespace Stratis.Bitcoin.Features.Miner
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
+            MinerSettings minerSettings,
             Network network,
             IConsensusRuleEngine consensusRules,
             BlockDefinitionOptions options = null)
-            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
+            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

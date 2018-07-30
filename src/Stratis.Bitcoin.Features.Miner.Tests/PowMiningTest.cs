@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly PowMiningTestFixture fixture;
         private readonly Mock<ITxMempool> mempool;
         private readonly MempoolSchedulerLock mempoolLock;
+        private readonly Mock<MinerSettings> minerSettings;
         private readonly Network network;
         private readonly Mock<INodeLifetime> nodeLifetime;
 
@@ -52,6 +53,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.mempool = new Mock<ITxMempool>();
             this.mempool.SetupGet(mp => mp.MapTx).Returns(new TxMempool.IndexedTransactionSet());
+
+            this.minerSettings = new Mock<MinerSettings>();
 
             this.chain = fixture.Chain;
 
@@ -407,6 +410,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     this.LoggerFactory.Object,
                     this.mempool.Object,
                     this.mempoolLock,
+                    this.minerSettings.Object,
                     this.network,
                     this.consensusRules.Object,
                     null);
