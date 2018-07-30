@@ -353,5 +353,50 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             return task.Result;
         }
+
+        [Fact]
+        public void Execute_NestedLoop_ExecutionSucceeds()
+        {
+            var transactionValue = (Money)100;
+
+            var executor = new ContractExecutor(this.loggerFactory,
+                this.serializer,
+                this.state,
+                this.refundProcessor,
+                this.transferProcessor,
+                this.network,
+                this.stateFactory,
+                this.stateProcessor,
+                this.contractPrimitiveSerializer);
+
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/NestedLoop.cs");
+            Assert.True(compilationResult.Success);
+            byte[] contractExecutionCode = compilationResult.Compilation;
+
+            var contractTxData = new ContractTxData(1, (Gas)1, (Gas)10000, contractExecutionCode);
+
+            var transaction = new Transaction();
+            TxOut txOut = transaction.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
+            txOut.Value = transactionValue;
+            var transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
+
+            IContractExecutionResult result = executor.Execute(transactionContext);
+            uint160 contractAddress = result.NewContractAddress;
+
+            object[] methodParameters = { (int)6 };
+            contractTxData = new ContractTxData(1, (Gas)1, (Gas)5000, contractAddress, nameof(NestedLoop.GetNumbers), methodParameters);
+
+            transaction = new Transaction();
+            txOut = transaction.AddOutput(0, new Script(this.serializer.Serialize( contractTxData)));
+            txOut.Value = transactionValue;
+            transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
+
+            result = executor.Execute(transactionContext);
+
+            Assert.NotNull(result);
+            Assert.Null(result.ErrorMessage);
+            Assert.NotNull(result.Return);
+            Assert.Equal("1; 1,2; 1,2,3; 1,2,3,4; 1,2,3,4,5; 1,2,3,4,5,6;", (string)result.Return);
+        }
     }
 }
