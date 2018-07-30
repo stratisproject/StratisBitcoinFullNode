@@ -18,6 +18,11 @@ namespace Stratis.Bitcoin.P2P
         internal const int AttemptThreshold = 5;
 
         /// <summary>
+        /// The maximum amount of times handshake can be attempted within a give time frame.
+        /// </summary>
+        internal const int AttemptHandshakeThreshold = 3;
+
+        /// <summary>
         /// The amount of hours we will wait before selecting an attempted peer again,
         /// if it hasn't yet reached the <see cref="AttemptThreshold"/> amount of attempts.
         /// </summary>
@@ -62,6 +67,14 @@ namespace Stratis.Bitcoin.P2P
         public int ConnectionAttempts { get; private set; }
 
         /// <summary>
+        /// The amount of handshake attempts.
+        /// <para>
+        /// This gets reset when a handshake was successful.</para>
+        /// </summary>
+        [JsonIgnore()]
+        public int HandshakedAttempts { get; private set; }
+
+        /// <summary>
         /// The last successful version handshake.
         /// <para>
         /// This is set when the connection attempt was successful and a handshake was done.
@@ -69,6 +82,21 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         [JsonProperty(PropertyName = "lastConnectionHandshake", NullValueHandling = NullValueHandling.Ignore)]
         public DateTimeOffset? LastConnectionHandshake { get; private set; }
+
+        /// <summary>
+        /// The last handshake attempt.
+        /// </summary>
+        [JsonProperty(PropertyName = "lastHandshakeAttempt", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTimeOffset? LastHandshakeAttempt { get; private set; }
+
+        /// <summary>
+        /// The last unsuccessful handshake attempt.
+        /// <para>
+        /// This is reset when a handshake is done.
+        /// </para>
+        /// </summary>
+        [JsonProperty(PropertyName = "lastHandshakeFailure", NullValueHandling = NullValueHandling.Ignore)]
+        public DateTimeOffset? LastHandshakeFailure { get; private set; }
 
         /// <summary>
         /// The last time this peer was seen.
@@ -226,7 +254,23 @@ namespace Stratis.Bitcoin.P2P
             this.LastConnectionSuccess = null;
             this.LastConnectionHandshake = null;
         }
+        
+        internal void SetHandshakeAttempted(DateTimeOffset peerAttemptedAt, bool handshakeSuccessful)
+        {
+            if (handshakeSuccessful)
+            {
+                this.HandshakedAttempts = 0;
+                this.LastHandshakeFailure = null;
+            }
+            else
+            {
+                this.HandshakedAttempts += 1;
+                this.LastHandshakeFailure = peerAttemptedAt;
+            }
 
+            this.LastHandshakeAttempt = peerAttemptedAt;
+        }
+        
         /// <summary>
         /// Sets the <see cref="LastConnectionSuccess"/>, <see cref="addressTime"/> and <see cref="NetworkAddress.Time"/> properties.
         /// <para>
@@ -252,6 +296,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Sets the <see cref="LastConnectionHandshake"/> date.</summary>
         internal void SetHandshaked(DateTimeOffset peerHandshakedAt)
         {
+            this.SetHandshakeAttempted(peerHandshakedAt, handshakeSuccessful: true);
             this.LastConnectionHandshake = peerHandshakedAt;
         }
 

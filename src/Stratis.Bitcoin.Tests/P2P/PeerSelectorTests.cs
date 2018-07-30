@@ -750,6 +750,81 @@ namespace Stratis.Bitcoin.Tests.P2P
             }
         }
 
+        /// <summary>
+        /// <para>
+        /// Tests we don't return connected peers that have failed multiple handshakes within a certain time frame.
+        /// </para><para>
+        /// Scenario:
+        /// Peer fails 1st handshake -> Returned.
+        /// Peer fails 2nd handshake -> Returned.
+        /// Peer fails 3rd handshake -> Not returned.
+        /// </para><para>
+        /// Peer fails handshake -> Returned ( > 1 hour later).
+        /// </para><para>
+        /// Peer succeeds handshake -> Returned and count resets ( > 1 hour later).
+        /// </para>
+        /// </summary>
+        [Fact]
+        public void PeerSelector_ReturnConnectedPeers_AfterHandshakeFailure_WithAttemptsRemaining()
+        {
+            var peersToAdd = new List<IPEndPoint>();
+
+            for (int i = 1; i <= 5; i++)
+            {
+                IPAddress ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peersToAdd.Add(new IPEndPoint(ipAddress, 80));
+            }
+
+            DataFolder peerFolder = CreateDataFolder(this);
+            PeerAddressManager peerAddressManager = this.CreatePeerAddressManager(peerFolder);
+            peerAddressManager.AddPeers(peersToAdd.ToArray(), IPAddress.Loopback);
+
+            for (int i = 1; i <= 5; i++)
+            {
+                IPAddress ipAddress = IPAddress.Parse(string.Format("::ffff:192.168.0.{0}", i));
+                peerAddressManager.PeerConnected(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
+            }
+
+            DateTime firstConnectionAttemptTime = DateTime.UtcNow.AddSeconds(-90);
+            DateTime firstHandshakeAttemptTime = DateTime.UtcNow.AddSeconds(-80);
+
+            foreach (PeerAddress peer in peerAddressManager.Peers)
+            {
+                int totalPeerCount = peerAddressManager.Peers.Count * 2; // 50% selected and we need all.
+
+                // Peer selected after one handshake failure.
+                peer.SetConnected(firstConnectionAttemptTime);
+                peer.SetHandshakeAttempted(firstHandshakeAttemptTime, false);
+                Assert.Equal(1, peer.HandshakedAttempts);
+                Assert.Contains(peer, peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(totalPeerCount));
+
+                // Peer selected after two handshake failures.
+                peer.SetConnected(firstConnectionAttemptTime);
+                peer.SetHandshakeAttempted(firstHandshakeAttemptTime, false);
+                Assert.Equal(2, peer.HandshakedAttempts);
+                Assert.Contains(peer, peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(totalPeerCount));
+
+                // Peer not selected after three handshake failures.
+                peer.SetConnected(firstConnectionAttemptTime);
+                peer.SetHandshakeAttempted(firstHandshakeAttemptTime, false);
+                Assert.Equal(3, peer.HandshakedAttempts);
+                Assert.DoesNotContain(peer, peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(totalPeerCount));
+
+                // Peer selected after handshake retry allowed when threshold time has elapsed.
+                peer.SetConnected(firstConnectionAttemptTime);
+                peer.SetHandshakeAttempted(firstHandshakeAttemptTime.AddMinutes(65), false);
+                Assert.Equal(4, peer.HandshakedAttempts);
+                Assert.Contains(peer, peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(totalPeerCount));
+
+                // Peer selected after handshake success and threshold time has elapsed.
+                peer.SetConnected(firstConnectionAttemptTime);
+                peer.SetHandshakeAttempted(firstHandshakeAttemptTime.AddHours(65), true);
+                Assert.Contains(peer, peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(totalPeerCount));
+                Assert.Equal(0, peer.HandshakedAttempts);
+                Assert.Null(peer.LastHandshakeFailure);
+            }
+        }
+        
         [Fact]
         public void PeerSelector_HasAllPeersReachedConnectionThreshold()
         {

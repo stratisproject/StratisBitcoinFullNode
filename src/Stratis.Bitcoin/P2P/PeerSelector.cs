@@ -272,6 +272,8 @@ namespace Stratis.Bitcoin.P2P
             //peers we have not yet connected to and/or that are fresh.
             if (connectedAndHandshaked.Any())
             {
+                connectedAndHandshaked = this.GetPeersNotBannedForBadHandShakes(connectedAndHandshaked).ToList();
+                
                 //50% of the peers to return
                 int toTake = peerCount / 2;
 
@@ -319,6 +321,12 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        public IEnumerable<PeerAddress> GetPeersNotBannedForBadHandShakes(IEnumerable<PeerAddress> peers)
+        {
+            return peers.Where(p => p.HandshakedAttempts < PeerAddress.AttemptHandshakeThreshold || 
+                                    p.LastHandshakeFailure > this.dateTimeProvider.GetUtcNow().AddHours(PeerAddress.AttempThresholdHours));
+        }
+
         public IEnumerable<PeerAddress> NotBanned()
         {
             return this.peerAddresses.Values.Where(p => !this.IsBanned(p));
