@@ -687,7 +687,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Equal(connectedNewHeadersResult.Consumed.HashBlock, chainedHeaderTree.GetPeerTipChainedHeaderByPeerId(4).HashBlock);
         }
 
-
         /// <summary>
         /// Issue 10 @ Create chained header tree component #1321
         /// When checkpoints are enabled and the only checkpoint is at block X,
@@ -3021,6 +3020,77 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.HeaderOnly);
                 chainedHeader = chainedHeader.Previous;
             }
+        }
+
+        /// <summary>
+        /// There are several checkpoints. Headers are presented with some of them.
+        /// Headers up to the last checkpointed one that was included in the presented headers should be marked for download.
+        /// </summary>
+        [Fact]
+        public void PresentHeadersMessageWithSeveralCheckpointedHeaders_MarkToDownloadFromStartToLastCheckpointedHeaderInMessage()
+        {
+            const int initialChainSize = 5;
+            const int presentHeadersCount = 2000;
+            const int totalHeadersCount = 5000;
+
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            ChainedHeader extendedChainTip = testContext.ExtendAChain(totalHeadersCount, initialChainTip);
+
+            List<BlockHeader> headers = testContext.ChainedHeaderToList(extendedChainTip, initialChainSize + totalHeadersCount);
+
+            List<BlockHeader> headersToPresent = headers.Take(presentHeadersCount).ToList();
+
+            // Setup checkpoints.
+            var checkpointsHeight = new List<int>() { 300, 800, 1400, 2300, 4500 };
+            var checkpoints = new List<CheckpointFixture>();
+            foreach (int checkpointHeight in checkpointsHeight)
+                checkpoints.Add(new CheckpointFixture(checkpointHeight, headers[checkpointHeight - 1]));
+
+            testContext.SetupCheckpoints(checkpoints.ToArray());
+
+            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, headersToPresent);
+
+            Assert.Equal(headersToPresent.Last().GetHash(), connectNewHeadersResult.Consumed.HashBlock);
+            Assert.Equal(headers[initialChainSize].GetHash(), connectNewHeadersResult.DownloadFrom.HashBlock);
+            Assert.Equal(headers[1400 - 1].GetHash(), connectNewHeadersResult.DownloadTo.HashBlock);
+        }
+
+        /// <summary>
+        /// There are several checkpoints. Headers are presented with several checkpointed headers in one message including last one.
+        /// </summary>
+        [Fact]
+        public void PresentHeadersMessageWithSeveralCheckpointsAndTheLastOne_MarkToDownloadFromStartToLastPresented()
+        {
+            const int initialChainSize = 5;
+            const int presentHeadersCount = 2000;
+            const int totalHeadersCount = 5000;
+
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            ChainedHeader initialChainTip = testContext.InitialChainTip;
+
+            ChainedHeader extendedChainTip = testContext.ExtendAChain(totalHeadersCount, initialChainTip);
+
+            List<BlockHeader> headers = testContext.ChainedHeaderToList(extendedChainTip, initialChainSize + totalHeadersCount);
+
+            List<BlockHeader> headersToPresent = headers.Take(presentHeadersCount).ToList();
+
+            // Setup checkpoints.
+            var checkpointsHeight = new List<int>() { 300, 800, 1400 };
+            var checkpoints = new List<CheckpointFixture>();
+            foreach (int checkpointHeight in checkpointsHeight)
+                checkpoints.Add(new CheckpointFixture(checkpointHeight, headers[checkpointHeight - 1]));
+
+            testContext.SetupCheckpoints(checkpoints.ToArray());
+
+            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, headersToPresent);
+
+            Assert.Equal(headersToPresent.Last().GetHash(), connectNewHeadersResult.Consumed.HashBlock);
+            Assert.Equal(headers[initialChainSize].GetHash(), connectNewHeadersResult.DownloadFrom.HashBlock);
+            Assert.Equal(headersToPresent.Last().GetHash(), connectNewHeadersResult.DownloadTo.HashBlock);
         }
     }
 }
