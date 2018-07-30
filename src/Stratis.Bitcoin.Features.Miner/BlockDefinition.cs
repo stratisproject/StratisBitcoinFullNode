@@ -81,9 +81,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         protected bool IncludeWitness;
 
-        // TODO: Reference parameters from this.Options instead.
-        protected uint BlockMaxWeight, BlockMaxSize;
-
         protected bool NeedSizeAccounting;
 
         protected FeeRate BlockMinFeeRate;
@@ -132,11 +129,9 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.Options = minerSettings.BlockDefinitionOptions;
             this.BlockMinFeeRate = this.Options.BlockMinFeeRate;
-            this.BlockMaxWeight = this.Options.BlockMaxWeight;
-            this.BlockMaxSize = this.Options.BlockMaxSize;
 
             // Whether we need to account for byte usage (in addition to weight usage).
-            this.NeedSizeAccounting = (this.BlockMaxSize < network.Consensus.Options.MaxBlockSerializedSize);
+            this.NeedSizeAccounting = (this.Options.BlockMaxSize < network.Consensus.Options.MaxBlockSerializedSize);
 
             this.Configure();
         }
@@ -438,7 +433,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                     nConsecutiveFailed++;
 
-                    if ((nConsecutiveFailed > MaxConsecutiveAddTransactionFailures) && (this.BlockWeight > this.BlockMaxWeight - 4000))
+                    if ((nConsecutiveFailed > MaxConsecutiveAddTransactionFailures) && (this.BlockWeight > this.Options.BlockMaxWeight - 4000))
                     {
                         // Give up if we're close to full and haven't succeeded in a while
                         break;
@@ -510,7 +505,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private bool TestPackage(long packageSize, long packageSigOpsCost)
         {
             // TODO: Switch to weight-based accounting for packages instead of vsize-based accounting.
-            if (this.BlockWeight + this.Network.Consensus.Options.WitnessScaleFactor * packageSize >= this.BlockMaxWeight)
+            if (this.BlockWeight + this.Network.Consensus.Options.WitnessScaleFactor * packageSize >= this.Options.BlockMaxWeight)
                 return false;
 
             if (this.BlockSigOpsCost + packageSigOpsCost >= this.Network.Consensus.Options.MaxBlockSigopsCost)
@@ -543,7 +538,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 {
                     long nPotentialBlockSize = this.BlockSize; // only used with needSizeAccounting
                     int nTxSize = it.Transaction.GetSerializedSize();
-                    if (nPotentialBlockSize + nTxSize >= this.BlockMaxSize)
+                    if (nPotentialBlockSize + nTxSize >= this.Options.BlockMaxSize)
                         return false;
 
                     nPotentialBlockSize += nTxSize;
