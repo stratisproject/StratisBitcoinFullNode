@@ -1,5 +1,6 @@
 ﻿using Stratis.SmartContracts;
 
+[Deploy]
 public class Auction : SmartContract
 {
     public Address Owner

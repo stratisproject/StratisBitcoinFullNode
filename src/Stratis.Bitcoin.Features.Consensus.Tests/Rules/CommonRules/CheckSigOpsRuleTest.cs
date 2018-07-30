@@ -8,11 +8,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class CheckSigOpsRuleTest : TestConsensusRulesUnitTestBase
     {
-        private PowConsensusOptions options;
+        private ConsensusOptions options;
 
         public CheckSigOpsRuleTest()
         {
-            this.options = this.network.Consensus.Option<PowConsensusOptions>();
+            this.options = this.network.Consensus.Options;
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
             this.ruleContext.Consensus = this.network.Consensus;
         }

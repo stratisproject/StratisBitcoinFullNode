@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
@@ -48,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private uint256 ComputeMerkleRoot(List<uint256> leaves, out bool mutated)
         {
-            Network.Main.Consensus.Options = new PosConsensusOptions();
+            KnownNetworks.Main.Consensus.Options = new PosConsensusOptions();
             return BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
         }
     }

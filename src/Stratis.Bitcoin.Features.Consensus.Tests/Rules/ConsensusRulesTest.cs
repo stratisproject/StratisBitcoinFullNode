@@ -51,12 +51,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.loggerFactory.Setup(l => l.CreateLogger(typeof(BlockSizeRule).FullName))
                 .Returns(new Mock<ILogger>().Object)
                 .Verifiable();
-            this.loggerFactory.Setup(l => l.CreateLogger(typeof(BlockHeaderRule).FullName))
+            this.loggerFactory.Setup(l => l.CreateLogger(typeof(SetActivationDeploymentsRule).FullName))
                 .Returns(new Mock<ILogger>().Object)
                 .Verifiable();
             this.ruleRegistrations = new List<ConsensusRule> {
                 new BlockSizeRule(),
-                new BlockHeaderRule()
+                new SetActivationDeploymentsRule()
             };
 
             TestConsensusRules consensusRules = InitializeConsensusRules();
@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public void TryFindRule_RuleNotFound_ReturnsNull()
         {
             this.ruleRegistrations = new List<ConsensusRule> {
-                new BlockHeaderRule()
+                new SetActivationDeploymentsRule()
             };
 
             TestConsensusRules consensusRules = this.InitializeConsensusRules();
@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             Assert.Throws<Exception>(() =>
             {
                 this.ruleRegistrations = new List<ConsensusRule> {
-                    new BlockHeaderRule()
+                    new SetActivationDeploymentsRule()
                 };
 
                 TestConsensusRules consensusRules = this.InitializeConsensusRules();
