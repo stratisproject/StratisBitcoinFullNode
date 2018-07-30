@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -271,7 +272,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.consensusLoop.Setup(c => c.BlockMined(It.IsAny<Block>())).Returns(Task.FromResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader)));
                 blockTemplate.Block.Header.Nonce = 0;
-                blockTemplate.Block.Header.Bits = Network.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
+                blockTemplate.Block.Header.Bits = KnownNetworks.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
 
                 this.chain.SetTip(this.chain.GetBlock(0));
 
@@ -493,7 +494,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PowMiningTestFixture()
         {
-            this.Network = Network.RegTest; // fast mining so use regtest
+            this.Network = KnownNetworks.RegTest; // fast mining so use regtest
             this.Chain = new ConcurrentChain(this.Network);
             this.Key = new Key();
             this.ReserveScript = new ReserveScript(this.Key.ScriptPubKey);

@@ -25,11 +25,14 @@ namespace Stratis.SmartContracts.Core.Validation
         {
             var errors = new List<ValidationResult>();
 
-            TypeDefinition contractType = moduleDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>");
+            IEnumerable<TypeDefinition> contractTypes = moduleDefinition.Types.Where(x => !TypesToIgnoreUtil.Ignore.Contains(x.FullName)).ToList();
 
-            foreach (ITypeDefinitionValidator typeDefValidator in TypeDefinitionValidators)
+            foreach(TypeDefinition contractType in contractTypes)
             {
-                errors.AddRange(typeDefValidator.Validate(contractType));
+                foreach (ITypeDefinitionValidator typeDefValidator in TypeDefinitionValidators)
+                {
+                    errors.AddRange(typeDefValidator.Validate(contractType));
+                }
             }
 
             return errors;

@@ -28,9 +28,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             return fullNode.NodeService<IConsensusManager>() as IConsensusManager;
         }
 
-        public static CoinView CoinView(this FullNode fullNode)
+        public static ICoinView CoinView(this FullNode fullNode)
         {
-            return fullNode.NodeService<CoinView>();
+            return fullNode.NodeService<ICoinView>();
         }
 
         public static MempoolManager MempoolManager(this FullNode fullNode)

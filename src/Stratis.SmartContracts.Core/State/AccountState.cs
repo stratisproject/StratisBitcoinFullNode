@@ -1,4 +1,5 @@
-﻿using Nethereum.RLP;
+﻿using System.Text;
+using Nethereum.RLP;
 
 namespace Stratis.SmartContracts.Core.State
 {
@@ -23,6 +24,11 @@ namespace Stratis.SmartContracts.Core.State
         /// </summary>
         public byte[] UnspentHash { get; set; }
 
+        /// <summary>
+        /// Name of the type to instantiate within the assembly.
+        /// </summary>
+        public string TypeName { get; set; }
+
         public AccountState() { }
 
         #region Serialization
@@ -34,6 +40,7 @@ namespace Stratis.SmartContracts.Core.State
             this.CodeHash = innerList[0].RLPData;
             this.StateRoot = innerList[1].RLPData;
             this.UnspentHash = innerList[2].RLPData;
+            this.TypeName = innerList[3].RLPData == null ? null : Encoding.UTF8.GetString(innerList[3].RLPData);
         }
 
         public byte[] ToBytes()
@@ -41,7 +48,8 @@ namespace Stratis.SmartContracts.Core.State
             return RLP.EncodeList(
                 RLP.EncodeElement(this.CodeHash ?? new byte[0]),
                 RLP.EncodeElement(this.StateRoot ?? new byte[0]),
-                RLP.EncodeElement(this.UnspentHash ?? new byte[0])
+                RLP.EncodeElement(this.UnspentHash ?? new byte[0]),
+                RLP.EncodeElement(this.TypeName == null ? new byte[0] : Encoding.UTF8.GetBytes(this.TypeName))
                 );
         }
 

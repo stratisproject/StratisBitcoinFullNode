@@ -11,21 +11,21 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     public class CoinViewStack
     {
         /// <summary>Coinview class at the top of the stack.</summary>
-        public CoinView Top { get; private set; }
+        public ICoinView Top { get; private set; }
 
         /// <summary>Coinview class at the bottom of the stack.</summary>
-        public CoinView Bottom { get; private set; }
+        public ICoinView Bottom { get; private set; }
 
         /// <summary>
         /// Initializes an instance of the stack using existing coinview.
         /// </summary>
         /// <param name="top">Coinview at the top of the stack.</param>
-        public CoinViewStack(CoinView top)
+        public CoinViewStack(ICoinView top)
         {
             Guard.NotNull(top, nameof(top));
 
             this.Top = top;
-            CoinView current = top;
+            ICoinView current = top;
             while (current is IBackedCoinView)
             {
                 current = ((IBackedCoinView)current).Inner;
@@ -37,9 +37,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Enumerates coinviews in the stack ordered from the top to the bottom.
         /// </summary>
         /// <returns>Enumeration of coin views in the stack ordered from the top to the bottom.</returns>
-        public IEnumerable<CoinView> GetElements()
+        public IEnumerable<ICoinView> GetElements()
         {
-            CoinView current = this.Top;
+            ICoinView current = this.Top;
             while (current is IBackedCoinView)
             {
                 yield return current;
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <returns>Coinview of the specific type from the stack or <c>null</c> if such a coinview is not in the stack.</returns>
         public T Find<T>()
         {
-            CoinView current = this.Top;
+            ICoinView current = this.Top;
             if (current is T)
                 return (T)(object)current;
 

@@ -17,12 +17,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     public class PowConsensusRuleEngine : ConsensusRuleEngine
     {
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
-        public CoinView UtxoSet { get; }
+        public ICoinView UtxoSet { get; }
 
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public PowConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, IChainState chainState)
+        public PowConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, chainState)
         {
             this.UtxoSet = utxoSet;
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override Task<uint256> GetBlockHashAsync()
         {
-            return this.UtxoSet.GetBlockHashAsync();
+            return this.UtxoSet.GetTipHashAsync();
         }
 
         /// <inheritdoc />

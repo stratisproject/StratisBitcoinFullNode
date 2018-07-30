@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Notifications.Controllers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -17,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
         public NotificationsControllerTest()
         {
-            this.network = Network.StratisMain;
+            this.network = KnownNetworks.StratisMain;
         }
 
         [Theory]

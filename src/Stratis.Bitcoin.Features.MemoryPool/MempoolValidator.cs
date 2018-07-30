@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly ConcurrentChain chain;
 
         /// <summary>Coin view of the memory pool.</summary>
-        private readonly CoinView coinView;
+        private readonly ICoinView coinView;
 
         /// <inheritdoc cref="IConsensusRuleEngine" />
         private readonly IConsensusRuleEngine consensusRules;
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
             ConcurrentChain chain,
-            CoinView coinView,
+            ICoinView coinView,
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
             IConsensusRuleEngine consensusRules)
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             catch (ConsensusErrorException consensusError)
             {
                 this.logger.LogTrace("{0}:'{1}' ErrorCode:'{2}',ErrorMessage:'{3}'", nameof(ConsensusErrorException), consensusError.Message, consensusError.ConsensusError?.Code, consensusError.ConsensusError?.Message);
-                state.Error = new MempoolError(consensusError.ConsensusError);                
+                state.Error = new MempoolError(consensusError.ConsensusError);
                 this.logger.LogTrace("(-)[CONSENSUS_EXCEPTION]:false");
                 return false;
             }

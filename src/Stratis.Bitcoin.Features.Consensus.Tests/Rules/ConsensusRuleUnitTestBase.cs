@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
@@ -90,14 +91,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IStakeChain> stakeChain;
         protected Mock<IStakeValidator> stakeValidator;
         protected Mock<IBlockPuller> lookaheadBlockPuller;
-        protected Mock<CoinView> coinView;
+        protected Mock<ICoinView> coinView;
 
-        public PosConsensusRuleUnitTestBase() : base(Network.StratisTest)
+        public PosConsensusRuleUnitTestBase() : base(KnownNetworks.StratisTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.lookaheadBlockPuller = new Mock<IBlockPuller>();
-            this.coinView = new Mock<CoinView>();
+            this.coinView = new Mock<ICoinView>();
         }
 
         protected T CreateRule<T>() where T : ConsensusRule, new()
@@ -196,7 +197,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
     public class TestConsensusRulesUnitTestBase : ConsensusRuleUnitTestBase<TestConsensusRules>
     {
-        public TestConsensusRulesUnitTestBase() : base(Network.TestNet)
+        public TestConsensusRulesUnitTestBase() : base(KnownNetworks.TestNet)
         {
             this.network.Consensus.Options = new ConsensusOptions();
             this.consensusRules = InitializeConsensusRules();
@@ -213,14 +214,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IStakeChain> stakeChain;
         protected Mock<IStakeValidator> stakeValidator;
         protected Mock<IBlockPuller> lookaheadBlockPuller;
-        protected Mock<CoinView> coinView;
+        protected Mock<ICoinView> coinView;
 
-        public TestPosConsensusRulesUnitTestBase() : base(Network.StratisTest)
+        public TestPosConsensusRulesUnitTestBase() : base(KnownNetworks.StratisTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.lookaheadBlockPuller = new Mock<IBlockPuller>();
-            this.coinView = new Mock<CoinView>();
+            this.coinView = new Mock<ICoinView>();
             this.consensusRules = InitializeConsensusRules();
         }
 

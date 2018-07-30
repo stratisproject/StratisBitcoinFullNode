@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus
     {
         private readonly DBreezeCoinView dBreezeCoinView;
 
-        private readonly CoinView coinView;
+        private readonly ICoinView coinView;
 
         private readonly IChainState chainState;
 
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public ConsensusFeature(
             DBreezeCoinView dBreezeCoinView,
             Network network,
-            CoinView coinView,
+            ICoinView coinView,
             IChainState chainState,
             IConnectionManager connectionManager,
             Signals.Signals signals,
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
 
-            this.signals.SubscribeForBlocks(this.consensusStats);
+            this.signals.SubscribeForBlocksConnected(this.consensusStats);
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ICheckpoints, Checkpoints>();
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
-                    services.AddSingleton<CoinView, CachedCoinView>();
+                    services.AddSingleton<ICoinView, CachedCoinView>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                         services.AddSingleton<ICheckpoints, Checkpoints>();
                         services.AddSingleton<DBreezeCoinView>();
-                        services.AddSingleton<CoinView, CachedCoinView>();
+                        services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
                         services.AddSingleton<ConsensusController>();
@@ -273,7 +273,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // rules that are inside the method ContextualCheckBlock
                     new TransactionLocktimeActivationRule(), // implements BIP113
                     new CoinbaseHeightActivationRule(), // implements BIP34
-                    new WitnessCommitmentsRule(), // BIP141, BIP144 
+                    new WitnessCommitmentsRule(), // BIP141, BIP144
                     new BlockSizeRule(),
 
                     new PosBlockContextRule(), // TODO: this rule needs to be implemented

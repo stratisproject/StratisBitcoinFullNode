@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
@@ -28,22 +27,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public sealed class SmartContractCarrier
     {
         /// <summary>The contract data provided with the transaction</summary>
-        public CallData CallData { get; set; }
-
-        /// <summary>The maximum cost (in satoshi) the contract can spend.</summary>
-        public ulong GasCostBudget
-        {
-            get
-            {
-                checked
-                {
-                    return this.CallData.GasPrice * this.CallData.GasLimit;
-                }
-            }
-        }
-
-        /// <summary>The size of the bytes (int) we take to determine the length of the subsequent byte array.</summary>
-        private const int intLength = sizeof(int);
+        public ContractTxData ContractTxData { get; set; }
 
         /// <summary>The method parameters that will be passed to the <see cref="MethodName"/> when the contract is executed.</summary>
         public object[] MethodParameters { get; private set; }
@@ -80,10 +64,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var serializer = new MethodParameterSerializer();
             string methodParams = GetMethodParams(serializer, methodParameters);
 
-            var callData = new CallData((byte) ScOpcodeType.OP_CREATECONTRACT, vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParams);
+            var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParams);
 
             var carrier = new SmartContractCarrier(new MethodParameterSerializer());
-            carrier.CallData = callData;
+            carrier.ContractTxData = callData;
 
             if (!string.IsNullOrWhiteSpace(methodParams))
                 carrier.MethodParameters = serializer.ToObjects(methodParams);
@@ -101,7 +85,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var serializer = new MethodParameterSerializer();
             string methodParams = GetMethodParams(serializer, methodParameters);
             var carrier = new SmartContractCarrier(new MethodParameterSerializer());
-            carrier.CallData = new CallData((byte)ScOpcodeType.OP_CALLCONTRACT, vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParams);
+            carrier.ContractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParams);
             
             if (!string.IsNullOrWhiteSpace(methodParams))
                 carrier.MethodParameters = serializer.ToObjects(methodParams);
@@ -125,24 +109,24 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             var bytes = new List<byte>
             {
-                this.CallData.OpCodeType
+                this.ContractTxData.OpCodeType
             };
 
-            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.CallData.VmVersion)));
-            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.CallData.GasPrice)));
-            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.CallData.GasLimit)));
+            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.ContractTxData.VmVersion)));
+            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.ContractTxData.GasPrice)));
+            bytes.AddRange(this.PrefixLength(BitConverter.GetBytes(this.ContractTxData.GasLimit)));
 
-            if (this.CallData.OpCodeType == (byte) ScOpcodeType.OP_CALLCONTRACT)
+            if (this.ContractTxData.OpCodeType == (byte) ScOpcodeType.OP_CALLCONTRACT)
             {
-                bytes.AddRange(this.PrefixLength(this.CallData.ContractAddress.ToBytes()));
-                bytes.AddRange(this.PrefixLength(Encoding.UTF8.GetBytes(this.CallData.MethodName)));
+                bytes.AddRange(this.PrefixLength(this.ContractTxData.ContractAddress.ToBytes()));
+                bytes.AddRange(this.PrefixLength(Encoding.UTF8.GetBytes(this.ContractTxData.MethodName)));
             }
 
-            if (this.CallData.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT)
-                bytes.AddRange(this.PrefixLength(this.CallData.ContractExecutionCode));
+            if (this.ContractTxData.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT)
+                bytes.AddRange(this.PrefixLength(this.ContractTxData.ContractExecutionCode));
 
-            if (!string.IsNullOrWhiteSpace(this.CallData.MethodParameters) && this.MethodParameters.Length > 0)
-                bytes.AddRange(this.PrefixLength(this.serializer.ToBytes(this.CallData.MethodParameters)));
+            if (!string.IsNullOrWhiteSpace(this.ContractTxData.MethodParametersRaw) && this.MethodParameters.Length > 0)
+                bytes.AddRange(this.PrefixLength(this.serializer.ToBytes(this.ContractTxData.MethodParametersRaw)));
             else
                 bytes.AddRange(BitConverter.GetBytes(0));
 
@@ -158,110 +142,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             prefixedBytes.AddRange(BitConverter.GetBytes(toPrefix.Length));
             prefixedBytes.AddRange(toPrefix);
             return prefixedBytes.ToArray();
-        }
-
-        /// <summary>
-        /// Deserializes the smart contract transaction with zeroed-out contextual information.
-        /// </summary>
-        /// <param name="transaction"></param>
-        /// <returns></returns>
-        public static SmartContractCarrier Deserialize(Transaction transaction)
-        {
-            return Deserialize(new SmartContractTransactionContext(0, 0, 0, 0, transaction));
-        }
-
-        /// <summary> 
-        /// Deserializes the smart contract execution code and other related information.
-        /// </summary>
-        public static SmartContractCarrier Deserialize(ISmartContractTransactionContext transactionContext)
-        {
-            var byteCursor = 0;
-            var takeLength = 0;
-
-            var callData = Deserialize(transactionContext.ScriptPubKey);           
-
-            var carrier = new SmartContractCarrier(new MethodParameterSerializer());
-
-            carrier.CallData = callData;
-            carrier.Nvout = transactionContext.Nvout;
-            carrier.Sender = transactionContext.Sender;
-            carrier.TransactionHash = transactionContext.TransactionHash;
-            carrier.Value = transactionContext.TxOutValue;
-
-            if (!string.IsNullOrWhiteSpace(callData.MethodParameters))
-                carrier.MethodParameters = carrier.serializer.ToObjects(callData.MethodParameters);
-
-            return carrier;
-        }
-
-        public static CallData Deserialize(Script script)
-        {
-            var byteCursor = 1;
-            var takeLength = 0;
-            byte[] smartContractBytes = script.ToBytes();
-
-            var type = smartContractBytes[0];
-
-            var vmVersion = Deserialize<int>(smartContractBytes, ref byteCursor, ref takeLength);
-            var gasPrice = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
-            var gasLimit = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
-
-            if (type == (byte)ScOpcodeType.OP_CALLCONTRACT)
-            {
-                var contractAddress = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
-                var methodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
-                var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
-                return new CallData(type, vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw);
-            }
-
-            if (type == (byte) ScOpcodeType.OP_CREATECONTRACT)
-            {
-                var contractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
-                var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
-                return new CallData(type, vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw);
-            }
-
-            // TODO Return a DeserializationResult and handle in executor
-            throw new InvalidOperationException("Invalid opcode type");
-        }
-
-        private static T Deserialize<T>(byte[] smartContractBytes, ref int byteCursor, ref int takeLength)
-        {
-            takeLength = BitConverter.ToInt16(smartContractBytes.Skip(byteCursor).Take(intLength).ToArray(), 0);
-            byteCursor += intLength;
-
-            if (takeLength == 0)
-                return default(T);
-
-            object result = null;
-
-            if (typeof(T) == typeof(bool))
-                result = BitConverter.ToBoolean(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
-
-            if (typeof(T) == typeof(byte[]))
-                result = smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray();
-
-            if (typeof(T) == typeof(int))
-                result = BitConverter.ToInt32(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
-
-            if (typeof(T) == typeof(short))
-                result = BitConverter.ToInt16(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
-
-            if (typeof(T) == typeof(string))
-                result = Encoding.UTF8.GetString(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray());
-
-            if (typeof(T) == typeof(uint))
-                result = BitConverter.ToUInt32(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
-
-            if (typeof(T) == typeof(uint160))
-                result = new uint160(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray());
-
-            if (typeof(T) == typeof(ulong))
-                result = BitConverter.ToUInt64(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
-
-            byteCursor += takeLength;
-
-            return (T)result;
         }
     }
 
