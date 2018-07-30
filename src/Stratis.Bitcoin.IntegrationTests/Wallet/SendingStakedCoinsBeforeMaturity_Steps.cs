@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.proofOfStakeSteps.GenerateCoins();
 
             this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.WalletManager()
-                .GetSpendableTransactionsInWallet(this.proofOfStakeSteps.PremineWallet)
+                .GetSpendableTransactionsInWallet(this.proofOfStakeSteps.PremineWallet, includeImmature: true)
                 .Sum(utxo => utxo.Transaction.Amount)
                 .Should().BeGreaterThan(Money.Coins(OneMillion));
 
@@ -59,19 +59,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             this.the_wallet_history_does_not_include_the_transaction();
 
-            IActionResult sendTransactionResult = this.SendTransaction(this.BuildTransaction());
+            IActionResult buildTransactionResult = this.BuildTransaction();
 
-            sendTransactionResult.Should().BeOfType<ErrorResult>();
+            buildTransactionResult.Should().BeOfType<ErrorResult>();
 
-            if (!(sendTransactionResult is ErrorResult))
+            if (!(buildTransactionResult is ErrorResult))
                 return;
 
-            var error = sendTransactionResult as ErrorResult;
+            var error = buildTransactionResult as ErrorResult;
             error.StatusCode.Should().Be(400);
 
             var errorResponse = error.Value as ErrorResponse;
             errorResponse?.Errors.Count.Should().Be(1);
-            errorResponse?.Errors[0].Message.Should().Be(ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Message);
+            errorResponse?.Errors[0].Message.Should().Be("Not enough funds.");
+
+            IActionResult sendTransactionResult = this.SendTransaction(buildTransactionResult);
+            sendTransactionResult.Should().BeNull();
         }
 
         private IActionResult SendTransaction(IActionResult transactionResult)

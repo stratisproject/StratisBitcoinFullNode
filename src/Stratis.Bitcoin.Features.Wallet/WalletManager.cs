@@ -749,7 +749,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0, bool includeImmature = false)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletName), walletName, nameof(confirmations), confirmations);
@@ -758,7 +758,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             UnspentOutputReference[] res = null;
             lock (this.lockObject)
             {
-                res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations).ToArray();
+                res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations, includeImmature).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", res.Count());

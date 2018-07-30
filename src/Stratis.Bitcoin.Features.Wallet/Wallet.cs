@@ -273,12 +273,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="currentChainHeight">Height of the current chain, used in calculating the number of confirmations.</param>
         /// <param name="confirmations">The number of confirmations required to consider a transaction spendable.</param>
         /// <returns>A collection of spendable outputs.</returns>
-        public IEnumerable<UnspentOutputReference> GetAllSpendableTransactions(CoinType coinType, int currentChainHeight, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetAllSpendableTransactions(CoinType coinType, int currentChainHeight, int confirmations = 0, bool includeImmature = false)
         {
             IEnumerable<HdAccount> accounts = this.GetAccountsByCoinType(coinType);
 
-            return accounts
-                .SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network.Consensus, confirmations));
+            return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network.Consensus, confirmations, includeImmature));
         }
     }
 

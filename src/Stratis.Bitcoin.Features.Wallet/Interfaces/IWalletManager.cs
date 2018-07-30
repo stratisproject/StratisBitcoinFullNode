@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Lists all spendable transactions from all accounts in the wallet.
         /// </summary>
         /// <returns>A collection of spendable outputs</returns>
-        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0);
+        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0, bool includeImmature = false);
 
         /// <summary>
         /// Lists all spendable transactions from the account specified in <see cref="WalletAccountReference"/>.
