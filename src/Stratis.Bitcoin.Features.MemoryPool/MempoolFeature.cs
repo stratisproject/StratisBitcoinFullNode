@@ -128,8 +128,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public override void Dispose()
         {
-            if (this.mempoolManager == null) return;
-
             this.mempoolLogger.LogInformation("Saving Memory Pool...");
 
             MemPoolSaveResult result = this.mempoolManager.SavePool();
