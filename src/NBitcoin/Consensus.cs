@@ -43,18 +43,12 @@ namespace NBitcoin
             this.MaxReorgLength = consensus.MaxReorgLength;
             this.MaxMoney = consensus.MaxMoney;
             this.Options = consensus.Options;
-            this.BuriedDeployments[NBitcoin.BuriedDeployments.BIP34] =
-                consensus.BuriedDeployments[NBitcoin.BuriedDeployments.BIP34];
-            this.BuriedDeployments[NBitcoin.BuriedDeployments.BIP65] =
-                consensus.BuriedDeployments[NBitcoin.BuriedDeployments.BIP65];
-            this.BuriedDeployments[NBitcoin.BuriedDeployments.BIP66] =
-                consensus.BuriedDeployments[NBitcoin.BuriedDeployments.BIP66];
-            this.BIP9Deployments[NBitcoin.BIP9Deployments.CSV] =
-                consensus.BIP9Deployments[NBitcoin.BIP9Deployments.CSV];
-            this.BIP9Deployments[NBitcoin.BIP9Deployments.Segwit] =
-                consensus.BIP9Deployments[NBitcoin.BIP9Deployments.Segwit];
-            this.BIP9Deployments[NBitcoin.BIP9Deployments.TestDummy] =
-                consensus.BIP9Deployments[NBitcoin.BIP9Deployments.TestDummy];
+            this.BuriedDeployments[NBitcoin.BuriedDeployments.BIP34] = consensus.BuriedDeployments[NBitcoin.BuriedDeployments.BIP34];
+            this.BuriedDeployments[NBitcoin.BuriedDeployments.BIP65] = consensus.BuriedDeployments[NBitcoin.BuriedDeployments.BIP65];
+            this.BuriedDeployments[NBitcoin.BuriedDeployments.BIP66] = consensus.BuriedDeployments[NBitcoin.BuriedDeployments.BIP66];
+            this.BIP9Deployments[NBitcoin.BIP9Deployments.CSV] = consensus.BIP9Deployments[NBitcoin.BIP9Deployments.CSV];
+            this.BIP9Deployments[NBitcoin.BIP9Deployments.Segwit] = consensus.BIP9Deployments[NBitcoin.BIP9Deployments.Segwit];
+            this.BIP9Deployments[NBitcoin.BIP9Deployments.TestDummy] = consensus.BIP9Deployments[NBitcoin.BIP9Deployments.TestDummy];
             this.SubsidyHalvingInterval = consensus.SubsidyHalvingInterval;
             this.MajorityEnforceBlockUpgrade = consensus.MajorityEnforceBlockUpgrade;
             this.MajorityRejectBlockOutdated = consensus.MajorityRejectBlockOutdated;
