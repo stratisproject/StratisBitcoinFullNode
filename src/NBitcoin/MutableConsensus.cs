@@ -15,18 +15,25 @@ namespace NBitcoin
             this.BIP9Deployments = new BIP9DeploymentsArray();
         }
 
+        /// <inheritdoc />
         public long CoinbaseMaturity { get; set; }
 
+        /// <inheritdoc />
         public Money PremineReward { get; set; }
 
+        /// <inheritdoc />
         public long PremineHeight { get; set; }
 
+        /// <inheritdoc />
         public Money ProofOfWorkReward { get; set; }
 
+        /// <inheritdoc />
         public Money ProofOfStakeReward { get; set; }
 
+        /// <inheritdoc />
         public uint MaxReorgLength { get; set; }
 
+        /// <inheritdoc />
         public long MaxMoney { get; set; }
 
         public ConsensusOptions Options { get; set; }
@@ -57,24 +64,30 @@ namespace NBitcoin
 
         public uint256 HashGenesisBlock { get; set; }
 
+        /// <inheritdoc />
         public uint256 MinimumChainWork { get; set; }
 
         public int MinerConfirmationWindow { get; set; }
 
         public int RuleChangeActivationThreshold { get; set; }
 
+        /// <inheritdoc />
         public int CoinType { get; set; }
 
         public BigInteger ProofOfStakeLimit { get; set; }
 
         public BigInteger ProofOfStakeLimitV2 { get; set; }
 
+        /// <inheritdoc />
         public int LastPOWBlock { get; set; }
 
+        /// <inheritdoc />
         public bool IsProofOfStake { get; set; }
 
+        /// <inheritdoc />
         public uint256 DefaultAssumeValid { get; set; }
 
+        /// <inheritdoc />
         public ConsensusFactory ConsensusFactory { get; set; }
     }
 }
