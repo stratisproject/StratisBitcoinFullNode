@@ -5,7 +5,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
     /// Options object to be passed to <see cref="WalletTransactionHandler"/>.
-    /// TODO: Order semantically / alphabetical
+    /// TODO: Order semantically / alphabetical.
+    /// TODO: Make immutable
     /// </summary>
     public class TransactionBuildOptions
     {
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         // required
         public List<Recipient> Recipients { get; set; }
 
-        // required
+        // required except for estimating
         public string WalletPassword { get; set; }
 
         public string OpReturnData { get; set; }

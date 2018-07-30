@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletFeePolicy>().Object, this.network, this.standardTransactionPolicy);
 
-                Transaction result = walletTransactionHandler.BuildTransaction(CreateOptions(this.network, new WalletAccountReference(), "password", new Script(), Money.Zero, FeeType.Medium, 2));
+                Transaction result = walletTransactionHandler.BuildTransaction(CreateOptions(new WalletAccountReference(), "password", new Script(), Money.Zero, FeeType.Medium, 2));
             });
         }
 
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     WalletName = "myWallet1"
                 };
 
-                walletTransactionHandler.BuildTransaction(CreateOptions(this.network, walletReference, "password", new Script(), new Money(500), FeeType.Medium, 2));
+                walletTransactionHandler.BuildTransaction(CreateOptions(walletReference, "password", new Script(), new Money(500), FeeType.Medium, 2));
             });
         }
 
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     WalletName = "myWallet1"
                 };
 
-                walletTransactionHandler.BuildTransaction(CreateOptions(this.network, walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0));
+                walletTransactionHandler.BuildTransaction(CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0));
             });
         }
 
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
 
-            TransactionBuildOptions options = CreateOptions(this.network, walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
+            TransactionBuildOptions options = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
             Transaction transactionResult = walletTransactionHandler.BuildTransaction(options);
 
             Transaction result = this.network.CreateTransaction(transactionResult.ToHex());
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             string opReturnData = "";
 
-            TransactionBuildOptions options = CreateOptions(this.network, walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, opReturnData);
+            TransactionBuildOptions options = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, opReturnData);
             Transaction transactionResult = walletTransactionHandler.BuildTransaction(options);
 
             transactionResult.Outputs.Where(o => o.ScriptPubKey.IsUnspendable).Should()
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             string opReturnData = null;
 
-            TransactionBuildOptions options = CreateOptions(this.network, walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, opReturnData);
+            TransactionBuildOptions options = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, opReturnData);
             Transaction transactionResult = walletTransactionHandler.BuildTransaction(options);
 
             transactionResult.Outputs.Where(o => o.ScriptPubKey.IsUnspendable).Should()
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string opReturnData = "some extra transaction info";
             byte[] expectedBytes = Encoding.UTF8.GetBytes(opReturnData);
 
-            TransactionBuildOptions options = CreateOptions(this.network, walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, opReturnData);
+            TransactionBuildOptions options = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, opReturnData);
             Transaction transactionResult = walletTransactionHandler.BuildTransaction(options);
 
             IEnumerable<TxOut> unspendableOutputs = transactionResult.Outputs.Where(o => o.ScriptPubKey.IsUnspendable).ToList();
@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             byte[] eightyOneBytes = Encoding.UTF8.GetBytes(this.CostlyOpReturnData).Concat(Convert.ToByte(1));
             string tooLongOpReturnString = Encoding.UTF8.GetString(eightyOneBytes);
 
-            TransactionBuildOptions options = CreateOptions(this.network, walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, tooLongOpReturnString);
+            TransactionBuildOptions options = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, tooLongOpReturnString);
             new Action(() => walletTransactionHandler.BuildTransaction(options))
                 .Should().Throw<ArgumentOutOfRangeException>()
                 .And.Message.Should().Contain(" maximum size of 83");
@@ -570,11 +570,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
 
             // Context to build requires password in order to sign transaction.
-            TransactionBuildOptions buildOptions = CreateOptions(this.network, walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
+            TransactionBuildOptions buildOptions = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
             walletTransactionHandler.BuildTransaction(buildOptions);
 
             // Context for estimate does not need password.
-            TransactionBuildOptions estimateOptions = CreateOptions(this.network, walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
+            TransactionBuildOptions estimateOptions = CreateOptions(walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
             Money fee = walletTransactionHandler.EstimateFee(estimateOptions);
 
             Assert.Equal(fee, buildOptions.TransactionFee);
@@ -591,14 +591,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
 
             // Context to build requires password in order to sign transaction.
-            TransactionBuildContext buildContext = CreateOptions(this.network, walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
-            walletTransactionHandler.BuildTransaction(buildContext);
+            TransactionBuildOptions buildOptions = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            walletTransactionHandler.BuildTransaction(buildOptions);
 
             // Context for estimate does not need password.
-            TransactionBuildContext estimateContext = CreateOptions(this.network, walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
-            Money feeEstimate = walletTransactionHandler.EstimateFee(estimateContext);
+            TransactionBuildOptions estimateOptions = CreateOptions(walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            Money feeEstimate = walletTransactionHandler.EstimateFee(estimateOptions);
 
-            feeEstimate.Should().Be(buildContext.TransactionFee);
+            feeEstimate.Should().Be(buildOptions.TransactionFee);
         }
 
         /// <summary>
@@ -610,11 +610,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
 
             // Context with OpReturnData
-            TransactionBuildContext estimateContextWithOpReturn = CreateOptions(this.network, walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            TransactionBuildOptions estimateContextWithOpReturn = CreateOptions(walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
             Money feeEstimateWithOpReturn = walletTransactionHandler.EstimateFee(estimateContextWithOpReturn);
 
             // Context without OpReturnData
-            TransactionBuildContext estimateContextWithoutOpReturn = CreateOptions(this.network, walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, null);
+            TransactionBuildOptions estimateContextWithoutOpReturn = CreateOptions(walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, null);
             Money feeEstimateWithoutOpReturn = walletTransactionHandler.EstimateFee(estimateContextWithoutOpReturn);
 
             feeEstimateWithOpReturn.Should().NotBe(feeEstimateWithoutOpReturn);
@@ -630,11 +630,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
 
             // Context with OpReturnData
-            TransactionBuildContext contextWithOpReturn = CreateOptions(this.network, walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            TransactionBuildOptions contextWithOpReturn = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
             walletTransactionHandler.BuildTransaction(contextWithOpReturn);
 
             // Context without OpReturnData
-            TransactionBuildContext contextWithoutOpReturn = CreateOptions(this.network, walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, null);
+            TransactionBuildOptions contextWithoutOpReturn = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, null);
             walletTransactionHandler.BuildTransaction(contextWithoutOpReturn);
 
             contextWithoutOpReturn.TransactionFee.Should().NotBe(contextWithOpReturn.TransactionFee);
@@ -642,7 +642,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
 
-        public static TransactionBuildOptions CreateOptions(Network network, WalletAccountReference accountReference, string password,
+        public static TransactionBuildOptions CreateOptions(WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations, string opReturnData = null)
         {
             return new TransactionBuildOptions(accountReference, password, new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList())

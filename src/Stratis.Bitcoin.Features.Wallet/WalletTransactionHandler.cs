@@ -71,74 +71,72 @@ namespace Stratis.Bitcoin.Features.Wallet
             throw new NotImplementedException();
         }
 
-        ///// <inheritdoc />
-        //public Transaction BuildTransaction(TransactionBuildContext context)
-        //{
-        //    this.InitializeTransactionBuilder(context);
+        private Transaction BuildTransaction(TransactionBuildContext context)
+        {
+            this.InitializeTransactionBuilder(context);
 
-        //    if (context.Shuffle)
-        //        context.TransactionBuilder.Shuffle();
+            if (context.Shuffle)
+                context.TransactionBuilder.Shuffle();
 
-        //    context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
+            context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
 
-        //    if (context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
-        //        return context.Transaction;
+            if (context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
+                return context.Transaction;
 
-        //    string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
-        //    this.logger.LogError($"Build transaction failed: {errorsMessage}");
-        //    throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
-        //}
+            string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
+            this.logger.LogError($"Build transaction failed: {errorsMessage}");
+            throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
+        }
 
-        ///// <inheritdoc />
-        //public void FundTransaction(TransactionBuildContext context, Transaction transaction)
-        //{
-        //    if (context.Recipients.Any())
-        //        throw new WalletException("Adding outputs is not allowed.");
+        private void FundTransaction(TransactionBuildContext context, Transaction transaction)
+        {
+            if (context.Recipients.Any())
+                throw new WalletException("Adding outputs is not allowed.");
 
-        //    // Turn the txout set into a Recipient array
-        //    context.Recipients.AddRange(transaction.Outputs
-        //        .Select(s => new Recipient
-        //        {
-        //            ScriptPubKey = s.ScriptPubKey,
-        //            Amount = s.Value,
-        //            SubtractFeeFromAmount = false // default for now
-        //        }));
+            // Turn the txout set into a Recipient array
+            context.Recipients.AddRange(transaction.Outputs
+                .Select(s => new Recipient
+                {
+                    ScriptPubKey = s.ScriptPubKey,
+                    Amount = s.Value,
+                    SubtractFeeFromAmount = false // default for now
+                }));
 
-        //    context.AllowOtherInputs = true;
+            context.AllowOtherInputs = true;
 
-        //    foreach (TxIn transactionInput in transaction.Inputs)
-        //        context.SelectedInputs.Add(transactionInput.PrevOut);
+            foreach (TxIn transactionInput in transaction.Inputs)
+                context.SelectedInputs.Add(transactionInput.PrevOut);
 
-        //    Transaction newTransaction = this.BuildTransaction(context);
+            Transaction newTransaction = this.BuildTransaction(context);
 
-        //    if (context.ChangeAddress != null)
-        //    {
-        //        // find the position of the change and move it over.
-        //        int index = 0;
-        //        foreach (TxOut newTransactionOutput in newTransaction.Outputs)
-        //        {
-        //            if (newTransactionOutput.ScriptPubKey == context.ChangeAddress.ScriptPubKey)
-        //            {
-        //                transaction.Outputs.Insert(index, newTransactionOutput);
-        //            }
+            if (context.ChangeAddress != null)
+            {
+                // find the position of the change and move it over.
+                int index = 0;
+                foreach (TxOut newTransactionOutput in newTransaction.Outputs)
+                {
+                    if (newTransactionOutput.ScriptPubKey == context.ChangeAddress.ScriptPubKey)
+                    {
+                        transaction.Outputs.Insert(index, newTransactionOutput);
+                    }
 
-        //            index++;
-        //        }
-        //    }
+                    index++;
+                }
+            }
 
-        //    // TODO: copy the new output amount size (this also includes spreading the fee over all outputs)
+            // TODO: copy the new output amount size (this also includes spreading the fee over all outputs)
 
-        //    // copy all the inputs from the new transaction.
-        //    foreach (TxIn newTransactionInput in newTransaction.Inputs)
-        //    {
-        //        if (!context.SelectedInputs.Contains(newTransactionInput.PrevOut))
-        //        {
-        //            transaction.Inputs.Add(newTransactionInput);
+            // copy all the inputs from the new transaction.
+            foreach (TxIn newTransactionInput in newTransaction.Inputs)
+            {
+                if (!context.SelectedInputs.Contains(newTransactionInput.PrevOut))
+                {
+                    transaction.Inputs.Add(newTransactionInput);
 
-        //            // TODO: build a mechanism to lock inputs
-        //        }
-        //    }
-        //}
+                    // TODO: build a mechanism to lock inputs
+                }
+            }
+        }
 
         /// <inheritdoc />
         public (Money maximumSpendableAmount, Money Fee) GetMaximumSpendableAmount(WalletAccountReference accountReference, FeeType feeType, bool allowUnconfirmed)
@@ -397,6 +395,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
     }
 
+    /// <summary>
+    /// a mutable settings object to hold data related to building a transaction.
+    /// </summary>
     public class TransactionBuildContext
     {
         /// <summary>
