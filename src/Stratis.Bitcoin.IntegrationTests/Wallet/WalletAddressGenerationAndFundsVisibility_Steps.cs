@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -103,7 +104,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private void a_wallet_with_funds_at_index_20_which_is_beyond_default_gap_limit()
         {
             ExtPubKey xPublicKey = this.GetExtendedPublicKey(ReceivingNodeName);
-            var recipientAddressBeyondGapLimit = xPublicKey.Derive(new KeyPath("0/20")).PubKey.GetAddress(Networks.RegTest);
+            var recipientAddressBeyondGapLimit = xPublicKey.Derive(new KeyPath("0/20")).PubKey.GetAddress(KnownNetworks.RegTest);
 
             TransactionBuildContext transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
                 this.sendingStratisBitcoinNode.FullNode.Network,

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
-using NBitcoin.NetworkDefinitions;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var lifetime = new NodeLifetime();
             var loggerFactory = new LoggerFactory();
             var asyncLoopFactory = new AsyncLoopFactory(loggerFactory);
-            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory, Networks.Main);
+            var state = new TimeSyncBehaviorState(dateTimeProvider, lifetime, asyncLoopFactory, loggerFactory, KnownNetworks.Main);
             return state;
         }
 

@@ -21,7 +21,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     public class WalletTransactionHandlerTest : LogsTestBase
     {
         public readonly string CostlyOpReturnData;
-        private readonly Network network;
         private readonly StandardTransactionPolicy standardTransactionPolicy;
         private readonly IScriptAddressReader scriptAddressReader;
 
@@ -32,8 +31,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             byte[] maxQuantityOfBytes = Enumerable.Range(0, 80).Select(Convert.ToByte).ToArray();
             this.CostlyOpReturnData = Encoding.UTF8.GetString(maxQuantityOfBytes);
 
-            this.network = Networks.Main;
-            this.standardTransactionPolicy = new StandardTransactionPolicy(this.network);
+            this.standardTransactionPolicy = new StandardTransactionPolicy(this.Network);
             this.scriptAddressReader = new ScriptAddressReader();
         }
 
@@ -42,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             Assert.Throws<WalletException>(() =>
             {
-                var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletFeePolicy>().Object, this.network, this.standardTransactionPolicy);
+                var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletFeePolicy>().Object, this.Network, this.standardTransactionPolicy);
 
                 Transaction result = walletTransactionHandler.BuildTransaction(CreateOptions(new WalletAccountReference(), "password", new Script(), Money.Zero, FeeType.Medium, 2));
             });
@@ -62,13 +60,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                         InternalAddresses = new List<HdAddress>()
                     });
 
-                BlockHeader blockHeader = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-                var chain = new ConcurrentChain(this.network, new ChainedHeader(blockHeader, blockHeader.GetHash(), 1));
+                BlockHeader blockHeader = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                var chain = new ConcurrentChain(this.Network, new ChainedHeader(blockHeader, blockHeader.GetHash(), 1));
 
                 string dataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionNoSpendableTransactionsThrowsWalletException";
-                var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
+                var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                     new DataFolder(new NodeSettings(args: new string[] { $"-datadir={dataDir}" }).DataDir), new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
-                var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, new Mock<IWalletFeePolicy>().Object, this.network, new StandardTransactionPolicy(this.Network));
+                var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, new Mock<IWalletFeePolicy>().Object, this.Network, new StandardTransactionPolicy(this.Network));
 
                 walletManager.Wallets.Add(wallet);
 
@@ -131,9 +129,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 });
 
                 string dataDir = "TestData/WalletTransactionHandlerTest/BuildTransactionFeeTooLowThrowsWalletException";
-                var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
+                var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                     new DataFolder(new NodeSettings(args: new string[] { $"-datadir={dataDir}" }).DataDir), walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
-                var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, this.network, this.standardTransactionPolicy);
+                var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, this.Network, this.standardTransactionPolicy);
 
                 walletManager.Wallets.Add(wallet);
 
@@ -150,12 +148,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void BuildTransactionNoChangeAdressesLeftCreatesNewChangeAddress()
         {
-            (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
+            Wallet wallet = testContext.Wallet;
+            WalletAccountReference walletReference = testContext.WalletReference;
+            (ExtKey ExtKey, string ExtPubKey) accountKeys = testContext.AccountKeys;
+            (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = testContext.DestinationKeys;
+            WalletTransactionHandler walletTransactionHandler = testContext.WalletTransactionHandler;
+            TransactionData addressTransaction = testContext.AddressTransaction;
 
             TransactionBuildOptions options = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
             Transaction transactionResult = walletTransactionHandler.BuildTransaction(options);
 
-            Transaction result = this.network.CreateTransaction(transactionResult.ToHex());
+
+            Transaction result = this.Network.CreateTransaction(transactionResult.ToHex());
             (PubKey PubKey, BitcoinPubKeyAddress Address) expectedChangeAddressKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "1/0");
 
             Assert.Single(result.Inputs);
@@ -178,7 +183,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void BuildTransaction_When_OpReturnData_Is_Empty_Should_Not_Add_Extra_Output()
         {
-            (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
+            WalletAccountReference walletReference = testContext.WalletReference;
+            (ExtKey ExtKey, string ExtPubKey) accountKeys = testContext.AccountKeys;
+            (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = testContext.DestinationKeys;
+            WalletTransactionHandler walletTransactionHandler = testContext.WalletTransactionHandler;
 
             string opReturnData = "";
 
@@ -192,7 +201,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void BuildTransaction_When_OpReturnData_Is_Null_Should_Not_Add_Extra_Output()
         {
-            (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
+            WalletAccountReference walletReference = testContext.WalletReference;
+            (ExtKey ExtKey, string ExtPubKey) accountKeys = testContext.AccountKeys;
+            (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = testContext.DestinationKeys;
+            WalletTransactionHandler walletTransactionHandler = testContext.WalletTransactionHandler;
 
             string opReturnData = null;
 
@@ -207,7 +220,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void BuildTransaction_When_OpReturnData_Is_Neither_Null_Nor_Empty_Should_Add_Extra_Output_With_Data()
         {
-            (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
+            WalletAccountReference walletReference = testContext.WalletReference;
+            (ExtKey ExtKey, string ExtPubKey) accountKeys = testContext.AccountKeys;
+            (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = testContext.DestinationKeys;
+            WalletTransactionHandler walletTransactionHandler = testContext.WalletTransactionHandler;
 
             string opReturnData = "some extra transaction info";
             byte[] expectedBytes = Encoding.UTF8.GetBytes(opReturnData);
@@ -229,7 +246,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void BuildTransaction_When_OpReturnData_Is_Too_Long_Should_Fail_With_Helpful_Message()
         {
-            (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
+            WalletAccountReference walletReference = testContext.WalletReference;
+            (ExtKey ExtKey, string ExtPubKey) accountKeys = testContext.AccountKeys;
+            (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = testContext.DestinationKeys;
+            WalletTransactionHandler walletTransactionHandler = testContext.WalletTransactionHandler;
 
             byte[] eightyOneBytes = Encoding.UTF8.GetBytes(this.CostlyOpReturnData).Concat(Convert.ToByte(1));
             string tooLongOpReturnString = Encoding.UTF8.GetString(eightyOneBytes);
@@ -238,62 +259,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             new Action(() => walletTransactionHandler.BuildTransaction(options))
                 .Should().Throw<ArgumentOutOfRangeException>()
                 .And.Message.Should().Contain(" maximum size of 83");
-
-        }
-
-        private (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address)
-            destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler,
-            WalletAccountReference walletReference) SetupWallet()
-        {
-            DataFolder dataFolder = CreateDataFolder(this);
-
-            Wallet wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
-            (ExtKey ExtKey, string ExtPubKey) accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
-            (PubKey PubKey, BitcoinPubKeyAddress Address) spendingKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
-            (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
-
-            var address = new HdAddress
-            {
-                Index = 0,
-                HdPath = $"m/44'/0'/0'/0/0",
-                Address = spendingKeys.Address.ToString(),
-                Pubkey = spendingKeys.PubKey.ScriptPubKey,
-                ScriptPubKey = spendingKeys.Address.ScriptPubKey,
-                Transactions = new List<TransactionData>()
-            };
-
-            var chain = new ConcurrentChain(wallet.Network);
-            WalletTestsHelpers.AddBlocksWithCoinbaseToChain(wallet.Network, chain, address);
-            TransactionData addressTransaction = address.Transactions.First();
-
-            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount
-            {
-                Index = 0,
-                Name = "account1",
-                HdPath = "m/44'/0'/0'",
-                ExtendedPubKey = accountKeys.ExtPubKey,
-                ExternalAddresses = new List<HdAddress> { address },
-                InternalAddresses = new List<HdAddress>()
-            });
-
-            var walletFeePolicy = new Mock<IWalletFeePolicy>();
-            walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations()))
-                .Returns(new FeeRate(20000));
-
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, chain, NodeSettings.Default(),
-                new Mock<WalletSettings>().Object, dataFolder,
-                walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
-            var walletTransactionHandler =
-                new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, this.network, this.standardTransactionPolicy);
-
-            walletManager.Wallets.Add(wallet);
-
-            var walletReference = new WalletAccountReference
-            {
-                AccountName = "account1",
-                WalletName = "myWallet1"
-            };
-            return (wallet, accountKeys, destinationKeys, addressTransaction, walletTransactionHandler, walletReference);
         }
 
         [Fact]
@@ -336,9 +301,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations())).Returns(new FeeRate(20000));
             var overrideFeeRate = new FeeRate(20000);
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
-            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, this.network, this.standardTransactionPolicy);
+            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, this.Network, this.standardTransactionPolicy);
 
             walletManager.Wallets.Add(wallet);
 
@@ -374,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             fundTransaction.Inputs.RemoveAt(1);
             Assert.Single(fundTransaction.Inputs); // 4 inputs
 
-            Transaction fundTransactionClone = this.network.CreateTransaction(fundTransaction.ToBytes());
+            Transaction fundTransactionClone = this.Network.CreateTransaction(fundTransaction.ToBytes());
             var fundOptions = new TransactionBuildOptions(walletReference, "password", new List<Recipient>())
             {
                 MinConfirmations = 0,
@@ -401,11 +366,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            var chain = new ConcurrentChain(this.network);
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
+            var chain = new ConcurrentChain(this.Network);
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 
-            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.network, this.standardTransactionPolicy);
+            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.Network, this.standardTransactionPolicy);
 
             Wallet wallet = WalletTestsHelpers.CreateWallet("wallet1");
             wallet.AccountsRoot.Add(new AccountRoot()
@@ -426,10 +391,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, new ConcurrentChain(this.network), NodeSettings.Default(), new Mock<WalletSettings>().Object,
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new ConcurrentChain(this.Network), NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
 
-            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.network, this.standardTransactionPolicy);
+            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.Network, this.standardTransactionPolicy);
 
             HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
 
@@ -462,10 +427,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, new ConcurrentChain(this.network), NodeSettings.Default(), new Mock<WalletSettings>().Object,
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new ConcurrentChain(this.Network), NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
 
-            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.network, this.standardTransactionPolicy);
+            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.Network, this.standardTransactionPolicy);
 
             HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
 
@@ -501,10 +466,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var walletFeePolicy = new Mock<IWalletFeePolicy>();
             walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations())).Returns(new FeeRate(20000));
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, new ConcurrentChain(this.network), NodeSettings.Default(), new Mock<WalletSettings>().Object,
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new ConcurrentChain(this.Network), NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
 
-            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, this.network, this.standardTransactionPolicy);
+            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, this.Network, this.standardTransactionPolicy);
 
             HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
 
@@ -536,10 +501,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         {
             DataFolder dataFolder = CreateDataFolder(this);
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.network, new ConcurrentChain(this.network), NodeSettings.Default(), new Mock<WalletSettings>().Object,
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new ConcurrentChain(this.Network), NodeSettings.Default(), new Mock<WalletSettings>().Object,
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
 
-            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.network, this.standardTransactionPolicy);
+            var walletTransactionHandler = new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, It.IsAny<WalletFeePolicy>(), this.Network, this.standardTransactionPolicy);
             HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
             HdAddress accountAddress1 = WalletTestsHelpers.CreateAddress();
             HdAddress accountAddress2 = WalletTestsHelpers.CreateAddress();
@@ -567,7 +532,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void EstimateFeeWithLowFeeMatchesBuildTxLowFee()
         {
-            (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
+            WalletAccountReference walletReference = testContext.WalletReference;
+            (ExtKey ExtKey, string ExtPubKey) accountKeys = testContext.AccountKeys;
+            (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = testContext.DestinationKeys;
+            WalletTransactionHandler walletTransactionHandler = testContext.WalletTransactionHandler;
 
             // Context to build requires password in order to sign transaction.
             TransactionBuildOptions buildOptions = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
@@ -588,7 +557,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void EstimateFee_WithLowFee_Matches_BuildTransaction_WithLowFee_With_Long_OpReturnData_added()
         {
-            (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
+            WalletAccountReference walletReference = testContext.WalletReference;
+            (ExtKey ExtKey, string ExtPubKey) accountKeys = testContext.AccountKeys;
+            (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = testContext.DestinationKeys;
+            WalletTransactionHandler walletTransactionHandler = testContext.WalletTransactionHandler;
 
             // Context to build requires password in order to sign transaction.
             TransactionBuildOptions buildOptions = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
@@ -607,7 +580,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void EstimateFee_Without_OpReturnData_Should_Be_Less_Than_Estimate_Fee_With_Costly_OpReturnData()
         {
-            (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
+            WalletAccountReference walletReference = testContext.WalletReference;
+            (ExtKey ExtKey, string ExtPubKey) accountKeys = testContext.AccountKeys;
+            (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = testContext.DestinationKeys;
+            WalletTransactionHandler walletTransactionHandler = testContext.WalletTransactionHandler;
 
             // Context with OpReturnData
             TransactionBuildOptions estimateContextWithOpReturn = CreateOptions(walletReference, null, destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
@@ -627,15 +604,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void Actual_Fee_Without_OpReturnData_Should_Be_Less_Than_Actual_Fee_With_Costly_OpReturnData()
         {
-            (Wallet wallet, (ExtKey ExtKey, string ExtPubKey) accountKeys, (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys, TransactionData addressTransaction, WalletTransactionHandler walletTransactionHandler, WalletAccountReference walletReference) = this.SetupWallet();
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
 
             // Context with OpReturnData
-            TransactionBuildOptions contextWithOpReturn = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
-            walletTransactionHandler.BuildTransaction(contextWithOpReturn);
+            TransactionBuildOptions contextWithOpReturn = CreateOptions(testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            testContext.WalletTransactionHandler.BuildTransaction(contextWithOpReturn);
 
             // Context without OpReturnData
-            TransactionBuildOptions contextWithoutOpReturn = CreateOptions(walletReference, "password", destinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, null);
-            walletTransactionHandler.BuildTransaction(contextWithoutOpReturn);
+            TransactionBuildOptions contextWithoutOpReturn = CreateOptions(testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, null);
+            testContext.WalletTransactionHandler.BuildTransaction(contextWithoutOpReturn);
 
             contextWithoutOpReturn.TransactionFee.Should().NotBe(contextWithOpReturn.TransactionFee);
             contextWithoutOpReturn.TransactionFee.Satoshi.Should().BeLessThan(contextWithOpReturn.TransactionFee.Satoshi);
@@ -652,5 +629,85 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 OpReturnData = opReturnData
             };
         }
+
+        private WalletTransactionHandlerTestContext SetupWallet()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+
+            Wallet wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet1", "password");
+            (ExtKey ExtKey, string ExtPubKey) accountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+            (PubKey PubKey, BitcoinPubKeyAddress Address) spendingKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/0");
+            (PubKey PubKey, BitcoinPubKeyAddress Address) destinationKeys = WalletTestsHelpers.GenerateAddressKeys(wallet, accountKeys.ExtPubKey, "0/1");
+
+            var address = new HdAddress
+            {
+                Index = 0,
+                HdPath = $"m/44'/0'/0'/0/0",
+                Address = spendingKeys.Address.ToString(),
+                Pubkey = spendingKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = spendingKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            var chain = new ConcurrentChain(wallet.Network);
+            WalletTestsHelpers.AddBlocksWithCoinbaseToChain(wallet.Network, chain, address);
+            TransactionData addressTransaction = address.Transactions.First();
+
+            wallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount
+            {
+                Index = 0,
+                Name = "account1",
+                HdPath = "m/44'/0'/0'",
+                ExtendedPubKey = accountKeys.ExtPubKey,
+                ExternalAddresses = new List<HdAddress> { address },
+                InternalAddresses = new List<HdAddress>()
+            });
+
+            var walletFeePolicy = new Mock<IWalletFeePolicy>();
+            walletFeePolicy.Setup(w => w.GetFeeRate(FeeType.Low.ToConfirmations()))
+                .Returns(new FeeRate(20000));
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, NodeSettings.Default(),
+                new Mock<WalletSettings>().Object, dataFolder,
+                walletFeePolicy.Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, this.scriptAddressReader);
+            var walletTransactionHandler =
+                new WalletTransactionHandler(this.LoggerFactory.Object, walletManager, walletFeePolicy.Object, this.Network, this.standardTransactionPolicy);
+
+            walletManager.Wallets.Add(wallet);
+
+            var walletReference = new WalletAccountReference
+            {
+                AccountName = "account1",
+                WalletName = "myWallet1"
+            };
+
+            return new WalletTransactionHandlerTestContext
+            {
+                Wallet = wallet,
+                AccountKeys = accountKeys,
+                DestinationKeys = destinationKeys,
+                AddressTransaction = addressTransaction,
+                WalletTransactionHandler = walletTransactionHandler,
+                WalletReference = walletReference
+            };
+        }
+    }
+
+    /// <summary>
+    /// Data carrier class for objects required to test the <see cref="WalletTransactionHandler"/>.
+    /// </summary>
+    public class WalletTransactionHandlerTestContext
+    {
+        public Wallet Wallet { get; set; }
+
+        public (ExtKey ExtKey, string ExtPubKey) AccountKeys { get; set; }
+
+        public (PubKey PubKey, BitcoinPubKeyAddress Address) DestinationKeys { get; set; }
+
+        public TransactionData AddressTransaction { get; set; }
+
+        public WalletTransactionHandler WalletTransactionHandler { get; set; }
+
+        public WalletAccountReference WalletReference { get; set; }
     }
 }
