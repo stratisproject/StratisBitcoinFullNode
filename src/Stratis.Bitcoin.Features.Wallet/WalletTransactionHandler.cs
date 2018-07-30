@@ -63,12 +63,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public Transaction BuildTransaction(TransactionBuildOptions options)
         {
-            throw new NotImplementedException();
-        }
-
-        public void FundTransaction(TransactionBuildOptions options, Transaction transaction)
-        {
-            throw new NotImplementedException();
+            var transactionBuildContext = new TransactionBuildContext(this.Network, options);
+            return BuildTransaction(transactionBuildContext);
         }
 
         private Transaction BuildTransaction(TransactionBuildContext context)
@@ -86,6 +82,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
             this.logger.LogError($"Build transaction failed: {errorsMessage}");
             throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
+        }
+
+        public void FundTransaction(TransactionBuildOptions options, Transaction transaction)
+        {
+            throw new NotImplementedException();
         }
 
         private void FundTransaction(TransactionBuildContext context, Transaction transaction)
@@ -138,6 +139,19 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        public Money EstimateFee(TransactionBuildOptions options)
+        {
+            throw new NotImplementedException();
+        }
+
+        
+        private Money EstimateFee(TransactionBuildContext context)
+        {
+            this.InitializeTransactionBuilder(context);
+
+            return context.TransactionFee;
+        }
+
         /// <inheritdoc />
         public (Money maximumSpendableAmount, Money Fee) GetMaximumSpendableAmount(WalletAccountReference accountReference, FeeType feeType, bool allowUnconfirmed)
         {
@@ -183,19 +197,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             return (maxSpendableAmount - fee, fee);
         }
-
-        public Money EstimateFee(TransactionBuildOptions options)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
-        //public Money EstimateFee(TransactionBuildContext context)
-        //{
-        //    this.InitializeTransactionBuilder(context);
-
-        //    return context.TransactionFee;
-        //}
 
         /// <summary>
         /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.
@@ -396,32 +397,53 @@ namespace Stratis.Bitcoin.Features.Wallet
     }
 
     /// <summary>
-    /// a mutable settings object to hold data related to building a transaction.
+    /// A mutable settings object to hold data related to building a transaction.
     /// </summary>
     public class TransactionBuildContext
     {
-        /// <summary>
-        /// Initialize a new instance of a <see cref="TransactionBuildContext"/>
-        /// </summary>
-        /// <param name="accountReference">The wallet and account from which to build this transaction</param>
-        /// <param name="recipients">The target recipients to send coins to.</param>
-        /// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
-        /// <param name="opReturnData">Optional transaction data <see cref="OpReturnData"/></param>
-        public TransactionBuildContext(Network network, WalletAccountReference accountReference, List<Recipient> recipients, string walletPassword = "", string opReturnData = null)
-        {
-            Guard.NotNull(recipients, nameof(recipients));
+        ///// <summary>
+        ///// Initialize a new instance of a <see cref="TransactionBuildContext"/>
+        ///// </summary>
+        ///// <param name="accountReference">The wallet and account from which to build this transaction</param>
+        ///// <param name="recipients">The target recipients to send coins to.</param>
+        ///// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
+        ///// <param name="opReturnData">Optional transaction data <see cref="OpReturnData"/></param>
+        //public TransactionBuildContext(Network network, WalletAccountReference accountReference, List<Recipient> recipients, string walletPassword = "", string opReturnData = null)
+        //{
+        //    Guard.NotNull(recipients, nameof(recipients));
 
+        //    this.TransactionBuilder = new TransactionBuilder(network);
+        //    this.AccountReference = accountReference;
+        //    this.Recipients = recipients;
+        //    this.WalletPassword = walletPassword;
+        //    this.FeeType = FeeType.Medium;
+        //    this.MinConfirmations = 1;
+        //    this.SelectedInputs = new List<OutPoint>();
+        //    this.AllowOtherInputs = false;
+        //    this.Sign = !string.IsNullOrEmpty(walletPassword);
+        //    this.OpReturnData = opReturnData;
+        //}
+
+        public TransactionBuildContext(Network network, TransactionBuildOptions options)
+        {
             this.TransactionBuilder = new TransactionBuilder(network);
-            this.AccountReference = accountReference;
-            this.Recipients = recipients;
-            this.WalletPassword = walletPassword;
-            this.FeeType = FeeType.Medium;
-            this.MinConfirmations = 1;
-            this.SelectedInputs = new List<OutPoint>();
+            this.BuildOptions = options;
+
+            this.AccountReference = options.WalletAccountReference;
+            this.Recipients = options.Recipients;
+            this.WalletPassword = options.WalletPassword;
+            this.FeeType = options.FeeType;
+            this.MinConfirmations = options.MinConfirmations;
+            this.SelectedInputs = options.SelectedInputs;
             this.AllowOtherInputs = false;
-            this.Sign = !string.IsNullOrEmpty(walletPassword);
-            this.OpReturnData = opReturnData;
+            this.Sign = !string.IsNullOrEmpty(this.WalletPassword);
+            this.OpReturnData = options.OpReturnData;
         }
+
+        /// <summary>
+        /// Options defined to use when constructing the transaction.
+        /// </summary>
+        public TransactionBuildOptions BuildOptions { get; }
 
         /// <summary>
         /// The wallet account to use for building a transaction.
