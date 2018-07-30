@@ -8,6 +8,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
@@ -106,7 +107,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             (Mock<IBlockStoreCache> cache, BlockStoreController controller) = GetControllerAndCache();
 
             cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult(Block.Parse(BlockAsHex, Network.StratisTest)));
+                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest)));
 
             Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
                 {Hash = ValidHash, OutputJson = true});
@@ -126,14 +127,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 (Mock<IBlockStoreCache> cache, BlockStoreController controller) = GetControllerAndCache();
 
                 cache.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                    .Returns(Task.FromResult(Block.Parse(BlockAsHex, Network.StratisTest)));
+                    .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest)));
 
                 Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
                 { Hash = ValidHash, OutputJson = false });
 
                 response.Result.Should().BeOfType<JsonResult>();
                 var result = (JsonResult)response.Result;
-                ((Block)(result.Value)).ToHex(Network.StratisTest).Should().Be(BlockAsHex); 
+                ((Block)(result.Value)).ToHex(KnownNetworks.StratisTest).Should().Be(BlockAsHex); 
         }
 
         [Fact]
@@ -142,7 +143,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var logger = new Mock<ILoggerFactory>();
             var cache = new Mock<IBlockStoreCache>();
             var chainState = new Mock<IChainState>();
-            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, Network.StratisTest);
+            ConcurrentChain chain = WalletTestsHelpers.GenerateChainWithHeight(3, KnownNetworks.StratisTest);
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 

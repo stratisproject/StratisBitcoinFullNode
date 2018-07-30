@@ -250,22 +250,22 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             res.IsValid = false;
 
             // P2WPKH
-            if (BitcoinWitPubKeyAddress.IsValid(address, ref this.Network, out Exception _))
+            if (BitcoinWitPubKeyAddress.IsValid(address, this.Network, out Exception _))
             {
                 res.IsValid = true;
             }
             // P2WSH
-            else if (BitcoinWitScriptAddress.IsValid(address, ref this.Network, out Exception _))
+            else if (BitcoinWitScriptAddress.IsValid(address, this.Network, out Exception _))
             {
                 res.IsValid = true;
             }
             // P2PKH
-            else if (BitcoinPubKeyAddress.IsValid(address, ref this.Network))
+            else if (BitcoinPubKeyAddress.IsValid(address, this.Network))
             {
                 res.IsValid = true;
             }
             // P2SH
-            else if (BitcoinScriptAddress.IsValid(address, ref this.Network))
+            else if (BitcoinScriptAddress.IsValid(address, this.Network))
             {
                 res.IsValid = true;
             }

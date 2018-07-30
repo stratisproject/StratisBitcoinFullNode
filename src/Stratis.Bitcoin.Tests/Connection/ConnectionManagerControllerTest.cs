@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.mockLoggerFactory = new Mock<ILoggerFactory>();
             this.mockLoggerFactory.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
             this.connectionManager.Setup(i => i.Network)
-                .Returns(Network.StratisTest);
+                .Returns(KnownNetworks.StratisTest);
             this.controller = new ConnectionManagerController(this.connectionManager.Object, this.LoggerFactory.Object);
         }
 
