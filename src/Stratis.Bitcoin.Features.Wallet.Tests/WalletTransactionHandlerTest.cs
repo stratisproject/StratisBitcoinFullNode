@@ -586,12 +586,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             WalletTransactionHandlerTestContext testContext = SetupWallet();
 
             // Context with OpReturnData
-            TransactionBuildOptions estimateContextWithOpReturn = CreateOptions(testContext.WalletReference, null, testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
-            Money feeEstimateWithOpReturn = testContext.WalletTransactionHandler.EstimateFee(estimateContextWithOpReturn);
+            TransactionBuildOptions estimateOptionsWithOpReturn = CreateOptions(testContext.WalletReference, null, testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
+            Money feeEstimateWithOpReturn = testContext.WalletTransactionHandler.EstimateFee(estimateOptionsWithOpReturn);
 
             // Context without OpReturnData
-            TransactionBuildOptions estimateContextWithoutOpReturn = CreateOptions(testContext.WalletReference, null, testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, null);
-            Money feeEstimateWithoutOpReturn = testContext.WalletTransactionHandler.EstimateFee(estimateContextWithoutOpReturn);
+            TransactionBuildOptions estimateOptionsWithoutOpReturn = CreateOptions(testContext.WalletReference, null, testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, null);
+            Money feeEstimateWithoutOpReturn = testContext.WalletTransactionHandler.EstimateFee(estimateOptionsWithoutOpReturn);
 
             feeEstimateWithOpReturn.Should().NotBe(feeEstimateWithoutOpReturn);
             feeEstimateWithoutOpReturn.Satoshi.Should().BeLessThan(feeEstimateWithOpReturn.Satoshi);
