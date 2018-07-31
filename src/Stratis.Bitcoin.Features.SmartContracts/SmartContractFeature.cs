@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
-using NBitcoin.Rules;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -21,6 +20,7 @@ using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Interfaces;
@@ -52,25 +52,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.stateRoot.SyncToRoot(((SmartContractBlockHeader)this.consensusLoop.Chain.Tip.Header).HashStateRoot.ToBytes());
             this.logger.LogInformation("Smart Contract Feature Injected.");
-        }
-    }
-
-    public sealed class ReflectionVirtualMachineFeature : FullNodeFeature
-    {
-        private readonly IConsensusRules consensusRules;
-        private readonly ILogger logger;
-
-        public ReflectionVirtualMachineFeature(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
-        {
-            this.consensusRules = consensusRules;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-        }
-
-        public override void Initialize()
-        {
-            this.logger.LogInformation("Reflection Virtual Machine Injected.");
-            //new ReflectionRuleRegistration()
-            this.consensusRules.Register();
         }
     }
 
@@ -145,7 +126,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     services.AddSingleton<ConsensusSettings>();
 
                     services.AddSingleton<IConsensusRules, SmartContractConsensusRules>();
-                    services.AddSingleton<IRuleRegistration, SmartContractRuleRegistration>();
+
+                    fullNodeBuilder.Network.Consensus.Rules = new SmartContractRuleRegistration();
                 });
             });
 

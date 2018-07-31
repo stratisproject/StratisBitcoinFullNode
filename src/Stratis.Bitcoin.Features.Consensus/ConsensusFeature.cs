@@ -49,8 +49,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly StakeChainStore stakeChain;
 
-        private readonly IRuleRegistration ruleRegistration;
-
         private readonly ConsensusSettings consensusSettings;
 
         private readonly IConsensusRules consensusRules;
@@ -76,7 +74,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
             ConsensusStats consensusStats,
-            IRuleRegistration ruleRegistration,
             IConsensusRules consensusRules,
             NodeSettings nodeSettings,
             ConsensusSettings consensusSettings,
@@ -94,7 +91,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.consensusStats = consensusStats;
-            this.ruleRegistration = ruleRegistration;
             this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
 
@@ -202,7 +198,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
                     services.AddSingleton<IConsensusRules, PowConsensusRules>();
-                    services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
+
+                    fullNodeBuilder.Network.Consensus.Rules = new PowConsensusRulesRegistration();
                 });
             });
 
@@ -234,7 +231,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<ConsensusSettings>();
                         services.AddSingleton<IConsensusRules, PosConsensusRules>();
-                        services.AddSingleton<IRuleRegistration, PosConsensusRulesRegistration>();
+
+                        fullNodeBuilder.Network.Consensus.Rules = new PosConsensusRulesRegistration();
                     });
             });
 
