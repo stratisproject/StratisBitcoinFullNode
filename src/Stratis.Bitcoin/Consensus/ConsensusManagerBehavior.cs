@@ -301,7 +301,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.ExpectedPeerTip = result.Consumed;
                 this.UpdateBestSentHeader(this.ExpectedPeerTip);
 
-                if (result.Consumed.Header != headers.Last())
+                if (result.Consumed.HashBlock != headers.Last().GetHash())
                 {
                     // Some headers were not consumed, add to cache.
                     int consumedCount = headers.IndexOf(result.Consumed.Header) + 1;
