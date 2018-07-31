@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -68,6 +69,9 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="block">The block.</param>
         /// <param name="peerId">ID of a peer that delivered a block.</param>
         void PushBlock(uint256 blockHash, Block block, int peerId);
+
+        /// <summary>Logs statistics to the console.</summary>
+        void ShowStats(StringBuilder statsBuilder);
     }
 
     /// <inheritdoc cref="IBlockPuller"/>
@@ -968,10 +972,14 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Logs statistics to the console.</summary>
-        private void ShowStats()
+        /// <inheritdoc/>
+        public void ShowStats(StringBuilder statsBuilder)
         {
             this.logger.LogTrace("()");
+
+            statsBuilder.AppendLine("======Block Puller======");
+            statsBuilder.AppendLine("TODO");
+
 
             //TODO: do that when component is activated.
 

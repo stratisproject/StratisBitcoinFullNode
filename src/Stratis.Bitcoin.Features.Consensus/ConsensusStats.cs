@@ -72,23 +72,14 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public async Task LogAsync()
+        public void BenchStats()
         {
             var benchLogs = new StringBuilder();
 
-            if (this.consensusManager.BlockPuller != null)
-            {
-                benchLogs.AppendLine("======Block Puller======");
-                benchLogs.AppendLine("Lookahead:".PadRight(LoggingConfiguration.ColumnLength) + " fix me");// + this.lookaheadPuller.ActualLookahead + " blocks");
-                benchLogs.AppendLine("Downloaded:".PadRight(LoggingConfiguration.ColumnLength) + " fix me"); // + this.lookaheadPuller.MedianDownloadCount + " blocks");
-                benchLogs.AppendLine("==========================");
-            }
-            benchLogs.AppendLine("Persistent Tip:".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(await this.bottom.GetTipHashAsync().ConfigureAwait(false))?.Height);
+            this.consensusManager.BlockPuller?.ShowStats(benchLogs);
+
             if (this.cache != null)
-            {
-                benchLogs.AppendLine("Cache Tip".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(await this.cache.GetTipHashAsync().ConfigureAwait(false))?.Height);
                 benchLogs.AppendLine("Cache entries".PadRight(LoggingConfiguration.ColumnLength) + this.cache.CacheEntryCount);
-            }
 
             ConsensusPerformanceSnapshot snapshot = this.consensusRules.PerformanceCounter.Snapshot();
             benchLogs.AppendLine((snapshot - this.lastSnapshot).ToString());
@@ -100,13 +91,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                 benchLogs.AppendLine((snapshot2 - this.lastSnapshot2).ToString());
                 this.lastSnapshot2 = snapshot2;
             }
+
             if (this.cache != null)
             {
                 CachePerformanceSnapshot snapshot3 = this.cache.PerformanceCounter.Snapshot();
                 benchLogs.AppendLine((snapshot3 - this.lastSnapshot3).ToString());
                 this.lastSnapshot3 = snapshot3;
             }
-            benchLogs.AppendLine(this.connectionManager.GetStats());
+
             this.logger.LogInformation(benchLogs.ToString());
         }
 
@@ -115,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
             {
                 if (this.initialBlockDownloadState.IsInitialBlockDownload())
-                    this.LogAsync().GetAwaiter().GetResult();
+                    this.BenchStats();
             }
         }
     }
