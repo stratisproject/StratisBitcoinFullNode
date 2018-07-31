@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private SharedSteps sharedSteps;
         private IDictionary<string, CoreNode> nodes;
         private NodeGroupBuilder nodeGroupBuilder;
-        private TransactionBuildContext transactionBuildContext;
+        private TransactionBuildOptions transactionBuildOptions;
 
         private Money nodeTwoBalance;
         private Money transactionFee;
@@ -71,14 +71,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Amount = Money.COIN
             }).ToList();
 
-            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(this.nodes[NodeOne].FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, 101);
+            this.transactionBuildOptions = SharedSteps.CreateTransactionBuildOptions(WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, 101);
 
-            Transaction transaction = this.nodes[NodeOne].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
+            Transaction transaction = this.nodes[NodeOne].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildOptions);
 
             // Returns 50 outputs, including one extra output for change.
             transaction.Outputs.Count.Should().Be(UnspentTransactionOutputs + 1);
 
-            this.transactionFee = this.nodes[NodeOne].GetFee(this.transactionBuildContext);
+            this.transactionFee = this.nodes[NodeOne].GetFee(this.transactionBuildOptions);
 
             this.nodes[NodeOne].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
         }
@@ -109,9 +109,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             HdAddress sendToNodeOne = this.nodes[NodeOne].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccountName));
 
-            this.transactionBuildContext = new TransactionBuildContext(
-                this.nodes[NodeOne].FullNode.Network,
+            this.transactionBuildOptions = new TransactionBuildOptions(
                 new WalletAccountReference(WalletName, WalletAccountName),
+                WalletPassword,
                 new[]
                 {
                     new Recipient
@@ -119,12 +119,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         Amount = this.nodeTwoBalance - Money.COIN,
                         ScriptPubKey = sendToNodeOne.ScriptPubKey
                     }
-                }.ToList(),
-                WalletPassword);
+                }.ToList());
 
-            Transaction transaction = this.nodes[NodeTwo].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
+            Transaction transaction = this.nodes[NodeTwo].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildOptions);
 
-            this.transactionFee = this.nodes[NodeTwo].GetFee(this.transactionBuildContext);
+            this.transactionFee = this.nodes[NodeTwo].GetFee(this.transactionBuildOptions);
 
             transaction.Inputs.Count.Should().Be(50);
 

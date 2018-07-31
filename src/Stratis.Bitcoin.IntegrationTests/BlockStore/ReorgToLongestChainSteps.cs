@@ -84,8 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             HdAddress nodeCReceivingAddress = this.GetSecondUnusedAddressToAvoidClashWithMiningAddress(this.nodes[Charlie]);
 
-            TransactionBuildContext transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
-                this.nodes[Bob].FullNode.Network,
+            TransactionBuildOptions transactionBuildContext = SharedSteps.CreateTransactionBuildOptions(
                 WalletZero,
                 AccountZero,
                 WalletPassword,

@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private SharedSteps sharedSteps;
         private IDictionary<string, CoreNode> nodes;
         private NodeGroupBuilder nodeGroupBuilder;
-        private TransactionBuildContext transactionBuildContext;
+        private TransactionBuildOptions transactionBuildOptions;
 
         private Money transactionFee;
         private Transaction transaction;
@@ -102,12 +102,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Amount = Money.COIN
             }).ToList();
 
-            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(this.nodes[NodeOne].FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, 101);
+            this.transactionBuildOptions = SharedSteps.CreateTransactionBuildOptions(WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, 101);
 
             try
             {
-                this.transaction = this.nodes[NodeOne].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
-                this.transactionFee = this.nodes[NodeOne].GetFee(this.transactionBuildContext);
+                this.transaction = this.nodes[NodeOne].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildOptions);
+                this.transactionFee = this.nodes[NodeOne].GetFee(this.transactionBuildOptions);
             }
             catch (Exception e)
             {

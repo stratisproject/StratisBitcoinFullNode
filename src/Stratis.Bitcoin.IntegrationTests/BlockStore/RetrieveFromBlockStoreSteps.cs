@@ -122,11 +122,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void a_real_transaction()
         {
-            var transactionBuildContext = new TransactionBuildContext(
-                    this.node.FullNode.Network,
-                    this.miningWalletAccountReference,
-                    new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } },
-                    this.password)
+            var transactionBuildContext = new TransactionBuildOptions(
+                    this.miningWalletAccountReference, this.password,
+                    new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } })
             { MinConfirmations = this.maturity };
             this.transaction = this.node.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 

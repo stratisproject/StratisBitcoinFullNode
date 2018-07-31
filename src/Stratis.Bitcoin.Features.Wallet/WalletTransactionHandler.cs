@@ -401,6 +401,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
     /// <summary>
     /// A mutable settings object to hold data related to building a transaction.
+    /// TODO: Make internal.
     /// </summary>
     public class TransactionBuildContext
     {

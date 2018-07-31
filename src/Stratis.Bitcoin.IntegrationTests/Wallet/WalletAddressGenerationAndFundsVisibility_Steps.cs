@@ -106,8 +106,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             ExtPubKey xPublicKey = this.GetExtendedPublicKey(ReceivingNodeName);
             var recipientAddressBeyondGapLimit = xPublicKey.Derive(new KeyPath("0/20")).PubKey.GetAddress(KnownNetworks.RegTest);
 
-            TransactionBuildContext transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
-                this.sendingStratisBitcoinNode.FullNode.Network,
+            TransactionBuildOptions transactionBuildOptions = SharedSteps.CreateTransactionBuildOptions(
                 SendingWalletName,
                 AccountZero,
                 WalletPassword,
@@ -120,7 +119,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 FeeType.Medium, 0);
 
             var transaction = this.sendingStratisBitcoinNode.FullNode.WalletTransactionHandler()
-                 .BuildTransaction(transactionBuildContext);
+                 .BuildTransaction(transactionBuildOptions);
 
             this.sendingStratisBitcoinNode.FullNode.NodeService<WalletController>()
                 .SendTransaction(new SendTransactionRequest(transaction.ToHex()));
