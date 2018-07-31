@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     return 0;
 
                 return Enumerable.Range(startBlock,
-                        ((numberOfBlocks - maturity + 1) >= startBlock ? (numberOfBlocks - maturity + 1) : startBlock))
+                        ((numberOfBlocks - maturity + 1) > 0 ? (numberOfBlocks - maturity + 1) : 0))
                     .Sum(p => coinviewRule.GetProofOfWorkReward(p));
             }
             else
