@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Rules;
 
@@ -101,6 +102,7 @@ namespace NBitcoin
             this.BIP9Deployments = new BIP9DeploymentsArray();
 
             this.ConsensusFactory = new ConsensusFactory();
+            this.Rules = new List<IConsensusRule>();
         }
 
         public BuriedDeploymentsArray BuriedDeployments { get; set; }
@@ -169,6 +171,6 @@ namespace NBitcoin
         /// <summary>
         /// Rules specific to the given network.
         /// </summary>
-        public IRuleRegistration Rules { get; set; }
+        public List<IConsensusRule> Rules { get; set; }
     }
 }

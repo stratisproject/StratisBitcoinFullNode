@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public T RegisterRule<T>() where T : ConsensusRule, new()
         {
             var rule = new T();
-            this.Network.Consensus.Rules = new RuleRegistrationTest(new List<ConsensusRule>() { rule });
+            this.Network.Consensus.Rules = new List<IConsensusRule>() { rule };
             this.Register();
             return rule;
         }
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public T RegisterRule<T>() where T : ConsensusRule, new()
         {
             var rule = new T();
-            this.Network.Consensus.Rules = new RuleRegistrationTest(new List<ConsensusRule>() { rule });
+            this.Network.Consensus.Rules = new List<IConsensusRule>() { rule };
             this.Register();
             return rule;
         }
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
             network.Consensus.Options = new ConsensusOptions();
-            network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
+            network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
 
             var consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
@@ -165,21 +165,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 throw new XunitException("Test failed no blocks found");
 
             return block;
-        }
-    }
-
-    public sealed class RuleRegistrationTest : IRuleRegistration
-    {
-        public RuleRegistrationTest(IEnumerable<IConsensusRule> rules)
-        {
-            this.Rules = rules;
-        }
-
-        public readonly IEnumerable<IConsensusRule> Rules;
-
-        public IEnumerable<IConsensusRule> GetRules()
-        {
-            return this.Rules;
         }
     }
 }

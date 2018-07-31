@@ -8,13 +8,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public sealed class SmartContractRuleRegistration : IRuleRegistration
     {
-        public SmartContractRuleRegistration()
+        public List<IConsensusRule> GetRules()
         {
-        }
-
-        public IEnumerable<IConsensusRule> GetRules()
-        {
-            var rules = new List<ConsensusRule>
+            var rules = new List<IConsensusRule>
             {
                 new TemporarySetChainHeader(),
                 

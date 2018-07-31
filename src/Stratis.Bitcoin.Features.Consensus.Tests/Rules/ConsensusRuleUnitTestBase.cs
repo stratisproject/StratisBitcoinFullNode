@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected NodeDeployments nodeDeployments;
         protected ConsensusSettings consensusSettings;
         protected Mock<ICheckpoints> checkpoints;
-        protected List<ConsensusRule> ruleRegistrations;
+        protected List<IConsensusRule> ruleRegistrations;
         protected Mock<IRuleRegistration> ruleRegistration;
         protected RuleContext ruleContext;
         protected Transaction lastAddedTransaction;
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.consensusSettings = new ConsensusSettings();
             this.checkpoints = new Mock<ICheckpoints>();
 
-            this.ruleRegistrations = new List<ConsensusRule>();
+            this.ruleRegistrations = new List<IConsensusRule>();
             this.ruleRegistration = new Mock<IRuleRegistration>();
             this.ruleRegistration.Setup(r => r.GetRules()).Returns(() => { return this.ruleRegistrations; });
 
@@ -118,7 +118,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected NodeDeployments nodeDeployments;
         protected ConsensusSettings consensusSettings;
         protected Mock<ICheckpoints> checkpoints;
-        protected List<ConsensusRule> ruleRegistrations;
         protected Mock<IRuleRegistration> ruleRegistration;
         protected T consensusRules;
         protected RuleContext ruleContext;
@@ -135,11 +134,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
             this.consensusSettings = new ConsensusSettings();
             this.checkpoints = new Mock<ICheckpoints>();
-
-            this.ruleRegistrations = new List<ConsensusRule>();
-            this.ruleRegistration = new Mock<IRuleRegistration>();
-            this.ruleRegistration.Setup(r => r.GetRules())
-                .Returns(() => { return this.ruleRegistrations; });
 
             if (network.Consensus.IsProofOfStake)
             {

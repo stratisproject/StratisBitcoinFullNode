@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.DateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new ConsensusOptions();
-            network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
+            network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
 
             var consensusSettings = new ConsensusSettings(testChainContext.NodeSettings);
             testChainContext.Checkpoints = new Checkpoints();
@@ -96,8 +96,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var dataFolder = new DataFolder(TestBase.AssureEmptyDir(dataDir));
             testChainContext.PeerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory, new SelfEndpointTracker());
 
-            testChainContext.MockConnectionManager = new Moq.Mock<IConnectionManager>();
-            testChainContext.MockReadOnlyNodesCollection = new Moq.Mock<IReadOnlyNetworkPeerCollection>();
+            testChainContext.MockConnectionManager = new Mock<IConnectionManager>();
+            testChainContext.MockReadOnlyNodesCollection = new Mock<IReadOnlyNetworkPeerCollection>();
             testChainContext.MockConnectionManager.Setup(s => s.ConnectedPeers).Returns(testChainContext.MockReadOnlyNodesCollection.Object);
             testChainContext.MockConnectionManager.Setup(s => s.NodeSettings).Returns(testChainContext.NodeSettings);
             testChainContext.MockConnectionManager.Setup(s => s.ConnectionSettings).Returns(testChainContext.ConnectionSettings);

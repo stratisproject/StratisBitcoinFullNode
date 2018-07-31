@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Rules;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
@@ -21,7 +20,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         private readonly ILogger logger;
 
         /// <summary>A collection of rules that well be executed by the rules engine.</summary>
-        private readonly Dictionary<string, IConsensusRule> consensusRules;
+        private readonly Dictionary<string, ConsensusRule> consensusRules;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; }
@@ -47,9 +46,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <inheritdoc />
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
-        /// <summary>The set of rules this instance of the node will execute.</summary>
-        private IRuleRegistration ruleRegistration;
-
         /// <summary>
         /// Group of rules that are marked with a <see cref="PartialValidationRuleAttribute"/> or no attribute.
         /// </summary>
@@ -71,7 +67,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         private readonly List<ConsensusRuleDescriptor> headerValidationRules;
 
         /// <inheritdoc />
-        public List<IConsensusRule> Rules => this.consensusRules.Values.ToList();
+        public List<ConsensusRule> Rules => this.consensusRules.Values.ToList();
 
         /// <summary>
         /// Initializes an instance of the object.
@@ -98,7 +94,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.NodeDeployments = nodeDeployments;
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
 
-            this.consensusRules = new Dictionary<string, IConsensusRule>();
+            this.consensusRules = new Dictionary<string, ConsensusRule>();
             this.partialValidationRules = new List<ConsensusRuleDescriptor>();
             this.headerValidationRules = new List<ConsensusRuleDescriptor>();
             this.fullValidationRules = new List<ConsensusRuleDescriptor>();
@@ -108,12 +104,9 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <inheritdoc />
         public ConsensusRules Register()
         {
-            this.ruleRegistration = this.Network.Consensus.Rules;
+            Guard.Assert(this.Network.Consensus.Rules.Any());
 
-            Guard.NotNull(this.ruleRegistration, nameof(this.ruleRegistration));
-            Guard.Assert(this.ruleRegistration.GetRules().Any());
-
-            foreach (ConsensusRule consensusRule in this.ruleRegistration.GetRules())
+            foreach (ConsensusRule consensusRule in this.Network.Consensus.Rules)
             {
                 consensusRule.Parent = this;
                 consensusRule.Logger = this.loggerFactory.CreateLogger(consensusRule.GetType().FullName);

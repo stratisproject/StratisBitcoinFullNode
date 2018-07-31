@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<ICoinView, CachedCoinView>();
-                    services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
+                    services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>());
                     services.AddSingleton<IConsensusLoop, ConsensusLoop>()
                         .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
                         .AddSingleton<IGetUnspentTransaction, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop);
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                     services.AddSingleton<IConsensusRules, SmartContractConsensusRules>();
 
-                    fullNodeBuilder.Network.Consensus.Rules = new SmartContractRuleRegistration();
+                    fullNodeBuilder.Network.Consensus.Rules = new SmartContractRuleRegistration().GetRules();
                 });
             });
 

@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.entry = new TestMemPoolEntryHelper();
                 this.chain = new ConcurrentChain(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
-                this.network.Consensus.Rules = new SmartContractRuleRegistration();
+                this.network.Consensus.Rules = new SmartContractRuleRegistration().GetRules();
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 

@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.entry = new TestMemPoolEntryHelper();
                 this.chain = new ConcurrentChain(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
-                this.network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
+                this.network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 

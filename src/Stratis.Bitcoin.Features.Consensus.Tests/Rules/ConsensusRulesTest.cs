@@ -17,10 +17,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 {
     public class ConsensusRulesTest : TestConsensusRulesUnitTestBase
     {
-        public ConsensusRulesTest()
-        {
-        }
-
         [Fact]
         public void Constructor_InitializesClass()
         {
@@ -55,16 +51,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.loggerFactory.Setup(l => l.CreateLogger(typeof(SetActivationDeploymentsRule).FullName))
                 .Returns(new Mock<ILogger>().Object)
                 .Verifiable();
-            this.ruleRegistrations = new List<ConsensusRule> {
+
+            TestConsensusRules consensusRules = InitializeConsensusRules();
+            this.network.Consensus.Rules = new List<IConsensusRule> {
                 new BlockSizeRule(),
                 new SetActivationDeploymentsRule()
             };
-
-            TestConsensusRules consensusRules = InitializeConsensusRules();
-            this.network.Consensus.Rules = this.ruleRegistration.Object;
             consensusRules = consensusRules.Register() as TestConsensusRules;
 
-            List<IConsensusRule> rules = consensusRules.Rules.ToList();
+            List<ConsensusRule> rules = consensusRules.Rules.ToList();
             Assert.Equal(2, rules.Count);
             ConsensusRule rule = (ConsensusRule)rules[0];
             Assert.Equal(typeof(TestConsensusRules), rule.Parent.GetType());
@@ -83,10 +78,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var rule = new Mock<ConsensusRule>();
             rule.Setup(r => r.RunAsync(It.Is<RuleContext>(c => c.SkipValidation == false)));
 
-            this.ruleRegistrations = new List<ConsensusRule> { rule.Object };
-
             TestConsensusRules consensusRules = InitializeConsensusRules();
-            this.network.Consensus.Rules = this.ruleRegistration.Object;
+            this.network.Consensus.Rules = new List<IConsensusRule> { rule.Object };
             Assert.Throws<ConsensusException>(() => { consensusRules.Register(); });
         }
 
@@ -94,9 +87,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public async Task ValidateAsync_RuleWithValidationRuleAttribute_GetsRunAsync()
         {
             var rule = new ConsensusRuleWithValidationAttribute();
-            this.ruleRegistrations = new List<ConsensusRule> { rule };
             TestConsensusRules consensusRules = InitializeConsensusRules();
-            this.network.Consensus.Rules = this.ruleRegistration.Object;
+            this.network.Consensus.Rules = new List<IConsensusRule> { rule };
             consensusRules.Register();
 
             await consensusRules.ValidateAsync(new RuleContext() { SkipValidation = true });
@@ -108,9 +100,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public async Task ValidateAsync_RuleWithNonValidationRuleAttribute_GetsRunAsync()
         {
             var rule = new ConsensusRuleWithoutNonValidationRuleAttribute();
-            this.ruleRegistrations = new List<ConsensusRule> { rule };
             TestConsensusRules consensusRules = InitializeConsensusRules();
-            this.network.Consensus.Rules = this.ruleRegistration.Object;
+            this.network.Consensus.Rules = new List<IConsensusRule> { rule };
             consensusRules.Register();
 
             await consensusRules.ValidateAsync(new RuleContext() { SkipValidation = true });
@@ -122,7 +113,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public async Task ExecuteAsync_RuleCannotSkipValidation_ContextCannotSkipValidation_RunsRuleAsync()
         {
             var rule = new ConsensusRuleWithValidationAttribute();
-            this.ruleRegistrations = new List<ConsensusRule> { rule };
             var blockValidationContext = new ValidationContext()
             {
                 RuleContext = new RuleContext()
@@ -131,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 }
             };
             TestConsensusRules consensusRules = InitializeConsensusRules();
-            this.network.Consensus.Rules = this.ruleRegistration.Object;
+            this.network.Consensus.Rules = new List<IConsensusRule> { rule };
             consensusRules.Register();
 
             await consensusRules.AcceptBlockAsync(blockValidationContext, new ChainedHeader(this.network.GetGenesis().Header, this.network.GenesisHash, 0));
@@ -144,7 +134,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public async Task ExecuteAsync_RuleCanSkipValidation_ContextRequiresValidation_RunsRuleAsync()
         {
             var rule = new ConsensusRuleWithSkipValidationAttribute();
-            this.ruleRegistrations = new List<ConsensusRule> { rule };
 
             var blockValidationContext = new ValidationContext()
             {
@@ -154,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 }
             };
             TestConsensusRules consensusRules = InitializeConsensusRules();
-            this.network.Consensus.Rules = this.ruleRegistration.Object;
+            this.network.Consensus.Rules = new List<IConsensusRule> { rule };
             consensusRules.Register();
 
             await consensusRules.AcceptBlockAsync(blockValidationContext, new ChainedHeader(this.network.GetGenesis().Header, this.network.GenesisHash, 0));
@@ -167,7 +156,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public async Task ExecuteAsync_RuleCannotSkipValidation_ContextCanSkipValidation_RunsRuleAsync()
         {
             var rule = new ConsensusRuleWithValidationAttribute();
-            this.ruleRegistrations = new List<ConsensusRule> { rule };
 
             var blockValidationContext = new ValidationContext()
             {
@@ -177,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 }
             };
             TestConsensusRules consensusRules = InitializeConsensusRules();
-            this.network.Consensus.Rules = this.ruleRegistration.Object;
+            this.network.Consensus.Rules = new List<IConsensusRule> { rule };
             consensusRules.Register();
 
             await consensusRules.AcceptBlockAsync(blockValidationContext, new ChainedHeader(this.network.GetGenesis().Header, this.network.GenesisHash, 0));
@@ -190,14 +178,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public async Task ExecuteAsync_RuleCanSkipValidation_ContextCanSkipValidation_DoesNotRunRuleAsync()
         {
             var rule = new ConsensusRuleWithSkipValidationAttribute();
-            this.ruleRegistrations = new List<ConsensusRule> { rule };
-
             var blockValidationContext = new ValidationContext()
             {
                 ChainedHeader = this.concurrentChain.Tip,
             };
             TestConsensusRules consensusRules = InitializeConsensusRules();
-            this.network.Consensus.Rules = this.ruleRegistration.Object;
+            this.network.Consensus.Rules = new List<IConsensusRule> { rule };
             consensusRules.RuleContext = new RuleContext() { SkipValidation = true };
 
             consensusRules.Register();
@@ -226,7 +212,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 .Throws(new ConsensusErrorException(consensusError))
                 .Verifiable();
 
-            this.ruleRegistrations = new List<ConsensusRule> { new TestRule() };
             var blockValidationContext = new ValidationContext()
             {
                 RuleContext = new RuleContext()
@@ -234,8 +219,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                     SkipValidation = false
                 }
             };
+
             TestConsensusRules consensusRules = InitializeConsensusRules();
-            this.network.Consensus.Rules = this.ruleRegistration.Object;
+            this.network.Consensus.Rules = new List<IConsensusRule> { new TestRule() };
             consensusRules.Register();
 
             await consensusRules.AcceptBlockAsync(blockValidationContext, new ChainedHeader(this.network.GetGenesis().Header, this.network.GenesisHash, 0));
@@ -249,13 +235,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         [Fact]
         public void TryFindRule_RuleFound_ReturnsConsensusRule()
         {
-            this.ruleRegistrations = new List<ConsensusRule> {
-                new BlockSizeRule()
-            };
-
             TestConsensusRules consensusRules = this.InitializeConsensusRules();
-            this.network.Consensus.Rules = this.ruleRegistration.Object;
-            consensusRules = consensusRules.Register() as TestConsensusRules;
+            this.network.Consensus.Rules = new List<IConsensusRule> { new BlockSizeRule() }; consensusRules = consensusRules.Register() as TestConsensusRules;
 
             var rule = consensusRules.Rules.TryFindRule<BlockSizeRule>();
 
@@ -266,12 +247,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         [Fact]
         public void TryFindRule_RuleNotFound_ReturnsNull()
         {
-            this.ruleRegistrations = new List<ConsensusRule> {
-                new SetActivationDeploymentsRule()
-            };
-
             TestConsensusRules consensusRules = this.InitializeConsensusRules();
-            this.network.Consensus.Rules = this.ruleRegistration.Object;
+            this.network.Consensus.Rules = new List<IConsensusRule> { new SetActivationDeploymentsRule() };
             consensusRules = consensusRules.Register() as TestConsensusRules;
 
             var rule = consensusRules.Rules.TryFindRule<BlockSizeRule>();
@@ -282,12 +259,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         [Fact]
         public void FindRule_RuleFound_ReturnsConsensusRule()
         {
-            this.ruleRegistrations = new List<ConsensusRule> {
+            TestConsensusRules consensusRules = this.InitializeConsensusRules();
+            this.network.Consensus.Rules = new List<IConsensusRule> {
                 new BlockSizeRule()
             };
-
-            TestConsensusRules consensusRules = this.InitializeConsensusRules();
-            this.network.Consensus.Rules = this.ruleRegistration.Object;
             consensusRules = consensusRules.Register() as TestConsensusRules;
 
             var rule = consensusRules.Rules.FindRule<BlockSizeRule>();
@@ -301,12 +276,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
             Assert.Throws<Exception>(() =>
             {
-                this.ruleRegistrations = new List<ConsensusRule> {
+                TestConsensusRules consensusRules = this.InitializeConsensusRules();
+                this.network.Consensus.Rules = new List<IConsensusRule> {
                     new SetActivationDeploymentsRule()
                 };
-
-                TestConsensusRules consensusRules = this.InitializeConsensusRules();
-                this.network.Consensus.Rules = this.ruleRegistration.Object;
                 consensusRules = consensusRules.Register() as TestConsensusRules;
 
                 consensusRules.Rules.FindRule<BlockSizeRule>();

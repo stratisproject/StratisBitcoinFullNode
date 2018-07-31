@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
-using NBitcoin.Rules;
 
 namespace Stratis.Bitcoin.Consensus.Rules
 {
@@ -18,7 +17,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <summary>
         /// Collection of all the rules that are registered with the engine.
         /// </summary>
-        List<IConsensusRule> Rules { get; }
+        List<ConsensusRule> Rules { get; }
 
         /// <summary>
         /// Keeps track of how much time different actions took to execute and how many times they were executed.

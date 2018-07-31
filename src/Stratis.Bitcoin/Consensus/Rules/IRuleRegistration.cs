@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+using NBitcoin.Rules;
 
-namespace NBitcoin.Rules
+namespace Stratis.Bitcoin.Consensus.Rules
 {
     /// <summary>
     /// An interface that will allow the registration of bulk consensus rules in to the engine.
@@ -16,6 +17,6 @@ namespace NBitcoin.Rules
         /// with the engine, this is important for rules with dependencies on other rules.
         /// Rules are executed in the same order they are registered with the engine.
         /// </remarks>
-        IEnumerable<IConsensusRule> GetRules();
+        List<IConsensusRule> GetRules();
     }
 }
