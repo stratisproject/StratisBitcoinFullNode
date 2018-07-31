@@ -2047,6 +2047,47 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
+        /// Issue 18 @ Peer A starts to claim chain that D claims. Make sure that 8a, 9a are disconnected.
+        /// </summary>
+        [Fact]
+        public void PeerAClaimsChainThatPeerDClaims_Heads8Aand9A_Shoulddisconect()
+        {
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+            ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
+
+            ctx.SetupPeersForTest(cht, initialChainTip);
+
+            // Additional SetUp for current test.
+            ChainedHeader chainATip = cht.GetPeerTipChainedHeaderByPeerId(0);
+            ChainedHeader[] last2HeadersPeerA = {
+                chainATip.Previous, chainATip
+            };
+            var intitialChainedHeaders = new Dictionary<uint256, ChainedHeader>(cht.GetChainedHeadersByHash());
+
+            // Checking that 8a,9a in chained tree.
+            intitialChainedHeaders.Should().ContainValues(last2HeadersPeerA);
+
+            ChainedHeader chainDTip = cht.GetPeerTipChainedHeaderByPeerId(3);
+
+            // Peed A claims Peer D chain.
+            chainATip = chainDTip;
+
+            List<BlockHeader> peerABlockHeaders = ctx.ChainedHeaderToList(chainATip, chainATip.Height);
+
+            cht.ConnectNewHeaders(0, peerABlockHeaders);
+
+            var chainedHeadersAfterPeerAChainged = new Dictionary<uint256, ChainedHeader>(cht.GetChainedHeadersByHash());
+
+            // Checking that 8a,9a not presented in chained tree anymore.
+            chainedHeadersAfterPeerAChainged.Should().NotContainValues(last2HeadersPeerA);
+
+            this.CheckChainedHeaderTreeConsistency(cht, ctx, consensusTip, new HashSet<int>() { 0, 1, 2, 3 });
+        }
+
+        /// <summary>
         /// Issue 19 @ New peer K claims 10d. Peer K disconnects. Chain shouldn't change.
         /// </summary>
         [Fact]
