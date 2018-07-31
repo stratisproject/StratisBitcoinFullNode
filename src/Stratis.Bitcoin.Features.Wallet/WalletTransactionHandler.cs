@@ -264,11 +264,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Find the next available change address.
+        /// If a ChangeAddress was set in the options send change there, otherwise find the next available change address.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void FindChangeAddress(TransactionBuildContext context)
         {
+            if (context.BuildOptions.ChangeAddress != null)
+            {
+                // TODO: Do we want to check this address belongs to the same wallet?
+                context.TransactionBuilder.SetChange(context.BuildOptions.ChangeAddress.ScriptPubKey);
+                return;
+            }
+
             // Get an address to send the change to.
             context.ChangeAddress = this.walletManager.GetUnusedChangeAddress(new WalletAccountReference(context.AccountReference.WalletName, context.AccountReference.AccountName));
             context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
@@ -410,6 +417,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.AccountReference = options.WalletAccountReference;
                 this.Recipients = options.Recipients;
                 this.WalletPassword = options.WalletPassword;
+                this.TransactionFee = options.TransactionFee;
                 this.FeeType = options.FeeType;
                 this.MinConfirmations = options.MinConfirmations;
                 this.SelectedInputs = options.SelectedInputs;
