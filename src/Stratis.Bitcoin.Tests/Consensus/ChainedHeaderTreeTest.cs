@@ -388,7 +388,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// <summary>
         /// Issue 4 @ Create chained header tree component #1321
         /// Supply headers where half of them are new and half are old.
-        /// Make sure that ChainedHeader was created for new ones.
+        /// Make sure that ChainTipToExtand was created for new ones.
         /// </summary>
         [Fact]
         public void ConnectHeaders_HalfOldHalfNew_ShouldCreateHeadersForNew()
@@ -407,7 +407,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Supply both old and new headers.
             chainedHeaderTree.ConnectNewHeaders(1, listOfOldAndNewHeaders);
 
-            // ChainedHeader tree entries are created for all new BlockHeaders.
+            // ChainTipToExtand tree entries are created for all new BlockHeaders.
             IEnumerable<uint256> hashesOfNewBlocks = listOfOldAndNewHeaders.Select(x => x.GetHash()).TakeLast(chainExtensionSize);
             Assert.True(hashesOfNewBlocks.All(x => chainedHeaderTree.GetChainedHeadersByHash().Keys.Contains(x)));
         }

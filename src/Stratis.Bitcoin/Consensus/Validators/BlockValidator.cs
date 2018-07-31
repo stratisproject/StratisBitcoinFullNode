@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            var validationContext = new ValidationContext { ChainedHeader = chainedHeader };
+            var validationContext = new ValidationContext { ChainTipToExtand = chainedHeader };
 
             this.consensusRules.HeaderValidation(validationContext);
 
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            var validationContext = new ValidationContext { Block = block, ChainedHeader = chainedHeader };
+            var validationContext = new ValidationContext { Block = block, ChainTipToExtand = chainedHeader };
 
             this.consensusRules.IntegrityValidation(validationContext);
 
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(item), item);
 
-            var validationContext = new ValidationContext { Block = item.ChainedHeaderBlock.Block, ChainedHeader = item.ChainedHeaderBlock.ChainedHeader };
+            var validationContext = new ValidationContext { Block = item.ChainedHeaderBlock.Block, ChainTipToExtand = item.ChainedHeaderBlock.ChainedHeader };
 
             // TODO: pass the tip.
             await this.consensusRules.PartialValidationAsync(validationContext).ConfigureAwait(false);

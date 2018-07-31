@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             await base.RunAsync(context).ConfigureAwait(false);
             var posRuleContext = context as PosRuleContext;
-            await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeader, posRuleContext.BlockStake).ConfigureAwait(false);
+            await this.stakeChain.SetAsync(context.ValidationContext.ChainTipToExtand, posRuleContext.BlockStake).ConfigureAwait(false);
 
             this.Logger.LogTrace("(-)");
         }
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
+            ChainedHeader chainedHeader = context.ValidationContext.ChainTipToExtand;
             Block block = context.ValidationContext.Block;
             var posRuleContext = context as PosRuleContext;
             BlockStake blockStake = posRuleContext.BlockStake;
