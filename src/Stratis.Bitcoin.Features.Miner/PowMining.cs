@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
         private void OnBlockMined(MineBlockContext context)
         {
-            this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(context.ValidationContext.Block) ? "POS" : "POW", context.ValidationContext.ChainedHeader);
+            this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(context.ValidationContext.Block) ? "POS" : "POW", context.ValidationContext.ChainTipToExtand);
 
             context.CurrentHeight++;
 

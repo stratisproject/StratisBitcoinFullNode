@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             var blockValidationContext = new ValidationContext()
             {
-                ChainedHeader = this.concurrentChain.Tip,
+                ChainTipToExtand = this.concurrentChain.Tip,
             };
             TestConsensusRules consensusRules = InitializeConsensusRules();
             consensusRules.RuleContext = new RuleContext() { SkipValidation = true };

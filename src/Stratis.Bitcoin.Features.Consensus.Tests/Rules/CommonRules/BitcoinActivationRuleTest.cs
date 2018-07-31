@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
 
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
 
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 2;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
 
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 2;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
 
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
 
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
 
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 3;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
 
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 3;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
 
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 2;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
 
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 2;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
 
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
 
@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
 
@@ -243,7 +243,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             await this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext);
         }
@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 2;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             await this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext);
         }
@@ -275,7 +275,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 3;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             await this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext);
         }
@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 4;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 1);
 
             await this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext);
         }

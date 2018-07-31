@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
         public override void Run(RuleContext context)
         {
-            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
+            ChainedHeader chainedHeader = context.ValidationContext.ChainTipToExtand;
 
             if (chainedHeader.Header.Version < 7)
             {

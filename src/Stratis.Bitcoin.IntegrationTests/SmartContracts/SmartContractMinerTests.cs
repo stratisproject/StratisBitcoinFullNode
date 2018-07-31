@@ -106,7 +106,7 @@
 //            {2, 0xbbbeb305}, {2, 0xfe1c810a}
 //        };
 
-//        public bool TestSequenceLocks(TestContext testContext, ChainedHeader chainedBlock, Transaction tx, Transaction.LockTimeFlags flags, LockPoints uselock = null)
+//        public bool TestSequenceLocks(TestContext testContext, ChainTipToExtand chainedBlock, Transaction tx, Transaction.LockTimeFlags flags, LockPoints uselock = null)
 //        {
 //            var context = new MempoolValidationContext(tx, new MempoolValidationState(false))
 //            {

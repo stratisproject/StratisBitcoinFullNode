@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (!context.MinedBlock && !context.ValidationContext.Block.Header.CheckProofOfWork())
                 ConsensusErrors.HighHash.Throw();
 
-            Target nextWorkRequired = context.ValidationContext.ChainedHeader.GetWorkRequired(this.Parent.Network.Consensus);
+            Target nextWorkRequired = context.ValidationContext.ChainTipToExtand.GetWorkRequired(this.Parent.Network.Consensus);
 
             BlockHeader header = context.ValidationContext.Block.Header;
 
