@@ -1,19 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-
 using FluentAssertions;
-
 using NBitcoin;
-
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Miner.Staking;
-using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit;
-using StakingWallet = Stratis.Bitcoin.Features.Wallet.Wallet;
-
 
 namespace Stratis.Bitcoin.Features.Miner.Tests
 {
@@ -21,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     {
         private const int ChainHeight = 500000;
 
-        private const int SplitFactor = 8;
+        private const int SplitFactor = PosMinting.SplitFactor;
 
         public StakeSplittingTests()
         {
@@ -31,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void Given_A_Wallet_With_Big_And_Small_Coins_Then_Big_Coins_Below_Target_Should_Get_Split()
         {
-            //target value around 4700
+            // Aiming for target value around 4700.
             var amounts = new[] { 2000, 10 }
                 .Concat(Enumerable.Repeat(100_000, 3))
                 .Select(a => new Money(a, MoneyUnit.BTC))
@@ -67,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void Given_A_Wallet_With_Big_And_Small_Coins_Then_Coins_Below_Target_Should_Get_Split()
         {
-            //target value around 4700
+            // Aiming for target value around 4700.
             var amounts = new[] { 2000, 10 }
                 .Concat(Enumerable.Repeat(100_000, 3))
                 .Select(a => new Money(a, MoneyUnit.BTC))
@@ -152,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var transaction = this.posMinting.PrepareCoinStakeTransactions(
                 currentChainHeight: ChainHeight,
                 coinstakeContext: coinStakeContext,
-                coinstakeInputValue: coinstakeInputValue,
+                coinstakeOutputValue: coinstakeInputValue,
                 utxosCount: amounts.Count,
                 amountStaked: amountStaked);
             return (coinstakeInputValue, transaction);
@@ -206,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var transaction = this.posMinting.PrepareCoinStakeTransactions(
                 currentChainHeight: ChainHeight,
                 coinstakeContext: coinStakeContext,
-                coinstakeInputValue: coinstakeInputValue,
+                coinstakeOutputValue: coinstakeInputValue,
                 utxosCount: amounts.Count,
                 amountStaked: amounts.Sum(u => u.Satoshi));
             return transaction;
