@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <summary>When splitting a big utxo, this is the number of smaller utxos we divide it into.</summary>
         internal const int SplitFactor = 8;
 
-        /// <summary>Minimum value of a split utxo we are aiming for (after splitting it into <c><seealso cref="SplitFactor" /></c> equal parts).</summary>
+        /// <summary>Minimum value of a split utxo we are aiming for (after splitting it into <see cref="SplitFactor" /> equal parts).</summary>
         private const long SplitCoinMinSize = 100 * Money.COIN;
 
         /// <summary>
@@ -723,7 +723,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             // Total amount of input values in coinstake transaction.
             long coinstakeOutputValue = coinstakeInput.TxOut.Value + reward;
 
-            Transaction coinstakeTx = this.PrepareCoinStakeTransactions(chainTip.Height, coinstakeContext, coinstakeOutputValue, stakingUtxoDescriptions.Count, ourWeight);
+            int eventuallyStakableUtxosCount = utxoStakeDescriptions.Count;
+            Transaction coinstakeTx = this.PrepareCoinStakeTransactions(chainTip.Height, coinstakeContext, coinstakeOutputValue, eventuallyStakableUtxosCount, ourWeight);
 
             // Sign.
             if (!this.SignTransactionInput(coinstakeInput, coinstakeTx))
@@ -751,7 +752,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5},{6}:{7})", nameof(currentChainHeight), currentChainHeight, nameof(coinstakeOutputValue), coinstakeOutputValue, nameof(utxosCount), utxosCount, nameof(amountStaked), amountStaked);
 
             // Split stake into SplitFactor utxos if above threshold.
-            bool shouldSplitStake = this.ShouldSplitStake(utxosCount, amountStaked, coinstakeOutputValue, SplitFactor, currentChainHeight);
+            bool shouldSplitStake = this.ShouldSplitStake(utxosCount, amountStaked, coinstakeOutputValue, currentChainHeight);
 
             if (!shouldSplitStake)
             {
@@ -1134,20 +1135,23 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <summary>
         /// Checks whether the coinstake should be split or not.
         /// </summary>
-        /// <param name="stakedUtxosCount">Number of non-empty UTXOs currently at stake.</param>
-        /// <param name="amountStaked">Total amount currently at stake</param>
-        /// <param name="coinValue">Value of the coin we are considering to split</param>
-        /// <param name="splitFactor">number of time we want to split the coin</param>
-        /// <param name="chainHeight">Current height of the chain</param>
+        /// <param name="stakedUtxosCount">Number of UTXOs that the wallet could stake, if coin base maturity and stake minimum confirmations were not taken into account.</param>
+        /// <param name="amountStaked">Total amount currently at stake.</param>
+        /// <param name="coinValue">Value of the coin we are considering to split.</param>
+        /// <param name="chainHeight">Current height of the chain.</param>
         /// <returns><c>true</c> if the coinstake should be split, <c>false</c> otherwise.</returns>
         /// <remarks>
-        /// The rule is that we want to be splitting coins until they are individually around 100 Strats,
-        /// but aiming not to exceed a total amount of coins bigger than (<c><seealso cref="requiredCoinAgeForStaking"/></c>>+1)*<c><seealso cref="CoinstakeSplitLimitMultiplier"/></c>.
+        /// We do not split a coin if the value of new coins after the split would be less than<see cref="SplitCoinMinSize" />.Because we split the coin to multiple outputs defined by split factor, we only consider coins with value at least <see cref="SplitCoinMinSize" /> * < see cref="SplitFactor" />.
+        /// <para>
+        /// If the above-mentioned criteria is satisfied, then we split the coin if its value is greater than an expected average value of coins that we would have if we have perfect distribution of the value among all our coins while having a specific number of coins that we aim for. The optimal number of coins we are looking for is calculated based on consensus settings of coin maturity and minimum required coin age for staking.
+        /// </para>
         /// </remarks>
-        internal bool ShouldSplitStake(int stakedUtxosCount, long amountStaked, long coinValue, int splitFactor, int chainHeight)
+        /// <seealso cref="CoinstakeSplitLimitMultiplier" />
+        /// <seealso cref="SplitFactor" />                                                                                                                                              
+        internal bool ShouldSplitStake(int stakedUtxosCount, long amountStaked, long coinValue, int chainHeight)
         {
-            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5},{6}:{7},{8}:{9})", nameof(stakedUtxosCount), stakedUtxosCount, nameof(amountStaked), amountStaked, 
-                nameof(coinValue), coinValue, nameof(splitFactor), splitFactor, nameof(chainHeight), chainHeight);
+            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5},{6}:{7})", nameof(stakedUtxosCount), stakedUtxosCount, nameof(amountStaked), amountStaked, 
+                nameof(coinValue), coinValue, nameof(chainHeight), chainHeight);
             
             long coinAgeLimit = ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(chainHeight + 1, this.network);
             long coinMaturityLimit = this.network.Consensus.CoinbaseMaturity;
@@ -1156,11 +1160,10 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
             long targetCoinDistributionSize = (requiredCoinAgeForStaking + 1) * CoinstakeSplitLimitMultiplier;
 
-            bool coinAboveMaxValue = coinValue > splitFactor * SplitCoinMinSize;
-            bool utxosCanStillBeSplitted = stakedUtxosCount < targetCoinDistributionSize;
-            bool coinAboveTargetAverage = coinValue > amountStaked / targetCoinDistributionSize;
+            bool coinAboveMinValue = coinValue > SplitFactor * SplitCoinMinSize;
+            bool coinAboveTargetAverage = coinValue > (amountStaked / targetCoinDistributionSize) + Money.COIN;
 
-            bool shouldSplitCoin = coinAboveMaxValue && utxosCanStillBeSplitted && coinAboveTargetAverage;
+            bool shouldSplitCoin = coinAboveMinValue && coinAboveTargetAverage;
 
             this.logger.LogTrace("(-):{0}", shouldSplitCoin);
 

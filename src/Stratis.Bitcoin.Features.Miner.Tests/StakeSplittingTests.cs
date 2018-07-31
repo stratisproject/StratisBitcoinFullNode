@@ -13,8 +13,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     {
         private const int ChainHeight = 500000;
 
-        private const int SplitFactor = PosMinting.SplitFactor;
-
         public StakeSplittingTests()
         {
             this.network.Consensus.Options = new PosConsensusOptions();
@@ -33,7 +31,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 stakedUtxosCount: amounts.Length,
                 amountStaked: amounts.Sum(u => u.Satoshi),
                 coinValue: amounts.Last(),
-                splitFactor: SplitFactor,
                 chainHeight: ChainHeight);
 
             shouldStakeSplitForThe100000Coin.Should().BeTrue("coin is bigger than target average value");
@@ -50,7 +47,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 stakedUtxosCount: amounts.Length,
                 amountStaked: amounts.Sum(u => u.Satoshi),
                 coinValue: amounts.Last(),
-                splitFactor: SplitFactor,
                 chainHeight: ChainHeight);
 
             shouldStakeSplit.Should().BeTrue("coin is bigger than target average value");
@@ -65,20 +61,18 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Select(a => new Money(a, MoneyUnit.BTC))
                 .ToArray();
 
-            var shouldStakeSplitForThe1000Coin = this.posMinting.ShouldSplitStake(
+            var shouldStakeSplitForThe2000Coin = this.posMinting.ShouldSplitStake(
                  stakedUtxosCount: amounts.Length, 
                  amountStaked: amounts.Sum(u => u.Satoshi),
                  coinValue: amounts.First(),
-                 splitFactor: SplitFactor,
                  chainHeight: ChainHeight);
 
-            shouldStakeSplitForThe1000Coin.Should().BeFalse("coin is bigger than max value, but smaller than ");
+            shouldStakeSplitForThe2000Coin.Should().BeFalse("coin is bigger than max value, but smaller than target value");
 
             var shouldStakeSplitForThe10Coin = this.posMinting.ShouldSplitStake(
                 stakedUtxosCount: amounts.Length,
                 amountStaked: amounts.Sum(u => u.Satoshi),
                 coinValue: amounts.Skip(1).First(),
-                splitFactor: SplitFactor,
                 chainHeight: ChainHeight);
 
             shouldStakeSplitForThe10Coin.Should().BeFalse("because coin is below target average and max value");
@@ -99,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             var nonZeroOutputs = transaction.Outputs.Skip(1).ToList();
 
-            nonZeroOutputs.Count().Should().Be(SplitFactor);
+            nonZeroOutputs.Count().Should().Be(PosMinting.SplitFactor);
             nonZeroOutputs.Sum(t => t.Value)
                 .Should().Be(coinstakeInputValue);
             nonZeroOutputs.Select(o => o.ScriptPubKey)
@@ -135,7 +129,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 stakedUtxosCount: amounts.Count,
                 amountStaked: amountStaked,
                 coinValue: amounts.Last(),
-                splitFactor: SplitFactor,
                 chainHeight: ChainHeight).Should().Be(expectToSplit);
 
             var reward = 1.2M * Money.COIN;
@@ -160,15 +153,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             //only a rough calculation to prevent infinite loop later in the test
             var targetSplitCoinValue = amounts.Sum(u => u.Satoshi) / (500 + 1) * 3;
-            var maxIterations = Math.Ceiling((Math.Log(amounts.Last().Satoshi, SplitFactor) 
-                                       - Math.Log(targetSplitCoinValue, SplitFactor))) + 1;
+            var maxIterations = Math.Ceiling((Math.Log(amounts.Last().Satoshi, PosMinting.SplitFactor) 
+                                       - Math.Log(targetSplitCoinValue, PosMinting.SplitFactor))) + 1;
 
             var iterations = 0;
             while (this.posMinting.ShouldSplitStake(
                 stakedUtxosCount: amounts.Count,
                 amountStaked: amounts.Sum(u => u.Satoshi),
                 coinValue: amounts.Last(),
-                splitFactor: SplitFactor,
                 chainHeight: ChainHeight) && iterations < maxIterations)
             {
                 iterations++;
@@ -184,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             iterations.Should().BeLessThan((int)maxIterations, "the loop should end when we don't need to split anymore");
             amounts.Reverse();
-            amounts.Take(SplitFactor).All(a => a.Satoshi < targetSplitCoinValue)
+            amounts.Take(PosMinting.SplitFactor).All(a => a.Satoshi < targetSplitCoinValue)
                 .Should().BeTrue();
         }
 
