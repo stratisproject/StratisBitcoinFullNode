@@ -294,6 +294,8 @@ namespace Stratis.Bitcoin.Base
             {
                 disposable.Dispose();
             }
+
+            this.consensusRules.Dispose();
         }
     }
 

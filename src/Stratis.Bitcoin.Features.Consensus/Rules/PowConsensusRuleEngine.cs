@@ -54,5 +54,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         {
             return ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner).InitializeAsync();
         }
+
+        public override void Dispose()
+        {
+            var cache = this.UtxoSet as CachedCoinView;
+            if (cache != null)
+            {
+                this.logger.LogInformation("Flushing Cache CoinView...");
+                cache.FlushAsync().GetAwaiter().GetResult();
+                cache.Dispose();
+            }
+
+            ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner).Dispose();
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -12,7 +13,7 @@ namespace Stratis.Bitcoin.Consensus
     /// In order for a block to be valid it has to successfully pass the rules checks.
     /// A block  that is not valid will result in the <see cref="ValidationContext.Error"/> as not <c>null</c>.
     /// </remarks>
-    public interface IConsensusRuleEngine
+    public interface IConsensusRuleEngine : IDisposable
     {
         /// <summary>
         /// Collection of all the rules that are registered with the engine.
