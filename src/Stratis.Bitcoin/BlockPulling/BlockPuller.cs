@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -68,6 +69,9 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="block">The block.</param>
         /// <param name="peerId">ID of a peer that delivered a block.</param>
         void PushBlock(uint256 blockHash, Block block, int peerId);
+
+        /// <summary>Logs statistics to the console.</summary>
+        void ShowStats(StringBuilder statsBuilder);
     }
 
     /// <inheritdoc cref="IBlockPuller"/>
@@ -419,10 +423,11 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.processQueuesSignal.Reset();
             }
 
-            this.logger.LogTrace("Total amount of downloads assigned in this iteration is {0}.", newAssignments.Count);
-
             if (newAssignments.Count != 0)
+            {
+                this.logger.LogDebug("Total amount of downloads assigned in this iteration is {0}.", newAssignments.Count);
                 await this.AskPeersForBlocksAsync(newAssignments).ConfigureAwait(false);
+            }
 
             // Call callbacks with null since puller failed to deliver requested blocks.
             if (failedHashes.Count != 0)
@@ -968,10 +973,33 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Logs statistics to the console.</summary>
-        private void ShowStats()
+        /// <inheritdoc/>
+        public void ShowStats(StringBuilder statsBuilder)
         {
             this.logger.LogTrace("()");
+
+            statsBuilder.AppendLine("======Block Puller======");
+
+            lock (this.assignedLock)
+            {
+                int pendingBlocks = this.assignedDownloadsByHash.Count;
+                statsBuilder.AppendLine($"Blocks being downloaded: {pendingBlocks}");
+
+                int unassignedDownloads = 0;
+
+                foreach (DownloadJob downloadJob in this.downloadJobsQueue)
+                    unassignedDownloads += downloadJob.Headers.Count;
+
+                statsBuilder.AppendLine($"Queueued downloads: {unassignedDownloads}");
+            }
+
+            double averageBlockSizeKb = this.GetAverageBlockSizeBytes() / 1024.0;
+            statsBuilder.AppendLine($"Average block size: {Math.Round(averageBlockSizeKb, 2)} KB");
+
+            double totalSpeedKB = (this.GetTotalSpeedOfAllPeersBytesPerSec() / 1024.0);
+            statsBuilder.AppendLine($"Total download speed: {Math.Round(totalSpeedKB, 2)} KB/sec");
+
+
 
             //TODO: do that when component is activated.
 
@@ -986,6 +1014,8 @@ namespace Stratis.Bitcoin.BlockPulling
 		        show actual speed (no 1mb limit)
             */
 
+            statsBuilder.AppendLine("TODO");
+            statsBuilder.AppendLine("=========================");
             this.logger.LogTrace("(-)");
         }
 

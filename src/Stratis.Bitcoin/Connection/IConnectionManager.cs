@@ -46,8 +46,6 @@
 
         string GetNodeStats();
 
-        string GetStats();
-
         /// <summary>Initializes and starts each peer connection as well as peer discovery.</summary>
         void Initialize();
 
@@ -68,7 +66,7 @@
 
         /// <summary>Connection settings.</summary>
         ConnectionManagerSettings ConnectionSettings { get; }
-        
+
         /// <summary>
         /// Remove a peer from the address manager's collection as well as
         /// the connection manager's add node collection.

@@ -70,8 +70,6 @@ namespace Stratis.Bitcoin.Connection
             get { return this.connectedPeers; }
         }
 
-        private readonly Dictionary<INetworkPeer, PerformanceSnapshot> downloads;
-
         private NetworkPeerServices discoveredNodeRequiredService = NetworkPeerServices.Network;
 
         public List<NetworkPeerServer> Servers { get; }
@@ -116,8 +114,6 @@ namespace Stratis.Bitcoin.Connection
             this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{versionProvider.GetVersion()}";
 
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
-
-            this.downloads = new Dictionary<INetworkPeer, PerformanceSnapshot>();
         }
 
         /// <inheritdoc />
@@ -195,56 +191,12 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
-        public string GetStats()
-        {
-            var builder = new StringBuilder();
-            lock (this.downloads)
-            {
-                var diffTotal = new PerformanceSnapshot(0, 0);
-                builder.AppendLine("=======Connections=======");
-                foreach (INetworkPeer peer in this.ConnectedPeers)
-                {
-                    PerformanceSnapshot newSnapshot = peer.Counter.Snapshot();
-                    PerformanceSnapshot lastSnapshot = null;
-                    if (this.downloads.TryGetValue(peer, out lastSnapshot))
-                    {
-                        BlockPullerBehavior behavior = peer.Behaviors.OfType<BlockPullerBehavior>().Single();
-
-                        PerformanceSnapshot diff = newSnapshot - lastSnapshot;
-                        diffTotal = new PerformanceSnapshot(diff.TotalReadBytes + diffTotal.TotalReadBytes, diff.TotalWrittenBytes + diffTotal.TotalWrittenBytes) { Start = diff.Start, Taken = diff.Taken };
-                        builder.Append((peer.RemoteSocketAddress + ":" + peer.RemoteSocketPort).PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + this.ToKBSec(diff.ReadenBytesPerSecond) + "\tW:" + this.ToKBSec(diff.WrittenBytesPerSecond));
-                        if (behavior != null)
-                        {
-                            int intQuality = (int)behavior.QualityScore;
-                            builder.Append("\tQualityScore: " + intQuality + (intQuality < 10 ? "\t" : "") + "\tPendingBlocks: fix me"); // + behavior.PendingDownloadsCount);
-                        }
-
-                        builder.AppendLine();
-                    }
-
-                    this.downloads.AddOrReplace(peer, newSnapshot);
-                }
-
-                builder.AppendLine("=================");
-                builder.AppendLine("Total".PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + this.ToKBSec(diffTotal.ReadenBytesPerSecond) + "\tW:" + this.ToKBSec(diffTotal.WrittenBytesPerSecond));
-                builder.AppendLine("==========================");
-
-                //TODO: Hack, we should just clean nodes that are not connect anymore.
-                if (this.downloads.Count > 1000)
-                    this.downloads.Clear();
-            }
-
-            return builder.ToString();
-        }
-
-
         public string GetNodeStats()
         {
             var builder = new StringBuilder();
 
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
-                var connectionManagerBehavior = peer.Behavior<IConnectionManagerBehavior>();
                 var chainHeadersBehavior = peer.Behavior<ConsensusManagerBehavior>();
 
                 string agent = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]";

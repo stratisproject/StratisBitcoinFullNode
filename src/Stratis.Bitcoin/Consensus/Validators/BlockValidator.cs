@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
             }
             catch (Exception exception)
             {
-                this.logger.LogCritical(exception.ToString());
+                this.logger.LogCritical("Partial validation callback threw an exception: {0}.", exception);
                 throw;
             }
 

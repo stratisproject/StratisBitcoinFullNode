@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -192,6 +193,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         public void RequestBlocksDownload(List<ChainedHeader> headers) { this.puller.RequestBlocksDownload(headers); }
 
         public void PushBlock(uint256 blockHash, Block block, int peerId) { this.puller.PushBlock(blockHash, block, peerId); }
+
+        public void ShowStats(StringBuilder statsBuilder) { this.puller.ShowStats(statsBuilder); }
 
         public void Dispose() { this.puller.Dispose(); }
     }
