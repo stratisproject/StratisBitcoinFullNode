@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             // TODO: set a rule that will be invoked when a validation of a block failed.
 
-            // This will allow the creator of the blockchain to provide  
+            // This will allow the creator of the blockchain to provide
             // an error handler rule that is unique to the current blockchain.
             // future sidechains may have additional handling of errors that
             // extend or replace the default current error handling code.
@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Consensus
 
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
+            await this.ExecuteRulesAsync(this.fullValidationRules, ruleContext).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>

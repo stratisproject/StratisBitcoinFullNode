@@ -16,6 +16,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of stake is incorrect.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            if (context.SkipValidation)
+            {
+                this.Logger.LogTrace("(-)[SKIP_VALIDATION]");
+                return Task.CompletedTask;
+            }
+
             var posRuleContext = context as PosRuleContext;
 
             posRuleContext.BlockStake = BlockStake.Load(context.ValidationContext.Block);
