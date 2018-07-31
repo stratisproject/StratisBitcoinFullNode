@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             BlockHeader header = context.ValidationContext.ChainTipToExtand.Header;
 
-            int height = context.ConsensusTipHeight + 1;
+            int height = context.ValidationContext.ChainTipToExtand.Height;
 
             // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
             // check for version 2, 3 and 4 upgrades.

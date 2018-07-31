@@ -22,9 +22,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
         public bool SkipValidation { get; set; }
 
-        /// <summary>The height of the consensus tip.</summary>
-        public int ConsensusTipHeight { get; set; }
-
         public RuleContext()
         {
         }

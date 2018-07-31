@@ -521,7 +521,7 @@ namespace Stratis.Bitcoin.Consensus
                 return result;
             }
 
-            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(newTip, currentTip, blocksToConnect).ConfigureAwait(false);
+            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(newTip, blocksToConnect).ConfigureAwait(false);
 
             if (connectBlockResult.Succeeded)
             {
@@ -553,7 +553,7 @@ namespace Stratis.Bitcoin.Consensus
                 return result;
             }
 
-            ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(oldTip, currentTip, blocksToReconnect).ConfigureAwait(false);
+            ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(currentTip, blocksToReconnect).ConfigureAwait(false);
 
             this.logger.LogTrace("(-):'{0}'", reconnectionResult);
             return reconnectionResult;
@@ -610,18 +610,17 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Connects new chain.</summary>
         /// <param name="newTip">New tip.</param>
-        /// <param name="currentTip">Current tip.</param>
         /// <param name="blocksToConnect">List of blocks to connect.</param>
-        private async Task<ConnectBlocksResult> ConnectChainAsync(ChainedHeader newTip, ChainedHeader currentTip, List<ChainedHeaderBlock> blocksToConnect)
+        private async Task<ConnectBlocksResult> ConnectChainAsync(ChainedHeader newTip, List<ChainedHeaderBlock> blocksToConnect)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}.{5}:{6})", nameof(newTip), newTip, nameof(currentTip), currentTip, nameof(blocksToConnect), nameof(blocksToConnect.Count), blocksToConnect.Count);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newTip), newTip, nameof(blocksToConnect), nameof(blocksToConnect.Count), blocksToConnect.Count);
 
             ChainedHeader lastValidatedBlockHeader = null;
             ConnectBlocksResult connectBlockResult = null;
 
             foreach (ChainedHeaderBlock blockToConnect in blocksToConnect)
             {
-                connectBlockResult = await this.ConnectBlockAsync(currentTip, blockToConnect).ConfigureAwait(false);
+                connectBlockResult = await this.ConnectBlockAsync(blockToConnect).ConfigureAwait(false);
 
                 if (!connectBlockResult.Succeeded)
                 {
@@ -654,15 +653,14 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Reconnects the old chain.</summary>
-        /// <param name="oldTip">The old tip.</param>
         /// <param name="currentTip">Current tip.</param>
         /// <param name="blocksToReconnect">List of blocks to reconnect.</param>
-        private async Task<ConnectBlocksResult> ReconnectOldChainAsync(ChainedHeader oldTip, ChainedHeader currentTip, List<ChainedHeaderBlock> blocksToReconnect)
+        private async Task<ConnectBlocksResult> ReconnectOldChainAsync(ChainedHeader currentTip, List<ChainedHeaderBlock> blocksToReconnect)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}.{5}:{6})", nameof(oldTip), oldTip, nameof(currentTip), currentTip, nameof(blocksToReconnect), nameof(blocksToReconnect.Count), blocksToReconnect.Count);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(currentTip), currentTip, nameof(blocksToReconnect), nameof(blocksToReconnect.Count), blocksToReconnect.Count);
 
             // Connect back the old blocks.
-            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(oldTip, currentTip, blocksToReconnect).ConfigureAwait(false);
+            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(currentTip, blocksToReconnect).ConfigureAwait(false);
 
             if (connectBlockResult.Succeeded)
             {
@@ -750,12 +748,11 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Attempts to connect a block to a chain with specified tip.
         /// </summary>
-        /// <param name="chainTipToExtand">Tip of the chain to extend.</param>
         /// <param name="blockToConnect">Block to connect.</param>
         /// <exception cref="ConsensusException">Thrown in case CHT is not in a consistent state.</exception>
-        private async Task<ConnectBlocksResult> ConnectBlockAsync(ChainedHeader chainTipToExtand, ChainedHeaderBlock blockToConnect)
+        private async Task<ConnectBlocksResult> ConnectBlockAsync(ChainedHeaderBlock blockToConnect)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(chainTipToExtand), chainTipToExtand, nameof(blockToConnect), blockToConnect);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockToConnect), blockToConnect);
 
             if ((blockToConnect.ChainedHeader.BlockValidationState != ValidationState.PartiallyValidated) &&
                 (blockToConnect.ChainedHeader.BlockValidationState != ValidationState.FullyValidated))
@@ -765,7 +762,7 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("Block must be partially or fully validated.");
             }
 
-                var validationContext = new ValidationContext() { Block = blockToConnect.Block, ChainTipToExtand = chainTipToExtand};
+                var validationContext = new ValidationContext() { Block = blockToConnect.Block, ChainTipToExtand = blockToConnect.ChainedHeader };
 
                 // Call the validation engine.
                 await this.consensusRules.FullValidationAsync(validationContext).ConfigureAwait(false);

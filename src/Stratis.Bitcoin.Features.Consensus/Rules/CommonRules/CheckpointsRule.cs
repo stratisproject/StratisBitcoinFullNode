@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         [Obsolete("Delete when CM is activated")]
         public override Task RunAsync(RuleContext context)
         {
-            int height = context.ConsensusTipHeight + 1;
+            int height = context.ValidationContext.ChainTipToExtand.Height;
             BlockHeader header = context.ValidationContext.Block.Header;
 
             // Check that the block header hash matches the known checkpointed value, if any.
