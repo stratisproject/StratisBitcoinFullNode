@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     /// <summary>
     /// Cache layer for coinview prevents too frequent updates of the data in the underlying storage.
     /// </summary>
-    public class CachedCoinView : CoinView, IBackedCoinView, IDisposable
+    public class CachedCoinView : ICoinView, IBackedCoinView, IDisposable
     {
         /// <summary>
         /// Item of the coinview cache that holds information about the unspent outputs
@@ -83,10 +83,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         private uint256 innerBlockHash;
 
         /// <summary>Coin view at one layer below this implementaiton.</summary>
-        private readonly CoinView inner;
+        private readonly ICoinView inner;
 
         /// <inheritdoc />
-        public CoinView Inner
+        public ICoinView Inner
         {
             get { return this.inner; }
         }
@@ -110,7 +110,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Time of the last cache flush.</summary>
         private DateTime lastCacheFlushTime;
-
         /// <summary>
         /// Initializes instance of the object based on DBreeze based coinview.
         /// </summary>
@@ -162,7 +161,24 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public override async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            this.logger.LogTrace("()");
+
+            if (this.blockHash == null)
+            {
+                FetchCoinsResponse response = await this.FetchCoinsAsync(new uint256[0], cancellationToken).ConfigureAwait(false);
+
+                this.innerBlockHash = response.BlockHash;
+                this.blockHash = this.innerBlockHash;
+            }
+
+            this.logger.LogTrace("(-):'{0}'", this.blockHash);
+            return this.blockHash;
+        }
+
+        /// <inheritdoc />
+        public async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
         {
             Guard.NotNull(txIds, nameof(txIds));
             this.logger.LogTrace("({0}.{1}:{2})", nameof(txIds), nameof(txIds.Length), txIds.Length);
@@ -260,7 +276,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 await this.stakeChainStore.FlushAsync(true);
 
             if (this.innerBlockHash == null)
-                this.innerBlockHash = await this.inner.GetBlockHashAsync().ConfigureAwait(false);
+                this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
@@ -324,7 +340,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public override async Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+        public async Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
@@ -373,12 +389,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public override async Task<uint256> Rewind()
+        public async Task<uint256> Rewind()
         {
             this.logger.LogTrace("()");
 
             if (this.innerBlockHash == null)
-                this.innerBlockHash = await this.inner.GetBlockHashAsync().ConfigureAwait(false);
+                this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {

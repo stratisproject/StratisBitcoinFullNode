@@ -9,14 +9,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class CoinViewTester
     {
-        private CoinView coinView;
+        private ICoinView coinView;
         private List<UnspentOutputs> pendingCoins = new List<UnspentOutputs>();
         private uint256 hash;
 
-        public CoinViewTester(CoinView coinView)
+        public CoinViewTester(ICoinView coinView)
         {
             this.coinView = coinView;
-            this.hash = coinView.GetBlockHashAsync().Result;
+            this.hash = coinView.GetTipHashAsync().Result;
         }
 
         public Coin[] CreateCoins(int coinCount)

@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 
-namespace NBitcoin.NetworkDefinitions
+namespace Stratis.Bitcoin.Networks
 {
     public class BitcoinTest : BitcoinMain
     {
@@ -47,6 +48,8 @@ namespace NBitcoin.NetworkDefinitions
             consensus.PowAllowMinDifficultyBlocks = true;
             consensus.RuleChangeActivationThreshold = 1512; // 75% for testchains
             consensus.CoinType = 1;
+
+            consensus.Options = new ConsensusOptions(); // Default - set to Bitcoin params.
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };

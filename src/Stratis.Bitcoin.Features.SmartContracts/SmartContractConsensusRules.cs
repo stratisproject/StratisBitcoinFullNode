@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             NodeDeployments nodeDeployments,
             ContractStateRepositoryRoot originalStateRoot,
             ILookaheadBlockPuller puller,
-            CoinView utxoSet,
+            ICoinView utxoSet,
             ISmartContractReceiptStorage receiptStorage)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, puller)
         {

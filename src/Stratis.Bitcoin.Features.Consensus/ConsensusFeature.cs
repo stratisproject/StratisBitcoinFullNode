@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly LookaheadBlockPuller blockPuller;
 
-        private readonly CoinView coinView;
+        private readonly ICoinView coinView;
 
         private readonly IChainState chainState;
 
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             DBreezeCoinView dBreezeCoinView,
             Network network,
             LookaheadBlockPuller blockPuller,
-            CoinView coinView,
+            ICoinView coinView,
             IChainState chainState,
             IConnectionManager connectionManager,
             Signals.Signals signals,
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.stakeChain?.LoadAsync().GetAwaiter().GetResult();
 
-            this.signals.SubscribeForBlocks(this.consensusStats);
+            this.signals.SubscribeForBlocksConnected(this.consensusStats);
 
             this.consensusRules.Register(this.ruleRegistration);
         }
@@ -188,13 +188,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                 .AddFeature<ConsensusFeature>()
                 .FeatureServices(services =>
                 {
-                    // TODO: this should be set on the network build
-                    fullNodeBuilder.Network.Consensus.Options = new ConsensusOptions();
-
                     services.AddSingleton<ICheckpoints, Checkpoints>();
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
-                    services.AddSingleton<CoinView, CachedCoinView>();
+                    services.AddSingleton<ICoinView, CachedCoinView>();
                     services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
                     services.AddSingleton<IConsensusLoop, ConsensusLoop>()
                         .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
@@ -222,12 +219,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     .AddFeature<ConsensusFeature>()
                     .FeatureServices(services =>
                     {
-                        fullNodeBuilder.Network.Consensus.Options = new PosConsensusOptions();
-
                         services.AddSingleton<ICheckpoints, Checkpoints>();
                         services.AddSingleton<DBreezeCoinView>();
-                        services.AddSingleton<CoinView, CachedCoinView>();
-                        services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
+                        services.AddSingleton<ICoinView, CachedCoinView>();
+                        services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>());
                         services.AddSingleton<IConsensusLoop, ConsensusLoop>()
                             .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
                             .AddSingleton<IGetUnspentTransaction, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop);
@@ -325,7 +320,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // rules that are inside the method ContextualCheckBlock
                     new TransactionLocktimeActivationRule(), // implements BIP113
                     new CoinbaseHeightActivationRule(), // implements BIP34
-                    new WitnessCommitmentsRule(), // BIP141, BIP144 
+                    new WitnessCommitmentsRule(), // BIP141, BIP144
                     new BlockSizeRule(),
 
                     new PosBlockContextRule(), // TODO: this rule needs to be implemented

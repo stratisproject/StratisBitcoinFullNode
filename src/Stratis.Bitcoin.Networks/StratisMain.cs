@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 
-namespace NBitcoin.NetworkDefinitions
+namespace Stratis.Bitcoin.Networks
 {
     public class StratisMain : Network
     {
@@ -74,6 +75,14 @@ namespace NBitcoin.NetworkDefinitions
             this.Consensus.ProofOfStakeReward = Money.COIN;
             this.Consensus.MaxReorgLength = 500;
             this.Consensus.MaxMoney = long.MaxValue;
+
+            // Taken from StratisX.
+            this.Consensus.Options = new PosConsensusOptions(
+                maxBlockBaseSize: 1_000_000,
+                maxStandardVersion: 2,
+                maxStandardTxWeight: 100_000,
+                maxBlockSigopsCost: 20_000
+                );
 
             this.Base58Prefixes = new byte[12][];
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (63) };

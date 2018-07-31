@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using NBitcoin.DataEncoders;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -84,11 +85,11 @@ namespace NBitcoin.Tests
                 Assert.True(mnemonic.IsValidChecksum);
                 Assert.Equal(seed, Encoders.Hex.EncodeData(mnemonic.DeriveSeed(passphrase)));
                 string bip32 = unitTest["bip32_xprv"].ToString();
-                string bip32Actual = mnemonic.DeriveExtKey(passphrase).ToString(Networks.Main);
+                string bip32Actual = mnemonic.DeriveExtKey(passphrase).ToString(KnownNetworks.Main);
                 Assert.Equal(bip32, bip32Actual.ToString());
                 mnemonic = new Mnemonic(Wordlist.Japanese, entropy);
                 Assert.True(mnemonic.IsValidChecksum);
-                bip32Actual = mnemonic.DeriveExtKey(passphrase).ToString(Networks.Main);
+                bip32Actual = mnemonic.DeriveExtKey(passphrase).ToString(KnownNetworks.Main);
                 Assert.Equal(bip32, bip32Actual.ToString());
             }
         }

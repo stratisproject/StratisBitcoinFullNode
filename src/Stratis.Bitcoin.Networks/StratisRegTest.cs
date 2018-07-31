@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Protocol;
 
-namespace NBitcoin.NetworkDefinitions
+namespace Stratis.Bitcoin.Networks
 {
     public class StratisRegTest : StratisMain
     {
@@ -58,6 +59,14 @@ namespace NBitcoin.NetworkDefinitions
             consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
             consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
             consensus.CoinbaseMaturity = 10;
+
+            // Taken from StratisX.
+            consensus.Options = new PosConsensusOptions(
+                maxBlockBaseSize: 1_000_000,
+                maxStandardVersion: 2,
+                maxStandardTxWeight: 100_000,
+                maxBlockSigopsCost: 20_000
+                );
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (65) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };

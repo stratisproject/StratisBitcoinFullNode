@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public ConcurrentChain Chain { get; }
 
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
-        public CoinView UTXOSet { get; }
+        public ICoinView UTXOSet { get; }
 
         /// <summary>The current tip of the chain that has been validated.</summary>
         public ChainedHeader Tip { get; private set; }
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         /// <summary>
         /// Specifies time threshold which is used to determine if flush is required.
-        /// When consensus tip timestamp is greater than current time minus the threshold the flush is required. 
+        /// When consensus tip timestamp is greater than current time minus the threshold the flush is required.
         /// </summary>
         /// <remarks>Used only on blockchains without max reorg property.</remarks>
         private const int FlushRequiredThresholdSeconds = 2 * 24 * 60 * 60;
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
             ConcurrentChain chain,
-            CoinView utxoSet,
+            ICoinView utxoSet,
             LookaheadBlockPuller puller,
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
@@ -176,13 +176,13 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            uint256 utxoHash = await this.UTXOSet.GetBlockHashAsync().ConfigureAwait(false);
+            uint256 utxoHash = await this.UTXOSet.GetTipHashAsync().ConfigureAwait(false);
             bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
 
             while (true)
             {
                 this.Tip = this.Chain.GetBlock(utxoHash);
-               
+
                 if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
                     break;
 
@@ -310,7 +310,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             using (await this.consensusLock.LockAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false))
             {
                 validationContext.RuleContext = this.ConsensusRules.CreateRuleContext(validationContext, this.Tip);
-                
+
                 // TODO: Once all code is migrated to rules this can be uncommented and the logic in this method moved to the IConsensusRules.AcceptBlockAsync()
                 // await this.consensusRules.AcceptBlockAsync(blockValidationContext);
 
@@ -372,14 +372,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                         // Since ChainHeadersBehavior check PoW, MarkBlockInvalid can't be spammed.
                         this.logger.LogError("Marking block '{0}' as invalid{1}.", rejectedBlockHash, validationContext.RejectUntil != null ? string.Format(" until {0:yyyy-MM-dd HH:mm:ss}", validationContext.RejectUntil.Value) : "");
                         this.chainState.MarkBlockInvalid(rejectedBlockHash, validationContext.RejectUntil);
-                    } 
+                    }
                 }
                 else
                 {
                     this.logger.LogTrace("Block '{0}' accepted.", this.Tip);
 
                     this.chainState.ConsensusTip = this.Tip;
-                    
+
                     bool forceFlush = this.FlushRequired();
                     await this.FlushAsync(forceFlush).ConfigureAwait(false);
 
@@ -392,7 +392,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         this.logger.LogDebug("Block extends best chain tip to '{0}'.", this.Tip);
                     }
 
-                    this.signals.SignalBlock(validationContext.Block);
+                    this.signals.SignalBlockConnected(validationContext.Block);
                 }
             }
 
@@ -410,7 +410,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             if (this.chainState.MaxReorgLength != 0)
                 return this.Chain.Height - this.Tip.Height < this.chainState.MaxReorgLength;
-            
+
             return this.Tip.Header.Time > this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - FlushRequiredThresholdSeconds;
         }
 

@@ -27,6 +27,7 @@ using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -38,14 +39,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public static PowBlockDefinition AssemblerForTest(TestContext testContext)
         {
-            var options = new BlockDefinitionOptions
-            {
-                BlockMaxWeight = testContext.network.Consensus.Options.MaxBlockWeight,
-                BlockMaxSize = testContext.network.Consensus.Options.MaxBlockSerializedSize,
-                BlockMinFeeRate = blockMinFeeRate
-            };
-
-            return new PowBlockDefinition(testContext.consensus, testContext.DateTimeProvider, new LoggerFactory(), testContext.mempool, testContext.mempoolLock, testContext.network, testContext.ConsensusRules, options);
+            return new PowBlockDefinition(testContext.consensus, testContext.DateTimeProvider, new LoggerFactory(), testContext.mempool, testContext.mempoolLock, new MinerSettings(), testContext.network, testContext.ConsensusRules);
         }
 
         public class Blockinfo
@@ -128,7 +122,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     this.blockinfo.Add(new Blockinfo { extranonce = (int)lst[i], nonce = (uint)lst[i + 1] });
 
                 // Note that by default, these tests run with size accounting enabled.
-                this.network = Networks.Main;
+                this.network = KnownNetworks.Main;
                 byte[] hex = Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
                 this.scriptPubKey = new Script(new[] { Op.GetPushOp(hex), OpcodeType.OP_CHECKSIG });
                 this.newBlock = new BlockTemplate(this.network);
@@ -149,7 +143,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
 
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
-                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, Networks.Main, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
+                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
                 var connectionSettings = new ConnectionManagerSettings(nodeSettings);
                 var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, connectionSettings, new VersionProvider());
 

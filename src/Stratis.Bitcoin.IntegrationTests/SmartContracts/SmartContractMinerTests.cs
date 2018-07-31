@@ -63,6 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 new LoggerFactory(),
                 testContext.mempool,
                 testContext.mempoolLock,
+                new MinerSettings(testContext.nodeSettings),
                 testContext.network,
                 testContext.stateRoot);
         }
@@ -121,6 +122,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             public List<Blockinfo> blockinfo;
             public Network network;
+            public NodeSettings nodeSettings;
             public Script scriptPubKey;
             public BlockTemplate newBlock;
             public Transaction tx, tx2;
@@ -180,8 +182,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
 
-                var nodeSettings = NodeSettings.Default();
-                var consensusSettings = new ConsensusSettings(nodeSettings);
+                this.nodeSettings = NodeSettings.Default();
+                var consensusSettings = new ConsensusSettings(this.nodeSettings);
                 consensusSettings.UseCheckpoints = this.useCheckpoints;
 
                 this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
@@ -204,7 +206,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 this.refundProcessor = new SmartContractResultRefundProcessor(loggerFactory);
                 this.transferProcessor = new SmartContractResultTransferProcessor(loggerFactory, this.network);
-                
+
                 this.serializer = CallDataSerializer.Default;
                 this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
 
@@ -214,7 +216,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
 
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
-                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, Networks.Main, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
+                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
                 var connectionSettings = new ConnectionManagerSettings(nodeSettings);
                 var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, connectionSettings, new SmartContractVersionProvider());
 
@@ -843,7 +845,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         private readonly Dictionary<Type, object> registered;
 
         public MockServiceProvider(
-            CoinView coinView,
+            ICoinView coinView,
             ISmartContractExecutorFactory executorFactory,
             ContractStateRepositoryRoot stateRoot,
             ILoggerFactory loggerFactory,
@@ -851,7 +853,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             this.registered = new Dictionary<Type, object>
             {
-                { typeof(CoinView), coinView },
+                { typeof(ICoinView), coinView },
                 { typeof(ISmartContractExecutorFactory), executorFactory },
                 { typeof(ContractStateRepositoryRoot), stateRoot },
                 { typeof(ILoggerFactory), loggerFactory },

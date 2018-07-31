@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using NBitcoin.NetworkDefinitions;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {
@@ -15,8 +15,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
         public SmartContractsRegTest()
         {
             this.Name = "SmartContractsRegTest";
-            this.RootFolderName = NBitcoin.NetworkDefinitions.StratisMain.StratisRootFolderName;
-            this.DefaultConfigFilename = NBitcoin.NetworkDefinitions.StratisMain.StratisDefaultConfigFilename;
+            this.RootFolderName = StratisMain.StratisRootFolderName;
+            this.DefaultConfigFilename = StratisMain.StratisDefaultConfigFilename;
             this.Magic = 0xDAB5BFFA;
             this.DefaultPort = 18444;
             this.RPCPort = 18332;
@@ -61,6 +61,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             consensus.HashGenesisBlock = this.Genesis.Header.GetHash();
 
             consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
+
+            // Taken from StratisX.
+            consensus.Options = new PosConsensusOptions(
+                maxBlockBaseSize: 1_000_000,
+                maxStandardVersion: 2,
+                maxStandardTxWeight: 100_000,
+                maxBlockSigopsCost: 20_000
+                );
 
             this.Consensus = consensus;
 

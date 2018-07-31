@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     services.AddSingleton<ICheckpoints, Checkpoints>();
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
-                    services.AddSingleton<CoinView, CachedCoinView>();
+                    services.AddSingleton<ICoinView, CachedCoinView>();
                     services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>()); ;
                     services.AddSingleton<IConsensusLoop, ConsensusLoop>()
                         .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
@@ -171,8 +171,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
                         services.AddSingleton<SmartContractBlockDefinition>();
-                        services.AddSingleton<MinerController>();
-                        services.AddSingleton<MiningRPCController>();
+                        services.AddSingleton<StakingApiController>();
+                        services.AddSingleton<MiningRpcController>();
+                        services.AddSingleton<StakingRpcController>();
+                        services.AddSingleton<MiningApiController>();
                         services.AddSingleton<MinerSettings>();
                     });
             });

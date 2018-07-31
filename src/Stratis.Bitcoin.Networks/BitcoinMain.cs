@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using NBitcoin;
 using NBitcoin.DataEncoders;
 
-namespace NBitcoin.NetworkDefinitions
+namespace Stratis.Bitcoin.Networks
 {
     public class BitcoinMain : Network
     {
@@ -54,6 +55,8 @@ namespace NBitcoin.NetworkDefinitions
             this.Consensus.ProofOfStakeReward = Money.Zero;
             this.Consensus.MaxReorgLength = 0;
             this.Consensus.MaxMoney = 21000000 * Money.COIN;
+
+            this.Consensus.Options = new ConsensusOptions(); // Default - set to Bitcoin parameters.
 
             this.Base58Prefixes = new byte[12][];
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (0) };

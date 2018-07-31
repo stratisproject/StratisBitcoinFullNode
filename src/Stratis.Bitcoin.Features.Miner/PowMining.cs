@@ -49,17 +49,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Default for "-blockmintxfee", which sets the minimum feerate for a transaction in blocks created by mining code.</summary>
         public const int DefaultBlockMinTxFee = 1000;
 
-        /// <summary>Default for "-blockmaxsize", which controls the maximum size of block the mining code will create.</summary>
-        public const int DefaultBlockMaxSize = 750000;
-
-        /// <summary>
-        /// Default for "-blockmaxweight", which controls the maximum block weight the mining code can create.
-        /// Block is measured in weight units. Data which touches the UTXO (What addresses are involved in the transaction, how many coins are being transferred) costs
-        /// 4 weight units (WU) per byte. Witness data (signatures used to unlock existing coins so that they can be spent) costs 1 WU per byte.
-        /// <seealso cref="http://learnmeabitcoin.com/faq/segregated-witness"/>
-        /// </summary>
-        public const int DefaultBlockMaxWeight = 3000000;
-
         private uint256 hashPrevBlock;
 
         private const int InnerLoopCount = 0x10000;
