@@ -261,6 +261,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             if (context.BuildOptions.ChangeAddress != null)
             {
+                // Ensure the given ChangeAddress is from the same wallet. 
                 Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
                 if (!wallet.ContainsAddress(context.BuildOptions.ChangeAddress))
                 {
