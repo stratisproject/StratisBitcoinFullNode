@@ -216,9 +216,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // == Integrity ==
                     new BlockMerkleRootRule(),
 
-                    // == Partial ==
+                    // == Partial and Full ==
                     new SetActivationDeploymentsRule(),
 
+                    // == Partial ==
                     // rules that are inside the method CheckBlockHeader
 
                     // rules that are inside the method ContextualCheckBlockHeader
@@ -264,11 +265,12 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new BlockMerkleRootRule(),
                     new PosBlockSignatureRule(),
 
-                    // == Partial ==
+                    // == Partial and Full ==
                     new SetActivationDeploymentsRule(),
+
+                    // == Partial ==
                     new CheckDifficultykHybridRule(),
                     new PosTimeMaskRule(),
-
                     // rules that are inside the method CheckBlockHeader
 
                     // rules that are inside the method ContextualCheckBlockHeader
