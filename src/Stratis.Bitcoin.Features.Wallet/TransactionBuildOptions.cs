@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public List<Recipient> Recipients { get; set; }
 
         /// <summary>
-        /// Address to send change from transaction to. Should be owned by this wallet. 
+        /// Address to send change back to.
         /// </summary>
         public HdAddress ChangeAddress { get; set; }
 

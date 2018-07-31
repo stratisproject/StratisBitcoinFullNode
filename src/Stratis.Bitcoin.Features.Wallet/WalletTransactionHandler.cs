@@ -67,31 +67,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             return BuildTransaction(transactionBuildContext);
         }
 
-        private Transaction BuildTransaction(TransactionBuildContext context)
-        {
-            this.InitializeTransactionBuilder(context);
-
-            if (context.Shuffle)
-                context.TransactionBuilder.Shuffle();
-
-            context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
-
-            if (context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
-                return context.Transaction;
-
-            string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
-            this.logger.LogError($"Build transaction failed: {errorsMessage}");
-            throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
-        }
-
         public void FundTransaction(TransactionBuildOptions options, Transaction transaction)
         {
             var context = new TransactionBuildContext(this.Network, options);
-            FundTransaction(context, transaction);
-        }
 
-        private void FundTransaction(TransactionBuildContext context, Transaction transaction)
-        {
             if (context.Recipients.Any())
                 throw new WalletException("Adding outputs is not allowed.");
 
@@ -143,16 +122,27 @@ namespace Stratis.Bitcoin.Features.Wallet
         public Money EstimateFee(TransactionBuildOptions options)
         {
             var context = new TransactionBuildContext(this.Network, options);
-            return EstimateFee(context);
+            this.InitializeTransactionBuilder(context);
+            return context.TransactionFee;
         }
 
-        
-        private Money EstimateFee(TransactionBuildContext context)
+        private Transaction BuildTransaction(TransactionBuildContext context)
         {
             this.InitializeTransactionBuilder(context);
 
-            return context.TransactionFee;
+            if (context.Shuffle)
+                context.TransactionBuilder.Shuffle();
+
+            context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
+
+            if (context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
+                return context.Transaction;
+
+            string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
+            this.logger.LogError($"Build transaction failed: {errorsMessage}");
+            throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
         }
+
 
         /// <inheritdoc />
         public (Money maximumSpendableAmount, Money Fee) GetMaximumSpendableAmount(WalletAccountReference accountReference, FeeType feeType, bool allowUnconfirmed)
