@@ -198,8 +198,6 @@ namespace Stratis.Bitcoin.Base
             this.consensusManager.InitializeAsync(this.chain.Tip).GetAwaiter().GetResult();
             this.consensusRules.Register(this.ruleRegistration);
 
-            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.consensusManager.BlockPuller, this.initialBlockDownloadState, this.loggerFactory));
-
             this.chainState.ConsensusTip = this.consensusManager.Tip;
 
             this.logger.LogTrace("(-)");

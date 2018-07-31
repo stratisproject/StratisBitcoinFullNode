@@ -320,6 +320,8 @@ namespace Stratis.Bitcoin.Consensus
                 partialValidationRequired = this.chainedHeaderTree.BlockDataDownloaded(chainedHeaderBlock.ChainedHeader, chainedHeaderBlock.Block);
             }
 
+            this.logger.LogTrace("Partial validation is{0} required.", partialValidationRequired ? "" : " NOT");
+
             if (partialValidationRequired)
                 this.partialValidator.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);
 

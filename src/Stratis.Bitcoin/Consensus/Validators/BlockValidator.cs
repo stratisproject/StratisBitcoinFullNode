@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -130,7 +131,15 @@ namespace Stratis.Bitcoin.Consensus.Validators
                 Succeeded = validationContext.Error == null
             };
 
-            await item.PartialValidationCompletedAsyncCallback(partialValidationResult).ConfigureAwait(false);
+            try
+            {
+                await item.PartialValidationCompletedAsyncCallback(partialValidationResult).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                this.logger.LogCritical(exception.ToString());
+                throw;
+            }
 
             this.logger.LogTrace("(-)");
         }
