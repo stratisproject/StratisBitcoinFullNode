@@ -36,6 +36,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
+            long immatureBalanceBeforeMining = node.FullNode.WalletManager()
+                .GetSpendableTransactionsInWallet(toWalletName, includeImmature: true)
+                .Where(x => x.Address == address)
+                .Sum(s => s.Transaction.Amount);
+
             Wallet wallet = node.FullNode.WalletManager().GetWalletByName(toWalletName);
             Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(withPassword, address).PrivateKey;
 
@@ -50,9 +55,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
+            long immatureBalanceAfterMining = node.FullNode.WalletManager()
+                .GetSpendableTransactionsInWallet(toWalletName, includeImmature: true)
+                .Where(x => x.Address == address)
+                .Sum(s => s.Transaction.Amount);
+
             long balanceIncrease = balanceAfterMining - balanceBeforeMining;
-            
-            balanceIncrease.Should().Be(node.GetProofOfWorkRewardForMinedBlocks(blockCount, true) + expectedFees);
+            long immatureBalanceIncrease = immatureBalanceAfterMining - immatureBalanceBeforeMining;
+            Money immaturePowReward = node.GetProofOfWorkRewardForMinedBlocks(blockCount, false);
+            long calculatedFees = immatureBalanceIncrease - immaturePowReward;
+
+            balanceIncrease.Should().Be(node.GetProofOfWorkRewardForMinedBlocks(blockCount, true));
+            calculatedFees.Should().Be(expectedFees);
         }
 
         public void MinePremineBlocks(CoreNode node, string walletName, string walletAccount, string walletPassword)
