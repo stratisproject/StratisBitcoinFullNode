@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 
@@ -47,6 +47,9 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <inheritdoc />
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
+        /// <summary>The set of rules this instance of the node will execute.</summary>
+        private IRuleRegistration ruleRegistration;
+
         /// <summary>
         /// Group of rules that are marked with a <see cref="PartialValidationRuleAttribute"/> or no attribute.
         /// </summary>
@@ -67,9 +70,8 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// </summary>
         private readonly List<ConsensusRuleDescriptor> headerValidationRules;
 
-
         /// <inheritdoc />
-        public IEnumerable<ConsensusRule> Rules => this.consensusRules.Values;
+        public IEnumerable<IConsensusRule> Rules => this.consensusRules.Values;
 
         /// <summary>
         /// Initializes an instance of the object.
@@ -85,14 +87,15 @@ namespace Stratis.Bitcoin.Consensus.Rules
             Guard.NotNull(checkpoints, nameof(checkpoints));
 
             this.Network = network;
-            this.DateTimeProvider = dateTimeProvider;
+
             this.Chain = chain;
-            this.NodeDeployments = nodeDeployments;
-            this.loggerFactory = loggerFactory;
-            this.ConsensusSettings = consensusSettings;
             this.Checkpoints = checkpoints;
             this.ConsensusParams = this.Network.Consensus;
+            this.ConsensusSettings = consensusSettings;
+            this.DateTimeProvider = dateTimeProvider;
+            this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.NodeDeployments = nodeDeployments;
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
 
             this.consensusRules = new Dictionary<string, ConsensusRule>();
@@ -100,15 +103,17 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.headerValidationRules = new List<ConsensusRuleDescriptor>();
             this.fullValidationRules = new List<ConsensusRuleDescriptor>();
             this.integrityValidationRules = new List<ConsensusRuleDescriptor>();
-
         }
 
         /// <inheritdoc />
-        public ConsensusRules Register(IRuleRegistration ruleRegistration)
+        public ConsensusRules Register()
         {
-            Guard.NotNull(ruleRegistration, nameof(ruleRegistration));
+            this.ruleRegistration = this.Network.Consensus.Rules;
 
-            foreach (ConsensusRule consensusRule in ruleRegistration.GetRules())
+            Guard.NotNull(this.ruleRegistration, nameof(this.ruleRegistration));
+            Guard.Assert(this.ruleRegistration.GetRules().Any());
+
+            foreach (ConsensusRule consensusRule in this.ruleRegistration.GetRules())
             {
                 consensusRule.Parent = this;
                 consensusRule.Logger = this.loggerFactory.CreateLogger(consensusRule.GetType().FullName);
@@ -118,7 +123,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
                 List<RuleAttribute> ruleAttributes = Attribute.GetCustomAttributes(consensusRule.GetType()).OfType<RuleAttribute>().ToList();
 
-                if(!ruleAttributes.Any())
+                if (!ruleAttributes.Any())
                     throw new ConsensusException($"The rule {consensusRule.GetType().FullName} must have at least one {nameof(RuleAttribute)}");
 
                 foreach (RuleAttribute ruleAttribute in ruleAttributes)

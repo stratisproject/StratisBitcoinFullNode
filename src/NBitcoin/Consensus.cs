@@ -1,5 +1,6 @@
 ﻿using System;
 using NBitcoin.BouncyCastle.Math;
+using NBitcoin.Rules;
 
 namespace NBitcoin
 {
@@ -164,5 +165,10 @@ namespace NBitcoin
         /// A factory that enables overloading base types.
         /// </summary>
         public ConsensusFactory ConsensusFactory { get; set; }
+
+        /// <summary>
+        /// Rules specific to the given network.
+        /// </summary>
+        public IRuleRegistration Rules { get; set; }
     }
 }

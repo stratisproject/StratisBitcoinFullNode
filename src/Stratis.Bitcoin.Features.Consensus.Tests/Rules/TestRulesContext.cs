@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
@@ -54,23 +55,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     /// </summary>
     public class TestConsensusRules : ConsensusRules
     {
-        private Mock<IRuleRegistration> ruleRegistration;
-
         public RuleContext RuleContext { get; set; }
 
         public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
         {
-            this.ruleRegistration = new Mock<IRuleRegistration>();
         }
 
         public T RegisterRule<T>() where T : ConsensusRule, new()
         {
             var rule = new T();
-            this.ruleRegistration.Setup(r => r.GetRules())
-                .Returns(new List<ConsensusRule>() { rule });
-
-            this.Register(this.ruleRegistration.Object);
+            this.Network.Consensus.Rules = new RuleRegistrationTest(new List<ConsensusRule>() { rule });
+            this.Register();
             return rule;
         }
 
@@ -106,10 +102,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public T RegisterRule<T>() where T : ConsensusRule, new()
         {
             var rule = new T();
-            this.ruleRegistration.Setup(r => r.GetRules())
-                .Returns(new List<ConsensusRule>() { rule });
-
-            this.Register(this.ruleRegistration.Object);
+            this.ruleRegistration.Setup(r => r.GetRules()).Returns(new List<ConsensusRule>() { rule });
+            this.Network.Consensus.Rules = this.ruleRegistration.Object;
+            this.Register();
             return rule;
         }
     }
@@ -135,13 +130,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
             network.Consensus.Options = new ConsensusOptions();
+            network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
 
             var consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
             testRulesContext.Chain = new ConcurrentChain(network);
 
             var deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
-            testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register();
 
             return testRulesContext;
         }
@@ -173,6 +169,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 throw new XunitException("Test failed no blocks found");
 
             return block;
+        }
+    }
+
+    public class RuleRegistrationTest : IRuleRegistration
+    {
+        public RuleRegistrationTest(IEnumerable<IConsensusRule> rules)
+        {
+            this.Rules = rules;
+        }
+
+        public readonly IEnumerable<IConsensusRule> Rules;
+
+        public IEnumerable<IConsensusRule> GetRules()
+        {
+            return this.Rules;
         }
     }
 }

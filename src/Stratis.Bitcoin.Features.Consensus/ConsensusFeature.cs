@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -129,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.signals.SubscribeForBlocksConnected(this.consensusStats);
 
-            this.consensusRules.Register(this.ruleRegistration);
+            this.consensusRules.Register();
         }
 
         /// <summary>
@@ -242,7 +243,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PowConsensusRulesRegistration : IRuleRegistration
         {
-            public IEnumerable<ConsensusRule> GetRules()
+            public IEnumerable<IConsensusRule> GetRules()
             {
                 return new List<ConsensusRule>
                 {
@@ -289,7 +290,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PosConsensusRulesRegistration : IRuleRegistration
         {
-            public IEnumerable<ConsensusRule> GetRules()
+            public IEnumerable<IConsensusRule> GetRules()
             {
                 return new List<ConsensusRule>
                 {

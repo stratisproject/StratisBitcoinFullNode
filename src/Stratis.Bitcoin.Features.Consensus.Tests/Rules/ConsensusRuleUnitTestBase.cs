@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -33,10 +34,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected ConsensusRuleUnitTestBase(Network network)
         {
             this.network = network;
+
             this.logger = new Mock<ILogger>();
             this.loggerFactory = new Mock<ILoggerFactory>();
-            this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-                .Returns(new Mock<ILogger>().Object);
+            this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
 
             this.concurrentChain = new ConcurrentChain(this.network);
@@ -46,8 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             this.ruleRegistrations = new List<ConsensusRule>();
             this.ruleRegistration = new Mock<IRuleRegistration>();
-            this.ruleRegistration.Setup(r => r.GetRules())
-                .Returns(() => { return this.ruleRegistrations; });
+            this.ruleRegistration.Setup(r => r.GetRules()).Returns(() => { return this.ruleRegistrations; });
 
             if (network.Consensus.IsProofOfStake)
             {

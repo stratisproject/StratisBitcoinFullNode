@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
+using NBitcoin.Rules;
 
 namespace Stratis.Bitcoin.Consensus.Rules
 {
@@ -17,7 +18,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <summary>
         /// Collection of all the rules that are registered with the engine.
         /// </summary>
-        IEnumerable<ConsensusRule> Rules { get; }
+        IEnumerable<IConsensusRule> Rules { get; }
 
         /// <summary>
         /// Keeps track of how much time different actions took to execute and how many times they were executed.
@@ -27,9 +28,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <summary>
         /// Register a new rule to the engine
         /// </summary>
-        /// <param name="ruleRegistration">A container of rules to register.</param>
-        /// <returns></returns>
-        ConsensusRules Register(IRuleRegistration ruleRegistration);
+        ConsensusRules Register();
 
         /// <summary>
         /// A method that will accept a new block to the node.
@@ -113,22 +112,5 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <param name="validationContext">The validation context.</param>
         /// <param name="tip">The current tip.</param>
         Task FullValidationAsync(ValidationContext validationContext, ChainedHeader tip);
-    }
-
-    /// <summary>
-    /// An interface that will allow the registration of bulk consensus rules in to the engine.
-    /// </summary>
-    public interface IRuleRegistration
-    {
-        /// <summary>
-        /// The rules that will be registered with the rules engine.
-        /// </summary>
-        /// <returns>A list of rules.</returns>
-        /// <remarks>
-        /// It is important to note that there is high importance to the order the rules are registered 
-        /// with the engine, this is important for rules with dependencies on other rules.
-        /// Rules are executed in the same order they are registered with the engine.
-        /// </remarks>
-        IEnumerable<ConsensusRule> GetRules();
     }
 }
