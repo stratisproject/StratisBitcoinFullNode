@@ -310,7 +310,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(4, fundTransaction.Outputs.Count); // 3 outputs with change
 
             // remove the change output
-            fundTransaction.Outputs.Remove(fundTransaction.Outputs.First(f => f.ScriptPubKey == options.ChangeAddress.ScriptPubKey));
+            fundTransaction.Outputs.RemoveAt(0);
             // remove 3 inputs they will be added back by fund transaction
             fundTransaction.Inputs.RemoveAt(3);
             fundTransaction.Inputs.RemoveAt(2);
@@ -332,7 +332,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Equal(4, fundTransaction.Inputs.Count); // we expect 4 inputs
             Assert.Equal(4, fundTransaction.Outputs.Count); // we expect 4 outputs
-            Assert.Equal(new Money(200, MoneyUnit.BTC) - fundContext.TransactionFee, fundTransaction.TotalOut);
+
+            // get coins owned by address and hence transaction fee
+            ICoin[] coins = address.Transactions.Select(tx => new Coin(tx.Id, 0, new Money(50, MoneyUnit.BTC), tx.ScriptPubKey)).ToArray();
+            Money transactionFee = fundTransaction.GetFee(coins);
+            Assert.Equal(new Money(200, MoneyUnit.BTC) - transactionFee, fundTransaction.TotalOut);
 
             Assert.Contains(fundTransaction.Outputs, a => a.ScriptPubKey == destinationKeys1.PubKey.ScriptPubKey);
             Assert.Contains(fundTransaction.Outputs, a => a.ScriptPubKey == destinationKeys2.PubKey.ScriptPubKey);
@@ -514,13 +518,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             // Context to build requires password in order to sign transaction.
             TransactionBuildOptions buildOptions = CreateOptions(testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
-            testContext.WalletTransactionHandler.BuildTransaction(buildOptions);
+            Transaction transaction = testContext.WalletTransactionHandler.BuildTransaction(buildOptions);
+            Money transactionFee = transaction.GetFee(testContext.WalletCoins);
 
             // Context for estimate does not need password.
             TransactionBuildOptions estimateOptions = CreateOptions(testContext.WalletReference, null, testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
             Money fee = testContext.WalletTransactionHandler.EstimateFee(estimateOptions);
 
-            Assert.Equal(fee, buildOptions.TransactionFee);
+            Assert.Equal(fee, transactionFee);
         }
 
         /// <summary>
@@ -535,13 +540,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             // Context to build requires password in order to sign transaction.
             TransactionBuildOptions buildOptions = CreateOptions(testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
-            testContext.WalletTransactionHandler.BuildTransaction(buildOptions);
+            Transaction transaction = testContext.WalletTransactionHandler.BuildTransaction(buildOptions);
+            Money transactionFee = transaction.GetFee(testContext.WalletCoins);
 
             // Context for estimate does not need password.
             TransactionBuildOptions estimateOptions = CreateOptions(testContext.WalletReference, null, testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
             Money feeEstimate = testContext.WalletTransactionHandler.EstimateFee(estimateOptions);
 
-            feeEstimate.Should().Be(buildOptions.TransactionFee);
+            feeEstimate.Should().Be(transactionFee);
         }
 
         /// <summary>

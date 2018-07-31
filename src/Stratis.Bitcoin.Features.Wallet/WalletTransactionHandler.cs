@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public Money EstimateFee(TransactionBuildOptions options)
         {
             var context = new TransactionBuildContext(this.Network, options);
-            return context.TransactionFee;
+            return EstimateFee(context);
         }
 
         
