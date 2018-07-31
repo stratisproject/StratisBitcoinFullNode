@@ -35,7 +35,7 @@ namespace NBitcoin.Policy
         /// <summary>
         /// Check if the transaction is safe from malleability (default: false).
         /// </summary>
-        public bool CheckMalleabilitySafe { get; set; } = false;
+        public bool CheckMalleabilitySafe { get; set; }
 
         /// <summary>
         /// A value indicating whether to include checking the fee as part of checking the transaction.
@@ -57,7 +57,7 @@ namespace NBitcoin.Policy
             this.MaxTransactionSize = 100000;
             // TODO: replace fee params with whats in Network.
             this.MaxTxFee = new FeeRate(Money.Coins(0.1m));
-            this.MinRelayTxFee = new FeeRate(Money.Satoshis(5000)); // TODO: new FeeRate(Money.Satoshis(network.MinRelayTxFee));
+            this.MinRelayTxFee = new FeeRate(Money.Satoshis(network.MinRelayTxFee));
             this.CheckFee = true;
             this.CheckScriptPubKey = true;
         }
@@ -143,7 +143,7 @@ namespace NBitcoin.Policy
                 }
             }
 
-            CheckMinRelayTxFee(transaction, errors);
+            this.CheckMinRelayTxFee(transaction, errors);
 
             int opReturnCount = transaction.Outputs.Select(o => o.ScriptPubKey.ToBytes(true)).Count(b => IsOpReturn(b));
             if (opReturnCount > 1)
