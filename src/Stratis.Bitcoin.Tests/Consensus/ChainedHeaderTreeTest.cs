@@ -2192,7 +2192,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // ConsensusTip is claimed by LocalPeer.
             Assert.Equal(consensusTip.ChainedHeader.HashBlock, peerIdsDictionary[ChainedHeaderTree.LocalPeerId]);
-            
+
             // ChainedHeadersByHash contains only reachable headers.
             var allConnectedHeaders = new List<ChainedHeader>();
 
