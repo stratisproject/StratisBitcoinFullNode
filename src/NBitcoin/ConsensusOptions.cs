@@ -39,6 +39,15 @@
         /// <summary>The maximum allowed number of signature check operations in a block (network rule).</summary>
         public int MaxBlockSigopsCost { get; set; }
 
+        /// <summary>The maximum transaction size in bytes. MaxTxWeight / WitnessScaleFactor.</summary>
+        public int MaxTxBaseSize
+        {
+            get
+            {
+                return this.MaxStandardTxWeight / this.WitnessScaleFactor;
+            }
+        }
+
         /// <summary>
         /// Initializes the default values. Currently only used for initialising Bitcoin networks and testing.
         /// </summary>
