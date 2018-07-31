@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <summary>Provider of console logger.</summary>
         public ConsoleLoggerProvider ConsoleLoggerProvider { get; set; }
 
-        /// <summary>Loads an NLog.config file from the <see cref="DataFolder"/>, if it exists</summary>
+        /// <summary>Loads an NLog.config file from the <see cref="DataFolder"/>, if it exists.</summary>
         public void LoadNLogConfiguration(DataFolder dataFolder)
         {
             if (dataFolder == null)

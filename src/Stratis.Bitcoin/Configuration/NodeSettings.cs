@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Configuration
             // Set the data folder.
             this.DataFolder = new DataFolder(this.DataDir);
 
-            // Attempt to load NLog configuration from the DataFolder
+            // Attempt to load NLog configuration from the DataFolder.
             loggerFactory.LoadNLogConfiguration(this.DataFolder);
 
             // Get the configuration file name for the network if it was not specified on the command line.
