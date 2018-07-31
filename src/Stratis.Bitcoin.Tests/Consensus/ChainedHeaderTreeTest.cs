@@ -2116,7 +2116,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.CheckChainedHeaderTreeConsistency(cht, ctx, consensusTip, new HashSet<int>() { 0, 1, 2, 3 });
         }
 
-
         /// <summary>
         /// Basic test for tests 18 to 20, 28.
         /// 1/6 There is no branch which is claimed by no one (PeerTipsByHash have tip of every branch), none of list should be empty.
