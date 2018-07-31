@@ -15,15 +15,22 @@ namespace Stratis.SmartContracts.Core.Validation
         public IEnumerable<ValidationResult> Validate(MethodDefinition method)
         {
             if (method.Body == null || !method.Body.HasExceptionHandlers)
-                return Enumerable.Empty<ValidationResult>();
+                return Enumerable.Empty<TryCatchValidationResult>();
 
             return new List<ValidationResult>
             {
-                new MethodDefinitionValidationResult(
-                    method.Name,
+                new TryCatchValidationResult(method)
+            };
+        }
+
+        public class TryCatchValidationResult : ValidationResult
+        {
+            public TryCatchValidationResult(MethodDefinition method) 
+                : base(method.Name,
                     ErrorType,
                     $"Try-catch not permitted.")
-            };
+            {
+            }
         }
     }
 }
