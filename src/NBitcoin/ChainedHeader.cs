@@ -33,24 +33,17 @@ namespace NBitcoin
     public enum ValidationState
     {
         /// <summary>
-        /// No validation was performed.
-        /// </summary>
-        Unknown,
-
-        /// <summary>
         /// We have a valid block header.
         /// </summary>
         HeaderValidated,
 
         /// <summary>
         /// Validated using all rules that don't require change of state.
-        /// Some rules validation may be skipped for blocks previously marked as <see cref="AssumedValid"/>.
         /// </summary>
         PartiallyValidated,
 
         /// <summary>
         /// Validated using all the rules.
-        /// Some rules validation may be skipped for blocks previously marked as <see cref="AssumedValid"/>.
         /// </summary>
         FullyValidated
     }
