@@ -2,8 +2,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using NBitcoin.Policy;
 using NBitcoin;
+using NBitcoin.Policy;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -20,7 +21,6 @@ using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
-using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Interfaces;
@@ -69,7 +69,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public override void Initialize()
         {
             this.logger.LogInformation("Reflection Virtual Machine Injected.");
-            this.consensusRules.Register(new ReflectionRuleRegistration());
+            //new ReflectionRuleRegistration()
+            this.consensusRules.Register();
         }
     }
 
