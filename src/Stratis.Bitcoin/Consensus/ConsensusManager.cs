@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Consensus
         Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback);
 
         /// <summary>
-        /// A new block was mined by the node and is attempted to connect to tip. 
+        /// A new block was mined by the node and is attempted to connect to tip.
         /// </summary>
         /// <param name="block">The mined block.</param>
         Task<ChainedHeaderBlock> BlockMined(Block block);
@@ -378,6 +378,8 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeaderBlock.ChainedHeader, out fullValidationRequired);
                 }
+
+                this.logger.LogTrace("Full validation required: {0}.", fullValidationRequired);
 
                 if (fullValidationRequired)
                 {

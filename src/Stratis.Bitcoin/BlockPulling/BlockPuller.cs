@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Gets the average size of a block based on sizes of blocks that were previously downloaded.</summary>
         double GetAverageBlockSizeBytes();
-        
+
         /// <summary>Updates puller behaviors when IDB state is changed.</summary>
         /// <remarks>Should be called when IBD state was changed or first calculated.</remarks>
         void OnIbdStateChanged(bool isIbd);
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>This affects quality score only. If the peer is too fast don't give him all the assignments in the world when not in IBD.</summary>
         private const int PeerSpeedLimitWhenNotInIbdBytesPerSec = 1024 * 1024;
-        
+
         /// <param name="blockHash">Hash of the delivered block.</param>
         /// <param name="block">The block.</param>
         public delegate void OnBlockDownloadedCallback(uint256 blockHash, Block block);
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <inheritdoc cref="NetworkPeerRequirement"/>
         private readonly NetworkPeerRequirement networkPeerRequirement;
-        
+
         /// <inheritdoc cref="IDateTimeProvider"/>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.assignedHeadersByPeerId = new Dictionary<int, List<ChainedHeader>>();
 
             this.averageBlockSizeBytes = new AverageCalculator(AverageBlockSizeSamplesCount);
-            
+
             this.pullerBehaviorsByPeerId = new Dictionary<int, IBlockPullerBehavior>();
 
             this.processQueuesSignal = new AsyncManualResetEvent(false);
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.peerLock = new object();
             this.assignedLock = new object();
             this.nextJobId = 0;
-            
+
             this.networkPeerRequirement = new NetworkPeerRequirement
             {
                 MinVersion = protocolVersion,
@@ -382,13 +382,13 @@ namespace Stratis.Bitcoin.BlockPulling
                     this.logger.LogTrace("(-)[CANCELLED]");
                     return;
                 }
-                
+
                 this.CheckStalling();
             }
 
             this.logger.LogTrace("(-)");
         }
-        
+
         /// <summary>Assigns downloads from <see cref="reassignedJobsQueue"/> and <see cref="downloadJobsQueue"/> to the peers that are capable of delivering blocks.</summary>
         private async Task AssignDownloadJobsAsync()
         {
@@ -425,7 +425,8 @@ namespace Stratis.Bitcoin.BlockPulling
                 await this.AskPeersForBlocksAsync(newAssignments).ConfigureAwait(false);
 
             // Call callbacks with null since puller failed to deliver requested blocks.
-            this.logger.LogTrace("{0} jobs partially or fully failed.", failedHashes.Count);
+            if (failedHashes.Count != 0)
+                this.logger.LogTrace("{0} jobs partially or fully failed.", failedHashes.Count);
             foreach (uint256 failedJob in failedHashes)
                 this.onDownloadedCallback(failedJob, null);
 
@@ -449,7 +450,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 int jobHeadersCount = jobToAssign.Headers.Count;
 
                 List<AssignedDownload> assignments = this.DistributeHeadersLocked(jobToAssign, failedHashes, emptySlots);
-                
+
                 emptySlots -= assignments.Count;
 
                 this.logger.LogTrace("Assigned {0} headers out of {1} for job {2}.", assignments.Count, jobHeadersCount, jobToAssign.Id);
@@ -501,7 +502,7 @@ namespace Stratis.Bitcoin.BlockPulling
             else
             {
                 LinkedListNode<AssignedDownload> current = lastDownload;
-                
+
                 while ((current.Previous != null) && (current.Previous.Value.Header.Height > assignment.Header.Height))
                     current = current.Previous;
 
@@ -519,19 +520,19 @@ namespace Stratis.Bitcoin.BlockPulling
         private void RemoveAssignedDownloadLocked(AssignedDownload assignment)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(assignment), assignment);
-            
+
             this.assignedDownloadsByHash.Remove(assignment.Header.HashBlock);
 
             List<ChainedHeader> headersForId = this.assignedHeadersByPeerId[assignment.PeerId];
             headersForId.Remove(assignment.Header);
             if (headersForId.Count == 0)
                 this.assignedHeadersByPeerId.Remove(assignment.PeerId);
-          
+
             this.assignedDownloadsSorted.Remove(assignment.LinkedListNode);
-            
+
             this.logger.LogTrace("(-)");
         }
-        
+
         /// <summary>Asks peer behaviors in parallel to deliver blocks.</summary>
         /// <param name="assignments">Assignments given to peers.</param>
         private async Task AskPeersForBlocksAsync(List<AssignedDownload> assignments)
@@ -583,7 +584,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     this.PeerDisconnected(peerId);
                 }
             }
-            
+
             this.logger.LogTrace("(-)");
         }
 
@@ -704,7 +705,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
             int lastImportantHeight = this.chainState.ConsensusTip.Height + ImportantHeightMargin;
             this.logger.LogTrace("Blocks up to height {0} are considered to be important.", lastImportantHeight);
-            
+
             var allReleasedAssignments = new List<Dictionary<int, List<ChainedHeader>>>();
 
             lock (this.assignedLock)
@@ -789,7 +790,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
 
                 this.logger.LogTrace("Assignment '{0}' for peer ID {1} was delivered by peer ID {2}.", blockHash, assignedDownload.PeerId, peerId);
-                
+
                 if (assignedDownload.PeerId != peerId)
                 {
                     this.logger.LogTrace("(-)[WRONG_PEER_DELIVERED]");
@@ -879,7 +880,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("Max number of blocks that can be downloaded at the same time is set to {0}.", this.maxBlocksBeingDownloaded);
             this.logger.LogTrace("(-)");
         }
-        
+
         /// <summary>
         /// Finds all blocks assigned to a given peer, removes assignments from <see cref="assignedDownloadsByHash"/>,
         /// adds to <see cref="reassignedJobsQueue"/> and signals the <see cref="processQueuesSignal"/>.
@@ -929,7 +930,7 @@ namespace Stratis.Bitcoin.BlockPulling
                         jobHeaders = new List<ChainedHeader>();
                         headersByJobId.Add(assignment.JobId, jobHeaders);
                     }
-                    
+
                     jobHeaders.Add(assignment.Header);
 
                     assignmentsToRemove.Add(assignment);
@@ -951,7 +952,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private void ReassignAssignmentsLocked(Dictionary<int, List<ChainedHeader>> headersByJobId)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(headersByJobId), nameof(headersByJobId.Count), headersByJobId.Count);
-            
+
             foreach (KeyValuePair<int, List<ChainedHeader>> jobIdToHeaders in headersByJobId)
             {
                 var newJob = new DownloadJob()
@@ -962,7 +963,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
                 this.reassignedJobsQueue.Enqueue(newJob);
             }
-            
+
             this.logger.LogTrace("(-)");
         }
 
@@ -976,17 +977,17 @@ namespace Stratis.Bitcoin.BlockPulling
             /*
             just for logging
 	        show it as a part of nodestats, not separated spammer:
-		        avg download speed 
-		        peer quality score (sort by quality score) 
+		        avg download speed
+		        peer quality score (sort by quality score)
 		        number of assigned blocks
 		        MaxBlocksBeingDownloaded
 		        amount of blocks being downloaded
 		        show actual speed (no 1mb limit)
             */
-            
+
             this.logger.LogTrace("(-)");
         }
-        
+
         /// <inheritdoc />
         public void Dispose()
         {
@@ -998,7 +999,7 @@ namespace Stratis.Bitcoin.BlockPulling
             this.stallingLoop?.GetAwaiter().GetResult();
 
             this.cancellationSource.Dispose();
-            
+
             this.logger.LogTrace("(-)");
         }
     }
