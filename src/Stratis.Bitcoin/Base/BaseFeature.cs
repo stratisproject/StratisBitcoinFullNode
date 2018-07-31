@@ -196,6 +196,7 @@ namespace Stratis.Bitcoin.Base
             this.consensusRules.Initialize().GetAwaiter().GetResult();
 
             this.consensusManager.InitializeAsync(this.chain.Tip).GetAwaiter().GetResult();
+            this.consensusRules.Register(this.ruleRegistration);
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
 
