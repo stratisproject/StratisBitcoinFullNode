@@ -1141,7 +1141,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <param name="chainHeight">Current height of the chain.</param>
         /// <returns><c>true</c> if the coinstake should be split, <c>false</c> otherwise.</returns>
         /// <remarks>
-        /// We do not split a coin if the value of new coins after the split would be less than<see cref="SplitCoinMinSize" />.Because we split the coin to multiple outputs defined by split factor, we only consider coins with value at least <see cref="SplitCoinMinSize" /> * < see cref="SplitFactor" />.
+        /// We do not split a coin if the value of new coins after the split would be less than<see cref="SplitCoinMinSize" />.Because we split the coin to multiple outputs defined by split factor, we only consider coins with value at least <see cref="SplitCoinMinSize" /> * <see cref="SplitFactor" />.
         /// <para>
         /// If the above-mentioned criteria is satisfied, then we split the coin if its value is greater than an expected average value of coins that we would have if we have perfect distribution of the value among all our coins while having a specific number of coins that we aim for. The optimal number of coins we are looking for is calculated based on consensus settings of coin maturity and minimum required coin age for staking.
         /// </para>
