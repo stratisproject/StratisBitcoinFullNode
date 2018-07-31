@@ -2103,7 +2103,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             cht.ConnectNewHeaders(4, peerKBlockHeaders);
 
             var chainedHeadersWithPeerK = new Dictionary<uint256, ChainedHeader>(cht.GetChainedHeadersByHash());
-            
+
             // Double checking that chained tree has been changed after connecting new peer.
             chainedHeadersBeforePeerKConnected.Should().NotEqual(chainedHeadersWithPeerK);
 
@@ -2173,7 +2173,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             }
 
             Assert.Empty(tipsLeft);
-            
+
             // Checking "Each connected peer has exactly 1 entry in PeertipsByHash".
             if (peerEntryDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false;
             if (peerHeaderDictionary.Count(x => x.Value > 1) > 0) eachPeerOneEntry = false;
@@ -2195,11 +2195,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             
             // ChainedHeadersByHash contains only reachable headers.
             var allConnectedHeaders = new List<ChainedHeader>();
-            
+
             ChainedHeader genesis = cht.GetChainedHeadersByHash()[ctx.Network.GenesisHash];
             var headersToProcess = new Stack<ChainedHeader>();
             headersToProcess.Push(genesis);
-            
+
             while (headersToProcess.Count > 0)
             {
                 ChainedHeader current = headersToProcess.Pop();
