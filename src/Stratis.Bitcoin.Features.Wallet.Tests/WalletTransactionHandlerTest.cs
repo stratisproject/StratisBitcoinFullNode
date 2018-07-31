@@ -161,14 +161,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Equal(2, result.Outputs.Count);
             TxOut output = result.Outputs[0];
-            Assert.Equal((testContext.AddressTransaction.Amount - options.TransactionFee - 7500), output.Value);
+            Money transactionFee = transactionResult.GetFee(testContext.WalletCoins);
+
+            Assert.Equal((testContext.AddressTransaction.Amount - transactionFee - 7500), output.Value);
             Assert.Equal(expectedChangeAddressKeys.Address.ScriptPubKey, output.ScriptPubKey);
 
             output = result.Outputs[1];
             Assert.Equal(7500, output.Value);
             Assert.Equal(testContext.DestinationKeys.PubKey.ScriptPubKey, output.ScriptPubKey);
 
-            Assert.Equal(testContext.AddressTransaction.Amount - options.TransactionFee, result.TotalOut);
+            Assert.Equal(testContext.AddressTransaction.Amount - transactionFee, result.TotalOut);
             Assert.NotNull(transactionResult.GetHash());
             Assert.Equal(result.GetHash(), transactionResult.GetHash());
         }
