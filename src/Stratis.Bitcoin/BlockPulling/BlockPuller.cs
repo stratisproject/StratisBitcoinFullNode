@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private const int MaxSecondsToDeliverBlock = 30; //TODO change to target spacing / 3
 
         /// <summary>This affects quality score only. If the peer is too fast don't give him all the assignments in the world when not in IBD.</summary>
-        private const int PeerSpeedLimitWhenNotInIbdBytesPerSec = 1024 * 1024;
+        private const int MaxBlockDeliveryLimitWhenNotInIbd = 1000;
 
         /// <param name="blockHash">Hash of the delivered block.</param>
         /// <param name="block">The block.</param>
@@ -253,7 +253,10 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             lock (this.peerLock)
             {
-                return this.pullerBehaviorsByPeerId.Sum(x => x.Value.SpeedBytesPerSecond);
+                double avgSize = this.averageBlockSizeBytes.Average;
+                double totalDeliveryRate = this.pullerBehaviorsByPeerId.Sum(x => x.Value.BlockDeliveryRate);
+
+                return (int) (avgSize * totalDeliveryRate);
             }
         }
 
@@ -264,9 +267,6 @@ namespace Stratis.Bitcoin.BlockPulling
 
             lock (this.peerLock)
             {
-                foreach (IBlockPullerBehavior blockPullerBehavior in this.pullerBehaviorsByPeerId.Values)
-                    blockPullerBehavior.OnIbdStateChanged(isIbd);
-
                 this.isIbd = isIbd;
             }
 
@@ -742,15 +742,21 @@ namespace Stratis.Bitcoin.BlockPulling
 
                     peerIdsToReassignJobs.Add(peerId);
 
-                    int assignedCount = this.assignedHeadersByPeerId[peerId].Count;
+                    List<ChainedHeader> assignedHeaders = this.assignedHeadersByPeerId[peerId];
 
-                    this.logger.LogDebug("Peer {0} failed to deliver {1} blocks from which some were important.",
-                        peerId, assignedCount);
+                    this.logger.LogDebug("Peer {0} failed to deliver {1} blocks from which some were important.", peerId, assignedHeaders.Count);
 
                     lock (this.peerLock)
                     {
                         IBlockPullerBehavior pullerBehavior = this.pullerBehaviorsByPeerId[peerId];
-                        pullerBehavior.Penalize(secondsPassed, assignedCount);
+
+                        foreach (ChainedHeader header in assignedHeaders)
+                        {
+                            DateTime assignedTime = this.assignedDownloadsByHash[header.HashBlock].AssignedTime;
+                            double delay = (this.dateTimeProvider.GetUtcNow() - assignedTime).TotalSeconds;
+
+                            pullerBehavior.AddSample(delay);
+                        }
 
                         this.RecalculateQualityScoreLocked(pullerBehavior, peerId);
                     }
@@ -814,7 +820,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 // Add peer sample.
                 if (this.pullerBehaviorsByPeerId.TryGetValue(peerId, out IBlockPullerBehavior behavior))
                 {
-                    behavior.AddSample(block.BlockSize.Value, deliveredInSeconds);
+                    behavior.AddSample(deliveredInSeconds);
 
                     // Recalculate quality score.
                     this.RecalculateQualityScoreLocked(behavior, peerId);
@@ -844,16 +850,16 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("({0}:{1})", nameof(peerId), peerId);
 
             // Now decide if we need to recalculate quality score for all peers or just for this one.
-            int bestSpeed = this.pullerBehaviorsByPeerId.Max(x => x.Value.SpeedBytesPerSecond);
+            double blockDeliveryRate = this.pullerBehaviorsByPeerId.Max(x => x.Value.BlockDeliveryRate);
 
-            int adjustedBestSpeed = bestSpeed;
-            if (!this.isIbd && (adjustedBestSpeed > PeerSpeedLimitWhenNotInIbdBytesPerSec))
-                adjustedBestSpeed = PeerSpeedLimitWhenNotInIbdBytesPerSec;
+            double adjustedDeliveryRate = blockDeliveryRate;
+            if (!this.isIbd && (adjustedDeliveryRate > MaxBlockDeliveryLimitWhenNotInIbd))
+                adjustedDeliveryRate = MaxBlockDeliveryLimitWhenNotInIbd;
 
-            if (pullerBehavior.SpeedBytesPerSecond != bestSpeed)
+            if (!this.DoubleEqual(pullerBehavior.BlockDeliveryRate, blockDeliveryRate))
             {
                 // This is not the best peer. Recalculate it's score only.
-                pullerBehavior.RecalculateQualityScore(adjustedBestSpeed);
+                pullerBehavior.RecalculateQualityScore(adjustedDeliveryRate);
             }
             else
             {
@@ -861,7 +867,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
                 // This is the best peer. Recalculate quality score for everyone.
                 foreach (IBlockPullerBehavior peerPullerBehavior in this.pullerBehaviorsByPeerId.Values)
-                    peerPullerBehavior.RecalculateQualityScore(adjustedBestSpeed);
+                    peerPullerBehavior.RecalculateQualityScore(adjustedDeliveryRate);
             }
 
             this.logger.LogTrace("(-)");
@@ -973,6 +979,11 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("(-)");
         }
 
+        private bool DoubleEqual(double a, double b)
+        {
+            return Math.Abs(a - b) < 0.00001;
+        }
+
         /// <inheritdoc/>
         public void ShowStats(StringBuilder statsBuilder)
         {
@@ -1002,6 +1013,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
 
             //TODO: do that when component is activated.
+            //TODO move to nodestats and not bench
 
             /*
             just for logging
