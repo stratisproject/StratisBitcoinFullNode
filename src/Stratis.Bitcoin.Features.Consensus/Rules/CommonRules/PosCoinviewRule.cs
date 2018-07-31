@@ -138,9 +138,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
+
             ChainedHeader chainedHeader = context.ValidationContext.ChainTipToExtand;
             Block block = context.ValidationContext.Block;
+
             var posRuleContext = context as PosRuleContext;
+            if (posRuleContext.BlockStake == null)
+                posRuleContext.BlockStake = BlockStake.Load(context.ValidationContext.Block);
+
             BlockStake blockStake = posRuleContext.BlockStake;
 
             // Verify hash target and signature of coinstake tx.
