@@ -261,7 +261,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             if (context.BuildOptions.ChangeAddress != null)
             {
-                // TODO: Do we want to check this address belongs to the same wallet?
+                Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
+                if (!wallet.ContainsAddress(context.BuildOptions.ChangeAddress))
+                {
+                    throw new WalletException("Change address given does not belong to this wallet");
+                }
+
                 context.TransactionBuilder.SetChange(context.BuildOptions.ChangeAddress.ScriptPubKey);
                 return;
             }

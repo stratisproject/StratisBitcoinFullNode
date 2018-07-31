@@ -176,6 +176,31 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
+        public void BuildTransaction_CustomChangeAddress()
+        {
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
+
+            TransactionBuildOptions options = CreateOptions(testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
+            options.ChangeAddress = testContext.WalletManager.GetUnusedChangeAddress(testContext.WalletReference);
+            Transaction transactionResult = testContext.WalletTransactionHandler.BuildTransaction(options);
+
+            // Check our assigned value is used as the first output AKA is where the change was sent to
+            transactionResult.Outputs[0].ScriptPubKey.Should().Be(options.ChangeAddress.ScriptPubKey);
+        }
+
+        [Fact]
+        public void BuildTransaction_CustomChangeAddress_NotFromSameWallet_Fails()
+        {
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
+
+            TransactionBuildOptions options = CreateOptions(testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0);
+            options.ChangeAddress = new HdAddress();
+
+            // New address is from an address that isn't from our wallet, so should fail. 
+            Assert.Throws<WalletException>(() => testContext.WalletTransactionHandler.BuildTransaction(options));
+        }
+
+        [Fact]
         public void BuildTransaction_When_OpReturnData_Is_Empty_Should_Not_Add_Extra_Output()
         {
             WalletTransactionHandlerTestContext testContext = SetupWallet();
@@ -660,6 +685,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             return new WalletTransactionHandlerTestContext
             {
                 Wallet = wallet,
+                WalletManager = walletManager,
                 WalletCoins = new ICoin[] { new Coin(addressTransaction.Id, 0, new Money(50, MoneyUnit.BTC), addressTransaction.ScriptPubKey) },
                 AccountKeys = accountKeys,
                 DestinationKeys = destinationKeys,
@@ -676,6 +702,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     public class WalletTransactionHandlerTestContext
     {
         public Wallet Wallet { get; set; }
+
+        public WalletManager WalletManager { get; set; }
 
         public ICoin[] WalletCoins { get; set; } 
 
