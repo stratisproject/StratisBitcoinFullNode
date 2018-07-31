@@ -423,11 +423,11 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.processQueuesSignal.Reset();
             }
 
-            if (newAssignments.Count > 0)
-                this.logger.LogDebug("Total amount of downloads assigned in this iteration is {0}.", newAssignments.Count);
-
             if (newAssignments.Count != 0)
+            {
+                this.logger.LogDebug("Total amount of downloads assigned in this iteration is {0}.", newAssignments.Count);
                 await this.AskPeersForBlocksAsync(newAssignments).ConfigureAwait(false);
+            }
 
             // Call callbacks with null since puller failed to deliver requested blocks.
             if (failedHashes.Count != 0)
