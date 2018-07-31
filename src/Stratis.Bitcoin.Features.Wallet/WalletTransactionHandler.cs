@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.
         /// </summary>
         /// <param name="context">Transaction build context.</param>
-        public virtual void InitializeTransactionBuilder(TransactionBuildContext context)
+        protected virtual void InitializeTransactionBuilder(TransactionBuildContext context)
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
@@ -397,171 +397,126 @@ namespace Stratis.Bitcoin.Features.Wallet
             context.TransactionBuilder.Send(opReturnScript, Money.Zero);
         }
 
-    }
-
-    /// <summary>
-    /// A mutable settings object to hold data related to building a transaction.
-    /// TODO: Make internal.
-    /// </summary>
-    public class TransactionBuildContext
-    {
-        ///// <summary>
-        ///// Initialize a new instance of a <see cref="TransactionBuildContext"/>
-        ///// </summary>
-        ///// <param name="accountReference">The wallet and account from which to build this transaction</param>
-        ///// <param name="recipients">The target recipients to send coins to.</param>
-        ///// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
-        ///// <param name="opReturnData">Optional transaction data <see cref="OpReturnData"/></param>
-        //public TransactionBuildContext(Network network, WalletAccountReference accountReference, List<Recipient> recipients, string walletPassword = "", string opReturnData = null)
-        //{
-        //    Guard.NotNull(recipients, nameof(recipients));
-
-        //    this.TransactionBuilder = new TransactionBuilder(network);
-        //    this.AccountReference = accountReference;
-        //    this.Recipients = recipients;
-        //    this.WalletPassword = walletPassword;
-        //    this.FeeType = FeeType.Medium;
-        //    this.MinConfirmations = 1;
-        //    this.SelectedInputs = new List<OutPoint>();
-        //    this.AllowOtherInputs = false;
-        //    this.Sign = !string.IsNullOrEmpty(walletPassword);
-        //    this.OpReturnData = opReturnData;
-        //}
-
-        public TransactionBuildContext(Network network, TransactionBuildOptions options)
+        /// <summary>
+        /// A mutable settings object to hold data when building a transaction.
+        /// </summary>
+        protected class TransactionBuildContext
         {
-            this.TransactionBuilder = new TransactionBuilder(network);
-            this.BuildOptions = options;
+            public TransactionBuildContext(Network network, TransactionBuildOptions options)
+            {
+                this.TransactionBuilder = new TransactionBuilder(network);
+                this.BuildOptions = options;
 
-            this.AccountReference = options.WalletAccountReference;
-            this.Recipients = options.Recipients;
-            this.WalletPassword = options.WalletPassword;
-            this.FeeType = options.FeeType;
-            this.MinConfirmations = options.MinConfirmations;
-            this.SelectedInputs = options.SelectedInputs;
-            this.AllowOtherInputs = false;
-            this.Sign = !string.IsNullOrEmpty(this.WalletPassword);
-            this.OpReturnData = options.OpReturnData;
+                this.AccountReference = options.WalletAccountReference;
+                this.Recipients = options.Recipients;
+                this.WalletPassword = options.WalletPassword;
+                this.FeeType = options.FeeType;
+                this.MinConfirmations = options.MinConfirmations;
+                this.SelectedInputs = options.SelectedInputs;
+                this.AllowOtherInputs = false;
+                this.Sign = !string.IsNullOrEmpty(this.WalletPassword);
+                this.OpReturnData = options.OpReturnData;
+            }
+
+            /// <summary>
+            /// Options defined to use when constructing the transaction.
+            /// </summary>
+            public TransactionBuildOptions BuildOptions { get; }
+
+            /// <summary>
+            /// The wallet account to use for building a transaction.
+            /// </summary>
+            public WalletAccountReference AccountReference { get; set; }
+
+            /// <summary>
+            /// The recipients to send Bitcoin to.
+            /// </summary>
+            public List<Recipient> Recipients { get; set; }
+
+            /// <summary>
+            /// An indicator to estimate how much fee to spend on a transaction.
+            /// </summary>
+            /// <remarks>
+            /// The higher the fee the faster a transaction will get in to a block.
+            /// </remarks>
+            public FeeType FeeType { get; set; }
+
+            /// <summary>
+            /// The minimum number of confirmations an output must have to be included as an input.
+            /// </summary>
+            public int MinConfirmations { get; set; }
+
+            /// <summary>
+            /// Coins that are available to be spent.
+            /// </summary>
+            public List<UnspentOutputReference> UnspentOutputs { get; set; }
+
+            /// <summary>
+            /// The builder used to build the current transaction.
+            /// </summary>
+            public readonly TransactionBuilder TransactionBuilder;
+
+            /// <summary>
+            /// The change address, where any remaining funds will be sent to.
+            /// </summary>
+            /// <remarks>
+            /// A Bitcoin has to spend the entire UTXO, if total value is greater then the send target
+            /// the rest of the coins go in to a change address that is under the senders control.
+            /// </remarks>
+            public HdAddress ChangeAddress { get; set; }
+
+            /// <summary>
+            /// The total fee on the transaction.
+            /// </summary>
+            public Money TransactionFee { get; set; }
+
+            /// <summary>
+            /// The final transaction.
+            /// </summary>
+            public Transaction Transaction { get; set; }
+
+            /// <summary>
+            /// The password that protects the wallet in <see cref="WalletAccountReference"/>.
+            /// </summary>
+            /// <remarks>
+            /// TODO: replace this with System.Security.SecureString (https://github.com/dotnet/corefx/tree/master/src/System.Security.SecureString)
+            /// More info (https://github.com/dotnet/corefx/issues/1387)
+            /// </remarks>
+            public string WalletPassword { get; set; }
+
+            /// <summary>
+            /// The inputs that must be used when building the transaction.
+            /// </summary>
+            /// <remarks>
+            /// The inputs are required to be part of the wallet.
+            /// </remarks>
+            public List<OutPoint> SelectedInputs { get; set; }
+
+            /// <summary>
+            /// If false, allows unselected inputs, but requires all selected inputs be used.
+            /// </summary>
+            public bool AllowOtherInputs { get; set; }
+
+            /// <summary>
+            /// Specify whether to sign the transaction.
+            /// </summary>
+            public bool Sign { get; set; }
+
+            /// <summary>
+            /// Allows the context to specify a <see cref="FeeRate"/> when building a transaction.
+            /// </summary>
+            public FeeRate OverrideFeeRate { get; set; }
+
+            /// <summary>
+            /// Shuffles transaction inputs and outputs for increased privacy.
+            /// </summary>
+            public bool Shuffle { get; set; }
+
+            /// <summary>
+            /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
+            /// </summary>
+            public string OpReturnData { get; set; }
         }
 
-        /// <summary>
-        /// Options defined to use when constructing the transaction.
-        /// </summary>
-        public TransactionBuildOptions BuildOptions { get; }
-
-        /// <summary>
-        /// The wallet account to use for building a transaction.
-        /// </summary>
-        public WalletAccountReference AccountReference { get; set; }
-
-        /// <summary>
-        /// The recipients to send Bitcoin to.
-        /// </summary>
-        public List<Recipient> Recipients { get; set; }
-
-        /// <summary>
-        /// An indicator to estimate how much fee to spend on a transaction.
-        /// </summary>
-        /// <remarks>
-        /// The higher the fee the faster a transaction will get in to a block.
-        /// </remarks>
-        public FeeType FeeType { get; set; }
-
-        /// <summary>
-        /// The minimum number of confirmations an output must have to be included as an input.
-        /// </summary>
-        public int MinConfirmations { get; set; }
-
-        /// <summary>
-        /// Coins that are available to be spent.
-        /// </summary>
-        public List<UnspentOutputReference> UnspentOutputs { get; set; }
-
-        /// <summary>
-        /// The builder used to build the current transaction.
-        /// </summary>
-        public readonly TransactionBuilder TransactionBuilder;
-
-        /// <summary>
-        /// The change address, where any remaining funds will be sent to.
-        /// </summary>
-        /// <remarks>
-        /// A Bitcoin has to spend the entire UTXO, if total value is greater then the send target
-        /// the rest of the coins go in to a change address that is under the senders control.
-        /// </remarks>
-        public HdAddress ChangeAddress { get; set; }
-
-        /// <summary>
-        /// The total fee on the transaction.
-        /// </summary>
-        public Money TransactionFee { get; set; }
-
-        /// <summary>
-        /// The final transaction.
-        /// </summary>
-        public Transaction Transaction { get; set; }
-
-        /// <summary>
-        /// The password that protects the wallet in <see cref="WalletAccountReference"/>.
-        /// </summary>
-        /// <remarks>
-        /// TODO: replace this with System.Security.SecureString (https://github.com/dotnet/corefx/tree/master/src/System.Security.SecureString)
-        /// More info (https://github.com/dotnet/corefx/issues/1387)
-        /// </remarks>
-        public string WalletPassword { get; set; }
-
-        /// <summary>
-        /// The inputs that must be used when building the transaction.
-        /// </summary>
-        /// <remarks>
-        /// The inputs are required to be part of the wallet.
-        /// </remarks>
-        public List<OutPoint> SelectedInputs { get; set; }
-
-        /// <summary>
-        /// If false, allows unselected inputs, but requires all selected inputs be used.
-        /// </summary>
-        public bool AllowOtherInputs { get; set; }
-
-        /// <summary>
-        /// Specify whether to sign the transaction.
-        /// </summary>
-        public bool Sign { get; set; }
-
-        /// <summary>
-        /// Allows the context to specify a <see cref="FeeRate"/> when building a transaction.
-        /// </summary>
-        public FeeRate OverrideFeeRate { get; set; }
-
-        /// <summary>
-        /// Shuffles transaction inputs and outputs for increased privacy.
-        /// </summary>
-        public bool Shuffle { get; set; }
-
-        /// <summary>
-        /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
-        /// </summary>
-        public string OpReturnData { get; set; }
-    }
-
-    /// <summary>
-    /// Represents recipients of a payment, used in <see cref="WalletTransactionHandler.BuildTransaction"/>.
-    /// </summary>
-    public class Recipient
-    {
-        /// <summary>
-        /// The destination script.
-        /// </summary>
-        public Script ScriptPubKey { get; set; }
-
-        /// <summary>
-        /// The amount that will be sent.
-        /// </summary>
-        public Money Amount { get; set; }
-
-        /// <summary>
-        /// An indicator if the fee is subtracted from the current recipient.
-        /// </summary>
-        public bool SubtractFeeFromAmount { get; set; }
     }
 }
