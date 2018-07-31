@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // The check requires the last two blocks be of the same algo type,
             // thats why we wait for at least 2 bock beyond the last pow block.
 
-            // Both POW and POW blocks will be checked in the partial validation rule CheckDifficultykHybridRule 
+            // Both POW and POW blocks will be checked in the partial validation rule CheckDifficultykHybridRule
             // this rule will have the full block and can determine the algo type.
             if (chainedHeader.Height + 2 > this.Parent.Network.Consensus.LastPOWBlock)
             {
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
                 Target nextWorkRequired = this.PosParent.StakeValidator.CalculateRetarget(first.Time, first.Bits, second.Time, this.Parent.Network.Consensus.ProofOfStakeLimitV2);
 
-                BlockHeader header = context.ValidationContext.Block.Header;
+                BlockHeader header = context.ValidationContext.ChainedHeader.Header;
 
                 // Check proof of stake.
                 if (header.Bits != nextWorkRequired)
