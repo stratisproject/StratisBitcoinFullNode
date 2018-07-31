@@ -574,14 +574,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             // Context with OpReturnData
             TransactionBuildOptions optionsWithOpReturn = CreateOptions(testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, this.CostlyOpReturnData);
-            testContext.WalletTransactionHandler.BuildTransaction(optionsWithOpReturn);
+            Transaction withOpReturnResult = testContext.WalletTransactionHandler.BuildTransaction(optionsWithOpReturn);
+            Money withOpReturnFee = withOpReturnResult.GetFee(testContext.WalletCoins);
 
             // Context without OpReturnData
             TransactionBuildOptions optionsWithoutOpReturn = CreateOptions(testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, null);
-            testContext.WalletTransactionHandler.BuildTransaction(optionsWithoutOpReturn);
+            Transaction withoutOpReturnResult = testContext.WalletTransactionHandler.BuildTransaction(optionsWithoutOpReturn);
+            Money withoutOpReturnFee = withoutOpReturnResult.GetFee(testContext.WalletCoins);
 
-            optionsWithoutOpReturn.TransactionFee.Should().NotBe(optionsWithOpReturn.TransactionFee);
-            optionsWithoutOpReturn.TransactionFee.Satoshi.Should().BeLessThan(optionsWithOpReturn.TransactionFee.Satoshi);
+            withoutOpReturnFee.Should().NotBe(withOpReturnFee);
+            withoutOpReturnFee.Satoshi.Should().BeLessThan(withOpReturnFee.Satoshi);
         }
 
 
@@ -650,6 +652,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             return new WalletTransactionHandlerTestContext
             {
                 Wallet = wallet,
+                WalletCoins = new ICoin[] { new Coin(addressTransaction.Id, 0, new Money(50, MoneyUnit.BTC), addressTransaction.ScriptPubKey) },
                 AccountKeys = accountKeys,
                 DestinationKeys = destinationKeys,
                 AddressTransaction = addressTransaction,
@@ -665,6 +668,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     public class WalletTransactionHandlerTestContext
     {
         public Wallet Wallet { get; set; }
+
+        public ICoin[] WalletCoins { get; set; } 
 
         public (ExtKey ExtKey, string ExtPubKey) AccountKeys { get; set; }
 
