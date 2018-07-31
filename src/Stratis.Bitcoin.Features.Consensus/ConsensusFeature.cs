@@ -124,15 +124,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override void Dispose()
         {
-            var cache = this.coinView as CachedCoinView;
-            if (cache != null)
-            {
-                this.logger.LogInformation("Flushing Cache CoinView...");
-                cache.FlushAsync().GetAwaiter().GetResult();
-                cache.Dispose();
-            }
-
-            this.dBreezeCoinView.Dispose();
         }
     }
 

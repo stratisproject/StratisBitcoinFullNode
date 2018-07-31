@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ILoggerFactory loggerFactory;
 
         /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
+        protected readonly ILogger logger;
 
         /// <summary>A collection of rules that well be executed by the rules engine.</summary>
         private readonly Dictionary<string, ConsensusRule> consensusRules;
@@ -116,6 +116,11 @@ namespace Stratis.Bitcoin.Consensus
         public virtual Task Initialize()
         {
             return Task.CompletedTask;
+        }
+
+        /// <inheritdoc />
+        public virtual void Dispose()
+        {
         }
 
         /// <inheritdoc />
