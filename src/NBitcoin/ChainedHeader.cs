@@ -39,13 +39,13 @@ namespace NBitcoin
 
         /// <summary>
         /// Validated using all rules that don't require change of state.
-        /// Some rules validation may be skipped for blocks previously marked as assumed valid.
+        /// Some validation rules may be skipped for blocks previously marked as assumed valid.
         /// </summary>
         PartiallyValidated,
 
         /// <summary>
         /// Validated using all the rules.
-        /// Some rules validation may be skipped for blocks previously marked as assumed valid.
+        /// Some validation rules may be skipped for blocks previously marked as assumed valid.
         /// </summary>
         FullyValidated
     }
