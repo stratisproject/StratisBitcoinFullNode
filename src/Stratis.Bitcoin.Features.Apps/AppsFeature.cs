@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
@@ -33,22 +32,9 @@ namespace Stratis.Bitcoin.Features.Apps
         {
             this.logger.LogInformation("Initializing {0}", nameof(AppsFeature));
 
-            this.AppsFolderCheck();
+            Directory.CreateDirectory(this.dataFolder.ApplicationsPath);
 
             this.appsHost.Host(this.appsStore.Applications);
-        }
-
-        private void AppsFolderCheck()
-        {
-            try
-            {
-                if (!Directory.Exists(this.dataFolder.ApplicationsPath))
-                    Directory.CreateDirectory(this.dataFolder.ApplicationsPath);
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError($"Failed to create apps folder '{this.dataFolder.ApplicationsPath}' : {e.Message}");
-            }
         }
 
         public override void Dispose()
