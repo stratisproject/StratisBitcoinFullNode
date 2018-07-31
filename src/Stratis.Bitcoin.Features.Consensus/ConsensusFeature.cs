@@ -52,6 +52,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Consensus statistics logger.</summary>
         private readonly ConsensusStats consensusStats;
 
+        private IRuleRegistration ruleRegistration;
+
+        private IConsensusRuleEngine consensusRuleEngine;
+
         public ConsensusFeature(
             DBreezeCoinView dBreezeCoinView,
             Network network,
@@ -60,6 +64,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             IConnectionManager connectionManager,
             Signals.Signals signals,
             IConsensusManager consensusManager,
+            IRuleRegistration ruleRegistration,
+            IConsensusRuleEngine consensusRuleEngine,
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
             ConsensusStats consensusStats)
@@ -70,6 +76,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.connectionManager = connectionManager;
             this.signals = signals;
             this.consensusManager = consensusManager;
+            this.ruleRegistration = ruleRegistration;
+            this.consensusRuleEngine = consensusRuleEngine;
             this.nodeDeployments = nodeDeployments;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
@@ -97,6 +105,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
 
+
+            this.consensusRuleEngine.Register(this.ruleRegistration);
             this.signals.SubscribeForBlocksConnected(this.consensusStats);
         }
 
