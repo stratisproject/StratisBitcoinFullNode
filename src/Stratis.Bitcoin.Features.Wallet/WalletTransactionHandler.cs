@@ -420,6 +420,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.AllowOtherInputs = false;
                 this.Sign = !string.IsNullOrEmpty(this.WalletPassword);
                 this.OpReturnData = options.OpReturnData;
+                this.OverrideFeeRate = options.OverrideFeeRate;
             }
 
             /// <summary>
