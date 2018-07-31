@@ -58,6 +58,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             consensus.MaxReorgLength = 500;
             consensus.MaxMoney = long.MaxValue;
 
+
+
+            // Taken from StratisX.
+            consensus.Options = new PosConsensusOptions(
+                maxBlockBaseSize: 1_000_000,
+                maxStandardVersion: 2,
+                maxStandardTxWeight: 100_000,
+                maxBlockSigopsCost: 20_000
+                );
+
             this.Genesis = BitcoinMain.CreateBitcoinGenesisBlock(consensus.ConsensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
             ((SmartContractBlockHeader)this.Genesis.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
             this.Genesis.Header.Nonce = 3; // Incremented 19/06
