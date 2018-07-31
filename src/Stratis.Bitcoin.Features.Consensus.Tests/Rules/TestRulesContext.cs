@@ -91,19 +91,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     /// </summary>
     public class TestPosConsensusRules : PosConsensusRules
     {
-        private Mock<IRuleRegistration> ruleRegistration;
-
         public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView uxtoSet, ILookaheadBlockPuller lookaheadBlockPuller, IStakeChain stakeChain, IStakeValidator stakeValidator)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, uxtoSet, lookaheadBlockPuller, stakeChain, stakeValidator)
         {
-            this.ruleRegistration = new Mock<IRuleRegistration>();
         }
 
         public T RegisterRule<T>() where T : ConsensusRule, new()
         {
             var rule = new T();
-            this.ruleRegistration.Setup(r => r.GetRules()).Returns(new List<ConsensusRule>() { rule });
-            this.Network.Consensus.Rules = this.ruleRegistration.Object;
+            this.Network.Consensus.Rules = new RuleRegistrationTest(new List<ConsensusRule>() { rule });
             this.Register();
             return rule;
         }
@@ -172,7 +168,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         }
     }
 
-    public class RuleRegistrationTest : IRuleRegistration
+    public sealed class RuleRegistrationTest : IRuleRegistration
     {
         public RuleRegistrationTest(IEnumerable<IConsensusRule> rules)
         {
