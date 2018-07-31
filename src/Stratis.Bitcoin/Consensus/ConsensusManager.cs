@@ -379,7 +379,7 @@ namespace Stratis.Bitcoin.Consensus
                     chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeaderBlock.ChainedHeader, out fullValidationRequired);
                 }
 
-                this.logger.LogTrace("Full validation required: {0}.", fullValidationRequired);
+                this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? "" : " NOT");
 
                 if (fullValidationRequired)
                 {
@@ -763,7 +763,7 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("Block must be partially or fully validated.");
             }
 
-                var validationContext = new ValidationContext() { Block = blockToConnect.Block, ChainedHeader = chainTipToExtand};
+                var validationContext = new ValidationContext() { Block = blockToConnect.Block, ChainTipToExtand = chainTipToExtand};
 
                 // Call the validation engine.
                 await this.consensusRules.FullValidationAsync(validationContext).ConfigureAwait(false);

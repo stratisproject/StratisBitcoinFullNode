@@ -427,6 +427,7 @@ namespace Stratis.Bitcoin.BlockPulling
             // Call callbacks with null since puller failed to deliver requested blocks.
             if (failedHashes.Count != 0)
                 this.logger.LogTrace("{0} jobs partially or fully failed.", failedHashes.Count);
+
             foreach (uint256 failedJob in failedHashes)
                 this.onDownloadedCallback(failedJob, null);
 
