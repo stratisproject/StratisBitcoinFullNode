@@ -33,9 +33,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public ChainedHeader WalletTip => this.walletTip;
 
-        /// <inheritdoc />
+        /// <summary>Provides a <see cref="BufferBlock{T}"/> for storing <see cref="Block"/> data</summary>
         private BufferBlock<Block> BlockBuffer { get; }
 
+        /// <summary>Provides a <see cref="Block"/> <see cref="ConcurrentQueue{T}"/></summary>
         private readonly ConcurrentQueue<Block> blocksQueue = new ConcurrentQueue<Block>();
 
         /// <summary>Factory for creating background async loop tasks.</summary>
