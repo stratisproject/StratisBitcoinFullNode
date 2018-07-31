@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using ConcurrentCollections;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -37,14 +36,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         private BufferBlock<Block> BlockBuffer { get; }
 
-        private readonly ConcurrentQueue<uint256> hashBlocks;
-
-        public readonly ConcurrentQueue<Block> BlocksQueue = new ConcurrentQueue<Block>();
-
-        private readonly object queueLock = new object();
-
-        /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
-        private IAsyncLoop asyncLoop;
+        private readonly ConcurrentQueue<Block> blocksQueue = new ConcurrentQueue<Block>();
 
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -69,7 +61,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.BlockBuffer = new BufferBlock<Block>();
-            this.hashBlocks = new ConcurrentQueue<uint256>();
             this.asyncLoopFactory = asyncLoopFactory;
         }
 
@@ -105,16 +96,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.walletManager.WalletTipHash = fork.HashBlock;
                 this.walletTip = fork;
             }
-            else
-            {
-                this.asyncLoop = this.asyncLoopFactory.Run(nameof(WalletSyncManager), async token =>
-                    {
-                        await this.ProcessBlockLoopAsync(token);
-                    }
+
+            this.asyncLoopFactory.Run(nameof(WalletSyncManager), async token =>
+                {
+                    await this.ProcessBlockLoopAsync(token);
+                }
                 , this.nodeLifetime.ApplicationStopping
-                , TimeSpans.Second
-                , TimeSpans.TenSeconds);
-            }
+                , TimeSpans.Second);
 
             this.logger.LogTrace("(-)");
         }
@@ -133,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        private async Task ConsumeBlockAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue)
+        private static async Task ConsumeBlockAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue)
         {
             while (await source.OutputAvailableAsync())
             {
@@ -146,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         private void QueueBlock(Block block)
         {
-            Task.Run(() => this.ConsumeBlockAsync(this.BlockBuffer, this.BlocksQueue));
+            Task.Run(() => ConsumeBlockAsync(this.BlockBuffer, this.blocksQueue));
 
             this.ProduceBlock(this.BlockBuffer, block);
         }
@@ -193,51 +181,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Builds a list of Chain headers to be processed in batches of 50.
+        /// Processes a new block.
         /// </summary>
-        /// <param name="blockHeader"></param>
-        /// <param name="token"></param>
-        /// <param name="batchCount"></param>
-        private async Task ProcessBlockInBatchesAsync(CancellationToken token, int batchCount)
-        {
-            if (this.BlocksQueue.Count == 0) return;
-
-            await Task.Run(() =>
-            {
-                lock (this.queueLock)
-                {
-                    var blocks = new ConcurrentHashSet<uint256>();
-
-                    var blocksAdded = 0;
-
-                    while (blocksAdded <= batchCount)
-                    {
-                        if (this.hashBlocks.TryDequeue(out uint256 block))
-                            blocks.Add(block);
-
-                        blocksAdded++;
-                    }
-
-                    IList<Block> processedBlocks =
-                        this.blockStoreCache.GetBlockAsync(blocks.ToList()).GetAwaiter().GetResult();
-
-                    foreach (Block processedBlock in processedBlocks.OrderBy(b => b.Header.BlockTime))
-                    {
-                        token.ThrowIfCancellationRequested();
-
-                        ChainedHeader blockChainedHeader = this.chain.GetBlock(processedBlock.GetHash());
-
-                        this.walletManager.WalletTipHash = blockChainedHeader.HashBlock;
-
-                        // TODO: In QueueBlock the chainedHeader.Height > current.Height (line 789) - need to fix to allow batches of blocks to update
-                        // Also add relevant unit tests around batches and the consumer producer function
-
-                        this.walletManager.ProcessBlock(processedBlock, blockChainedHeader);
-                    }
-                }
-            }, token);
-        }
-
+        /// <param name="block"></param>
         private async Task ProcessAsync(Block block)
         {
             await Task.Run(() =>
@@ -302,7 +248,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             });
         }
 
-        public async Task ProcessBlockLoopAsync(CancellationToken token)
+        /// <summary>
+        /// Processes blocks stored in the block store cache and block queue, asynchronously.
+        /// </summary>
+        /// <param name="cancellation">Cancellation token that triggers when the task and the loop should be cancelled.</param>
+        private async Task ProcessBlockLoopAsync(CancellationToken token)
         {
             try
             {
@@ -340,7 +290,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                             if (nextBlock == null)
                             {
                                 // Check if any Blocks are queued up.
-                                while (this.BlocksQueue.TryDequeue(out Block block))
+                                while (this.blocksQueue.TryDequeue(out Block block))
                                 {
                                     await this.ProcessAsync(block).ConfigureAwait(false);
                                 }
@@ -368,6 +318,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                         await this.ProcessAsync(nextBlock).ConfigureAwait(false);
 
+                    }
+                }
+                else
+                {
+                    // Check if any Blocks are queued up.
+                    while (this.blocksQueue.TryDequeue(out Block block))
+                    {
+                        await this.ProcessAsync(block).ConfigureAwait(false);
                     }
                 }
             }
