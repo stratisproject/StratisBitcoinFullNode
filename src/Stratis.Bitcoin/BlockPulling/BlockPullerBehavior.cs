@@ -12,10 +12,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
-
-    //TODO comments and review all
-
-
     /// <summary>
     /// Relation of the node's puller to a network peer node.
     /// Keeps all peer-related values that <see cref="BlockPuller"/> needs to know about a peer.
@@ -27,7 +23,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <remarks>It's a value from <see cref="BlockPullerBehavior.MinQualityScore"/> to <see cref="BlockPullerBehavior.MaxQualityScore"/>.</remarks>
         double QualityScore { get; }
 
-        /// <summary>How many blocks peer can deliver in a second.</summary>
+        /// <summary>How many blocks peer can deliver in one second.</summary>
         double BlockDeliveryRate { get; }
 
         /// <summary>Tip claimed by peer.</summary>
@@ -38,7 +34,7 @@ namespace Stratis.Bitcoin.BlockPulling
         void AddSample(double delaySeconds);
 
         /// <summary>Recalculates the quality score for this peer.</summary>
-        /// <param name="bestBlockDeliveryRate">TODO that is considered to be the maximum speed.</param>
+        /// <param name="bestBlockDeliveryRate">Highest <see cref="BlockDeliveryRate"/> between all peers.</param>
         void RecalculateQualityScore(double bestBlockDeliveryRate);
 
         /// <summary>Requests blocks from this peer.</summary>
@@ -61,6 +57,12 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Minimal interval between <see cref="BlockDeliveryRate"/> recalculation can happen.</summary>
         internal const int MinRecalculationDelaySeconds = 3;
+
+        /// <summary>By how much times <see cref="BlockDeliveryRate"/> can increase per recalculation.</summary>
+        private const double MaxBlockDeliveryRateIncrease = 2;
+
+        /// <summary>By how much times <see cref="BlockDeliveryRate"/> can decrease per recalculation.</summary>
+        private const double MaxBlockDeliveryRateDecrease = 0.5;
 
         /// <inheritdoc />
         public double QualityScore { get; private set; }
@@ -117,12 +119,11 @@ namespace Stratis.Bitcoin.BlockPulling
 
                 double multiplyer = 1.0 / this.averageDelaySeconds.Average;
 
-                // TODO to constants
-                if (multiplyer > 2)
-                    multiplyer = 2;
+                if (multiplyer > MaxBlockDeliveryRateIncrease)
+                    multiplyer = MaxBlockDeliveryRateIncrease;
 
-                if (multiplyer < 0.5)
-                    multiplyer = 0.5;
+                if (multiplyer < MaxBlockDeliveryRateDecrease)
+                    multiplyer = MaxBlockDeliveryRateDecrease;
 
                 this.BlockDeliveryRate *= multiplyer;
             }
@@ -135,10 +136,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("({0}:{1})", nameof(bestBlockDeliveryRate), bestBlockDeliveryRate);
 
-            if (bestBlockDeliveryRate == 0)
-                this.QualityScore = MaxQualityScore;
-            else
-                this.QualityScore = this.BlockDeliveryRate / bestBlockDeliveryRate;
+            this.QualityScore = this.BlockDeliveryRate / bestBlockDeliveryRate;
 
             if (this.QualityScore < MinQualityScore)
                 this.QualityScore = MinQualityScore;

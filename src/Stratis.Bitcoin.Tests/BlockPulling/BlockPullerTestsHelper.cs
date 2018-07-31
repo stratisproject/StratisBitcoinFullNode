@@ -204,8 +204,6 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
     {
         public readonly List<uint256> RequestedHashes;
 
-        public bool ProvidedIbdState;
-
         public bool RecalculateQualityScoreWasCalled;
 
         public bool ShouldThrowAtRequestBlocksAsync;
@@ -220,12 +218,6 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             this.RecalculateQualityScoreWasCalled = false;
             this.RequestedHashes = new List<uint256>();
             this.underlyingBehavior = new BlockPullerBehavior(blockPuller, ibdState, loggerFactory);
-        }
-
-        public void OnIbdStateChanged(bool isIbd)
-        {
-            this.underlyingBehavior.OnIbdStateChanged(isIbd);
-            this.ProvidedIbdState = isIbd;
         }
 
         public Task RequestBlocksAsync(List<uint256> hashes)
@@ -249,19 +241,15 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             }
         }
 
-        public int SpeedBytesPerSecond => this.underlyingBehavior.SpeedBytesPerSecond;
+        public double BlockDeliveryRate => this.underlyingBehavior.BlockDeliveryRate;
 
         public ChainedHeader Tip { get => this.underlyingBehavior.Tip; set => this.underlyingBehavior.Tip = value; }
 
-        public void AddSample(long blockSizeBytes, double delaySeconds) { this.underlyingBehavior.AddSample(blockSizeBytes, delaySeconds); }
+        public void AddSample(double delaySeconds) { this.underlyingBehavior.AddSample(delaySeconds); }
 
-        public AverageCalculator AverageSizeBytes => this.underlyingBehavior.averageSizeBytes;
-
-        public void Penalize(double delaySeconds, int notDeliveredBlocksCount) { this.underlyingBehavior.Penalize(delaySeconds, notDeliveredBlocksCount); }
-
-        public void RecalculateQualityScore(int bestSpeedBytesPerSecond)
+        public void RecalculateQualityScore(double bestRate)
         {
-            this.underlyingBehavior.RecalculateQualityScore(bestSpeedBytesPerSecond);
+            this.underlyingBehavior.RecalculateQualityScore(bestRate);
             this.RecalculateQualityScoreWasCalled = true;
         }
 

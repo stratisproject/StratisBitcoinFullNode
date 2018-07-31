@@ -66,81 +66,6 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         }
 
         /// <summary>
-        /// Connect peer A. Call OnIbdStateChanged and make sure that peer's behavior was updated about IBD state being changed.
-        /// </summary>
-        [Fact]
-        public void OnIbdStateChanged_CallsBehaviors()
-        {
-            INetworkPeer peer = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior);
-            ChainedHeader header = this.helper.CreateChainedHeader();
-
-            this.puller.NewPeerTipClaimed(peer, header);
-
-            this.puller.OnIbdStateChanged(false);
-            Assert.False(behavior.ProvidedIbdState);
-
-            this.puller.OnIbdStateChanged(true);
-            Assert.True(behavior.ProvidedIbdState);
-
-            this.puller.OnIbdStateChanged(false);
-            Assert.False(behavior.ProvidedIbdState);
-        }
-
-        /// <summary>
-        /// Connect 3 peers. Setup avg speed of them as: max / 2, max, max * 2 (where max is the max speed when the node is not in IBD).
-        /// When in IBD there are no speed limitations and all should have different quality scores, when not in IBD last 2 should have quality score of 1.
-        /// </summary>
-        [Fact]
-        public void OnIbdStateChanged_AffectsQualityScore()
-        {
-            var peers = new List<INetworkPeer>();
-            var behaviors = new List<ExtendedBlockPullerBehavior>();
-            ChainedHeader header = this.helper.CreateChainedHeader();
-
-            for (int i = 0; i < 3; i++)
-            {
-                INetworkPeer peer = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior);
-                peers.Add(peer);
-                behaviors.Add(behavior);
-
-                this.puller.NewPeerTipClaimed(peer, header);
-            }
-
-            int maxSpeedWhenNotIbd = this.puller.PeerSpeedLimitWhenNotInIbdBytesPerSec;
-
-            behaviors[0].AddSample(maxSpeedWhenNotIbd / 2, 1);
-            behaviors[1].AddSample(maxSpeedWhenNotIbd, 1);
-            behaviors[2].AddSample(maxSpeedWhenNotIbd * 2, 1);
-
-            this.puller.OnIbdStateChanged(true);
-
-            // After recalculation all scores should be different.
-            for (int i = 0; i < peers.Count; i++)
-                this.puller.RecalculateQualityScoreLocked(behaviors[i], peers[i].Connection.Id);
-
-            Assert.True(behaviors[0].QualityScore < behaviors[1].QualityScore);
-            Assert.True(behaviors[1].QualityScore < behaviors[2].QualityScore);
-
-            this.puller.OnIbdStateChanged(false);
-
-            // After recalculation last 2 peers should hit the max bound and their scores should be equal.
-            for (int i = 0; i < peers.Count; i++)
-                this.puller.RecalculateQualityScoreLocked(behaviors[i], peers[i].Connection.Id);
-
-            Assert.Equal(behaviors[1].QualityScore, behaviors[2].QualityScore);
-            Assert.True(behaviors[0].QualityScore < behaviors[1].QualityScore);
-
-            this.puller.OnIbdStateChanged(true);
-
-            // Back to IBD, no speed limits.
-            for (int i = 0; i < peers.Count; i++)
-                this.puller.RecalculateQualityScoreLocked(behaviors[i], peers[i].Connection.Id);
-
-            Assert.True(behaviors[0].QualityScore < behaviors[1].QualityScore);
-            Assert.True(behaviors[1].QualityScore < behaviors[2].QualityScore);
-        }
-
-        /// <summary>
         /// Call <see cref="BlockPuller.NewPeerTipClaimed"/>, make sure that internal structures of the puller are updated,
         /// make sure that <see cref="BlockPullerBehavior.Tip"/> is set.
         /// </summary>
@@ -765,50 +690,6 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         }
 
         /// <summary>
-        /// Peer is asked for 100 block. After N (stalling threshold) seconds he doesn't deliver and they are reassigned. Make sure peer quality score is decreased
-        /// but it doesn't go to min quality score (only fixed % of all samples can be taken out).
-        /// </summary>
-        [Fact]
-        public async Task Stalling_CanReassignAndDecreaseQualityScoreAsync()
-        {
-            INetworkPeer peer = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior);
-
-            List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(100);
-
-            this.puller.SetMaxBlocksBeingDownloaded(100);
-
-            this.puller.NewPeerTipClaimed(peer, headers.Last());
-            this.puller.OnIbdStateChanged(false);
-
-            int bestSpeed = 1000;
-            for (int i=0; i < 10; i++)
-                behavior.AddSample(bestSpeed, 1);
-
-            behavior.RecalculateQualityScore(bestSpeed);
-
-            double initialQualityScore = behavior.QualityScore;
-
-            this.puller.RequestBlocksDownload(headers);
-
-            await this.puller.AssignDownloadJobsAsync();
-
-            // Fake assign time to avoid waiting for a long time.
-            foreach (AssignedDownload assignedDownload in this.puller.AssignedDownloadsByHash.Values)
-                assignedDownload.AssignedTime = (assignedDownload.AssignedTime - TimeSpan.FromSeconds(this.puller.MaxSecondsToDeliverBlock));
-
-            Assert.Empty(this.puller.ReassignedJobsQueue);
-
-            this.puller.CheckStalling();
-            behavior.RecalculateQualityScore(bestSpeed);
-
-            Assert.Single(this.puller.ReassignedJobsQueue);
-            Assert.Equal(headers.Count, this.puller.ReassignedJobsQueue.Peek().Headers.Count);
-
-            Assert.True(behavior.QualityScore < initialQualityScore);
-            Assert.True(behavior.QualityScore > BlockPullerBehavior.MinQualityScore);
-        }
-
-        /// <summary>
         /// Ask 1 peer for <see cref="ExtendedBlockPuller.ImportantHeightMargin"/> blocks. After that ask 2nd peer for more. None of the peers
         /// deliver anything, peer 1's blocks are reassigned and penalty is applied, penalty is not applied on another peer because their assignment
         /// is not important. Make sure that headers that are released are in reassign job queue.
@@ -833,11 +714,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
             this.puller.RequestBlocksDownload(headers.Skip(this.puller.ImportantHeightMargin).ToList());
 
-            behavior1.AddSample(100, 1);
-            behavior2.AddSample(100, 1);
+            behavior1.AddSample(0.1);
+            behavior2.AddSample(0.1);
 
-            behavior1.RecalculateQualityScore(100);
-            behavior2.RecalculateQualityScore(100);
+            behavior1.RecalculateQualityScore(10);
+            behavior2.RecalculateQualityScore(10);
 
             Assert.True(this.helper.DoubleEqual(behavior1.QualityScore, behavior2.QualityScore));
 
@@ -854,9 +735,6 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             this.puller.CheckStalling();
 
             Assert.True(behavior1.QualityScore < behavior2.QualityScore);
-
-            List<double> samples = ((CircularArray<double>)behavior1.AverageSizeBytes.GetMemberValue("samples")).ToList();
-            Assert.Equal(BlockPullerBehavior.IbdSamplesCount * BlockPullerBehavior.MaxSamplesPercentageToPenalize, samples.Count(x => this.helper.DoubleEqual(x, 0)));
 
             // Two jobs reassigned from peer 1.
             Assert.Equal(2, this.puller.ReassignedJobsQueue.Count);
@@ -939,11 +817,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
             INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
             this.puller.NewPeerTipClaimed(peer1, headers.Last());
-            behavior1.AddSample(1000000, 1);
+            behavior1.AddSample(0.1);
 
             INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
             this.puller.NewPeerTipClaimed(peer2, ChainedHeadersHelper.CreateConsecutiveHeaders(10).Last());
-            behavior2.AddSample(100000, 1);
+            behavior2.AddSample(0.5);
 
             this.puller.SetMaxBlocksBeingDownloaded(int.MaxValue);
 
