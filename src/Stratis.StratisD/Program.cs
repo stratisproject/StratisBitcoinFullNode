@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
@@ -31,7 +32,7 @@ namespace Stratis.StratisD
                     .UseMempool()
                     .UseWallet()
                     .AddPowPosMining()
-                    .UseApi()        
+                    .UseApi()
                     .UseApps()
                     .AddRPC()
                     .Build();

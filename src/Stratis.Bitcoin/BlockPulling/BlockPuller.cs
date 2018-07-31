@@ -978,7 +978,26 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("()");
 
             statsBuilder.AppendLine("======Block Puller======");
-            statsBuilder.AppendLine("TODO");
+
+            lock (this.assignedLock)
+            {
+                int pendingBlocks = this.assignedDownloadsByHash.Count;
+                statsBuilder.AppendLine($"Blocks being downloaded: {pendingBlocks}");
+
+                int unassignedDownloads = 0;
+
+                foreach (DownloadJob downloadJob in this.downloadJobsQueue)
+                    unassignedDownloads += downloadJob.Headers.Count;
+
+                statsBuilder.AppendLine($"Queueued downloads: {unassignedDownloads}");
+            }
+
+            double averageBlockSizeKb = this.GetAverageBlockSizeBytes() / 1024.0;
+            statsBuilder.AppendLine($"Average block size: {Math.Round(averageBlockSizeKb, 2)} KB");
+
+            double totalSpeedKB = (this.GetTotalSpeedOfAllPeersBytesPerSec() / 1024.0);
+            statsBuilder.AppendLine($"Total download speed: {Math.Round(totalSpeedKB, 2)} KB/sec");
+
 
 
             //TODO: do that when component is activated.
@@ -994,6 +1013,8 @@ namespace Stratis.Bitcoin.BlockPulling
 		        show actual speed (no 1mb limit)
             */
 
+            statsBuilder.AppendLine("TODO");
+            statsBuilder.AppendLine("=========================");
             this.logger.LogTrace("(-)");
         }
 
