@@ -6,8 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
-using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -29,6 +27,9 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
 
         /// <summary>Wallet manager.</summary>
         private readonly IWalletManager walletManager;
+
+        /// <summary>Error message prefix when an exception is thrown in this controller.</summary>
+        private const string ExceptionOccurredMessage = "Exception occurred: {0}";
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -89,26 +90,35 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.logger.LogError(ExceptionOccurredMessage, e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-   
+
         /// <summary>
         /// Finds first available wallet and its account.
         /// </summary>
         /// <returns>Reference to wallet account.</returns>
         private WalletAccountReference GetAccount()
         {
+            const string noWalletMessage = "No wallet found";
+            const string noAccountMessage = "No account found on wallet";
+
             this.logger.LogTrace("()");
 
             string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
             if (walletName == null)
-                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
+            {                
+                this.logger.LogError(ExceptionOccurredMessage, noWalletMessage);
+                throw new Exception(noWalletMessage);
+            }
 
             HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
             if (account == null)
-                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No account found on wallet");
+            {
+                this.logger.LogError(ExceptionOccurredMessage, noAccountMessage);
+                throw new Exception(noAccountMessage);
+            }
 
             var res = new WalletAccountReference(walletName, account.Name);
 

@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public override void Initialize()
         {
             // subscribe to receiving blocks and transactions
-            this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletSyncManager));
+            this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
 
             this.walletManager.Start();
