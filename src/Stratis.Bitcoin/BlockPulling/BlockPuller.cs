@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private const int MaxSecondsToDeliverBlock = 30; //TODO change to target spacing / 3
 
         /// <summary>This affects quality score only. If the peer is too fast don't give him all the assignments in the world when not in IBD.</summary>
-        private const int MaxBlockDeliveryLimitWhenNotInIbd = 1000;
+        private const int PeerSpeedLimitWhenNotInIbdBytesPerSec = 1024 * 1024;
 
         /// <param name="blockHash">Hash of the delivered block.</param>
         /// <param name="block">The block.</param>
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private readonly CancellationTokenSource cancellationSource;
 
         /// <summary>The average block size in bytes calculated used up to <see cref="AverageBlockSizeSamplesCount"/> most recent samples.</summary>
-        /// <remarks>This object has to be protected by <see cref="queueLock" />.</remarks>
+        /// <remarks>Write access to this object has to be protected by <see cref="queueLock" />.</remarks>
         private readonly AverageCalculator averageBlockSizeBytes;
 
         /// <summary>Amount of samples that should be used for average block size calculation.</summary>
@@ -243,17 +243,14 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc/>
         public double GetAverageBlockSizeBytes()
         {
-            lock (this.queueLock)
-            {
-                return this.averageBlockSizeBytes.Average;
-            }
+            return this.averageBlockSizeBytes.Average;
         }
 
         private int GetTotalSpeedOfAllPeersBytesPerSec()
         {
             lock (this.peerLock)
             {
-                double avgSize = this.averageBlockSizeBytes.Average;
+                double avgSize = this.GetAverageBlockSizeBytes();
                 double totalDeliveryRate = this.pullerBehaviorsByPeerId.Sum(x => x.Value.BlockDeliveryRate);
 
                 return (int) (avgSize * totalDeliveryRate);
@@ -851,9 +848,11 @@ namespace Stratis.Bitcoin.BlockPulling
             // Now decide if we need to recalculate quality score for all peers or just for this one.
             double blockDeliveryRate = this.pullerBehaviorsByPeerId.Max(x => x.Value.BlockDeliveryRate);
 
+            double averageBlockSize = this.averageBlockSizeBytes.Average;
             double adjustedDeliveryRate = blockDeliveryRate;
-            if (!this.isIbd && (adjustedDeliveryRate > MaxBlockDeliveryLimitWhenNotInIbd))
-                adjustedDeliveryRate = MaxBlockDeliveryLimitWhenNotInIbd;
+
+            if (!this.isIbd && (adjustedDeliveryRate * averageBlockSize > PeerSpeedLimitWhenNotInIbdBytesPerSec))
+                adjustedDeliveryRate = PeerSpeedLimitWhenNotInIbdBytesPerSec / averageBlockSize;
 
             if (!this.DoubleEqual(pullerBehavior.BlockDeliveryRate, blockDeliveryRate))
             {
