@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
@@ -23,6 +24,12 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
+        /// <summary>It's a logger mate.</summary>
+        private readonly ILogger logger;
+
+        /// <summary>Builds loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
         /// <summary>
         /// See <see cref="PeerAddressManagerBehaviourMode"/> for the different modes and their
         /// explanations.
@@ -43,12 +50,14 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         private bool sentAddress;
 
-        public PeerAddressManagerBehaviour(IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager)
+        public PeerAddressManagerBehaviour(IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
             Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
 
             this.dateTimeProvider = dateTimeProvider;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
+            this.loggerFactory = loggerFactory;
             this.Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
             this.peerAddressManager = peerAddressManager;
             this.PeersToDiscover = 1000;
@@ -72,11 +81,26 @@ namespace Stratis.Bitcoin.P2P
             {
                 if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
                 {
-                    if ((message.Message.Payload is GetAddrPayload) && (!this.sentAddress))
+                    if ((message.Message.Payload is GetAddrPayload))
                     {
+                        if (!peer.Inbound)
+                        {
+                            this.logger.LogTrace("Outbound peer sent GetAddrPayload. Not replying to avoid fingerprinting attack.");
+                            return;
+                        }
+                    
+                        if (this.sentAddress)
+                        {
+                            this.logger.LogTrace("Multiple GetAddr requests. Not replying to avoid fingerprinting attack.");
+                            return;
+                        }
+
                         IPEndPoint[] endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.Endpoint).ToArray();
                         var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
                         await peer.SendMessageAsync(addressPayload).ConfigureAwait(false);
+
+                        this.logger.LogTrace("Sent address payload following GetAddr request.");
+
                         this.sentAddress = true;
                     }
 
@@ -117,7 +141,7 @@ namespace Stratis.Bitcoin.P2P
 
         public override object Clone()
         {
-            return new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager)
+            return new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager, this.loggerFactory)
             {
                 PeersToDiscover = this.PeersToDiscover,
                 Mode = this.Mode
