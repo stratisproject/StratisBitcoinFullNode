@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Utilities
     /// </summary>
     /// <typeparam name="TSender">Type of event source sender objects.</typeparam>
     /// <typeparam name="TArg">Type of arguments that are passed to callbacks.</typeparam>
-    public class AsyncExecutionEvent<TSender, TArg>: IDisposable
+    public class AsyncExecutionEvent<TSender, TArg> : IDisposable
     {
         /// <summary>
         /// Protects access to <see cref="callbackList"/> and <see cref="callbackToListNodeMapping"/>,

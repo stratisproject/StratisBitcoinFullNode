@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.P2P.Peer
     /// the connection to our node's listener, or outbound, if our node was the one connecting to a remote server.
     /// </para>
     /// </summary>
-    public interface INetworkPeer: IDisposable
+    public interface INetworkPeer : IDisposable
     {
         /// <summary>State of the network connection to the peer.</summary>
         NetworkPeerState State { get; }
