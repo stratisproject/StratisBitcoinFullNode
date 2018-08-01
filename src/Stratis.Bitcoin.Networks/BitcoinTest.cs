@@ -30,42 +30,53 @@ namespace Stratis.Bitcoin.Networks
 
             this.Genesis = genesisBlock;
 
-            // Taken from BitcoinMain Consensus options
-            var consensus = new MutableConsensus();
-            consensus.ConsensusFactory = consensusFactory;
-            consensus.HashGenesisBlock = genesisBlock.GetHash();
-            consensus.SubsidyHalvingInterval = 210000;
-            consensus.PowLimit = new Target(new uint256("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
-            consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
-            consensus.PowTargetSpacing = TimeSpan.FromSeconds(10 * 60);
-            consensus.PowNoRetargeting = false;
-            consensus.MinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
-            consensus.CoinbaseMaturity = 100;
-            consensus.PremineReward = Money.Zero;
-            consensus.ProofOfWorkReward = Money.Coins(50);
-            consensus.ProofOfStakeReward = Money.Zero;
-            consensus.MaxReorgLength = 0;
-            consensus.MaxMoney = 21000000 * Money.COIN;
-            
-            // BitcoinTest differences
-            consensus.MajorityEnforceBlockUpgrade = 51;
-            consensus.MajorityRejectBlockOutdated = 75;
-            consensus.MajorityWindow = 100;
-            consensus.BIP34Hash = new uint256("0x0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8");
-            consensus.MinimumChainWork = new uint256("0x0000000000000000000000000000000000000000000000198b4def2baa9338d6");
-            consensus.DefaultAssumeValid = new uint256("0x000000000000015682a21fc3b1e5420435678cba99cace2b07fe69b668467651"); // 1292762
-            consensus.BuriedDeployments[BuriedDeployments.BIP34] = 21111;
-            consensus.BuriedDeployments[BuriedDeployments.BIP65] = 581885;
-            consensus.BuriedDeployments[BuriedDeployments.BIP66] = 330776;
-            consensus.BIP9Deployments[BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999);
-            consensus.BIP9Deployments[BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1456790400, 1493596800);
-            consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 1462060800, 1493596800);
-            consensus.PowAllowMinDifficultyBlocks = true;
-            consensus.RuleChangeActivationThreshold = 1512; // 75% for testchains
-            consensus.CoinType = 1;
-            consensus.Options = new ConsensusOptions(); // Default - set to Bitcoin params.
+            var buriedDeployments = new BuriedDeploymentsArray
+            {
+                [BuriedDeployments.BIP34] = 21111,
+                [BuriedDeployments.BIP65] = 581885,
+                [BuriedDeployments.BIP66] = 330776
+            };
 
-            this.Consensus = new Consensus(consensus);
+            var bip9Deployments = new BIP9DeploymentsArray
+            {
+                [BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999),
+                [BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1456790400, 1493596800),
+                [BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 1462060800, 1493596800)
+            };
+
+            this.Consensus = new Consensus(
+                consensusFactory: consensusFactory,
+                consensusOptions: new ConsensusOptions(), // Default - set to Bitcoin params.
+                coinType: 1,
+                hashGenesisBlock: genesisBlock.GetHash(),
+                subsidyHalvingInterval: 210000,
+                majorityEnforceBlockUpgrade: 51,
+                majorityRejectBlockOutdated: 75,
+                majorityWindow: 100,
+                buriedDeployments: buriedDeployments,
+                bip9Deployments: bip9Deployments,
+                bip34Hash: new uint256("0x0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8"),
+                ruleChangeActivationThreshold: 1512,
+                minerConfirmationWindow: 2016,
+                maxReorgLength: 0,
+                defaultAssumeValid: new uint256("0x000000000000015682a21fc3b1e5420435678cba99cace2b07fe69b668467651"), // 1292762
+                maxMoney: 21000000 * Money.COIN,
+                coinbaseMaturity: 100,
+                premineHeight: 0,
+                premineReward: Money.Zero,
+                proofOfWorkReward: Money.Coins(50),
+                powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
+                powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
+                powAllowMinDifficultyBlocks: true,
+                powNoRetargeting: false,
+                powLimit: new Target(new uint256("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
+                minimumChainWork: new uint256("0x0000000000000000000000000000000000000000000000198b4def2baa9338d6"),
+                isProofOfStake: false,
+                lastPowBlock: default(int),
+                proofOfStakeLimit: null,
+                proofOfStakeLimitV2: null,
+                proofOfStakeReward: Money.Zero
+            );
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
