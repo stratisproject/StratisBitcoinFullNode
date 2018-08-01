@@ -90,15 +90,6 @@ namespace Stratis.Bitcoin.P2P
         public DateTimeOffset? LastHandshakeAttempt { get; private set; }
 
         /// <summary>
-        /// The last unsuccessful handshake attempt.
-        /// <para>
-        /// This is reset when a handshake is done.
-        /// </para>
-        /// </summary>
-        [JsonProperty(PropertyName = "lastHandshakeFailure", NullValueHandling = NullValueHandling.Ignore)]
-        public DateTimeOffset? LastHandshakeFailure { get; private set; }
-
-        /// <summary>
         /// The last time this peer was seen.
         /// <para>
         /// This is set via <see cref="Protocol.Behaviors.PingPongBehavior"/> to ensure that a peer is live.
@@ -255,19 +246,9 @@ namespace Stratis.Bitcoin.P2P
             this.LastConnectionHandshake = null;
         }
         
-        internal void SetHandshakeAttempted(DateTimeOffset peerAttemptedAt, bool handshakeSuccessful)
+        internal void SetHandshakeAttempted(DateTimeOffset peerAttemptedAt)
         {
-            if (handshakeSuccessful)
-            {
-                this.HandshakedAttempts = 0;
-                this.LastHandshakeFailure = null;
-            }
-            else
-            {
-                this.HandshakedAttempts += 1;
-                this.LastHandshakeFailure = peerAttemptedAt;
-            }
-
+            this.HandshakedAttempts += 1;
             this.LastHandshakeAttempt = peerAttemptedAt;
         }
         
@@ -296,8 +277,9 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Sets the <see cref="LastConnectionHandshake"/> date.</summary>
         internal void SetHandshaked(DateTimeOffset peerHandshakedAt)
         {
-            this.SetHandshakeAttempted(peerHandshakedAt, handshakeSuccessful: true);
+            this.HandshakedAttempts = 0;
             this.LastConnectionHandshake = peerHandshakedAt;
+            this.LastHandshakeAttempt = null;
         }
 
         /// <summary>Sets the <see cref="LastSeen"/> date.</summary>
