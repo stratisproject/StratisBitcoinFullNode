@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             this.ClearCurrentPing();
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         public override void Dispose()
         {
             this.timer?.Dispose();

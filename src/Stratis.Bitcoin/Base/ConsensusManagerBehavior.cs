@@ -488,7 +488,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         protected override void AttachCore()
         {
             this.logger.LogTrace("()");
@@ -513,7 +513,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
@@ -524,7 +524,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         public override void Dispose()
         {
             this.autosyncTimer?.Dispose();

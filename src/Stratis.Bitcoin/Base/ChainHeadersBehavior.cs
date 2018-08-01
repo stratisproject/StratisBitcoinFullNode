@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         public override void Dispose()
         {
             this.refreshTimer?.Dispose();

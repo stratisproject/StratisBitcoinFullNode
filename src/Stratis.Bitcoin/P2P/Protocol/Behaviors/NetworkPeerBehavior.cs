@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             }
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         public virtual void Dispose()
         {
             this.AttachedPeer = null;
