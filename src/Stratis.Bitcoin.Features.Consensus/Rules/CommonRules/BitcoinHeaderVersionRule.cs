@@ -24,31 +24,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
 
-            // TODO: Need to check if BIP9 is actually active & use ComputeBlockVersion logic
-            if (chainedHeader.Header.Version < 0x20000000)
+            // BIP9 mandates that the top bits of version be 001. So a standard node should never generate
+            // block versions between 4 and 0x20000000. Block versions 5 onwards were never allocated, as the
+            // BIP9 standard became predominant.
+            if ((chainedHeader.Header.Version > 4) && (chainedHeader.Header.Version < ThresholdConditionCache.VersionbitsTopBits))
             {
                 this.Logger.LogTrace("(-)[BAD_VERSION]");
                 ConsensusErrors.BadVersion.Throw();
             }
 
             return Task.CompletedTask;
-        }
-
-        public override int ComputeBlockVersion(ChainedHeader prevChainedHeader, NBitcoin.Consensus consensus)
-        {
-            uint version = ThresholdConditionCache.VersionbitsTopBits;
-            var thresholdConditionCache = new ThresholdConditionCache(consensus);
-
-            IEnumerable<BIP9Deployments> deployments = Enum.GetValues(typeof(BIP9Deployments)).OfType<BIP9Deployments>();
-
-            foreach (BIP9Deployments deployment in deployments)
-            {
-                ThresholdState state = thresholdConditionCache.GetState(prevChainedHeader, deployment);
-                if ((state == ThresholdState.LockedIn) || (state == ThresholdState.Started))
-                    version |= thresholdConditionCache.Mask(deployment);
-            }
-
-            return (int)version;
         }
     }
 }
