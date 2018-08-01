@@ -119,7 +119,6 @@ namespace NBitcoin
             bool powNoRetargeting,
             Target powLimit,
             uint256 minimumChainWork,
-
             bool isProofOfStake,
             int lastPowBlock,
             BigInteger proofOfStakeLimit,
