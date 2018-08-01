@@ -1,20 +1,13 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
-using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class CalculateWorkRuleTest : TestConsensusRulesUnitTestBase
     {
-        public CalculateWorkRuleTest()
-        {
-        }
-
         [Fact]
         public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorExceptionAsync()
         {

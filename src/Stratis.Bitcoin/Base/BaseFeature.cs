@@ -12,10 +12,10 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
@@ -199,7 +199,8 @@ namespace Stratis.Bitcoin.Base
             this.consensusRules.Initialize().GetAwaiter().GetResult();
 
             this.consensusManager.InitializeAsync(this.chain.Tip).GetAwaiter().GetResult();
-            this.consensusRules.Register(this.ruleRegistration);
+
+            this.consensusRules.Register();
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
 

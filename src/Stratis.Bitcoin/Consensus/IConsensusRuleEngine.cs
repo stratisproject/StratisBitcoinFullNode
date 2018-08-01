@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Collection of all the rules that are registered with the engine.
         /// </summary>
-        IEnumerable<ConsensusRule> Rules { get; }
+        List<ConsensusRule> Rules { get; }
 
         /// <summary>
         /// Keeps track of how much time different actions took to execute and how many times they were executed.
@@ -33,9 +33,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Register a new rule to the engine
         /// </summary>
-        /// <param name="ruleRegistration">A container of rules to register.</param>
-        /// <returns></returns>
-        ConsensusRuleEngine Register(IRuleRegistration ruleRegistration);
+        ConsensusRuleEngine Register();
 
         /// <summary>
         /// Gets the consensus rule that is assignable to the supplied generic type.
@@ -89,22 +87,5 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
         Task FullValidationAsync(ValidationContext validationContext);
-    }
-
-    /// <summary>
-    /// An interface that will allow the registration of bulk consensus rules in to the engine.
-    /// </summary>
-    public interface IRuleRegistration
-    {
-        /// <summary>
-        /// The rules that will be registered with the rules engine.
-        /// </summary>
-        /// <returns>A list of rules.</returns>
-        /// <remarks>
-        /// It is important to note that there is high importance to the order the rules are registered 
-        /// with the engine, this is important for rules with dependencies on other rules.
-        /// Rules are executed in the same order they are registered with the engine.
-        /// </remarks>
-        IEnumerable<ConsensusRule> GetRules();
     }
 }

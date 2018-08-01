@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using NBitcoin.BouncyCastle.Math;
+using NBitcoin.Rules;
 
 namespace NBitcoin
 {
@@ -100,6 +102,7 @@ namespace NBitcoin
             this.BIP9Deployments = new BIP9DeploymentsArray();
 
             this.ConsensusFactory = new ConsensusFactory();
+            this.Rules = new List<IConsensusRule>();
         }
 
         public BuriedDeploymentsArray BuriedDeployments { get; set; }
@@ -164,5 +167,10 @@ namespace NBitcoin
         /// A factory that enables overloading base types.
         /// </summary>
         public ConsensusFactory ConsensusFactory { get; set; }
+
+        /// <summary>
+        /// Rules specific to the given network.
+        /// </summary>
+        public ICollection<IConsensusRule> Rules { get; set; }
     }
 }
