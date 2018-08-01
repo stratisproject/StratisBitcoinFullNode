@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.P2P
             fileStorage.SaveToFile(
                 snapshotOfPeersToSave
                     .OrderByDescending(p => p.LastConnectionSuccess)
-                    .ToList(), 
+                    .ToList(),
                 PeerFileName);
         }
 
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.P2P
         {
             if (!endPoint.Address.IsRoutable(true))
                 return;
-            
+
             PeerAddress peerToAdd = PeerAddress.Create(endPoint, source);
             this.peers.TryAdd(peerToAdd.Endpoint, peerToAdd);
         }

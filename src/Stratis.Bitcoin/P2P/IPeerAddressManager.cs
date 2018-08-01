@@ -32,7 +32,7 @@
         /// </para>
         /// </summary>
         void AddPeers(IPEndPoint[] endPoints, IPAddress source);
-        
+
         /// <summary>
         /// Remove a peer from the <see cref="Peers"/> dictionary.
         /// </summary>

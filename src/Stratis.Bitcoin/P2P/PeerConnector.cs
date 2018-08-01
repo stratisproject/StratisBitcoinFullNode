@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.P2P
         private void AddPeer(INetworkPeer peer)
         {
             Guard.NotNull(peer, nameof(peer));
-            
+
             this.ConnectorPeers.Add(peer);
 
             if (this.asyncLoop != null && this.ConnectorPeers.Count >= this.ConnectionSettings.BurstModeTargetConnections)
@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.P2P
                 return;
             }
 
-            // Connect if local, ip range filtering disabled or ip range filtering enabled and peer in a different group. 
+            // Connect if local, ip range filtering disabled or ip range filtering enabled and peer in a different group.
             if (peerAddress.Endpoint.Address.IsRoutable(false) && this.ConnectionSettings.IpRangeFiltering && this.PeerIsPartOfExistingGroup(peerAddress))
             {
                 this.logger.LogTrace("(-)[RANGE_FILTERED]");

@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.P2P
         {
             this.logger.LogTrace("()");
 
-            // If peers are specified in the -connect arg then discovery does not happen.            
+            // If peers are specified in the -connect arg then discovery does not happen.
             if (connectionManager.ConnectionSettings.Connect.Any())
                 return;
 
@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.P2P
                     this.isSeedAndDnsAttempted = true;
                 }
             }
-            
+
             await peersToDiscover.ForEachAsync(5, this.nodeLifetime.ApplicationStopping, async (endPoint, cancellation) =>
             {
                 using (CancellationTokenSource connectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation))

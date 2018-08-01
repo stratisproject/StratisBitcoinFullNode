@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
         /// <inheritdoc />
         public override bool CanConvert(Type objectType)
         {
-            return objectType == typeof(KeyId) || 
+            return objectType == typeof(KeyId) ||
                 objectType == typeof(ScriptId) ||
                 objectType == typeof(WitKeyId) ||
                 objectType == typeof(WitScriptId);

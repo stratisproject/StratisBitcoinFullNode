@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Base
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
-                    
+
                     Row<byte[], int> row = transaction.Select<byte[], int>("FinalizedBlock", finalizedBlockKey);
                     if (!row.Exists)
                     {
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Base
                     }
                     else
                         this.finalizedHeight = row.Value;
-                    
+
                     this.logger.LogTrace("(-):{0}={1}", nameof(this.finalizedHeight), this.finalizedHeight);
                 }
             });
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogTrace("(-)[CANT_GO_BACK]:false");
                 return Task.FromResult(false);
             }
-            
+
             this.finalizedHeight = height;
 
             Task<bool> task = Task.Run(() =>

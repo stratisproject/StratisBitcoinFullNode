@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Base
 
                 this.logger.LogTrace("(-)");
             }, null, 0, (int)TimeSpan.FromMinutes(10).TotalMilliseconds);
-            
+
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
             {
                 ChainedHeader highPoW = this.chainState.ConsensusTip;

@@ -98,8 +98,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
     /// <inheritdoc/>
     /// <remarks>
-    /// All instances of this object must be disposed or disconnected. <see cref="Disconnect(string, Exception)"/> and disposing methods 
-    /// have the same functionality and the disconnecting method is provided only for better readability of the code. 
+    /// All instances of this object must be disposed or disconnected. <see cref="Disconnect(string, Exception)"/> and disposing methods
+    /// have the same functionality and the disconnecting method is provided only for better readability of the code.
     /// <para>It is safe to try to disconnect or dispose this object multiple times, only the first call will be processed.</para>
     /// </remarks>
     public class NetworkPeer : INetworkPeer
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         private class DisconnectedExecutionAsyncContext
         {
             /// <summary>
-            /// Set to <c>true</c> if <see cref="NetworkPeer.onDisconnected"/> was 
+            /// Set to <c>true</c> if <see cref="NetworkPeer.onDisconnected"/> was
             /// called from within the current async context, set to <c>false</c> otherwise.
             /// </summary>
             public bool DisconnectCallbackRequested { get; set; }
@@ -211,10 +211,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public VersionPayload PeerVersion { get; private set; }
 
-        /// <summary>Set to <c>1</c> if the peer disconnection has been initiated, <c>0</c> otherwise.</summary> 
+        /// <summary>Set to <c>1</c> if the peer disconnection has been initiated, <c>0</c> otherwise.</summary>
         private int disconnected;
 
-        /// <summary>Set to <c>1</c> if the peer disposal has been initiated, <c>0</c> otherwise.</summary> 
+        /// <summary>Set to <c>1</c> if the peer disposal has been initiated, <c>0</c> otherwise.</summary>
         private int disposed;
 
         /// <summary>
@@ -820,7 +820,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>
         /// Executes <see cref="onDisconnected"/> callback if no callbacks are currently executing in the same async context,
-        /// schedules <see cref="onDisconnected"/> execution after the callback otherwise. 
+        /// schedules <see cref="onDisconnected"/> execution after the callback otherwise.
         /// </summary>
         private void ExecuteDisconnectedCallbackWhenSafe()
         {

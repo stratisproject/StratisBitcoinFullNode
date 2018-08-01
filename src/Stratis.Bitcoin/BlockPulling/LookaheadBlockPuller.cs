@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.BlockPulling
     }
 
     /// <summary>
-    /// Puller that is used for fast sync during initial block download (IBD). It implements a strategy of downloading 
+    /// Puller that is used for fast sync during initial block download (IBD). It implements a strategy of downloading
     /// multiple blocks from multiple peers at once, so that IBD is fast enough, but does not consume too many resources.
     /// </summary>
     /// <remarks>

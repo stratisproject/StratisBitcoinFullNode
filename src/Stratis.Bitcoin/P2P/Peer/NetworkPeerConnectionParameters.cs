@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.SendBufferSize = 1048576;
             }
             else
-            {               
+            {
                 this.ReceiveBufferSize = 1000 * 5000;
                 this.SendBufferSize = 1000 * 5000;
             }

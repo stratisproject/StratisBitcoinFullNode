@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
                     return;
 
                 this.AttachedPeer = peer;
-                 
+
                 this.AttachCore();
             }
         }

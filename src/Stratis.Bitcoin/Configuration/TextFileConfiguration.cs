@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Configuration
             if (!this.args.TryGetValue($"-{key}", out List<string> values))
                 values = new List<string>();
 
-            logger?.LogDebug("{0} entries were returned for the key '{1}': {2}", 
+            logger?.LogDebug("{0} entries were returned for the key '{1}': {2}",
                 values.Count, key, string.Join(",", values.Select(str => $"'{str}'")));
 
             return values.ToArray();

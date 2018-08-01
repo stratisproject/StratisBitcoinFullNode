@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Builder
             foreach (Action<IFeatureCollection> configureFeature in this.featuresRegistrationDelegates)
                 configureFeature(this.Features);
 
-            // configure features startup            
+            // configure features startup
             foreach (IFeatureRegistration featureRegistration in this.Features.FeatureRegistrations)
             {
                 try

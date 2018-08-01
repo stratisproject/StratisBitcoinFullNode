@@ -123,9 +123,9 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.averageSizeBytes.AddSample(blockSizeBytes);
             this.averageDelaySeconds.AddSample(delaySeconds);
-            
+
             this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
-            
+
             this.logger.LogTrace("(-):{0}={1}", nameof(this.SpeedBytesPerSecond), this.SpeedBytesPerSecond);
         }
 
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("Quality score was set to {0}.", this.QualityScore);
             this.logger.LogTrace("(-)");
         }
-        
+
         private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
@@ -242,9 +242,9 @@ namespace Stratis.Bitcoin.BlockPulling2
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
-            
+
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-            
+
             this.logger.LogTrace("(-)");
         }
     }

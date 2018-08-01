@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             set
             {
                 if (value.Length > MaxSubversionLength)
-                    value = value.Substring(0, MaxSubversionLength); 
+                    value = value.Substring(0, MaxSubversionLength);
 
                 this.user_agent = new VarString(Encoders.ASCII.DecodeData(value));
             }
