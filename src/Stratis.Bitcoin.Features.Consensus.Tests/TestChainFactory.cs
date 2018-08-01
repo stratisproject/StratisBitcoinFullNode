@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         /// <summary>
         /// Creates test chain with a consensus loop.
         /// </summary>
-        public static async Task<TestChainContext> CreateAsync(Network network, string dataDir)
+        public static async Task<TestChainContext> CreateAsync(Network network, string dataDir, Mock<IPeerAddressManager> mockPeerAddressManager = null)
         {
             var testChainContext = new TestChainContext() { Network = network };
 
@@ -93,7 +93,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, testChainContext.LoggerFactory);
 
             var dataFolder = new DataFolder(TestBase.AssureEmptyDir(dataDir));
-            testChainContext.PeerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory, new SelfEndpointTracker());
+            testChainContext.PeerAddressManager = 
+                mockPeerAddressManager == null ? 
+                    new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory, new SelfEndpointTracker()) 
+                    : mockPeerAddressManager.Object;
 
             testChainContext.MockConnectionManager = new Moq.Mock<IConnectionManager>();
             testChainContext.MockReadOnlyNodesCollection = new Moq.Mock<IReadOnlyNetworkPeerCollection>();
