@@ -117,31 +117,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        private void ProducerBlock(ITargetBlock<Block> target, Block block)
-        {
-            target.Post(block);
-        }
-
-        /// <inheritdoc />
-        private static async Task ConsumerBlockAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue)
-        {
-            while (await source.OutputAvailableAsync())
-            {
-                Block block = source.Receive();
-
-                queue.Enqueue(block);
-            }
-        }
-
-        /// <inheritdoc />
-        private void QueueBlock(Block block)
-        {
-            Task.Run(() => ConsumerBlockAsync(this.BlockBuffer, this.blocksQueue));
-        
-            this.ProducerBlock(this.BlockBuffer, block);
-        }
-
-        /// <inheritdoc />
         public void ProcessBlock(Block block)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
@@ -327,6 +302,31 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
             }
+        }
+
+        /// <inheritdoc />
+        private void ProducerBlock(ITargetBlock<Block> target, Block block)
+        {
+            target.Post(block);
+        }
+
+        /// <inheritdoc />
+        private static async Task ConsumerBlockAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue)
+        {
+            while (await source.OutputAvailableAsync())
+            {
+                Block block = source.Receive();
+
+                queue.Enqueue(block);
+            }
+        }
+
+        /// <inheritdoc />
+        private void QueueBlock(Block block)
+        {
+            Task.Run(() => ConsumerBlockAsync(this.BlockBuffer, this.blocksQueue));
+        
+            this.ProducerBlock(this.BlockBuffer, block);
         }
     }
 }
