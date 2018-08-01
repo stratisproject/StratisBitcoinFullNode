@@ -254,27 +254,35 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// If a ChangeAddress was set in the options send change there, otherwise find the next available change address.
+        /// If a ChangeAddress was set in the options, check it is from the wallet given and use that for the transaction.
+        /// Otherwise find the next available change address and use that for the transaction.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void FindChangeAddress(TransactionBuildContext context)
         {
             if (context.BuildOptions.ChangeAddress != null)
             {
-                // Ensure the given ChangeAddress is from the same wallet. 
-                Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
-                if (!wallet.ContainsAddress(context.BuildOptions.ChangeAddress))
-                {
-                    throw new WalletException("Change address given does not belong to this wallet");
-                }
-
-                context.TransactionBuilder.SetChange(context.BuildOptions.ChangeAddress.ScriptPubKey);
-                return;
+                CheckAddressIsFromSameWallet(context.BuildOptions.WalletAccountReference.WalletName, context.BuildOptions.ChangeAddress);
+                context.ChangeAddress = context.BuildOptions.ChangeAddress;
+            }
+            else
+            {
+                context.ChangeAddress = this.walletManager.GetUnusedChangeAddress(new WalletAccountReference(context.AccountReference.WalletName, context.AccountReference.AccountName));
             }
 
-            // Get an address to send the change to.
-            context.ChangeAddress = this.walletManager.GetUnusedChangeAddress(new WalletAccountReference(context.AccountReference.WalletName, context.AccountReference.AccountName));
             context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
+        }
+
+        /// <summary>
+        /// Throws a <see cref="WalletException"/> if the ChangeAddress does not belong to the given wallet.
+        /// </summary>
+        protected void CheckAddressIsFromSameWallet(string walletName, HdAddress changeAddress)
+        {
+            Wallet wallet = this.walletManager.GetWalletByName(walletName);
+            if (!wallet.ContainsAddress(changeAddress))
+            {
+                throw new WalletException("Change address given does not belong to this wallet.");
+            }
         }
 
         /// <summary>

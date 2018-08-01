@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void BuildTransaction_CustomChangeAddress()
+        public void BuildTransaction_WithCustomChangeAddress_UsedAsFirstOutput()
         {
             WalletTransactionHandlerTestContext testContext = SetupWallet();
 
@@ -197,7 +197,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             options.ChangeAddress = new HdAddress();
 
             // New address is from an address that isn't from our wallet, so should fail. 
-            Assert.Throws<WalletException>(() => testContext.WalletTransactionHandler.BuildTransaction(options));
+            var exceptionThrown = Assert.Throws<WalletException>(() => testContext.WalletTransactionHandler.BuildTransaction(options));
+            Assert.Equal("Change address given does not belong to this wallet.", exceptionThrown.Message);
         }
 
         [Fact]

@@ -68,16 +68,30 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         public Money TransactionFee { get; set; }
 
-        public TransactionBuildOptions(WalletAccountReference wallet, string password, List<Recipient> recipients)
+        /// <summary>
+        /// Initializes a new options object with open wallet and addresses to send to. 
+        /// </summary>
+        public TransactionBuildOptions(WalletAccountReference walletAccountReference, string password, List<Recipient> recipients)
         {
             Guard.NotNull(recipients, nameof(recipients));
 
-            // Set required fields
-            this.WalletAccountReference = wallet;
+            this.WalletAccountReference = walletAccountReference;
             this.WalletPassword = password;
             this.Recipients = recipients;
+            InitializeDefaults();
+        }
 
-            // Set defaults for options
+        /// <summary>
+        /// When estimating, don't need password.
+        /// </summary>
+        public TransactionBuildOptions(WalletAccountReference walletAccountReference, List<Recipient> recipients) 
+            : this(walletAccountReference, null, recipients) {}
+
+        /// <summary>
+        /// Set default values on all optional properties.
+        /// </summary>
+        private void InitializeDefaults()
+        {
             this.ChangeAddress = null;
             this.FeeType = FeeType.Medium;
             this.MinConfirmations = 1;
@@ -87,12 +101,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.ShuffleOutputs = false;
             this.TransactionFee = null;
         }
-
-        /// <summary>
-        /// When estimating, don't need password.
-        /// </summary>
-        public TransactionBuildOptions(WalletAccountReference wallet, List<Recipient> recipients) 
-            : this(wallet, null, recipients) {}
 
     }
 }
