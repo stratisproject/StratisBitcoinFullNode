@@ -750,16 +750,6 @@ namespace Stratis.Bitcoin.Tests.P2P
             }
         }
 
-        /// <summary>
-        /// <para>
-        /// Tests we don't return connected peers that have failed multiple handshakes within a certain time frame.
-        /// </para><para>
-        /// Scenario:
-        /// Peer fails 1st handshake -> Returned.
-        /// Peer fails 2nd handshake -> Returned.
-        /// Peer fails 3rd handshake -> Not returned.
-        /// </para>
-        /// </summary>
         [Fact]
         public void PeerSelector_ReturnConnectedPeers_AfterHandshakeFailure_WithAttemptsRemaining()
         {
@@ -776,33 +766,19 @@ namespace Stratis.Bitcoin.Tests.P2P
             // Peer selected after one handshake failure.
             peer.SetHandshakeAttempted(firstHandshakeAttemptTime);
             Assert.Equal(1, peer.HandshakedAttempts);
-            Assert.Contains(peer, peerAddressManager.PeerSelector.ConnectedFilteredByBadHandshakes());
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
 
             // Peer selected after two handshake failures.
             peer.SetHandshakeAttempted(firstHandshakeAttemptTime);
             Assert.Equal(2, peer.HandshakedAttempts);
-            Assert.Contains(peer, peerAddressManager.PeerSelector.ConnectedFilteredByBadHandshakes());
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
 
             // Peer not selected after three handshake failures.
             peer.SetHandshakeAttempted(firstHandshakeAttemptTime);
             Assert.Equal(3, peer.HandshakedAttempts);
-            Assert.DoesNotContain(peer, peerAddressManager.PeerSelector.ConnectedFilteredByBadHandshakes());
+            Assert.DoesNotContain(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
         }
 
-        /// <summary>
-        /// <para>
-        /// Tests we don't return connected peers that have failed multiple handshakes within a certain time frame.
-        /// </para><para>
-        /// Scenario:
-        /// Peer fails 1st handshake -> Returned.
-        /// Peer fails 2nd handshake -> Returned.
-        /// Peer fails 3rd handshake -> Not returned.
-        /// </para><para>
-        /// Peer fails handshake -> Returned ( > 1 hour later).
-        /// </para><para>
-        /// Peer succeeds handshake -> Returned and count resets ( > 1 hour later).
-        /// </para>
-        /// </summary>
         [Fact]
         public void PeerSelector_ReturnConnectedPeers_AfterHandshakeFailure_ThresholdExceeded()
         {
@@ -819,34 +795,19 @@ namespace Stratis.Bitcoin.Tests.P2P
             // Peer selected after one handshake failure.
             peer.SetHandshakeAttempted(firstHandshakeAttemptTime.AddHours(-(PeerAddress.AttempThresholdHours + 4)));
             Assert.Equal(1, peer.HandshakedAttempts);
-            Assert.Contains(peer, peerAddressManager.PeerSelector.ConnectedFilteredByBadHandshakes());
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
 
             // Peer selected after two handshake failures.
             peer.SetHandshakeAttempted(firstHandshakeAttemptTime.AddHours(-(PeerAddress.AttempThresholdHours + 3)));
             Assert.Equal(2, peer.HandshakedAttempts);
-            Assert.Contains(peer, peerAddressManager.PeerSelector.ConnectedFilteredByBadHandshakes());
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
 
             // Peer selected after two handshake failures when threshold time has elapsed.
             peer.SetHandshakeAttempted(firstHandshakeAttemptTime.AddHours(-(PeerAddress.AttempThresholdHours + 2)));
             Assert.Equal(3, peer.HandshakedAttempts);
-            Assert.Contains(peer, peerAddressManager.PeerSelector.ConnectedFilteredByBadHandshakes());
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
         }
-
-
-        /// <summary>
-        /// <para>
-        /// Tests we don't return connected peers that have failed multiple handshakes within a certain time frame.
-        /// </para><para>
-        /// Scenario:
-        /// Peer fails 1st handshake -> Returned.
-        /// Peer fails 2nd handshake -> Returned.
-        /// Peer fails 3rd handshake -> Not returned.
-        /// </para><para>
-        /// Peer fails handshake -> Returned ( > 1 hour later).
-        /// </para><para>
-        /// Peer succeeds handshake -> Returned and count resets ( > 1 hour later).
-        /// </para>
-        /// </summary>
+        
         [Fact]
         public void PeerSelector_ReturnConnectedPeers_AfterHandshakeFailure_HandshakeSucceeded_ResetCounters()
         {
@@ -863,20 +824,19 @@ namespace Stratis.Bitcoin.Tests.P2P
             // Peer selected after one handshake failure.
             peer.SetHandshakeAttempted(firstHandshakeAttemptTime);
             Assert.Equal(1, peer.HandshakedAttempts);
-            Assert.Contains(peer, peerAddressManager.PeerSelector.ConnectedFilteredByBadHandshakes());
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
 
             // Peer selected after two handshake failures.
             peer.SetHandshakeAttempted(firstHandshakeAttemptTime);
             Assert.Equal(2, peer.HandshakedAttempts);
-            Assert.Contains(peer, peerAddressManager.PeerSelector.ConnectedFilteredByBadHandshakes());
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
 
             // Peer attempt counter and last attempt reset after successful handshake.
             peer.SetHandshaked(firstHandshakeAttemptTime);
             Assert.Equal(0, peer.HandshakedAttempts);
             Assert.Null(peer.LastHandshakeAttempt);
         }
-
-
+        
         [Fact]
         public void PeerSelector_HasAllPeersReachedConnectionThreshold()
         {
