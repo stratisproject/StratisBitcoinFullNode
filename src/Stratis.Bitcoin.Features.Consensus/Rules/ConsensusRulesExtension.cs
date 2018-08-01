@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         {
             var rule = rules.TryFindRule<T>();
             if (rule == null)
-                throw new Exception(); // todo:
+                throw new Exception(string.Format("{0} does not exist in rules.", typeof(T).Name));
 
             return rule;
         }

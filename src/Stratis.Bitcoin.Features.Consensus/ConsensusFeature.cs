@@ -241,7 +241,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PowConsensusRulesRegistration : IRuleRegistration
         {
-            public List<IConsensusRule> GetRules()
+            public ICollection<IConsensusRule> GetRules()
             {
                 return new List<IConsensusRule>
                 {
@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PosConsensusRulesRegistration : IRuleRegistration
         {
-            public List<IConsensusRule> GetRules()
+            public ICollection<IConsensusRule> GetRules()
             {
                 return new List<IConsensusRule>
                 {

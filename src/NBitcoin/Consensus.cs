@@ -171,6 +171,6 @@ namespace NBitcoin
         /// <summary>
         /// Rules specific to the given network.
         /// </summary>
-        public List<IConsensusRule> Rules { get; set; }
+        public ICollection<IConsensusRule> Rules { get; set; }
     }
 }
