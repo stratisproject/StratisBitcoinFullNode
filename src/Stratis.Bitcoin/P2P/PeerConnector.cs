@@ -271,14 +271,12 @@ namespace Stratis.Bitcoin.P2P
                     peer?.Disconnect("Connection timeout");
                 }
             }
-
             catch (NBitcoin.Protocol.ProtocolException)
             {
                 this.logger.LogDebug("Handshake rejected by peer '{0}'.", peerAddress.Endpoint);
                 peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                 peer?.Disconnect("Error while handshaking");
             }
-
             catch (Exception exception)
             {
                 this.logger.LogTrace("Exception occurred while connecting: {0}", exception.ToString());
