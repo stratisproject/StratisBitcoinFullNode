@@ -1,14 +1,16 @@
-﻿using Stratis.Bitcoin.Configuration;
+﻿using System;
+using FluentAssertions;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests
 {
-    public class MinerSettingsTest : LogsTestBase	
-    {	
-        [Fact]	
+    public class MinerSettingsTest : LogsTestBase
+    {
+        [Fact]
         public void Load_GivenNodeSettings_LoadsSettingsFromNodeSettings()
-        {	
+        {
             var nodeSettings = new NodeSettings(args: new string[] {
                 "-mine=true",
                 "-stake=true",
@@ -18,15 +20,15 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             });
 
             var minersettings = new MinerSettings(nodeSettings);
-	
-            Assert.True(minersettings.Mine);	
-            Assert.True(minersettings.Stake);	
-            Assert.Equal("mytestwallet", minersettings.WalletName);	
+
+            Assert.True(minersettings.Mine);
+            Assert.True(minersettings.Stake);
+            Assert.Equal("mytestwallet", minersettings.WalletName);
             Assert.Equal("test", minersettings.WalletPassword);
             Assert.Equal("TFE7R2FSAgAeJxt1fgW2YVCh9Zc448f3ms", minersettings.MineAddress);
-        }	
-	
-        [Fact]	
+        }
+
+        [Fact]
         public void Load_MiningDisabled_DoesNotLoadMineAddress()
         {
             var nodeSettings = new NodeSettings(args: new string[] {
@@ -40,13 +42,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var minersettings = new MinerSettings(nodeSettings);
 
 
-            Assert.False(minersettings.Mine);	
-            Assert.True(minersettings.Stake);	
-            Assert.Equal("mytestwallet", minersettings.WalletName);	
-            Assert.Equal("test", minersettings.WalletPassword);	
+            Assert.False(minersettings.Mine);
+            Assert.True(minersettings.Stake);
+            Assert.Equal("mytestwallet", minersettings.WalletName);
+            Assert.Equal("test", minersettings.WalletPassword);
             Assert.Null(minersettings.MineAddress);
-        }	
-	
+        }
+
         [Fact]	
         public void Load_StakingDisabled_DoesNotLoadWalletDetails()
         {
@@ -60,10 +62,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             var minersettings = new MinerSettings(nodeSettings);
 
-            Assert.True(minersettings.Mine);	
-            Assert.False(minersettings.Stake);	
-            Assert.Null(minersettings.WalletName);	
-            Assert.Null(minersettings.WalletPassword);	
+            Assert.True(minersettings.Mine);
+            Assert.False(minersettings.Stake);
+            Assert.Null(minersettings.WalletName);
+            Assert.Null(minersettings.WalletPassword);
             Assert.Equal("TFE7R2FSAgAeJxt1fgW2YVCh9Zc448f3ms", minersettings.MineAddress);
         }
 
@@ -117,5 +119,63 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             Assert.Equal(nodeSettings.Network.Consensus.Options.MaxBlockSerializedSize, minersettings.BlockDefinitionOptions.BlockMaxSize);
             Assert.Equal(nodeSettings.Network.Consensus.Options.MaxBlockWeight, minersettings.BlockDefinitionOptions.BlockMaxWeight);
         }
-    }	
+
+        [Fact]
+        public void Load_EnableCoinStakeSplitting_MinimumStakingCoinValue_And_MinimumSplitCoinValue()
+        {
+            var nodeSettings = new NodeSettings(args: new string[] {
+                "-enablecoinstakesplitting=false",
+                "-minimumstakingcoinvalue=50000",
+                "-minimumsplitcoinvalue=50000000"
+            });
+
+            var minerSettings = new MinerSettings(nodeSettings);
+
+            minerSettings.EnableCoinStakeSplitting.Should().BeFalse();
+            minerSettings.MinimumStakingCoinValue.Should().Be(50000);
+            minerSettings.MinimumSplitCoinValue.Should().Be(50000000);
+        }
+
+        [Fact]
+        public void Load_MinimumStakingCoinValue_Should_Be_Strictly_Above_Zero()
+        {
+            var nodeSettings = new NodeSettings(args: new string[] {
+                "-minimumstakingcoinvalue=0",
+            });
+
+            var minerSettings = new MinerSettings(nodeSettings);
+
+            minerSettings.MinimumStakingCoinValue.Should().Be(1);
+        }
+
+        [Fact]
+        public void Defaults_EnableCoinStakeSplitting_MinimumStakingCoinValue_And_MinimumSplitCoinValue()
+        {
+            var nodeSettings = new NodeSettings(args: new string[] {
+                "-stake=1",
+            });
+
+            var minerSettings = new MinerSettings(nodeSettings);
+
+            minerSettings.EnableCoinStakeSplitting.Should().BeTrue();
+            minerSettings.MinimumStakingCoinValue.Should().Be(10000000);
+            minerSettings.MinimumSplitCoinValue.Should().Be(10000000000);
+        }
+
+        [Fact]
+        public void Throws_On_MinimumStakingCoinValue_Or_MinimumSplitCoinValue_Invalid()
+        {
+            var nodeSettings = new NodeSettings(args: new string[] {
+               "-minimumstakingcoinvalue=-1",
+            });
+
+            new Action(() => new MinerSettings(nodeSettings)).Should().Throw<Exception>();
+
+            nodeSettings = new NodeSettings(args: new string[] {
+                "-minimumsplitcoinvalue=-1"
+            });
+
+            new Action(() => new MinerSettings(nodeSettings)).Should().Throw<Exception>();
+        }
+    }
 } 

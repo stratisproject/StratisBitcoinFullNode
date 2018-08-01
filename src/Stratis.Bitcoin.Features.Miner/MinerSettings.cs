@@ -18,6 +18,24 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Enable the node to stake.
         /// </summary>
         public bool Stake { get; private set; }
+        
+        /// <summary>
+        /// Enable splitting coins when staking.
+        /// </summary>
+        public bool EnableCoinStakeSplitting { get; private set; }
+
+        /// <summary>
+        /// Minimum value a coin has to be in order to be considered for staking.
+        /// <remarks>
+        /// This is can be used to save on CPU consumption by excluding small coins that would not significantly impact a wallet's staking power.
+        /// </remarks>
+        /// </summary>
+        public ulong MinimumStakingCoinValue { get; private set; }
+
+        /// <summary>
+        /// Targeted minimum value of staking coins after splitting.
+        /// </summary>
+        public ulong MinimumSplitCoinValue { get; private set; }
 
         /// <summary>
         /// Enable the node to mine.
@@ -80,6 +98,11 @@ namespace Stratis.Bitcoin.Features.Miner
 
             this.BlockDefinitionOptions = new BlockDefinitionOptions(blockMaxWeight, blockMaxSize).RestrictForNetwork(nodeSettings.Network);
 
+            this.EnableCoinStakeSplitting = config.GetOrDefault("enablecoinstakesplitting", true, this.logger);
+            this.MinimumSplitCoinValue = config.GetOrDefault("minimumsplitcoinvalue", (ulong) (100 * Money.COIN) , this.logger);
+            this.MinimumStakingCoinValue = config.GetOrDefault("minimumstakingcoinvalue", (ulong) (10 * Money.CENT) , this.logger);
+            this.MinimumStakingCoinValue = this.MinimumStakingCoinValue == 0 ? 1 : this.MinimumStakingCoinValue;
+
             this.logger.LogTrace("(-)");
         }
         
@@ -92,13 +115,16 @@ namespace Stratis.Bitcoin.Features.Miner
             NodeSettings defaults = NodeSettings.Default();
             var builder = new StringBuilder();
 
-            builder.AppendLine("-mine=<0 or 1>            Enable POW mining.");
-            builder.AppendLine("-stake=<0 or 1>           Enable POS.");
-            builder.AppendLine("-mineaddress=<string>     The address to use for mining (empty string to select an address from the wallet).");
-            builder.AppendLine("-walletname=<string>      The wallet name to use when staking.");
-            builder.AppendLine("-walletpassword=<string>  Password to unlock the wallet.");
-            builder.AppendLine("-blockmaxsize=<number>    Maximum block size (in bytes) for the miner to generate.");
-            builder.AppendLine("-blockmaxweight=<number>  Maximum block weight (in weight units) for the miner to generate.");
+            builder.AppendLine("-mine=<0 or 1>                      Enable POW mining.");
+            builder.AppendLine("-stake=<0 or 1>                     Enable POS.");
+            builder.AppendLine("-mineaddress=<string>               The address to use for mining (empty string to select an address from the wallet).");
+            builder.AppendLine("-walletname=<string>                The wallet name to use when staking.");
+            builder.AppendLine("-walletpassword=<string>            Password to unlock the wallet.");
+            builder.AppendLine("-blockmaxsize=<number>              Maximum block size (in bytes) for the miner to generate.");
+            builder.AppendLine("-blockmaxweight=<number>            Maximum block weight (in weight units) for the miner to generate.");
+            builder.AppendLine("-enablecoinstakesplitting=<0 or 1>  Enable splitting coins when staking. This is true by default.");
+            builder.AppendLine("-minimumstakingcoinvalue=<number>   Minimum size of the coins considered for staking, in satoshis. Default value is 10,000,000 satoshis (= 0.1 Coin).");
+            builder.AppendLine("-minimumsplitcoinvalue=<number>     Targeted minimum value of staking coins after splitting, in satoshis. Default value is 10,000,000,000 satoshis (= 100 Coin).");
 
             defaults.Logger.LogInformation(builder.ToString());
         }
@@ -125,6 +151,12 @@ namespace Stratis.Bitcoin.Features.Miner
             builder.AppendLine($"#blockmaxsize={network.Consensus.Options.MaxBlockSerializedSize}");
             builder.AppendLine("#Maximum block weight (in weight units) for the miner to generate.");
             builder.AppendLine($"#blockmaxweight={network.Consensus.Options.MaxBlockWeight}");
+            builder.AppendLine("#Enable splitting coins when staking.");
+            builder.AppendLine("#enablecoinstakesplitting=1");
+            builder.AppendLine("#Minimum size of the coins considered for staking, in satoshis.");
+            builder.AppendLine("#minimumstakingcoinvalue=10000000");
+            builder.AppendLine("#Targeted minimum value of staking coins after splitting, in satoshis.");
+            builder.AppendLine("#minimumsplitcoinvalue=10000000000");
         }
     }
 }
