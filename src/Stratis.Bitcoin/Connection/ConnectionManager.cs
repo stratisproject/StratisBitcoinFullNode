@@ -237,7 +237,6 @@ namespace Stratis.Bitcoin.Connection
             return builder.ToString();
         }
 
-
         public string GetNodeStats()
         {
             var builder = new StringBuilder();

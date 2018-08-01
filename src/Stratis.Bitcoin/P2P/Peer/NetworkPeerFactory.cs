@@ -56,7 +56,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>Newly created network peer server, which is ready to be started.</returns>
         NetworkPeerServer CreateNetworkPeerServer(IPEndPoint localEndPoint, IPEndPoint externalEndPoint, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION);
 
-
         /// <summary>
         /// Creates a new representation of the network connection using TCP client object.
         /// </summary>

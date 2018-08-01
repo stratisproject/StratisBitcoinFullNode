@@ -109,7 +109,6 @@ namespace Stratis.Bitcoin.P2P
            this.peers.TryRemove(endPoint.MapToIpv6(), out PeerAddress address);
         }
 
-
         /// <inheritdoc/>
         public void AddPeers(IPEndPoint[] endPoints, IPAddress source)
         {

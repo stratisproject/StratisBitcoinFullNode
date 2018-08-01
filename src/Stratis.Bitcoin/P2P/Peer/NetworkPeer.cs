@@ -843,7 +843,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             else
                 this.logger.LogTrace("Disconnection callback is not specified.");
 
-
             this.logger.LogTrace("(-)");
         }
 
