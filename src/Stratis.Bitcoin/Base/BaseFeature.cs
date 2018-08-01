@@ -108,6 +108,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IConsensusManager consensusManager;
         private readonly IConsensusRuleEngine consensusRules;
         private readonly IRuleRegistration ruleRegistration;
+        private readonly IPartialValidator partialValidator;
 
         /// <inheritdoc cref="IFinalizedBlockHeight"/>
         private readonly IFinalizedBlockHeight finalizedBlockHeight;
@@ -131,7 +132,8 @@ namespace Stratis.Bitcoin.Base
             IPeerAddressManager peerAddressManager,
             IConsensusManager consensusManager,
             IConsensusRuleEngine consensusRules,
-            IRuleRegistration ruleRegistration)
+            IRuleRegistration ruleRegistration,
+            IPartialValidator partialValidator)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -144,6 +146,7 @@ namespace Stratis.Bitcoin.Base
             this.consensusManager = consensusManager;
             this.consensusRules = consensusRules;
             this.ruleRegistration = ruleRegistration;
+            this.partialValidator = partialValidator;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
@@ -285,6 +288,8 @@ namespace Stratis.Bitcoin.Base
             this.flushAddressManagerLoop.Dispose();
 
             this.peerAddressManager.Dispose();
+
+            (this.partialValidator as PartialValidator)?.Dispose();
 
             this.logger.LogInformation("Flushing headers chain...");
             this.flushChainLoop?.Dispose();

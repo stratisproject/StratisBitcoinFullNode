@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
     }
 
     /// <inheritdoc />
-    public class PartialValidator : IPartialValidator
+    public class PartialValidator : IPartialValidator, IDisposable
     {
         private readonly IConsensusRuleEngine consensusRules;
         private readonly AsyncQueue<PartialValidationItem> asyncQueue;
@@ -113,6 +113,12 @@ namespace Stratis.Bitcoin.Consensus.Validators
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.asyncQueue = new AsyncQueue<PartialValidationItem>(this.OnEnqueueAsync);
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.asyncQueue.Dispose();
         }
 
         private async Task OnEnqueueAsync(PartialValidationItem item, CancellationToken cancellationtoken)
