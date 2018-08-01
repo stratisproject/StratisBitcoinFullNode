@@ -92,6 +92,75 @@ namespace NBitcoin
         /// </summary>
         public ICollection<IConsensusRule> Rules { get; set; }
 
+        public Consensus(
+            ConsensusFactory consensusFactory,
+            ConsensusOptions consensusOptions,
+            int coinType,            
+            uint256 hashGenesisBlock,
+            int subsidyHalvingInterval,
+            int majorityEnforceBlockUpgrade,
+            int majorityRejectBlockOutdated,
+            int majorityWindow,
+            BuriedDeploymentsArray buriedDeployments,
+            BIP9DeploymentsArray bip9Deployments,
+            uint256 bip34Hash,
+            int ruleChangeActivationThreshold,
+            int minerConfirmationWindow,
+            uint maxReorgLength,
+            uint256 defaultAssumeValid,
+            long maxMoney,
+            long coinbaseMaturity,
+            long premineHeight,
+            Money premineReward,
+            Money proofOfWorkReward,
+            TimeSpan powTargetTimespan,
+            TimeSpan powTargetSpacing,
+            bool powAllowMinDifficultyBlocks,
+            bool powNoRetargeting,
+            Target powLimit,
+            uint256 minimumChainWork,
+
+            bool isProofOfStake,
+            int lastPowBlock,
+            BigInteger proofOfStakeLimit,
+            BigInteger proofOfStakeLimitV2,
+            Money proofOfStakeReward
+            )
+        {
+            this.Rules = new List<IConsensusRule>();
+            this.CoinbaseMaturity = coinbaseMaturity;
+            this.PremineReward = premineReward;
+            this.PremineHeight = premineHeight;
+            this.ProofOfWorkReward = proofOfWorkReward;
+            this.ProofOfStakeReward = proofOfStakeReward;
+            this.MaxReorgLength = maxReorgLength;
+            this.MaxMoney = maxMoney;
+            this.Options = consensusOptions;
+            this.BuriedDeployments = buriedDeployments;
+            this.BIP9Deployments = bip9Deployments;
+            this.SubsidyHalvingInterval = subsidyHalvingInterval;
+            this.MajorityEnforceBlockUpgrade = majorityEnforceBlockUpgrade;
+            this.MajorityRejectBlockOutdated = majorityRejectBlockOutdated;
+            this.MajorityWindow = majorityWindow;
+            this.BIP34Hash = bip34Hash;
+            this.PowLimit = powLimit;
+            this.PowTargetTimespan = powTargetTimespan;
+            this.PowTargetSpacing = powTargetSpacing;
+            this.PowAllowMinDifficultyBlocks = powAllowMinDifficultyBlocks;
+            this.PowNoRetargeting = powNoRetargeting;
+            this.HashGenesisBlock = hashGenesisBlock;
+            this.MinimumChainWork = minimumChainWork;
+            this.MinerConfirmationWindow = minerConfirmationWindow;
+            this.RuleChangeActivationThreshold = ruleChangeActivationThreshold;
+            this.CoinType = coinType;
+            this.ProofOfStakeLimit = proofOfStakeLimit;
+            this.ProofOfStakeLimitV2 = proofOfStakeLimitV2;
+            this.LastPOWBlock = lastPowBlock;
+            this.IsProofOfStake = isProofOfStake;
+            this.DefaultAssumeValid = defaultAssumeValid;
+            this.ConsensusFactory = consensusFactory;
+        }
+
         public Consensus(IConsensus consensus)
         {
             this.BuriedDeployments = new BuriedDeploymentsArray();
