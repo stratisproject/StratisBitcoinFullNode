@@ -107,7 +107,6 @@ namespace Stratis.Bitcoin.Base
 
         private readonly IConsensusManager consensusManager;
         private readonly IConsensusRuleEngine consensusRules;
-        private readonly IRuleRegistration ruleRegistration;
         private readonly IPartialValidator partialValidator;
 
         /// <inheritdoc cref="IFinalizedBlockHeight"/>
@@ -132,7 +131,6 @@ namespace Stratis.Bitcoin.Base
             IPeerAddressManager peerAddressManager,
             IConsensusManager consensusManager,
             IConsensusRuleEngine consensusRules,
-            IRuleRegistration ruleRegistration,
             IPartialValidator partialValidator)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -145,7 +143,6 @@ namespace Stratis.Bitcoin.Base
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
             this.consensusManager = consensusManager;
             this.consensusRules = consensusRules;
-            this.ruleRegistration = ruleRegistration;
             this.partialValidator = partialValidator;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 

@@ -28,10 +28,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class ConsensusFeature : FullNodeFeature, INodeStats
     {
-        private readonly DBreezeCoinView dBreezeCoinView;
-
-        private readonly ICoinView coinView;
-
         private readonly IChainState chainState;
 
         private readonly IConnectionManager connectionManager;
@@ -52,20 +48,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ConsensusStats consensusStats;
 
         public ConsensusFeature(
-            DBreezeCoinView dBreezeCoinView,
             Network network,
-            ICoinView coinView,
             IChainState chainState,
             IConnectionManager connectionManager,
             Signals.Signals signals,
             IConsensusManager consensusManager,
-            IConsensusRuleEngine consensusRuleEngine,
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
             ConsensusStats consensusStats)
         {
-            this.dBreezeCoinView = dBreezeCoinView;
-            this.coinView = coinView;
             this.chainState = chainState;
             this.connectionManager = connectionManager;
             this.signals = signals;
