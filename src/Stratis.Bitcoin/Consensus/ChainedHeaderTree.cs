@@ -149,6 +149,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Get the chained header.</summary>
         /// <returns>Chained header for specified block hash if it exists, <c>null</c> otherwise.</returns>
         ChainedHeader GetChainedHeader(uint256 blockHash);
+
+        /// <summary>Returns <c>true</c> if consensus tip is equal to the tip of the most advanced peer node it is connected to.</summary>
+        bool IsAtBestChainTip();
     }
 
     /// <inheritdoc />
@@ -1161,6 +1164,29 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public bool IsAtBestChainTip()
+        {
+            this.logger.LogTrace("()");
+
+            ChainedHeader bestTip = null;
+
+            foreach (uint256 tipHash in this.peerTipsByPeerId.Values)
+            {
+                ChainedHeader tip = this.chainedHeadersByHash[tipHash];
+
+                if ((bestTip == null) || (tip.ChainWork > bestTip.ChainWork))
+                    bestTip = tip;
+            }
+
+            ChainedHeader consensusTip = this.GetConsensusTip();
+
+            bool atBestChainTip = consensusTip == bestTip;
+
+            this.logger.LogTrace("(-):{0}", atBestChainTip);
+            return atBestChainTip;
         }
     }
 
