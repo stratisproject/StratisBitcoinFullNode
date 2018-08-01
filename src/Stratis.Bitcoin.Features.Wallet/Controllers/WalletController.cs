@@ -1095,6 +1095,26 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
+        /// Starts sending block to the wallet for synchronisation.
+        /// This is for demo and testing use only.
+        /// </summary>
+        /// <param name="request">The model containing the date from which to start syncing.</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("syncFromDate")]
+        public IActionResult SyncFromDate([FromBody] WalletSyncFromDateRequest request)
+        {
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            this.walletSyncManager.SyncFromDate(request.Date);
+
+            return this.Ok();
+        }
+
+        /// <summary>
         /// Retrieves a string that represents the receiving address for an output. For smart contract transactions,
         /// returns the opcode that was sent i.e. OP_CALL or OP_CREATE
         /// </summary>

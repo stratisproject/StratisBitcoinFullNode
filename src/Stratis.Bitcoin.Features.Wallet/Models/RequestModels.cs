@@ -25,6 +25,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     }
 
     /// <summary>
+    /// Object used to synchronize a wallet
+    /// </summary>
+    public class WalletSyncFromDateRequest : RequestModel
+    {
+        [JsonConverter(typeof(IsoDateTimeConverter))]
+        public DateTime Date { get; set; }
+    }
+
+    /// <summary>
     /// Object used to create a new wallet
     /// </summary>
     public class WalletCreationRequest : RequestModel
