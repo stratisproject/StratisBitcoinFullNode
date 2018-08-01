@@ -87,9 +87,7 @@ namespace NBitcoin
         /// <inheritdoc />
         public ConsensusFactory ConsensusFactory { get; }
 
-        /// <summary>
-        /// Rules specific to the given network.
-        /// </summary>
+        /// <inheritdoc />
         public ICollection<IConsensusRule> Rules { get; set; }
 
         public Consensus(
