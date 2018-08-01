@@ -5,6 +5,7 @@
     <AssemblyName>City.Chain</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>City.Chain</PackageId>
+    <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
