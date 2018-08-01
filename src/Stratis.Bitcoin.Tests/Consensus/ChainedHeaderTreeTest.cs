@@ -2067,7 +2067,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             };
             var intitialChainedHeaders = new Dictionary<uint256, ChainedHeader>(cht.GetChainedHeadersByHash());
 
-            // Checking that 8a,9a in chained tree.
+            // Checking that 8a, 9a in chained tree.
             intitialChainedHeaders.Should().ContainValues(last2HeadersPeerA);
 
             ChainedHeader chainDTip = cht.GetPeerTipChainedHeaderByPeerId(3);
@@ -2079,10 +2079,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             cht.ConnectNewHeaders(0, peerABlockHeaders);
 
-            var chainedHeadersAfterPeerAChainged = new Dictionary<uint256, ChainedHeader>(cht.GetChainedHeadersByHash());
+            var chainedHeadersAfterPeerAChanged = new Dictionary<uint256, ChainedHeader>(cht.GetChainedHeadersByHash());
 
-            // Checking that 8a,9a not presented in chained tree anymore.
-            chainedHeadersAfterPeerAChainged.Should().NotContainValues(last2HeadersPeerA);
+            // Checking that 8a, 9a are not presented in chained tree anymore.
+            chainedHeadersAfterPeerAChanged.Should().NotContainValues(last2HeadersPeerA);
 
             this.CheckChainedHeaderTreeConsistency(cht, ctx, consensusTip, new HashSet<int>() { 0, 1, 2, 3 });
         }
