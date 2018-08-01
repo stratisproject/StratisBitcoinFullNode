@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var notification = new BlockNotification(this.LoggerFactory.Object, chain, new Mock<ILookaheadBlockPuller>().Object, signals.Object, new AsyncLoopFactory(new LoggerFactory()), lifetime);
             notification.Notify(lifetime.ApplicationStopping);
 
-            signals.Verify(s => s.SignalBlock(It.IsAny<Block>()), Times.Exactly(0));
+            signals.Verify(s => s.SignalBlockConnected(It.IsAny<Block>()), Times.Exactly(0));
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             notification.SyncFrom(startBlockId);
             notification.Notify(lifetime.ApplicationStopping);
 
-            signals.Verify(s => s.SignalBlock(It.IsAny<Block>()), Times.Exactly(0));
+            signals.Verify(s => s.SignalBlockConnected(It.IsAny<Block>()), Times.Exactly(0));
         }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         }
 
         /// <summary>
-        /// Ensures that <see cref="ISignals.SignalBlock(Block)" /> was called twice
+        /// Ensures that <see cref="ISignals.SignalBlockConnected" /> was called twice
         /// as 2 blocks were made available by the puller to be signaled.
         /// </summary>
         [Fact]
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             notification.Object.Notify(lifetime.ApplicationStopping);
 
-            signals.Verify(s => s.SignalBlock(It.IsAny<Block>()), Times.Exactly(2));
+            signals.Verify(s => s.SignalBlockConnected(It.IsAny<Block>()), Times.Exactly(2));
         }
 
         [Fact]
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             var source = new CancellationTokenSource();
             CancellationToken token = source.Token;
-            signals.Setup(s => s.SignalBlock(It.Is<Block>(b => b.GetHash() == blocks[0].GetHash())))
+            signals.Setup(s => s.SignalBlockConnected(It.Is<Block>(b => b.GetHash() == blocks[0].GetHash())))
                 .Callback(() =>
                 {
                     source.Cancel();
