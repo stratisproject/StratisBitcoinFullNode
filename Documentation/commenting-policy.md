@@ -39,7 +39,7 @@ We have two types of rules. Hard rules are those that are required and your code
 them. Soft rules are more like guidelines - try to use them where possible. The reviewer can ask you to update your code 
 if it violates a soft rule and it can be fixed easily.
 
- * **XMLDOC** - Use triple slash (XML documentation) comments for classes, interfaces, methods, parameters, fields, properties, structures, enums, etc. These comments are required - even for trivial code. *(HARD)*
+ * **XMLDOC** - Use triple slash (XML documentation) comments for classes, interfaces, methods, parameters, fields, properties, structures, enums, etc. These comments are optional for: constructors, method parameters, private methods, private properties, private fields. *(SOFT)* These comments are required for everything else - even for trivial code. *(HARD)*
    * **SUMMARY-1** - First paragraph in `<summary>` must be short, no more than 3 lines. If you find you need more than 2 lines, maybe you are not writing the summary anymore and you are already explaining details. *(HARD)*
    * **SUMMARY-2** - `<summary>` should contain information useful for someone who is trying to understand the code. Implementation details belong to `<remarks>`. *(SOFT)*
    * **METHODS** - Method comments must contain `<summary>`. If the method has input and/or output parameters `<param>` must be used for each of them. If the method returns anything else than `void` or `Task` (but not `Task<T>`),
