@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
             foreach (Transaction tx in block.Transactions.Skip(1))
             {
-                this.ShortIds.Add(GetShortID(tx.GetHash()));
+                this.ShortIds.Add(this.GetShortID(tx.GetHash()));
             }
         }
 
@@ -167,12 +167,12 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         public ulong AddTransactionShortId(Transaction tx)
         {
-            return AddTransactionShortId(tx.GetHash());
+            return this.AddTransactionShortId(tx.GetHash());
         }
 
         public ulong AddTransactionShortId(uint256 txId)
         {
-            ulong id = GetShortID(txId);
+            ulong id = this.GetShortID(txId);
             this.ShortIds.Add(id);
             return id;
         }
