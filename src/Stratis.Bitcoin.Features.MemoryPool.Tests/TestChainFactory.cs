@@ -73,6 +73,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new ConsensusOptions();
+            network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
+
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chain = new ConcurrentChain(network);
             InMemoryCoinView inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
@@ -88,7 +90,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var blockPuller = new LookaheadBlockPuller(chain, connectionManager, new LoggerFactory());
             var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
             var deployments = new NodeDeployments(network, chain);
-            ConsensusRules consensusRules = new PowConsensusRules(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(), inMemoryCoinView, new Mock<ILookaheadBlockPuller>().Object).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            ConsensusRules consensusRules = new PowConsensusRules(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(), inMemoryCoinView, new Mock<ILookaheadBlockPuller>().Object).Register();
             var consensusLoop = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), new NodeLifetime(), chain, cachedCoinView, blockPuller, deployments, loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, nodeSettings, peerBanning, consensusRules);
             await consensusLoop.StartAsync();
 

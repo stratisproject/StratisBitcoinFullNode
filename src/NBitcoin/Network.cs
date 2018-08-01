@@ -33,7 +33,7 @@ namespace NBitcoin
         WITNESS_SCRIPT_ADDRESS
     }
 
-    public abstract partial class Network
+    public abstract class Network
     {
         protected Block Genesis;
 
