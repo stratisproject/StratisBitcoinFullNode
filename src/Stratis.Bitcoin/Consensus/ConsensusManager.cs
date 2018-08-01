@@ -208,12 +208,13 @@ namespace Stratis.Bitcoin.Consensus
             //  coinview and it will abstract the methods `RewindAsync()` `GetBlockHashAsync()`
 
             uint256 consensusTipHash = await this.consensusRules.GetBlockHashAsync().ConfigureAwait(false);
+            bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
 
             while (true)
             {
                 this.Tip = chainTip.FindAncestorOrSelf(consensusTipHash);
 
-                if (this.Tip?.HashBlock == consensusTipHash)
+                if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
                     break;
 
                 // In case block store initialized behind, rewind until or before the block store tip.

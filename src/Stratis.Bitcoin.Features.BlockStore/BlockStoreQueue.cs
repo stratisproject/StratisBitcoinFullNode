@@ -109,8 +109,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </para>
         /// </summary>
         public async Task InitializeAsync()
-        {
+        {             
             this.logger.LogTrace("()");
+
+            await this.blockRepository.InitializeAsync();
 
             if (this.storeSettings.ReIndex)
             {
@@ -141,11 +143,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             // Throw if block store was initialized after the consensus.
             // This is needed in order to rewind consensus in case it is initialized ahead of the block store.
-            if (this.chainState.ConsensusTip.Height > this.storeTip.Height)
+            if (this.chainState.ConsensusTip != null)
             {
-                this.logger.LogCritical("Block store tip is behind consensus!");
+                this.logger.LogCritical("Block store initialized after the consensus!");
                 this.logger.LogTrace("(-)[INITIALIZATION_ERROR]");
-                throw new BlockStoreException("BlBlock store tip is behind consensus!");
+                throw new BlockStoreException("Block store initialized after consensus!");
             }
 
             // Start dequeuing.
@@ -428,6 +430,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // Let current batch saving task finish.
             this.blocksQueue.Dispose();
             this.dequeueLoopTask?.GetAwaiter().GetResult();
+            this.blockRepository.Dispose();
 
             this.logger.LogTrace("(-)");
         }

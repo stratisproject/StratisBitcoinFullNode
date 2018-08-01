@@ -108,6 +108,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IConsensusManager consensusManager;
         private readonly IConsensusRuleEngine consensusRules;
         private readonly IPartialValidator partialValidator;
+        private readonly IBlockStore blockStore;
 
         /// <inheritdoc cref="IFinalizedBlockHeight"/>
         private readonly IFinalizedBlockHeight finalizedBlockHeight;
@@ -131,7 +132,8 @@ namespace Stratis.Bitcoin.Base
             IPeerAddressManager peerAddressManager,
             IConsensusManager consensusManager,
             IConsensusRuleEngine consensusRules,
-            IPartialValidator partialValidator)
+            IPartialValidator partialValidator,
+            IBlockStore blockStore = null)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -144,6 +146,7 @@ namespace Stratis.Bitcoin.Base
             this.consensusManager = consensusManager;
             this.consensusRules = consensusRules;
             this.partialValidator = partialValidator;
+            this.blockStore = blockStore;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
@@ -192,6 +195,10 @@ namespace Stratis.Bitcoin.Base
 
             this.disposableResources.Add(this.timeSyncBehaviorState as IDisposable);
             this.disposableResources.Add(this.chainRepository);
+
+            // Block store must be initialized before consensus manager.
+            // This may be a temporary solution until a better way is found to solve this dependency.
+            this.blockStore?.InitializeAsync().GetAwaiter().GetResult();
 
             this.consensusRules.Initialize().GetAwaiter().GetResult();
 
@@ -299,6 +306,8 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.consensusRules.Dispose();
+
+            (this.blockStore as IDisposable)?.Dispose();
         }
     }
 
