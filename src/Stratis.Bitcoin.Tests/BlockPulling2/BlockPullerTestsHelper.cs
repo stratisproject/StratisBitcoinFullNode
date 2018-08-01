@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -14,6 +13,7 @@ using Stratis.Bitcoin.BlockPulling2;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -37,16 +37,14 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         private int currentPeerId = 0;
         private readonly ILoggerFactory loggerFactory;
-        private int currentNonce;
-        
+
         public BlockPullerTestsHelper()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
-            this.currentNonce = 0;
 
             this.CallbacksCalled = new Dictionary<uint256, Block>();
-            this.ChainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider())) {ConsensusTip = this.CreateGenesisChainedHeader()};
+            this.ChainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider())) {ConsensusTip = ChainedHeadersHelper.CreateGenesisChainedHeader()};
 
             this.Puller = new ExtendedBlockPuller((hash, block) => { this.CallbacksCalled.Add(hash, block); },
                 this.ChainState, NodeSettings.SupportedProtocolVersion, new DateTimeProvider(), this.loggerFactory);
@@ -56,15 +54,15 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
         public INetworkPeer CreatePeer(out ExtendedBlockPullerBehavior mockedBehavior, bool notSupportedVersion = false)
         {
             var peer = new Mock<INetworkPeer>();
-            
-            var connection = new NetworkPeerConnection(Network.StratisMain, peer.Object, new TcpClient(), this.currentPeerId, (message, token) => Task.CompletedTask,
+
+            var connection = new NetworkPeerConnection(KnownNetworks.StratisMain, peer.Object, new TcpClient(), this.currentPeerId, (message, token) => Task.CompletedTask,
                 new DateTimeProvider(), this.loggerFactory, new PayloadProvider());
 
             this.currentPeerId++;
             peer.SetupGet(networkPeer => networkPeer.Connection).Returns(connection);
 
             var connectionParameters = new NetworkPeerConnectionParameters();
-            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), Network.StratisMain, new DateTimeProvider().GetTimeOffset());
+            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), KnownNetworks.StratisMain, new DateTimeProvider().GetTimeOffset());
 
             if (notSupportedVersion)
                 version.Version = ProtocolVersion.NOBLKS_VERSION_START;
@@ -93,41 +91,10 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             return behavior;
         }
 
-        public List<ChainedHeader> CreateConsequtiveHeaders(int count, ChainedHeader prevBlock = null)
-        {
-            var chainedHeaders = new List<ChainedHeader>();
-            Network network = Network.StratisMain;
-            
-            ChainedHeader tip = prevBlock ?? this.CreateGenesisChainedHeader();
-            uint256 hashPrevBlock = tip.HashBlock;
-
-            for (int i = 0; i < count; ++i)
-            {
-                BlockHeader header = network.Consensus.ConsensusFactory.CreateBlockHeader();
-                header.Nonce = (uint)Interlocked.Increment(ref this.currentNonce);
-                header.HashPrevBlock = hashPrevBlock;
-                header.Bits = Target.Difficulty1;
-
-                var chainedHeader = new ChainedHeader(header, header.GetHash(), tip);
-
-                hashPrevBlock = chainedHeader.HashBlock;
-                tip = chainedHeader;
-
-                chainedHeaders.Add(chainedHeader);
-            }
-
-            return chainedHeaders;
-        }
-
-        private ChainedHeader CreateGenesisChainedHeader()
-        {
-            return new ChainedHeader(Network.StratisMain.GetGenesis().Header, Network.StratisMain.GenesisHash, 0);
-        }
-
         /// <summary>Creates a new block with mocked serialized size.</summary>
         public Block GenerateBlock(long size)
         {
-            Block block = Network.StratisMain.Consensus.ConsensusFactory.CreateBlock();
+            Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
 
             block.SetPrivatePropertyValue("BlockSize", size);
 
@@ -136,7 +103,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         public ChainedHeader CreateChainedHeader()
         {
-            return this.CreateConsequtiveHeaders(1).First();
+            return ChainedHeadersHelper.CreateConsecutiveHeaders(1).First();
         }
 
         public bool DoubleEqual(double a, double b)
@@ -277,7 +244,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
                 return this.underlyingBehavior.QualityScore;
             }
-        }  
+        }
 
         public int SpeedBytesPerSecond => this.underlyingBehavior.SpeedBytesPerSecond;
 

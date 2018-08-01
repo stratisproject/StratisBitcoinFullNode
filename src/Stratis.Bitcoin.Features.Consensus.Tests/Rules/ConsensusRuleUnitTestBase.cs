@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -10,6 +11,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
@@ -24,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected NodeDeployments nodeDeployments;
         protected ConsensusSettings consensusSettings;
         protected Mock<ICheckpoints> checkpoints;
-        protected List<ConsensusRule> ruleRegistrations;
+        protected List<IConsensusRule> ruleRegistrations;
         protected Mock<IRuleRegistration> ruleRegistration;
         protected RuleContext ruleContext;
         protected Transaction lastAddedTransaction;
@@ -32,10 +34,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected ConsensusRuleUnitTestBase(Network network)
         {
             this.network = network;
+
             this.logger = new Mock<ILogger>();
             this.loggerFactory = new Mock<ILoggerFactory>();
-            this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-                .Returns(new Mock<ILogger>().Object);
+            this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
 
             this.concurrentChain = new ConcurrentChain(this.network);
@@ -43,10 +45,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.consensusSettings = new ConsensusSettings();
             this.checkpoints = new Mock<ICheckpoints>();
 
-            this.ruleRegistrations = new List<ConsensusRule>();
+            this.ruleRegistrations = new List<IConsensusRule>();
             this.ruleRegistration = new Mock<IRuleRegistration>();
-            this.ruleRegistration.Setup(r => r.GetRules())
-                .Returns(() => { return this.ruleRegistrations; });
+            this.ruleRegistration.Setup(r => r.GetRules()).Returns(() => { return this.ruleRegistrations; });
 
             if (network.Consensus.IsProofOfStake)
             {
@@ -88,14 +89,23 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IStakeChain> stakeChain;
         protected Mock<IStakeValidator> stakeValidator;
         protected Mock<ILookaheadBlockPuller> lookaheadBlockPuller;
-        protected Mock<CoinView> coinView;
+        protected Mock<ICoinView> coinView;
 
-        public PosConsensusRuleUnitTestBase() : base(Network.StratisTest)
+        public PosConsensusRuleUnitTestBase() : base(KnownNetworks.StratisTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.lookaheadBlockPuller = new Mock<ILookaheadBlockPuller>();
-            this.coinView = new Mock<CoinView>();
+            this.coinView = new Mock<ICoinView>();
+        }
+
+        protected T CreateRule<T>() where T : ConsensusRule, new()
+        {
+            return new T()
+            {
+                Logger = this.logger.Object,
+                Parent = new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.lookaheadBlockPuller.Object, this.stakeChain.Object, this.stakeValidator.Object)
+            };
         }
     }
 
@@ -108,7 +118,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected NodeDeployments nodeDeployments;
         protected ConsensusSettings consensusSettings;
         protected Mock<ICheckpoints> checkpoints;
-        protected List<ConsensusRule> ruleRegistrations;
         protected Mock<IRuleRegistration> ruleRegistration;
         protected T consensusRules;
         protected RuleContext ruleContext;
@@ -125,11 +134,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
             this.consensusSettings = new ConsensusSettings();
             this.checkpoints = new Mock<ICheckpoints>();
-
-            this.ruleRegistrations = new List<ConsensusRule>();
-            this.ruleRegistration = new Mock<IRuleRegistration>();
-            this.ruleRegistration.Setup(r => r.GetRules())
-                .Returns(() => { return this.ruleRegistrations; });
 
             if (network.Consensus.IsProofOfStake)
             {
@@ -184,9 +188,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
     public class TestConsensusRulesUnitTestBase : ConsensusRuleUnitTestBase<TestConsensusRules>
     {
-        public TestConsensusRulesUnitTestBase() : base(Network.TestNet)
+        public TestConsensusRulesUnitTestBase() : base(KnownNetworks.TestNet)
         {
-            this.network.Consensus.Options = new PowConsensusOptions();
+            this.network.Consensus.Options = new ConsensusOptions();
             this.consensusRules = InitializeConsensusRules();
         }
 
@@ -201,14 +205,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IStakeChain> stakeChain;
         protected Mock<IStakeValidator> stakeValidator;
         protected Mock<ILookaheadBlockPuller> lookaheadBlockPuller;
-        protected Mock<CoinView> coinView;
+        protected Mock<ICoinView> coinView;
 
-        public TestPosConsensusRulesUnitTestBase() : base(Network.StratisTest)
+        public TestPosConsensusRulesUnitTestBase() : base(KnownNetworks.StratisTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.lookaheadBlockPuller = new Mock<ILookaheadBlockPuller>();
-            this.coinView = new Mock<CoinView>();
+            this.coinView = new Mock<ICoinView>();
             this.consensusRules = InitializeConsensusRules();
         }
 

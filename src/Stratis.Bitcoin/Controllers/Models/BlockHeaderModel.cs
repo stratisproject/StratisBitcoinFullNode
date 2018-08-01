@@ -31,6 +31,14 @@ namespace Stratis.Bitcoin.Controllers.Models
         }
 
         /// <summary>
+        /// Constructs a BlockHeaderModel.
+        /// Used when deserializing block header from Json.
+        /// </summary>
+        public BlockHeaderModel()
+        {
+        }
+
+        /// <summary>
         /// The blocks version number.
         /// </summary>
         [JsonProperty(PropertyName = "version")]

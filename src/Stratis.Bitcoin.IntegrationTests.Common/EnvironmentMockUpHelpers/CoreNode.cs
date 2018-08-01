@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
@@ -56,7 +57,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.CookieAuth = useCookieAuth;
             this.ConfigParameters.Import(builder.ConfigParameters);
             var randomFoundPorts = new int[3];
-            TestHelper.FindPorts(randomFoundPorts);
+            IpHelper.FindPorts(randomFoundPorts);
             this.ConfigParameters.SetDefaultValueIfUndefined("port", randomFoundPorts[0].ToString());
             this.ConfigParameters.SetDefaultValueIfUndefined("rpcport", randomFoundPorts[1].ToString());
             this.ConfigParameters.SetDefaultValueIfUndefined("apiport", randomFoundPorts[2].ToString());
@@ -84,7 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public RPCClient CreateRPCClient()
         {
-            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.RpcPort + "/"), Network.RegTest);
+            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.RpcPort + "/"), KnownNetworks.RegTest);
         }
 
         public INetworkPeer CreateNetworkPeerClient()
@@ -437,10 +438,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public bool AddToStratisMempool(Transaction trx)
         {
-            FullNode fullNode = ((StratisBitcoinPowRunner)this.runner).FullNode;
             var state = new MempoolValidationState(true);
-
-            return fullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
+            return this.runner.FullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
         }
 
         public List<uint256> GenerateStratisWithMiner(int blockCount)

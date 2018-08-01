@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>
         /// Whether the attached peer should only be relayed blocks (no transactions).
-        /// </summary> 
+        /// </summary>
         private bool isBlocksOnlyMode;
 
         public MempoolBehavior(
@@ -113,9 +113,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.isPeerWhitelistedForRelay = false;
             this.isBlocksOnlyMode = false;
         }
-        
+
         /// <summary>Time of last memory pool request in unix time.</summary>
-        public long LastMempoolReq { get; private set; } 
+        public long LastMempoolReq { get; private set; }
 
         /// <inheritdoc />
         protected override void AttachCore()
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.logger.LogTrace("()");
 
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-            this.isPeerWhitelistedForRelay = this.AttachedPeer.Behavior<ConnectionManagerBehavior>().Whitelisted && this.mempoolManager.mempoolSettings.WhiteListRelay;
+            this.isPeerWhitelistedForRelay = this.AttachedPeer.Behavior<IConnectionManagerBehavior>().Whitelisted && this.mempoolManager.mempoolSettings.WhiteListRelay;
             this.isBlocksOnlyMode = !this.connectionManager.ConnectionSettings.RelayTxes && !this.isPeerWhitelistedForRelay;
 
             this.logger.LogTrace("(-)");
@@ -307,7 +307,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogTrace("(-)[IS_IBD]");
                 return;
             }
-            
+
             //uint32_t nFetchFlags = GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
 
             var send = new GetDataPayload();
@@ -316,7 +316,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //inv.type |= nFetchFlags;
 
                 // TODO: This is incorrect, in blocks only mode we should just add to known inventory but not relay
-                if (this.isBlocksOnlyMode)                 
+                if (this.isBlocksOnlyMode)
                     this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
 
                 if (await this.orphans.AlreadyHaveAsync(inv.Hash))
@@ -325,7 +325,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     continue;
                 }
 
-                send.Inventory.Add(inv);
+                send.Inventory.Add(new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), inv.Hash));
             }
 
             // add to known inventory
@@ -333,13 +333,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 foreach (InventoryVector inventoryVector in send.Inventory)
                 {
-                    this.filterInventoryKnown.Add(inventoryVector.Hash);                    
+                    this.filterInventoryKnown.Add(inventoryVector.Hash);
                 }
             }
 
             if (peer.IsConnected)
             {
-                this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
+                this.logger.LogTrace("Asking for transaction data from peer '{0}'.", peer.RemoteSocketEndpoint);
                 await peer.SendMessageAsync(send).ConfigureAwait(false);
             }
 
@@ -401,7 +401,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // add to local filter
             lock (this.lockObject)
             {
-                this.filterInventoryKnown.Add(trxHash);                
+                this.filterInventoryKnown.Add(trxHash);
             }
             this.logger.LogTrace("Added transaction ID '{0}' to known inventory filter.", trxHash);
 
@@ -499,7 +499,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 if (!this.filterInventoryKnown.Contains(hash))
                 {
-                    this.inventoryTxToSend.Add(hash);   
+                    this.inventoryTxToSend.Add(hash);
                 }
             }
 
@@ -557,13 +557,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             var transactionsToSend = new List<uint256>();
             lock (this.lockObject)
-            { 
+            {
                 if (!this.inventoryTxToSend.Any())
                 {
                     this.logger.LogTrace("(-)[NO_TXS]");
                     return;
                 }
-                            
+
                 this.logger.LogTrace("Creating list of transaction inventory to send.");
 
                 // Determine transactions to relay
@@ -582,7 +582,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         this.logger.LogTrace("Transaction ID '{0}' not added to inventory list, exists in known inventory filter.", hash);
                         continue;
                     }
-                   
+
                     //if (filterrate && txinfo.feeRate.GetFeePerK() < filterrate) // TODO:filterrate
                     //{
                     //  continue;

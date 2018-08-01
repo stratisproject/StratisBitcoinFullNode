@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
@@ -32,7 +31,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly Signals.Signals signals;
 
         /// <summary>Coin view of the memory pool.</summary>
-        private readonly CoinView coinView;
+        private readonly ICoinView coinView;
 
         /// <summary>Date and time information provider.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -71,7 +70,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             ConcurrentChain chain,
             Signals.Signals signals,
             IMempoolValidator validator,
-            CoinView coinView,
+            ICoinView coinView,
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
             ILoggerFactory loggerFactory,
@@ -133,7 +132,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Orphan list count.
         /// </summary>
-        public int OrphansCount() 
+        public int OrphansCount()
         {
             this.logger.LogTrace("()");
 
@@ -196,7 +195,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             if (!isTxPresent)
             {
                 isTxPresent = await this.mempoolManager.ExistsAsync(trxid).ConfigureAwait(false);
-            }                                
+            }
 
             this.logger.LogTrace("(-):{0}", isTxPresent);
             return isTxPresent;
@@ -235,7 +234,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 foreach (OrphanTx mi in itByPrev)
                 {
-                    Transaction orphanTx = mi.Tx; 
+                    Transaction orphanTx = mi.Tx;
                     uint256 orphanHash = orphanTx.GetHash();
                     ulong fromPeer = mi.NodeId;
 
@@ -270,7 +269,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                             setMisbehaving.Add(fromPeer);
                             this.logger.LogInformation("invalid orphan tx {0}", orphanHash);
                         }
-                    
+
                         // Has inputs but not accepted to mempool
                         // Probably non-standard or insufficient fee/priority
                         this.logger.LogInformation("removed orphan tx {0}", orphanHash);
@@ -405,7 +404,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         nMinExpTime = Math.Min(maybeErase.TimeExpire, nMinExpTime);
                     }
                 }
-               
+
                 // Sweep again 5 minutes after the next entry that expires in order to batch the linear scan.
                 this.nNextSweep = nMinExpTime + OrphanTxExpireInterval;
 
@@ -421,7 +420,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     // Evict a random orphan:
                     int randomCount = this.random.Next(this.mapOrphanTransactions.Count);
                     uint256 erase = this.mapOrphanTransactions.ElementAt(randomCount).Key;
-                    this.EraseOrphanTxLock(erase); 
+                    this.EraseOrphanTxLock(erase);
                     ++nEvicted;
                 }
             }
@@ -457,7 +456,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 // 100 orphans, each of which is at most 99,999 bytes big is
                 // at most 10 megabytes of orphans and somewhat more byprev index (in the worst case):
                 int sz = MempoolValidator.GetTransactionWeight(tx, this.Validator.ConsensusOptions);
-                if (sz >= this.chain.Network.Consensus.Option<PowConsensusOptions>().MaxStandardTxWeight)
+                if (sz >= this.chain.Network.Consensus.Options.MaxStandardTxWeight)
                 {
                     this.logger.LogInformation("ignoring large orphan tx (size: {0}, hash: {1})", sz, hash);
                     this.logger.LogTrace("(-)[LARGE_ORPH]:false");

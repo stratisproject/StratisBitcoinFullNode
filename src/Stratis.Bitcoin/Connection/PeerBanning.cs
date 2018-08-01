@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Functionality of date and time.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>Keeps a set of peers discovered on the network in cache and on disk.</summary> 
+        /// <summary>Keeps a set of peers discovered on the network in cache and on disk.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
         public PeerBanning(IConnectionManager connectionManager, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, IPeerAddressManager peerAddressManager)
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Connection
 
             if (peer != null)
             {
-                var peerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                var peerBehavior = peer.Behavior<IConnectionManagerBehavior>();
                 if (!peerBehavior.Whitelisted)
                 {
                     peer.Disconnect($"The peer was banned, reason: {reason}");

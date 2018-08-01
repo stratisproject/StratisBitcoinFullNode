@@ -11,7 +11,6 @@ namespace Stratis.SmartContracts.Core.Validation
     {
         private static readonly List<IModuleDefinitionValidator> ModuleDefinitionValidators = new List<IModuleDefinitionValidator>
         {
-            new SingleTypeValidator(),
             new SmartContractTypeDefinitionValidator()
         };
 
