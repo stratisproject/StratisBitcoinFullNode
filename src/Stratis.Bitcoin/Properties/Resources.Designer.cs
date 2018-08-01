@@ -61,11 +61,15 @@ namespace Stratis.Bitcoin.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to SSSSSSSSSSSSSSS      tttt                                                     tttt            iiii                   
-        /// SS:::::::::::::::S  ttt:::t                                                  ttt:::t           i::::i                  
-        ///S:::::SSSSSS::::::S  t:::::t                                                  t:::::t            iiii                   
-        ///S:::::S     SSSSSSS  t:::::t                                                  t:::::t                                   
-        ///S:::::S        ttttttt::::: [rest of string was truncated]&quot;;.
+        ///   Looks up a localized string similar to 
+        ///
+        ///     .d8888b. 88888888888 8888888b.         d8888 88888888888 8888888  .d8888b. 
+        ///    d88P  Y88b    888     888   Y88b       d88888     888       888   d88P  Y88b
+        ///    Y88b.         888     888    888      d88P888     888       888   Y88b.     
+        ///     &quot;Y888b.      888     888   d88P     d88P 888     888       888    &quot;Y888b.  
+        ///        &quot;Y88b.    888     8888888P&quot;     d88P  888     888       888       &quot;Y88b.
+        ///          &quot;888    888     888 T88b     d88P   888     888       888         &quot;888
+        ///    Y88b  d88P   [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string AsciiLogo {
             get {
