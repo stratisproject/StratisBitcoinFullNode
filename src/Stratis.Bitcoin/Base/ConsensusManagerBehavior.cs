@@ -273,7 +273,7 @@ namespace Stratis.Bitcoin.Base
 
             using (await this.asyncLock.LockAsync().ConfigureAwait(false))
             {
-                if (this.cachedHeaders.Count > CacheSyncHeadersThreshold) //TODO when proven headers are implemented combine this with size threshold of N mb.
+                if (this.cachedHeaders.Count > CacheSyncHeadersThreshold) // TODO when proven headers are implemented combine this with size threshold of N mb.
                 {
                     // Ignore this message because cache is full.
                     this.logger.LogTrace("(-)[CACHE_IS_FULL]");

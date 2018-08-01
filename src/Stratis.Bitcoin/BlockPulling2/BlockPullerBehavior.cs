@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         /// <summary>The maximum percentage of samples that can be used when peer is being penalized for not delivering blocks.</summary>
         /// <remarks><c>1</c> is 100%, <c>0</c> is 0%.</remarks>
-        internal const double MaxSamplesPercentageToPenalize = 0.1; //TODO test it and find best value
+        internal const double MaxSamplesPercentageToPenalize = 0.1; // TODO test it and find best value
 
         /// <inheritdoc />
         public double QualityScore { get; private set; }

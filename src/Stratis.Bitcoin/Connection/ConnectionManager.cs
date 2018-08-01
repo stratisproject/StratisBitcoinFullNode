@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.Connection
                 builder.AppendLine("Total".PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + this.ToKBSec(diffTotal.ReadenBytesPerSecond) + "\tW:" + this.ToKBSec(diffTotal.WrittenBytesPerSecond));
                 builder.AppendLine("==========================");
 
-                //TODO: Hack, we should just clean nodes that are not connect anymore.
+                // TODO: Hack, we should just clean nodes that are not connect anymore.
                 if (this.downloads.Count > 1000)
                     this.downloads.Clear();
             }

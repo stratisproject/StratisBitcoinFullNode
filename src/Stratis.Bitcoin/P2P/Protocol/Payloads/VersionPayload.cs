@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             {
                 // A version number of 10300 is converted to 300 before being processed.
                 if (this.version == 10300)
-                    return (ProtocolVersion)(300);  //https://en.bitcoin.it/wiki/Version_Handshake
+                    return (ProtocolVersion)(300);  // https://en.bitcoin.it/wiki/Version_Handshake
 
                 return (ProtocolVersion)this.version;
             }

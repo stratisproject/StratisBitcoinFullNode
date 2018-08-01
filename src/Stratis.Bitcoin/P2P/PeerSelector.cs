@@ -275,28 +275,28 @@ namespace Stratis.Bitcoin.P2P
             List<PeerAddress> connectedAndHandshaked = this.Connected().Concat(this.Handshaked()).OrderBy(p => this.random.Next()).ToList();
             List<PeerAddress> freshAndAttempted = this.Attempted().Concat(this.Fresh()).OrderBy(p => this.random.Next()).ToList();
 
-            //If there are connected and/or handshaked peers in the address list,
-            //we need to split the list 50 / 50 between them and
-            //peers we have not yet connected to and/or that are fresh.
+            // If there are connected and/or handshaked peers in the address list,
+            // we need to split the list 50 / 50 between them and
+            // peers we have not yet connected to and/or that are fresh.
             if (connectedAndHandshaked.Any())
             {
-                //50% of the peers to return
+                // 50% of the peers to return
                 int toTake = peerCount / 2;
 
-                //If the amount of connected and/or handshaked peers is less
-                //than 50% of the peers asked for, just take all of them.
+                // If the amount of connected and/or handshaked peers is less
+                // than 50% of the peers asked for, just take all of them.
                 if (connectedAndHandshaked.Count() < toTake)
                     peersToReturn.AddRange(connectedAndHandshaked);
-                //If not take 50% of the amount requested.
+                // If not take 50% of the amount requested.
                 else
                     peersToReturn.AddRange(connectedAndHandshaked.Take(toTake));
 
-                //Fill up the list with the rest.
+                // Fill up the list with the rest.
                 peersToReturn.AddRange(freshAndAttempted.Take(peerCount - peersToReturn.Count()));
             }
 
-            //If there are no connected or handshaked peers in the address list,
-            //just return an amount of peers that has been asked for. 
+            // If there are no connected or handshaked peers in the address list,
+            // just return an amount of peers that has been asked for. 
             else
             {
                 peersToReturn.AddRange(freshAndAttempted.Take(peerCount));

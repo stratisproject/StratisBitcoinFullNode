@@ -935,13 +935,13 @@ namespace Stratis.Bitcoin.Consensus
                         this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
                         return;
                     }
-                    //catch (BlockIntegrityVerificationException)
-                    //{
+                    // catch (BlockIntegrityVerificationException)
+                    // {
                     //    // TODO: catch validation exceptions.
                     //    // TODO ban the peer, disconnect, return
                     //    // this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
                     //    return;
-                    //}
+                    // }
                 }
                 else
                 {
