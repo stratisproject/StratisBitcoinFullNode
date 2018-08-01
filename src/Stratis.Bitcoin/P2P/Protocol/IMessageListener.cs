@@ -1,4 +1,5 @@
-﻿/// <summary>
+﻿
+/// <summary>
 /// Contract for a recipient part of a consumer logic that handles incoming messages.
 /// </summary>
 /// <typeparam name="T">Type of the messages that are being handled.</typeparam>

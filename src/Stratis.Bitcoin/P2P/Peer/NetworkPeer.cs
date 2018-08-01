@@ -169,6 +169,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>Statistics about the number of bytes transferred from and to the peer.</summary>
         private PerformanceCounter counter;
+
         /// <inheritdoc/>
         public PerformanceCounter Counter
         {
