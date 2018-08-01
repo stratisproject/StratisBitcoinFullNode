@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var networkPeer = new Mock<INetworkPeer>();
             networkPeer.SetupGet(n => n.PeerEndPoint).Returns(endpoint);
             networkPeer.SetupGet(n => n.State).Returns(NetworkPeerState.HandShaked);
-            networkPeer.SetupGet(n => n.Inbound).Returns(false);
+            networkPeer.SetupGet(n => n.Inbound).Returns(false); // Outbound
 
             var messageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
             networkPeer.SetupGet(n => n.MessageReceived).Returns(messageReceived);
@@ -131,9 +131,8 @@ namespace Stratis.Bitcoin.Tests.P2P
                 Payload = new GetAddrPayload(),
             };
 
-            //Trigger the event handler
+            // Event handler triggered, but SendMessage shouldn't be called as the node is Outbound.
             networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
-
             networkPeer.Verify(x => x.SendMessageAsync(It.IsAny<Payload>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -168,10 +167,11 @@ namespace Stratis.Bitcoin.Tests.P2P
                 Payload = new GetAddrPayload(),
             };
 
-            //Trigger the event handler
+            // Event handler triggered twice.
             networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
             networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
 
+            // SendMessage should only be called once.
             networkPeer.Verify(x => x.SendMessageAsync(It.IsAny<Payload>(), It.IsAny<CancellationToken>()), Times.Once);
         }
     }
