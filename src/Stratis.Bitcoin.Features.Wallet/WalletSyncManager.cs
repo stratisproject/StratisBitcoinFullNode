@@ -43,7 +43,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
-            Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
+            Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime, 
+            IAsyncLoopFactory asyncLoopFactory)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -280,7 +281,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                         next = tip.GetAncestor(next.Height + 1);
 
                         Block nextBlock;
-                        int index = 0;
 
                         while (true)
                         {
@@ -295,22 +295,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                                 {
                                     await this.ProcessAsync(block).ConfigureAwait(false);
                                 }
-
-                                // The idea in this abandoning of the loop is to release consensus to push the block.
-                                // That will make the block available in the next push from consensus.
-                                index++;
-
-                                if (index > 10)
-                                {
-                                    this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
-                                    return;
-                                }
-
-                                // Really ugly hack to let store catch up.
-                                // This will block the entire consensus pulling.
-                                this.logger.LogWarning(
-                                    "Wallet is behind the best chain and the next block is not found in store.");
-                                Thread.Sleep(100);
 
                                 continue;
                             }
