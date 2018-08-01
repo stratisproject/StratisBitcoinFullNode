@@ -149,6 +149,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     return i;
                 i++;
             }
+
             return scores.Length - 1;
         }
     }

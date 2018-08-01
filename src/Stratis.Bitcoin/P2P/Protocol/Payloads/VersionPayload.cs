@@ -204,6 +204,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                     {
                         stream.ReadWrite(ref this.addr_from);
                     }
+
                     stream.ReadWrite(ref this.nonce);
                     stream.ReadWrite(ref this.user_agent);
                     if (this.version < 60002)

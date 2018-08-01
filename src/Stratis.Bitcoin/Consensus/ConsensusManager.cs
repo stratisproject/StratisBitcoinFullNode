@@ -935,6 +935,7 @@ namespace Stratis.Bitcoin.Consensus
                         this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
                         return;
                     }
+
                     // catch (BlockIntegrityVerificationException)
                     // {
                     //    // TODO: catch validation exceptions.

@@ -150,6 +150,7 @@ namespace Stratis.Bitcoin.Utilities
             {
                 coins.Outputs.Add(output == null ? Coins.NullTxOut : output);
             }
+
             coins.ClearUnspendable();
             return coins;
         }

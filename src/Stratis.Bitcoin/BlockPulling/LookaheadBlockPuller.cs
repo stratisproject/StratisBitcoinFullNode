@@ -139,6 +139,7 @@ namespace Stratis.Bitcoin.BlockPulling
             {
                 return Math.Min(this.MaximumLookahead, Math.Max(this.MinimumLookahead, this.actualLookahead));
             }
+
             private set
             {
                 this.actualLookahead = Math.Min(this.MaximumLookahead, Math.Max(this.MinimumLookahead, value));
@@ -394,6 +395,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.currentBufferedSize += downloadedBlock.Length;
                 this.currentBufferedCount++;
             }
+
             this.pushed.Set();
 
             this.logger.LogTrace("(-)");
@@ -565,6 +567,7 @@ namespace Stratis.Bitcoin.BlockPulling
                         this.currentBufferedSize -= block.Length;
                         this.currentBufferedCount--;
                     }
+
                     this.consumed.Set();
 
                     res.Block = block.Block;

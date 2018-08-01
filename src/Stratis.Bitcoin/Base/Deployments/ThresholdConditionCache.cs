@@ -75,9 +75,11 @@ namespace Stratis.Bitcoin.Base.Deployments
                     this.Set(indexPrev?.HashBlock, deployment, ThresholdState.Defined);
                     break;
                 }
+
                 vToCompute.Add(indexPrev);
                 indexPrev = indexPrev.GetAncestor(indexPrev.Height - period);
             }
+
             // At this point, cache[pindexPrev] is known
             this.Assert(this.ContainsKey(indexPrev?.HashBlock, deployment));
             ThresholdState state = this.Get(indexPrev?.HashBlock, deployment);
@@ -101,8 +103,10 @@ namespace Stratis.Bitcoin.Base.Deployments
                             {
                                 stateNext = ThresholdState.Started;
                             }
+
                             break;
                         }
+
                     case ThresholdState.Started:
                         {
                             if (indexPrev.GetMedianTimePast() >= timeTimeout)
@@ -110,6 +114,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                                 stateNext = ThresholdState.Failed;
                                 break;
                             }
+
                             // We need to count
                             ChainedHeader pindexCount = indexPrev;
                             int count = 0;
@@ -119,20 +124,25 @@ namespace Stratis.Bitcoin.Base.Deployments
                                 {
                                     count++;
                                 }
+
                                 pindexCount = pindexCount.Previous;
                             }
+
                             if (count >= threshold)
                             {
                                 stateNext = ThresholdState.LockedIn;
                             }
+
                             break;
                         }
+
                     case ThresholdState.LockedIn:
                         {
                             // Always progresses into ACTIVE.
                             stateNext = ThresholdState.Active;
                             break;
                         }
+
                     case ThresholdState.Failed:
                     case ThresholdState.Active:
                         {
@@ -140,6 +150,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                             break;
                         }
                 }
+
                 this.Set(indexPrev?.HashBlock, deployment, state = stateNext);
             }
 
@@ -168,6 +179,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                 threshold = new ThresholdState?[ArraySize];
                 this.cache.Add(hash, threshold);
             }
+
             threshold[(int)deployment] = state;
         }
 

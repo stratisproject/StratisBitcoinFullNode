@@ -216,6 +216,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
                 this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
             }
+
             this.ClearCurrentPing();
         }
 

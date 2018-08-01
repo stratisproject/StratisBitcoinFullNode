@@ -566,6 +566,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                         await this.SendMessageAsync(rejectPayload, cancellation).ConfigureAwait(false);
                     }
+
                     break;
             }
 

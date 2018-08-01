@@ -102,6 +102,7 @@ namespace Stratis.Bitcoin.Configuration
                 list = new List<string>();
                 this.args.Add(key, list);
             }
+
             list.Add(value);
         }
 

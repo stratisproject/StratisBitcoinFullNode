@@ -128,6 +128,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                     break;
                 }
             }
+
             LogManager.Configuration.LoggingRules.Remove(nullPreInitRule);
 
             // Configure main file target, configured using command line or node configuration file settings.

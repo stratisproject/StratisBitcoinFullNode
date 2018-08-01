@@ -158,6 +158,7 @@ namespace Stratis.Bitcoin.Controllers.Models
                 this.VOut = prevOut.N;
                 this.ScriptSig = new Script(scriptSig);
             }
+
             this.Sequence = (uint)sequence;
         }
 
@@ -324,6 +325,7 @@ namespace Stratis.Bitcoin.Controllers.Models
                 case TxOutType.TX_NULL_DATA:
                     return "nulldata";
             }
+
             return "nonstandard";
         }
     }
