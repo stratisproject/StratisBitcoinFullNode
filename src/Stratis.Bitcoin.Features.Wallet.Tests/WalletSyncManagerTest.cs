@@ -386,31 +386,29 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             });
         }
 
-        //[Fact]
-        //public void Produce_And_Consume_Blocks_Asyncrhonsouly()
-        //{
-        //    const int blockCount = 5;
+        [Fact]
+        public void Sync_Queued_Blocks_Get_Processed_By_The_WalletManager()
+        {
+            const int blockCount = 5;
+            (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(blockCount, KnownNetworks.StratisMain);
 
-        //    IList<Block> blocks = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(blockCount, Network.StratisMain).Blocks;
+            this.chain = result.Chain;
 
-        //    var syncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, Network.StratisMain,
-        //        this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+            var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
+                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, new AsyncLoopFactory(this.LoggerFactory.Object));
 
-        //    Assert.True(syncManager.BlocksQueue?.Count == 0);
+            walletSyncManager.SetWalletTip(this.chain.GetBlock(0));
+            this.walletManager.Setup(w => w.WalletTipHash).Returns(walletSyncManager.WalletTip.HashBlock);
+            
+            foreach (Block block in result.Blocks)
+                walletSyncManager.ProcessBlock(block);
 
-        //    // Setup the blockbuffer and blocks queue (concurrent queue) is a sepearate task.
-        //    Task.Run(() => syncManager.ConsumeBlockAsync(syncManager.BlockBuffer, syncManager.BlocksQueue));
-           
-        //    // Produce a block - to mimic the consensus broadcasting a block.
-        //    foreach (Block block in blocks)
-        //        syncManager.ProduceBlock(syncManager.BlockBuffer, block);
+            walletSyncManager.Start();
+            Thread.Sleep(2000);
+            walletSyncManager.Stop();
 
-        //    // Wait a period of time for the producer to complete it's work.
-        //    Thread.Sleep(1000);
-
-        //    // 
-        //    Assert.True(syncManager.BlocksQueue.Count == blockCount);
-        //}
+            this.walletManager.Verify(w => w.ProcessBlock(It.IsAny<Block>(), It.IsAny<ChainedHeader>()), Times.Exactly(blockCount));
+        }
 
         private static ChainedHeader ExpectChainedBlock(ChainedHeader block)
         {
