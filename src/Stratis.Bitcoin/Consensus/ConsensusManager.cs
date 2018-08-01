@@ -785,6 +785,8 @@ namespace Stratis.Bitcoin.Consensus
             lock (this.peerLock)
             {
                 this.chainedHeaderTree.FullValidationSucceeded(blockToConnect.ChainedHeader);
+
+                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsAtBestChainTip();
             }
 
             var result = new ConnectBlocksResult(true);
