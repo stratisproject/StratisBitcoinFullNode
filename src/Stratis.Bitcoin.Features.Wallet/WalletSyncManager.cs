@@ -99,11 +99,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             this.asyncLoopFactory.Run(nameof(WalletSyncManager), async token =>
-                {
-                    await this.ProcessBlockLoopAsync(token);
-                }
-                , this.nodeLifetime.ApplicationStopping
-                , TimeSpans.Second);
+            {
+                await this.ProcessBlockLoopAsync(token);
+            }, 
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpans.Second);
 
             this.logger.LogTrace("(-)");
         }
@@ -308,7 +308,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                                 // Really ugly hack to let store catch up.
                                 // This will block the entire consensus pulling.
-                                this.logger.LogWarning("Wallet is behind the best chain and the next block is not found in store.");
+                                this.logger.LogWarning(
+                                    "Wallet is behind the best chain and the next block is not found in store.");
                                 Thread.Sleep(100);
 
                                 continue;
@@ -330,9 +331,13 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 }
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException operationCanceledException)
             {
-                return;
+                this.logger.LogError("OperationCanceledException Message: {0}", operationCanceledException.Message);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
             }
         }
     }
