@@ -975,13 +975,13 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             /*
             just for logging
-	        show it as a part of nodestats, not separated spammer:
-		        avg download speed
-		        peer quality score (sort by quality score)
-		        number of assigned blocks
-		        MaxBlocksBeingDownloaded
-		        amount of blocks being downloaded
-		        show actual speed (no 1mb limit)
+            show it as a part of nodestats, not separated spammer:
+                avg download speed
+                peer quality score (sort by quality score)
+                number of assigned blocks
+                MaxBlocksBeingDownloaded
+                amount of blocks being downloaded
+                show actual speed (no 1mb limit)
             */
 
             this.logger.LogTrace("(-)");
