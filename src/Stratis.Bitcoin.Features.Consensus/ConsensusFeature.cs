@@ -194,13 +194,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new SetActivationDeploymentsRule(),
 
                     // == Partial ==
-                    // rules that are inside the method CheckBlockHeader
-
-                    // rules that are inside the method ContextualCheckBlockHeader
-                    new CheckpointsRule(),
-                    new AssumeValidRule(),
-
-                    // rules that are inside the method ContextualCheckBlock
                     new TransactionLocktimeActivationRule(), // implements BIP113
                     new CoinbaseHeightActivationRule(), // implements BIP34
                     new WitnessCommitmentsRule(), // BIP141, BIP144
@@ -245,11 +238,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     // == Partial ==
                     new CheckDifficultykHybridRule(),
                     new PosTimeMaskRule(),
-                    // rules that are inside the method CheckBlockHeader
-
-                    // rules that are inside the method ContextualCheckBlockHeader
-                    new CheckpointsRule(),
-                    new AssumeValidRule(),
 
                     // rules that are inside the method ContextualCheckBlock
                     new TransactionLocktimeActivationRule(), // implements BIP113

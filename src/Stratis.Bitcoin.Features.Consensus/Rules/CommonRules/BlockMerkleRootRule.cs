@@ -24,23 +24,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// kind of blocks.
     /// <seealso cref="https://bitcointalk.org/index.php?topic=102395.0"/>
     /// </remarks>
-    [PartialValidationRule(CanSkipValidation = true)] // TODO remove this from the rule when CM activates.
     [IntegrityValidationRule]
     public class BlockMerkleRootRule : ConsensusRule
     {
-        /// <inheritdoc />
-        /// <exception cref="ConsensusErrors.BadMerkleRoot">The block merkle root is different from the computed merkle root.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionDuplicate">One of the leaf nodes on the merkle tree has a duplicate hash within the subtree.</exception>
-        [Obsolete("Delete when CM is activated")]
-        public override Task RunAsync(RuleContext context)
-        {
-            if (context.MinedBlock) return Task.CompletedTask;
-
-            this.Run(context);
-
-            return Task.CompletedTask;
-        }
-
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadMerkleRoot">The block merkle root is different from the computed merkle root.</exception>
         /// <exception cref="ConsensusErrors.BadTransactionDuplicate">One of the leaf nodes on the merkle tree has a duplicate hash within the subtree.</exception>
