@@ -1093,5 +1093,24 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.walletSyncManager.SyncFromHeight(block.Height);
             return this.Ok();
         }
+
+        /// <summary>
+        /// Starts sending block to the wallet for synchronisation.
+        /// </summary>
+        /// <param name="request">The model containing the date from which to start syncing.</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("syncFromDate")]
+        public IActionResult SyncFromDate([FromBody] WalletSyncFromDateRequest request)
+        {
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            this.walletSyncManager.SyncFromDate(request.Date);
+
+            return this.Ok();
+        }
     }
 }
