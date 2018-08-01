@@ -117,13 +117,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        private void ProduceBlock(ITargetBlock<Block> target, Block block)
+        private void ProducerBlock(ITargetBlock<Block> target, Block block)
         {
             target.Post(block);
         }
 
         /// <inheritdoc />
-        private static async Task ConsumeBlockAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue)
+        private static async Task ConsumerBlockAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue)
         {
             while (await source.OutputAvailableAsync())
             {
@@ -136,15 +136,19 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         private void QueueBlock(Block block)
         {
-            Task.Run(() => ConsumeBlockAsync(this.BlockBuffer, this.blocksQueue));
-
-            this.ProduceBlock(this.BlockBuffer, block);
+            Task.Run(() => ConsumerBlockAsync(this.BlockBuffer, this.blocksQueue));
+        
+            this.ProducerBlock(this.BlockBuffer, block);
         }
 
         /// <inheritdoc />
         public void ProcessBlock(Block block)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
+
             this.QueueBlock(block);
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
