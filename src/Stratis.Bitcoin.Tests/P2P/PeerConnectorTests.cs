@@ -439,7 +439,6 @@ namespace Stratis.Bitcoin.Tests.P2P
             ISelfEndpointTracker selfEndpointTracker)
         {
             var networkPeerFactory = new Mock<INetworkPeerFactory>();
-            var peerDiscovery = new Mock<IPeerDiscovery>();
 
             var connectionManager = new ConnectionManager(
                 DateTimeProvider.Default,
@@ -451,7 +450,7 @@ namespace Stratis.Bitcoin.Tests.P2P
                 this.networkPeerParameters,
                 peerAddressManager,
                 new IPeerConnector[] { peerConnector },
-                peerDiscovery.Object,
+                null,
                 selfEndpointTracker,
                 connectionSettings, 
                 new VersionProvider());
