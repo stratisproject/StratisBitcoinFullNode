@@ -1069,7 +1069,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Starts sending block to the wallet for synchronisation.
+        /// Request the node to sync back from a given block hash.
         /// This is for demo and testing use only.
         /// </summary>
         /// <param name="model">The hash of the block from which to start syncing.</param>
@@ -1095,12 +1095,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Starts sending block to the wallet for synchronisation.
+        /// Request the node to sync back from a given date.
         /// </summary>
         /// <param name="request">The model containing the date from which to start syncing.</param>
         /// <returns></returns>
         [HttpPost]
-        [Route("syncFromDate")]
+        [Route("syncfromdate")]
         public IActionResult SyncFromDate([FromBody] WalletSyncFromDateRequest request)
         {
             if (!this.ModelState.IsValid)
