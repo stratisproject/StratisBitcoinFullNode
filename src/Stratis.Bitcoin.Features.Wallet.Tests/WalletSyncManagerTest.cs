@@ -387,7 +387,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void Sync_Queued_Blocks_Get_Processed_By_The_WalletManager()
+        public void ProcesBlock_Sync_Queued_Blocks_Are_Processed_By_WalletManager()
         {
             const int blockCount = 5;
             (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(blockCount, KnownNetworks.StratisMain);
