@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -26,8 +27,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected NodeDeployments nodeDeployments;
         protected ConsensusSettings consensusSettings;
         protected Mock<ICheckpoints> checkpoints;
+        protected List<IConsensusRule> rules;
         protected Mock<IChainState> chainState;
-        protected List<ConsensusRule> ruleRegistrations;
         protected Mock<IRuleRegistration> ruleRegistration;
         protected RuleContext ruleContext;
         protected Transaction lastAddedTransaction;
@@ -35,30 +36,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected ConsensusRuleUnitTestBase(Network network)
         {
             this.network = network;
+
             this.logger = new Mock<ILogger>();
             this.loggerFactory = new Mock<ILoggerFactory>();
-            this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-                .Returns(new Mock<ILogger>().Object);
+            this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
 
-            this.concurrentChain = new ConcurrentChain(this.network);
-            this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
-            this.consensusSettings = new ConsensusSettings();
+            this.chainState = new Mock<IChainState>();
             this.checkpoints = new Mock<ICheckpoints>();
+            this.concurrentChain = new ConcurrentChain(this.network);
+            this.consensusSettings = new ConsensusSettings();
+            this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
 
-            this.ruleRegistrations = new List<ConsensusRule>();
+            this.rules = new List<IConsensusRule>();
             this.ruleRegistration = new Mock<IRuleRegistration>();
-            this.ruleRegistration.Setup(r => r.GetRules())
-                .Returns(() => { return this.ruleRegistrations; });
+            this.ruleRegistration.Setup(r => r.GetRules()).Returns(() => { return this.rules; });
 
             if (network.Consensus.IsProofOfStake)
-            {
                 this.ruleContext = new PosRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
-            }
             else
-            {
                 this.ruleContext = new PowRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
-            }
         }
 
         protected void AddBlocksToChain(ConcurrentChain chain, int blockAmount)
@@ -130,19 +127,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
             this.network = network;
             this.loggerFactory = new Mock<ILoggerFactory>();
-            this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
-                .Returns(new Mock<ILogger>().Object);
-            this.dateTimeProvider = new Mock<IDateTimeProvider>();
+            this.loggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
 
-            this.concurrentChain = new ConcurrentChain(this.network);
-            this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
-            this.consensusSettings = new ConsensusSettings();
+            this.chainState = new Mock<IChainState>();
             this.checkpoints = new Mock<ICheckpoints>();
-
-            this.ruleRegistrations = new List<ConsensusRule>();
-            this.ruleRegistration = new Mock<IRuleRegistration>();
-            this.ruleRegistration.Setup(r => r.GetRules())
-                .Returns(() => { return this.ruleRegistrations; });
+            this.concurrentChain = new ConcurrentChain(this.network);
+            this.consensusSettings = new ConsensusSettings();
+            this.dateTimeProvider = new Mock<IDateTimeProvider>();
+            this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
 
             if (network.Consensus.IsProofOfStake)
             {

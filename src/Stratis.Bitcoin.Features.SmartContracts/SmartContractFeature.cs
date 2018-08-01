@@ -4,16 +4,13 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Controllers;
@@ -52,24 +49,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.stateRoot.SyncToRoot(((SmartContractBlockHeader)this.consensusManager.Tip.Header).HashStateRoot.ToBytes());
             this.logger.LogInformation("Smart Contract Feature Injected.");
-        }
-    }
-
-    public sealed class ReflectionVirtualMachineFeature : FullNodeFeature
-    {
-        private readonly IConsensusRuleEngine consensusRules;
-        private readonly ILogger logger;
-
-        public ReflectionVirtualMachineFeature(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
-        {
-            this.consensusRules = consensusRules;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-        }
-
-        public override void Initialize()
-        {
-            this.logger.LogInformation("Reflection Virtual Machine Injected.");
-            this.consensusRules.Register(new ReflectionRuleRegistration());
         }
     }
 
@@ -128,19 +107,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 .DependOn<SmartContractFeature>()
                 .FeatureServices(services =>
                 {
-                    fullNodeBuilder.Network.Consensus.Options = new ConsensusOptions();
-
                     services.AddSingleton<ICheckpoints, Checkpoints>();
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<ICoinView, CachedCoinView>();
-                    services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
 
                     services.AddSingleton<IConsensusRuleEngine, SmartContractConsensusRuleEngine>();
-                    services.AddSingleton<IRuleRegistration, SmartContractRuleRegistration>();
+
+                    fullNodeBuilder.Network.Consensus.Rules = new SmartContractRuleRegistration().GetRules();
                 });
             });
 
@@ -167,10 +144,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
                         services.AddSingleton<SmartContractBlockDefinition>();
-                        services.AddSingleton<StakingApiController>();
+                        services.AddSingleton<StakingController>();
                         services.AddSingleton<MiningRpcController>();
                         services.AddSingleton<StakingRpcController>();
-                        services.AddSingleton<MiningApiController>();
+                        services.AddSingleton<MiningController>();
                         services.AddSingleton<MinerSettings>();
                     });
             });

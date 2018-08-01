@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -97,21 +96,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.DateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new ConsensusOptions();
+            network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
 
             var consensusSettings = new ConsensusSettings(testChainContext.NodeSettings);
             testChainContext.Checkpoints = new Checkpoints();
-
-            testChainContext.ChainState = new Moq.Mock<IChainState>().Object;
-
+            testChainContext.ChainState = new Mock<IChainState>().Object;
             testChainContext.Chain = new ConcurrentChain(network);
+            testChainContext.InitialBlockDownloadState = new InitialBlockDownloadState(testChainContext.ChainState, testChainContext.Network, consensusSettings, new Checkpoints());
+
             var inMemoryCoinView = new InMemoryCoinView(testChainContext.Chain.Tip.HashBlock);
             var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, testChainContext.LoggerFactory);
 
             var dataFolder = new DataFolder(TestBase.AssureEmptyDir(dataDir));
             testChainContext.PeerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory, new SelfEndpointTracker());
 
-            testChainContext.MockConnectionManager = new Moq.Mock<IConnectionManager>();
-            testChainContext.MockReadOnlyNodesCollection = new Moq.Mock<IReadOnlyNetworkPeerCollection>();
+            testChainContext.MockConnectionManager = new Mock<IConnectionManager>();
+            testChainContext.MockReadOnlyNodesCollection = new Mock<IReadOnlyNetworkPeerCollection>();
             testChainContext.MockConnectionManager.Setup(s => s.ConnectedPeers).Returns(testChainContext.MockReadOnlyNodesCollection.Object);
             testChainContext.MockConnectionManager.Setup(s => s.NodeSettings).Returns(testChainContext.NodeSettings);
             testChainContext.MockConnectionManager.Setup(s => s.ConnectionSettings).Returns(testChainContext.ConnectionSettings);
@@ -122,16 +122,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var deployments = new NodeDeployments(testChainContext.Network, testChainContext.Chain);
             testChainContext.ConsensusRules = new PowConsensusRuleEngine(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider,
                 testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints, cachedCoinView, testChainContext.ChainState)
-                .Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+                .Register();
 
             testChainContext.HeaderValidator = new HeaderValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
             testChainContext.IntegrityValidator = new IntegrityValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
             testChainContext.PartialValidator = new PartialValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
 
-            testChainContext.Consensus = new ConsensusManager(network, testChainContext.LoggerFactory, testChainContext.ChainState, testChainContext.HeaderValidator, testChainContext.IntegrityValidator, 
-                testChainContext.PartialValidator, testChainContext.Checkpoints, consensusSettings, testChainContext.ConsensusRules, testChainContext.FinalizedBlockHeight, new Signals.Signals(), 
+            testChainContext.Consensus = new ConsensusManager(network, testChainContext.LoggerFactory, testChainContext.ChainState, testChainContext.HeaderValidator, testChainContext.IntegrityValidator,
+                testChainContext.PartialValidator, testChainContext.Checkpoints, consensusSettings, testChainContext.ConsensusRules, testChainContext.FinalizedBlockHeight, new Signals.Signals(),
                 testChainContext.PeerBanning, testChainContext.NodeSettings, testChainContext.DateTimeProvider, testChainContext.InitialBlockDownloadState, testChainContext.Chain, null);
-
 
             await testChainContext.Consensus.InitializeAsync(testChainContext.Chain.Tip);
 

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Stratis.Bitcoin.Consensus;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
@@ -8,24 +8,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public sealed class SmartContractRuleRegistration : IRuleRegistration
     {
-        public SmartContractRuleRegistration()
+        public ICollection<IConsensusRule> GetRules()
         {
-        }
-
-        public IEnumerable<ConsensusRule> GetRules()
-        {
-            var rules = new List<ConsensusRule>
-            {                
+            var rules = new List<IConsensusRule>
+            {
                 // == Header ==
                 new HeaderTimeChecksRule(),
                 new CheckDifficultyPowRule(),
-                
+                new BitcoinActivationRule(),
+
                 // == Integrity ==
                 new BlockMerkleRootRule(),
-                
-                // == Partial ==
+
+                // == Partial and Full ==
                 new SetActivationDeploymentsRule(),
 
+                // == Partial ==
                 // rules that are inside the method CheckBlockHeader
 
                 // rules that are inside the method ContextualCheckBlockHeader

@@ -45,6 +45,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.powReward = Money.Coins(50);
             this.testNet = KnownNetworks.TestNet;
+            this.testNet.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
             this.minerSettings = new Mock<MinerSettings>();
             this.key = new Key();
 
@@ -435,7 +436,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     new NodeDeployments(this.testNet, chain), new ConsensusSettings(new NodeSettings(this.testNet)), new Checkpoints(),
                     new Mock<ICoinView>().Object, new Mock<IChainState>().Object);
 
-            powConsensusRules.Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            powConsensusRules.Register();
             this.consensusLoop.SetupGet(x => x.ConsensusRules).Returns(powConsensusRules);
         }
 

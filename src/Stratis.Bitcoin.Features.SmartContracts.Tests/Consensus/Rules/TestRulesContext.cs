@@ -71,7 +71,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             testRulesContext.LoggerFactory = testRulesContext.NodeSettings.LoggerFactory;
             testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
+
             network.Consensus.Options = new ConsensusOptions();
+            network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
 
             ConsensusSettings consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
@@ -79,7 +81,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             testRulesContext.ChainState = new ChainState(new InvalidBlockHashStore(testRulesContext.DateTimeProvider));
 
             NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
-            testRulesContext.Consensus = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, null, testRulesContext.ChainState).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            testRulesContext.Consensus = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, null, testRulesContext.ChainState).Register();
 
             return testRulesContext;
         }

@@ -4,12 +4,11 @@ using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
@@ -60,7 +59,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             IConnectionManager connectionManager,
             Signals.Signals signals,
             IConsensusManager consensusManager,
-            IRuleRegistration ruleRegistration,
             IConsensusRuleEngine consensusRuleEngine,
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
@@ -151,7 +149,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
                     services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>();
-                    services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
+
+                    fullNodeBuilder.Network.Consensus.Rules = new PowConsensusRulesRegistration().GetRules();
                 });
             });
 
@@ -178,7 +177,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<ConsensusSettings>();
                         services.AddSingleton<IConsensusRuleEngine, PosConsensusRuleEngine>();
-                        services.AddSingleton<IRuleRegistration, PosConsensusRulesRegistration>();
+
+                        fullNodeBuilder.Network.Consensus.Rules = new PosConsensusRulesRegistration().GetRules();
                     });
             });
 
@@ -187,9 +187,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PowConsensusRulesRegistration : IRuleRegistration
         {
-            public IEnumerable<ConsensusRule> GetRules()
+            public ICollection<IConsensusRule> GetRules()
             {
-                return new List<ConsensusRule>
+                return new List<IConsensusRule>
                 {
                     // == Header ==
                     new HeaderTimeChecksRule(),
@@ -233,9 +233,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PosConsensusRulesRegistration : IRuleRegistration
         {
-            public IEnumerable<ConsensusRule> GetRules()
+            public ICollection<IConsensusRule> GetRules()
             {
-                return new List<ConsensusRule>
+                return new List<IConsensusRule>
                 {
                     // == Header ==
                     new HeaderTimeChecksRule(),

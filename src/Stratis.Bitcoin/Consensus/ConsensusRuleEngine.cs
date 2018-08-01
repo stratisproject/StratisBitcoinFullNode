@@ -71,7 +71,8 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private readonly List<ConsensusRuleDescriptor> headerValidationRules;
 
-        public IEnumerable<ConsensusRule> Rules => this.consensusRules.Values;
+        /// <inheritdoc />
+        public List<ConsensusRule> Rules => this.consensusRules.Values.ToList();
 
         protected ConsensusRuleEngine(
             Network network,
@@ -94,7 +95,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(chainState, nameof(chainState));
 
             this.Network = network;
-            this.DateTimeProvider = dateTimeProvider;
+
             this.Chain = chain;
             this.ChainState = chainState;
             this.NodeDeployments = nodeDeployments;
@@ -102,7 +103,11 @@ namespace Stratis.Bitcoin.Consensus
             this.ConsensusSettings = consensusSettings;
             this.Checkpoints = checkpoints;
             this.ConsensusParams = this.Network.Consensus;
+            this.ConsensusSettings = consensusSettings;
+            this.DateTimeProvider = dateTimeProvider;
+            this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.NodeDeployments = nodeDeployments;
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
 
             this.consensusRules = new Dictionary<string, ConsensusRule>();
@@ -124,11 +129,11 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public ConsensusRuleEngine Register(IRuleRegistration ruleRegistration)
+        public ConsensusRuleEngine Register()
         {
-            Guard.NotNull(ruleRegistration, nameof(ruleRegistration));
+            Guard.Assert(this.Network.Consensus.Rules.Any());
 
-            foreach (ConsensusRule consensusRule in ruleRegistration.GetRules())
+            foreach (ConsensusRule consensusRule in this.Network.Consensus.Rules)
             {
                 consensusRule.Parent = this;
                 consensusRule.Logger = this.loggerFactory.CreateLogger(consensusRule.GetType().FullName);

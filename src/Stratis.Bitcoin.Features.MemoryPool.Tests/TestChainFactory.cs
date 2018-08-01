@@ -74,6 +74,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new ConsensusOptions();
+            network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
+
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chain = new ConcurrentChain(network);
             InMemoryCoinView inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
@@ -88,7 +90,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider));
             var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
             var deployments = new NodeDeployments(network, chain);
-            ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(), inMemoryCoinView, chainState).Register(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+            ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(), inMemoryCoinView, chainState).Register();
 
             var consensus = new ConsensusManager(network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory), 
                 new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory),new Checkpoints(), consensusSettings, consensusRules, 
