@@ -159,47 +159,5 @@ namespace NBitcoin
             this.DefaultAssumeValid = defaultAssumeValid;
             this.ConsensusFactory = consensusFactory;
         }
-
-        public Consensus(IConsensus consensus)
-        {
-            this.BuriedDeployments = new BuriedDeploymentsArray();
-            this.BIP9Deployments = new BIP9DeploymentsArray();
-            this.Rules = new List<IConsensusRule>();
-            this.CoinbaseMaturity = consensus.CoinbaseMaturity;
-            this.PremineReward = consensus.PremineReward;
-            this.PremineHeight = consensus.PremineHeight;
-            this.ProofOfWorkReward = consensus.ProofOfWorkReward;
-            this.ProofOfStakeReward = consensus.ProofOfStakeReward;
-            this.MaxReorgLength = consensus.MaxReorgLength;
-            this.MaxMoney = consensus.MaxMoney;
-            this.Options = consensus.Options;
-            this.BuriedDeployments[NBitcoin.BuriedDeployments.BIP34] = consensus.BuriedDeployments[NBitcoin.BuriedDeployments.BIP34];
-            this.BuriedDeployments[NBitcoin.BuriedDeployments.BIP65] = consensus.BuriedDeployments[NBitcoin.BuriedDeployments.BIP65];
-            this.BuriedDeployments[NBitcoin.BuriedDeployments.BIP66] = consensus.BuriedDeployments[NBitcoin.BuriedDeployments.BIP66];
-            this.BIP9Deployments[NBitcoin.BIP9Deployments.CSV] = consensus.BIP9Deployments[NBitcoin.BIP9Deployments.CSV];
-            this.BIP9Deployments[NBitcoin.BIP9Deployments.Segwit] = consensus.BIP9Deployments[NBitcoin.BIP9Deployments.Segwit];
-            this.BIP9Deployments[NBitcoin.BIP9Deployments.TestDummy] = consensus.BIP9Deployments[NBitcoin.BIP9Deployments.TestDummy];
-            this.SubsidyHalvingInterval = consensus.SubsidyHalvingInterval;
-            this.MajorityEnforceBlockUpgrade = consensus.MajorityEnforceBlockUpgrade;
-            this.MajorityRejectBlockOutdated = consensus.MajorityRejectBlockOutdated;
-            this.MajorityWindow = consensus.MajorityWindow;
-            this.BIP34Hash = consensus.BIP34Hash;
-            this.PowLimit = consensus.PowLimit;
-            this.PowTargetTimespan = consensus.PowTargetTimespan;
-            this.PowTargetSpacing = consensus.PowTargetSpacing;
-            this.PowAllowMinDifficultyBlocks = consensus.PowAllowMinDifficultyBlocks;
-            this.PowNoRetargeting = consensus.PowNoRetargeting;
-            this.HashGenesisBlock = consensus.HashGenesisBlock;
-            this.MinimumChainWork = consensus.MinimumChainWork;
-            this.MinerConfirmationWindow = consensus.MinerConfirmationWindow;
-            this.RuleChangeActivationThreshold = consensus.RuleChangeActivationThreshold;
-            this.CoinType = consensus.CoinType;
-            this.ProofOfStakeLimit = consensus.ProofOfStakeLimit;
-            this.ProofOfStakeLimitV2 = consensus.ProofOfStakeLimitV2;
-            this.LastPOWBlock = consensus.LastPOWBlock;
-            this.IsProofOfStake = consensus.IsProofOfStake;
-            this.DefaultAssumeValid = consensus.DefaultAssumeValid;
-            this.ConsensusFactory = consensus.ConsensusFactory;
-        }
     }
 }
