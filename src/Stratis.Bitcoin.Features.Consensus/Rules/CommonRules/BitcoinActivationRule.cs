@@ -8,7 +8,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
     /// Check that a <see cref="BitcoinMain"/> network block has the correct version according to the defined active deployments.
-    /// Note that BIP9 softfork activations are separately tested in <see cref="BitcoinHeaderVersionRule">
     /// </summary>
     [HeaderValidationRule]
     public class BitcoinActivationRule : ConsensusRule
