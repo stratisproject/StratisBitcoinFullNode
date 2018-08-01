@@ -167,7 +167,8 @@ namespace Stratis.Bitcoin.Tests.P2P
                 Payload = new GetAddrPayload(),
             };
 
-            // Event handler triggered twice.
+            // Event handler triggered several times 
+            networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
             networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
             networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
 
