@@ -102,5 +102,6 @@
     <Rule Id="SA1108" Action="None" />
     <Rule Id="SA1100" Action="None" />
     <Rule Id="SA1502" Action="None" />
+    <Rule Id="SA1515" Action="None" />
   </Rules>
 </RuleSet>
