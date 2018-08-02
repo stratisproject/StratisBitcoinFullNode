@@ -98,8 +98,8 @@ namespace Stratis.Bitcoin.P2P.Peer
 
     /// <inheritdoc/>
     /// <remarks>
-    /// All instances of this object must be disposed or disconnected. <see cref="Disconnect(string, Exception)"/> and disposing methods 
-    /// have the same functionality and the disconnecting method is provided only for better readability of the code. 
+    /// All instances of this object must be disposed or disconnected. <see cref="Disconnect(string, Exception)"/> and disposing methods
+    /// have the same functionality and the disconnecting method is provided only for better readability of the code.
     /// <para>It is safe to try to disconnect or dispose this object multiple times, only the first call will be processed.</para>
     /// </remarks>
     public class NetworkPeer : INetworkPeer
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         private class DisconnectedExecutionAsyncContext
         {
             /// <summary>
-            /// Set to <c>true</c> if <see cref="NetworkPeer.onDisconnected"/> was 
+            /// Set to <c>true</c> if <see cref="NetworkPeer.onDisconnected"/> was
             /// called from within the current async context, set to <c>false</c> otherwise.
             /// </summary>
             public bool DisconnectCallbackRequested { get; set; }
@@ -135,10 +135,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Table of valid transitions between peer states.</summary>
         private static readonly Dictionary<NetworkPeerState, NetworkPeerState[]> stateTransitionTable = new Dictionary<NetworkPeerState, NetworkPeerState[]>()
         {
-            { NetworkPeerState.Created, new []{ NetworkPeerState.Connected, NetworkPeerState.Offline, NetworkPeerState.Failed} },
-            { NetworkPeerState.Connected, new []{ NetworkPeerState.HandShaked, NetworkPeerState.Disconnecting, NetworkPeerState.Offline, NetworkPeerState.Failed} },
-            { NetworkPeerState.HandShaked, new []{ NetworkPeerState.Disconnecting, NetworkPeerState.Offline, NetworkPeerState.Failed} },
-            { NetworkPeerState.Disconnecting, new []{ NetworkPeerState.Offline, NetworkPeerState.Failed} },
+            { NetworkPeerState.Created, new[] { NetworkPeerState.Connected, NetworkPeerState.Offline, NetworkPeerState.Failed} },
+            { NetworkPeerState.Connected, new[] { NetworkPeerState.HandShaked, NetworkPeerState.Disconnecting, NetworkPeerState.Offline, NetworkPeerState.Failed} },
+            { NetworkPeerState.HandShaked, new[] { NetworkPeerState.Disconnecting, NetworkPeerState.Offline, NetworkPeerState.Failed} },
+            { NetworkPeerState.Disconnecting, new[] { NetworkPeerState.Offline, NetworkPeerState.Failed} },
             { NetworkPeerState.Offline, new NetworkPeerState[] {} },
             { NetworkPeerState.Failed, new NetworkPeerState[] {} }
         };
@@ -169,6 +169,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>Statistics about the number of bytes transferred from and to the peer.</summary>
         private PerformanceCounter counter;
+
         /// <inheritdoc/>
         public PerformanceCounter Counter
         {
@@ -211,10 +212,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc/>
         public VersionPayload PeerVersion { get; private set; }
 
-        /// <summary>Set to <c>1</c> if the peer disconnection has been initiated, <c>0</c> otherwise.</summary> 
+        /// <summary>Set to <c>1</c> if the peer disconnection has been initiated, <c>0</c> otherwise.</summary>
         private int disconnected;
 
-        /// <summary>Set to <c>1</c> if the peer disposal has been initiated, <c>0</c> otherwise.</summary> 
+        /// <summary>Set to <c>1</c> if the peer disposal has been initiated, <c>0</c> otherwise.</summary>
         private int disposed;
 
         /// <summary>
@@ -566,6 +567,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                         await this.SendMessageAsync(rejectPayload, cancellation).ConfigureAwait(false);
                     }
+
                     break;
             }
 
@@ -820,7 +822,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>
         /// Executes <see cref="onDisconnected"/> callback if no callbacks are currently executing in the same async context,
-        /// schedules <see cref="onDisconnected"/> execution after the callback otherwise. 
+        /// schedules <see cref="onDisconnected"/> execution after the callback otherwise.
         /// </summary>
         private void ExecuteDisconnectedCallbackWhenSafe()
         {
@@ -842,7 +844,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             else
                 this.logger.LogTrace("Disconnection callback is not specified.");
-
 
             this.logger.LogTrace("(-)");
         }

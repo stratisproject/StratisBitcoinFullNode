@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Utilities
 
             this.FolderPath = folderPath;
 
-            // Create a folder if none exists.
+            // Create a folder if none exists.
             Directory.CreateDirectory(folderPath);
         }
 

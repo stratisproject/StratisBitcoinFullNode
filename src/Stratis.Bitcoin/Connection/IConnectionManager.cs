@@ -1,18 +1,16 @@
-﻿namespace Stratis.Bitcoin.Connection
+﻿using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Threading.Tasks;
+using NBitcoin;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
+
+namespace Stratis.Bitcoin.Connection
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Net;
-    using System.Threading.Tasks;
-
-    using NBitcoin;
-
-    using Stratis.Bitcoin.Configuration;
-    using Stratis.Bitcoin.Configuration.Settings;
-    using Stratis.Bitcoin.P2P;
-    using Stratis.Bitcoin.P2P.Peer;
-    using Stratis.Bitcoin.P2P.Protocol.Payloads;
-
     public interface IConnectionManager : IDisposable
     {
         /// <summary>

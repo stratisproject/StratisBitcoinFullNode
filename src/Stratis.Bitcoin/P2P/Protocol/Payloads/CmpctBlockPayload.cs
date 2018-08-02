@@ -11,12 +11,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class CmpctBlockPayload : Payload
     {
         private BlockHeader header;
+
         public BlockHeader Header
         {
             get
             {
                 return this.header;
             }
+
             set
             {
                 this.header = value;
@@ -26,12 +28,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private ulong nonce;
+
         public ulong Nonce
         {
             get
             {
                 return this.nonce;
             }
+
             set
             {
                 this.nonce = value;
@@ -40,9 +44,11 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private List<ulong> shortIds = new List<ulong>();
+
         public List<ulong> ShortIds { get { return this.shortIds; } }
 
         private List<PrefilledTransaction> prefilledTransactions = new List<PrefilledTransaction>();
+
         public List<PrefilledTransaction> PrefilledTransactions { get { return this.prefilledTransactions; } }
 
         private ulong shortTxidk0;
@@ -65,7 +71,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
             foreach (Transaction tx in block.Transactions.Skip(1))
             {
-                this.ShortIds.Add(GetShortID(tx.GetHash()));
+                this.ShortIds.Add(this.GetShortID(tx.GetHash()));
             }
         }
 
@@ -167,12 +173,12 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         public ulong AddTransactionShortId(Transaction tx)
         {
-            return AddTransactionShortId(tx.GetHash());
+            return this.AddTransactionShortId(tx.GetHash());
         }
 
         public ulong AddTransactionShortId(uint256 txId)
         {
-            ulong id = GetShortID(txId);
+            ulong id = this.GetShortID(txId);
             this.ShortIds.Add(id);
             return id;
         }

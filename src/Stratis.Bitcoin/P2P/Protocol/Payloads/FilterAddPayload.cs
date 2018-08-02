@@ -6,12 +6,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class FilterAddPayload : Payload
     {
         private byte[] data;
+
         public byte[] Data
         {
             get
             {
                 return this.data;
             }
+
             set
             {
                 this.data = value;

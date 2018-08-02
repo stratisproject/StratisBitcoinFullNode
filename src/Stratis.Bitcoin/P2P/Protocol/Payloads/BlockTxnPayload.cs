@@ -8,12 +8,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class BlockTxnPayload : Payload
     {
         private uint256 blockId;
+
         public uint256 BlockId
         {
             get
             {
                 return this.blockId;
             }
+
             set
             {
                 this.blockId = value;
@@ -21,6 +23,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private List<Transaction> transactions = new List<Transaction>();
+
         public List<Transaction> Transactions
         {
             get

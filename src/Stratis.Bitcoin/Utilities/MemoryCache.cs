@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>Maximum items count that can be stored in the cache.</summary>
         private readonly int maxItemsCount;
-        
+
         /// <summary>Lock to protect access to <see cref="keys"/> and <see cref="cache"/>.</summary>
         private readonly object lockObject;
 

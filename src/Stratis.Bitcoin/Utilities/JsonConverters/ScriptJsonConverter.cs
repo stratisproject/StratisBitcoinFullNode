@@ -21,16 +21,16 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
         /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            if(reader.TokenType == JsonToken.Null)
+            if (reader.TokenType == JsonToken.Null)
                 return null;
             try
             {
-                if(objectType == typeof(Script))
+                if (objectType == typeof(Script))
                     return Script.FromBytesUnsafe(Encoders.Hex.DecodeData((string)reader.Value));
-                if(objectType == typeof(WitScript))
+                if (objectType == typeof(WitScript))
                     return new WitScript((string)reader.Value);
             }
-            catch(FormatException)
+            catch (FormatException)
             {
             }
 
@@ -40,11 +40,11 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
         /// <inheritdoc />
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            if(value != null)
+            if (value != null)
             {
-                if(value is Script)
+                if (value is Script)
                     writer.WriteValue(Encoders.Hex.EncodeData(((Script)value).ToBytes(false)));
-                if(value is WitScript)
+                if (value is WitScript)
                     writer.WriteValue(((WitScript)value).ToString());
             }
         }
