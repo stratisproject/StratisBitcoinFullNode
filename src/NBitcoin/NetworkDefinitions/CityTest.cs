@@ -76,16 +76,17 @@ namespace NBitcoin.NetworkDefinitions
             this.DNSSeeds = new List<DNSSeedData>
             {
                 new DNSSeedData("testnode1.city-chain.org", "testnode1.city-chain.org"),
-                new DNSSeedData("testnode1.citychain.foundation", "testnode1.citychain.foundation"),
-                new DNSSeedData("testnode2.city-chain.org", "testnode2.city-chain.org"),
-                new DNSSeedData("testnode2.citychain.foundation", "testnode2.citychain.foundation")
+                //new DNSSeedData("testnode1.citychain.foundation", "testnode1.citychain.foundation"),
+                //new DNSSeedData("testnode2.city-chain.org", "testnode2.city-chain.org"),
+                //new DNSSeedData("testnode2.citychain.foundation", "testnode2.citychain.foundation")
             };
 
             string[] seedNodes = {
-                "10.0.0.192:24333", // city-chain.org (node3)
-                "10.0.0.192:25333", // citychain.foundation (node3)
-                "10.0.0.192:26333", // City 1 Node #1
-                "10.0.0.192:27333" // City 2 Node #1
+                "40.91.197.238:24333", // city-chain.org (testnode1)
+                "40.91.197.238:25333", // city-chain.org (testnode1)
+                "40.91.197.238:26333", // city-chain.org (testnode1)
+                //"10.0.0.192:26333", // City 1 Node #1
+                //"10.0.0.192:27333" // City 2 Node #1
                 // As more cities are included in the City Chain, consider adding their official nodes to the seeds.
             };
             this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
