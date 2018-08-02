@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <typeparam name="TPayload">Type of payload to wait for.</typeparam>
         /// <param name="cancellationToken">Cancellation token to abort the waiting operation.</param>
         /// <returns>Payload of the specific type received from the peer.</returns>
-        /// <exception cref="OperationCanceledException">Thrown if the peer is not connected when the method is called, or when <see cref="Dispose"/> 
+        /// <exception cref="OperationCanceledException">Thrown if the peer is not connected when the method is called, or when <see cref="Dispose"/>
         /// has been called while we are waiting for the message.</exception>
         public async Task<TPayload> ReceivePayloadAsync<TPayload>(CancellationToken cancellationToken = default(CancellationToken)) where TPayload : Payload
         {

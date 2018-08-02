@@ -85,11 +85,11 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="args">The command-line arguments.</param>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         /// <remarks>
-        /// Processing depends on whether a configuration file is passed via the command line. 
+        /// Processing depends on whether a configuration file is passed via the command line.
         /// There are two main scenarios here:
         /// - The configuration file is passed via the command line. In this case we need
         ///   to read it earlier so that it can provide defaults for "testnet" and "regtest".
-        /// - Alternatively, if the file name is not supplied then a network-specific file 
+        /// - Alternatively, if the file name is not supplied then a network-specific file
         ///   name would be determined. In this case we first need to determine the network.
         /// </remarks>
         public NodeSettings(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion,

@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             // If we're on the known chain at height greater than where BIP34 activated, we can save the db accesses needed for the BIP30 check.
             ChainedHeader bip34HeightChainedHeader = chain.GetBlock(chainparams.BuriedDeployments[BuriedDeployments.BIP34]);
 
-            //Only continue to enforce if we're below BIP34 activation height or the block hash at that height doesn't correspond.
+            // Only continue to enforce if we're below BIP34 activation height or the block hash at that height doesn't correspond.
             this.EnforceBIP30 = this.EnforceBIP30 && ((bip34HeightChainedHeader == null) || !(bip34HeightChainedHeader.HashBlock == chainparams.BIP34Hash));
 
             // BIP16 didn't become active until Apr 1 2012.

@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Base
 
         /// <summary>Collection of all available tips provided by connected peers.</summary>
         private readonly Dictionary<int, ChainedHeader> availableTips;
-        
+
         /// <summary>Information about node's chain.</summary>
         private readonly IChainState chainState;
 
@@ -77,12 +77,12 @@ namespace Stratis.Bitcoin.Base
                 {
                     if (availableTip == this.chain.Tip)
                     {
-                        // Do nothing if there is at least one available tip that is equal to the best chain's tip. 
+                        // Do nothing if there is at least one available tip that is equal to the best chain's tip.
                         this.logger.LogTrace("(-)[EQUIVALENT_TIP_FOUND]");
                         return Task.CompletedTask;
                     }
 
-                    // We need to check max reorg here again because it is possible that since the last check our tip has advanced and now 
+                    // We need to check max reorg here again because it is possible that since the last check our tip has advanced and now
                     // available tip claims a reorg of length that is longer than maximum allowed.
                     if ((bestTip.ChainWork < availableTip.ChainWork) && !this.IsMaxReorgRuleViolated(availableTip))
                         bestTip = availableTip;
@@ -101,20 +101,20 @@ namespace Stratis.Bitcoin.Base
         /// <param name="peerConnectionId">Unique ID of the peer's connection.</param>
         /// <param name="tip">The tip.</param>
         /// <returns>
-        /// <c>true</c> if the tip was added to the available tips collection, 
+        /// <c>true</c> if the tip was added to the available tips collection,
         /// <c>false</c> if it's invalid and violates the max reorg rule.
         /// </returns>
         public bool TrySetAvailableTip(int peerConnectionId, ChainedHeader tip)
         {
             Guard.NotNull(tip, nameof(tip));
             this.logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(peerConnectionId), peerConnectionId, nameof(tip), tip);
-            
+
             if (this.IsMaxReorgRuleViolated(tip))
             {
                 this.logger.LogTrace("(-)[MAX_REORG_VIOLATION]:false");
                 return false;
             }
-            
+
             lock (this.lockObject)
             {
                 if (this.chain.SetTipIfChainworkIsGreater(tip))
@@ -197,9 +197,9 @@ namespace Stratis.Bitcoin.Base
         public void Dispose()
         {
             this.logger.LogTrace("()");
-            
+
             this.unavailableTipsProcessingQueue.Dispose();
-            
+
             this.logger.LogTrace("(-)");
         }
     }

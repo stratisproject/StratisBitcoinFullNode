@@ -12,13 +12,13 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.P2P.Peer
 {
     /// <summary>
-    /// Represents a counterparty of the node on the network. This is usually another node, but it can be 
+    /// Represents a counterparty of the node on the network. This is usually another node, but it can be
     /// a wallet, an analytical robot, or any other network client or server that understands the protocol.
-    /// <para>The network peer is connected either inbound, if it was the counterparty that established 
+    /// <para>The network peer is connected either inbound, if it was the counterparty that established
     /// the connection to our node's listener, or outbound, if our node was the one connecting to a remote server.
     /// </para>
     /// </summary>
-    public interface INetworkPeer: IDisposable
+    public interface INetworkPeer : IDisposable
     {
         /// <summary>State of the network connection to the peer.</summary>
         NetworkPeerState State { get; }
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Event that is triggered when a new message is received from a network peer.</summary>
         /// <remarks>Do not dispose the peer from this callback.</remarks>
         AsyncExecutionEvent<INetworkPeer, IncomingMessage> MessageReceived { get; }
-        
+
         /// <summary>Various settings and requirements related to how the connections with peers are going to be established.</summary>
         NetworkPeerConnectionParameters ConnectionParameters { get; }
 
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>
         /// Exchanges "version" and "verack" messages with the peer.
-        /// <para>Both parties have to send their "version" messages to the other party 
+        /// <para>Both parties have to send their "version" messages to the other party
         /// as well as to acknowledge that they are happy with the other party's "version" information.</para>
         /// </summary>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>
         /// Exchanges "version" and "verack" messages with the peer.
-        /// <para>Both parties have to send their "version" messages to the other party 
+        /// <para>Both parties have to send their "version" messages to the other party
         /// as well as to acknowledge that they are happy with the other party's "version" information.</para>
         /// </summary>
         /// <param name="requirements">Protocol requirement for network peers the node wants to be connected to.</param>

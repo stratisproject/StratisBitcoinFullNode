@@ -56,7 +56,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>Newly created network peer server, which is ready to be started.</returns>
         NetworkPeerServer CreateNetworkPeerServer(IPEndPoint localEndPoint, IPEndPoint externalEndPoint, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION);
 
-
         /// <summary>
         /// Creates a new representation of the network connection using TCP client object.
         /// </summary>
@@ -134,10 +133,10 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <inheritdoc/>
         public async Task<INetworkPeer> CreateConnectedNetworkPeerAsync(
-            string endPoint, 
-            ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION, 
-            bool isRelay = true, 
-            CancellationToken cancellation = default(CancellationToken), 
+            string endPoint,
+            ProtocolVersion myVersion = ProtocolVersion.PROTOCOL_VERSION,
+            bool isRelay = true,
+            CancellationToken cancellation = default(CancellationToken),
             NetworkPeerDisposer networkPeerDisposer = null)
         {
             Guard.NotNull(endPoint, nameof(endPoint));
@@ -168,7 +167,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 onDisconnected = networkPeerDisposer.OnPeerDisconnectedHandler;
 
             var peer = new NetworkPeer(peerEndPoint, this.network, parameters, this, this.dateTimeProvider, this.loggerFactory, this.selfEndpointTracker, onDisconnected);
-            
+
             try
             {
                 await peer.ConnectAsync(peer.ConnectionParameters.ConnectCancellation).ConfigureAwait(false);

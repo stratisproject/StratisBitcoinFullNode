@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Utilities
             {
                 if (cancellationToken.IsCancellationRequested)
                     break;
-                
+
                 if (unfinished.Count >= maxDegreeOfParallelism)
                 {
                     await Task.WhenAny(unfinished).ConfigureAwait(false);
