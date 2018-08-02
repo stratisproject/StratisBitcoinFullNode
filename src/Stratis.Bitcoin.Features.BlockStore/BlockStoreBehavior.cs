@@ -321,7 +321,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
             {
                 // TODO: check if we need to add support for "not found"
-                Block block = await this.blockStoreCache.GetBlockAsync(item.Hash).ConfigureAwait(false);
+                Block block = await this.blockStore.GetBlockAsync(item.Hash).ConfigureAwait(false);
 
                 if (block != null)
                 {
@@ -505,7 +505,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            var res = new BlockStoreBehavior(this.chain, this.blockStore, this.blockStoreCache, this.chainState, this.loggerFactory)
+            var res = new BlockStoreBehavior(this.chain, this.blockStore, this.chainState, this.loggerFactory)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload

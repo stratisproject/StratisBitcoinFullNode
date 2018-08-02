@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public virtual BlockStoreBehavior BlockStoreBehaviorFactory()
         {
-            return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.chainState, this.loggerFactory);
+            return new BlockStoreBehavior(this.chain, this.blockRepository, this.chainState, this.loggerFactory);
         }
 
         /// <inheritdoc />
