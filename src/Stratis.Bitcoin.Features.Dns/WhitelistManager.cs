@@ -6,6 +6,7 @@ using DNS.Protocol;
 using DNS.Protocol.ResourceRecords;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -52,6 +53,8 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         private readonly DnsSettings dnsSettings;
 
+        private readonly IPeerBanning peerBanning;
+
         /// <summary>
         /// Defines the external endpoint for the dns node.
         /// </summary>
@@ -70,7 +73,9 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="peerAddressManager">The manager implementation for peer addresses.</param>
         /// <param name="dnsServer">The DNS server.</param>
         /// <param name="connectionSettings">The connection settings.</param>
-        public WhitelistManager(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IPeerAddressManager peerAddressManager, IDnsServer dnsServer, ConnectionManagerSettings connectionSettings, DnsSettings dnsSettings)
+        /// <param name="dnsSettings">The DNS settings.</param>
+        /// <param name="peerBanning">Peer banning component.</param>
+        public WhitelistManager(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IPeerAddressManager peerAddressManager, IDnsServer dnsServer, ConnectionManagerSettings connectionSettings, DnsSettings dnsSettings, IPeerBanning peerBanning)
         {
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -78,13 +83,15 @@ namespace Stratis.Bitcoin.Features.Dns
             Guard.NotNull(dnsServer, nameof(dnsServer));
             Guard.NotNull(dnsSettings, nameof(dnsSettings));
             Guard.NotNull(connectionSettings, nameof(connectionSettings));
+            Guard.NotNull(peerBanning, nameof(peerBanning));
 
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.peerAddressManager = peerAddressManager;
             this.dnsServer = dnsServer;
-            this.dnsSettings = dnsSettings;                      
-            this.externalEndpoint = connectionSettings.ExternalEndpoint;            
+            this.dnsSettings = dnsSettings;
+            this.externalEndpoint = connectionSettings.ExternalEndpoint;
+            this.peerBanning = peerBanning;
         }
 
         /// <summary>
@@ -107,10 +114,15 @@ namespace Stratis.Bitcoin.Features.Dns
                 // Exclude the current external ip address from DNS as its not a full node.
                 whitelist = whitelist.Where(p => !p.Endpoint.Match(this.externalEndpoint));
             }
-
+            
             IMasterFile masterFile = new DnsSeedMasterFile();
             foreach (PeerAddress whitelistEntry in whitelist)
             {
+                if (this.peerBanning.IsBanned(whitelistEntry.Endpoint))
+                {
+                    continue;
+                }
+
                 var domain = new Domain(this.dnsHostName);
 
                 // Is this an IPv4 embedded address? If it is, make sure an 'A' record is added to the DNS master file, rather than an 'AAAA' record.
