@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.P2P
 
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:[{1}], {2}:[{3}])", nameof(peer), peer, nameof(message), message);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 
             try
             {
@@ -87,13 +87,15 @@ namespace Stratis.Bitcoin.P2P
                     {
                         if (!peer.Inbound)
                         {
-                            this.logger.LogTrace($"Outbound peer ${peer} sent {nameof(GetAddrPayload)}. Not replying to avoid fingerprinting attack.");
+                            this.logger.LogTrace($"Outbound peer sent {nameof(GetAddrPayload)}. Not replying to avoid fingerprinting attack.");
+                            this.logger.LogTrace("(-)");
                             return;
                         }
                     
                         if (this.sentAddress)
                         {
-                            this.logger.LogTrace($"Multiple GetAddr requests from peer ${peer}. Not replying to avoid fingerprinting attack.");
+                            this.logger.LogTrace("Multiple GetAddr requests from peer. Not replying to avoid fingerprinting attack.");
+                            this.logger.LogTrace("(-)");
                             return;
                         }
 
