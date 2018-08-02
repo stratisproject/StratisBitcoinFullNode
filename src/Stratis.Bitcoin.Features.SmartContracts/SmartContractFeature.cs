@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -30,7 +29,6 @@ using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -209,8 +207,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
                         services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
-                        services.AddSingleton<MinerController>();
-                        services.AddSingleton<MiningRPCController>();
+                        services.AddSingleton<MiningApiController>();
+                        services.AddSingleton<MiningRpcController>();
                         services.AddSingleton<MinerSettings>();
                     });
             });
@@ -239,8 +237,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
                         services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
                         services.AddSingleton<BlockDefinition, SmartContractPosPowBlockDefinition>();
-                        services.AddSingleton<MinerController>();
-                        services.AddSingleton<MiningRPCController>();
+                        services.AddSingleton<MiningApiController>();
+                        services.AddSingleton<MiningRpcController>();
                         services.AddSingleton<MinerSettings>();
                     });
             });
@@ -263,11 +261,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .FeatureServices(services =>
                     {
                         // Validator
-                        ISmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
-                        {
-                            new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
-                            new SmartContractDeterminismValidator()
-                        });
+                        ISmartContractValidator validator = new SmartContractValidator();
                         services.AddSingleton(validator);
 
                         // Executor et al.

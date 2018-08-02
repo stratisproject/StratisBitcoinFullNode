@@ -83,6 +83,16 @@ namespace Stratis.Bitcoin.Tests.Common.TestFramework
             this.RunStep(step, cancellationToken);
         }
 
+        public void But(Action step)
+        {
+            this.RunStep(step);
+        }
+
+        public void But(Func<Task> step, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            this.RunStep(step, cancellationToken);
+        }
+
         private void RunStep(Action step, [CallerMemberName] string stepType = null)
         {
             OuputStepDetails(step.Method.Name, stepType);

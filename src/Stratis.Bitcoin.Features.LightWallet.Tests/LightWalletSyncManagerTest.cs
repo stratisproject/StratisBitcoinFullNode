@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             lightWalletSyncManager.Start();
 
-            this.signals.Verify(s => s.SubscribeForBlocks(It.IsAny<IObserver<Block>>()), Times.Exactly(1));
+            this.signals.Verify(s => s.SubscribeForBlocksConnected(It.IsAny<IObserver<Block>>()), Times.Exactly(1));
             this.signals.Verify(s => s.SubscribeForTransactions(It.IsAny<IObserver<Transaction>>()), Times.Exactly(1));
         }
 
@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(1, this.network);
             var blockSub = new Mock<IDisposable>();
             var transSub = new Mock<IDisposable>();
-            this.signals.Setup(s => s.SubscribeForBlocks(It.IsAny<BlockObserver>()))
+            this.signals.Setup(s => s.SubscribeForBlocksConnected(It.IsAny<BlockObserver>()))
                 .Returns(blockSub.Object);
             this.signals.Setup(s => s.SubscribeForTransactions(It.IsAny<TransactionObserver>()))
                 .Returns(transSub.Object);

@@ -47,11 +47,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
+            MinerSettings minerSettings,
             Network network,
             IStakeChain stakeChain,
             IStakeValidator stakeValidator,
             ContractStateRepositoryRoot stateRoot)
-            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network, new BlockDefinitionOptions() { IsProofOfStake = false })
+            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.coinView = coinView;
             this.executorFactory = executorFactory;
@@ -135,7 +136,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             base.UpdateBaseHeaders();
 
-            this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.Network.Consensus, this.Options.IsProofOfStake);
+            this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.Network.Consensus, false);
             ((SmartContractBlockHeader)this.block.Header).HashStateRoot = new uint256(this.stateSnapshot.Root);
 
             this.logger.LogTrace("(-)");
