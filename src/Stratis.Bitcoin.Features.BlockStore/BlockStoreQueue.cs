@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // Set the dequeue task to null so it can be assigned on the next iteration.
                     dequeueTask = null;
 
-                    batch.Add(item);
+                    this.batch.Add(item);
 
                     this.currentBatchSizeBytes += item.Block.BlockSize.Value;
 
@@ -313,11 +313,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 if (saveBatch)
                 {
-                    if (batch.Count != 0)
+                    if (this.batch.Count != 0)
                     {
-                        await this.SaveBatchAsync(batch).ConfigureAwait(false);
+                        await this.SaveBatchAsync().ConfigureAwait(false);
 
-                        batch.Clear();
+                        this.batch.Clear();
                         this.currentBatchSizeBytes = 0;
                     }
 
@@ -337,12 +337,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Checks if repository contains reorged blocks and deletes them; saves batch on top.
         /// The last block in the list is considered to be on the current main chain and will be used to determine if a database reorg is required.
         /// </summary>
-        /// <param name="batch">List of batched blocks. Cannot be empty.</param>
-        private async Task SaveBatchAsync(List<ChainedHeaderBlock> batch)
+        private async Task SaveBatchAsync()
         {
-            this.logger.LogTrace("({0}.{1}:{2})", nameof(batch), nameof(batch.Count), batch.Count);
+            this.logger.LogTrace("()");
 
-            List<ChainedHeaderBlock> clearedBatch = this.GetBatchWithoutReorgedBlocks(batch);
+            List<ChainedHeaderBlock> clearedBatch = this.GetBatchWithoutReorgedBlocks();
 
             ChainedHeader expectedStoreTip = clearedBatch.First().ChainedHeader.Previous;
 
@@ -367,29 +366,28 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Cleans the batch in a way that all headers from the latest one are consecutive.
         /// Those that violate consecutiveness are removed.
         /// </summary>
-        /// <param name="batch">Uncleaned batch that might contain non-consecutive blocks. Cannot be empty.</param>
         /// <returns>List of consecutive blocks.</returns>
-        private List<ChainedHeaderBlock> GetBatchWithoutReorgedBlocks(List<ChainedHeaderBlock> batch)
+        private List<ChainedHeaderBlock> GetBatchWithoutReorgedBlocks()
         {
-            this.logger.LogTrace("({0}.{1}:{2})", nameof(batch), nameof(batch.Count), batch.Count);
+            this.logger.LogTrace("()");
 
             // Initialize current with highest block from the batch.
-            ChainedHeaderBlock current = batch.Last();
+            ChainedHeaderBlock current = this.batch.Last();
 
             // List of consecutive blocks. It's a cleaned out version of batch that doesn't have blocks that were reorged.
-            var batchCleared = new List<ChainedHeaderBlock>(batch.Count) { current };
+            var batchCleared = new List<ChainedHeaderBlock>(this.batch.Count) { current };
 
             // Select only those blocks that were not reorged away.
-            for (int i = batch.Count - 2; i >= 0; i--)
+            for (int i = this.batch.Count - 2; i >= 0; i--)
             {
-                if (batch[i].ChainedHeader.HashBlock != current.ChainedHeader.Previous.HashBlock)
+                if (this.batch[i].ChainedHeader.HashBlock != current.ChainedHeader.Previous.HashBlock)
                 {
-                    this.logger.LogDebug("Block '{0}' removed from the batch because it was reorged.", batch[i].ChainedHeader);
+                    this.logger.LogDebug("Block '{0}' removed from the batch because it was reorged.", this.batch[i].ChainedHeader);
                     continue;
                 }
 
-                batchCleared.Add(batch[i]);
-                current = batch[i];
+                batchCleared.Add(this.batch[i]);
+                current = this.batch[i];
             }
 
             batchCleared.Reverse();

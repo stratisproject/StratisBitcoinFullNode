@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public virtual BlockStoreBehavior BlockStoreBehaviorFactory()
         {
-            return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.loggerFactory);
+            return new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.chainState, this.loggerFactory);
         }
 
         /// <inheritdoc />
@@ -167,7 +167,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 .AddFeature<BlockStoreFeature>()
                 .FeatureServices(services =>
                     {
-                        services.AddSingleton<IBlockRepository, BlockRepository>();
                         services.AddSingleton<IBlockStoreCache, BlockStoreCache>();
                         services.AddSingleton<BlockStoreQueue>().AddSingleton<IBlockStore, BlockStoreQueue>(provider => provider.GetService<BlockStoreQueue>());
                         services.AddSingleton<BlockStoreManager>();

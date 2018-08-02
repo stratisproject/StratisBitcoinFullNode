@@ -7,6 +7,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -36,7 +37,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly ConcurrentChain chain;
 
-        private readonly IBlockRepository blockRepository;
+        private readonly IBlockStore blockStore;
 
         private readonly IBlockStoreCache blockStoreCache;
 
@@ -72,25 +73,30 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Chained header of the last header sent to the peer.</summary>
         private ChainedHeader lastHeaderSent;
 
+        /// <see cref="IChainState"/>
+        private IChainState chainState;
+
         public BlockStoreBehavior(
             ConcurrentChain chain,
             BlockRepository blockRepository,
             IBlockStoreCache blockStoreCache,
+            IChainState chainState,
             ILoggerFactory loggerFactory)
-            : this(chain, blockRepository as IBlockRepository, blockStoreCache, loggerFactory)
+            : this(chain, blockRepository as IBlockRepository, blockStoreCache, chainState, loggerFactory)
         {
         }
 
-        public BlockStoreBehavior(ConcurrentChain chain, IBlockRepository blockRepository, IBlockStoreCache blockStoreCache, ILoggerFactory loggerFactory)
+        public BlockStoreBehavior(ConcurrentChain chain, IBlockStore blockStore, IBlockStoreCache blockStoreCache, IChainState chainState, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(blockRepository, nameof(blockRepository));
+            Guard.NotNull(blockStore, nameof(blockStore));
             Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
             this.chain = chain;
-            this.blockRepository = blockRepository;
+            this.blockStore = blockStore;
             this.blockStoreCache = blockStoreCache;
+            this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
 
@@ -211,7 +217,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             // We only want to work with blocks that are in the store,
             // so we first get information about the store's tip.
-            ChainedHeader blockStoreTip = this.chain.GetBlock(this.blockRepository.BlockHash);
+            ChainedHeader blockStoreTip = this.chainState.BlockStoreTip;
             if (blockStoreTip == null)
             {
                 this.logger.LogTrace("(-)[REORG]");
@@ -348,7 +354,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.getBlocksBatchLastItemHash = null;
 
                     // Announce last block we have in the store.
-                    ChainedHeader blockStoreTip = this.chain.GetBlock(this.blockRepository.BlockHash);
+                    ChainedHeader blockStoreTip = this.chainState.BlockStoreTip;
                     if (blockStoreTip != null)
                     {
                         this.logger.LogTrace("Sending continuation inventory message for block '{0}' to peer '{1}'.", blockStoreTip, peer.RemoteSocketEndpoint);
@@ -513,7 +519,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            var res = new BlockStoreBehavior(this.chain, this.blockRepository, this.blockStoreCache, this.loggerFactory)
+            var res = new BlockStoreBehavior(this.chain, this.blockStore, this.blockStoreCache, this.chainState, this.loggerFactory)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload
