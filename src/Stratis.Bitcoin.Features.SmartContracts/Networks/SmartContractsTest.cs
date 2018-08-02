@@ -59,8 +59,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             consensus.MaxReorgLength = 500;
             consensus.MaxMoney = long.MaxValue;
 
-
-
             // Taken from StratisX.
             consensus.Options = new PosConsensusOptions(
                 maxBlockBaseSize: 1_000_000,

@@ -25,39 +25,50 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.RootFolderName = StratisMain.StratisRootFolderName;
             this.RPCPort = 185556;
 
-            this.Consensus.ConsensusFactory = new SmartContractPosConsensusFactory();
-            this.Consensus.IsProofOfStake = true;
+            var consensus = new NBitcoin.Consensus();
+            consensus.ConsensusFactory = new SmartContractPosConsensusFactory();
+            consensus.IsProofOfStake = true;
 
-            this.Consensus.BIP34Hash = new uint256();
-            this.Consensus.BuriedDeployments[BuriedDeployments.BIP34] = 0;
-            this.Consensus.BuriedDeployments[BuriedDeployments.BIP65] = 0;
-            this.Consensus.BuriedDeployments[BuriedDeployments.BIP66] = 0;
-            this.Consensus.CoinbaseMaturity = 5;
-            this.Consensus.CoinType = 105;
-            this.Consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
-            this.Consensus.LastPOWBlock = 1000000;
-            this.Consensus.MajorityEnforceBlockUpgrade = 750;
-            this.Consensus.MajorityRejectBlockOutdated = 950;
-            this.Consensus.MajorityWindow = 1000;
-            this.Consensus.MaxMoney = long.MaxValue;
-            this.Consensus.MaxReorgLength = 500;
-            this.Consensus.MinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
-            this.Consensus.SubsidyHalvingInterval = 210000;
+            consensus.BIP34Hash = new uint256();
+            consensus.BuriedDeployments[BuriedDeployments.BIP34] = 0;
+            consensus.BuriedDeployments[BuriedDeployments.BIP65] = 0;
+            consensus.BuriedDeployments[BuriedDeployments.BIP66] = 0;
+            consensus.CoinbaseMaturity = 5;
+            consensus.CoinType = 105;
+            consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
+            consensus.LastPOWBlock = 1000000;
+            consensus.MajorityEnforceBlockUpgrade = 750;
+            consensus.MajorityRejectBlockOutdated = 950;
+            consensus.MajorityWindow = 1000;
+            consensus.MaxMoney = long.MaxValue;
+            consensus.MaxReorgLength = 500;
+            consensus.MinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
+            consensus.SubsidyHalvingInterval = 210000;
 
-            this.Consensus.PowAllowMinDifficultyBlocks = true;
-            this.Consensus.PowNoRetargeting = true;
-            this.Consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
-            this.Consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
-            this.Consensus.PowTargetSpacing = TimeSpan.FromSeconds(20); //20 seconds for test net
+            consensus.PowAllowMinDifficultyBlocks = true;
+            consensus.PowNoRetargeting = true;
+            consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
+            consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
+            consensus.PowTargetSpacing = TimeSpan.FromSeconds(20); //20 seconds for test net
 
-            this.Consensus.PremineReward = Money.Zero;
+            consensus.PremineReward = Money.Zero;
 
-            this.Consensus.ProofOfWorkReward = Money.Coins(50);
-            this.Consensus.ProofOfStakeReward = Money.COIN;
-            this.Consensus.ProofOfStakeLimit = new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
-            this.Consensus.ProofOfStakeLimitV2 = new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
+            consensus.ProofOfWorkReward = Money.Coins(50);
+            consensus.ProofOfStakeReward = Money.COIN;
+            consensus.ProofOfStakeLimit = new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
+            consensus.ProofOfStakeLimitV2 = new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false));
 
-            this.Consensus.RuleChangeActivationThreshold = 1512; // 75% for testchains
+            // Taken from StratisX.
+            consensus.Options = new PosConsensusOptions(
+                maxBlockBaseSize: 1_000_000,
+                maxStandardVersion: 2,
+                maxStandardTxWeight: 100_000,
+                maxBlockSigopsCost: 20_000
+                );
+
+            consensus.RuleChangeActivationThreshold = 1512; // 75% for testchains
+
+            this.Consensus = consensus;
 
             this.Base58Prefixes = new byte[12][];
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (63) };
