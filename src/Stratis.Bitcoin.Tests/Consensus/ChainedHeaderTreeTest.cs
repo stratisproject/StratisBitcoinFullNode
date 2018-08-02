@@ -2295,7 +2295,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             ChainedHeader[] consumedHeaders = eResult.Consumed.ToArray(12);
             List<int> peersToBan = cht.PartialOrFullValidationFailed(consumedHeaders.FirstOrDefault(x => x.Height == 7)); // 7a validation failed.
-            peersToBan.Should().Equal(4); // Check that just four peers have been banned.
+            peersToBan.Count.Should().Be(4); // Check that just four peers have been banned.
 
             List<uint256> peerIdsByHashAfterFail = cht.GetPeerIdsByTipHash().Select(x => x.Key).ToList();
             List<ChainedHeader> chainedHeadersAfterFail = cht.GetChainedHeadersByHash().Select(x => x.Value).ToList();
