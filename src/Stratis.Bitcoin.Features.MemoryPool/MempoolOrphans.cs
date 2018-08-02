@@ -309,7 +309,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="orphanHash">Hash to add.</param>
         public void AddToRecentRejects(uint256 orphanHash)
         {
-            this.logger.LogTrace("{0}:'{1}'", nameof(orphanHash), orphanHash);
+            this.logger.LogTrace("({0}:'{1}')", nameof(orphanHash), orphanHash);
 
             lock (this.lockObject)
             {
