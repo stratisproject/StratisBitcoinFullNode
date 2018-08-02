@@ -174,7 +174,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public Task<Block> GetBlockAsync(uint256 blockHash)
         {
-            //TODO ACTIVATION take blocks from pending
+            // TODO ACTIVATION take blocks from pending
+            // TODO make sure this method is used only by CM and all components ask the blocks from CM
 
             return this.blockRepository.GetBlockAsync(blockHash);
         }
