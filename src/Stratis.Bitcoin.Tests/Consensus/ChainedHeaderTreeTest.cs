@@ -2252,8 +2252,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Equal(chainHeaders.Count, allConnectedHeaders.Count);
         }
 
-         /// <summary>
-        /// Issue 28 @ Peer E,F claims 11d. PartialOrFullValidationFailed(7a), make sure that 7a,8a,9a,8d,9d,10d,11d are removed and the peers A E F D are marked as PeersToBan.
+        /// <summary>
+        /// Issue 28 @ Peers E,F claims 10d. PartialOrFullValidationFailed(7a), make sure that 7a,8a,9a,8d,9d,10d,11d are removed and the peers A, E, F, D are marked as PeersToBan.
         /// </summary>
         [Fact]
         public void PeerEAndFClaimsHead_PartialOrFullValidationFailed_RestOfHeadMustBeRemoved_PeersMarkedAsPeersToBan()
@@ -2295,9 +2295,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             ChainedHeader[] consumedHeaders = eResult.Consumed.ToArray(12);
             List<int> peersToBan = cht.PartialOrFullValidationFailed(consumedHeaders.FirstOrDefault(x => x.Height == 7)); // 7a validation failed.
+            peersToBan.Should().Equal(4); // Check that just four peers have been banned.
 
             List<uint256> peerIdsByHashAfterFail = cht.GetPeerIdsByTipHash().Select(x => x.Key).ToList();
-            List<ChainedHeader> chainedHeadersAfterFail = cht.GetChainedHeadersByHash().Select(x=>x.Value).ToList();
+            List<ChainedHeader> chainedHeadersAfterFail = cht.GetChainedHeadersByHash().Select(x => x.Value).ToList();
 
             chainedHeadersAfterFail.Should().NotContain(listOfChainedHeadersMustBeRemovedFromCht); // Check that headers have been removed.
 
