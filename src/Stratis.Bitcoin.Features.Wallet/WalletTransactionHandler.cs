@@ -58,16 +58,39 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.TransactionPolicy = transactionPolicy;
         }
 
+        /// <inheritdoc />
         public Transaction BuildTransaction(TransactionBuildOptions options)
         {
             var transactionBuildContext = new TransactionBuildContext(this.Network, options);
-            return BuildTransaction(transactionBuildContext);
+            return BuildTransactionInternal(transactionBuildContext);
         }
 
+        /// <inheritdoc />
         public void FundTransaction(TransactionBuildOptions options, Transaction transaction)
         {
             var context = new TransactionBuildContext(this.Network, options);
 
+            TransferTransactionDetailsToContext(transaction, context);
+
+            Transaction newTransaction = this.BuildTransactionInternal(context);
+
+            UpdateTransactionFromBuiltTransaction(transaction, newTransaction, context);
+        }
+
+        /// <inheritdoc />
+        public Money EstimateFee(TransactionBuildOptions options)
+        {
+            var context = new TransactionBuildContext(this.Network, options);
+            this.InitializeTransactionBuilder(context);
+            return context.TransactionFee;
+        }
+
+        /// <summary>
+        /// Given a <see cref="Transaction"/> that we wish to recreate in some form, move all of its properties to a <see cref="TransactionBuildContext"/>
+        /// which we can use to build a new Transaction with the same properties. i.e. in the case of calling <see cref="FundTransaction(TransactionBuildOptions, Transaction)"/>.
+        /// </summary>
+        private void TransferTransactionDetailsToContext(Transaction transaction, TransactionBuildContext context)
+        {
             if (context.Recipients.Any())
                 throw new WalletException("Adding outputs is not allowed.");
 
@@ -84,9 +107,17 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             foreach (TxIn transactionInput in transaction.Inputs)
                 context.SelectedInputs.Add(transactionInput.PrevOut);
+        }
 
-            Transaction newTransaction = this.BuildTransaction(context);
-
+        /// <summary>
+        /// In the case of funding a <see cref="Transaction"/>,  ensures all the features of the transaction are transferred over from 
+        /// a transaction that was built via <see cref="BuildTransactionInternal(TransactionBuildContext)"/>.
+        /// </summary>
+        /// <param name="transaction"></param>
+        /// <param name="newTransaction"></param>
+        /// <param name="context"></param>
+        private void UpdateTransactionFromBuiltTransaction(Transaction transaction, Transaction newTransaction, TransactionBuildContext context)
+        {
             if (context.ChangeAddress != null)
             {
                 // find the position of the change and move it over.
@@ -116,14 +147,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
-        public Money EstimateFee(TransactionBuildOptions options)
-        {
-            var context = new TransactionBuildContext(this.Network, options);
-            this.InitializeTransactionBuilder(context);
-            return context.TransactionFee;
-        }
-
-        private Transaction BuildTransaction(TransactionBuildContext context)
+        /// <summary>
+        /// The core transaction building method. Given a <see cref="TransactionBuildContext"/>, creates a new transaction.
+        /// This context may be constructed from just the available options, or may also have had a previous transaction as input
+        /// (i.e. when calling <see cref="FundTransaction(TransactionBuildOptions, Transaction)"/>).
+        /// </summary>
+        private Transaction BuildTransactionInternal(TransactionBuildContext context)
         {
             this.InitializeTransactionBuilder(context);
 
