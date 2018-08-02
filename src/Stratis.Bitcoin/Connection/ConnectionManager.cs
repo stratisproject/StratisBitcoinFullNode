@@ -65,6 +65,9 @@ namespace Stratis.Bitcoin.Connection
 
         private readonly NetworkPeerCollection connectedPeers;
 
+        /// <summary>Registry of endpoints used to identify this node.</summary>
+        private readonly ISelfEndpointTracker selfEndpointTracker;
+
         public IReadOnlyNetworkPeerCollection ConnectedPeers
         {
             get { return this.connectedPeers; }
@@ -89,6 +92,7 @@ namespace Stratis.Bitcoin.Connection
             IPeerAddressManager peerAddressManager,
             IEnumerable<IPeerConnector> peerConnectors,
             IPeerDiscovery peerDiscovery,
+            ISelfEndpointTracker selfEndpointTracker,
             ConnectionManagerSettings connectionSettings,
             IVersionProvider versionProvider)
         {
@@ -109,6 +113,7 @@ namespace Stratis.Bitcoin.Connection
 
             this.Parameters = parameters;
             this.Parameters.ConnectCancellation = this.nodeLifetime.ApplicationStopping;
+            this.selfEndpointTracker = selfEndpointTracker;
             this.versionProvider = versionProvider;
 
             this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{versionProvider.GetVersion()}";
@@ -121,6 +126,8 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
+            AddExternalIpToSelfEndpoints();
+
             this.peerDiscovery.DiscoverPeers(this);
 
             foreach (IPeerConnector peerConnector in this.PeerConnectors)
@@ -132,6 +139,16 @@ namespace Stratis.Bitcoin.Connection
             this.StartNodeServer();
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// If -externalip was set on startup, put it in the registry of known selves so
+        /// we can avoid connecting to our own node.
+        /// </summary>
+        private void AddExternalIpToSelfEndpoints()
+        {
+            if (this.ConnectionSettings.ExternalEndpoint != null)
+                this.selfEndpointTracker.Add(this.ConnectionSettings.ExternalEndpoint);
         }
 
         private void StartNodeServer()
