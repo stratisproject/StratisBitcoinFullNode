@@ -32,11 +32,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             var utxoRuleContext = context as UtxoRuleContext;
             await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash).ConfigureAwait(false);
 
-            if (this.FlushRequired(context.ValidationContext.ChainTipToExtand))
-            {
-                if (this.PowParent.UtxoSet is CachedCoinView cachedCoinView)
-                    await cachedCoinView.FlushAsync().ConfigureAwait(false);
-            }
+            bool forceFlush = this.FlushRequired(context.ValidationContext.ChainTipToExtand);
+            if (this.PowParent.UtxoSet is CachedCoinView cachedCoinView)
+                await cachedCoinView.FlushAsync(forceFlush).ConfigureAwait(false);
         }
 
         /// <summary>
