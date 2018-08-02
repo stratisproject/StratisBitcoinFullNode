@@ -108,8 +108,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
             }
 
-            // If the new block's previous hash is the same as the
-            // wallet hash then just pass the block to the manager.
+            // If the new block's previous hash is not the same as the one we have, there might have been a reorg.
+            // If the new block follows the previous one, just pass the block to the manager.
             if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
             {
                 // If previous block does not match there might have
@@ -136,7 +136,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // The new tip can be ahead or behind the wallet.
                 // If the new tip is ahead we try to bring the wallet up to the new tip.
                 // If the new tip is behind we just check the wallet and the tip are in the same chain.
-
                 if (newTip.Height > this.walletTip.Height)
                 {
                     ChainedHeader findTip = newTip.FindAncestorOrSelf(this.walletTip);
@@ -153,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     while (next != newTip)
                     {
                         // While the wallet is catching up the entire node will wait.
-                        // If a wallet is recovered to a date in the past. Consensus will stop till the wallet is up to date.
+                        // If a wallet is recovered to a date in the past. Consensus will stop until the wallet is up to date.
 
                         // TODO: This code should be replaced with a different approach
                         // Similar to BlockStore the wallet should be standalone and not depend on consensus.
