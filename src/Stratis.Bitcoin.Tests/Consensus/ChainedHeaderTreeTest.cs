@@ -388,7 +388,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// <summary>
         /// Issue 4 @ Create chained header tree component #1321
         /// Supply headers where half of them are new and half are old.
-        /// Make sure that ChainedHeader was created for new ones.
+        /// Make sure that ChainTipToExtand was created for new ones.
         /// </summary>
         [Fact]
         public void ConnectHeaders_HalfOldHalfNew_ShouldCreateHeadersForNew()
@@ -407,7 +407,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Supply both old and new headers.
             chainedHeaderTree.ConnectNewHeaders(1, listOfOldAndNewHeaders);
 
-            // ChainedHeader tree entries are created for all new BlockHeaders.
+            // ChainTipToExtand tree entries are created for all new BlockHeaders.
             IEnumerable<uint256> hashesOfNewBlocks = listOfOldAndNewHeaders.Select(x => x.GetHash()).TakeLast(chainExtensionSize);
             Assert.True(hashesOfNewBlocks.All(x => chainedHeaderTree.GetChainedHeadersByHash().Keys.Contains(x)));
         }
@@ -753,7 +753,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Checking from the checkpoint back to the initialized chain.
             while (chainedHeader.Height > initialChainSize)
             {
-                chainedHeader.BlockValidationState.Should().Be(ValidationState.AssumedValid);
+                Assert.True(chainedHeader.IsAssumedValid);
                 chainedHeader.BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockRequired);
                 chainedHeader = chainedHeader.Previous;
             }
@@ -831,7 +831,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 .SingleOrDefault(x => (x.Value.HashBlock == checkpoint1.Header.GetHash())).Value;
             while (chainedHeader.Height > initialChainSize)
             {
-                chainedHeader.BlockValidationState.Should().Be(ValidationState.AssumedValid);
+                Assert.True(chainedHeader.IsAssumedValid);
                 chainedHeader = chainedHeader.Previous;
             }
 
@@ -932,7 +932,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             while (headerBeforeIncludingAssumeValid.Height > assumeValidBlockHeight - 20)
             {
-                headerBeforeIncludingAssumeValid.BlockValidationState.Should().Be(ValidationState.AssumedValid);
+                Assert.True(headerBeforeIncludingAssumeValid.IsAssumedValid);
                 headerBeforeIncludingAssumeValid = headerBeforeIncludingAssumeValid.Previous;
             }
         }
@@ -1243,12 +1243,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Headers h7-h9 are marked as "assumed valid".
             ChainedHeader consumed = result.Consumed;
-            var expectedState = ValidationState.HeaderValidated;
             while (consumed.Height > initialChainSize)
             {
-                if (consumed.Height == 9) expectedState = ValidationState.AssumedValid;
-                if (consumed.Height == 6) expectedState = ValidationState.PartiallyValidated;
-                consumed.BlockValidationState.Should().Be(expectedState);
+                if (consumed.Height == 9)
+                    Assert.True(consumed.IsAssumedValid);
+
+                if (consumed.Height == 6)
+                    Assert.Equal(ValidationState.PartiallyValidated, consumed.BlockValidationState);
+
                 consumed = consumed.Previous;
             }
         }
@@ -3079,8 +3081,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(peerOneId, listOfExtendedChainBlockHeaders);
 
             // 11b, 12b should be marked as AV.
-            connectNewHeadersResult.Consumed.GetAncestor(11).BlockValidationState.Should().Be(ValidationState.AssumedValid);
-            connectNewHeadersResult.Consumed.GetAncestor(12).BlockValidationState.Should().Be(ValidationState.AssumedValid);
+            Assert.True(connectNewHeadersResult.Consumed.GetAncestor(11).IsAssumedValid);
+            Assert.True(connectNewHeadersResult.Consumed.GetAncestor(12).IsAssumedValid);
 
             // 13b, 14b, 15b should be header only.
             connectNewHeadersResult.Consumed.GetAncestor(13).BlockValidationState.Should().Be(ValidationState.HeaderValidated);

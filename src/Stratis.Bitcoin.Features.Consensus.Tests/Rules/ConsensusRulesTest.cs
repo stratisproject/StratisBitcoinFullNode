@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.network.Consensus.Rules = new List<IConsensusRule> { rule };
             consensusRules.Register();
 
-            await consensusRules.ValidateAsync(new RuleContext() { SkipValidation = true });
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.True(rule.RunCalled);
         }
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.network.Consensus.Rules = new List<IConsensusRule> { rule };
             consensusRules.Register();
 
-            await consensusRules.ValidateAsync(new RuleContext() { SkipValidation = true });
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.False(rule.RunCalled);
         }
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.network.Consensus.Rules = new List<IConsensusRule> { rule };
             consensusRules.Register();
 
-            await consensusRules.AcceptBlockAsync(blockValidationContext, new ChainedHeader(this.network.GetGenesis().Header, this.network.GenesisHash, 0));
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.True(rule.RunCalled);
             Assert.Null(blockValidationContext.Error);
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.network.Consensus.Rules = new List<IConsensusRule> { rule };
             consensusRules.Register();
 
-            await consensusRules.AcceptBlockAsync(blockValidationContext, new ChainedHeader(this.network.GetGenesis().Header, this.network.GenesisHash, 0));
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.True(rule.RunCalled);
             Assert.Null(blockValidationContext.Error);
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.network.Consensus.Rules = new List<IConsensusRule> { rule };
             consensusRules.Register();
 
-            await consensusRules.AcceptBlockAsync(blockValidationContext, new ChainedHeader(this.network.GetGenesis().Header, this.network.GenesisHash, 0));
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.True(rule.RunCalled);
             Assert.Null(blockValidationContext.Error);
@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var rule = new ConsensusRuleWithSkipValidationAttribute();
             var blockValidationContext = new ValidationContext()
             {
-                ChainedHeader = this.concurrentChain.Tip,
+                ChainTipToExtand = this.concurrentChain.Tip,
             };
             TestConsensusRules consensusRules = InitializeConsensusRules();
             this.network.Consensus.Rules = new List<IConsensusRule> { rule };
@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             consensusRules.Register();
 
-            await consensusRules.AcceptBlockAsync(blockValidationContext, new ChainedHeader(this.network.GetGenesis().Header, this.network.GenesisHash, 0));
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
             Assert.False(rule.RunCalled);
             Assert.Null(blockValidationContext.Error);
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 .Throws(new ConsensusErrorException(consensusError))
                 .Verifiable();
 
-            var blockValidationContext = new ValidationContext()
+            var validationContext = new ValidationContext()
             {
                 RuleContext = new RuleContext()
                 {
@@ -224,11 +224,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.network.Consensus.Rules = new List<IConsensusRule> { new TestRule() };
             consensusRules.Register();
 
-            await consensusRules.AcceptBlockAsync(blockValidationContext, new ChainedHeader(this.network.GetGenesis().Header, this.network.GenesisHash, 0));
+            await consensusRules.PartialValidationAsync(new ValidationContext());
 
-            Assert.NotNull(blockValidationContext.Error);
-            Assert.Equal(consensusError.Message, blockValidationContext.Error.Message);
-            Assert.Equal(consensusError.Code, blockValidationContext.Error.Code);
+            Assert.NotNull(validationContext.Error);
+            Assert.Equal(consensusError.Message, validationContext.Error.Message);
+            Assert.Equal(consensusError.Code, validationContext.Error.Code);
         }
 
         // test extension methods

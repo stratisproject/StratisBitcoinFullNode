@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using NBitcoin;
-using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using static Stratis.Bitcoin.BlockPulling.BlockPuller;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -17,7 +15,7 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         public static Money GetProofOfWorkRewardForMinedBlocks(this CoreNode node, int numberOfBlocks)
         {
-            var coinviewRule = node.FullNode.NodeService<IConsensusRules>().GetRule<CoinViewRule>();
+            var coinviewRule = node.FullNode.NodeService<IConsensusRuleEngine>().GetRule<CoinViewRule>();
 
             int startBlock = node.FullNode.Chain.Height - numberOfBlocks + 1;
 
@@ -82,10 +80,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             while (!block.CheckProofOfWork())
                 block.Header.Nonce = ++nonce;
 
-            uint256 blockHash = block.GetHash();
-            var chainedHeader = new ChainedHeader(block.Header, blockHash, coreNode.FullNode.Chain.Tip);
-            ChainedHeader oldTip = coreNode.FullNode.Chain.SetTip(chainedHeader);
-            coreNode.FullNode.ConsensusLoop().Puller.InjectBlock(blockHash, new DownloadedBlock { Length = block.GetSerializedSize(), Block = block }, CancellationToken.None);
+            coreNode.FullNode.ConsensusManager().BlockMined(block);
 
             return block;
         }

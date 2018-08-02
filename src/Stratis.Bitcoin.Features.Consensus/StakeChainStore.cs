@@ -110,8 +110,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             BlockStake res = this.GetAsync(blockid).GetAwaiter().GetResult();
-            if (res != null) this.logger.LogTrace("(-):*.{0}='{1}'", nameof(res.HashProof), res.HashProof);
-            else this.logger.LogTrace("(-):null");
+            this.logger.LogTrace("(-):*.{0}='{1}'", nameof(res.HashProof), res.HashProof);
             return res;
         }
 

@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             base.Initialize();
 
             this.consensus = this.Parent.Network.Consensus;
-            var consensusRules = (PosConsensusRules)this.Parent;
+            var consensusRules = (PosConsensusRuleEngine)this.Parent;
 
             this.stakeValidator = consensusRules.StakeValidator;
             this.stakeChain = consensusRules.StakeChain;
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             await base.RunAsync(context).ConfigureAwait(false);
             var posRuleContext = context as PosRuleContext;
-            await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeader, posRuleContext.BlockStake).ConfigureAwait(false);
+            await this.stakeChain.SetAsync(context.ValidationContext.ChainTipToExtand, posRuleContext.BlockStake).ConfigureAwait(false);
 
             this.Logger.LogTrace("(-)");
         }
@@ -138,9 +138,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
+
+            ChainedHeader chainedHeader = context.ValidationContext.ChainTipToExtand;
             Block block = context.ValidationContext.Block;
+
             var posRuleContext = context as PosRuleContext;
+            if (posRuleContext.BlockStake == null)
+                posRuleContext.BlockStake = BlockStake.Load(context.ValidationContext.Block);
+
             BlockStake blockStake = posRuleContext.BlockStake;
 
             // Verify hash target and signature of coinstake tx.

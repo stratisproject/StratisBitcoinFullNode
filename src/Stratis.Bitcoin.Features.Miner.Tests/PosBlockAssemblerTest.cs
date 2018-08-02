@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     public class PosBlockAssemblerTest : LogsTestBase
     {
         private RuleContext callbackRuleContext = null;
-        private readonly Mock<IConsensusLoop> consensusLoop;
+        private readonly Mock<IConsensusManager> consensusLoop;
         private readonly Mock<IDateTimeProvider> dateTimeProvider;
         private readonly Key key;
         private readonly Mock<ITxMempool> mempool;
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PosBlockAssemblerTest()
         {
-            this.consensusLoop = new Mock<IConsensusLoop>();
+            this.consensusLoop = new Mock<IConsensusManager>();
             this.mempool = new Mock<ITxMempool>();
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.stakeValidator = new Mock<IStakeValidator>();
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 BlockTemplate blockTemplate = posBlockAssembler.Build(chain.Tip, this.key.ScriptPubKey);
 
-                this.consensusLoop.Verify(c => c.ValidateBlock(It.IsAny<RuleContext>()), Times.Exactly(0));
+                this.consensusLoop.Verify(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ValidationContext>()), Times.Exactly(0));
                 Assert.Null(this.callbackRuleContext);
                 this.stakeValidator.Verify();
             });
@@ -415,16 +415,16 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.callbackRuleContext = null;
 
-            this.consensusLoop.Setup(c => c.ValidateBlock(It.IsAny<RuleContext>()))
+            this.consensusLoop.Setup(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ValidationContext>()))
                 .Callback<RuleContext>(c =>
                 {
                     this.callbackRuleContext = c;
-                }).Verifiable();
+                });
         }
 
         private void SetupRulesEngine(ConcurrentChain chain)
         {
-            var posConsensusRules = new PosConsensusRules(
+            var posConsensusRules = new PosConsensusRuleEngine(
                 this.stratisTest,
                 this.LoggerFactory.Object,
                 this.dateTimeProvider.Object,
@@ -433,9 +433,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new ConsensusSettings(new NodeSettings(this.stratisTest)),
                 new Checkpoints(),
                 new Mock<ICoinView>().Object,
-                new Mock<ILookaheadBlockPuller>().Object,
                 new Mock<IStakeChain>().Object,
-                new Mock<IStakeValidator>().Object);
+                new Mock<IStakeValidator>().Object,
+                new Mock<IChainState>().Object);
 
             posConsensusRules.Register();
 
@@ -472,7 +472,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private class PosTestBlockAssembler : PosBlockDefinition
         {
             public PosTestBlockAssembler(
-                IConsensusLoop consensusLoop,
+                IConsensusManager consensusManager,
                 Network network,
                 MempoolSchedulerLock mempoolLock,
                 ITxMempool mempool,
@@ -481,7 +481,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 IStakeChain stakeChain,
                 IStakeValidator stakeValidator,
                 ILoggerFactory loggerFactory)
-                : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, stakeChain, stakeValidator)
+                : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, stakeChain, stakeValidator)
             {
                 base.block = this.BlockTemplate.Block;
             }

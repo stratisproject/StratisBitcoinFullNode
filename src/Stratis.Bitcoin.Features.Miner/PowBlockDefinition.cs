@@ -12,20 +12,20 @@ namespace Stratis.Bitcoin.Features.Miner
 {
     public class PowBlockDefinition : BlockDefinition
     {
-        private readonly IConsensusRules consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
         private readonly ILogger logger;
 
         public PowBlockDefinition(
-            IConsensusLoop consensusLoop,
+            IConsensusManager consensusManager,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
             MinerSettings minerSettings,
             Network network,
-            IConsensusRules consensusRules,
+            IConsensusRuleEngine consensusRules,
             BlockDefinitionOptions options = null)
-            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
+            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -76,10 +76,11 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            RuleContext context = this.consensusRules.CreateRuleContext(new ValidationContext { Block = this.block }, this.ConsensusLoop.Tip);
+            RuleContext context = this.consensusRules.CreateRuleContext(new ValidationContext { Block = this.block, ChainTipToExtand = this.ConsensusManager.Tip });
             context.MinedBlock = true;
 
-            this.ConsensusLoop.ValidateBlock(context);
+            // TODO: Is this correct or should we not call validation from rules but from CM
+            this.ConsensusManager.ConsensusRules.PartialValidationAsync(new ValidationContext { Block = this.block, ChainTipToExtand = this.ConsensusManager.Tip });
 
             this.logger.LogTrace("(-)");
         }

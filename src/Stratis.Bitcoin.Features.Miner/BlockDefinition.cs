@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected ChainedHeader ChainTip;
 
         /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        protected readonly IConsensusLoop ConsensusLoop;
+        protected readonly IConsensusManager ConsensusManager;
 
         /// <summary>Provider of date time functions.</summary>
         protected readonly IDateTimeProvider DateTimeProvider;
@@ -112,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Miner
         protected Script scriptPubKey;
 
         protected BlockDefinition(
-            IConsensusLoop consensusLoop,
+            IConsensusManager consensusManager,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
@@ -120,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Miner
             MinerSettings minerSettings,
             Network network)
         {
-            this.ConsensusLoop = consensusLoop;
+            this.ConsensusManager = consensusManager;
             this.DateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Mempool = mempool;
@@ -243,7 +244,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // TODO: Implement Witness Code
             // pblocktemplate->CoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
 
-            var coinviewRule = this.ConsensusLoop.ConsensusRules.GetRule<CoinViewRule>();
+            var coinviewRule = this.ConsensusManager.ConsensusRules.GetRule<CoinViewRule>();
             this.coinbase.Outputs[0].Value = this.fees + coinviewRule.GetProofOfWorkReward(this.height);
             this.BlockTemplate.TotalFee = this.fees;
 

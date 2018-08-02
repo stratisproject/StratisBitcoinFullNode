@@ -56,9 +56,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BlockTimestampTooFar">The block timestamp is too far into the future.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
-            BlockHeader header = context.ValidationContext.ChainedHeader.Header;
+            BlockHeader header = context.ValidationContext.ChainTipToExtand.Header;
 
             long adjustedTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
 
@@ -70,8 +70,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
             }
-
-            return Task.CompletedTask;
         }
 
         /// <summary>

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -36,9 +37,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>An interface implementation used to retrieve the network difficulty target.</summary>
         private readonly INetworkDifficulty networkDifficulty;
 
-        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        private readonly IConsensusLoop consensusLoop;
-
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
 
@@ -48,13 +46,13 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
             IGetUnspentTransaction getUnspentTransaction = null,
             INetworkDifficulty networkDifficulty = null,
-            IConsensusLoop consensusLoop = null,
             IFullNode fullNode = null,
             NodeSettings nodeSettings = null,
             Network network = null,
             ConcurrentChain chain = null,
             IChainState chainState = null,
             Connection.IConnectionManager connectionManager = null,
+            IConsensusManager consensusManager = null,
             IBlockStore blockStore = null)
             : base(
                   fullNode: fullNode,
@@ -62,14 +60,14 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                   network: network,
                   chain: chain,
                   chainState: chainState,
-                  connectionManager: connectionManager)
+                  connectionManager: connectionManager,
+                  consensusManager: consensusManager)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.pooledTransaction = pooledTransaction;
             this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
             this.getUnspentTransaction = getUnspentTransaction;
             this.networkDifficulty = networkDifficulty;
-            this.consensusLoop = consensusLoop;
             this.blockStore = blockStore;
         }
 
@@ -164,7 +162,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Gets the current consensus tip height.")]
         public int GetBlockCount()
         {
-            return this.consensusLoop?.Tip.Height ?? -1;
+            return this.ConsensusManager?.Tip.Height ?? -1;
         }
 
         /// <summary>

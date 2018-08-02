@@ -21,12 +21,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override Task RunAsync(RuleContext context)
         {
             DeploymentFlags deploymentFlags = context.Flags;
-            int newHeight = context.ConsensusTipHeight + 1;
+            int newHeight = context.ValidationContext.ChainTipToExtand.Height;
             Block block = context.ValidationContext.Block;
 
             // Start enforcing BIP113 (Median Time Past) using versionbits logic.
             DateTimeOffset nLockTimeCutoff = deploymentFlags.LockTimeFlags.HasFlag(Transaction.LockTimeFlags.MedianTimePast) ?
-                context.ConsensusTip.GetMedianTimePast() :
+                context.ValidationContext.ChainTipToExtand.Previous.GetMedianTimePast() :
                 block.Header.BlockTime;
 
             // Check that all transactions are finalized.

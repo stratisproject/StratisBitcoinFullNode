@@ -121,9 +121,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.signals.SubscribeForBlocksConnected(this.blockStoreSignaled);
 
-            this.blockRepository.InitializeAsync().GetAwaiter().GetResult();
-            this.blockStoreQueue.InitializeAsync().GetAwaiter().GetResult();
-
             this.logger.LogTrace("(-)");
         }
 
@@ -152,8 +149,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogInformation("Stopping {0}...", this.name);
 
             this.blockStoreSignaled.Dispose();
-            this.blockStoreManager.BlockStoreQueue.Dispose();
-            this.blockRepository.Dispose();
         }
     }
 

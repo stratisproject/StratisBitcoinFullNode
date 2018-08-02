@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -9,7 +10,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Consensus.Validators
 {
     /// <summary>
-    /// A callback that is invoked when <see cref="IPartialValidation.StartPartialValidation"/> completes validation of a block.
+    /// A callback that is invoked when <see cref="IPartialValidator.StartPartialValidation"/> completes validation of a block.
     /// </summary>
     /// <param name="validationResult">Result of the validation including information about banning if necessary.</param>
     public delegate Task OnPartialValidationCompletedAsyncCallback(PartialValidationResult validationResult);
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         void ValidateHeader(ChainedHeader chainedHeader);
     }
 
-    public interface IPartialValidation
+    public interface IPartialValidator
     {
         /// <summary>
         /// Schedules a block for background partial validation.
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// <summary>
         /// Verifies that the block data corresponds to the chain header.
         /// </summary>
-        /// <remarks>  
+        /// <remarks>
         /// This validation represents minimal required validation for every block that we download.
         /// It should be performed even if the block is behind last checkpoint or part of assume valid chain.
         /// TODO specify what exceptions are thrown (add throws xmldoc)
@@ -52,10 +53,10 @@ namespace Stratis.Bitcoin.Consensus.Validators
     /// <inheritdoc />
     public class HeaderValidator : IHeaderValidator
     {
-        private readonly IConsensusRules consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
         private readonly ILogger logger;
 
-        public HeaderValidator(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
+        public HeaderValidator(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
         {
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -66,10 +67,9 @@ namespace Stratis.Bitcoin.Consensus.Validators
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            var validationContext = new ValidationContext { ChainedHeader = chainedHeader };
+            var validationContext = new ValidationContext { ChainTipToExtand = chainedHeader };
 
-            // TODO: pass the tip.
-            this.consensusRules.HeaderValidation(validationContext, null);
+            this.consensusRules.HeaderValidation(validationContext);
 
             this.logger.LogTrace("(-)");
         }
@@ -78,10 +78,10 @@ namespace Stratis.Bitcoin.Consensus.Validators
     /// <inheritdoc />
     public class IntegrityValidator : IIntegrityValidator
     {
-        private readonly IConsensusRules consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
         private readonly ILogger logger;
 
-        public IntegrityValidator(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
+        public IntegrityValidator(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
         {
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -92,23 +92,22 @@ namespace Stratis.Bitcoin.Consensus.Validators
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            var validationContext = new ValidationContext { Block = block };
+            var validationContext = new ValidationContext { Block = block, ChainTipToExtand = chainedHeader };
 
-            // TODO: pass the tip.
-            this.consensusRules.IntegrityValidation(validationContext, null);
+            this.consensusRules.IntegrityValidation(validationContext);
 
             this.logger.LogTrace("(-)");
         }
     }
 
     /// <inheritdoc />
-    public class PartialValidation : IPartialValidation
+    public class PartialValidator : IPartialValidator, IDisposable
     {
-        private readonly IConsensusRules consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
         private readonly AsyncQueue<PartialValidationItem> asyncQueue;
         private readonly ILogger logger;
 
-        public PartialValidation(IConsensusRules consensusRules, ILoggerFactory loggerFactory)
+        public PartialValidator(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
         {
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -116,24 +115,37 @@ namespace Stratis.Bitcoin.Consensus.Validators
             this.asyncQueue = new AsyncQueue<PartialValidationItem>(this.OnEnqueueAsync);
         }
 
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.asyncQueue.Dispose();
+        }
+
         private async Task OnEnqueueAsync(PartialValidationItem item, CancellationToken cancellationtoken)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(item), item);
 
-            var validationContext = new ValidationContext {Block = item.ChainedHeaderBlock.Block};
+            var validationContext = new ValidationContext { Block = item.ChainedHeaderBlock.Block, ChainTipToExtand = item.ChainedHeaderBlock.ChainedHeader };
 
-            // TODO: pass the tip.
-            await this.consensusRules.PartialValidationAsync(validationContext, null).ConfigureAwait(false);
+            await this.consensusRules.PartialValidationAsync(validationContext).ConfigureAwait(false);
 
             var partialValidationResult = new PartialValidationResult
             {
                 ChainedHeaderBlock = item.ChainedHeaderBlock,
                 BanDurationSeconds = validationContext.BanDurationSeconds,
                 BanReason = validationContext.Error != null ? $"Invalid block received: {validationContext.Error.Message}" : string.Empty,
-                Succeeded = validationContext.Error != null
+                Succeeded = validationContext.Error == null
             };
 
-            await item.PartialValidationCompletedAsyncCallback(partialValidationResult).ConfigureAwait(false);
+            try
+            {
+                await item.PartialValidationCompletedAsyncCallback(partialValidationResult).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                this.logger.LogCritical("Partial validation callback threw an exception: {0}.", exception.ToString());
+                throw;
+            }
 
             this.logger.LogTrace("(-)");
         }

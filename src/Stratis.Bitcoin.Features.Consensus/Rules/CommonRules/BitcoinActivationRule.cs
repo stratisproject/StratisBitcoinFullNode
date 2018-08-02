@@ -14,13 +14,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
-            Guard.NotNull(context.ConsensusTip, nameof(context.ConsensusTip));
+            BlockHeader header = context.ValidationContext.ChainTipToExtand.Header;
 
-            BlockHeader header = context.ValidationContext.ChainedHeader.Header;
-
-            int height = context.ConsensusTipHeight + 1;
+            int height = context.ValidationContext.ChainTipToExtand.Height;
 
             // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
             // check for version 2, 3 and 4 upgrades.
@@ -32,8 +30,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("(-)[BAD_VERSION]");
                 ConsensusErrors.BadVersion.Throw();
             }
-
-            return Task.CompletedTask;
         }
     }
 }

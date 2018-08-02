@@ -12,6 +12,7 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
@@ -69,8 +70,6 @@ namespace Stratis.Bitcoin.Connection
             get { return this.connectedPeers; }
         }
 
-        private readonly Dictionary<INetworkPeer, PerformanceSnapshot> downloads;
-
         private NetworkPeerServices discoveredNodeRequiredService = NetworkPeerServices.Network;
 
         public List<NetworkPeerServer> Servers { get; }
@@ -115,8 +114,6 @@ namespace Stratis.Bitcoin.Connection
             this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{versionProvider.GetVersion()}";
 
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
-
-            this.downloads = new Dictionary<INetworkPeer, PerformanceSnapshot>();
         }
 
         /// <inheritdoc />
@@ -148,7 +145,7 @@ namespace Stratis.Bitcoin.Connection
                 NetworkPeerServer server = this.NetworkPeerFactory.CreateNetworkPeerServer(listen.Endpoint, this.ConnectionSettings.ExternalEndpoint);
 
                 this.Servers.Add(server);
-                cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(true, this, this.loggerFactory)
+                cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(this, this.loggerFactory)
                 {
                     Whitelisted = listen.Whitelisted
                 });
@@ -194,63 +191,18 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
-        public string GetStats()
-        {
-            var builder = new StringBuilder();
-            lock (this.downloads)
-            {
-                var diffTotal = new PerformanceSnapshot(0, 0);
-                builder.AppendLine("=======Connections=======");
-                foreach (INetworkPeer peer in this.ConnectedPeers)
-                {
-                    PerformanceSnapshot newSnapshot = peer.Counter.Snapshot();
-                    PerformanceSnapshot lastSnapshot = null;
-                    if (this.downloads.TryGetValue(peer, out lastSnapshot))
-                    {
-                        BlockPullerBehavior behavior = peer.Behaviors.OfType<BlockPullerBehavior>()
-                            .FirstOrDefault(b => b.Puller.GetType() == typeof(LookaheadBlockPuller));
-
-                        PerformanceSnapshot diff = newSnapshot - lastSnapshot;
-                        diffTotal = new PerformanceSnapshot(diff.TotalReadBytes + diffTotal.TotalReadBytes, diff.TotalWrittenBytes + diffTotal.TotalWrittenBytes) { Start = diff.Start, Taken = diff.Taken };
-                        builder.Append((peer.RemoteSocketAddress + ":" + peer.RemoteSocketPort).PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + this.ToKBSec(diff.ReadenBytesPerSecond) + "\tW:" + this.ToKBSec(diff.WrittenBytesPerSecond));
-                        if (behavior != null)
-                        {
-                            int intQuality = (int)behavior.QualityScore;
-                            builder.Append("\tQualityScore: " + intQuality + (intQuality < 10 ? "\t" : "") + "\tPendingBlocks: " + behavior.PendingDownloadsCount);
-                        }
-
-                        builder.AppendLine();
-                    }
-
-                    this.downloads.AddOrReplace(peer, newSnapshot);
-                }
-
-                builder.AppendLine("=================");
-                builder.AppendLine("Total".PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + this.ToKBSec(diffTotal.ReadenBytesPerSecond) + "\tW:" + this.ToKBSec(diffTotal.WrittenBytesPerSecond));
-                builder.AppendLine("==========================");
-
-                //TODO: Hack, we should just clean nodes that are not connect anymore.
-                if (this.downloads.Count > 1000)
-                    this.downloads.Clear();
-            }
-
-            return builder.ToString();
-        }
-
-
         public string GetNodeStats()
         {
             var builder = new StringBuilder();
 
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
-                var connectionManagerBehavior = peer.Behavior<IConnectionManagerBehavior>();
-                var chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
+                var chainHeadersBehavior = peer.Behavior<ConsensusManagerBehavior>();
 
                 string agent = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]";
                 builder.AppendLine(
                     "Peer:" + (peer.RemoteSocketEndpoint + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
-                    (" connected:" + (connectionManagerBehavior.Inbound ? "inbound" : "outbound") + ",").PadRight(LoggingConfiguration.ColumnLength + 7) +
+                    (" connected:" + (peer.Inbound ? "inbound" : "outbound") + ",").PadRight(LoggingConfiguration.ColumnLength + 7) +
                     (" height:" + (chainHeadersBehavior.ExpectedPeerTip != null ? chainHeadersBehavior.ExpectedPeerTip.Height.ToString() : peer.PeerVersion?.StartHeight.ToString() ?? "unknown") + ",").PadRight(LoggingConfiguration.ColumnLength + 2) +
                     " agent:" + agent);
             }
@@ -381,7 +333,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("({0}:'{1}')", nameof(ipEndpoint), ipEndpoint);
 
             NetworkPeerConnectionParameters cloneParameters = this.Parameters.Clone();
-            cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(false, this, this.loggerFactory)
+            cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(this, this.loggerFactory)
             {
                 OneTry = true
             });

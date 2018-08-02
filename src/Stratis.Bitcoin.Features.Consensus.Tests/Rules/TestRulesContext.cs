@@ -3,11 +3,10 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
 using NBitcoin.Rules;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -26,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     /// </summary>
     internal class TestRulesContext
     {
-        public ConsensusRules Consensus { get; set; }
+        public ConsensusRuleEngine ConsensusRuleEngine { get; set; }
 
         public IDateTimeProvider DateTimeProvider { get; set; }
 
@@ -40,10 +39,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public ICheckpoints Checkpoints { get; set; }
 
+        public IChainState ChainState { get; set; }
+
         public T CreateRule<T>() where T : ConsensusRule, new()
         {
             var rule = new T();
-            rule.Parent = this.Consensus;
+            rule.Parent = this.ConsensusRuleEngine;
             rule.Logger = this.LoggerFactory.CreateLogger(rule.GetType().FullName);
             rule.Initialize();
             return rule;
@@ -53,12 +54,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     /// <summary>
     /// Test consensus rules for unit tests.
     /// </summary>
-    public class TestConsensusRules : ConsensusRules
+    public class TestConsensusRules : ConsensusRuleEngine
     {
         public RuleContext RuleContext { get; set; }
 
-        public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
+        public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, IChainState chainState)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, chainState)
         {
         }
 
@@ -70,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             return rule;
         }
 
-        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader tip)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext)
         {
             return this.RuleContext ?? new PowRuleContext();
         }
@@ -89,10 +90,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     /// <summary>
     /// Test PoS consensus rules for unit tests.
     /// </summary>
-    public class TestPosConsensusRules : PosConsensusRules
+    public class TestPosConsensusRules : PosConsensusRuleEngine
     {
-        public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView uxtoSet, ILookaheadBlockPuller lookaheadBlockPuller, IStakeChain stakeChain, IStakeValidator stakeValidator)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, uxtoSet, lookaheadBlockPuller, stakeChain, stakeValidator)
+        public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView uxtoSet, IStakeChain stakeChain, IStakeValidator stakeValidator, IChainState chainState)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, uxtoSet, stakeChain, stakeValidator, chainState)
         {
         }
 
@@ -131,9 +132,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
             testRulesContext.Chain = new ConcurrentChain(network);
+            testRulesContext.ChainState = new ChainState(new InvalidBlockHashStore(testRulesContext.DateTimeProvider));
 
             var deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
-            testRulesContext.Consensus = new PowConsensusRules(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), new Mock<ILookaheadBlockPuller>().Object).Register();
+            testRulesContext.ConsensusRuleEngine = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), testRulesContext.ChainState).Register();
 
             return testRulesContext;
         }

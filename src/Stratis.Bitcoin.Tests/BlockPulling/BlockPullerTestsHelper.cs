@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.BlockPulling2;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Interfaces;
@@ -21,7 +22,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Tests.BlockPulling2
+namespace Stratis.Bitcoin.Tests.BlockPulling
 {
     public class BlockPullerTestsHelper
     {
@@ -193,6 +194,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
 
         public void PushBlock(uint256 blockHash, Block block, int peerId) { this.puller.PushBlock(blockHash, block, peerId); }
 
+        public void ShowStats(StringBuilder statsBuilder) { this.puller.ShowStats(statsBuilder); }
+
         public void Dispose() { this.puller.Dispose(); }
     }
 
@@ -200,8 +203,6 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
     public class ExtendedBlockPullerBehavior : NetworkPeerBehavior, IBlockPullerBehavior
     {
         public readonly List<uint256> RequestedHashes;
-
-        public bool ProvidedIbdState;
 
         public bool RecalculateQualityScoreWasCalled;
 
@@ -217,12 +218,6 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             this.RecalculateQualityScoreWasCalled = false;
             this.RequestedHashes = new List<uint256>();
             this.underlyingBehavior = new BlockPullerBehavior(blockPuller, ibdState, loggerFactory);
-        }
-
-        public void OnIbdStateChanged(bool isIbd)
-        {
-            this.underlyingBehavior.OnIbdStateChanged(isIbd);
-            this.ProvidedIbdState = isIbd;
         }
 
         public Task RequestBlocksAsync(List<uint256> hashes)
@@ -246,19 +241,15 @@ namespace Stratis.Bitcoin.Tests.BlockPulling2
             }
         }
 
-        public int SpeedBytesPerSecond => this.underlyingBehavior.SpeedBytesPerSecond;
+        public double BlockDeliveryRate => this.underlyingBehavior.BlockDeliveryRate;
 
         public ChainedHeader Tip { get => this.underlyingBehavior.Tip; set => this.underlyingBehavior.Tip = value; }
 
-        public void AddSample(long blockSizeBytes, double delaySeconds) { this.underlyingBehavior.AddSample(blockSizeBytes, delaySeconds); }
+        public void AddSample(double delaySeconds) { this.underlyingBehavior.AddSample(delaySeconds); }
 
-        public AverageCalculator AverageSizeBytes => this.underlyingBehavior.averageSizeBytes;
-
-        public void Penalize(double delaySeconds, int notDeliveredBlocksCount) { this.underlyingBehavior.Penalize(delaySeconds, notDeliveredBlocksCount); }
-
-        public void RecalculateQualityScore(int bestSpeedBytesPerSecond)
+        public void RecalculateQualityScore(double bestRate)
         {
-            this.underlyingBehavior.RecalculateQualityScore(bestSpeedBytesPerSecond);
+            this.underlyingBehavior.RecalculateQualityScore(bestRate);
             this.RecalculateQualityScoreWasCalled = true;
         }
 

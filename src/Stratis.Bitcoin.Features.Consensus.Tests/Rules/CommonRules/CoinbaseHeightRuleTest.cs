@@ -16,7 +16,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_BestBlockAvailable_BadCoinBaseHeight_ThrowsBadCoinbaseHeightConsensusErrorExceptionAsync()
         {
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
-            this.ruleContext.ConsensusTipHeight = 3;
 
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new Script(Op.GetPushOp(3))));
@@ -45,7 +44,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task RunAsync_CorrectCoinBaseHeight_DoesNotThrowExceptionAsync()
         {
             this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
-            this.ruleContext.ConsensusTipHeight = 3;
 
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new Script(Op.GetPushOp(4))));

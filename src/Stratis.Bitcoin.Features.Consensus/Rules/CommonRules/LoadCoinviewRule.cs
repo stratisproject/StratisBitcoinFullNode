@@ -16,8 +16,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
-            uint256 oldBlockHash = context.ConsensusTip.HashBlock;
-            uint256 nextBlockHash = context.ValidationContext.ChainedHeader.HashBlock;
+            uint256 oldBlockHash = context.ValidationContext.ChainTipToExtand.Previous.HashBlock;
+            uint256 nextBlockHash = context.ValidationContext.ChainTipToExtand.HashBlock;
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             // Check that the current block has not been reorged.
             // Catching a reorg at this point will not require a rewind.
-            if (context.ValidationContext.Block.Header.HashPrevBlock != context.ConsensusTip.HashBlock)
+            if (context.ValidationContext.Block.Header.HashPrevBlock != this.Parent.ChainState.ConsensusTip.HashBlock)
             {
                 this.Logger.LogTrace("Reorganization detected.");
                 ConsensusErrors.InvalidPrevTip.Throw();
@@ -53,28 +53,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
                 utxoRuleContext.UnspentOutputSet.SetCoins(coins.UnspentOutputs);
             }
-
-            // Attempt to load into the cache the next set of UTXO to be validated.
-            // The task is not awaited so will not stall main validation process.
-            this.TryPrefetchAsync(context.Flags);
-        }
-
-        /// <summary>
-        /// This method tries to load from cache the UTXO of the next block in a background task.
-        /// </summary>
-        /// <param name="flags">Information about activated features.</param>
-        private async void TryPrefetchAsync(DeploymentFlags flags)
-        {
-            this.Logger.LogTrace("({0}:{1})", nameof(flags), flags);
-
-            if (this.PowParent.UtxoSet is CachedCoinView)
-            {
-                Block nextBlock = this.PowParent.Puller.TryGetLookahead(0);
-                if (nextBlock != null)
-                    await this.PowParent.UtxoSet.FetchCoinsAsync(this.GetIdsToFetch(nextBlock, flags.EnforceBIP30)).ConfigureAwait(false);
-            }
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <summary>

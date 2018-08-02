@@ -330,12 +330,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void the_consensus_tip_blockhash_is_returned()
         {
-            this.responseText.Should().Be("\"" + this.nodes[FirstPowNode].FullNode.ConsensusLoop().Tip.HashBlock.ToString() + "\"");
+            this.responseText.Should().Be("\"" + this.nodes[FirstPowNode].FullNode.ConsensusManager().Tip.HashBlock.ToString() + "\"");
         }
 
         private void the_blockcount_should_match_consensus_tip_height()
         {
-            this.responseText.Should().Be(this.nodes[FirstPowNode].FullNode.ConsensusLoop().Tip.Height.ToString());
+            this.responseText.Should().Be(this.nodes[FirstPowNode].FullNode.ConsensusManager().Tip.Height.ToString());
         }
 
         private void the_real_block_should_be_retrieved()

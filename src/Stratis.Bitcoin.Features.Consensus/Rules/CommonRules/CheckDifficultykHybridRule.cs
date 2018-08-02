@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Calculate the difficulty of a POS network for both Pow/POS blocks.
     /// </summary>
-    [PartialValidationRule]
+    [PartialValidationRule(CanSkipValidation = true)]
     public class CheckDifficultykHybridRule : StakeStoreConsensusRule
     {
         /// <inheritdoc />
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
 
-            Target nextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.ValidationContext.ChainedHeader.Previous, context.Consensus, posRuleContext.BlockStake.IsProofOfStake());
+            Target nextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.ValidationContext.ChainTipToExtand.Previous, this.Parent.Network.Consensus, posRuleContext.BlockStake.IsProofOfStake());
 
             BlockHeader header = context.ValidationContext.Block.Header;
 

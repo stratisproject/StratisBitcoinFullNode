@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
@@ -14,7 +13,7 @@ using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Base
+namespace Stratis.Bitcoin.Consensus
 {
     /// <summary>Behavior that takes care of headers protocol. It also keeps the notion of peer's consensus tip.</summary>
     public class ConsensusManagerBehavior : NetworkPeerBehavior
@@ -302,7 +301,7 @@ namespace Stratis.Bitcoin.Base
                 this.ExpectedPeerTip = result.Consumed;
                 this.UpdateBestSentHeader(this.ExpectedPeerTip);
 
-                if (result.Consumed.Header != headers.Last())
+                if (result.Consumed.HashBlock != headers.Last().GetHash())
                 {
                     // Some headers were not consumed, add to cache.
                     int consumedCount = headers.IndexOf(result.Consumed.Header) + 1;
@@ -459,7 +458,7 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/> in case peer's state is <see cref="NetworkPeerState.HandShaked"/>.</summary>
-        private async Task ResyncAsync()
+        public async Task ResyncAsync()
         {
             this.logger.LogTrace("()");
 

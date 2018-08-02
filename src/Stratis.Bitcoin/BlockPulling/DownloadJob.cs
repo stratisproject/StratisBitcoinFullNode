@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.BlockPulling2
+namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>Represents consecutive collection of headers that are to be downloaded.</summary>
     public struct DownloadJob

@@ -14,19 +14,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
-            Guard.NotNull(context.ConsensusTip, nameof(context.ConsensusTip));
-
-            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
+            ChainedHeader chainedHeader = context.ValidationContext.ChainTipToExtand;
 
             if (chainedHeader.Header.Version < 7)
             {
                 this.Logger.LogTrace("(-)[BAD_VERSION]");
                 ConsensusErrors.BadVersion.Throw();
             }
-
-            return Task.CompletedTask;
         }
     }
 }

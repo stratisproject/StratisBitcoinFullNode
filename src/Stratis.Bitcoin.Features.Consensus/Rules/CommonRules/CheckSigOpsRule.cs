@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.Block;
-            ConsensusOptions options = context.Consensus.Options;
+            ConsensusOptions options = this.Parent.Network.Consensus.Options;
 
             long nSigOps = 0;
             foreach (Transaction tx in block.Transactions)

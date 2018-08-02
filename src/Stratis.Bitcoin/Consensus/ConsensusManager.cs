@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.BlockPulling2;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
@@ -26,6 +26,12 @@ namespace Stratis.Bitcoin.Consensus
     {
         /// <summary>The current tip of the chain that has been validated.</summary>
         ChainedHeader Tip { get; }
+
+        /// <summary>Puller of blocks.</summary>
+        IBlockPuller BlockPuller { get; }
+
+        /// <summary>The collection of rules.</summary>
+        IConsensusRuleEngine ConsensusRules { get; }
 
         /// <summary>
         /// Set the tip of <see cref="ConsensusManager"/>, if the given <paramref name="chainTip"/> is not equal to <see cref="Tip"/>
@@ -65,6 +71,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="blockHashes">The block hashes to download.</param>
         /// <param name="onBlockDownloadedCallback">The callback that will be called for each downloaded block.</param>
         Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback);
+
+        /// <summary>
+        /// A new block was mined by the node and is attempted to connect to tip.
+        /// </summary>
+        /// <param name="block">The mined block.</param>
+        Task<ChainedHeaderBlock> BlockMined(Block block);
     }
 
     /// <inheritdoc cref="IConsensusManager"/>
@@ -87,10 +99,10 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ILogger logger;
         private readonly IChainedHeaderTree chainedHeaderTree;
         private readonly IChainState chainState;
-        private readonly IPartialValidation partialValidation;
+        private readonly IPartialValidator partialValidator;
         private readonly ConsensusSettings consensusSettings;
         private readonly IBlockPuller blockPuller;
-        private readonly IConsensusRules consensusRules;
+        private readonly IConsensusRuleEngine consensusRules;
         private readonly Signals.Signals signals;
         private readonly IPeerBanning peerBanning;
         private readonly IBlockStore blockStore;
@@ -98,6 +110,12 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <inheritdoc />
         public ChainedHeader Tip { get; private set; }
+
+        /// <inheritdoc />
+        public IBlockPuller BlockPuller => this.blockPuller;
+
+        /// <inheritdoc />
+        public IConsensusRuleEngine ConsensusRules => this.consensusRules;
 
         private readonly Dictionary<uint256, List<OnBlockDownloadedCallback>> callbacksByBlocksRequestedHash;
 
@@ -131,10 +149,10 @@ namespace Stratis.Bitcoin.Consensus
             IChainState chainState,
             IHeaderValidator headerValidator,
             IIntegrityValidator integrityValidator,
-            IPartialValidation partialValidation,
+            IPartialValidator partialValidator,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
-            IConsensusRules consensusRules,
+            IConsensusRuleEngine consensusRules,
             IFinalizedBlockHeight finalizedBlockHeight,
             Signals.Signals signals,
             IPeerBanning peerBanning,
@@ -146,7 +164,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.network = network;
             this.chainState = chainState;
-            this.partialValidation = partialValidation;
+            this.partialValidator = partialValidator;
             this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
             this.signals = signals;
@@ -190,12 +208,13 @@ namespace Stratis.Bitcoin.Consensus
             //  coinview and it will abstract the methods `RewindAsync()` `GetBlockHashAsync()`
 
             uint256 consensusTipHash = await this.consensusRules.GetBlockHashAsync().ConfigureAwait(false);
+            bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
 
             while (true)
             {
                 this.Tip = chainTip.FindAncestorOrSelf(consensusTipHash);
 
-                if (this.Tip?.HashBlock == consensusTipHash)
+                if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
                     break;
 
                 // In case block store initialized behind, rewind until or before the block store tip.
@@ -257,6 +276,12 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
+        public Task<ChainedHeaderBlock> BlockMined(Block block)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Called after a peer was disconnected.
         /// Informs underlying components about the even.
@@ -296,8 +321,10 @@ namespace Stratis.Bitcoin.Consensus
                 partialValidationRequired = this.chainedHeaderTree.BlockDataDownloaded(chainedHeaderBlock.ChainedHeader, chainedHeaderBlock.Block);
             }
 
+            this.logger.LogTrace("Partial validation is{0} required.", partialValidationRequired ? "" : " NOT");
+
             if (partialValidationRequired)
-                this.partialValidation.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);
+                this.partialValidator.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);
 
             this.logger.LogTrace("(-)");
         }
@@ -355,6 +382,8 @@ namespace Stratis.Bitcoin.Consensus
                     chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeaderBlock.ChainedHeader, out fullValidationRequired);
                 }
 
+                this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? "" : " NOT");
+
                 if (fullValidationRequired)
                 {
                     connectBlocksResult = await this.FullyValidateLockedAsync(chainedHeaderBlock).ConfigureAwait(false);
@@ -398,7 +427,7 @@ namespace Stratis.Bitcoin.Consensus
                 // Start validating all next blocks that come after the current block,
                 // all headers in this list have the blocks present in the header.
                 foreach (ChainedHeaderBlock toValidate in chainedHeaderBlocksToValidate)
-                    this.partialValidation.StartPartialValidation(toValidate, this.OnPartialValidationCompletedCallbackAsync);
+                    this.partialValidator.StartPartialValidation(toValidate, this.OnPartialValidationCompletedCallbackAsync);
             }
 
             this.logger.LogTrace("(-)");
@@ -493,7 +522,7 @@ namespace Stratis.Bitcoin.Consensus
                 return result;
             }
 
-            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(newTip, currentTip, blocksToConnect).ConfigureAwait(false);
+            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(newTip, blocksToConnect).ConfigureAwait(false);
 
             if (connectBlockResult.Succeeded)
             {
@@ -525,7 +554,7 @@ namespace Stratis.Bitcoin.Consensus
                 return result;
             }
 
-            ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(oldTip, currentTip, blocksToReconnect).ConfigureAwait(false);
+            ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(currentTip, blocksToReconnect).ConfigureAwait(false);
 
             this.logger.LogTrace("(-):'{0}'", reconnectionResult);
             return reconnectionResult;
@@ -582,18 +611,17 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Connects new chain.</summary>
         /// <param name="newTip">New tip.</param>
-        /// <param name="currentTip">Current tip.</param>
         /// <param name="blocksToConnect">List of blocks to connect.</param>
-        private async Task<ConnectBlocksResult> ConnectChainAsync(ChainedHeader newTip, ChainedHeader currentTip, List<ChainedHeaderBlock> blocksToConnect)
+        private async Task<ConnectBlocksResult> ConnectChainAsync(ChainedHeader newTip, List<ChainedHeaderBlock> blocksToConnect)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}.{5}:{6})", nameof(newTip), newTip, nameof(currentTip), currentTip, nameof(blocksToConnect), nameof(blocksToConnect.Count), blocksToConnect.Count);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newTip), newTip, nameof(blocksToConnect), nameof(blocksToConnect.Count), blocksToConnect.Count);
 
             ChainedHeader lastValidatedBlockHeader = null;
             ConnectBlocksResult connectBlockResult = null;
 
             foreach (ChainedHeaderBlock blockToConnect in blocksToConnect)
             {
-                connectBlockResult = await this.ConnectBlockAsync(currentTip, blockToConnect).ConfigureAwait(false);
+                connectBlockResult = await this.ConnectBlockAsync(blockToConnect).ConfigureAwait(false);
 
                 if (!connectBlockResult.Succeeded)
                 {
@@ -626,15 +654,14 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Reconnects the old chain.</summary>
-        /// <param name="oldTip">The old tip.</param>
         /// <param name="currentTip">Current tip.</param>
         /// <param name="blocksToReconnect">List of blocks to reconnect.</param>
-        private async Task<ConnectBlocksResult> ReconnectOldChainAsync(ChainedHeader oldTip, ChainedHeader currentTip, List<ChainedHeaderBlock> blocksToReconnect)
+        private async Task<ConnectBlocksResult> ReconnectOldChainAsync(ChainedHeader currentTip, List<ChainedHeaderBlock> blocksToReconnect)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}.{5}:{6})", nameof(oldTip), oldTip, nameof(currentTip), currentTip, nameof(blocksToReconnect), nameof(blocksToReconnect.Count), blocksToReconnect.Count);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(currentTip), currentTip, nameof(blocksToReconnect), nameof(blocksToReconnect.Count), blocksToReconnect.Count);
 
             // Connect back the old blocks.
-            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(oldTip, currentTip, blocksToReconnect).ConfigureAwait(false);
+            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(currentTip, blocksToReconnect).ConfigureAwait(false);
 
             if (connectBlockResult.Succeeded)
             {
@@ -722,12 +749,11 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Attempts to connect a block to a chain with specified tip.
         /// </summary>
-        /// <param name="chainTipToExtand">Tip of the chain to extend.</param>
         /// <param name="blockToConnect">Block to connect.</param>
         /// <exception cref="ConsensusException">Thrown in case CHT is not in a consistent state.</exception>
-        private async Task<ConnectBlocksResult> ConnectBlockAsync(ChainedHeader chainTipToExtand, ChainedHeaderBlock blockToConnect)
+        private async Task<ConnectBlocksResult> ConnectBlockAsync(ChainedHeaderBlock blockToConnect)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(chainTipToExtand), chainTipToExtand, nameof(blockToConnect), blockToConnect);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockToConnect), blockToConnect);
 
             if ((blockToConnect.ChainedHeader.BlockValidationState != ValidationState.PartiallyValidated) &&
                 (blockToConnect.ChainedHeader.BlockValidationState != ValidationState.FullyValidated))
@@ -737,10 +763,10 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("Block must be partially or fully validated.");
             }
 
-            var validationContext = new ValidationContext() { Block = blockToConnect.Block };
+                var validationContext = new ValidationContext() { Block = blockToConnect.Block, ChainTipToExtand = blockToConnect.ChainedHeader };
 
-            // Call the validation engine.
-            await this.consensusRules.FullValidationAsync(validationContext, chainTipToExtand).ConfigureAwait(false);
+                // Call the validation engine.
+                await this.consensusRules.FullValidationAsync(validationContext).ConfigureAwait(false);
 
             if (validationContext.Error != null)
             {
@@ -760,6 +786,8 @@ namespace Stratis.Bitcoin.Consensus
             lock (this.peerLock)
             {
                 this.chainedHeaderTree.FullValidationSucceeded(blockToConnect.ChainedHeader);
+
+                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsAtBestChainTip();
             }
 
             var result = new ConnectBlocksResult(true);

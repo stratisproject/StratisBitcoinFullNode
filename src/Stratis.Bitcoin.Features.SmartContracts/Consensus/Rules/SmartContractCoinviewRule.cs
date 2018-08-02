@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private NBitcoin.Consensus consensusParams;
         private Transaction generatedTransaction;
         private uint refundCounter;
-        private SmartContractConsensusRules smartContractParent;
+        private SmartContractConsensusRuleEngine smartContractParent;
 
         public SmartContractCoinviewRule()
         {
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.consensusParams = this.Parent.Network.Consensus;
             this.generatedTransaction = null;
             this.refundCounter = 1;
-            this.smartContractParent = (SmartContractConsensusRules)this.Parent;
+            this.smartContractParent = (SmartContractConsensusRuleEngine)this.Parent;
 
             this.Logger.LogTrace("(-)");
         }
@@ -52,14 +52,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             this.blockTxsProcessed = new List<Transaction>();
             NBitcoin.Block block = context.ValidationContext.Block;
-            ChainedHeader index = context.ValidationContext.ChainedHeader;
+            ChainedHeader index = context.ValidationContext.ChainTipToExtand;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = ((UtxoRuleContext)context).UnspentOutputSet;
 
             this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
             // Start state from previous block's root
-            this.smartContractParent.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
+            this.smartContractParent.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ValidationContext.ChainTipToExtand.Previous.Header).HashStateRoot.ToBytes());
             IContractStateRepository trackedState = this.smartContractParent.OriginalStateRoot.StartTracking();
 
             this.refundCounter = 1;
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         private ISmartContractTransactionContext GetSmartContractTransactionContext(RuleContext context, Transaction transaction)
         {
-            ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainedHeader.Height);
+            ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainTipToExtand.Height);
 
             GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(transaction, this.smartContractParent.UtxoSet, this.blockTxsProcessed);
 

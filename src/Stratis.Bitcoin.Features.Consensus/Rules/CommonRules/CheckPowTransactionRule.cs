@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.Block;
-            var options = context.Consensus.Options;
+            var options = this.Parent.Network.Consensus.Options;
 
             // Check transactions
             foreach (Transaction tx in block.Transactions)

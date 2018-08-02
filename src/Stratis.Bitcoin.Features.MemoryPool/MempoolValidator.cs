@@ -128,8 +128,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Coin view of the memory pool.</summary>
         private readonly ICoinView coinView;
 
-        /// <inheritdoc cref="IConsensusRules" />
-        private readonly IConsensusRules consensusRules;
+        /// <inheritdoc cref="IConsensusRuleEngine" />
+        private readonly IConsensusRuleEngine consensusRules;
 
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         private readonly ITxMempool memPool;
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             ICoinView coinView,
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
-            IConsensusRules consensusRules)
+            IConsensusRuleEngine consensusRules)
         {
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;

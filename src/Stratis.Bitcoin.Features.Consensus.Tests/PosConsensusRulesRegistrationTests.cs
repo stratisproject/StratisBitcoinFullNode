@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact(Skip = "This should be activated when rules move to network")]
         public void GetRules_ForPOS_ReturnsListOfRegisteredPowRules()
         {
-            this.rules.Count().Should().Be(26);
+            this.rules.Count().Should().Be(24);
 
             this.rules.ElementAt(0).Should().BeOfType<HeaderTimeChecksRule>();
             this.rules.ElementAt(1).Should().BeOfType<HeaderTimeChecksPosRule>();
@@ -30,8 +30,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             this.rules.ElementAt(6).Should().BeOfType<PosBlockSignatureRule>();
             this.rules.ElementAt(7).Should().BeOfType<SetActivationDeploymentsRule>();
             this.rules.ElementAt(8).Should().BeOfType<CheckDifficultyPosRule>();
-            this.rules.ElementAt(9).Should().BeOfType<CheckpointsRule>();
-            this.rules.ElementAt(10).Should().BeOfType<AssumeValidRule>();
             this.rules.ElementAt(11).Should().BeOfType<TransactionLocktimeActivationRule>();
             this.rules.ElementAt(12).Should().BeOfType<CoinbaseHeightActivationRule>();
             this.rules.ElementAt(13).Should().BeOfType<WitnessCommitmentsRule>();

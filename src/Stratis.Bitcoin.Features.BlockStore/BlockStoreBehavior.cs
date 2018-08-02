@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IBlockStoreCache blockStoreCache;
 
-        private ChainHeadersBehavior headersBehavior;
+        private ConsensusManagerBehavior consensusManagerBehavior;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -105,7 +106,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
 
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-            this.headersBehavior = this.AttachedPeer.Behavior<ChainHeadersBehavior>();
+            this.consensusManagerBehavior = this.AttachedPeer.Behavior<ConsensusManagerBehavior>();
 
             this.logger.LogTrace("(-)");
         }
@@ -188,7 +189,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
 
             //TODO use CMB.BestPeerTip instead. Also when we update LastHeaderSent update CMB.UpdateBestHeaderSent
-            ChainedHeader peerTip = this.headersBehavior.ExpectedPeerTip;
+            ChainedHeader peerTip = this.consensusManagerBehavior.ExpectedPeerTip;
 
             ChainedHeader bestHeader = peerTip;
 

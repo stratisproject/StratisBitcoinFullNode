@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = block,
-                ChainedHeader = this.concurrentChain.GetBlock(4)
+                ChainTipToExtand = this.concurrentChain.GetBlock(4)
             };
 
             var target = new Target(0x1f111115);
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(
                 this.stakeChain.Object,
                 this.concurrentChain.GetBlock(3),
-                this.ruleContext.Consensus,
+                this.network.Consensus,
                 true))
                 .Returns(target)
                 .Verifiable();
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = block,
-                ChainedHeader = this.concurrentChain.GetBlock(4)
+                ChainTipToExtand = this.concurrentChain.GetBlock(4)
             };
             this.ruleContext.MinedBlock = true;
             var target = new Target(0x1f111115);
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(
                 this.stakeChain.Object,
                 this.concurrentChain.GetBlock(3),
-                this.ruleContext.Consensus,
+                this.network.Consensus,
                 false))
                 .Returns(target)
                 .Verifiable();
@@ -95,16 +95,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain),
-                ChainedHeader = this.concurrentChain.Tip
+                ChainTipToExtand = this.concurrentChain.Tip
             };
             this.ruleContext.MinedBlock = false;
-            this.ruleContext.Consensus = this.network.Consensus;
             var target = this.ruleContext.ValidationContext.Block.Header.Bits;
 
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(
                 this.stakeChain.Object,
                 this.concurrentChain.GetBlock(1),
-                this.ruleContext.Consensus,
+                this.network.Consensus,
                 false))
                 .Returns(target)
                 .Verifiable();
@@ -130,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = block,
-                ChainedHeader = this.concurrentChain.GetBlock(4)
+                ChainTipToExtand = this.concurrentChain.GetBlock(4)
             };
             this.ruleContext.MinedBlock = false;
 

@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -22,9 +23,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             return fullNode.NodeService<IWalletTransactionHandler>() as WalletTransactionHandler;
         }
 
-        public static ConsensusLoop ConsensusLoop(this FullNode fullNode)
+        public static IConsensusManager ConsensusManager(this FullNode fullNode)
         {
-            return fullNode.NodeService<IConsensusLoop>() as ConsensusLoop;
+            return fullNode.NodeService<IConsensusManager>() as IConsensusManager;
         }
 
         public static ICoinView CoinView(this FullNode fullNode)

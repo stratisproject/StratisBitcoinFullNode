@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Rules;
 
-namespace Stratis.Bitcoin.Consensus.Rules
+namespace Stratis.Bitcoin.Consensus
 {
     /// <summary>
     /// An engine that enforce the execution and validation of consensus rule. 
@@ -12,7 +13,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// In order for a block to be valid it has to successfully pass the rules checks.
     /// A block  that is not valid will result in the <see cref="ValidationContext.Error"/> as not <c>null</c>.
     /// </remarks>
-    public interface IConsensusRules
+    public interface IConsensusRuleEngine : IDisposable
     {
         /// <summary>
         /// Collection of all the rules that are registered with the engine.
@@ -25,35 +26,14 @@ namespace Stratis.Bitcoin.Consensus.Rules
         ConsensusPerformanceCounter PerformanceCounter { get; }
 
         /// <summary>
+        /// Initialize the rules engine.
+        /// </summary>
+        Task Initialize();
+
+        /// <summary>
         /// Register a new rule to the engine
         /// </summary>
-        ConsensusRules Register();
-
-        /// <summary>
-        /// A method that will accept a new block to the node.
-        /// The block will be validated and the <see cref="CoinView"/> db will be updated.
-        /// If it's a new block that was mined or staked it will extend the chain and the new block will set <see cref="ConcurrentChain.Tip"/>.
-        /// </summary>
-        /// <param name="validationContext">Information about the block to validate.</param>
-        /// <param name="tip">The current tip.</param>
-        [Obsolete("Delete when CM activates")]
-        Task AcceptBlockAsync(ValidationContext validationContext, ChainedHeader tip);
-
-        /// <summary>
-        /// Execute the consensus rule engine.
-        /// </summary>
-        /// <param name="ruleContext">A context that holds information about the current validated block.</param>
-        /// <returns>The processing task.</returns>
-        [Obsolete("Delete when CM activates")]
-        Task ValidateAndExecuteAsync(RuleContext ruleContext);
-
-        /// <summary>
-        /// Execute the consensus rule engine in validation mode only, no state will be changed.
-        /// </summary>
-        /// <param name="ruleContext">A context that holds information about the current validated block.</param>
-        /// <returns>The processing task.</returns>
-        [Obsolete("Delete when CM activates")]
-        Task ValidateAsync(RuleContext ruleContext);
+        ConsensusRuleEngine Register();
 
         /// <summary>
         /// Gets the consensus rule that is assignable to the supplied generic type.
@@ -66,7 +46,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <remarks>
         /// Each network type can specify it's own <see cref="RuleContext"/>.
         /// </remarks>
-        RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip);
+        RuleContext CreateRuleContext(ValidationContext validationContext);
 
         /// <summary>
         /// Retrieves the block hash of the current tip of the chain.
@@ -88,28 +68,24 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// Execute rules that are marked with the <see cref="HeaderValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
-        /// <param name="tip">The current tip.</param>
-        void HeaderValidation(ValidationContext validationContext, ChainedHeader tip);
+        void HeaderValidation(ValidationContext validationContext);
 
         /// <summary>
         /// Execute rules that are marked with the <see cref="IntegrityValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
-        /// <param name="tip">The current tip.</param>
-        void IntegrityValidation(ValidationContext validationContext, ChainedHeader tip);
+        void IntegrityValidation(ValidationContext validationContext);
 
         /// <summary>
         /// Execute rules that are marked with the <see cref="PartialValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
-        /// <param name="tip">The current tip.</param>
-        Task PartialValidationAsync(ValidationContext validationContext, ChainedHeader tip);
+        Task PartialValidationAsync(ValidationContext validationContext);
 
         /// <summary>
         /// Execute rules that are marked with the <see cref="FullValidationRuleAttribute"/>.
         /// </summary>
         /// <param name="validationContext">The validation context.</param>
-        /// <param name="tip">The current tip.</param>
-        Task FullValidationAsync(ValidationContext validationContext, ChainedHeader tip);
+        Task FullValidationAsync(ValidationContext validationContext);
     }
 }

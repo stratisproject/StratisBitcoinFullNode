@@ -13,14 +13,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoS header.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
-            if (!context.MinedBlock && !context.ValidationContext.Block.Header.CheckProofOfWork())
+            if (!context.MinedBlock && !context.ValidationContext.ChainTipToExtand.Header.CheckProofOfWork())
                 ConsensusErrors.HighHash.Throw();
 
-            Target nextWorkRequired = context.ValidationContext.ChainedHeader.GetWorkRequired(context.Consensus);
+            Target nextWorkRequired = context.ValidationContext.ChainTipToExtand.GetWorkRequired(this.Parent.Network.Consensus);
 
-            BlockHeader header = context.ValidationContext.Block.Header;
+            BlockHeader header = context.ValidationContext.ChainTipToExtand.Header;
 
             // Check proof of work.
             if (header.Bits != nextWorkRequired)
@@ -28,8 +28,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("(-)[BAD_DIFF_BITS]");
                 ConsensusErrors.BadDiffBits.Throw();
             }
-
-            return Task.CompletedTask;
         }
     }
 }

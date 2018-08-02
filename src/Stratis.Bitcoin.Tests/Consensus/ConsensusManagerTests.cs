@@ -23,12 +23,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public readonly Network Network = KnownNetworks.RegTest;
             public Mock<IHeaderValidator> HeaderValidatorMock = new Mock<IHeaderValidator>();
             public Mock<IIntegrityValidator> IntegrityValidatorMock = new Mock<IIntegrityValidator>();
-            public readonly Mock<IPartialValidation> PartialValidationMock = new Mock<IPartialValidation>();
+            public readonly Mock<IPartialValidator> PartialValidationMock = new Mock<IPartialValidator>();
             public readonly Mock<ICheckpoints> CheckpointsMock = new Mock<ICheckpoints>();
             public readonly Mock<IPeerBanning> PeerBanningMock = new Mock<IPeerBanning>();
 
             public readonly Mock<IChainState> ChainStateMock = new Mock<IChainState>();
-            public readonly Mock<IConsensusRules> ConsensusRulesMock = new Mock<IConsensusRules>();
+            public readonly Mock<IConsensusRuleEngine> ConsensusRulesMock = new Mock<IConsensusRuleEngine>();
 
             public readonly Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
             public readonly ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(KnownNetworks.RegTest));

@@ -1,11 +1,10 @@
 ﻿using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus
+namespace Stratis.Bitcoin.Base
 {
     /// <summary>
     /// Provides IBD (Initial Block Download) state.

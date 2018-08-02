@@ -18,8 +18,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>A value indicating the peer ban time should be <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.</summary>
         public const int BanDurationDefaultBan = 0;
 
-        /// <summary>The chain of headers associated with the block.</summary>
-        public ChainedHeader ChainedHeader { get; set; }
+        /// <summary>Chained header which is a tip of the chain that will be extended with a block being validated.</summary>
+        public ChainedHeader ChainTipToExtand { get; set; }
 
         /// <summary>Downloaded or mined block to be validated.</summary>
         public Block Block { get; set; }

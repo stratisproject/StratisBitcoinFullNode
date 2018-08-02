@@ -12,23 +12,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             var rules = new List<IConsensusRule>
             {
-                new TemporarySetChainHeader(),
-                
                 // == Header ==
                 new HeaderTimeChecksRule(),
                 new CheckDifficultyPowRule(),
-                
+                new BitcoinActivationRule(),
+
                 // == Integrity ==
                 new BlockMerkleRootRule(),
-                
-                // == Partial ==
+
+                // == Partial and Full ==
                 new SetActivationDeploymentsRule(),
 
-                // rules that are inside the method CheckBlockHeader
-
-                // rules that are inside the method ContextualCheckBlockHeader
-                new CheckpointsRule(),
-                new AssumeValidRule(),
+                // == Partial ==
 
                 // rules that are inside the method ContextualCheckBlock
                 new TransactionLocktimeActivationRule(), // implements BIP113

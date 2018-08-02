@@ -15,7 +15,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public BlockSizeRuleTest()
         {
             this.options = this.network.Consensus.Options;
-            this.ruleContext.Consensus = this.network.Consensus;
         }
 
         [Fact]

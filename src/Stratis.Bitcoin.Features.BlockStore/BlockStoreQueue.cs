@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>The highest stored block in the repository.</summary>
         private ChainedHeader storeTip;
-        
+
         /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            
+
             this.chainState = chainState;
             this.nodeLifetime = nodeLifetime;
             this.storeSettings = storeSettings;
@@ -109,8 +109,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </para>
         /// </summary>
         public async Task InitializeAsync()
-        {
+        {             
             this.logger.LogTrace("()");
+
+            await this.blockRepository.InitializeAsync();
 
             if (this.storeSettings.ReIndex)
             {
@@ -120,7 +122,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             ChainedHeader initializationTip = this.chain.GetBlock(this.blockRepository.BlockHash);
             this.SetStoreTip(initializationTip);
-            
+
             if (this.storeTip == null)
                 await this.RecoverStoreTipAsync().ConfigureAwait(false);
 
@@ -138,7 +140,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 // Always set the TxIndex here.
                 await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
             }
-            
+
             // Throw if block store was initialized after the consensus.
             // This is needed in order to rewind consensus in case it is initialized ahead of the block store.
             if (this.chainState.ConsensusTip != null)
@@ -252,7 +254,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("(-)");
         }
-        
+
         /// <summary>
         /// Dequeues the blocks continuously and saves them to the database when max batch size is reached or timer ran out.
         /// </summary>
@@ -287,8 +289,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.logger.LogDebug("Node is shutting down. Save batch.");
                 }
 
-                // Save batch if timer ran out or we've dequeued a new block and reached the consensus tip 
-                // or the max batch size is reached or the node is shutting down.  
+                // Save batch if timer ran out or we've dequeued a new block and reached the consensus tip
+                // or the max batch size is reached or the node is shutting down.
                 if (dequeueTask.Status == TaskStatus.RanToCompletion)
                 {
                     ChainedHeaderBlock item = dequeueTask.Result;
@@ -300,7 +302,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     this.currentBatchSizeBytes += item.Block.BlockSize.Value;
 
-                    saveBatch = saveBatch || (item.ChainedHeader == this.chain.Tip) || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes);
+                    saveBatch = saveBatch || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes) || this.chainState.IsAtBestChainTip;
                 }
                 else
                 {
@@ -329,7 +331,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("(-)");
         }
-        
+
         /// <summary>
         /// Checks if repository contains reorged blocks and deletes them; saves batch on top.
         /// The last block in the list is considered to be on the current main chain and will be used to determine if a database reorg is required.
@@ -375,7 +377,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             // List of consecutive blocks. It's a cleaned out version of batch that doesn't have blocks that were reorged.
             var batchCleared = new List<ChainedHeaderBlock>(batch.Count) { current };
-            
+
             // Select only those blocks that were not reorged away.
             for (int i = batch.Count - 2; i >= 0; i--)
             {
@@ -413,7 +415,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogDebug("Block store reorg detected. Removing {0} blocks from the database.", blocksToDelete.Count);
 
             await this.blockRepository.DeleteAsync(currentHeader.HashBlock, blocksToDelete).ConfigureAwait(false);
-            
+
             this.SetStoreTip(expectedStoreTip);
             this.logger.LogDebug("Store tip rewound to '{0}'.", this.storeTip);
 
@@ -428,6 +430,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // Let current batch saving task finish.
             this.blocksQueue.Dispose();
             this.dequeueLoopTask?.GetAwaiter().GetResult();
+            this.blockRepository.Dispose();
 
             this.logger.LogTrace("(-)");
         }

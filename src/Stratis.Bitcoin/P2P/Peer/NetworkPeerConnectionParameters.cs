@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Nonce = RandomUtils.GetUInt64();
         }
 
-        public NetworkPeerConnectionParameters(NetworkPeerConnectionParameters other)
+        public NetworkPeerConnectionParameters SetFrom(NetworkPeerConnectionParameters other)
         {
             this.Version = other.Version;
             this.IsRelay = other.IsRelay;
@@ -79,11 +79,13 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.TemplateBehaviors.Add(behavior.Clone());
             }
+
+            return this;
         }
 
         public NetworkPeerConnectionParameters Clone()
         {
-            return new NetworkPeerConnectionParameters(this);
+            return new NetworkPeerConnectionParameters().SetFrom(this);
         }
 
         public VersionPayload CreateVersion(IPEndPoint peerAddress, Network network, DateTimeOffset timeStamp)

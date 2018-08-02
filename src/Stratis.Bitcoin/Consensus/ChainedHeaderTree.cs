@@ -149,6 +149,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Get the chained header.</summary>
         /// <returns>Chained header for specified block hash if it exists, <c>null</c> otherwise.</returns>
         ChainedHeader GetChainedHeader(uint256 blockHash);
+
+        /// <summary>Returns <c>true</c> if consensus tip is equal to the tip of the most advanced peer node it is connected to.</summary>
+        bool IsAtBestChainTip();
     }
 
     /// <inheritdoc />
@@ -209,7 +212,7 @@ namespace Stratis.Bitcoin.Consensus
             ICheckpoints checkpoints,
             IChainState chainState,
             IFinalizedBlockHeight finalizedBlockHeight,
-            ConsensusSettings consensusSettings, 
+            ConsensusSettings consensusSettings,
             ISignals signals)
         {
             this.network = network;
@@ -811,9 +814,9 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Mark the chain ending with <paramref name="chainedHeader"/> as <see cref="ValidationState.AssumedValid"/>.
+        /// Mark the chain ending with <paramref name="chainedHeader"/> as assumed to be valid.
         /// </summary>
-        /// <param name="chainedHeader">Last <see cref="ChainedHeader"/> to be marked <see cref="ValidationState.AssumedValid"/>.</param>
+        /// <param name="chainedHeader">Last <see cref="ChainedHeader"/> to be marked as assumed valid.</param>
         private void MarkTrustedChainAsAssumedValid(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
@@ -822,7 +825,7 @@ namespace Stratis.Bitcoin.Consensus
 
             while (!this.HeaderWasMarkedAsValidated(current))
             {
-                current.BlockValidationState = ValidationState.AssumedValid;
+                current.IsAssumedValid = true;
                 current = current.Previous;
             }
 
@@ -830,7 +833,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// The header is assumed to be valid, the header and all of its previous headers will be marked as <see cref="ValidationState.AssumedValid" />.
+        /// The header is assumed to be valid, the header and all of its previous headers will be marked as assumed valid.
         /// If the header's cumulative work is better then <see cref="IChainState.ConsensusTip" /> the header and all its predecessors will be marked with <see cref="BlockDataAvailabilityState.BlockRequired" />.
         /// </summary>
         /// <param name="assumedValidHeader">The header that is assumed to be valid.</param>
@@ -860,7 +863,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>
         /// When a header is checkpointed and has a correct hash, chain that ends with such a header
-        /// will be marked as <see cref="ValidationState.AssumedValid" /> and requested for download.
+        /// will be marked as assumed valid and requested for download.
         /// </summary>
         /// <param name="chainedHeader">Checkpointed header.</param>
         /// <param name="latestNewHeader">The latest new header that was presented by the peer.</param>
@@ -904,13 +907,12 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Check whether a header is in one of the following states:
-        /// <see cref="ValidationState.AssumedValid"/>, <see cref="ValidationState.PartiallyValidated"/>, <see cref="ValidationState.FullyValidated"/>.
+        /// Check whether a header is in one of the following states: <see cref="ValidationState.PartiallyValidated"/>, <see cref="ValidationState.FullyValidated"/>
+        /// or is assumed to be valid.
         /// </summary>
         private bool HeaderWasMarkedAsValidated(ChainedHeader chainedHeader)
         {
-            return (chainedHeader.BlockValidationState == ValidationState.AssumedValid)
-                  || (chainedHeader.BlockValidationState == ValidationState.PartiallyValidated)
+            return chainedHeader.IsAssumedValid || (chainedHeader.BlockValidationState == ValidationState.PartiallyValidated)
                   || (chainedHeader.BlockValidationState == ValidationState.FullyValidated);
         }
 
@@ -1162,6 +1164,29 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public bool IsAtBestChainTip()
+        {
+            this.logger.LogTrace("()");
+
+            ChainedHeader bestTip = null;
+
+            foreach (uint256 tipHash in this.peerTipsByPeerId.Values)
+            {
+                ChainedHeader tip = this.chainedHeadersByHash[tipHash];
+
+                if ((bestTip == null) || (tip.ChainWork > bestTip.ChainWork))
+                    bestTip = tip;
+            }
+
+            ChainedHeader consensusTip = this.GetConsensusTip();
+
+            bool atBestChainTip = consensusTip == bestTip;
+
+            this.logger.LogTrace("(-):{0}", atBestChainTip);
+            return atBestChainTip;
         }
     }
 

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.BlockPulling2
+namespace Stratis.Bitcoin.BlockPulling
 {
     /// <summary>Represents a single download assignment to a peer.</summary>
     public class AssignedDownload

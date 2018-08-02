@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public SmartContractBlockDefinition(
             ICoinView coinView,
-            IConsensusLoop consensusLoop,
+            IConsensusManager consensusManager,
             IDateTimeProvider dateTimeProvider,
             ISmartContractExecutorFactory executorFactory,
             ILoggerFactory loggerFactory,
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             MinerSettings minerSettings,
             Network network,
             ContractStateRepositoryRoot stateRoot)
-            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
+            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.coinView = coinView;
             this.executorFactory = executorFactory;
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             this.coinbaseAddress = getSenderResult.Sender;
 
-            this.stateSnapshot = this.stateRoot.GetSnapshotTo(((SmartContractBlockHeader)this.ConsensusLoop.Tip.Header).HashStateRoot.ToBytes());
+            this.stateSnapshot = this.stateRoot.GetSnapshotTo(((SmartContractBlockHeader)this.ConsensusManager.Tip.Header).HashStateRoot.ToBytes());
 
             this.refundOutputs.Clear();
 

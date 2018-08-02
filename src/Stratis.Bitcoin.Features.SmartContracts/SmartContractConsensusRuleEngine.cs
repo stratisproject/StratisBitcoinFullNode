@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -18,13 +18,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     /// <summary>
     /// Extension of consensus rules that provide access to a store based on UTXO (Unspent transaction outputs).
     /// </summary>
-    public sealed class SmartContractConsensusRules : PowConsensusRules
+    public sealed class SmartContractConsensusRuleEngine : PowConsensusRuleEngine
     {
         public readonly ISmartContractExecutorFactory ExecutorFactory;
         public readonly ContractStateRepositoryRoot OriginalStateRoot;
         public readonly ISmartContractReceiptStorage ReceiptStorage;
 
-        public SmartContractConsensusRules(
+        public SmartContractConsensusRuleEngine(
             ConcurrentChain chain,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
@@ -34,10 +34,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Network network,
             NodeDeployments nodeDeployments,
             ContractStateRepositoryRoot originalStateRoot,
-            ILookaheadBlockPuller puller,
             ICoinView utxoSet,
-            ISmartContractReceiptStorage receiptStorage)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, puller)
+            ISmartContractReceiptStorage receiptStorage,
+            IChainState chainState)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState)
         {
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;
@@ -45,9 +45,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <inheritdoc />
-        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext)
         {
-            return new PowRuleContext(validationContext, this.Network.Consensus, consensusTip, this.DateTimeProvider.GetTimeOffset());
+            return new PowRuleContext(validationContext, this.DateTimeProvider.GetTimeOffset());
         }
     }
 }
