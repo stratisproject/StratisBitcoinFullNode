@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         public override void Initialize()
         {
             // subscribe to receiving blocks and transactions
-            this.blockSubscriberdDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletManager));
+            this.blockSubscriberdDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletManager));
             this.transactionSubscriberdDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletManager));
 
             this.walletManager.Initialize();

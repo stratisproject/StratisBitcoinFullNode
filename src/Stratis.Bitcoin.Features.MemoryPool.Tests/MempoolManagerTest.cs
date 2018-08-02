@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                         );
 
                 var mockPersist = new Mock<IMempoolPersistence>();
-                var mockCoinView = new Mock<CoinView>();
+                var mockCoinView = new Mock<ICoinView>();
 
                 return new MempoolManager(new MempoolSchedulerLock(), mempool, mockValidator.Object, dateTime, settings, mockPersist.Object, mockCoinView.Object, loggerFactory, nodeSettings.Network);
             }

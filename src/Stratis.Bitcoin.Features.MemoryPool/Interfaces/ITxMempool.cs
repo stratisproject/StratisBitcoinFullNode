@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// </summary>
         /// <param name="pcoins">Coin view of the transaction.</param>
         /// <exception cref="NotImplementedException"/>
-        void Check(CoinView pcoins);
+        void Check(ICoinView pcoins);
 
         /// <summary>
         /// Clears the collections that contain the memory pool transactions,
