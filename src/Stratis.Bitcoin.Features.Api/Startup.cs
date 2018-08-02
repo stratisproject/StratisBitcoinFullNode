@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
+using NBitcoin;
 using Swashbuckle.AspNetCore.Swagger;
 
 namespace Stratis.Bitcoin.Features.Api
@@ -86,6 +87,19 @@ namespace Stratis.Bitcoin.Features.Api
                 }
 
                 setup.DescribeAllEnumsAsStrings();
+
+                // Retrieves the network so we can filter API settings based on consensus rules.
+                Network network = services.BuildServiceProvider().GetService<Network>();
+                if (network.Consensus.IsProofOfStake)
+                {
+                    // Filters out mining api endpoints.
+                    setup.DocumentFilter<ProofOfStakeConsensusApiFilter>();
+                }
+                else
+                {
+                    // Filters out staking api endpoints.
+                    setup.DocumentFilter<ProofOfWorkConsensusApiFilter>();
+                }
 
             });
         }

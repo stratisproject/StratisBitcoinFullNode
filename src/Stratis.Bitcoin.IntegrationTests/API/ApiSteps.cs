@@ -49,7 +49,6 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private HttpResponseMessage response;
         private string responseText;
-        private HttpResponseMessage postResponse;
 
         private int maturity;
         private HdAddress receiverAddress;
@@ -195,7 +194,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 Password = WalletPassword
             };
 
-            this.postResponse = this.httpClient.PostAsJsonAsync($"{this.apiUri}api/Wallet/account", request)
+            this.response = this.httpClient.PostAsJsonAsync($"{this.apiUri}api/Wallet/account", request)
                 .GetAwaiter().GetResult();
         }
 
@@ -220,12 +219,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             };
 
             this.send_api_post_request("api/Wallet/recover-via-extpubkey", request);
-            this.postResponse.StatusCode.Should().Be(StatusCodes.Status200OK);
+            this.response.StatusCode.Should().Be(StatusCodes.Status200OK);
         }
 
         private void send_api_post_request<T>(string url, T request)
         {
-            this.postResponse = this.httpClient.PostAsJsonAsync($"{this.apiUri}{url}", request)
+            this.response = this.httpClient.PostAsJsonAsync($"{this.apiUri}{url}", request)
                 .GetAwaiter().GetResult();
         }
 
@@ -322,6 +321,17 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.send_api_get_request($"api/Node/getrawtransaction?trxid={this.transaction.GetHash().ToString()}&verbose=true");
         }
 
+        private void calling_getstakinginfo()
+        {
+            this.send_api_get_request("api/Staking/getstakinginfo");
+        }
+
+        private void calling_generate()
+        {
+            var request = new MiningRequest() { BlockCount = 1 };
+            this.send_api_post_request("api/Mining/generate", request);
+        }
+
         private void a_valid_address_is_validated()
         {
             JObject jObjectResponse = JObject.Parse(this.responseText);
@@ -352,7 +362,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void it_is_rejected_as_forbidden()
         {
-            this.postResponse.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
+            this.response.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
         }
 
         private void the_blockhash_is_returned()
@@ -462,6 +472,18 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var txOutResponse = JsonDataSerializer.Instance.Deserialize<GetTxOutModel>(this.responseText);
             txOutResponse.Value.Should().Be(this.transferAmount);
+        }
+
+        private void staking_information_is_returned()
+        {
+            var stakingInfoModel = JsonDataSerializer.Instance.Deserialize<GetStakingInfoModel>(this.responseText);
+            stakingInfoModel.Enabled.Should().Be(false);
+            stakingInfoModel.Staking.Should().Be(false);
+        }
+
+        private void a_404_error_is_returned()
+        {
+            this.response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
         }
 
         private void send_api_get_request(string apiendpoint)

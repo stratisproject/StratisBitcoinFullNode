@@ -177,5 +177,29 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             When(calling_status);
             Then(status_information_is_returned);
         }
+
+        [Fact]
+        public void POS_node_calls_getstakinginfo_returns_info()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_getstakinginfo);
+            Then(staking_information_is_returned);
+        }
+
+        [Fact]
+        public void POW_node_calls_getstakinginfo_and_receives_error()
+        {
+            Given(a_pow_node_with_api_enabled);
+            When(calling_getstakinginfo);
+            Then(a_404_error_is_returned);
+        }
+
+        [Fact]
+        public void POS_node_calls_generate_and_receives_error()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_generate);
+            Then(a_404_error_is_returned);
+        }
     }
 }
