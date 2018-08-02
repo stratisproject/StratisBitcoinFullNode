@@ -216,7 +216,7 @@ namespace Stratis.Bitcoin.Connection
                         if (behavior != null)
                         {
                             int intQuality = (int)behavior.QualityScore;
-                            builder.Append("\tQualityScore: " + intQuality + (intQuality < 10 ? "\t" : "") + "\tPendingBlocks: " + behavior.PendingDownloadsCount);
+                            builder.Append("\tQualityScore: " + intQuality + (intQuality < 10 ? "\t" : string.Empty) + "\tPendingBlocks: " + behavior.PendingDownloadsCount);
                         }
 
                         builder.AppendLine();

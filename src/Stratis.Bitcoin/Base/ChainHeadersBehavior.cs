@@ -396,7 +396,7 @@ namespace Stratis.Bitcoin.Base
                     await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
                 }
                 else
-                    this.logger.LogTrace("No sync. Peer's state is {0} (need {1}), {2}invalid header received from this peer.", peer.State, NetworkPeerState.HandShaked, this.InvalidHeaderReceived ? "" : "NO ");
+                    this.logger.LogTrace("No sync. Peer's state is {0} (need {1}), {2}invalid header received from this peer.", peer.State, NetworkPeerState.HandShaked, this.InvalidHeaderReceived ? string.Empty : "NO ");
             }
             else this.logger.LogTrace("No peer attached.");
 
