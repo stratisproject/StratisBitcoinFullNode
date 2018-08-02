@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.PerformanceCounter.AddCacheMissCount(1);
 
-            block = await this.blockRepository.GetAsync(blockid);
+            block = await this.blockRepository.GetBlockAsync(blockid);
             if (block != null)
             {
                 this.cache.AddOrUpdate(blockid, block);

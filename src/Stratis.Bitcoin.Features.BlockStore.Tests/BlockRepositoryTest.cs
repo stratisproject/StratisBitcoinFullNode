@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             transaction.Version = 48;
             block.Transactions.Add(transaction);
             blocks.Add(block);
-            
+
             Block block2 = this.Network.Consensus.ConsensusFactory.CreateBlock();
             transaction = this.Network.CreateTransaction();
             transaction.Version = 15;
@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<Block> task = repository.GetAsync(block.GetHash());
+                Task<Block> task = repository.GetBlockAsync(block.GetHash());
                 task.Wait();
 
                 Assert.Equal(block.GetHash(), task.Result.GetHash());
@@ -382,7 +382,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<Block> task = repository.GetAsync(new uint256());
+                Task<Block> task = repository.GetBlockAsync(new uint256());
                 task.Wait();
 
                 Assert.Null(task.Result);

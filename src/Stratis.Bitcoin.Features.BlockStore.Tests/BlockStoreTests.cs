@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 return Task.CompletedTask;
             });
 
-            blockRepositoryMock.Setup(x => x.GetAsync(It.IsAny<uint256>()))
+            blockRepositoryMock.Setup(x => x.GetBlockAsync(It.IsAny<uint256>()))
                 .Returns((uint256 hash) =>
             {
                 Block block = null;
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, alternativeChain.GetBlock(i)));
             }
 
-            // Present second chain which has more work and reorgs blocks from genesis. 
+            // Present second chain which has more work and reorgs blocks from genesis.
             for (int i = 1; i < realChainLenght; i++)
             {
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();

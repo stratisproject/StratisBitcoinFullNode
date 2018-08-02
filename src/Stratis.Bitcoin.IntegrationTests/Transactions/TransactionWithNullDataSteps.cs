@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private async Task the_transaction_should_appear_in_the_blockchain()
         {
             Block block = await this.senderNode.FullNode.BlockStoreManager().BlockRepository
-                    .GetAsync(this.blockWithOpReturnId);
+                    .GetBlockAsync(this.blockWithOpReturnId);
 
             Transaction transactionFromBlock = block.Transactions
                 .Single(t => t.ToHex() == this.transaction.ToHex());

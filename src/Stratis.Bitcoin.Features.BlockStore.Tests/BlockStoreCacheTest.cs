@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var blockId = new uint256(2389704);
             Block repositoryBlock = this.network.CreateBlock();
             repositoryBlock.Header.Version = 1451;
-            this.blockRepository.Setup(b => b.GetAsync(blockId)).Returns(Task.FromResult(repositoryBlock));
+            this.blockRepository.Setup(b => b.GetBlockAsync(blockId)).Returns(Task.FromResult(repositoryBlock));
 
             this.blockStoreCache = new BlockStoreCache(this.blockRepository.Object, DateTimeProvider.Default, this.loggerFactory, this.storeSettings);
 

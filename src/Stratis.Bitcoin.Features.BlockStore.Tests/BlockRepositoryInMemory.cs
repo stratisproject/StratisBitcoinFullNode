@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public uint256 BlockHash { get; private set; }
         public bool TxIndex { get; private set; }
         public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; private set; }
-        
+
         public BlockRepositoryInMemory()
         {
             this.InitializeAsync();
@@ -47,11 +47,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             return Task.FromResult(this.store.ContainsKey(hash));
         }
 
-        public Task<Block> GetAsync(uint256 hash)
+        public Task<Block> GetBlockAsync(uint256 hash)
         {
             return Task.FromResult(this.store[hash]);
         }
-        
+
         /// <inheritdoc />
         public Task<List<Block>> GetBlocksAsync(List<uint256> hashes)
         {

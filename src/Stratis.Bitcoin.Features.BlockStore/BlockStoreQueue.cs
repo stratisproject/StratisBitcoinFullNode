@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </para>
         /// </summary>
         public async Task InitializeAsync()
-        {             
+        {
             this.logger.LogTrace("()");
 
             await this.blockRepository.InitializeAsync();
@@ -172,6 +172,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public Task<Block> GetBlockAsync(uint256 blockHash)
         {
+            //TODO
             throw new System.NotImplementedException();
         }
 
@@ -191,7 +192,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             var blockStoreResetList = new List<uint256>();
             uint256 resetBlockHash = this.blockRepository.BlockHash;
-            Block resetBlock = await this.blockRepository.GetAsync(resetBlockHash).ConfigureAwait(false);
+            Block resetBlock = await this.blockRepository.GetBlockAsync(resetBlockHash).ConfigureAwait(false);
 
             while (this.chain.GetBlock(resetBlockHash) == null)
             {
@@ -203,7 +204,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     break;
                 }
 
-                resetBlock = await this.blockRepository.GetAsync(resetBlock.Header.HashPrevBlock).ConfigureAwait(false);
+                resetBlock = await this.blockRepository.GetBlockAsync(resetBlock.Header.HashPrevBlock).ConfigureAwait(false);
 
                 if (resetBlock == null)
                 {

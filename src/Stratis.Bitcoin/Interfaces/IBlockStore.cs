@@ -9,26 +9,26 @@ namespace Stratis.Bitcoin.Interfaces
     public interface IBlockStore
     {
         /// <summary>
-        /// Get a transaction, this is valid when <see cref="StoreSettings.ReIndex"/> is enabled.
+        /// Initializes the blockchain storage and ensure the genesis block has been created in the database.
         /// </summary>
-        /// <param name="trxid">The transaction hash.</param>
+        Task InitializeAsync();
+
+        /// <summary>
+        /// Retreive the transaction information asynchronously using transaction id.
+        /// </summary>
+        /// <param name="trxid">The transaction id to find.</param>
         Task<Transaction> GetTrxAsync(uint256 trxid);
 
         /// <summary>
-        /// Get the block associated with a transaction, this is valid when <see cref="StoreSettings.ReIndex"/> is enabled.
+        /// Get the corresponding block hash by using transaction hash.
         /// </summary>
-        /// <param name="trxid"></param>
+        /// <param name="trxid">The transaction hash</param>
         Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
 
         /// <summary>
-        /// Get an instance of a block.
+        /// Get the block from the database by using block hash.
         /// </summary>
         /// <param name="blockHash">The block hash.</param>
         Task<Block> GetBlockAsync(uint256 blockHash);
-
-        /// <summary>
-        /// Initialize the block store.
-        /// </summary>
-        Task InitializeAsync();
     }
 }

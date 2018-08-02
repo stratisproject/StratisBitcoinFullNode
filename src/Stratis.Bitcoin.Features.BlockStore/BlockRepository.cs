@@ -8,6 +8,7 @@ using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -16,13 +17,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// <see cref="IBlockRepository"/> is the interface to all the logics interacting with the blocks stored in the database.
     /// </summary>
     /// <seealso cref="System.IDisposable" />
-    public interface IBlockRepository : IDisposable
+    public interface IBlockRepository : IBlockStore, IDisposable
     {
-        /// <summary>
-        /// Initializes the blockchain storage and ensure the genesis block has been created in the database.
-        /// </summary>
-        Task InitializeAsync();
-
         /// <summary>
         /// Persist the next block hash and insert new blocks into the database.
         /// </summary>
@@ -31,23 +27,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task PutAsync(uint256 nextBlockHash, List<Block> blocks);
 
         /// <summary>
-        /// Get the block from the database by using block hash.
-        /// </summary>
-        /// <param name="hash">The block hash.</param>
-        Task<Block> GetAsync(uint256 hash);
-
-        /// <summary>
         /// Get the blocks from the database by using block hashes.
         /// </summary>
         /// <param name="hashes">A list of unique block hashes.</param>
         /// <returns>The blocks (or null if not found) in the same order as the hashes on input.</returns>
         Task<List<Block>> GetBlocksAsync(List<uint256> hashes);
-
-        /// <summary>
-        /// Retreive the transaction information asynchronously using transaction id.
-        /// </summary>
-        /// <param name="trxid">The transaction id to find.</param>
-        Task<Transaction> GetTrxAsync(uint256 trxid);
 
         /// <summary>
         /// Wipe out blocks and their transactions then replace with a new block.
@@ -64,13 +48,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task<bool> ExistAsync(uint256 hash);
 
         /// <summary>
-        /// Get the corresponding block hash by using transaction hash.
-        /// </summary>
-        /// <param name="trxid">The transaction hash</param>
-        Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
-
-        /// <summary>
-        /// Iterate over every block in the database. 
+        /// Iterate over every block in the database.
         /// If <see cref="TxIndex"/> is true, we store the block hash alongside the transaction hash in the transaction table, otherwise clear the transaction table.
         /// </summary>
         Task ReIndexAsync();
@@ -535,7 +513,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Get block from the database by block hash.
         /// </summary>
         /// <param name="hash">The block hash.</param>
-        public Task<Block> GetAsync(uint256 hash)
+        public Task<Block> GetBlockAsync(uint256 hash)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
             Guard.NotNull(hash, nameof(hash));
@@ -677,7 +655,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private List<Block> GetBlocksFromHashes(DBreeze.Transactions.Transaction dbreezeTransaction, List<uint256> hashes)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(hashes), nameof(hashes.Count), hashes?.Count);
-            
+
             var results = new Dictionary<uint256, Block>();
 
             // Access hash keys in sorted order.
@@ -704,7 +682,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.logger.LogTrace("Block hash '{0}' not found in the store.", key.Item1);
                 }
             }
-        
+
             this.logger.LogTrace("(-):{0}", results.Count);
 
             // Return the result in the order that the hashes were presented.

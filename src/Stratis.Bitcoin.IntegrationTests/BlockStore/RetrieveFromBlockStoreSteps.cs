@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void trying_to_retrieve_the_blocks_from_the_blockstore()
         {
             this.retrievedBlocks = this.blockIds.Concat(new[] { this.wrongBlockId })
-                .Select(id => this.node.FullNode.BlockStoreManager().BlockRepository.GetAsync(id).GetAwaiter().GetResult()).Select(b => b).ToList();
+                .Select(id => this.node.FullNode.BlockStoreManager().BlockRepository.GetBlockAsync(id).GetAwaiter().GetResult()).Select(b => b).ToList();
 
             this.retrievedBlocks.Count(b => b != null).Should().Be(this.blockIds.Count);
             this.retrievedBlocks.Count(b => b == null).Should().Be(1);
