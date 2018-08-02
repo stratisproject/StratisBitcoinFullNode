@@ -43,9 +43,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        /// <summary>Protects access to <see cref="blocksQueue"/>.</summary>
-        private readonly object lockObject;
-
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime, 
             IAsyncLoopFactory asyncLoopFactory)
@@ -69,7 +66,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.BlockBuffer = new BufferBlock<Block>();
             this.blocksQueue = new ConcurrentQueue<Block>();
-            this.lockObject = new object();
         }
 
         /// <inheritdoc />
@@ -238,7 +234,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Processes blocks stored in the block store cache and block queue, asynchronously.
         /// </summary>
-        /// <param name="cancellation">Cancellation token that triggers when the task and the loop should be cancelled.</param>
+        /// <param name="token">Cancellation token that triggers when the task and the loop should be cancelled.</param>
         private async Task ProcessBlockLoopAsync(CancellationToken token)
         {
             try
@@ -321,11 +317,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             while (await source.OutputAvailableAsync())
             {
-                lock (this.lockObject)
-                {
-                    Block block = source.Receive();
-                    queue.Enqueue(block);
-                }
+                Block block = source.Receive();
+                queue.Enqueue(block);
             }
         }
 
