@@ -221,8 +221,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                         this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
                     }
                 }
-
-                this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
+                else
+                {
+                    this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
+                }
 
                 this.walletTip = newTip;
                 this.walletManager.ProcessBlock(block, newTip);
@@ -261,13 +263,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                         next = tip.GetAncestor(next.Height + 1);
 
-                        Block nextBlock;
-
                         while (true)
                         {
                             token.ThrowIfCancellationRequested();
 
-                            nextBlock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                            Block nextBlock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
 
                             if (nextBlock == null)
                             {
@@ -279,12 +279,13 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                                 continue;
                             }
+                            else
+                            {
+                                await this.ProcessAsync(nextBlock).ConfigureAwait(false);
+                            }
 
                             break;
                         }
-
-                        await this.ProcessAsync(nextBlock).ConfigureAwait(false);
-
                     }
                 }
                 else
