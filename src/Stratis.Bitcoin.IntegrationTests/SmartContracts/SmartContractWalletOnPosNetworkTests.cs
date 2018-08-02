@@ -129,8 +129,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.NotNull(receiverState.GetCode(tokenContractAddress));
                 scSender.FullNode.MempoolManager().Clear();
 
-                //THE TESTS FAIL ON TRANSFER CALLS
-
                 // Create a call contract transaction which will transfer funds
                 contractCarrier = SmartContractCarrier.CallContract(1, tokenContractAddress, "Test", gasPrice, gasLimit);
                 Script contractCallScript = new Script(contractCarrier.Serialize());

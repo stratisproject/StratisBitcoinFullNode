@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
-    public class SmartContractPosRuleRegistration : IRuleRegistration
+    public sealed class SmartContractPosRuleRegistration : IRuleRegistration
     {
         public IEnumerable<ConsensusRule> GetRules()
         {

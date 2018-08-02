@@ -19,13 +19,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
     /// <summary>
     /// Extension of consensus rules that provide access to a PoS store.
     /// </summary>
-    public sealed class SmartContractPosRules : PosConsensusRules
+    public sealed class SmartContractPosConsensusRuleEngine : PosConsensusRules, ISmartContractCoinviewRule
     {
-        public readonly ISmartContractExecutorFactory ExecutorFactory;
-        public readonly ContractStateRepositoryRoot OriginalStateRoot;
-        public readonly ISmartContractReceiptStorage ReceiptStorage;
+        public ISmartContractExecutorFactory ExecutorFactory { get; private set; }
+        public ContractStateRepositoryRoot OriginalStateRoot { get; private set; }
+        public ISmartContractReceiptStorage ReceiptStorage { get; private set; }
 
-        public SmartContractPosRules(
+        public SmartContractPosConsensusRuleEngine(
             ConcurrentChain chain,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,

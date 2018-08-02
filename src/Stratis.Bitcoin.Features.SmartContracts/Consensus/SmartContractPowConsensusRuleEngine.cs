@@ -13,18 +13,18 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 
-namespace Stratis.Bitcoin.Features.SmartContracts
+namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
 {
     /// <summary>
     /// Extension of consensus rules that provide access to a store based on UTXO (Unspent transaction outputs).
     /// </summary>
-    public sealed class SmartContractConsensusRules : PowConsensusRules
+    public sealed class SmartContractPowConsensusRuleEngine : PowConsensusRules, ISmartContractCoinviewRule
     {
-        public readonly ISmartContractExecutorFactory ExecutorFactory;
-        public readonly ContractStateRepositoryRoot OriginalStateRoot;
-        public readonly ISmartContractReceiptStorage ReceiptStorage;
+        public ISmartContractExecutorFactory ExecutorFactory { get; private set; }
+        public ContractStateRepositoryRoot OriginalStateRoot { get; private set; }
+        public ISmartContractReceiptStorage ReceiptStorage { get; private set; }
 
-        public SmartContractConsensusRules(
+        public SmartContractPowConsensusRuleEngine(
             ConcurrentChain chain,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
