@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.height = this.ChainTip.Height + 1;
             var headerVersionRule = this.ConsensusLoop.ConsensusRules.GetRule<HeaderVersionRule>();
-            this.block.Header.Version = headerVersionRule.ComputeBlockVersion(this.ChainTip, this.Network.Consensus);
+            this.block.Header.Version = headerVersionRule.ComputeBlockVersion(this.ChainTip);
         }
 
         /// <summary>
