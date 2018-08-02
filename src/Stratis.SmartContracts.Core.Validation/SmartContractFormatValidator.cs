@@ -9,13 +9,13 @@ namespace Stratis.SmartContracts.Core.Validation
     {
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var policy = FormatPolicy.Default;
+            ValidationPolicy policy = FormatPolicy.Default;
 
             var validator = new ModulePolicyValidator(policy);
 
-            var results = validator.Validate(decompilation.ModuleDefinition).ToList();  
+            var results = validator.Validate(decompilation.ModuleDefinition).ToList();
 
             return new SmartContractValidationResult(results);
-        }  
+        }
     }
 }

@@ -63,6 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 new LoggerFactory(),
                 testContext.mempool,
                 testContext.mempoolLock,
+                new MinerSettings(testContext.nodeSettings),
                 testContext.network,
                 testContext.stateRoot);
         }
@@ -121,6 +122,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             public List<Blockinfo> blockinfo;
             public Network network;
+            public NodeSettings nodeSettings;
             public Script scriptPubKey;
             public BlockTemplate newBlock;
             public Transaction tx, tx2;
@@ -180,8 +182,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
 
-                var nodeSettings = NodeSettings.Default();
-                var consensusSettings = new ConsensusSettings(nodeSettings);
+                this.nodeSettings = NodeSettings.Default();
+                var consensusSettings = new ConsensusSettings(this.nodeSettings);
                 consensusSettings.UseCheckpoints = this.useCheckpoints;
 
                 this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;

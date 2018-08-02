@@ -1,4 +1,7 @@
-﻿namespace Stratis.SmartContracts.Core.Validation
+﻿using System.Collections.Generic;
+using Stratis.ModuleValidation.Net;
+
+namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
     /// Checks for non-deterministic properties inside smart contracts by validating them at the bytecode level.
@@ -8,9 +11,9 @@
         /// <inheritdoc/>
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var policy = DeterminismPolicy.Default;
+            ValidationPolicy policy = DeterminismPolicy.Default;
             var validator = new ModulePolicyValidator(policy);
-            var validationResults = validator.Validate(decompilation.ModuleDefinition);
+            IEnumerable<ValidationResult> validationResults = validator.Validate(decompilation.ModuleDefinition);
 
             return new SmartContractValidationResult(validationResults);
         }

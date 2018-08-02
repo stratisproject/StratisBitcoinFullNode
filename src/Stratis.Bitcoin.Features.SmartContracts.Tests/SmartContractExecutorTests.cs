@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -23,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private static readonly uint160 CoinbaseAddress = 0;
         private static readonly uint160 ToAddress = 1;
         private static readonly uint160 SenderAddress = 2;
-        private static readonly Money MempoolFee = new Money(10000); 
+        private static readonly Money MempoolFee = new Money(10000);
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
@@ -75,12 +74,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.state.SetContractType(new uint160(1), "ThrowExceptionContract");
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transactionCall);
-            
-            var executor = new Executor(this.loggerFactory, 
+
+            var executor = new Executor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
-                this.transferProcessor, 
+                this.transferProcessor,
                 this.vm);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
@@ -98,7 +97,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContractExecutor_CallContract_DoesNotExist_Refund()
         {
-            SmartContractCarrier carrier = SmartContractCarrier.CallContract(1, ToAddress, "TestMethod", 1, (Gas) 10000);
+            SmartContractCarrier carrier = SmartContractCarrier.CallContract(1, ToAddress, "TestMethod", 1, (Gas)10000);
 
             var transaction = new Transaction();
             TxOut txOut = transaction.AddOutput(0, new Script(carrier.Serialize()));
@@ -106,11 +105,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), transaction);
 
-            var executor = new Executor(this.loggerFactory, 
+            var executor = new Executor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
-                this.transferProcessor, 
+                this.transferProcessor,
                 this.vm);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
@@ -130,11 +129,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
-            var executor = new Executor(this.loggerFactory, 
+            var executor = new Executor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
-                this.transferProcessor, 
+                this.transferProcessor,
                 this.vm);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
@@ -161,12 +160,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             tx.AddOutput(0, new Script(carrier.Serialize()));
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
-            
-            var executor = new Executor(this.loggerFactory, 
+
+            var executor = new Executor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
-                this.transferProcessor, 
+                this.transferProcessor,
                 this.vm);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
@@ -192,11 +191,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
-            var executor = new Executor(this.loggerFactory, 
+            var executor = new Executor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
-                this.transferProcessor, 
+                this.transferProcessor,
                 this.vm);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
@@ -227,11 +226,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //and get the module definition
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
 
-            var executor = new Executor(this.loggerFactory, 
+            var executor = new Executor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
-                this.transferProcessor, 
+                this.transferProcessor,
                 this.vm);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
@@ -281,11 +280,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
 
-            var callExecutor = new Executor(this.loggerFactory, 
+            var callExecutor = new Executor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
-                this.transferProcessor, 
+                this.transferProcessor,
                 this.vm);
 
             // Because our contract contains an infinite loop, we want to kill our test after

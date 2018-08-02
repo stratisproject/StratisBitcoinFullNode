@@ -32,6 +32,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Observes block signal notifications from signals.</summary>
         private readonly MempoolSignaled mempoolSignaled;
 
+        /// <summary>Observes reorg signal notifications from signals.</summary>
+        private readonly BlocksDisconnectedSignaled blocksDisconnectedSignaled;
+
         /// <summary>Memory pool node behavior for managing attached node messages.</summary>
         private readonly MempoolBehavior mempoolBehavior;
 
@@ -53,6 +56,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="connectionManager">Connection manager for managing node connections.</param>
         /// <param name="signals">Node notifications available to subscribe to.</param>
         /// <param name="mempoolSignaled">Observes block signal notifications from signals.</param>
+        /// <param name="blocksDisconnectedSignaled">Observes reorged headers signal notifications from signals.</param>
         /// <param name="mempoolBehavior">Memory pool node behavior for managing attached node messages.</param>
         /// <param name="mempoolManager">Memory pool manager for managing external access to memory pool.</param>
         /// <param name="nodeSettings">User defined node settings.</param>
@@ -62,6 +66,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IConnectionManager connectionManager,
             Signals.Signals signals,
             MempoolSignaled mempoolSignaled,
+            BlocksDisconnectedSignaled blocksDisconnectedSignaled,
             MempoolBehavior mempoolBehavior,
             MempoolManager mempoolManager,
             NodeSettings nodeSettings,
@@ -71,6 +76,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.signals = signals;
             this.connectionManager = connectionManager;
             this.mempoolSignaled = mempoolSignaled;
+            this.blocksDisconnectedSignaled = blocksDisconnectedSignaled;
             this.mempoolBehavior = mempoolBehavior;
             this.mempoolManager = mempoolManager;
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -94,8 +100,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolManager.LoadPoolAsync().GetAwaiter().GetResult();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);
-            this.signals.SubscribeForBlocks(this.mempoolSignaled);
+            this.signals.SubscribeForBlocksConnected(this.mempoolSignaled);
             this.mempoolSignaled.Start();
+
+            this.signals.SubscribeForBlocksDisconnected(this.blocksDisconnectedSignaled);
         }
 
         /// <summary>
@@ -106,7 +114,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             MempoolSettings.PrintHelp(network);
         }
-        
+
         /// <summary>
         /// Get the default configuration.
         /// </summary>
@@ -120,23 +128,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public override void Dispose()
         {
-            if (this.mempoolManager != null)
-            {
-                this.mempoolLogger.LogInformation("Saving Memory Pool...");
+            this.mempoolLogger.LogInformation("Saving Memory Pool...");
 
-                MemPoolSaveResult result = this.mempoolManager.SavePool();
-                if (result.Succeeded)
-                {
-                    this.mempoolLogger.LogInformation($"...Memory Pool Saved {result.TrxSaved} transactions");
-                }
-                else
-                {
-                    this.mempoolLogger.LogWarning("...Memory Pool Not Saved!");
-                }
+            MemPoolSaveResult result = this.mempoolManager.SavePool();
+            if (result.Succeeded)
+            {
+                this.mempoolLogger.LogInformation($"...Memory Pool Saved {result.TrxSaved} transactions");
+            }
+            else
+            {
+                this.mempoolLogger.LogWarning("...Memory Pool Not Saved!");
             }
 
-            if (this.mempoolSignaled != null)
-                this.mempoolSignaled.Stop();
+            this.mempoolSignaled.Stop();
         }
     }
 
@@ -172,6 +176,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<IPooledGetUnspentTransaction, MempoolManager>();
                         services.AddSingleton<MempoolBehavior>();
                         services.AddSingleton<MempoolSignaled>();
+                        services.AddSingleton<BlocksDisconnectedSignaled>();
                         services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
                         services.AddSingleton<MempoolController>();
                         services.AddSingleton<MempoolSettings>();
