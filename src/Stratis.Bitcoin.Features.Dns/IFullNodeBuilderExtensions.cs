@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Connection;
 
 namespace Stratis.Bitcoin.Features.Dns
 {
@@ -30,6 +31,7 @@ namespace Stratis.Bitcoin.Features.Dns
                     services.AddSingleton<DnsSettings>();
                     services.AddSingleton<IUdpClient, DnsSeedUdpClient>();
                     services.AddSingleton<IWhitelistManager, WhitelistManager>();
+                    services.AddSingleton<IPeerBanning, PeerBanning>();
                 });
             });
 
