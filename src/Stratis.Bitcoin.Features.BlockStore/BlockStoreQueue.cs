@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -71,14 +72,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private Task dequeueLoopTask;
 
         public BlockStoreQueue(
-            IBlockRepository blockRepository,
             ConcurrentChain chain,
             IChainState chainState,
             StoreSettings storeSettings,
             INodeLifetime nodeLifetime,
+            Network network,
+            DataFolder dataFolder,
+            IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory)
         {
-            Guard.NotNull(blockRepository, nameof(blockRepository));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(storeSettings, nameof(storeSettings));
@@ -89,7 +91,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeLifetime = nodeLifetime;
             this.storeSettings = storeSettings;
             this.chain = chain;
-            this.blockRepository = blockRepository;
+            this.blockRepository = new BlockRepository(network, dataFolder, dateTimeProvider, loggerFactory);
             this.batch = new List<ChainedHeaderBlock>();
 
             this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
@@ -172,8 +174,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public Task<Block> GetBlockAsync(uint256 blockHash)
         {
-            //TODO
-            throw new System.NotImplementedException();
+            // TODO ACTIVATION take blocks from pending
+            // TODO make sure this method is used only by CM and all components ask the blocks from CM
+
+            return this.blockRepository.GetBlockAsync(blockHash);
         }
 
         /// <summary>Sets the internal store tip and exposes the store tip to other components through the chain state.</summary>

@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void dave_confirms_transaction_is_present()
         {
-            Transaction transaction = this.nodes[Dave].FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.shorterChainTransaction.GetHash()).Result;
+            Transaction transaction = this.nodes[Dave].FullNode.BlockStore().GetTrxAsync(this.shorterChainTransaction.GetHash()).Result;
             transaction.Should().NotBeNull();
             transaction.GetHash().Should().Be(this.shorterChainTransaction.GetHash());
         }
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void bobs_transaction_from_shorter_chain_is_now_missing()
         {
-            this.nodes[Bob].FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.shorterChainTransaction.GetHash()).Result
+            this.nodes[Bob].FullNode.BlockStore().GetTrxAsync(this.shorterChainTransaction.GetHash()).Result
                 .Should().BeNull("longest chain comes from selfish miner and shouldn't contain the transaction made on the chain with the other 3 nodes");
         }
 

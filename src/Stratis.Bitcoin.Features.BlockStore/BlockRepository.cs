@@ -87,13 +87,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly ILogger logger;
 
         /// <summary>Access to DBreeze database.</summary>
-        protected readonly DBreezeEngine DBreeze;
+        private readonly DBreezeEngine DBreeze;
 
-        protected readonly Network network;
+        private readonly Network network;
 
-        protected static readonly byte[] BlockHashKey = new byte[0];
+        private static readonly byte[] BlockHashKey = new byte[0];
 
-        protected static readonly byte[] TxIndexKey = new byte[1];
+        private static readonly byte[] TxIndexKey = new byte[1];
 
         public uint256 BlockHash { get; private set; }
 
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public bool TxIndex { get; private set; }
 
         /// <summary>Provider of time functions.</summary>
-        protected readonly IDateTimeProvider dateTimeProvider;
+        private readonly IDateTimeProvider dateTimeProvider;
 
         public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
             : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory)

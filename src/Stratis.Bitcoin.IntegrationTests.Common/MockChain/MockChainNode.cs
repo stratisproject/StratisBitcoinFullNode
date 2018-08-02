@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
@@ -30,7 +31,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         // Services on the node. Used to retrieve information about the state of the network.
         private readonly SmartContractsController smartContractsController;
         private readonly ContractStateRepositoryRoot stateRoot;
-        private readonly IBlockStoreCache blockStore;
+        private readonly IBlockStore blockStore;
 
         /// <summary>
         /// Reference to the complex underlying node object.
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
             // Set up services for later
             this.smartContractsController = this.CoreNode.FullNode.NodeService<SmartContractsController>();
             this.stateRoot = this.CoreNode.FullNode.NodeService<ContractStateRepositoryRoot>();
-            this.blockStore = this.CoreNode.FullNode.NodeService<IBlockStoreCache>();
+            this.blockStore = this.CoreNode.FullNode.NodeService<IBlockStore>();
         }
 
         /// <summary>

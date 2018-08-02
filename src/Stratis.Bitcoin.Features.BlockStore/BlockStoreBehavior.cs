@@ -39,8 +39,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IBlockStore blockStore;
 
-        private readonly IBlockStoreCache blockStoreCache;
-
         private ConsensusManagerBehavior consensusManagerBehavior;
 
         /// <summary>Instance logger.</summary>
@@ -76,16 +74,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <see cref="IChainState"/>
         private readonly IChainState chainState;
 
-        public BlockStoreBehavior(ConcurrentChain chain, IBlockStore blockStore, IBlockStoreCache blockStoreCache, IChainState chainState, ILoggerFactory loggerFactory)
+        public BlockStoreBehavior(ConcurrentChain chain, IBlockStore blockStore, IChainState chainState, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(blockStore, nameof(blockStore));
-            Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
             this.chain = chain;
             this.blockStore = blockStore;
-            this.blockStoreCache = blockStoreCache;
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
@@ -325,7 +321,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
             {
                 // TODO: check if we need to add support for "not found"
-                Block block = await this.blockStoreCache.GetBlockAsync(item.Hash).ConfigureAwait(false);
+                Block block = await this.blockStore.GetBlockAsync(item.Hash).ConfigureAwait(false);
 
                 if (block != null)
                 {
@@ -509,7 +505,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            var res = new BlockStoreBehavior(this.chain, this.blockStore, this.blockStoreCache, this.chainState, this.loggerFactory)
+            var res = new BlockStoreBehavior(this.chain, this.blockStore, this.chainState, this.loggerFactory)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload
