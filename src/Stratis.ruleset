@@ -93,5 +93,9 @@
     <Rule Id="SA1214" Action="None" />
     <Rule Id="SA1216" Action="None" />
     <Rule Id="SA1501" Action="None" />
+    <Rule Id="SA1008" Action="None" />
+    <Rule Id="SA1009" Action="None" />
+    <Rule Id="SA1012" Action="None" />
+    <Rule Id="SA1013" Action="None" />
   </Rules>
 </RuleSet>
