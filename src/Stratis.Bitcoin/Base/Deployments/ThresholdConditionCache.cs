@@ -9,18 +9,18 @@ namespace Stratis.Bitcoin.Base.Deployments
     public class ThresholdConditionCache
     {
         /** What block version to use for new blocks (pre versionbits) */
-        public static int VersionbitsLastOldBlockVersion = 4;
+        private static int VersionbitsLastOldBlockVersion = 4;
 
         /** What bits to set in version for versionbits blocks */
         public static uint VersionbitsTopBits = 0x20000000;
 
         /** What bitmask determines whether versionbits is in use */
-        public static uint VersionbitsTopMask = 0xE0000000;
+        private static uint VersionbitsTopMask = 0xE0000000;
 
         /** Total bits available for versionbits */
-        public static int VersionbitsNumBits = 29;
+        private static int VersionbitsNumBits = 29;
 
-        public static readonly int ArraySize;
+        private static readonly int ArraySize;
 
         static ThresholdConditionCache()
         {

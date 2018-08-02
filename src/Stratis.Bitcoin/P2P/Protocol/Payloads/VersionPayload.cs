@@ -97,33 +97,33 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             }
         }
 
-        private NetworkAddress addr_recv = new NetworkAddress();
+        private NetworkAddress addressReceiver = new NetworkAddress();
 
         public IPEndPoint AddressReceiver
         {
             get
             {
-                return this.addr_recv.Endpoint;
+                return this.addressReceiver.Endpoint;
             }
 
             set
             {
-                this.addr_recv.Endpoint = value;
+                this.addressReceiver.Endpoint = value;
             }
         }
 
-        private NetworkAddress addr_from = new NetworkAddress();
+        private NetworkAddress addressFrom = new NetworkAddress();
 
         public IPEndPoint AddressFrom
         {
             get
             {
-                return this.addr_from.Endpoint;
+                return this.addressFrom.Endpoint;
             }
 
             set
             {
-                this.addr_from.Endpoint = value;
+                this.addressFrom.Endpoint = value;
             }
         }
 
@@ -142,18 +142,18 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             }
         }
 
-        private int start_height;
+        private int startHeight;
 
         public int StartHeight
         {
             get
             {
-                return this.start_height;
+                return this.startHeight;
             }
 
             set
             {
-                this.start_height = value;
+                this.startHeight = value;
             }
         }
 
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                 // No time field in version message.
                 using (stream.ProtocolVersionScope(ProtocolVersion.CADDR_TIME_VERSION - 1))
                 {
-                    stream.ReadWrite(ref this.addr_recv);
+                    stream.ReadWrite(ref this.addressReceiver);
                 }
 
                 if (this.version >= 106)
@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                     // No time field in version message.
                     using (stream.ProtocolVersionScope(ProtocolVersion.CADDR_TIME_VERSION - 1))
                     {
-                        stream.ReadWrite(ref this.addr_from);
+                        stream.ReadWrite(ref this.addressFrom);
                     }
 
                     stream.ReadWrite(ref this.nonce);
@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                             throw new FormatException("Should not find user agent for current version " + this.version);
                     }
 
-                    stream.ReadWrite(ref this.start_height);
+                    stream.ReadWrite(ref this.startHeight);
                     if (this.version >= 70001)
                         stream.ReadWrite(ref this.relay);
                 }

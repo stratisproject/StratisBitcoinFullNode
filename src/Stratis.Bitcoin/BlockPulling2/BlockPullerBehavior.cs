@@ -88,16 +88,12 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>The average delay in seconds between asking this peer for a block and it being downloaded.</summary>
         internal readonly AverageCalculator averageDelaySeconds;
 
-        /// <inheritdoc cref="ILoggerFactory"/>
         private readonly ILoggerFactory loggerFactory;
 
-        /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
-        /// <inheritdoc cref="IBlockPuller"/>
         private readonly IBlockPuller blockPuller;
 
-        /// <inheritdoc cref="IInitialBlockDownloadState"/>
         private readonly IInitialBlockDownloadState ibdState;
 
         public BlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, ILoggerFactory loggerFactory)
