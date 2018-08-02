@@ -787,7 +787,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.chainedHeaderTree.FullValidationSucceeded(blockToConnect.ChainedHeader);
 
-                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsAtBestChainTip();
+                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.GetBestChainTip() == this.Tip;
             }
 
             var result = new ConnectBlocksResult(true);
