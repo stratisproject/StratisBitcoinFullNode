@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     {
         private readonly IWalletManager walletManager;
 
+        /// <summary>Thread safe class representing a chain of headers from genesis.</summary>
         private readonly ConcurrentChain chain;
 
         /// <summary>Instance logger.</summary>
@@ -37,10 +38,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         private BufferBlock<Block> BlockBuffer { get; }
 
         /// <summary>Provides a <see cref="Block"/> <see cref="ConcurrentQueue{T}"/></summary>
-        private readonly ConcurrentQueue<Block> blocksQueue = new ConcurrentQueue<Block>();
+        private readonly ConcurrentQueue<Block> blocksQueue;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
+
+        /// <summary>Protects access to <see cref="blocksQueue"/>.</summary>
+        private readonly object lockObject;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime, 
@@ -61,9 +65,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.asyncLoopFactory = asyncLoopFactory;
 
             this.BlockBuffer = new BufferBlock<Block>();
-            this.asyncLoopFactory = asyncLoopFactory;
+            this.blocksQueue = new ConcurrentQueue<Block>();
+            this.lockObject = new object();
         }
 
         /// <inheritdoc />
@@ -311,20 +317,22 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        private static async Task ConsumerBlockAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue)
+        private async Task ConsumerBlockAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue)
         {
             while (await source.OutputAvailableAsync())
             {
-                Block block = source.Receive();
-
-                queue.Enqueue(block);
+                lock (this.lockObject)
+                {
+                    Block block = source.Receive();
+                    queue.Enqueue(block);
+                }
             }
         }
 
         /// <inheritdoc />
         private void QueueBlock(Block block)
         {
-            Task.Run(() => ConsumerBlockAsync(this.BlockBuffer, this.blocksQueue));
+            Task.Run(() => this.ConsumerBlockAsync(this.BlockBuffer, this.blocksQueue));
         
             this.ProducerBlock(this.BlockBuffer, block);
         }
