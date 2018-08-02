@@ -26,8 +26,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IBlockRepository blockRepository;
 
-        private readonly IBlockStoreCache blockStoreCache;
-
         private readonly BlockStoreQueue blockStoreQueue;
 
         private readonly BlockStoreManager blockStoreManager;
@@ -57,7 +55,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IConnectionManager connectionManager,
             Signals.Signals signals,
             IBlockRepository blockRepository,
-            IBlockStoreCache blockStoreCache,
             BlockStoreQueue blockStoreQueue,
             BlockStoreManager blockStoreManager,
             BlockStoreSignaled blockStoreSignaled,
@@ -72,7 +69,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chain = chain;
             this.signals = signals;
             this.blockRepository = blockRepository;
-            this.blockStoreCache = blockStoreCache;
             this.blockStoreQueue = blockStoreQueue;
             this.blockStoreManager = blockStoreManager;
             this.blockStoreSignaled = blockStoreSignaled;
@@ -167,8 +163,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 .AddFeature<BlockStoreFeature>()
                 .FeatureServices(services =>
                     {
-                        services.AddSingleton<IBlockRepository, BlockRepository>(); // TODO ACTIVATION remove later
-                        services.AddSingleton<IBlockStoreCache, BlockStoreCache>();
                         services.AddSingleton<BlockStoreQueue>().AddSingleton<IBlockStore, BlockStoreQueue>(provider => provider.GetService<BlockStoreQueue>());
                         services.AddSingleton<BlockStoreManager>();
                         services.AddSingleton<BlockStoreSignaled>();

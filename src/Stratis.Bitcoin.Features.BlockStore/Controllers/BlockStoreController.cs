@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
@@ -18,8 +19,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     [Route("api/[controller]")]
     public class BlockStoreController : Controller
     {
-        /// <summary>An interface for getting blocks asynchronously from the blockstore cache.</summary>
-        private readonly IBlockStoreCache blockStoreCache;
+        /// <see cref="IBlockStore"/>
+        private readonly IBlockStore blockStore;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -27,14 +28,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <summary>An interface that provides information about the chain and validation.</summary>
         private readonly IChainState chainState;
 
-        public BlockStoreController(ILoggerFactory loggerFactory, 
-            IBlockStoreCache blockStoreCache, IChainState chainState)
+        public BlockStoreController(ILoggerFactory loggerFactory,
+            IBlockStore blockStore, IChainState chainState)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
             Guard.NotNull(chainState, nameof(chainState));
 
-            this.blockStoreCache = blockStoreCache;
+            this.blockStore = blockStore;
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -56,12 +56,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
             try
             {
-                Block block = await this.blockStoreCache.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);
+                Block block = await this.blockStore.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);
                 if(block == null) return new NotFoundObjectResult("Block not found");
-                return query.OutputJson 
+                return query.OutputJson
                     ? this.Json(new BlockModel(block))
                     : this.Json(block);
-            } 
+            }
             catch (Exception e)
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
