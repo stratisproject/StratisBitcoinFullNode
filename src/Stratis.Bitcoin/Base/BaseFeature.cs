@@ -307,7 +307,7 @@ namespace Stratis.Bitcoin.Base
 
             this.consensusRules.Dispose();
 
-            (this.blockStore as IDisposable)?.Dispose();
+            this.blockStore?.Dispose();
         }
     }
 

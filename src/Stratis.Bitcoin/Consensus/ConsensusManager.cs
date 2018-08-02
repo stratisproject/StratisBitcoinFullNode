@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Consensus
             //  coinview and it will abstract the methods `RewindAsync()` `GetBlockHashAsync()`
 
             uint256 consensusTipHash = await this.consensusRules.GetBlockHashAsync().ConfigureAwait(false);
-            bool blockStoreDisabled = this.chainState.BlockStoreTip == null;
+            bool blockStoreDisabled = this.blockStore == null;
 
             while (true)
             {
