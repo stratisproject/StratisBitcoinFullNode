@@ -216,12 +216,11 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.executorFactory = new ReflectionSmartContractExecutorFactory(loggerFactory, this.serializer, this.refundProcessor, this.transferProcessor, this.vm);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
-
-                var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
-                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), this.nodeSettings, peerAddressManager);
-                var connectionSettings = new ConnectionManagerSettings(this.nodeSettings);
-                var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, this.nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, connectionSettings, new SmartContractVersionProvider());
-
+                var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
+                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
+                var connectionSettings = new ConnectionManagerSettings(nodeSettings);
+                var selfEndpointTracker = new SelfEndpointTracker();
+                var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new SmartContractVersionProvider());
                 var blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
                 var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
