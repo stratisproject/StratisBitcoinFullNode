@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
@@ -11,6 +12,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
@@ -64,9 +66,127 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
             this.CheckAndComputeStake(context);
 
-            await base.RunAsync(context).ConfigureAwait(false);
+            await OverriddenSmartContractCoinviewRuleAsync(context);
+
             var posRuleContext = context as PosRuleContext;
             await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeader, posRuleContext.BlockStake).ConfigureAwait(false);
+
+            this.Logger.LogTrace("(-)");
+        }
+
+        private async Task OverriddenSmartContractCoinviewRuleAsync(RuleContext context)
+        {
+            this.Logger.LogTrace("()");
+
+            this.blockTxsProcessed = new List<Transaction>();
+            NBitcoin.Block block = context.ValidationContext.Block;
+            ChainedHeader index = context.ValidationContext.ChainedHeader;
+            DeploymentFlags flags = context.Flags;
+            UnspentOutputSet view = ((UtxoRuleContext)context).UnspentOutputSet;
+
+            this.Parent.PerformanceCounter.AddProcessedBlocks(1);
+
+            // Start state from previous block's root
+            this.smartContractParent.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
+            IContractStateRepository trackedState = this.smartContractParent.OriginalStateRoot.StartTracking();
+
+            this.refundCounter = 1;
+            long sigOpsCost = 0;
+            Money fees = Money.Zero;
+            var checkInputs = new List<Task<bool>>();
+
+            for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
+            {
+                this.Parent.PerformanceCounter.AddProcessedTransactions(1);
+                Transaction tx = block.Transactions[txIndex];
+                if (!context.SkipValidation)
+                {
+                    if (!this.IsProtocolTransaction(tx))
+                    {
+                        if (!view.HaveInputs(tx))
+                        {
+                            this.Logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
+                            ConsensusErrors.BadTransactionMissingInput.Throw();
+                        }
+
+                        var prevheights = new int[tx.Inputs.Count];
+                        // Check that transaction is BIP68 final.
+                        // BIP68 lock checks (as opposed to nLockTime checks) must
+                        // be in ConnectBlock because they require the UTXO set.
+                        for (int j = 0; j < tx.Inputs.Count; j++)
+                        {
+                            prevheights[j] = (int)view.AccessCoins(tx.Inputs[j].PrevOut.Hash).Height;
+                        }
+
+                        if (!tx.CheckSequenceLocks(prevheights, index, flags.LockTimeFlags))
+                        {
+                            this.Logger.LogTrace("(-)[BAD_TX_NON_FINAL]");
+                            ConsensusErrors.BadTransactionNonFinal.Throw();
+                        }
+                    }
+
+                    // GetTransactionSignatureOperationCost counts 3 types of sigops:
+                    // * legacy (always),
+                    // * p2sh (when P2SH enabled in flags and excludes coinbase),
+                    // * witness (when witness enabled in flags and excludes coinbase).
+                    sigOpsCost += this.GetTransactionSignatureOperationCost(tx, view, flags);
+                    if (sigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
+                        ConsensusErrors.BadBlockSigOps.Throw();
+
+                    if (!this.IsProtocolTransaction(tx))
+                    {
+                        this.CheckInputs(tx, view, index.Height);
+                        fees += view.GetValueIn(tx) - tx.TotalOut;
+                        var txData = new PrecomputedTransactionData(tx);
+                        for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
+                        {
+                            this.Parent.PerformanceCounter.AddProcessedInputs(1);
+                            TxIn input = tx.Inputs[inputIndex];
+                            int inputIndexCopy = inputIndex;
+                            TxOut txout = view.GetOutputFor(input);
+                            var checkInput = new Task<bool>(() =>
+                            {
+                                if (txout.ScriptPubKey.IsSmartContractExec() || txout.ScriptPubKey.IsSmartContractInternalCall())
+                                {
+                                    return input.ScriptSig.IsSmartContractSpend();
+                                }
+
+                                var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
+                                var ctx = new ScriptEvaluationContext(this.Parent.Network);
+                                ctx.ScriptVerify = flags.ScriptFlags;
+                                return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
+                            });
+
+                            checkInput.Start();
+                            checkInputs.Add(checkInput);
+                        }
+                    }
+                }
+
+                this.UpdateCoinView(context, tx);
+
+                this.blockTxsProcessed.Add(tx);
+            }
+
+            if (!context.SkipValidation)
+            {
+                this.CheckBlockReward(context, fees, index.Height, block);
+
+                foreach (Task<bool> checkInput in checkInputs)
+                {
+                    if (await checkInput.ConfigureAwait(false))
+                        continue;
+
+                    this.Logger.LogTrace("(-)[BAD_TX_SCRIPT]");
+                    ConsensusErrors.BadTransactionScriptError.Throw();
+                }
+            }
+            else this.Logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
+
+            if (new uint256(this.smartContractParent.OriginalStateRoot.Root) != ((SmartContractBlockHeader)block.Header).HashStateRoot)
+                SmartContractConsensusErrors.UnequalStateRoots.Throw();
+
+            this.smartContractParent.OriginalStateRoot.Commit();
 
             this.Logger.LogTrace("(-)");
         }

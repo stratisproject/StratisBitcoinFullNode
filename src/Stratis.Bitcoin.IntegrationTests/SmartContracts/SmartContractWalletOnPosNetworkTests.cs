@@ -132,31 +132,31 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 //THE TESTS FAIL ON TRANSFER CALLS
 
                 // Create a call contract transaction which will transfer funds
-                //contractCarrier = SmartContractCarrier.CallContract(1, tokenContractAddress, "Test", gasPrice, gasLimit);
-                //Script contractCallScript = new Script(contractCarrier.Serialize());
-                //txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList(), Password)
-                //{
-                //    ChangeAddress = senderAddress,
-                //    MinConfirmations = maturity,
-                //    FeeType = FeeType.High
-                //};
+                contractCarrier = SmartContractCarrier.CallContract(1, tokenContractAddress, "Test", gasPrice, gasLimit);
+                Script contractCallScript = new Script(contractCarrier.Serialize());
+                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList(), Password)
+                {
+                    ChangeAddress = senderAddress,
+                    MinConfirmations = maturity,
+                    FeeType = FeeType.High
+                };
 
                 // Build the transfer contract transaction
-                //var callContractTransaction = BuildTransferContractTransaction(scSender, txBuildContext);
+                var callContractTransaction = BuildTransferContractTransaction(scSender, txBuildContext);
 
-                //// Add the smart contract transaction to the mempool to be mined.
-                //scSender.AddToStratisMempool(callContractTransaction);
+                // Add the smart contract transaction to the mempool to be mined.
+                scSender.AddToStratisMempool(callContractTransaction);
 
-                //// Wait for the token transaction to be picked up by the mempool
-                //TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
-                //scSender.GenerateStratisWithMiner(1);
+                // Wait for the token transaction to be picked up by the mempool
+                TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
+                scSender.GenerateStratisWithMiner(1);
 
-                //// Ensure the nodes are synced
-                //TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
-                //TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+                // Ensure the nodes are synced
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
-                //// The balance should now reflect the transfer
-                //Assert.Equal((ulong)900, senderState.GetCurrentBalance(tokenContractAddress));
+                // The balance should now reflect the transfer
+                Assert.Equal((ulong)900, senderState.GetCurrentBalance(tokenContractAddress));
             }
         }
 
