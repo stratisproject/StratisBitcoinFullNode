@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Base
             IConsensusManager consensusManager,
             IConsensusRuleEngine consensusRules,
             IPartialValidator partialValidator,
-            IBlockStore blockStore = null)
+            IBlockStore blockStore)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Base
 
             // Block store must be initialized before consensus manager.
             // This may be a temporary solution until a better way is found to solve this dependency.
-            this.blockStore?.InitializeAsync().GetAwaiter().GetResult();
+            this.blockStore.InitializeAsync().GetAwaiter().GetResult();
 
             this.consensusRules.Initialize().GetAwaiter().GetResult();
 
@@ -307,7 +307,9 @@ namespace Stratis.Bitcoin.Base
 
             this.consensusRules.Dispose();
 
-            this.blockStore?.Dispose();
+            this.consensusManager.Dispose();
+
+            this.blockStore.Dispose();
         }
     }
 

@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.BlockPulling
     /// and delivered after that we will discard delivered block from this peer.
     /// </para>
     /// </remarks>
-    public interface IBlockPuller
+    public interface IBlockPuller : IDisposable
     {
         void Initialize();
 
@@ -74,8 +74,7 @@ namespace Stratis.Bitcoin.BlockPulling
         void ShowStats(StringBuilder statsBuilder);
     }
 
-    /// <inheritdoc cref="IBlockPuller"/>
-    public class BlockPuller : IBlockPuller, IDisposable
+    public class BlockPuller : IBlockPuller
     {
         /// <summary>Interval between checking if peers that were assigned important blocks didn't deliver the block.</summary>
         private const int StallingLoopIntervalMs = 500;
@@ -651,7 +650,21 @@ namespace Stratis.Bitcoin.BlockPulling
                         scoreToReachPeer -= peerBehavior.QualityScore;
                     }
 
-                    int peerId = selectedBehavior.AttachedPeer.Connection.Id;
+                    INetworkPeer attachedPeer = selectedBehavior.AttachedPeer;
+                    if (attachedPeer == null)
+                    {
+                        peerBehaviors.Remove(selectedBehavior);
+
+                        if (peerBehaviors.Count == 0)
+                        {
+                            jobFailed = true;
+                            break;
+                        }
+
+                        continue;
+                    }
+
+                    int peerId = attachedPeer.Connection.Id;
 
                     if (selectedBehavior.Tip.FindAncestorOrSelf(header) != null)
                     {
