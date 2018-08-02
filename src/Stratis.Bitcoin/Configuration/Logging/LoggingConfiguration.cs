@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using NLog;
 using NLog.Config;
+using NLog.Extensions.Logging;
 using NLog.Targets;
 using NLog.Targets.Wrappers;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -19,11 +20,24 @@ namespace Stratis.Bitcoin.Configuration.Logging
     /// </summary>
     public class ExtendedLoggerFactory : LoggerFactory
     {
+        private const string NLogConfigFileName = "NLog.config";
+
         /// <summary>Configuration of console logger.</summary>
         public ConsoleLoggerSettings ConsoleSettings { get; set; }
 
         /// <summary>Provider of console logger.</summary>
         public ConsoleLoggerProvider ConsoleLoggerProvider { get; set; }
+
+        /// <summary>Loads the NLog.config file from the <see cref="DataFolder"/>, if it exists.</summary>
+        public void LoadNLogConfiguration(DataFolder dataFolder)
+        {
+            if (dataFolder == null)
+                return;
+
+            string configPath = Path.Combine(dataFolder.RootPath, NLogConfigFileName);
+            if (File.Exists(configPath))
+                this.ConfigureNLog(configPath);
+        }
     }
 
     /// <summary>
