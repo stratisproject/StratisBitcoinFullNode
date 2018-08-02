@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Wallet.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // send coins to the receiver
                 HdAddress sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                Transaction trx = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
+                Transaction trx = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(WalletTestsHelpers.CreateOptions(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
                 // broadcast to the other node
                 stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(trx.ToHex()));
@@ -157,7 +158,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // ====================
                 // send coins to the receiver
                 HdAddress sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                Transaction transaction1 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
+                Transaction transaction1 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(WalletTestsHelpers.CreateOptions(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
 
                 // broadcast to the other node
                 stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction1.ToHex()));
@@ -194,7 +195,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // send more coins to the wallet
                 sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                Transaction transaction2 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 10, FeeType.Medium, 101));
+                Transaction transaction2 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(WalletTestsHelpers.CreateOptions(new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 10, FeeType.Medium, 101));
                 stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction2.ToHex()));
                 // wait for the trx to arrive
                 TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
@@ -448,18 +449,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // check that store recovered to be the same as the best chain.
                 Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.WalletManager().WalletTipHash);
             }
-        }
-
-        public static TransactionBuildOptions CreateContext(WalletAccountReference accountReference, string password,
-            Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
-        {
-            return new TransactionBuildOptions(
-                accountReference, password,
-                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList())
-            {
-                MinConfirmations = minConfirmations,
-                FeeType = feeType
-            };
         }
 
         /// <summary>

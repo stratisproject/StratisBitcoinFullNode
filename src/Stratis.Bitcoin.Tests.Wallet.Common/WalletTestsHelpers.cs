@@ -113,6 +113,18 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return (last, block);
         }
 
+        public static TransactionBuildOptions CreateOptions(WalletAccountReference accountReference, string password,
+            Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
+        {
+            return new TransactionBuildOptions(
+                accountReference, password,
+                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList())
+            {
+                MinConfirmations = minConfirmations,
+                FeeType = feeType
+            };
+        }
+
         public static Features.Wallet.Wallet CreateWallet(string name)
         {
             return new Features.Wallet.Wallet
