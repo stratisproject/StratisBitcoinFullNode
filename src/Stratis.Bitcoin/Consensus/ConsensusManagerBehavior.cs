@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Consensus
 
             using (await this.asyncLock.LockAsync().ConfigureAwait(false))
             {
-                if (this.cachedHeaders.Count > CacheSyncHeadersThreshold) //TODO when proven headers are implemented combine this with size threshold of N mb.
+                if (this.cachedHeaders.Count > CacheSyncHeadersThreshold) // TODO when proven headers are implemented combine this with size threshold of N mb.
                 {
                     // Ignore this message because cache is full.
                     this.logger.LogTrace("(-)[CACHE_IS_FULL]");
@@ -487,7 +487,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         protected override void AttachCore()
         {
             this.logger.LogTrace("()");
@@ -512,7 +512,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
@@ -523,7 +523,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         public override void Dispose()
         {
             this.autosyncTimer?.Dispose();

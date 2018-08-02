@@ -8,6 +8,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Filters
     {
         private readonly Action<IncomingMessage, Action> onIncoming;
         private readonly Action<INetworkPeer, Payload, Action> onSending;
+
         public ActionFilter(Action<IncomingMessage, Action> onIncoming = null, Action<INetworkPeer, Payload, Action> onSending = null)
         {
             this.onIncoming = onIncoming ?? new Action<IncomingMessage, Action>((m, n) => n());

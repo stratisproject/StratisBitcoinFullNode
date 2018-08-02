@@ -132,10 +132,6 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
-        private static TxIn CoinbaseTxIn = TxIn.CreateCoinbase(0);
-
-        private static TxIn NonCoinbaseTxIn = new TxIn(new OutPoint(uint256.One, 0));
-
         public Coins ToCoins()
         {
             var coins = new Coins
@@ -150,6 +146,7 @@ namespace Stratis.Bitcoin.Utilities
             {
                 coins.Outputs.Add(output == null ? Coins.NullTxOut : output);
             }
+
             coins.ClearUnspendable();
             return coins;
         }

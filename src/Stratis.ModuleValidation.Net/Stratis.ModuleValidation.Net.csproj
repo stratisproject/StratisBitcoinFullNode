@@ -4,6 +4,7 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <AssemblyName>Stratis.ModuleValidation.Net</AssemblyName>
     <RootNamespace>Stratis.ModuleValidation.Net</RootNamespace>
+	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
