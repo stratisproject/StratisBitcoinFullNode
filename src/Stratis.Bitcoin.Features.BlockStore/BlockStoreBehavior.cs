@@ -74,17 +74,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private ChainedHeader lastHeaderSent;
 
         /// <see cref="IChainState"/>
-        private IChainState chainState;
-
-        public BlockStoreBehavior(
-            ConcurrentChain chain,
-            BlockRepository blockRepository,
-            IBlockStoreCache blockStoreCache,
-            IChainState chainState,
-            ILoggerFactory loggerFactory)
-            : this(chain, blockRepository as IBlockRepository, blockStoreCache, chainState, loggerFactory)
-        {
-        }
+        private readonly IChainState chainState;
 
         public BlockStoreBehavior(ConcurrentChain chain, IBlockStore blockStore, IBlockStoreCache blockStoreCache, IChainState chainState, ILoggerFactory loggerFactory)
         {
