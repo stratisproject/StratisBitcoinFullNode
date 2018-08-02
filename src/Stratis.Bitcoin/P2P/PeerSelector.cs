@@ -331,7 +331,6 @@ namespace Stratis.Bitcoin.P2P
         {
             return peers.Where(p => (p.HandshakedAttempts < PeerAddress.AttemptHandshakeThreshold) ||
                                     p.LastHandshakeAttempt?.AddHours(PeerAddress.AttempThresholdHours) < this.dateTimeProvider.GetUtcNow());
-
         }
 
         public IEnumerable<PeerAddress> NotBanned()

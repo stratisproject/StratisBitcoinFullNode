@@ -26,7 +26,6 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 
             try
             {
-
                 byte[] bytes = Encoders.Hex.DecodeData((string)reader.Value);
                 if (objectType == typeof(Key))
                     return new Key(bytes);

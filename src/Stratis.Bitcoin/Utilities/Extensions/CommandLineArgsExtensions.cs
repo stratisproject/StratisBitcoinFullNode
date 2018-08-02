@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Utilities.Extensions
     /// <summary>
     /// Extension methods for command line arguments.
     /// </summary>
-    [DebuggerStepThrough()]
+    [DebuggerStepThrough]
     public static class CommandLineArgsExtensions
     {
         /// <summary>
