@@ -34,6 +34,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             {
                 return this.mode;
             }
+
             set
             {
                 this.AssertNotAttached();
@@ -52,6 +53,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             {
                 return this.timeoutInterval;
             }
+
             set
             {
                 this.AssertNotAttached();
@@ -70,6 +72,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             {
                 return this.pingInterval;
             }
+
             set
             {
                 this.AssertNotAttached();

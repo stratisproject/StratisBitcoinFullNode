@@ -46,6 +46,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         private static string userAgent;
 
         private uint version;
+
         public ProtocolVersion Version
         {
             get
@@ -56,6 +57,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
                 return (ProtocolVersion)this.version;
             }
+
             set
             {
                 if (value == (ProtocolVersion)10300)
@@ -66,12 +68,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private ulong services;
+
         public NetworkPeerServices Services
         {
             get
             {
                 return (NetworkPeerServices)this.services;
             }
+
             set
             {
                 this.services = (ulong)value;
@@ -79,12 +83,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private long timestamp;
+
         public DateTimeOffset Timestamp
         {
             get
             {
                 return Utils.UnixTimeToDateTime((uint)this.timestamp);
             }
+
             set
             {
                 this.timestamp = Utils.DateTimeToUnixTime(value);
@@ -92,12 +98,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private NetworkAddress addr_recv = new NetworkAddress();
+
         public IPEndPoint AddressReceiver
         {
             get
             {
                 return this.addr_recv.Endpoint;
             }
+
             set
             {
                 this.addr_recv.Endpoint = value;
@@ -105,12 +113,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private NetworkAddress addr_from = new NetworkAddress();
+
         public IPEndPoint AddressFrom
         {
             get
             {
                 return this.addr_from.Endpoint;
             }
+
             set
             {
                 this.addr_from.Endpoint = value;
@@ -118,12 +128,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private ulong nonce;
+
         public ulong Nonce
         {
             get
             {
                 return this.nonce;
             }
+
             set
             {
                 this.nonce = value;
@@ -131,12 +143,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private int start_height;
+
         public int StartHeight
         {
             get
             {
                 return this.start_height;
             }
+
             set
             {
                 this.start_height = value;
@@ -144,12 +158,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private bool relay = true;
+
         public bool Relay
         {
             get
             {
                 return this.relay;
             }
+
             set
             {
                 this.relay = value;
@@ -157,12 +173,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private VarString user_agent;
+
         public string UserAgent
         {
             get
             {
                 return Encoders.ASCII.EncodeData(this.user_agent.GetString());
             }
+
             set
             {
                 if (value.Length > MaxSubversionLength)

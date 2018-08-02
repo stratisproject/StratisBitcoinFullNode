@@ -37,6 +37,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private List<BlockHeader> headers = new List<BlockHeader>();
+
         public List<BlockHeader> Headers { get { return this.headers; } }
 
         public HeadersPayload()

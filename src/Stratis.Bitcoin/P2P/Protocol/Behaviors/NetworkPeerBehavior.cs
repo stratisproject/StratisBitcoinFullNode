@@ -8,14 +8,18 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
     public interface INetworkPeerBehavior : IDisposable
     {
         INetworkPeer AttachedPeer { get; }
+
         void Attach(INetworkPeer peer);
+
         void Detach();
+
         INetworkPeerBehavior Clone();
     }
 
     public abstract class NetworkPeerBehavior : INetworkPeerBehavior
     {
         private object cs = new object();
+
         public INetworkPeer AttachedPeer { get; private set; }
 
         protected abstract void AttachCore();

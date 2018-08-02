@@ -41,6 +41,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
         }
 
         private byte[] command = new byte[CommandSize];
+
         public string Command
         {
             get
@@ -55,12 +56,14 @@ namespace Stratis.Bitcoin.P2P.Protocol
         }
 
         private Payload payloadObject;
+
         public Payload Payload
         {
             get
             {
                 return this.payloadObject;
             }
+
             set
             {
                 this.payloadObject = value;

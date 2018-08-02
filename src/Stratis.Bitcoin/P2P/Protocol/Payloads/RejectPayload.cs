@@ -41,6 +41,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             {
                 return Encoders.ASCII.EncodeData(this.message.GetString(true));
             }
+
             set
             {
                 this.message = new VarString(Encoders.ASCII.DecodeData(value));
@@ -48,12 +49,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private byte code;
+
         public RejectCode Code
         {
             get
             {
                 return (RejectCode)this.code;
             }
+
             set
             {
                 this.code = (byte)value;
@@ -70,6 +73,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             {
                 return Encoders.ASCII.EncodeData(this.reason.GetString(true));
             }
+
             set
             {
                 this.reason = new VarString(Encoders.ASCII.DecodeData(value));

@@ -11,6 +11,7 @@ namespace Stratis.Bitcoin.P2P.Peer
     public class NetworkPeerEventArgs : EventArgs
     {
         public bool Added { get; private set; }
+
         public INetworkPeer peer { get; private set; }
 
         public NetworkPeerEventArgs(INetworkPeer peer, bool added)
@@ -23,7 +24,9 @@ namespace Stratis.Bitcoin.P2P.Peer
     public interface IReadOnlyNetworkPeerCollection : IEnumerable<INetworkPeer>
     {
         INetworkPeer FindByEndpoint(IPEndPoint endpoint);
+
         INetworkPeer FindByIp(IPAddress ip);
+
         INetworkPeer FindLocal();
     }
 

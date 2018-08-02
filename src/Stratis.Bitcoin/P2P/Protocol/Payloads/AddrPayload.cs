@@ -11,6 +11,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class AddrPayload : Payload, IBitcoinSerializable
     {
         private NetworkAddress[] addr_list = new NetworkAddress[0];
+
         public NetworkAddress[] Addresses { get { return this.addr_list; } }
 
         public AddrPayload()
