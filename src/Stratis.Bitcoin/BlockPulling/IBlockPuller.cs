@@ -30,8 +30,8 @@ namespace Stratis.Bitcoin.BlockPulling
         /// Check status of the block in the context of the puller.
         /// </summary>
         /// <param name="hash">Hash of the block header.</param>
-        /// <param name="IsDownloading">This is set to <c>true</c> if the block with the given hash is currently being downloaded.</param>
-        /// <param name="IsReady">This is set to <c>true</c> if the block with the given hash has been downloaded and is ready to be consumed.</param>
-        void CheckBlockStatus(uint256 hash, out bool IsDownloading, out bool IsReady);
+        /// <param name="isDownloading">This is set to <c>true</c> if the block with the given hash is currently being downloaded.</param>
+        /// <param name="isReady">This is set to <c>true</c> if the block with the given hash has been downloaded and is ready to be consumed.</param>
+        void CheckBlockStatus(uint256 hash, out bool isDownloading, out bool isReady);
     }
 }

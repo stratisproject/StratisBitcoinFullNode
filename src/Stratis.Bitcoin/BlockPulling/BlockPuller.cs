@@ -257,17 +257,17 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc />
-        public void CheckBlockStatus(uint256 hash, out bool IsDownloading, out bool IsReady)
+        public void CheckBlockStatus(uint256 hash, out bool isDownloading, out bool isReady)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
 
             lock (this.lockObject)
             {
-                IsDownloading = this.assignedBlockTasks.ContainsKey(hash) || this.pendingInventoryVectors.Contains(hash);
-                IsReady = this.downloadedBlocks.ContainsKey(hash);
+                isDownloading = this.assignedBlockTasks.ContainsKey(hash) || this.pendingInventoryVectors.Contains(hash);
+                isReady = this.downloadedBlocks.ContainsKey(hash);
             }
 
-            this.logger.LogTrace("(-):*{0}={1},*{2}={3}", nameof(IsDownloading), IsDownloading, nameof(IsReady), IsReady);
+            this.logger.LogTrace("(-):*{0}={1},*{2}={3}", nameof(isDownloading), isDownloading, nameof(isReady), isReady);
         }
 
         /// <summary>

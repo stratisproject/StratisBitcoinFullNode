@@ -195,12 +195,12 @@ namespace Stratis.Bitcoin.Controllers.Models
         /// <summary>
         /// Initializes an instance of the <see cref="Vout"/> class.
         /// </summary>
-        /// <param name="N">The index of the output.</param>
+        /// <param name="n">The index of the output.</param>
         /// <param name="txout">A <see cref="TxOut"/></param>
         /// <param name="network">The network where the transaction occured.</param>
-        public Vout(int N, TxOut txout, Network network)
+        public Vout(int n, TxOut txout, Network network)
         {
-            this.N = N;
+            this.N = n;
             this.Value = txout.Value.ToDecimal(MoneyUnit.BTC);
             this.ScriptPubKey = new ScriptPubKey(txout.ScriptPubKey, network);
         }
