@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>It's a logger mate.</summary>
+        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         /// <summary>Builds loggers.</summary>
@@ -77,21 +77,23 @@ namespace Stratis.Bitcoin.P2P
 
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
+            this.logger.LogTrace("({0}:[{1}], {2}:[{3}])", nameof(peer), peer, nameof(message), message);
+
             try
             {
                 if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
                 {
-                    if ((message.Message.Payload is GetAddrPayload))
+                    if (message.Message.Payload is GetAddrPayload)
                     {
                         if (!peer.Inbound)
                         {
-                            this.logger.LogTrace("Outbound peer sent GetAddrPayload. Not replying to avoid fingerprinting attack.");
+                            this.logger.LogTrace($"Outbound peer ${peer} sent {nameof(GetAddrPayload)}. Not replying to avoid fingerprinting attack.");
                             return;
                         }
                     
                         if (this.sentAddress)
                         {
-                            this.logger.LogTrace("Multiple GetAddr requests. Not replying to avoid fingerprinting attack.");
+                            this.logger.LogTrace($"Multiple GetAddr requests from peer ${peer}. Not replying to avoid fingerprinting attack.");
                             return;
                         }
 
@@ -120,6 +122,8 @@ namespace Stratis.Bitcoin.P2P
             catch (OperationCanceledException)
             {
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState previousState)

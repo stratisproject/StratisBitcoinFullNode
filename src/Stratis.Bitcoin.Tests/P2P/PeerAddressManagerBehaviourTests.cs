@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         [Fact]
-        public void PeerAddressManagerBehaviour_DoesntSendAddress_Inbound()
+        public void PeerAddressManagerBehaviour_DoesntSendAddress_Outbound()
         {
             IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
