@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Builder;
+﻿using NBitcoin.Networks;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public StratisSmartContractPosNode(string dataDir)
             : base(dataDir)
         {
-            this.Network = new SmartContractPosRegTest();
+            this.Network = NetworkRegistration.Register(new SmartContractPosRegTest());
         }
 
         public override void BuildNode()
