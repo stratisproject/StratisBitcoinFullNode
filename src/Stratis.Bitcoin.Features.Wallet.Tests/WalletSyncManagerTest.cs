@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -115,12 +117,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             // Start() will execute private methods asyncLoopFactory will run() ProcessBlockLoopAsync(), so need to wait some time.
             walletSyncManager.Start();
-            Thread.Sleep(2000);
-            walletSyncManager.Stop();
 
             uint256 expectedBlockHash = this.chain.GetBlock(4).Header.GetHash();
-            Assert.Equal(expectedBlockHash, walletSyncManager.WalletTip.Header.GetHash());
-            this.walletManager.Verify(w => w.ProcessBlock(It.Is<Block>(b => b.GetHash() == blockToProcess.GetHash()), It.Is<ChainedHeader>(c => c.Header.GetHash() == expectedBlockHash)));
+            WaitLoop(() => expectedBlockHash == walletSyncManager.WalletTip.Header.GetHash(), $"Expected block {expectedBlockHash} does not match tip {walletSyncManager.WalletTip.Header.GetHash()}.");
+
+            walletSyncManager.Stop();
+
+            this.walletManager.Verify(w => w.ProcessBlock(blockToProcess, this.chain.GetBlock(4)));
         }
 
         /// <summary>
@@ -162,14 +165,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             // Start() will execute private methods asyncLoopFactory will run() ProcessBlockLoopAsync(), so need to wait some time.
             walletSyncManager.Start();
-            Thread.Sleep(2000);
+
+            uint256 expectedBlockHash = this.chain.GetBlock(5).Header.GetHash();
+            WaitLoop(() => expectedBlockHash == walletSyncManager.WalletTip.Header.GetHash(), $"Expected block {expectedBlockHash} does not match tip {walletSyncManager.WalletTip.Header.GetHash()}.");
+
             walletSyncManager.Stop();
 
             // walletmanager removes all blocks up to the fork.
             this.walletManager.Verify(w => w.RemoveBlocks(ExpectChainedBlock(this.chain.GetBlock(2))));
-
-            uint256 expectedBlockHash = this.chain.GetBlock(5).Header.GetHash();
-            Assert.Equal(expectedBlockHash, walletSyncManager.WalletTip.Header.GetHash());
 
             //verify manager processes each missing block until caught up.
             // height 3
@@ -177,7 +180,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             // height 4
             this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(result.RightForkBlocks[3]), ExpectChainedBlock(this.chain.GetBlock(4))));
             // height 5
-            this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(result.RightForkBlocks[4]), ExpectChainedBlock(this.chain.GetBlock(5))), Times.Exactly(2));
+            this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(result.RightForkBlocks[4]), ExpectChainedBlock(this.chain.GetBlock(5))), Times.Exactly(1));
         }
 
         /// <summary>
@@ -213,11 +216,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             // Start() will execute private methods asyncLoopFactory will run() ProcessBlockLoopAsync(), so need to wait some time.
             walletSyncManager.Start();
-            Thread.Sleep(2000);
-            walletSyncManager.Stop();
 
             uint256 expectedBlockHash = this.chain.GetBlock(4).Header.GetHash();
-            Assert.Equal(expectedBlockHash, walletSyncManager.WalletTip.Header.GetHash());
+            WaitLoop(() => expectedBlockHash == walletSyncManager.WalletTip.Header.GetHash(), $"Expected block {expectedBlockHash} does not match tip {walletSyncManager.WalletTip.Header.GetHash()}.");
+
+            walletSyncManager.Stop();
+
             //verify manager processes each missing block until caught up.
             // height 3
             this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(blocks[2]), ExpectChainedBlock(this.chain.GetBlock(3))));
@@ -274,11 +278,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             // Start() will execute private methods asyncLoopFactory will run() ProcessBlockLoopAsync(), so need to wait some time.
             walletSyncManager.Start();
 
-            Thread.Sleep(2000);
-            walletSyncManager.Stop();
-
             uint256 expectedBlockHash = this.chain.GetBlock(5).Header.GetHash();
-            Assert.Equal(expectedBlockHash, walletSyncManager.WalletTip.Header.GetHash());
+            WaitLoop(() => expectedBlockHash == walletSyncManager.WalletTip.Header.GetHash(), $"Expected block {expectedBlockHash} does not match tip {walletSyncManager.WalletTip.Header.GetHash()}.");
+
+            walletSyncManager.Stop();
 
             //verify manager processes each missing block until caught up.
             // height 3
@@ -404,7 +407,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 walletSyncManager.ProcessBlock(block);
 
             walletSyncManager.Start();
-            Thread.Sleep(2000);
+
+            uint256 expectedBlockHash = this.chain.GetBlock(5).Header.GetHash();
+
+            WaitLoop(() => expectedBlockHash == walletSyncManager.WalletTip.Header.GetHash(), $"Expected block {expectedBlockHash} does not match tip {walletSyncManager.WalletTip.Header.GetHash()}.");
+
             walletSyncManager.Stop();
 
             this.walletManager.Verify(w => w.ProcessBlock(It.IsAny<Block>(), It.IsAny<ChainedHeader>()), Times.Exactly(blockCount));
@@ -431,6 +438,23 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             public void SetWalletTip(ChainedHeader tip)
             {
                 this.walletTip = tip;
+            }
+        }
+
+        private static void WaitLoop(Func<bool> act, string failureReason, int millisecondsTimeout = 50)
+        {
+            var cancel = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000);
+            while (!act())
+            {
+                try
+                {
+                    cancel.Token.ThrowIfCancellationRequested();
+                    Thread.Sleep(millisecondsTimeout);
+                }
+                catch (OperationCanceledException e)
+                {
+                    Assert.False(true, $"{failureReason}{Environment.NewLine}{e.Message}");
+                }
             }
         }
     }
