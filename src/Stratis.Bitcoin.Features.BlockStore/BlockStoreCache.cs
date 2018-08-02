@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <param name="blockids">A list of unique Block id hashes.</param>
         /// <returns>The blocks (or null if not found) in the same order as the hashes on input.</returns
-        Task<List<Block>> GetBlockAsync(List<uint256> blockids);
+        Task<List<Block>> GetBlocksAsync(List<uint256> blockids);
 
         void AddToCache(Block block);
 
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public async Task<List<Block>> GetBlockAsync(List<uint256> blockids)
+        public async Task<List<Block>> GetBlocksAsync(List<uint256> blockids)
         {
             Guard.NotNull(blockids, nameof(blockids));
 
