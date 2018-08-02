@@ -158,7 +158,7 @@ namespace Stratis.Bitcoin.P2P
 
             this.ConnectorPeers.Add(peer);
 
-            if (this.asyncLoop != null && this.ConnectorPeers.Count >= this.ConnectionSettings.BurstModeTargetConnections)
+            if ((this.asyncLoop != null) && (this.ConnectorPeers.Count >= this.ConnectionSettings.BurstModeTargetConnections))
                 this.asyncLoop.RepeatEvery = this.defaultConnectionInterval;
         }
 
