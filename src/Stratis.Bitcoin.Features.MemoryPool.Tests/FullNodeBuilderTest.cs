@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         [Fact]
         public void CanHaveAllFullnodeServicesTest()
         {
-            // This test is put in the mempool feature because the 
+            // This test is put in the mempool feature because the
             // mempool requires all the features to be a fullnode
 
             var nodeSettings = new NodeSettings(args: new string[] {
@@ -36,7 +36,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var consensusManager = serviceProvider.GetService<IConsensusManager>() as ConsensusManager;
             var chain = serviceProvider.GetService<ConcurrentChain>();
             var chainState = serviceProvider.GetService<IChainState>() as ChainState;
-            var blockStoreManager = serviceProvider.GetService<BlockStoreManager>();
             var consensusRuleEngine = serviceProvider.GetService<IConsensusRuleEngine>();
             consensusRuleEngine.Register();
             var mempoolManager = serviceProvider.GetService<MempoolManager>();
@@ -49,7 +48,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(chain);
             Assert.NotNull(chainState);
             Assert.NotNull(consensusRuleEngine);
-            Assert.NotNull(blockStoreManager);
             Assert.NotNull(mempoolManager);
             Assert.NotNull(connectionManager);
         }

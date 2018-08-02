@@ -24,11 +24,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly Signals.Signals signals;
 
-        private readonly IBlockRepository blockRepository;
-
         private readonly BlockStoreQueue blockStoreQueue;
-
-        private readonly BlockStoreManager blockStoreManager;
 
         private readonly BlockStoreSignaled blockStoreSignaled;
 
@@ -54,9 +50,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ConcurrentChain chain,
             IConnectionManager connectionManager,
             Signals.Signals signals,
-            IBlockRepository blockRepository,
             BlockStoreQueue blockStoreQueue,
-            BlockStoreManager blockStoreManager,
             BlockStoreSignaled blockStoreSignaled,
             INodeLifetime nodeLifetime,
             NodeSettings nodeSettings,
@@ -68,9 +62,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.name = name;
             this.chain = chain;
             this.signals = signals;
-            this.blockRepository = blockRepository;
             this.blockStoreQueue = blockStoreQueue;
-            this.blockStoreManager = blockStoreManager;
             this.blockStoreSignaled = blockStoreSignaled;
             this.nodeLifetime = nodeLifetime;
             this.connectionManager = connectionManager;
@@ -83,7 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public virtual BlockStoreBehavior BlockStoreBehaviorFactory()
         {
-            return new BlockStoreBehavior(this.chain, this.blockRepository, this.chainState, this.loggerFactory);
+            return new BlockStoreBehavior(this.chain, this.blockStoreQueue, this.chainState, this.loggerFactory);
         }
 
         /// <inheritdoc />
@@ -164,7 +156,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 .FeatureServices(services =>
                     {
                         services.AddSingleton<BlockStoreQueue>().AddSingleton<IBlockStore, BlockStoreQueue>(provider => provider.GetService<BlockStoreQueue>());
-                        services.AddSingleton<BlockStoreManager>();
                         services.AddSingleton<BlockStoreSignaled>();
                         services.AddSingleton<StoreSettings>();
                         services.AddSingleton<BlockStoreController>();
