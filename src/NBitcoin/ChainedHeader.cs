@@ -431,7 +431,7 @@ namespace NBitcoin
         /// Calculate the difficulty adjustment interval in blocks based on settings defined in <see cref="IConsensus"/>.
         /// </summary>
         /// <returns>The difficulty adjustment interval in blocks.</returns>
-        public long GetDifficultyAdjustmentInterval(IConsensus consensus)
+        private long GetDifficultyAdjustmentInterval(IConsensus consensus)
         {
             return (long)consensus.PowTargetTimespan.TotalSeconds / (long)consensus.PowTargetSpacing.TotalSeconds;
         }
