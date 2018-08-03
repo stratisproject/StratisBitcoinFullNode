@@ -330,7 +330,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var mockWalletWrapper = new Mock<IWalletManager>();
             mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), null)).Returns(wallet);
 
-            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+            Mock<IWalletSyncManager> walletSyncManager = new Mock<IWalletSyncManager>();
+            walletSyncManager.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header, this.Network.GetGenesis().Header.GetHash(), 3));
+
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), this.Network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
@@ -342,6 +345,49 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             });
 
             mockWalletWrapper.VerifyAll();
+            var viewResult = Assert.IsType<OkResult>(result);
+            Assert.Equal(200, viewResult.StatusCode);
+        }
+
+        /// <summary>
+        /// This is to cover the scenario where a wallet is syncing at height X
+        /// and the user recovers a new wallet at height X + Y.
+        /// The wallet should continue syncing from X without jumpoing forward.
+        /// </summary>
+        [Fact]
+        public void RecoverWalletWithDatedAfterCurrentSyncHeightDoesNotMoveSyncHeight()
+        {
+            var wallet = new Wallet
+            {
+                Name = "myWallet",
+                Network = NetworkHelpers.GetNetwork("mainnet")
+            };
+
+            // The chain is at height 100.
+            ConcurrentChain concurrentChain = WalletTestsHelpers.GenerateChainWithHeight(100, this.Network);
+            DateTime lastBlockDateTime = concurrentChain.Tip.Header.BlockTime.DateTime;
+
+            var mockWalletWrapper = new Mock<IWalletManager>();
+            mockWalletWrapper.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), null)).Returns(wallet);
+
+            Mock<IWalletSyncManager> walletSyncManager = new Mock<IWalletSyncManager>();
+            walletSyncManager.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header, this.Network.GetGenesis().Header.GetHash(), 3));
+            walletSyncManager.Verify(w => w.SyncFromHeight(100), Times.Never);
+
+            var controller = new WalletController(this.LoggerFactory.Object, mockWalletWrapper.Object, new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object, It.IsAny<ConnectionManager>(), this.Network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+
+            IActionResult result = controller.Recover(new WalletRecoveryRequest
+            {
+                Name = "myWallet",
+                FolderPath = "",
+                Password = "",
+                Network = "MainNet",
+                Mnemonic = "mnemonic",
+                CreationDate = lastBlockDateTime
+            });
+
+            mockWalletWrapper.VerifyAll();
+
             var viewResult = Assert.IsType<OkResult>(result);
             Assert.Equal(200, viewResult.StatusCode);
         }

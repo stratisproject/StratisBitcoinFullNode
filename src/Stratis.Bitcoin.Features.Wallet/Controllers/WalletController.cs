@@ -231,8 +231,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate);
 
-                // start syncing the wallet from the creation date
-                this.walletSyncManager.SyncFromDate(request.CreationDate);
+                // After recovery the wallet needs to be synced.
+                // We only sync if the syncing process needs to go back.
+                int blockHeightToSyncFrom = this.chain.GetHeightAtTime(request.CreationDate);
+                int currentSyncingHeight = this.walletSyncManager.WalletTip.Height;
+
+                if (blockHeightToSyncFrom < currentSyncingHeight)
+                {
+                    this.walletSyncManager.SyncFromHeight(blockHeightToSyncFrom);
+                }
 
                 return this.Ok();
             }
