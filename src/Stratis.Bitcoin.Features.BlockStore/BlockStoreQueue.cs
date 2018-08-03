@@ -66,14 +66,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly AsyncQueue<ChainedHeaderBlock> blocksQueue;
 
         /// <summary>Batch of blocks which should be saved in the database.</summary>
-        /// <remarks>Write access should be protected by <see cref="batchLock"/>.</remarks>
+        /// <remarks>Write access should be protected by <see cref="getBlockLock"/>.</remarks>
         private readonly List<ChainedHeaderBlock> batch;
 
         /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
         private Task dequeueLoopTask;
 
-        /// <summary>Protects access to <see cref="batch"/>.</summary>
-        private object batchLock;
+        /// <summary>Protects the batch from being modifying while <see cref="GetBlockAsync"/> method is using the batch.</summary>
+        private readonly object getBlockLock;
 
         public BlockStoreQueue(
             ConcurrentChain chain,
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chain = chain;
             this.blockRepository = new BlockRepository(network, dataFolder, dateTimeProvider, loggerFactory);
             this.batch = new List<ChainedHeaderBlock>();
-            this.batchLock = new object();
+            this.getBlockLock = new object();
 
             this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            await this.blockRepository.InitializeAsync();
+            await this.blockRepository.InitializeAsync().ConfigureAwait(false);
 
             if (this.storeSettings.ReIndex)
             {
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             Block block = null;
 
-            lock (this.batchLock)
+            lock (this.getBlockLock)
             {
                 block = this.batch.FirstOrDefault(x => x.ChainedHeader.HashBlock == blockHash)?.Block;
             }
@@ -320,7 +320,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // Set the dequeue task to null so it can be assigned on the next iteration.
                     dequeueTask = null;
 
-                    lock (this.batchLock)
+                    lock (this.getBlockLock)
                     {
                         this.batch.Add(item);
                     }
@@ -341,7 +341,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         await this.SaveBatchAsync().ConfigureAwait(false);
 
-                        lock (this.batchLock)
+                        lock (this.getBlockLock)
                         {
                             this.batch.Clear();
                         }
