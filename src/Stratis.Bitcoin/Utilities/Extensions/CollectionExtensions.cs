@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Utilities.Extensions
     /// <summary>
     /// Extension methods for collections.
     /// </summary>
-    [DebuggerStepThrough()]
+    [DebuggerStepThrough]
     public static class CollectionExtensions
     {
         /// <summary>

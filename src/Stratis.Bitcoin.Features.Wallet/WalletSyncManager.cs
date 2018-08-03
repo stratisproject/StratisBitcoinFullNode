@@ -43,9 +43,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        /// <summary>Protects access to <see cref="blocksQueue"/>.</summary>
-        private readonly object lockObject;
-
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime, 
             IAsyncLoopFactory asyncLoopFactory)
@@ -69,7 +66,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.BlockBuffer = new BufferBlock<Block>();
             this.blocksQueue = new ConcurrentQueue<Block>();
-            this.lockObject = new object();
         }
 
         /// <inheritdoc />
@@ -107,10 +103,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.asyncLoopFactory.Run(nameof(WalletSyncManager), async token =>
             {
-                await this.ProcessBlockLoopAsync(token);
+                await this.ProcessBlockLoopAsync(token).ConfigureAwait(false);
             }, 
             this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpans.Second);
+            repeatEvery: TimeSpans.TenSeconds);
 
             this.logger.LogTrace("(-)");
         }
@@ -125,6 +121,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void ProcessBlock(Block block)
         {
+            this.logger.LogTrace("()");
+
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
             this.QueueBlock(block);
@@ -135,6 +133,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
+            this.logger.LogTrace("()");
+
             Guard.NotNull(transaction, nameof(transaction));
 
             this.logger.LogTrace("({0}:'{1}')", nameof(transaction), transaction.GetHash());
@@ -147,6 +147,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public virtual void SyncFromDate(DateTime date)
         {
+            this.logger.LogTrace("()");
+
             this.logger.LogTrace("({0}:'{1::yyyy-MM-dd HH:mm:ss}')", nameof(date), date);
 
             int blockSyncStart = this.chain.GetHeightAtTime(date);
@@ -158,6 +160,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public virtual void SyncFromHeight(int height)
         {
+            this.logger.LogTrace("()");
+
             this.logger.LogTrace("({0}:{1})", nameof(height), height);
 
             ChainedHeader chainedHeader = this.chain.GetBlock(height);
@@ -170,11 +174,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Processes a new block.
         /// </summary>
-        /// <param name="block"></param>
+        /// <param name="block"><see cref="Block"/> to process</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task ProcessAsync(Block block)
         {
             await Task.Run(() =>
             {
+                this.logger.LogTrace("()");
+
                 Guard.NotNull(block, nameof(block));
                 this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
@@ -184,6 +191,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.logger.LogTrace("(-)[NEW_TIP_REORG]");
                     return;
                 }
+
+                this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip.ToString());
 
                 // If the new block's previous hash is the same as the
                 // wallet hash then just pass the block to the manager.
@@ -213,7 +222,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // The new tip can be ahead or behind the wallet.
                     // If the new tip is ahead we try to bring the wallet up to the new tip.
                     // If the new tip is behind we just check the wallet and the tip are in the same chain.
-                    if (newTip.Height < this.walletTip.Height)
+                    if (newTip.Height <= this.walletTip.Height)
                     {
                         ChainedHeader findTip = this.walletTip.FindAncestorOrSelf(newTip);
                         if (findTip == null)
@@ -225,8 +234,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                         this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
                     }
                 }
-
-                this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
+                else
+                {
+                    this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
+                }
 
                 this.walletTip = newTip;
                 this.walletManager.ProcessBlock(block, newTip);
@@ -238,16 +249,24 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Processes blocks stored in the block store cache and block queue, asynchronously.
         /// </summary>
-        /// <param name="cancellation">Cancellation token that triggers when the task and the loop should be cancelled.</param>
+        /// <param name="token">Cancellation token that triggers when the task and the loop should be cancelled.</param>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
         private async Task ProcessBlockLoopAsync(CancellationToken token)
         {
+            this.logger.LogTrace("()");
+            this.logger.LogDebug("(-)[PROCESS_BLOC_LOOP_ASYNC]");
+
             try
             {
                 ChainedHeader tip = this.chain.Tip;
 
+                this.logger.LogTrace("({0}:'{1}')", nameof(tip), tip.ToString());
+
                 // if not up-to-date then get previous blocks and sync
                 if (tip.Height > this.walletTip.Height)
                 {
+                    this.logger.LogDebug("(-)[TIP_HEIGHT_>_WALLET_TIP]");
+
                     ChainedHeader findTip = tip.FindAncestorOrSelf(this.walletTip);
                     if (findTip == null)
                     {
@@ -265,37 +284,41 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                         next = tip.GetAncestor(next.Height + 1);
 
-                        Block nextBlock;
-
                         while (true)
                         {
                             token.ThrowIfCancellationRequested();
 
-                            nextBlock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                            Block nextBlock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
 
                             if (nextBlock == null)
                             {
                                 // Check if any Blocks are queued up.
                                 while (this.blocksQueue.TryDequeue(out Block block))
                                 {
+                                    this.logger.LogDebug("Process block from blocksQueue - '{0}'", this.chain.GetBlock(block.GetHash()));
                                     await this.ProcessAsync(block).ConfigureAwait(false);
                                 }
 
                                 continue;
                             }
+                            else
+                            {
+                                this.logger.LogDebug("Process block from blockStoreCache - '{0}'", this.chain.GetBlock(nextBlock.GetHash()));
+                                await this.ProcessAsync(nextBlock).ConfigureAwait(false);
+                            }
 
                             break;
                         }
-
-                        await this.ProcessAsync(nextBlock).ConfigureAwait(false);
-
                     }
                 }
                 else
                 {
+                    this.logger.LogDebug("(-)[TIP_HEIGHT_<_WALLET_TIP]");
+
                     // Check if any Blocks are queued up.
                     while (this.blocksQueue.TryDequeue(out Block block))
                     {
+                        this.logger.LogTrace("Process block from blocksQueue - '{0}'", this.chain.GetBlock(block.GetHash()));
                         await this.ProcessAsync(block).ConfigureAwait(false);
                     }
                 }
@@ -308,33 +331,47 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         private void ProducerBlock(ITargetBlock<Block> target, Block block)
         {
+            this.logger.LogDebug("()");
+            this.logger.LogDebug("(-)[PRODUCER_BLOCK]");
+
             target.Post(block);
+
+            this.logger.LogDebug("(-)");
         }
 
         /// <inheritdoc />
         private async Task ConsumerBlockAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue)
         {
-            while (await source.OutputAvailableAsync())
+            this.logger.LogDebug("()");
+            this.logger.LogDebug("(-)[CONSUMER_BLOCK_ASYNC]");
+
+            while (await source.OutputAvailableAsync().ConfigureAwait(false))
             {
-                lock (this.lockObject)
-                {
-                    Block block = source.Receive();
-                    queue.Enqueue(block);
-                }
+                Block block = source.Receive();
+                queue.Enqueue(block);
             }
+
+            this.logger.LogDebug("(-)");
         }
 
         /// <inheritdoc />
         private void QueueBlock(Block block)
         {
-            Task.Run(() => this.ConsumerBlockAsync(this.BlockBuffer, this.blocksQueue));
+            this.logger.LogDebug("()");
+            this.logger.LogDebug("(-)[QUEUE_BLOCK]");
+
+            Task.Run(() => this.ConsumerBlockAsync(this.BlockBuffer, this.blocksQueue).ConfigureAwait(false));
         
             this.ProducerBlock(this.BlockBuffer, block);
+
+            this.logger.LogDebug("(-)");
         }
     }
 }

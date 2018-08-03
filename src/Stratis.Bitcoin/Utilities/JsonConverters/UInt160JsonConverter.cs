@@ -20,17 +20,17 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
         /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            if(reader.TokenType == JsonToken.Null)
+            if (reader.TokenType == JsonToken.Null)
                 return null;
 
             try
             {
                 return uint160.Parse((string)reader.Value);
             }
-            catch(EndOfStreamException)
+            catch (EndOfStreamException)
             {
             }
-            catch(FormatException)
+            catch (FormatException)
             {
             }
 

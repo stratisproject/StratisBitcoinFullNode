@@ -85,18 +85,19 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="args">The command-line arguments.</param>
         /// <exception cref="ConfigurationException">Thrown in case of any problems with the configuration file or command line arguments.</exception>
         /// <remarks>
-        /// Processing depends on whether a configuration file is passed via the command line. 
+        /// Processing depends on whether a configuration file is passed via the command line.
         /// There are two main scenarios here:
         /// - The configuration file is passed via the command line. In this case we need
         ///   to read it earlier so that it can provide defaults for "testnet" and "regtest".
-        /// - Alternatively, if the file name is not supplied then a network-specific file 
+        /// - Alternatively, if the file name is not supplied then a network-specific file
         ///   name would be determined. In this case we first need to determine the network.
         /// </remarks>
         public NodeSettings(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion,
             string agent = "StratisBitcoin", string[] args = null)
         {
             // Create the default logger factory and logger.
-            this.LoggerFactory = new ExtendedLoggerFactory();
+            var loggerFactory = new ExtendedLoggerFactory();
+            this.LoggerFactory = loggerFactory;
             this.LoggerFactory.AddConsoleWithFilters();
             this.LoggerFactory.AddNLog();
             this.Logger = this.LoggerFactory.CreateLogger(typeof(NodeSettings).FullName);
@@ -173,6 +174,9 @@ namespace Stratis.Bitcoin.Configuration
 
             // Set the data folder.
             this.DataFolder = new DataFolder(this.DataDir);
+
+            // Attempt to load NLog configuration from the DataFolder.
+            loggerFactory.LoadNLogConfiguration(this.DataFolder);
 
             // Get the configuration file name for the network if it was not specified on the command line.
             if (this.ConfigurationFile == null)

@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private const int HighWorkAmountThreshold = 50;
 
         /// <summary>Random number generator.</summary>
-        private static Random Rand = new Random();
+        private static Random rand = new Random();
 
         /// <summary>
         /// Initializes class logger.
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <returns>Random index to <paramref name="scores"/> array - i.e. a number from 0 to scores.Length - 1.</returns>
         private static int GetNodeIndex(int[] scores, int totalScore)
         {
-            int selectedScore = Rand.Next(totalScore);
+            int selectedScore = rand.Next(totalScore);
             int current = 0;
             int i = 0;
             foreach (int score in scores)
@@ -149,6 +149,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     return i;
                 i++;
             }
+
             return scores.Length - 1;
         }
     }

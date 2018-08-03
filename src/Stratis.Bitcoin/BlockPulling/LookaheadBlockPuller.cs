@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.BlockPulling
     }
 
     /// <summary>
-    /// Puller that is used for fast sync during initial block download (IBD). It implements a strategy of downloading 
+    /// Puller that is used for fast sync during initial block download (IBD). It implements a strategy of downloading
     /// multiple blocks from multiple peers at once, so that IBD is fast enough, but does not consume too many resources.
     /// </summary>
     /// <remarks>
@@ -139,6 +139,7 @@ namespace Stratis.Bitcoin.BlockPulling
             {
                 return Math.Min(this.MaximumLookahead, Math.Max(this.MinimumLookahead, this.actualLookahead));
             }
+
             private set
             {
                 this.actualLookahead = Math.Min(this.MaximumLookahead, Math.Max(this.MinimumLookahead, value));
@@ -394,6 +395,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.currentBufferedSize += downloadedBlock.Length;
                 this.currentBufferedCount++;
             }
+
             this.pushed.Set();
 
             this.logger.LogTrace("(-)");
@@ -565,6 +567,7 @@ namespace Stratis.Bitcoin.BlockPulling
                         this.currentBufferedSize -= block.Length;
                         this.currentBufferedCount--;
                     }
+
                     this.consumed.Set();
 
                     res.Block = block.Block;

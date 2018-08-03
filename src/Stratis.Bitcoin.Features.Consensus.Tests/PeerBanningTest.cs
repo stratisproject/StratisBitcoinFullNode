@@ -28,11 +28,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             MinerScriptPubKey = new Key().ScriptPubKey;
         }
 
-        private async Task<(TestChainContext context, IPEndPoint peerEndPoint)> InitialiseContextAndPeerEndpointAsync()
+        private async Task<(TestChainContext context, IPEndPoint peerEndPoint)> InitialiseContextAndPeerEndpointAsync(Mock<IPeerAddressManager> mockPeerAddressManager = null)
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            TestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, dataDir);
+            TestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, dataDir, mockPeerAddressManager);
             var peerEndPoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), context.Network.DefaultPort);
             context.PeerAddressManager.AddPeer(peerEndPoint, peerEndPoint.Address.MapToIPv6());
 
@@ -64,6 +64,30 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             await context.Consensus.AcceptBlockAsync(new ValidationContext { Block = badBlock, Peer = peerEndPoint });
 
             Assert.True(context.PeerBanning.IsBanned(peerEndPoint));
+        }
+
+        [Fact]
+        public async Task NodeIsSynced_PeerSendsAMutatedBlockAndPeerDisconnected_AndAddressIsNull_ThePeerGetsBanned_Async()
+        {
+            await this.NodeIsSynced_PeerSendsABadBlockAndPeerDisconnectedAndAddressIsNull_ThePeerGetsBanned_Async(
+                MineAMutatedBlockAsync);
+        }
+
+        private async Task NodeIsSynced_PeerSendsABadBlockAndPeerDisconnectedAndAddressIsNull_ThePeerGetsBanned_Async(
+            Func<TestChainContext, Task<Block>> createBadBlock)
+        {
+            var mockPeerAddressManager = new Mock<IPeerAddressManager>();
+            mockPeerAddressManager.Setup(x => x.FindPeer(It.IsAny<IPEndPoint>())).Returns((PeerAddress)null);
+
+            (TestChainContext context, IPEndPoint peerEndPoint) = await this.InitialiseContextAndPeerEndpointAsync(mockPeerAddressManager);
+            context.MockReadOnlyNodesCollection.Setup(s => s.FindByEndpoint(It.IsAny<IPEndPoint>()))
+                .Returns((INetworkPeer)null);
+
+            Block badBlock = await createBadBlock(context);
+
+            await context.Consensus.AcceptBlockAsync(new ValidationContext { Block = badBlock, Peer = peerEndPoint });
+
+            Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
         }
 
         [Fact]

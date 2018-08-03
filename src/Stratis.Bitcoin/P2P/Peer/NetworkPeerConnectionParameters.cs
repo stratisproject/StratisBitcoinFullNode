@@ -24,7 +24,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         public TransactionOptions PreferredTransactionOptions { get; set; }
 
         public string UserAgent { get; set; }
+
         public int ReceiveBufferSize { get; set; }
+
         public int SendBufferSize { get; set; }
 
         public IPEndPoint AddressFrom { get; set; }
@@ -34,6 +36,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public CancellationToken ConnectCancellation { get; set; }
 
         private readonly NetworkPeerBehaviorsCollection templateBehaviors = new NetworkPeerBehaviorsCollection(null);
+
         public NetworkPeerBehaviorsCollection TemplateBehaviors { get { return this.templateBehaviors; } }
 
         public NetworkPeerConnectionParameters()
@@ -51,7 +54,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.SendBufferSize = 1048576;
             }
             else
-            {               
+            {
                 this.ReceiveBufferSize = 1000 * 5000;
                 this.SendBufferSize = 1000 * 5000;
             }
