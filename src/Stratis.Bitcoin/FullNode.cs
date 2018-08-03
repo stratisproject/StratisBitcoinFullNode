@@ -210,8 +210,7 @@ namespace Stratis.Bitcoin
             this.fullNodeFeatureExecutor.Initialize();
 
             // Initialize peer connection.
-            var consensusManger = this.Services.ServiceProvider.GetRequiredService<IConsensusManager>();
-            this.ConnectionManager.Initialize(consensusManger);
+            this.ConnectionManager.Initialize();
 
             // Fire INodeLifetime.Started.
             this.nodeLifetime.NotifyStarted();
