@@ -195,13 +195,13 @@ namespace Stratis.Bitcoin.Consensus
         /// If <see cref="blockStore"/> is not <c>null</c> (block store is available) then all block headers in
         /// <see cref="chainedHeaderTree"/> will be marked as their block data is available.
         /// If store is not available the <see cref="ConsensusManager"/> won't be able to serve blocks from disk,
-        /// instead all block requests that are not in memory will be sent to the <see cref="blockPuller"/>.
+        /// instead all block requests that are not in memory will be sent to the <see cref="BlockPuller"/>.
         /// </remarks>
         public async Task InitializeAsync(ChainedHeader chainTip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainTip), chainTip);
 
-            this.consensusRules.Initialize().GetAwaiter().GetResult();
+            await this.consensusRules.Initialize().ConfigureAwait(false);
 
             // TODO: consensus store
             // We should consider creating a consensus store class that will internally contain
