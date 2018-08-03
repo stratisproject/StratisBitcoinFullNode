@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// <summary>
         /// Verifies that the block data corresponds to the chain header.
         /// </summary>
-        /// <remarks>  
+        /// <remarks>
         /// This validation represents minimal required validation for every block that we download.
         /// It should be performed even if the block is behind last checkpoint or part of assume valid chain.
         /// TODO specify what exceptions are thrown (add throws xmldoc)

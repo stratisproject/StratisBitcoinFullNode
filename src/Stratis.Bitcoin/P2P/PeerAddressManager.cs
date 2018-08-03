@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.P2P
             fileStorage.SaveToFile(
                 snapshotOfPeersToSave
                     .OrderByDescending(p => p.LastConnectionSuccess)
-                    .ToList(), 
+                    .ToList(),
                 PeerFileName);
         }
 
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.P2P
         {
             if (!endPoint.Address.IsRoutable(true))
                 return;
-            
+
             PeerAddress peerToAdd = PeerAddress.Create(endPoint, source);
             this.peers.TryAdd(peerToAdd.Endpoint, peerToAdd);
         }
@@ -108,7 +108,6 @@ namespace Stratis.Bitcoin.P2P
         {
            this.peers.TryRemove(endPoint.MapToIpv6(), out PeerAddress address);
         }
-
 
         /// <inheritdoc/>
         public void AddPeers(IPEndPoint[] endPoints, IPAddress source)
@@ -126,9 +125,9 @@ namespace Stratis.Bitcoin.P2P
             if (peer == null)
                 return;
 
-            //Reset the attempted count if:
-            //1: The last attempt was more than the threshold time ago.
-            //2: More than the threshold attempts was made.
+            // Reset the attempted count if:
+            // 1: The last attempt was more than the threshold time ago.
+            // 2: More than the threshold attempts was made.
             if (peer.Attempted &&
                 peer.LastAttempt < this.dateTimeProvider.GetUtcNow().AddHours(-PeerAddress.AttemptResetThresholdHours) &&
                 peer.ConnectionAttempts >= PeerAddress.AttemptThreshold)

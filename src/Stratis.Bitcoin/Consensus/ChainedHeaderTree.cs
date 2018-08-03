@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Consensus
             ICheckpoints checkpoints,
             IChainState chainState,
             IFinalizedBlockHeight finalizedBlockHeight,
-            ConsensusSettings consensusSettings, 
+            ConsensusSettings consensusSettings,
             ISignals signals)
         {
             this.network = network;

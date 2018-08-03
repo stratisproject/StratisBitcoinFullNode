@@ -25,6 +25,7 @@ namespace Stratis.Bitcoin.Controllers.Converters
             {
                 result = btcDecimal.ToString("0." + new string('0', MinDecimals), CultureInfo.InvariantCulture);
             }
+
             writer.WriteRawValue(result);
         }
 

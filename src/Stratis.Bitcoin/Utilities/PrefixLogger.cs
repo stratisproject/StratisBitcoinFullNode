@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Utilities
             this.logger = NLog.LogManager.GetLogger(categoryName);
             this.consoleLogger = loggerFactory.GetConsoleLoggerProvider().CreateLogger(categoryName);
 
-            this.prefix = prefix != null ? prefix : "";
+            this.prefix = prefix != null ? prefix : string.Empty;
             this.wrapperType = typeof(PrefixLogger);
         }
 

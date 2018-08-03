@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             return network.Name.ToLowerInvariant().Contains("test");
         }
-        
+
         /// <summary>
         /// Determines whether this network is a regtest network.
         /// </summary>
