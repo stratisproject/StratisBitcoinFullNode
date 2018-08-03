@@ -44,32 +44,36 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The highest stored block in the repository.</summary>
         private ChainedHeader storeTip;
 
-        /// <inheritdoc cref="ILogger"/>
+        /// <see cref="ILogger"/>
         private readonly ILogger logger;
 
-        /// <inheritdoc cref="INodeLifetime"/>
+        /// <see cref="INodeLifetime"/>
         private readonly INodeLifetime nodeLifetime;
 
-        /// <inheritdoc cref="IChainState"/>
+        /// <see cref="IChainState"/>
         private readonly IChainState chainState;
 
-        /// <inheritdoc cref="StoreSettings"/>
+        /// <see cref="StoreSettings"/>
         private readonly StoreSettings storeSettings;
 
-        /// <inheritdoc cref="ConcurrentChain"/>
+        /// <see cref="ConcurrentChain"/>
         private readonly ConcurrentChain chain;
 
-        /// <inheritdoc cref="IBlockRepository"/>
+        /// <see cref="IBlockRepository"/>
         private readonly IBlockRepository blockRepository;
 
         /// <summary>Queue which contains blocks that should be saved to the database.</summary>
         private readonly AsyncQueue<ChainedHeaderBlock> blocksQueue;
 
         /// <summary>Batch of blocks which should be saved in the database.</summary>
+        /// <remarks>Write access should be protected by <see cref="batchLock"/>.</remarks>
         private readonly List<ChainedHeaderBlock> batch;
 
         /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
         private Task dequeueLoopTask;
+
+        /// <summary>Protects access to <see cref="batch"/>.</summary>
+        private object batchLock;
 
         public BlockStoreQueue(
             ConcurrentChain chain,
@@ -93,6 +97,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chain = chain;
             this.blockRepository = new BlockRepository(network, dataFolder, dateTimeProvider, loggerFactory);
             this.batch = new List<ChainedHeaderBlock>();
+            this.batchLock = new object();
 
             this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -172,12 +177,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public Task<Block> GetBlockAsync(uint256 blockHash)
+        public async Task<Block> GetBlockAsync(uint256 blockHash)
         {
-            // TODO ACTIVATION take blocks from pending
-            // TODO make sure this method is used only by CM and all components ask the blocks from CM
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
-            return this.blockRepository.GetBlockAsync(blockHash);
+            Block block = null;
+
+            lock (this.batchLock)
+            {
+                block = this.batch.FirstOrDefault(x => x.ChainedHeader.HashBlock == blockHash)?.Block;
+            }
+
+            if (block == null)
+                block = await this.blockRepository.GetBlockAsync(blockHash);
+
+            this.logger.LogTrace("(-)");
+            return block;
         }
 
         /// <summary>Sets the internal store tip and exposes the store tip to other components through the chain state.</summary>
@@ -303,7 +318,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // Set the dequeue task to null so it can be assigned on the next iteration.
                     dequeueTask = null;
 
-                    this.batch.Add(item);
+                    lock (this.batchLock)
+                    {
+                        this.batch.Add(item);
+                    }
 
                     this.currentBatchSizeBytes += item.Block.BlockSize.Value;
 
@@ -321,7 +339,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         await this.SaveBatchAsync().ConfigureAwait(false);
 
-                        this.batch.Clear();
+                        lock (this.batchLock)
+                        {
+                            this.batch.Clear();
+                        }
+
                         this.currentBatchSizeBytes = 0;
                     }
 
