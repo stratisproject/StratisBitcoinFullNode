@@ -44,22 +44,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>The highest stored block in the repository.</summary>
         private ChainedHeader storeTip;
 
-        /// <see cref="ILogger"/>
+        /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
-        /// <see cref="INodeLifetime"/>
+        /// <inheritdoc cref="INodeLifetime"/>
         private readonly INodeLifetime nodeLifetime;
 
-        /// <see cref="IChainState"/>
+        /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
 
-        /// <see cref="StoreSettings"/>
+        /// <inheritdoc cref="StoreSettings"/>
         private readonly StoreSettings storeSettings;
 
-        /// <see cref="ConcurrentChain"/>
+        /// <inheritdoc cref="ConcurrentChain"/>
         private readonly ConcurrentChain chain;
 
-        /// <see cref="IBlockRepository"/>
+        /// <inheritdoc cref="IBlockRepository"/>
         private readonly IBlockRepository blockRepository;
 
         /// <summary>Queue which contains blocks that should be saved to the database.</summary>
