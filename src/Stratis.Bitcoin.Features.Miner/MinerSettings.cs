@@ -11,6 +11,10 @@ namespace Stratis.Bitcoin.Features.Miner
     /// </summary>
     public class MinerSettings
     {
+        private const ulong MinimumSplitCoinValueDefaultValue = 100 * Money.COIN;
+
+        private const ulong MinimumStakingCoinValueDefaultValue = 10 * Money.CENT;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -99,8 +103,8 @@ namespace Stratis.Bitcoin.Features.Miner
             this.BlockDefinitionOptions = new BlockDefinitionOptions(blockMaxWeight, blockMaxSize).RestrictForNetwork(nodeSettings.Network);
 
             this.EnableCoinStakeSplitting = config.GetOrDefault("enablecoinstakesplitting", true, this.logger);
-            this.MinimumSplitCoinValue = config.GetOrDefault("minimumsplitcoinvalue", (ulong)(100 * Money.COIN), this.logger);
-            this.MinimumStakingCoinValue = config.GetOrDefault("minimumstakingcoinvalue", (ulong)(10 * Money.CENT), this.logger);
+            this.MinimumSplitCoinValue = config.GetOrDefault("minimumsplitcoinvalue", MinimumSplitCoinValueDefaultValue, this.logger);
+            this.MinimumStakingCoinValue = config.GetOrDefault("minimumstakingcoinvalue", MinimumStakingCoinValueDefaultValue, this.logger);
             this.MinimumStakingCoinValue = this.MinimumStakingCoinValue == 0 ? 1 : this.MinimumStakingCoinValue;
 
             this.logger.LogTrace("(-)");
@@ -123,8 +127,8 @@ namespace Stratis.Bitcoin.Features.Miner
             builder.AppendLine("-blockmaxsize=<number>              Maximum block size (in bytes) for the miner to generate.");
             builder.AppendLine("-blockmaxweight=<number>            Maximum block weight (in weight units) for the miner to generate.");
             builder.AppendLine("-enablecoinstakesplitting=<0 or 1>  Enable splitting coins when staking. This is true by default.");
-            builder.AppendLine("-minimumstakingcoinvalue=<number>   Minimum size of the coins considered for staking, in satoshis. Default value is 10,000,000 satoshis (= 0.1 Coin).");
-            builder.AppendLine("-minimumsplitcoinvalue=<number>     Targeted minimum value of staking coins after splitting, in satoshis. Default value is 10,000,000,000 satoshis (= 100 Coin).");
+            builder.AppendLine($"-minimumstakingcoinvalue=<number>   Minimum size of the coins considered for staking, in satoshis. Default value is {MinimumStakingCoinValueDefaultValue:N0} satoshis (= {MinimumStakingCoinValueDefaultValue / (decimal)Money.COIN:N1} Coin).");
+            builder.AppendLine($"-minimumsplitcoinvalue=<number>     Targeted minimum value of staking coins after splitting, in satoshis. Default value is {MinimumSplitCoinValueDefaultValue:N0} satoshis (= {MinimumSplitCoinValueDefaultValue / Money.COIN} Coin).");
 
             defaults.Logger.LogInformation(builder.ToString());
         }
