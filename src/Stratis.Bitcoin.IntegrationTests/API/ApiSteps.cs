@@ -481,16 +481,18 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             stakingInfoModel.Staking.Should().Be(false);
         }
 
-        private void a_404_error_is_returned()
+        private void a_bad_request_error_is_returned()
         {
-            this.response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
+            this.response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
         }
 
         private void send_api_get_request(string apiendpoint)
         {
             this.response = this.httpClient.GetAsync($"{this.apiUri}{apiendpoint}").GetAwaiter().GetResult();
-            this.response.StatusCode.Should().Be(HttpStatusCode.OK);
-            this.responseText = this.response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            if (this.response.IsSuccessStatusCode)
+            {
+                this.responseText = this.response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            }
         }
 
         private void WaitForNodeToSync(params CoreNode[] nodes)

@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             Given(a_pow_node_with_api_enabled);
             When(calling_getstakinginfo);
-            Then(a_404_error_is_returned);
+            Then(a_bad_request_error_is_returned);
         }
 
         [Fact]
@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             Given(a_proof_of_stake_node_with_api_enabled);
             When(calling_generate);
-            Then(a_404_error_is_returned);
+            Then(a_bad_request_error_is_returned);
         }
     }
 }
