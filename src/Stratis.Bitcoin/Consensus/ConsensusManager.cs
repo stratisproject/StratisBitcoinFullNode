@@ -201,8 +201,6 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainTip), chainTip);
 
-            await this.consensusRules.Initialize().ConfigureAwait(false);
-
             // TODO: consensus store
             // We should consider creating a consensus store class that will internally contain
             // coinview and it will abstract the methods `RewindAsync()` `GetBlockHashAsync()`
@@ -231,8 +229,6 @@ namespace Stratis.Bitcoin.Consensus
 
             this.isIbd = this.ibdState.IsInitialBlockDownload();
             this.BlockPuller.OnIbdStateChanged(this.isIbd);
-
-            this.consensusRules.Register();
 
             this.logger.LogTrace("(-)");
         }
@@ -1160,9 +1156,6 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("()");
 
             this.BlockPuller.Dispose();
-            this.partialValidator.Dispose();
-
-            this.consensusRules.Dispose();
 
             this.reorgLock.Dispose();
 

@@ -106,6 +106,8 @@ namespace Stratis.Bitcoin.Base
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         private readonly IConsensusManager consensusManager;
+        private readonly IConsensusRuleEngine consensusRules;
+        private readonly IPartialValidator partialValidator;
         private readonly IBlockStore blockStore;
 
         /// <inheritdoc cref="IFinalizedBlockHeight"/>
@@ -129,6 +131,8 @@ namespace Stratis.Bitcoin.Base
             IPeerBanning peerBanning,
             IPeerAddressManager peerAddressManager,
             IConsensusManager consensusManager,
+            IConsensusRuleEngine consensusRules,
+            IPartialValidator partialValidator,
             IBlockStore blockStore)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -140,6 +144,8 @@ namespace Stratis.Bitcoin.Base
             this.chain = Guard.NotNull(chain, nameof(chain));
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
             this.consensusManager = consensusManager;
+            this.consensusRules = consensusRules;
+            this.partialValidator = partialValidator;
             this.blockStore = blockStore;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
@@ -194,7 +200,11 @@ namespace Stratis.Bitcoin.Base
             // This may be a temporary solution until a better way is found to solve this dependency.
             this.blockStore.InitializeAsync().GetAwaiter().GetResult();
 
+            this.consensusRules.Initialize().GetAwaiter().GetResult();
+
             this.consensusManager.InitializeAsync(this.chain.Tip).GetAwaiter().GetResult();
+
+            this.consensusRules.Register();
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
 
@@ -283,6 +293,8 @@ namespace Stratis.Bitcoin.Base
 
             this.peerAddressManager.Dispose();
 
+            this.partialValidator.Dispose();
+
             this.logger.LogInformation("Flushing headers chain...");
             this.flushChainLoop?.Dispose();
 
@@ -294,6 +306,7 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.consensusManager.Dispose();
+            this.consensusRules.Dispose();
 
             this.blockStore.Dispose();
         }
