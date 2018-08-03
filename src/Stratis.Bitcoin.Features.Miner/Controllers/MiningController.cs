@@ -4,6 +4,8 @@ using System.Linq;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
+using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet;
@@ -17,6 +19,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     /// API controller for calls related to PoW mining and PoS minting.
     /// </summary>
     [Route("api/[controller]")]
+    [HideWhenProofOfStake]
     public class MiningController : Controller
     {
         /// <summary>Instance logger.</summary>
@@ -29,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         private readonly IWalletManager walletManager;
 
         /// <summary>Full Node.</summary>
-        private readonly IFullNode fullNode;
+        private readonly Network network;
 
         /// <summary>Error message prefix when an exception is thrown in this controller.</summary>
         private const string ExceptionOccurredMessage = "Exception occurred: {0}";
@@ -41,14 +44,14 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <param name="fullNode">Full Node.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="walletManager">The wallet manager.</param>
-        public MiningController(IFullNode fullNode, IPowMining powMining, ILoggerFactory loggerFactory, IWalletManager walletManager) 
+        public MiningController(Network network, IPowMining powMining, ILoggerFactory loggerFactory, IWalletManager walletManager) 
         {
-            Guard.NotNull(fullNode, nameof(fullNode));
+            Guard.NotNull(network, nameof(network));
             Guard.NotNull(powMining, nameof(powMining));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
 
-            this.fullNode = fullNode;
+            this.network = network;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.walletManager = walletManager;
             this.powMining = powMining;
@@ -69,8 +72,8 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
 
             try
             {
-                if (this.fullNode.Network.Consensus.IsProofOfStake)
-                    throw new Exception("Method not available for Proof of Work");
+                if (this.network.Consensus.IsProofOfStake)
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Work");
 
                 if (!this.ModelState.IsValid)
                 {

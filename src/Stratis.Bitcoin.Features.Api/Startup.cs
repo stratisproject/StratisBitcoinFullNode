@@ -87,20 +87,6 @@ namespace Stratis.Bitcoin.Features.Api
                 }
 
                 setup.DescribeAllEnumsAsStrings();
-
-                // Retrieves the network so we can filter API settings based on consensus rules.
-                Network network = services.BuildServiceProvider().GetService<Network>();
-                if (network.Consensus.IsProofOfStake)
-                {
-                    // Filters out mining api endpoints.
-                    setup.DocumentFilter<ProofOfStakeConsensusApiFilter>();
-                }
-                else
-                {
-                    // Filters out staking api endpoints.
-                    setup.DocumentFilter<ProofOfWorkConsensusApiFilter>();
-                }
-
             });
         }
 

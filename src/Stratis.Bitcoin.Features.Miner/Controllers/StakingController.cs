@@ -6,6 +6,7 @@ using System.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -18,6 +19,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     /// Controller providing operations on mining feature.
     /// </summary>
     [Route("api/[controller]")]
+    [HideWhenProofOfWork]
     public class StakingController : Controller
     {
         /// <summary>Instance logger.</summary>
@@ -62,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             try
             {
                 if (!this.fullNode.Network.Consensus.IsProofOfStake)
-                    throw new Exception("Method not available for Proof of Work");
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Stake");
 
                 GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetGetStakingInfoModel() : new GetStakingInfoModel();
 
@@ -89,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             try
             {
                 if (!this.fullNode.Network.Consensus.IsProofOfStake)
-                    throw new Exception("Method not available for Proof of Work");
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Stake");
 
                 if (!this.ModelState.IsValid)
                 {
@@ -131,7 +133,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             try
             {
                 if (!this.fullNode.Network.Consensus.IsProofOfStake)
-                    throw new Exception("Method not available for Proof of Work");
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Stake");
 
                 this.fullNode.NodeFeature<MiningFeature>(true).StopStaking();
                 return this.Ok();

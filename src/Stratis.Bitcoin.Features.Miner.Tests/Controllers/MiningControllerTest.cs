@@ -20,14 +20,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         private MiningController controller;
         private readonly Mock<IPowMining> powMining;
         private readonly Mock<IWalletManager> walletManager;
-        private readonly Mock<IFullNode> fullNode;
+        private readonly Network network;
 
         public MiningControllerTest()
         {
             this.fullNode = new Mock<IFullNode>();
             this.powMining = new Mock<IPowMining>();
             this.walletManager = new Mock<IWalletManager>();
-            this.fullNode.Setup(i => i.Network).Returns(KnownNetworks.TestNet);
+            this.network = KnownNetworks.TestNet;
         }
 
         [Theory]
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         [InlineData(-1)]
         public void Generate_With_Incorrect_Block_Count_ReturnsInvalidRequest(int? blockCount)
         {
-            this.controller = new MiningController(this.fullNode.Object, this.powMining.Object, this.LoggerFactory.Object, this.walletManager.Object);
+            this.controller = new MiningController(this.network, this.powMining.Object, this.LoggerFactory.Object, this.walletManager.Object);
 
             IActionResult result = blockCount == null ? 
                 this.controller.Generate(new MiningRequest()) : 
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         [Fact]
         public void Generate_Blocks_When_Model_Is_Invalid_ReturnsBadRequest()
         {
-            this.controller = new MiningController(this.fullNode.Object, this.powMining.Object, this.LoggerFactory.Object, this.walletManager.Object);
+            this.controller = new MiningController(this.network, this.powMining.Object, this.LoggerFactory.Object, this.walletManager.Object);
 
             this.controller.ModelState.AddModelError("key", "error message");
 
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             this.powMining.Setup(p => p.GenerateBlocks(It.Is<ReserveScript>(r => r.ReserveFullNodeScript == address.Pubkey), 1, int.MaxValue))
                 .Returns(new List<uint256> { new uint256(1255632623) });
 
-            this.controller = new MiningController(this.fullNode.Object, this.powMining.Object, this.LoggerFactory.Object, this.walletManager.Object);
+            this.controller = new MiningController(this.network, this.powMining.Object, this.LoggerFactory.Object, this.walletManager.Object);
 
             IActionResult result = this.controller.Generate(new MiningRequest { BlockCount = 1 });
 
