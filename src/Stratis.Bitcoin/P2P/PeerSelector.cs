@@ -331,6 +331,7 @@ namespace Stratis.Bitcoin.P2P
         {
             IEnumerable<PeerAddress> filteredPeers = peers.Where(p => (p.HandshakedAttempts < PeerAddress.AttemptHandshakeThreshold) ||
                                     p.LastHandshakeAttempt?.AddHours(PeerAddress.AttempThresholdHours) < this.dateTimeProvider.GetUtcNow()).ToList();
+
             foreach (PeerAddress peer in filteredPeers)
             {
                 if (peer.HandshakedAttempts == PeerAddress.AttemptHandshakeThreshold)
