@@ -99,8 +99,8 @@ namespace Stratis.Bitcoin.Features.Miner
             this.BlockDefinitionOptions = new BlockDefinitionOptions(blockMaxWeight, blockMaxSize).RestrictForNetwork(nodeSettings.Network);
 
             this.EnableCoinStakeSplitting = config.GetOrDefault("enablecoinstakesplitting", true, this.logger);
-            this.MinimumSplitCoinValue = config.GetOrDefault("minimumsplitcoinvalue", (ulong)(100 * Money.COIN) , this.logger);
-            this.MinimumStakingCoinValue = config.GetOrDefault("minimumstakingcoinvalue", (ulong)(10 * Money.CENT) , this.logger);
+            this.MinimumSplitCoinValue = config.GetOrDefault("minimumsplitcoinvalue", (ulong)(100 * Money.COIN), this.logger);
+            this.MinimumStakingCoinValue = config.GetOrDefault("minimumstakingcoinvalue", (ulong)(10 * Money.CENT), this.logger);
             this.MinimumStakingCoinValue = this.MinimumStakingCoinValue == 0 ? 1 : this.MinimumStakingCoinValue;
 
             this.logger.LogTrace("(-)");

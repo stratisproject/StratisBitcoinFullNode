@@ -1159,7 +1159,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
             if (!this.CoinstakeSplitEnabled)
             {
-                this.logger.LogTrace("(-):{0}", false);
+                this.logger.LogTrace("(-):[SPLITTING_DISABLED]{0}", false);
                 return false;
             }
 
