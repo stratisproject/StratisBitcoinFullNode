@@ -189,7 +189,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             if (block == null)
-                block = await this.blockRepository.GetBlockAsync(blockHash);
+                block = await this.blockRepository.GetBlockAsync(blockHash).ConfigureAwait(false);
+            else
+                this.logger.LogTrace("Block was found in the batch.");
 
             this.logger.LogTrace("(-)");
             return block;
