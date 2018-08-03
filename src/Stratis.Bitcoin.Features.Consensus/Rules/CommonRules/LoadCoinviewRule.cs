@@ -13,6 +13,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     [FullValidationRule]
     public class SaveCoinviewRule : UtxoStoreConsensusRule
     {
+        /// <summary>
+        /// Specifies time threshold which is used to determine if flush is required.
+        /// When consensus tip timestamp is greater than current time minus the threshold the flush is required.
+        /// </summary>
+        /// <remarks>Used only on blockchains without max reorg property.</remarks>
+        private const int FlushRequiredThresholdSeconds = 2 * 24 * 60 * 60;
+
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
@@ -24,6 +31,27 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.Logger.LogTrace("Saving coinview changes.");
             var utxoRuleContext = context as UtxoRuleContext;
             await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash).ConfigureAwait(false);
+
+            bool forceFlush = this.FlushRequired(context.ValidationContext.ChainTipToExtand);
+            if (this.PowParent.UtxoSet is CachedCoinView cachedCoinView)
+                await cachedCoinView.FlushAsync(forceFlush).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Calculates if coinview flush is required.
+        /// </summary>
+        /// <remarks>
+        /// For blockchains with max reorg property flush is required when consensus tip is less than max reorg blocks behind the chain tip.
+        /// If there is no max reorg property - flush is required when consensus tip timestamp is less than <see cref="FlushRequiredThresholdSeconds"/> behind the adjusted time.
+        /// </remarks>
+        private bool FlushRequired(ChainedHeader tip)
+        {
+            if (tip.Header.Time > this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - FlushRequiredThresholdSeconds)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 
