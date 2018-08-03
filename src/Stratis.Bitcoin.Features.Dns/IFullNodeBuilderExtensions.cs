@@ -31,7 +31,6 @@ namespace Stratis.Bitcoin.Features.Dns
                     services.AddSingleton<DnsSettings>();
                     services.AddSingleton<IUdpClient, DnsSeedUdpClient>();
                     services.AddSingleton<IWhitelistManager, WhitelistManager>();
-                    services.AddSingleton<IPeerBanning, PeerBanning>();
                 });
             });
 
