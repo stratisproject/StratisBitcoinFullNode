@@ -275,6 +275,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
+        /// <inheritdoc />
         public void PeerDisconnected(int networkPeerId)
         {
             this.logger.LogTrace("({0}:{1})", nameof(networkPeerId), networkPeerId);

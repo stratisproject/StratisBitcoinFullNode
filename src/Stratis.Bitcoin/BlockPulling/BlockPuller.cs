@@ -655,23 +655,12 @@ namespace Stratis.Bitcoin.BlockPulling
                     }
 
                     INetworkPeer attachedPeer = selectedBehavior.AttachedPeer;
-                    if (attachedPeer == null)
+
+                    // Behavior's tip can't be null because we only have behaviors inserted in the behaviors structure after the tip is set.
+                    if ((attachedPeer != null) && (selectedBehavior.Tip.FindAncestorOrSelf(header) != null))
                     {
-                        peerBehaviors.Remove(selectedBehavior);
+                        int peerId = attachedPeer.Connection.Id;
 
-                        if (peerBehaviors.Count == 0)
-                        {
-                            jobFailed = true;
-                            break;
-                        }
-
-                        continue;
-                    }
-
-                    int peerId = attachedPeer.Connection.Id;
-
-                    if (selectedBehavior.Tip.FindAncestorOrSelf(header) != null)
-                    {
                         // Assign to this peer.
                         newAssignments.Add(new AssignedDownload()
                         {

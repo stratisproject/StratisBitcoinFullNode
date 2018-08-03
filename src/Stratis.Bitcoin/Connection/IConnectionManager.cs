@@ -45,6 +45,7 @@ namespace Stratis.Bitcoin.Connection
 
         void RemoveConnectedPeer(INetworkPeer peer, string reason);
 
+        /// <summary>Notifies other components about peer being disconnected.</summary>
         void PeerDisconnected(int networkPeerId);
 
         string GetNodeStats();
