@@ -10,6 +10,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class NotFoundPayload : Payload, IEnumerable<InventoryVector>
     {
         private List<InventoryVector> inventory = new List<InventoryVector>();
+
         public List<InventoryVector> Inventory { get { return this.inventory; } }
 
         public NotFoundPayload()
@@ -58,6 +59,6 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             return this.Inventory.GetEnumerator();
         }
 
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => this.GetEnumerator();
     }
 }

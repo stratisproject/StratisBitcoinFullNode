@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     /// RPC controller for calls related to PoW mining and PoS minting.
     /// </summary>
     [Route("api/[controller]")]
-    public class MiningApiController : Controller
+    public class MiningController : Controller
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <param name="powMining">PoW miner.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="walletManager">The wallet manager.</param>
-        public MiningApiController(IPowMining powMining, ILoggerFactory loggerFactory, IWalletManager walletManager) 
+        public MiningController(IPowMining powMining, ILoggerFactory loggerFactory, IWalletManager walletManager) 
         {
             Guard.NotNull(powMining, nameof(powMining));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));

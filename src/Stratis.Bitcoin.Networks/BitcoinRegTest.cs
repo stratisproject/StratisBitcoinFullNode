@@ -17,39 +17,66 @@ namespace Stratis.Bitcoin.Networks
             this.RPCPort = 18332;
             this.CoinTicker = "TBTC";
 
-            // Taken from BitcoinMain Consensus options
-            var consensus = new Consensus();
-            consensus.MajorityEnforceBlockUpgrade = 750;
-            consensus.MajorityRejectBlockOutdated = 950;
-            consensus.MajorityWindow = 1000;
-            consensus.PowTargetTimespan = TimeSpan.FromSeconds(14 * 24 * 60 * 60); // two weeks
-            consensus.PowTargetSpacing = TimeSpan.FromSeconds(10 * 60);
-            consensus.CoinbaseMaturity = 100;
-            consensus.PremineReward = Money.Zero;
-            consensus.ProofOfWorkReward = Money.Coins(50);
-            consensus.ProofOfStakeReward = Money.Zero;
-            consensus.MaxReorgLength = 0;
-            consensus.MaxMoney = 21000000 * Money.COIN;
+            var consensusFactory = new ConsensusFactory();
 
-            // BitcoinRegTest differences
-            consensus.CoinType = 0;
-            consensus.PowAllowMinDifficultyBlocks = true;
-            consensus.PowNoRetargeting = true;
-            consensus.RuleChangeActivationThreshold = 108;
-            consensus.MinerConfirmationWindow = 144;
-            consensus.SubsidyHalvingInterval = 150;
-            consensus.BIP34Hash = new uint256();
-            consensus.PowLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
-            consensus.MinimumChainWork = uint256.Zero;
-            consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
-            consensus.BuriedDeployments[BuriedDeployments.BIP34] = 100000000;
-            consensus.BuriedDeployments[BuriedDeployments.BIP65] = 100000000;
-            consensus.BuriedDeployments[BuriedDeployments.BIP66] = 100000000;
-            consensus.BIP9Deployments[BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999);
-            consensus.BIP9Deployments[BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999);
-            consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999);
+            // Create the genesis block.
+            this.GenesisTime = 1296688602;
+            this.GenesisNonce = 2;
+            this.GenesisBits = 0x207fffff;
+            this.GenesisVersion = 1;
+            this.GenesisReward = Money.Coins(50m);
 
-            consensus.Options = new ConsensusOptions(); // Default - set to Bitcoin params.
+            Block genesisBlock = CreateBitcoinGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+
+            this.Genesis = genesisBlock;
+
+            var buriedDeployments = new BuriedDeploymentsArray
+            {
+                [BuriedDeployments.BIP34] = 100000000,
+                [BuriedDeployments.BIP65] = 100000000,
+                [BuriedDeployments.BIP66] = 100000000
+            };
+
+            var bip9Deployments = new BIP9DeploymentsArray
+            {
+                [BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999),
+                [BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999),
+                [BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999)
+            };
+
+            this.Consensus = new Consensus(
+                consensusFactory: consensusFactory,
+                consensusOptions: new ConsensusOptions(), // Default - set to Bitcoin params.
+                coinType: 0,
+                hashGenesisBlock: genesisBlock.GetHash(),
+                subsidyHalvingInterval: 150,
+                majorityEnforceBlockUpgrade: 750,
+                majorityRejectBlockOutdated: 950,
+                majorityWindow: 1000,
+                buriedDeployments: buriedDeployments,
+                bip9Deployments: bip9Deployments,
+                bip34Hash: new uint256(),
+                ruleChangeActivationThreshold: 108,
+                minerConfirmationWindow: 144,
+                maxReorgLength: 0,
+                defaultAssumeValid: null, // turn off assumevalid for regtest.
+                maxMoney: 21000000 * Money.COIN,
+                coinbaseMaturity: 100,
+                premineHeight: 0,
+                premineReward: Money.Zero,
+                proofOfWorkReward: Money.Coins(50),
+                powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
+                powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
+                powAllowMinDifficultyBlocks: true,
+                powNoRetargeting: true,
+                powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
+                minimumChainWork: uint256.Zero,
+                isProofOfStake: false,
+                lastPowBlock: default(int),
+                proofOfStakeLimit: null,
+                proofOfStakeLimitV2: null,
+                proofOfStakeReward: Money.Zero
+            );
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
@@ -67,18 +94,6 @@ namespace Stratis.Bitcoin.Networks
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
-            
-            // Create the genesis block.
-            this.GenesisTime = 1296688602;
-            this.GenesisNonce = 2;
-            this.GenesisBits = 0x207fffff;
-            this.GenesisVersion = 1;
-            this.GenesisReward = Money.Coins(50m);
-
-            this.Genesis = CreateBitcoinGenesisBlock(consensus.ConsensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
-            consensus.HashGenesisBlock = this.Genesis.GetHash();
-
-            this.Consensus = consensus;
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206"));
         }

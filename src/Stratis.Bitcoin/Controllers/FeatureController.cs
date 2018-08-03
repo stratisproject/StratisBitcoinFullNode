@@ -19,17 +19,17 @@ namespace Stratis.Bitcoin.Controllers
 
     public abstract class FeatureController : Controller
     {
-        protected IFullNode FullNode;
+        protected IFullNode FullNode { get; set; }
 
-        protected NodeSettings Settings;
+        protected NodeSettings Settings { get; set; }
 
-        protected Network Network;
+        protected Network Network { get; set; }
 
-        protected ChainBase Chain;
+        protected ChainBase Chain { get; set; }
 
-        protected IChainState ChainState;
+        protected IChainState ChainState { get; set; }
 
-        protected Connection.IConnectionManager ConnectionManager;
+        protected Connection.IConnectionManager ConnectionManager { get; set; }
 
         public FeatureController(
             IFullNode fullNode = null,

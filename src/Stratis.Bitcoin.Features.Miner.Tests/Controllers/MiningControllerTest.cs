@@ -14,13 +14,13 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
 {
-    public class MiningApiControllerTest : LogsTestBase
+    public class MiningControllerTest : LogsTestBase
     {
-        private MiningApiController apiController;
+        private MiningController controller;
         private readonly Mock<IPowMining> powMining;
         private readonly Mock<IWalletManager> walletManager;
 
-        public MiningApiControllerTest()
+        public MiningControllerTest()
         {
             this.powMining = new Mock<IPowMining>();
             this.walletManager = new Mock<IWalletManager>();
@@ -31,11 +31,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         [InlineData(-1)]
         public void Generate_With_Incorrect_Block_Count_ReturnsInvalidRequest(int? blockCount)
         {
-            this.apiController = new MiningApiController(this.powMining.Object, this.LoggerFactory.Object, this.walletManager.Object);
+            this.controller = new MiningController(this.powMining.Object, this.LoggerFactory.Object, this.walletManager.Object);
 
             IActionResult result = blockCount == null ? 
-                this.apiController.Generate(new MiningRequest()) : 
-                this.apiController.Generate(new MiningRequest { BlockCount = (int)blockCount });
+                this.controller.Generate(new MiningRequest()) : 
+                this.controller.Generate(new MiningRequest { BlockCount = (int)blockCount });
 
             var errorResult = Assert.IsType<ErrorResult>(result);
             var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -50,11 +50,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         [Fact]
         public void Generate_Blocks_When_Model_Is_Invalid_ReturnsBadRequest()
         {
-            this.apiController = new MiningApiController(this.powMining.Object, this.LoggerFactory.Object, this.walletManager.Object);
+            this.controller = new MiningController(this.powMining.Object, this.LoggerFactory.Object, this.walletManager.Object);
 
-            this.apiController.ModelState.AddModelError("key", "error message");
+            this.controller.ModelState.AddModelError("key", "error message");
 
-            IActionResult result = this.apiController.Generate(new MiningRequest());
+            IActionResult result = this.controller.Generate(new MiningRequest());
 
             var errorResult = Assert.IsType<ErrorResult>(result);
             var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -81,9 +81,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             this.powMining.Setup(p => p.GenerateBlocks(It.Is<ReserveScript>(r => r.ReserveFullNodeScript == address.Pubkey), 1, int.MaxValue))
                 .Returns(new List<uint256> { new uint256(1255632623) });
 
-            this.apiController = new MiningApiController(this.powMining.Object, this.LoggerFactory.Object, this.walletManager.Object);
+            this.controller = new MiningController(this.powMining.Object, this.LoggerFactory.Object, this.walletManager.Object);
 
-            IActionResult result = this.apiController.Generate(new MiningRequest { BlockCount = 1 });
+            IActionResult result = this.controller.Generate(new MiningRequest { BlockCount = 1 });
 
             this.walletManager.VerifyAll();
             this.powMining.VerifyAll();

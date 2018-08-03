@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Base
     /// samples separated from inbound samples. Our final offset is also a median of collected
     /// samples, but outbound samples have much greater weight in the median calculation
     /// as per the given weight, which is dynamically adjusted depending on the inbound outbound ratio
-    /// in order to protect us from all inbound and an accepted percentage of outbound. 
+    /// in order to protect us from all inbound and an accepted percentage of outbound.
     /// </para>
     /// <para>
     /// Bitcoin's implementation only allows certain number of samples to be collected
@@ -264,8 +264,8 @@ namespace Stratis.Bitcoin.Base
         /// </para>
         /// <para>
         /// When there are many more inbound samples than outbound, which could be the case
-        /// in a malicious attack, the security is still maintained by using a dynamic inbound/outbound 
-        /// ratio multiplier ratio on the outbound samples that maintains the accepted level of security. 
+        /// in a malicious attack, the security is still maintained by using a dynamic inbound/outbound
+        /// ratio multiplier ratio on the outbound samples that maintains the accepted level of security.
         /// </para>
         /// <para>
         /// We require to have at least <see cref="MinOutboundSampleCount"/> outbound samples to change the value of <see cref="timeOffset"/>.
