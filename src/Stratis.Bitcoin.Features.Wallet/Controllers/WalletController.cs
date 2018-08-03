@@ -231,15 +231,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate);
 
-                // After recovery the wallet needs to be synced.
-                // We only sync if the syncing process needs to go back.
-                int blockHeightToSyncFrom = this.chain.GetHeightAtTime(request.CreationDate);
-                int currentSyncingHeight = this.walletSyncManager.WalletTip.Height;
-
-                if (blockHeightToSyncFrom < currentSyncingHeight)
-                {
-                    this.walletSyncManager.SyncFromHeight(blockHeightToSyncFrom);
-                }
+                this.SyncFromBestHeightForRecoveredWallets(request.CreationDate);
 
                 return this.Ok();
             }
@@ -293,7 +285,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 this.walletManager.RecoverWallet(request.Name, ExtPubKey.Parse(accountExtPubKey), request.AccountIndex,
                     request.CreationDate);
 
-                this.walletSyncManager.SyncFromDate(request.CreationDate);
+                this.SyncFromBestHeightForRecoveredWallets(request.CreationDate);
 
                 this.logger.LogTrace("(-)");
                 return this.Ok();
@@ -1118,6 +1110,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.walletSyncManager.SyncFromDate(request.Date);
 
             return this.Ok();
+        }
+
+        private void SyncFromBestHeightForRecoveredWallets(DateTime walletCreationDate)
+        {
+            // After recovery the wallet needs to be synced.
+            // We only sync if the syncing process needs to go back.
+            int blockHeightToSyncFrom = this.chain.GetHeightAtTime(walletCreationDate);
+            int currentSyncingHeight = this.walletSyncManager.WalletTip.Height;
+
+            if (blockHeightToSyncFrom < currentSyncingHeight)
+            {
+                this.walletSyncManager.SyncFromHeight(blockHeightToSyncFrom);
+            }
         }
     }
 }

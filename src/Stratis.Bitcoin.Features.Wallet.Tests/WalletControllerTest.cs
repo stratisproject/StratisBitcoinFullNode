@@ -533,13 +533,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             };
 
             var walletManager = new Mock<IWalletManager>();
+            walletManager.Setup(w => w.RecoverWallet(walletName, It.IsAny<ExtPubKey>(), 1, It.IsAny<DateTime>())).Returns(wallet);
 
-            walletManager.Setup(w => w.RecoverWallet(walletName, It.IsAny<ExtPubKey>(), 1, It.IsAny<DateTime>()))
-                .Returns(wallet);
+            Mock<IWalletSyncManager> walletSyncManager = new Mock<IWalletSyncManager>();
+            walletSyncManager.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header, this.Network.GetGenesis().Header.GetHash(), 3));
 
             var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object,
-                new Mock<IWalletTransactionHandler>().Object, new Mock<IWalletSyncManager>().Object,
-                It.IsAny<ConnectionManager>(), KnownNetworks.StratisMain, new Mock<ConcurrentChain>().Object,
+                new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object,
+                It.IsAny<ConnectionManager>(), KnownNetworks.StratisMain, this.chain,
                 new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
 
             IActionResult result = controller.RecoverViaExtPubKey(new WalletExtPubRecoveryRequest
@@ -549,6 +550,55 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 ExtPubKey = extPubKey,
                 AccountIndex = 1,
                 Network = wallet.Network.Name
+            });
+
+            walletManager.VerifyAll();
+
+            var viewResult = Assert.IsType<OkResult>(result);
+            Assert.Equal(200, viewResult.StatusCode);
+        }
+
+        /// <summary>
+        /// This is to cover the scenario where a wallet is syncing at height X
+        /// and the user recovers a new wallet at height X + Y.
+        /// The wallet should continue syncing from X without jumpoing forward.
+        /// </summary>
+        [Fact]
+        public void RecoverWalletWithExtPubDatedAfterCurrentSyncHeightDoesNotMoveSyncHeight()
+        {
+            string walletName = "myWallet";
+            string extPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
+
+            var wallet = new Wallet
+            {
+                Name = walletName,
+                Network = KnownNetworks.StratisMain,
+                IsExtPubKeyWallet = true
+            };
+
+            // The chain is at height 100.
+            ConcurrentChain concurrentChain = WalletTestsHelpers.GenerateChainWithHeight(100, this.Network);
+            DateTime lastBlockDateTime = concurrentChain.Tip.Header.BlockTime.DateTime;
+
+            var walletManager = new Mock<IWalletManager>();
+            walletManager.Setup(w => w.RecoverWallet(It.IsAny<string>(), It.IsAny<ExtPubKey>(), 1, It.IsAny<DateTime>())).Returns(wallet);
+
+            Mock<IWalletSyncManager> walletSyncManager = new Mock<IWalletSyncManager>();
+            walletSyncManager.Setup(w => w.WalletTip).Returns(new ChainedHeader(this.Network.GetGenesis().Header, this.Network.GetGenesis().Header.GetHash(), 3));
+            walletSyncManager.Verify(w => w.SyncFromHeight(100), Times.Never);
+
+            var controller = new WalletController(this.LoggerFactory.Object, walletManager.Object,
+                new Mock<IWalletTransactionHandler>().Object, walletSyncManager.Object,
+                It.IsAny<ConnectionManager>(), KnownNetworks.StratisMain, concurrentChain,
+                new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+
+            IActionResult result = controller.RecoverViaExtPubKey(new WalletExtPubRecoveryRequest
+            {
+                Name = walletName,
+                ExtPubKey = extPubKey,
+                AccountIndex = 1,
+                Network = wallet.Network.Name,
+                CreationDate = lastBlockDateTime
             });
 
             walletManager.VerifyAll();
