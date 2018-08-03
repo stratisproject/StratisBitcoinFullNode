@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.asyncLoopFactory.Run(nameof(WalletSyncManager), async token =>
             {
-                await this.ProcessBlockLoopAsync(token);
+                await this.ProcessBlockLoopAsync(token).ConfigureAwait(false);
             }, 
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.TenSeconds);
@@ -352,7 +352,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogDebug("()");
             this.logger.LogDebug("(-)[CONSUMER_BLOCK_ASYNC]");
 
-            while (await source.OutputAvailableAsync())
+            while (await source.OutputAvailableAsync().ConfigureAwait(false))
             {
                 Block block = source.Receive();
                 queue.Enqueue(block);
@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogDebug("()");
             this.logger.LogDebug("(-)[QUEUE_BLOCK]");
 
-            Task.Run(() => this.ConsumerBlockAsync(this.BlockBuffer, this.blocksQueue));
+            Task.Run(() => this.ConsumerBlockAsync(this.BlockBuffer, this.blocksQueue).ConfigureAwait(false));
         
             this.ProducerBlock(this.BlockBuffer, block);
 
