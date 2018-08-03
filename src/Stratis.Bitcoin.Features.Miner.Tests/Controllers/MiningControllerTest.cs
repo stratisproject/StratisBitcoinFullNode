@@ -24,7 +24,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
 
         public MiningControllerTest()
         {
-            this.fullNode = new Mock<IFullNode>();
             this.powMining = new Mock<IPowMining>();
             this.walletManager = new Mock<IWalletManager>();
             this.network = KnownNetworks.TestNet;
