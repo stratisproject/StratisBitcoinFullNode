@@ -77,6 +77,7 @@ DOs and DON'Ts
   of time.
 * **DON'T** commit code that you didn't write. If you find code that you think is a good fit to add to .NET Core, file an issue and start a discussion before proceeding.
 * **DON'T** submit PRs that alter licensing related files or headers. If you believe there's a problem with them, file an issue and we'll be happy to discuss it.
+* **DO NOT** fix merge conflicts using a merge commit. Prefer `git rebase`.
 
 Copyright
 =========
