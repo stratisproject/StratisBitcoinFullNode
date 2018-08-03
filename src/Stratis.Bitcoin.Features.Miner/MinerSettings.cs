@@ -158,9 +158,9 @@ namespace Stratis.Bitcoin.Features.Miner
             builder.AppendLine("#Enable splitting coins when staking.");
             builder.AppendLine("#enablecoinstakesplitting=1");
             builder.AppendLine("#Minimum size of the coins considered for staking, in satoshis.");
-            builder.AppendLine("#minimumstakingcoinvalue=10000000");
+            builder.AppendLine($"#minimumstakingcoinvalue={MinimumStakingCoinValueDefaultValue}");
             builder.AppendLine("#Targeted minimum value of staking coins after splitting, in satoshis.");
-            builder.AppendLine("#minimumsplitcoinvalue=10000000000");
+            builder.AppendLine($"#minimumsplitcoinvalue={MinimumSplitCoinValueDefaultValue}");
         }
     }
 }
