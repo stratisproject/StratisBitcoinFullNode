@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -34,7 +35,7 @@ namespace Stratis.Bitcoin.BlockPulling
     /// </remarks>
     public interface IBlockPuller : IDisposable
     {
-        void Initialize();
+        void Initialize(BlockPuller.OnBlockDownloadedCallback callback);
 
         /// <summary>Gets the average size of a block based on sizes of blocks that were previously downloaded.</summary>
         double GetAverageBlockSizeBytes();
@@ -101,7 +102,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Callback which is called when puller received a block which it was asked for.</summary>
         /// <remarks>Provided by the component that creates the block puller.</remarks>
-        private readonly OnBlockDownloadedCallback onDownloadedCallback;
+        private OnBlockDownloadedCallback onDownloadedCallback;
 
         /// <summary>Queue of download jobs which were released from the peers that failed to deliver in time or were disconnected.</summary>
         /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
@@ -192,7 +193,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Loop that checks if peers failed to deliver important blocks in given time and penalizes them if they did.</summary>
         private Task stallingLoop;
 
-        public BlockPuller(OnBlockDownloadedCallback callback, IChainState chainState, ProtocolVersion protocolVersion, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public BlockPuller(IChainState chainState, NodeSettings nodeSettings, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.reassignedJobsQueue = new Queue<DownloadJob>();
             this.downloadJobsQueue = new Queue<DownloadJob>();
@@ -211,6 +212,8 @@ namespace Stratis.Bitcoin.BlockPulling
             this.assignedLock = new object();
             this.nextJobId = 0;
 
+            ProtocolVersion protocolVersion = nodeSettings.ProtocolVersion;
+
             this.networkPeerRequirement = new NetworkPeerRequirement
             {
                 MinVersion = protocolVersion,
@@ -222,16 +225,17 @@ namespace Stratis.Bitcoin.BlockPulling
 
             this.maxBlocksBeingDownloaded = MinimalCountOfBlocksBeingDownloaded;
 
-            this.onDownloadedCallback = callback;
             this.chainState = chainState;
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc/>
-        public void Initialize()
+        public void Initialize(OnBlockDownloadedCallback callback)
         {
             this.logger.LogTrace("()");
+
+            this.onDownloadedCallback = callback;
 
             this.assignerLoop = this.AssignerLoopAsync();
             this.stallingLoop = this.StallingLoopAsync();

@@ -355,6 +355,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<ConnectionManagerSettings>();
                     services.AddSingleton<PayloadProvider>(new PayloadProvider().DiscoverPayloads());
                     services.AddSingleton<IVersionProvider, VersionProvider>();
+                    services.AddSingleton<IBlockPuller, BlockPuller>();
 
                     // Peer address manager
                     services.AddSingleton<IPeerAddressManager, PeerAddressManager>();

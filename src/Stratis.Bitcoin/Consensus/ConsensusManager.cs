@@ -158,7 +158,8 @@ namespace Stratis.Bitcoin.Consensus
             IDateTimeProvider dateTimeProvider,
             IInitialBlockDownloadState ibdState,
             ConcurrentChain chain,
-            IBlockStore blockStore = null)
+            IBlockPuller blockPuller,
+            IBlockStore blockStore)
         {
             this.network = network;
             this.chainState = chainState;
@@ -185,9 +186,7 @@ namespace Stratis.Bitcoin.Consensus
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
             this.ibdState = ibdState;
 
-            ProtocolVersion protocolVersion = nodeSettings.ProtocolVersion;
-
-            this.BlockPuller = new BlockPuller(this.BlockDownloaded, this.chainState, protocolVersion, dateTimeProvider, loggerFactory);
+            this.BlockPuller = blockPuller;
         }
 
         /// <inheritdoc />
@@ -225,7 +224,7 @@ namespace Stratis.Bitcoin.Consensus
 
             this.chainedHeaderTree.Initialize(this.Tip, this.blockStore != null);
 
-            this.BlockPuller.Initialize();
+            this.BlockPuller.Initialize(this.BlockDownloaded);
 
             this.isIbd = this.ibdState.IsInitialBlockDownload();
             this.BlockPuller.OnIbdStateChanged(this.isIbd);
