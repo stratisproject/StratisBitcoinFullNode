@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Connection
         string GetNodeStats();
 
         /// <summary>Initializes and starts each peer connection as well as peer discovery.</summary>
-        void Initialize();
+        void Initialize(IConsensusManager consensusManager);
 
         /// <summary>The network the node is running on.</summary>
         Network Network { get; }

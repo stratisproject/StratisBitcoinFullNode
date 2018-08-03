@@ -520,8 +520,6 @@ namespace Stratis.Bitcoin.Consensus
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
 
-            this.consensusManager.PeerDisconnected(this.AttachedPeer.Connection.Id);
-
             this.logger.LogTrace("(-)");
         }
 

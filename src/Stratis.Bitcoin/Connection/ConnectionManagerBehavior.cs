@@ -96,6 +96,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("()");
 
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
+            this.ConnectionManager.PeerDisconnected(this.AttachedPeer.Connection.Id);
 
             this.logger.LogTrace("(-)");
         }
