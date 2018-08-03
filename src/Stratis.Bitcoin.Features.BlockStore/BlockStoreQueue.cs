@@ -334,6 +334,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
             }
 
+            if (this.batch.Count != 0)
+                await this.SaveBatchAsync().ConfigureAwait(false);
+
             this.logger.LogTrace("(-)");
         }
 

@@ -82,6 +82,8 @@ namespace Stratis.Bitcoin.Connection
 
         private readonly IVersionProvider versionProvider;
 
+        private IConsensusManager consensusManager;
+
         public ConnectionManager(IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
@@ -122,11 +124,12 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <inheritdoc />
-        public void Initialize()
+        public void Initialize(IConsensusManager consensusManager)
         {
             this.logger.LogTrace("()");
 
-            AddExternalIpToSelfEndpoints();
+            this.consensusManager = consensusManager;
+            this.AddExternalIpToSelfEndpoints();
 
             this.peerDiscovery.DiscoverPeers(this);
 
@@ -263,11 +266,21 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <inheritdoc />
-        internal void RemoveConnectedPeer(INetworkPeer peer, string reason)
+        public void RemoveConnectedPeer(INetworkPeer peer, string reason)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(reason), reason);
 
             this.connectedPeers.Remove(peer);
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public void PeerDisconnected(int networkPeerId)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(networkPeerId), networkPeerId);
+
+            this.consensusManager.PeerDisconnected(networkPeerId);
 
             this.logger.LogTrace("(-)");
         }

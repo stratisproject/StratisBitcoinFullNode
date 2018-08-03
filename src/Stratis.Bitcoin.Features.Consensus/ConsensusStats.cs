@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
@@ -44,6 +45,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Provider of date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
+        private readonly IBlockPuller blockPuller;
+
         public ConsensusStats(
             ICoinView coinView,
             IConsensusManager consensusManager,
@@ -52,6 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             ConcurrentChain chain,
             IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
+            IBlockPuller blockPuller,
             ILoggerFactory loggerFactory)
         {
             var stack = new CoinViewStack(coinView);
@@ -69,6 +73,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chain = chain;
             this.connectionManager = connectionManager;
             this.dateTimeProvider = dateTimeProvider;
+            this.blockPuller = blockPuller;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -76,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             var benchLogs = new StringBuilder();
 
-            this.consensusManager.BlockPuller?.ShowStats(benchLogs);
+            this.blockPuller.ShowStats(benchLogs);
 
             if (this.cache != null)
                 benchLogs.AppendLine("Cache entries".PadRight(LoggingConfiguration.ColumnLength) + this.cache.CacheEntryCount);

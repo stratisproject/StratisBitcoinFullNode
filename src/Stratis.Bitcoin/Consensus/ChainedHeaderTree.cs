@@ -1001,8 +1001,14 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ChainedHeader oldTip = this.chainedHeadersByHash.TryGet(oldTipHash);
 
-                if (oldTip != null)
-                    this.RemovePeerClaim(networkPeerId, oldTip);
+                if (oldTip == null)
+                {
+                    // Sanity check. That should never happen.
+                    this.logger.LogTrace("(-)[OLD_TIP_NULL]");
+                    throw new Exception("Old tip is null!");
+                }
+
+                this.RemovePeerClaim(networkPeerId, oldTip);
             }
 
             this.logger.LogTrace("(-)");

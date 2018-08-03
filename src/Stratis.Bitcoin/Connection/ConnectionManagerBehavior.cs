@@ -10,8 +10,6 @@ namespace Stratis.Bitcoin.Connection
 {
     public interface IConnectionManagerBehavior : INetworkPeerBehavior
     {
-        ConnectionManager ConnectionManager { get; }
-
         bool Whitelisted { get; }
 
         bool OneTry { get; }
@@ -31,7 +29,7 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         private readonly ILogger infoLogger;
 
-        public ConnectionManager ConnectionManager { get; private set; }
+        private readonly IConnectionManager connectionManager;
 
         public bool Whitelisted { get; internal set; }
 
@@ -43,12 +41,12 @@ namespace Stratis.Bitcoin.Connection
             this.infoLogger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
 
-            this.ConnectionManager = connectionManager as ConnectionManager;
+            this.connectionManager = connectionManager;
         }
 
         public override object Clone()
         {
-            return new ConnectionManagerBehavior(this.ConnectionManager, this.loggerFactory)
+            return new ConnectionManagerBehavior(this.connectionManager, this.loggerFactory)
             {
                 OneTry = this.OneTry,
                 Whitelisted = this.Whitelisted,
@@ -72,7 +70,7 @@ namespace Stratis.Bitcoin.Connection
             {
                 if (peer.State == NetworkPeerState.HandShaked)
                 {
-                    this.ConnectionManager.AddConnectedPeer(peer);
+                    this.connectionManager.AddConnectedPeer(peer);
                     this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, peer.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
                     await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
                 }
@@ -81,7 +79,7 @@ namespace Stratis.Bitcoin.Connection
                 {
                     this.infoLogger.LogInformation("Peer '{0}' offline, reason: '{1}'.", peer.RemoteSocketEndpoint, peer.DisconnectReason?.Reason ?? "unknown");
 
-                    this.ConnectionManager.RemoveConnectedPeer(peer, "Peer offline");
+                    this.connectionManager.RemoveConnectedPeer(peer, "Peer offline");
                 }
             }
             catch (OperationCanceledException)
@@ -96,6 +94,7 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("()");
 
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
+            this.connectionManager.PeerDisconnected(this.AttachedPeer.Connection.Id);
 
             this.logger.LogTrace("(-)");
         }

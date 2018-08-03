@@ -47,8 +47,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             this.CallbacksCalled = new Dictionary<uint256, Block>();
             this.ChainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider())) {ConsensusTip = ChainedHeadersHelper.CreateGenesisChainedHeader()};
 
-            this.Puller = new ExtendedBlockPuller((hash, block) => { this.CallbacksCalled.Add(hash, block); },
-                this.ChainState, NodeSettings.SupportedProtocolVersion, new DateTimeProvider(), this.loggerFactory);
+            this.Puller = new ExtendedBlockPuller(this.ChainState, new NodeSettings(new StratisMain()), new DateTimeProvider(), this.loggerFactory);
         }
 
         /// <summary>Creates a peer with extended puller behavior.</summary>
@@ -118,9 +117,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
     {
         private readonly BlockPuller puller;
 
-        public ExtendedBlockPuller(BlockPuller.OnBlockDownloadedCallback callback, IChainState chainState, ProtocolVersion protocolVersion, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public ExtendedBlockPuller(IChainState chainState, NodeSettings nodeSettings, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
-            this.puller = new BlockPuller(callback, chainState, protocolVersion, dateTimeProvider, loggerFactory);
+            this.puller = new BlockPuller(chainState, nodeSettings, dateTimeProvider, loggerFactory);
         }
 
         public Dictionary<int, IBlockPullerBehavior> PullerBehaviorsByPeerId => (Dictionary<int, IBlockPullerBehavior>)this.puller.GetMemberValue("pullerBehaviorsByPeerId");
@@ -180,7 +179,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             return (List<AssignedDownload>)this.puller.InvokeMethod("DistributeHeadersLocked", downloadJob, failedHashes, emptySlots);
         }
 
-        public void Initialize() { this.puller.Initialize(); }
+        public void Initialize(BlockPuller.OnBlockDownloadedCallback callback) { this.puller.Initialize(callback); }
 
         public double GetAverageBlockSizeBytes() { return this.puller.GetAverageBlockSizeBytes(); }
 

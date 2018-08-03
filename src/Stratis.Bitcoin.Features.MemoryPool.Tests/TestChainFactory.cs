@@ -6,6 +6,7 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
@@ -93,9 +94,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var deployments = new NodeDeployments(network, chain);
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(), inMemoryCoinView, chainState).Register();
 
-            var consensus = new ConsensusManager(network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory), 
-                new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory),new Checkpoints(), consensusSettings, consensusRules, 
-                new Mock<IFinalizedBlockHeight>().Object, new Signals.Signals(), peerBanning, nodeSettings, dateTimeProvider, new Mock<IInitialBlockDownloadState>().Object, chain, null);   
+            var consensus = new ConsensusManager(network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),
+                new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory),new Checkpoints(), consensusSettings, consensusRules,
+                new Mock<IFinalizedBlockHeight>().Object, new Signals.Signals(), peerBanning, nodeSettings, dateTimeProvider, new Mock<IInitialBlockDownloadState>().Object, chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
 
             var blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
             var mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);

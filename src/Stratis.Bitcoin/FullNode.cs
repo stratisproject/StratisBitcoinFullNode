@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -209,7 +210,8 @@ namespace Stratis.Bitcoin
             this.fullNodeFeatureExecutor.Initialize();
 
             // Initialize peer connection.
-            this.ConnectionManager.Initialize();
+            var consensusManager = this.Services.ServiceProvider.GetRequiredService<IConsensusManager>();
+            this.ConnectionManager.Initialize(consensusManager);
 
             // Fire INodeLifetime.Started.
             this.nodeLifetime.NotifyStarted();
