@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Connection
 {
     public interface IConnectionManagerBehavior : INetworkPeerBehavior
     {
-        ConnectionManager ConnectionManager { get; }
+        IConnectionManager ConnectionManager { get; }
 
         bool Whitelisted { get; }
 
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         private readonly ILogger infoLogger;
 
-        public ConnectionManager ConnectionManager { get; private set; }
+        public IConnectionManager ConnectionManager { get; private set; }
 
         public bool Whitelisted { get; internal set; }
 
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Connection
             this.infoLogger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
 
-            this.ConnectionManager = connectionManager as ConnectionManager;
+            this.ConnectionManager = connectionManager;
         }
 
         public override object Clone()

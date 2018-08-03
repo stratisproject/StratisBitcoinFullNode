@@ -266,7 +266,7 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <inheritdoc />
-        internal void RemoveConnectedPeer(INetworkPeer peer, string reason)
+        public void RemoveConnectedPeer(INetworkPeer peer, string reason)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(reason), reason);
 

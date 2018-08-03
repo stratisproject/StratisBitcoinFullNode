@@ -43,6 +43,10 @@ namespace Stratis.Bitcoin.Connection
 
         INetworkPeer FindNodeById(int peerId);
 
+        void RemoveConnectedPeer(INetworkPeer peer, string reason);
+
+        void PeerDisconnected(int networkPeerId);
+
         string GetNodeStats();
 
         /// <summary>Initializes and starts each peer connection as well as peer discovery.</summary>
