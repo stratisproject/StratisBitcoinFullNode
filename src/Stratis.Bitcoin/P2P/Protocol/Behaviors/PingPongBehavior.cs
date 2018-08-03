@@ -34,6 +34,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             {
                 return this.mode;
             }
+
             set
             {
                 this.AssertNotAttached();
@@ -52,6 +53,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             {
                 return this.timeoutInterval;
             }
+
             set
             {
                 this.AssertNotAttached();
@@ -70,6 +72,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             {
                 return this.pingInterval;
             }
+
             set
             {
                 this.AssertNotAttached();
@@ -99,7 +102,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
             this.callbacksRegistered = true;
 
-            this.timer = new Timer(Ping, null, 0, (int)this.PingInterval.TotalMilliseconds);
+            this.timer = new Timer(this.Ping, null, 0, (int)this.PingInterval.TotalMilliseconds);
         }
 
         private bool PingVersion()
@@ -132,7 +135,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
                     this.currentPing = new PingPayload();
                     this.dateSent = DateTimeOffset.UtcNow;
                     peer.SendMessageAsync(this.currentPing).GetAwaiter().GetResult();
-                    this.pingTimeoutTimer = new Timer(PingTimeout, this.currentPing, (int)this.TimeoutInterval.TotalMilliseconds, Timeout.Infinite);
+                    this.pingTimeoutTimer = new Timer(this.PingTimeout, this.currentPing, (int)this.TimeoutInterval.TotalMilliseconds, Timeout.Infinite);
                 }
                 catch (OperationCanceledException)
                 {
@@ -216,10 +219,11 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
                 this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
             }
+
             this.ClearCurrentPing();
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         public override void Dispose()
         {
             this.timer?.Dispose();

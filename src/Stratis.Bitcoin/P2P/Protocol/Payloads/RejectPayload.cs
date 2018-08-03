@@ -33,6 +33,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     {
         /// <summary>"tx" or "block".</summary>
         private VarString message = new VarString();
+
         /// <summary>"tx" or "block".</summary>
         public string Message
         {
@@ -40,6 +41,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             {
                 return Encoders.ASCII.EncodeData(this.message.GetString(true));
             }
+
             set
             {
                 this.message = new VarString(Encoders.ASCII.DecodeData(value));
@@ -47,12 +49,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private byte code;
+
         public RejectCode Code
         {
             get
             {
                 return (RejectCode)this.code;
             }
+
             set
             {
                 this.code = (byte)value;
@@ -61,6 +65,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         /// <summary>Details of the error.</summary>
         private VarString reason = new VarString();
+
         /// <summary>Details of the error.</summary>
         public string Reason
         {
@@ -68,6 +73,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             {
                 return Encoders.ASCII.EncodeData(this.reason.GetString(true));
             }
+
             set
             {
                 this.reason = new VarString(Encoders.ASCII.DecodeData(value));
@@ -76,6 +82,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         /// <summary>The hash being rejected.</summary>
         private uint256 hash;
+
         /// <summary>The hash being rejected.</summary>
         public uint256 Hash { get { return this.hash; } set { this.hash = value; } }
 

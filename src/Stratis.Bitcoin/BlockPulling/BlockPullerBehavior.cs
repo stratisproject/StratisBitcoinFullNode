@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.BlockPulling
             {
                 await attachedNode.SendMessageAsync(getDataPayload).ConfigureAwait(false);
 
-                // In case job is assigned to a peer with low quality score- 
+                // In case job is assigned to a peer with low quality score-
                 // give it enough score so the job is not reassigned right away.
                 this.UpdateQualityScore(BlockPulling.QualityScore.MaxScore / 10);
             }

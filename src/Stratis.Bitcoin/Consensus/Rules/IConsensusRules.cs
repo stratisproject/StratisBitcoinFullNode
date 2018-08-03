@@ -6,7 +6,7 @@ using NBitcoin;
 namespace Stratis.Bitcoin.Consensus.Rules
 {
     /// <summary>
-    /// An engine that enforce the execution and validation of consensus rule. 
+    /// An engine that enforce the execution and validation of consensus rule.
     /// </summary>
     /// <remarks>
     /// In order for a block to be valid it has to successfully pass the rules checks.

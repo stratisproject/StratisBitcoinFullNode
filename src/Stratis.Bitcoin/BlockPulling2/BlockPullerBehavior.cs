@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.BlockPulling2
 
         /// <summary>The maximum percentage of samples that can be used when peer is being penalized for not delivering blocks.</summary>
         /// <remarks><c>1</c> is 100%, <c>0</c> is 0%.</remarks>
-        internal const double MaxSamplesPercentageToPenalize = 0.1; //TODO test it and find best value
+        internal const double MaxSamplesPercentageToPenalize = 0.1; // TODO test it and find best value
 
         /// <inheritdoc />
         public double QualityScore { get; private set; }
@@ -88,16 +88,12 @@ namespace Stratis.Bitcoin.BlockPulling2
         /// <summary>The average delay in seconds between asking this peer for a block and it being downloaded.</summary>
         internal readonly AverageCalculator averageDelaySeconds;
 
-        /// <inheritdoc cref="ILoggerFactory"/>
         private readonly ILoggerFactory loggerFactory;
 
-        /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
-        /// <inheritdoc cref="IBlockPuller"/>
         private readonly IBlockPuller blockPuller;
 
-        /// <inheritdoc cref="IInitialBlockDownloadState"/>
         private readonly IInitialBlockDownloadState ibdState;
 
         public BlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, ILoggerFactory loggerFactory)
@@ -123,9 +119,9 @@ namespace Stratis.Bitcoin.BlockPulling2
 
             this.averageSizeBytes.AddSample(blockSizeBytes);
             this.averageDelaySeconds.AddSample(delaySeconds);
-            
+
             this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
-            
+
             this.logger.LogTrace("(-):{0}={1}", nameof(this.SpeedBytesPerSecond), this.SpeedBytesPerSecond);
         }
 
@@ -179,7 +175,7 @@ namespace Stratis.Bitcoin.BlockPulling2
             this.logger.LogTrace("Quality score was set to {0}.", this.QualityScore);
             this.logger.LogTrace("(-)");
         }
-        
+
         private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
@@ -242,9 +238,9 @@ namespace Stratis.Bitcoin.BlockPulling2
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
-            
+
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-            
+
             this.logger.LogTrace("(-)");
         }
     }

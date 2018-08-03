@@ -42,6 +42,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             {
                 return this.delayAttach;
             }
+
             set
             {
                 this.delayAttach = value;

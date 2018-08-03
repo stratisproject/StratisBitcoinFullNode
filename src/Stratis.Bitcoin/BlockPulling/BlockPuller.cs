@@ -195,6 +195,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 var vector = new InventoryVector(InventoryType.MSG_BLOCK, request.HashBlock);
                 vectors.Add(request.Height, vector);
             }
+
             this.DistributeDownload(vectors, downloadRequests.Min(d => d.Height));
 
             this.logger.LogTrace("(-)");
@@ -256,17 +257,17 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc />
-        public void CheckBlockStatus(uint256 hash, out bool IsDownloading, out bool IsReady)
+        public void CheckBlockStatus(uint256 hash, out bool isDownloading, out bool isReady)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
 
             lock (this.lockObject)
             {
-                IsDownloading = this.assignedBlockTasks.ContainsKey(hash) || this.pendingInventoryVectors.Contains(hash);
-                IsReady = this.downloadedBlocks.ContainsKey(hash);
+                isDownloading = this.assignedBlockTasks.ContainsKey(hash) || this.pendingInventoryVectors.Contains(hash);
+                isReady = this.downloadedBlocks.ContainsKey(hash);
             }
 
-            this.logger.LogTrace("(-):*{0}={1},*{2}={3}", nameof(IsDownloading), IsDownloading, nameof(IsReady), IsReady);
+            this.logger.LogTrace("(-):*{0}={1},*{2}={3}", nameof(isDownloading), isDownloading, nameof(isReady), isReady);
         }
 
         /// <summary>
@@ -369,6 +370,7 @@ namespace Stratis.Bitcoin.BlockPulling
                     foreach (InventoryVector vector in vectors.Values)
                         this.pendingInventoryVectors.Enqueue(vector.Hash);
                 }
+
                 this.logger.LogTrace("(-)[NO_PEERS_LEFT]");
                 return;
             }
@@ -402,6 +404,7 @@ namespace Stratis.Bitcoin.BlockPulling
                         this.logger.LogTrace("Peer '{0:x} has been disconnected.'", peerBehavior.GetHashCode());
                         break;
                     }
+
                     // else This block has been assigned to someone else already, no action required.
                 }
 
@@ -719,6 +722,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 if (this.peersPendingDownloads.TryGetValue(peer, out peerPendingDownloads))
                     res = peerPendingDownloads.Count;
             }
+
             return res;
         }
 
