@@ -6,7 +6,10 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{5B331FD3-D493-46A9-928B-B786FC6F3103}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		None.ruleset = None.ruleset
 		Settings.StyleCop = Settings.StyleCop
+		Stratis.ruleset = Stratis.ruleset
+		stylecop.json = stylecop.json
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin", "Stratis.Bitcoin\Stratis.Bitcoin.csproj", "{094AECD5-E0D8-43A9-A0BD-39B01F51A1F2}"
@@ -119,7 +122,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Apps.Browse
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{A6FF48E5-310A-4606-B435-D24B6B348F8C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Networks", "Stratis.Bitcoin.Networks\Stratis.Bitcoin.Networks.csproj", "{C1D739B1-79CB-4D42-8147-3A31D1B84868}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Networks", "Stratis.Bitcoin.Networks\Stratis.Bitcoin.Networks.csproj", "{C1D739B1-79CB-4D42-8147-3A31D1B84868}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.SmartContracts.Wallet", "Stratis.Bitcoin.Features.SmartContracts.Wallet\Stratis.Bitcoin.Features.SmartContracts.Wallet.csproj", "{3E11D03E-1244-43A8-875B-A547249F5B53}"
 EndProject
@@ -317,14 +320,14 @@ Global
 		{6A4C72BF-E818-45B1-9DD4-562C7C6F31C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6A4C72BF-E818-45B1-9DD4-562C7C6F31C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A4C72BF-E818-45B1-9DD4-562C7C6F31C8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3E11D03E-1244-43A8-875B-A547249F5B53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3E11D03E-1244-43A8-875B-A547249F5B53}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3E11D03E-1244-43A8-875B-A547249F5B53}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3E11D03E-1244-43A8-875B-A547249F5B53}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C1D739B1-79CB-4D42-8147-3A31D1B84868}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C1D739B1-79CB-4D42-8147-3A31D1B84868}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1D739B1-79CB-4D42-8147-3A31D1B84868}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1D739B1-79CB-4D42-8147-3A31D1B84868}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E11D03E-1244-43A8-875B-A547249F5B53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E11D03E-1244-43A8-875B-A547249F5B53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E11D03E-1244-43A8-875B-A547249F5B53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E11D03E-1244-43A8-875B-A547249F5B53}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

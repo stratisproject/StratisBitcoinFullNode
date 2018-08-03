@@ -57,22 +57,22 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// <summary>Mappings of keys to class name spaces to be used when filtering log categories.</summary>
         private static readonly Dictionary<string, string> keyCategories = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            //{ "addrman", "" },
-            //{ "cmpctblock", "" }
-            //{ "coindb", "" },
-            //{ "http", "" },
-            //{ "libevent", "" },
-            //{ "lock", "" },
-            //{ "mempoolrej", "" },
+            // { "addrman", "" },
+            // { "cmpctblock", "" }
+            // { "coindb", "" },
+            // { "http", "" },
+            // { "libevent", "" },
+            // { "lock", "" },
+            // { "mempoolrej", "" },
             { "net", $"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Connection)}.*" },
-            //{ "proxy", "" },
-            //{ "prune", "" },
-            //{ "rand", "" },
-            //{ "reindex", "" },
-            //{ "qt", "" },
-            //{ "selectcoins", "" },
-            //{ "tor", "" },
-            //{ "zmq", "" },
+            // { "proxy", "" },
+            // { "prune", "" },
+            // { "rand", "" },
+            // { "reindex", "" },
+            // { "qt", "" },
+            // { "selectcoins", "" },
+            // { "tor", "" },
+            // { "zmq", "" },
 
             // Short Names
             { "configuration", $"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Configuration)}.*" },
@@ -142,6 +142,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                     break;
                 }
             }
+
             LogManager.Configuration.LoggingRules.Remove(nullPreInitRule);
 
             // Configure main file target, configured using command line or node configuration file settings.

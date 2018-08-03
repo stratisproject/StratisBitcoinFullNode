@@ -57,6 +57,7 @@ namespace Stratis.Bitcoin.Utilities
                     serializedItems[itemIndex] = serializedObject;
                     itemIndex++;
                 }
+
                 return ConcatArrays(serializedItems);
             }
 
@@ -78,6 +79,7 @@ namespace Stratis.Bitcoin.Utilities
                 Buffer.BlockCopy(array, 0, res, offset, array.Length);
                 offset += array.Length;
             }
+
             return res;
         }
 

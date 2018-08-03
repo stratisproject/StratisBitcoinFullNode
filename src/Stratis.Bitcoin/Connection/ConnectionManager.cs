@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.Connection
                         if (behavior != null)
                         {
                             int intQuality = (int)behavior.QualityScore;
-                            builder.Append("\tQualityScore: " + intQuality + (intQuality < 10 ? "\t" : "") + "\tPendingBlocks: " + behavior.PendingDownloadsCount);
+                            builder.Append("\tQualityScore: " + intQuality + (intQuality < 10 ? "\t" : string.Empty) + "\tPendingBlocks: " + behavior.PendingDownloadsCount);
                         }
 
                         builder.AppendLine();
@@ -246,14 +246,13 @@ namespace Stratis.Bitcoin.Connection
                 builder.AppendLine("Total".PadRight(LoggingConfiguration.ColumnLength * 2) + "R:" + this.ToKBSec(diffTotal.ReadenBytesPerSecond) + "\tW:" + this.ToKBSec(diffTotal.WrittenBytesPerSecond));
                 builder.AppendLine("==========================");
 
-                //TODO: Hack, we should just clean nodes that are not connect anymore.
+                // TODO: Hack, we should just clean nodes that are not connect anymore.
                 if (this.downloads.Count > 1000)
                     this.downloads.Clear();
             }
 
             return builder.ToString();
         }
-
 
         public string GetNodeStats()
         {

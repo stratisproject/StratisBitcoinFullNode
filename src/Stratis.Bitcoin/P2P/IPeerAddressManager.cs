@@ -1,13 +1,10 @@
-﻿namespace Stratis.Bitcoin.P2P
+﻿using System;
+using System.Collections.Generic;
+using System.Net;
+using Stratis.Bitcoin.Configuration;
+
+namespace Stratis.Bitcoin.P2P
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Net;
-
-    using NBitcoin;
-
-    using Stratis.Bitcoin.Configuration;
-
     /// <summary>Contract for <see cref="PeerAddressManager"/>.</summary>
     public interface IPeerAddressManager : IDisposable
     {
@@ -32,7 +29,7 @@
         /// </para>
         /// </summary>
         void AddPeers(IPEndPoint[] endPoints, IPAddress source);
-        
+
         /// <summary>
         /// Remove a peer from the <see cref="Peers"/> dictionary.
         /// </summary>

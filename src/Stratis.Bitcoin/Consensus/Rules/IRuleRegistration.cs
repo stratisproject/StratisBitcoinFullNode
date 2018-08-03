@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// </summary>
         /// <returns>A list of rules.</returns>
         /// <remarks>
-        /// It is important to note that there is high importance to the order the rules are registered 
+        /// It is important to note that there is high importance to the order the rules are registered
         /// with the engine, this is important for rules with dependencies on other rules.
         /// Rules are executed in the same order they are registered with the engine.
         /// </remarks>
