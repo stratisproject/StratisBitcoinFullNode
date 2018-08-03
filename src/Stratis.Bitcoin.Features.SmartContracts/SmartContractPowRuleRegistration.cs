@@ -5,12 +5,8 @@ using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
-    public sealed class SmartContractRuleRegistration : IRuleRegistration
+    public sealed class SmartContractPowRuleRegistration : IRuleRegistration
     {
-        public SmartContractRuleRegistration()
-        {
-        }
-
         public IEnumerable<ConsensusRule> GetRules()
         {
             var rules = new List<ConsensusRule>
@@ -53,7 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 // Smart contract specific rules
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
-                new SmartContractCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
+                new SmartContractPowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
                 new SmartContractSaveCoinviewRule()
             };
 

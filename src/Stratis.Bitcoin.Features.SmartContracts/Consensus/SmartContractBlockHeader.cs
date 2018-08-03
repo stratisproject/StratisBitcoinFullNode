@@ -1,6 +1,6 @@
 ﻿using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.SmartContracts
+namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
 {
     public class SmartContractBlockHeader : BlockHeader
     {
@@ -13,7 +13,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public SmartContractBlockHeader() : base()
         {
             this.hashStateRoot = 0;
-
         }
 
         /// <summary>

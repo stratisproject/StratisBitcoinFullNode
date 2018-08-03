@@ -5,6 +5,7 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -28,7 +29,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
             var loggerFactory = new ExtendedLoggerFactory();
             var receiptStorage = new Mock<ISmartContractReceiptStorage>();
 
-            var consensusRules = new SmartContractConsensusRules(
+            var consensusRules = new SmartContractPowConsensusRuleEngine(
                 chain, new Mock<ICheckpoints>().Object, new Configuration.Settings.ConsensusSettings(),
                 DateTimeProvider.Default, executorFactory.Object, loggerFactory, network,
                 new Base.Deployments.NodeDeployments(network, chain), contractState,

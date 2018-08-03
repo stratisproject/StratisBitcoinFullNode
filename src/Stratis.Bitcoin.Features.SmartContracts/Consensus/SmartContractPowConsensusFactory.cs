@@ -1,13 +1,13 @@
 ﻿using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.SmartContracts
+namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
 {
-    public class SmartContractConsensusFactory : ConsensusFactory
+    public sealed class SmartContractPowConsensusFactory : ConsensusFactory
     {
         /// <inheritdoc />
         public override BlockHeader CreateBlockHeader()
         {
-            return new SmartContractBlockHeader();
+            return new SmartContractPowBlockHeader();
         }
 
         /// <inheritdoc />
