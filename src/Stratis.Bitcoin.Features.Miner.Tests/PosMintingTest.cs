@@ -33,10 +33,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 {
     public class PosMintingTest : LogsTestBase
     {
-        private PosMinting posMinting;
+        protected PosMinting posMinting;
         private readonly Mock<IConsensusLoop> consensusLoop;
         private ConcurrentChain chain;
-        private Network network;
+        protected Network network;
         private readonly Mock<IDateTimeProvider> dateTimeProvider;
         private readonly Mock<IInitialBlockDownloadState> initialBlockDownloadState;
         private readonly Mock<INodeLifetime> nodeLifetime;
@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .Should().NotBeEmpty("big enough coins should be included");
 
             var expectedAmounts = spendableTransactions.Select(s => s.Transaction.Amount)
-                .Where(a => a > PosMinting.MinimumStakingCoinValue).ToArray();
+                .Where(a => a >= PosMinting.MinimumStakingCoinValue).ToArray();
             utxoStakeDescriptions.Count.Should().Be(expectedAmounts.Length);
 
             utxoStakeDescriptions.Select(d => d.TxOut.Value).Should().Contain(expectedAmounts);
@@ -265,8 +265,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private void AddAccountWithSpendableOutputs(Wallet.Wallet wallet)
         {
             var account = new HdAccount();
-            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(15), Index = 0, Amount = PosMinting.MinimumStakingCoinValue } } });
-            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(16), Index = 0, Amount = PosMinting.MinimumStakingCoinValue + 1} } });
+            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(15), Index = 0, Amount = PosMinting.MinimumStakingCoinValue - 1 } } });
+            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(16), Index = 0, Amount = PosMinting.MinimumStakingCoinValue } } });
             account.ExternalAddresses.Add(new HdAddress { Index = 2, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(17), Index = 0, Amount = 2 * Money.COIN } } });
             account.ExternalAddresses.Add(new HdAddress { Index = 2, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(18), Index = 0, Amount = 2 * Money.CENT } } });
             account.ExternalAddresses.Add(new HdAddress { Index = 3, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(19), Index = 0, Amount = 1 * Money.NANO } } });
