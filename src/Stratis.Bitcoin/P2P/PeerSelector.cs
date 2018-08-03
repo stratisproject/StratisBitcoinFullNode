@@ -329,8 +329,16 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> FilterBadHandshakedPeers(IEnumerable<PeerAddress> peers)
         {
-            return peers.Where(p => (p.HandshakedAttempts < PeerAddress.AttemptHandshakeThreshold) ||
-                                    p.LastHandshakeAttempt?.AddHours(PeerAddress.AttempThresholdHours) < this.dateTimeProvider.GetUtcNow());
+            IEnumerable<PeerAddress> filteredPeers = peers.Where(p => (p.HandshakedAttempts < PeerAddress.AttemptHandshakeThreshold) ||
+                                    p.LastHandshakeAttempt?.AddHours(PeerAddress.AttempThresholdHours) < this.dateTimeProvider.GetUtcNow()).ToList();
+
+            foreach (PeerAddress peer in filteredPeers)
+            {
+                if (peer.HandshakedAttempts == PeerAddress.AttemptHandshakeThreshold)
+                    peer.ResetHandshakeAttempts();
+            }
+
+            return filteredPeers;
         }
 
         public IEnumerable<PeerAddress> NotBanned()
