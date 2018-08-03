@@ -89,7 +89,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName()), start);
         }
 
-        public CoreNode CreateStratisCustomPowNode(NodeConfigParameters configParameters, bool start = false)
+        public CoreNode CreateStratisPowNode(Network network, bool start = false)
+        {
+            return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), network), start);
+        }
+
+        public CoreNode CreateStratisCustomPowNode(Network network, NodeConfigParameters configParameters, bool start = false)
         {
             var callback = new Action<IFullNodeBuilder>(builder => builder
                .UseBlockStore()
@@ -100,12 +105,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                .AddRPC()
                .MockIBD());
 
-            return CreateCustomNode(start, callback, KnownNetworks.RegTest, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
+            return CreateCustomNode(start, callback, network, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
         }
 
-        public CoreNode CreateStratisPowApiNode(bool start = false)
+        public CoreNode CreateStratisPowApiNode(Network network, bool start = false)
         {
-            return CreateNode(new StratisBitcoinPowApiRunner(this.GetNextDataFolderName()), start);
+            return CreateNode(new StratisBitcoinPowApiRunner(this.GetNextDataFolderName(), network), start);
         }
 
         public CoreNode CreateStratisPosNode()
@@ -113,9 +118,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName()), false, "stratis.conf");
         }
 
-        public CoreNode CreateStratisPosApiNode()
+
+        public CoreNode CreateStratisPosNode(Network network)
         {
-            return CreateNode(new StratisPosApiRunner(this.GetNextDataFolderName()), false, "stratis.conf");
+            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), network), false, "stratis.conf");
+        }
+
+        public CoreNode CreateStratisPosApiNode(Network network)
+        {
+            return CreateNode(new StratisPosApiRunner(this.GetNextDataFolderName(), network), false, "stratis.conf");
         }
 
         public CoreNode CreateSmartContractNode()

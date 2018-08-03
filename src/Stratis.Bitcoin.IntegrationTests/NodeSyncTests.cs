@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
@@ -293,7 +294,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             var sharedSteps = new SharedSteps();
             string testFolderPath = Path.Combine(this.GetType().Name, nameof(MiningNodeWithOneConnectionAlwaysSynced));
-            using (var builder = new NodeGroupBuilder(testFolderPath))
+            using (var builder = new NodeGroupBuilder(testFolderPath, KnownNetworks.RegTest))
             {
                 var nodes = builder.StratisPowNode(miner).Start().NotInIBD().WithWallet(walletName, walletPassword)
                     .StratisPowNode(connector).Start().NotInIBD().WithWallet(walletName, walletPassword)

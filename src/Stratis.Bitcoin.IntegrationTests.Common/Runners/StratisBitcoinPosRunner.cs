@@ -1,4 +1,5 @@
-﻿using NBitcoin.Protocol;
+﻿using NBitcoin;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -17,6 +18,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             : base(dataDir)
         {
             this.Network = KnownNetworks.StratisRegTest;
+        }
+
+        public StratisBitcoinPosRunner(string dataDir, Network network)
+            : base(dataDir)
+        {
+            this.Network = network;
         }
 
         public override void BuildNode()

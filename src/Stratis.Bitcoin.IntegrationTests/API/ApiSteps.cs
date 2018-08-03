@@ -54,7 +54,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private int maturity;
         private HdAddress receiverAddress;
         private readonly Money transferAmount = Money.COIN * 1;
-        private NodeGroupBuilder nodeGroupBuilder;
+        private NodeGroupBuilder powNodeGroupBuilder;
+        private NodeGroupBuilder posNodeGroupBuilder;
         private SharedSteps sharedSteps;
         private Transaction transaction;
         private uint256 block;
@@ -72,7 +73,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.httpClient.DefaultRequestHeaders.Accept.Clear();
             this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
 
-            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
+            this.powNodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.RegTest);
+            this.posNodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.StratisRegTest);
         }
 
         protected override void AfterTest()
@@ -83,12 +85,13 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 this.httpClient = null;
             }
 
-            this.nodeGroupBuilder.Dispose();
+            this.powNodeGroupBuilder.Dispose();
+            this.posNodeGroupBuilder.Dispose();
         }
 
         private void a_proof_of_stake_node_with_api_enabled()
         {
-            this.nodes = this.nodeGroupBuilder.CreateStratisPosApiNode(PosNode)
+            this.nodes = this.posNodeGroupBuilder.CreateStratisPosApiNode(PosNode)
                 .Start()
                 .Build();
 
@@ -110,7 +113,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_pow_node_with_api_enabled()
         {
-            this.nodes = this.nodeGroupBuilder
+            this.nodes = this.powNodeGroupBuilder
                 .CreateStratisPowApiNode(FirstPowNode)
                 .Start()
                 .NotInIBD()
@@ -129,7 +132,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_second_pow_node_with_api_enabled()
         {
-            this.nodes = this.nodeGroupBuilder
+            this.nodes = this.powNodeGroupBuilder
                 .CreateStratisPowApiNode(SecondPowNode)
                 .Start()
                 .NotInIBD()

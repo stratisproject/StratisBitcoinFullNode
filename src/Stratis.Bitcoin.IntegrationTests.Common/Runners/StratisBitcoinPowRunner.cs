@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Builder;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
@@ -18,9 +19,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             this.Network = KnownNetworks.RegTest;
         }
 
+        public StratisBitcoinPowRunner(string dataDir, Network network)
+            : base(dataDir)
+        {
+            this.Network = network;
+        }
+
         public override void BuildNode()
         {
-            var settings = new NodeSettings(args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder });
+            var settings = new NodeSettings(this.Network, args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
