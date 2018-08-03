@@ -66,10 +66,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly AsyncQueue<ChainedHeaderBlock> blocksQueue;
 
         /// <summary>Batch of blocks which should be saved in the database.</summary>
+        /// <remarks>Write access should be protected by <see cref="getBlockLock"/>.</remarks>
         private readonly List<ChainedHeaderBlock> batch;
 
         /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
         private Task dequeueLoopTask;
+
+        /// <summary>Protects the batch from being modifying while <see cref="GetBlockAsync"/> method is using the batch.</summary>
+        private readonly object getBlockLock;
 
         public BlockStoreQueue(
             ConcurrentChain chain,
@@ -93,6 +97,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chain = chain;
             this.blockRepository = new BlockRepository(network, dataFolder, dateTimeProvider, loggerFactory);
             this.batch = new List<ChainedHeaderBlock>();
+            this.getBlockLock = new object();
 
             this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -114,7 +119,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            await this.blockRepository.InitializeAsync();
+            await this.blockRepository.InitializeAsync().ConfigureAwait(false);
 
             if (this.storeSettings.ReIndex)
             {
@@ -172,12 +177,24 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public Task<Block> GetBlockAsync(uint256 blockHash)
+        public async Task<Block> GetBlockAsync(uint256 blockHash)
         {
-            // TODO ACTIVATION take blocks from pending
-            // TODO make sure this method is used only by CM and all components ask the blocks from CM
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
-            return this.blockRepository.GetBlockAsync(blockHash);
+            Block block = null;
+
+            lock (this.getBlockLock)
+            {
+                block = this.batch.FirstOrDefault(x => x.ChainedHeader.HashBlock == blockHash)?.Block;
+            }
+
+            if (block == null)
+                block = await this.blockRepository.GetBlockAsync(blockHash).ConfigureAwait(false);
+            else
+                this.logger.LogTrace("Block was found in the batch.");
+
+            this.logger.LogTrace("(-)");
+            return block;
         }
 
         /// <summary>Sets the internal store tip and exposes the store tip to other components through the chain state.</summary>
@@ -303,7 +320,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // Set the dequeue task to null so it can be assigned on the next iteration.
                     dequeueTask = null;
 
-                    this.batch.Add(item);
+                    lock (this.getBlockLock)
+                    {
+                        this.batch.Add(item);
+                    }
 
                     this.currentBatchSizeBytes += item.Block.BlockSize.Value;
 
@@ -321,7 +341,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         await this.SaveBatchAsync().ConfigureAwait(false);
 
-                        this.batch.Clear();
+                        lock (this.getBlockLock)
+                        {
+                            this.batch.Clear();
+                        }
+
                         this.currentBatchSizeBytes = 0;
                     }
 
