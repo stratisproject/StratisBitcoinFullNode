@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         void ValidateHeader(ChainedHeader chainedHeader);
     }
 
-    public interface IPartialValidator
+    public interface IPartialValidator : IDisposable
     {
         /// <summary>
         /// Schedules a block for background partial validation.
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
     }
 
     /// <inheritdoc />
-    public class PartialValidator : IPartialValidator, IDisposable
+    public class PartialValidator : IPartialValidator
     {
         private readonly IConsensusRuleEngine consensusRules;
         private readonly AsyncQueue<PartialValidationItem> asyncQueue;
