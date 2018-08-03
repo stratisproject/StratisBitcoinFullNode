@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             //verify manager processes each missing block until caught up.
             // height 3
             this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(blocks[2]), ExpectChainedBlock(this.chain.GetBlock(3))));
-            //// height 4
+            // height 4
             this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(blocks[3]), ExpectChainedBlock(this.chain.GetBlock(4))), Times.Exactly(2));
         }
 
@@ -390,7 +390,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void ProcesBlock_Sync_Queued_Blocks_Are_Processed_By_WalletManager()
+        public void ProcessBlock_Sync_Queued_Blocks_Are_Processed_By_WalletManager()
         {
             const int blockCount = 5;
             (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(blockCount, KnownNetworks.StratisMain);
