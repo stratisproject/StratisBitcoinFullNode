@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Base
 
                 this.logger.LogTrace("(-)");
             }, null, 0, (int)TimeSpan.FromMinutes(10).TotalMilliseconds);
-            
+
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
             {
                 ChainedHeader highPoW = this.chainState.ConsensusTip;
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         public override void Dispose()
         {
             this.refreshTimer?.Dispose();
@@ -396,7 +396,7 @@ namespace Stratis.Bitcoin.Base
                     await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
                 }
                 else
-                    this.logger.LogTrace("No sync. Peer's state is {0} (need {1}), {2}invalid header received from this peer.", peer.State, NetworkPeerState.HandShaked, this.InvalidHeaderReceived ? "" : "NO ");
+                    this.logger.LogTrace("No sync. Peer's state is {0} (need {1}), {2}invalid header received from this peer.", peer.State, NetworkPeerState.HandShaked, this.InvalidHeaderReceived ? string.Empty : "NO ");
             }
             else this.logger.LogTrace("No peer attached.");
 

@@ -1,16 +1,16 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -53,19 +53,21 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNode.NotInIBD();
 
                 Block tip = coreNode.FindBlock(10).Last();
-                stratisNode.CreateRPCClient().AddNode(coreNode.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
-                uint256 bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
+                RPCClient stratisNodeRpcClient = stratisNode.CreateRPCClient();
+                stratisNodeRpcClient.AddNode(coreNode.Endpoint, true);
+                RPCClient coreNodeRpcClient = coreNode.CreateRPCClient();
+                TestHelper.WaitLoop(() => stratisNodeRpcClient.GetBestBlockHash() == coreNodeRpcClient.GetBestBlockHash());
+                uint256 bestBlockHash = stratisNodeRpcClient.GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
 
-                //Now check if Core connect to stratis
-                stratisNode.CreateRPCClient().RemoveNode(coreNode.Endpoint);
-                TestHelper.WaitLoop(() => coreNode.CreateRPCClient().GetPeersInfo().Length == 0);
+                stratisNodeRpcClient.RemoveNode(coreNode.Endpoint);
+                TestHelper.WaitLoop(() => coreNodeRpcClient.GetPeersInfo()
+                    .All(pi => pi.Address.MapToIpv6().ToString() != coreNode.Endpoint.MapToIpv6().ToString()));
 
                 tip = coreNode.FindBlock(10).Last();
-                coreNode.CreateRPCClient().AddNode(stratisNode.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
-                bestBlockHash = stratisNode.CreateRPCClient().GetBestBlockHash();
+                coreNodeRpcClient.AddNode(stratisNode.Endpoint, true);
+                TestHelper.WaitLoop(() => stratisNodeRpcClient.GetBestBlockHash() == coreNodeRpcClient.GetBestBlockHash());
+                bestBlockHash = stratisNodeRpcClient.GetBestBlockHash();
                 Assert.Equal(tip.GetHash(), bestBlockHash);
             }
         }
@@ -138,8 +140,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
-            // Temporary fix so the Network static initialize will not break.
-            Network m = Networks.Main;
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode stratisMiner = builder.CreateStratisPosNode();
@@ -224,8 +224,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void PullerVsMinerRaceCondition()
         {
-            // Temporary fix so the Network static initialize will not break.
-            Network m = Networks.Main;
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // This represents local node.

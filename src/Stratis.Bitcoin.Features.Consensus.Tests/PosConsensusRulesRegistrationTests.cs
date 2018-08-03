@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
-using Stratis.Bitcoin.Consensus.Rules;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
 
@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
     public class PosConsensusRulesRegistrationTests
     {
-        private readonly IEnumerable<ConsensusRule> rules;
+        private readonly IEnumerable<IConsensusRule> rules;
 
         public PosConsensusRulesRegistrationTests()
         {

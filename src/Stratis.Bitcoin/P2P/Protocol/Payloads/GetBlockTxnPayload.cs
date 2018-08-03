@@ -9,9 +9,11 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class GetBlockTxnPayload : Payload
     {
         private uint256 blockId = uint256.Zero;
+
         public uint256 BlockId { get { return this.blockId; } set { this.blockId = value; } }
 
         private List<int> indices = new List<int>();
+
         public List<int> Indices { get { return this.indices; } }
 
         public override void ReadWriteCore(BitcoinStream stream)

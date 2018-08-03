@@ -12,8 +12,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.Api;
+using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.RPC.Models;
@@ -23,6 +27,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -97,7 +102,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             a_pow_node_with_api_enabled();
             a_second_pow_node_with_api_enabled();
-            calling_addnode_via_api_connects_two_nodes();
+            calling_addnode_connects_two_nodes();
 
             this.receiverAddress = this.nodes[SecondPowNode].FullNode.WalletManager()
                 .GetUnusedAddress(new WalletAccountReference(SecondaryWalletName, WalletAccountName));
@@ -153,14 +158,14 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.nodes[FirstPowNode].GenerateStratisWithMiner(1);
         }
 
-        private void calling_startstaking_via_api()
+        private void calling_startstaking()
         {
             var stakingRequest = new StartStakingRequest() { Name = PrimaryWalletName, Password = WalletPassword };
 
             this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName);
 
             var httpRequestContent = new StringContent(stakingRequest.ToString(), Encoding.UTF8, JsonContentType);
-            this.response = this.httpClient.PostAsync($"{this.apiUri}api/miner/startstaking", httpRequestContent).GetAwaiter().GetResult();
+            this.response = this.httpClient.PostAsync($"{this.apiUri}api/staking/startstaking", httpRequestContent).GetAwaiter().GetResult();
 
             this.response.StatusCode.Should().Be(HttpStatusCode.OK);
             this.responseText = this.response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
@@ -238,59 +243,58 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.send_api_get_request($"api/Wallet/balance?walletname={walletName}&AccountName=account {accountIndex}");
 
-            this.responseText.Should()
-                .Be("{\"balances\":[{\"accountName\":\"account " + accountIndex + "\",\"accountHdPath\":\"m/44'/105'/" + accountIndex + "'\",\"coinType\":105,\"amountConfirmed\":0,\"amountUnconfirmed\":0}]}");
+            this.responseText.Should().Be("{\"balances\":[{\"accountName\":\"account " + accountIndex + "\",\"accountHdPath\":\"m/44'/105'/" + accountIndex + "'\",\"coinType\":105,\"amountConfirmed\":0,\"amountUnconfirmed\":0}]}");
         }
 
-        private void calling_general_info_via_api()
+        private void calling_general_info()
         {
             this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName);
             this.send_api_get_request($"api/wallet/general-info?name={PrimaryWalletName}");
         }
 
-        private void calling_addnode_via_api_connects_two_nodes()
+        private void calling_addnode_connects_two_nodes()
         {
             this.send_api_get_request($"api/ConnectionManager/addnode?endpoint={this.nodes[SecondPowNode].Endpoint.ToString()}&command=onetry");
             this.responseText.Should().Be("true");
             this.WaitForNodeToSync(this.nodes[FirstPowNode], this.nodes[SecondPowNode]);
         }
 
-        private void calling_block_with_valid_hash_via_api_returns_block()
+        private void calling_block()
         {
             this.send_api_get_request($"api/BlockStore/block?Hash={this.block}&OutputJson=true");
         }
 
-        private void calling_getblockcount_via_api_returns_an_int()
+        private void calling_getblockcount()
         {
             this.send_api_get_request("api/BlockStore/getblockcount");
         }
 
-        private void calling_getbestblockhash_via_api()
+        private void calling_getbestblockhash()
         {
             this.send_api_get_request("api/Consensus/getbestblockhash");
         }
 
-        private void calling_getpeerinfo_via_api()
+        private void calling_getpeerinfo()
         {
             this.send_api_get_request("api/ConnectionManager/getpeerinfo");
         }
 
-        private void calling_getblockhash_via_api()
+        private void calling_getblockhash()
         {
             this.send_api_get_request("api/Consensus/getblockhash?height=0");
         }
 
-        private void calling_getblockheader_via_api()
+        private void calling_getblockheader()
         {
-            this.send_api_get_request($"api/Node/getblockheader?hash={Networks.RegTest.Consensus.HashGenesisBlock.ToString()}");
+            this.send_api_get_request($"api/Node/getblockheader?hash={KnownNetworks.RegTest.Consensus.HashGenesisBlock.ToString()}");
         }
 
-        private void calling_status_via_api()
+        private void calling_status()
         {
             this.send_api_get_request("api/Node/status");
         }
 
-        private void calling_validateaddress_via_api()
+        private void calling_validateaddress()
         {
             string address = this.nodes[FirstPowNode].FullNode.WalletManager()
                 .GetUnusedAddress(new WalletAccountReference(PrimaryWalletName, WalletAccountName))
@@ -298,21 +302,22 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.send_api_get_request($"api/Node/validateaddress?address={address}");
         }
 
-        private void calling_getrawmempool_via_api()
+        private void calling_getrawmempool()
         {
             this.send_api_get_request("api/Mempool/getrawmempool");
         }
 
-        private void calling_gettxout_notmempool_via_api()
+        private void calling_gettxout_notmempool()
         {
             this.send_api_get_request($"api/Node/gettxout?trxid={this.transaction.GetHash().ToString()}&vout=1&includeMemPool=false");
         }
-        private void calling_getrawtransaction_nonverbose_via_api()
+    
+        private void calling_getrawtransaction_nonverbose()
         {
             this.send_api_get_request($"api/Node/getrawtransaction?trxid={this.transaction.GetHash().ToString()}&verbose=false");
         }
 
-        private void calling_getrawtransaction_verbose_via_api()
+        private void calling_getrawtransaction_verbose()
         {
             this.send_api_get_request($"api/Node/getrawtransaction?trxid={this.transaction.GetHash().ToString()}&verbose=true");
         }
@@ -335,16 +340,14 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void the_real_block_should_be_retrieved()
         {
-            JObject jObjectResponse = JObject.Parse(this.responseText);
-            jObjectResponse["hash"].Value<string>()
-                .Should().Be(this.block.ToString());
+            var blockResponse = JsonDataSerializer.Instance.Deserialize<BlockModel>(this.responseText);
+            blockResponse.Hash.Should().Be(this.block.ToString());
         }
 
         private void the_block_should_contain_the_transaction()
         {
-            JObject jObjectResponse = JObject.Parse(this.responseText);
-            jObjectResponse["transactions"][1].Value<string>()
-                .Should().Be(this.transaction.GetHash().ToString());
+            var blockResponse = JsonDataSerializer.Instance.Deserialize<BlockModel>(this.responseText);
+            blockResponse.Transactions[1].Should().Be(this.transaction.GetHash().ToString());
         }
 
         private void it_is_rejected_as_forbidden()
@@ -354,7 +357,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void the_blockhash_is_returned()
         {
-            this.responseText.Should().Be("\"" + Networks.RegTest.Consensus.HashGenesisBlock.ToString() + "\"");
+            this.responseText.Should().Be("\"" + KnownNetworks.RegTest.Consensus.HashGenesisBlock.ToString() + "\"");
         }
 
         private void a_full_list_of_available_commands_is_returned()
@@ -383,30 +386,28 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private void status_information_is_returned()
         {
             var statusNode = this.nodes[FirstPowNode].FullNode;
-            JObject jObjectResponse = JObject.Parse(this.responseText);
-            jObjectResponse["agent"].Value<string>().Should().Contain(statusNode.Settings.Agent);
-            jObjectResponse["version"].Value<string>().Should().Be(statusNode.Version.ToString());
-            jObjectResponse["network"].Value<string>().Should().Be(statusNode.Network.Name);
-            jObjectResponse["consensusHeight"].Value<int>().Should().Be(0);
-            jObjectResponse["blockStoreHeight"].Value<int>().Should().Be(0);
-            jObjectResponse["protocolVersion"].Value<uint>().Should().Be((uint)(statusNode.Settings.ProtocolVersion));
-            jObjectResponse["relayFee"].Value<decimal>().Should().Be(statusNode.Settings.MinRelayTxFeeRate.FeePerK.ToUnit(MoneyUnit.BTC));
-            jObjectResponse["dataDirectoryPath"].Value<string>().Should().Be(statusNode.Settings.DataDir);
-            JArray jArrayFeatures = jObjectResponse["enabledFeatures"].Value<JArray>();
-            jArrayFeatures.Contains("Stratis.Bitcoin.Base.BaseFeature");
-            jArrayFeatures.Contains("Stratis.Bitcoin.Features.Api.ApiFeature");
-            jArrayFeatures.Contains("Stratis.Bitcoin.Features.BlockStore.BlockStoreFeature");
-            jArrayFeatures.Contains("Stratis.Bitcoin.Features.Consensus.ConsensusFeature");
-            jArrayFeatures.Contains("Stratis.Bitcoin.Features.MemoryPool.MempoolFeature");
-            jArrayFeatures.Contains("Stratis.Bitcoin.Features.Miner.MiningFeature");
-            jArrayFeatures.Contains("Stratis.Bitcoin.Features.RPC.RPCFeature");
-            jArrayFeatures.Contains("Stratis.Bitcoin.Features.Wallet.WalletFeature");
+            var statusResponse = JsonDataSerializer.Instance.Deserialize<StatusModel>(this.responseText);
+            statusResponse.Agent.Should().Contain(statusNode.Settings.Agent);
+            statusResponse.Version.Should().Be(statusNode.Version.ToString());
+            statusResponse.Network.Should().Be(statusNode.Network.Name);
+            statusResponse.ConsensusHeight.Should().Be(0);
+            statusResponse.BlockStoreHeight.Should().Be(0);
+            statusResponse.ProtocolVersion.Should().Be((uint)(statusNode.Settings.ProtocolVersion));
+            statusResponse.RelayFee.Should().Be(statusNode.Settings.MinRelayTxFeeRate.FeePerK.ToUnit(MoneyUnit.BTC));
+            statusResponse.DataDirectoryPath.Should().Be(statusNode.Settings.DataDir);
+            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Base.BaseFeature");
+            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Api.ApiFeature");
+            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.BlockStore.BlockStoreFeature");
+            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Consensus.ConsensusFeature");
+            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.MemoryPool.MempoolFeature");
+            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Miner.MiningFeature");
+            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.RPC.RPCFeature");
+            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Wallet.WalletFeature");
         }
 
         private void general_information_about_the_wallet_and_node_is_returned()
         {
             var generalInfoResponse = JsonDataSerializer.Instance.Deserialize<WalletGeneralInfoModel>(this.responseText);
-
             generalInfoResponse.WalletFilePath.Should().ContainAll(StratisRegTest, $"{PrimaryWalletName}.wallet.json");
             generalInfoResponse.Network.Name.Should().Be(StratisRegTest);
             generalInfoResponse.ChainTip.Should().Be(0);
@@ -417,23 +418,21 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void the_blockheader_is_returned()
         {
-            JObject jObjectResponse = JObject.Parse(this.responseText);
-            jObjectResponse["previousblockhash"].Value<string>().Should()
+            var blockheaderResponse = JsonDataSerializer.Instance.Deserialize<BlockHeaderModel>(this.responseText);
+            blockheaderResponse.PreviousBlockHash.Should()
                 .Be("0000000000000000000000000000000000000000000000000000000000000000");
         }
 
         private void the_transaction_is_found_in_mempool()
         {
-            JArray jArrayResponse = JArray.Parse(this.responseText);
-            jArrayResponse[0].Value<string>().Should()
-                .Be(this.transaction.GetHash().ToString());
+            List<string> transactionList = JArray.Parse(this.responseText).ToObject<List<string>>();
+            transactionList[0].Should().Be(this.transaction.GetHash().ToString());
         }
-
+        
         private void staking_is_enabled_but_nothing_is_staked()
         {
-            var miningRpcController = this.nodes[PosNode].FullNode.NodeService<MiningRPCController>();
+            var miningRpcController = this.nodes[PosNode].FullNode.NodeService<StakingRpcController>();
             GetStakingInfoModel stakingInfo = miningRpcController.GetStakingInfo();
-
             stakingInfo.Should().NotBeNull();
             stakingInfo.Enabled.Should().BeTrue();
             stakingInfo.Staking.Should().BeFalse();
@@ -446,32 +445,27 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_verbose_raw_transaction_is_returned()
         {
-            JObject jObjectResponse = JObject.Parse(this.responseText);
-            jObjectResponse["hex"].Value<string>().Should().Be(this.transaction.ToHex());
-            jObjectResponse["txid"].Value<string>().Should().Be(this.transaction.GetHash().ToString());
+            var verboseRawTransactionResponse = JsonDataSerializer.Instance.Deserialize<TransactionVerboseModel>(this.responseText);
+            verboseRawTransactionResponse.Hex.Should().Be(this.transaction.ToHex());
+            verboseRawTransactionResponse.TxId.Should().Be(this.transaction.GetHash().ToString());            
         }
 
         private void a_single_connected_peer_is_returned()
         {
-            JArray jArrayResponse = JArray.Parse(this.responseText);
-            jArrayResponse.Count.Should().Be(1);
-            jArrayResponse[0]["id"].Value<int>()
-                .Should().Be(0);
-            jArrayResponse[0]["addr"].Value<string>()
-                .Should().Contain("[::ffff:127.0.0.1]");
+            List<PeerNodeModel> getPeerInfoResponseList = JArray.Parse(this.responseText).ToObject<List<PeerNodeModel>>();            
+            getPeerInfoResponseList.Count.Should().Be(1);
+            getPeerInfoResponseList[0].Id.Should().Be(0);
+            getPeerInfoResponseList[0].Address.Should().Contain("[::ffff:127.0.0.1]");
         }
 
         private void the_txout_is_returned()
         {
-            JObject jObjectResponse = JObject.Parse(this.responseText);
-            jObjectResponse["value"].Value<long>().Should()
-                .Be(this.transferAmount.Satoshi);
+            var txOutResponse = JsonDataSerializer.Instance.Deserialize<GetTxOutModel>(this.responseText);
+            txOutResponse.Value.Should().Be(this.transferAmount);
         }
 
         private void send_api_get_request(string apiendpoint)
         {
-            this.httpClient.DefaultRequestHeaders.Accept.Clear();
-            this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
             this.response = this.httpClient.GetAsync($"{this.apiUri}{apiendpoint}").GetAwaiter().GetResult();
             this.response.StatusCode.Should().Be(HttpStatusCode.OK);
             this.responseText = this.response.Content.ReadAsStringAsync().GetAwaiter().GetResult();

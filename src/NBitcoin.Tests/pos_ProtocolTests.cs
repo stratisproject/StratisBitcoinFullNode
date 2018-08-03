@@ -73,7 +73,7 @@
 
             foreach (var test in tests)
             {
-                var message = Network.StratisMain.ParseMessage(TestUtils.ParseHex(test.Message), test.Version);
+                var message = StratisNetworks.StratisMain.ParseMessage(TestUtils.ParseHex(test.Message), test.Version);
                 test.Test(message.Payload);
                 var bytes = message.ToBytes(test.Version);
                 var old = message;
@@ -181,7 +181,7 @@
                 cts.Cancel();
                 try
                 {
-                    var client = Node.Connect(Network.StratisMain, "127.0.0.1:" + node.ProtocolPort.ToString(), new NodeConnectionParameters()
+                    var client = Node.Connect(StratisNetworks.StratisMain, "127.0.0.1:" + node.ProtocolPort.ToString(), new NodeConnectionParameters()
                     {
                         ConnectCancellation = cts.Token
                     });
@@ -205,7 +205,7 @@
                 node.ConfigParameters.Add("whitelist", "127.0.0.1");
                 //node.Start();
                 //node.Generate(101);
-                //node.CreateRPCClient().SendToAddress(new Key().PubKey.GetAddress(Network.StratisMain), Money.Coins(1.0m));
+                //node.CreateRPCClient().SendToAddress(new Key().PubKey.GetAddress(StratisNetworks.StratisMain), Money.Coins(1.0m));
                 var client = node.CreateNodeClient();
                 client.VersionHandshake();
                 var transactions = client.GetMempoolTransactions();
@@ -489,7 +489,7 @@
                 node.VersionHandshake();
                 node.SendMessageAsync(new GetDataPayload(new InventoryVector()
                 {
-                    Hash = Network.StratisMain.GenesisHash,
+                    Hash = StratisNetworks.StratisMain.GenesisHash,
                     Type = InventoryType.MSG_BLOCK
                 }));
 

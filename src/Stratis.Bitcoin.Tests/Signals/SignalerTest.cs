@@ -3,6 +3,7 @@ using System.Reactive.Subjects;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Signals
@@ -16,7 +17,7 @@ namespace Stratis.Bitcoin.Tests.Signals
         [Fact]
         public void SubscribeRegistersObserverWithObservable()
         {
-            var block = Networks.StratisMain.CreateBlock();
+            var block = KnownNetworks.StratisMain.CreateBlock();
             var subject = new Mock<ISubject<Block>>();
             var observer = new Mock<IObserver<Block>>();
             subject.Setup(s => s.Subscribe(It.IsAny<IObserver<Block>>()))
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.Tests.Signals
         [Fact]
         public void BroadcastSignalsSubject()
         {
-            var block = Networks.StratisMain.CreateBlock();
+            var block = KnownNetworks.StratisMain.CreateBlock();
             var subject = new Mock<ISubject<Block>>();
             var signaler = new Signaler<Block>(subject.Object);
 

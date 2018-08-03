@@ -6,7 +6,7 @@ namespace NBitcoin
     public class BitcoinWitPubKeyAddress : BitcoinAddress, IBech32Data
     {
         public BitcoinWitPubKeyAddress(string bech32, Network expectedNetwork)
-                : base(Validate(bech32, ref expectedNetwork), expectedNetwork)
+                : base(Validate(bech32, expectedNetwork), expectedNetwork)
         {
             Bech32Encoder encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_PUBKEY_ADDRESS, true);
             byte witVersion;
@@ -14,9 +14,9 @@ namespace NBitcoin
             this._Hash = new WitKeyId(decoded);
         }
 
-        private static string Validate(string bech32, ref Network expectedNetwork)
+        private static string Validate(string bech32, Network expectedNetwork)
         {
-            bool isValid = IsValid(bech32, ref expectedNetwork, out Exception exception);
+            bool isValid = IsValid(bech32, expectedNetwork, out Exception exception);
 
             if (exception != null)
                 throw exception;
@@ -27,7 +27,7 @@ namespace NBitcoin
             throw new FormatException("Invalid BitcoinWitPubKeyAddress");
         }
 
-        public static bool IsValid(string bech32, ref Network expectedNetwork, out Exception exception)
+        public static bool IsValid(string bech32, Network expectedNetwork, out Exception exception)
         {
             exception = null;
 
@@ -111,7 +111,7 @@ namespace NBitcoin
     public class BitcoinWitScriptAddress : BitcoinAddress, IBech32Data
     {
         public BitcoinWitScriptAddress(string bech32, Network expectedNetwork = null)
-                : base(Validate(bech32, ref expectedNetwork), expectedNetwork)
+                : base(Validate(bech32, expectedNetwork), expectedNetwork)
         {
             Bech32Encoder encoder = expectedNetwork.GetBech32Encoder(Bech32Type.WITNESS_SCRIPT_ADDRESS, true);
             byte witVersion;
@@ -119,9 +119,9 @@ namespace NBitcoin
             this._Hash = new WitScriptId(decoded);
         }
 
-        private static string Validate(string bech32, ref Network expectedNetwork)
+        private static string Validate(string bech32, Network expectedNetwork)
         {
-            bool isValid = IsValid(bech32, ref expectedNetwork, out Exception exception);
+            bool isValid = IsValid(bech32, expectedNetwork, out Exception exception);
 
             if (exception != null)
                 throw exception;
@@ -132,7 +132,7 @@ namespace NBitcoin
             throw new FormatException("Invalid BitcoinWitScriptAddress");
         }
 
-        public static bool IsValid(string bech32, ref Network expectedNetwork, out Exception exception)
+        public static bool IsValid(string bech32, Network expectedNetwork, out Exception exception)
         {
             exception = null;
 

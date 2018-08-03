@@ -9,16 +9,12 @@ using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Tests.Common;
 
@@ -95,16 +91,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public CoreNode CreateStratisCustomPowNode(NodeConfigParameters configParameters, bool start = false)
         {
-            var callback = new Action<IFullNodeBuilder>( builder => builder
-                .UseBlockStore()
-                .UsePowConsensus()
-                .UseMempool()
-                .AddMining()
-                .UseWallet()
-                .AddRPC()
-                .MockIBD());
+            var callback = new Action<IFullNodeBuilder>(builder => builder
+               .UseBlockStore()
+               .UsePowConsensus()
+               .UseMempool()
+               .AddMining()
+               .UseWallet()
+               .AddRPC()
+               .MockIBD());
 
-            return CreateCustomNode(start, callback, Networks.RegTest, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
+            return CreateCustomNode(start, callback, KnownNetworks.RegTest, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
         }
 
         public CoreNode CreateStratisPowApiNode(bool start = false)

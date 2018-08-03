@@ -35,9 +35,14 @@ namespace Stratis.Bitcoin.Features.Miner
         public string WalletPassword { get; set; }
 
         /// <summary>
-        /// The wallet name to select outputs ot stake.
+        /// The wallet name to select outputs to stake.
         /// </summary>
         public string WalletName { get; set; }
+
+        /// <summary>
+        /// Settings for <see cref="BlockDefinition"/>.
+        /// </summary>
+        public BlockDefinitionOptions BlockDefinitionOptions { get; }
 
         /// <summary>
         /// Initializes an instance of the object from the default configuration.
@@ -70,6 +75,11 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.WalletPassword = config.GetOrDefault<string>("walletpassword", null); // No logging!
             }
 
+            uint blockMaxSize = (uint) config.GetOrDefault<int>("blockmaxsize", (int) nodeSettings.Network.Consensus.Options.MaxBlockSerializedSize, this.logger);
+            uint blockMaxWeight = (uint) config.GetOrDefault<int>("blockmaxweight", (int) nodeSettings.Network.Consensus.Options.MaxBlockWeight, this.logger);
+
+            this.BlockDefinitionOptions = new BlockDefinitionOptions(blockMaxWeight, blockMaxSize).RestrictForNetwork(nodeSettings.Network);
+
             this.logger.LogTrace("(-)");
         }
         
@@ -87,6 +97,8 @@ namespace Stratis.Bitcoin.Features.Miner
             builder.AppendLine("-mineaddress=<string>     The address to use for mining (empty string to select an address from the wallet).");
             builder.AppendLine("-walletname=<string>      The wallet name to use when staking.");
             builder.AppendLine("-walletpassword=<string>  Password to unlock the wallet.");
+            builder.AppendLine("-blockmaxsize=<number>    Maximum block size (in bytes) for the miner to generate.");
+            builder.AppendLine("-blockmaxweight=<number>  Maximum block weight (in weight units) for the miner to generate.");
 
             defaults.Logger.LogInformation(builder.ToString());
         }
@@ -109,6 +121,10 @@ namespace Stratis.Bitcoin.Features.Miner
             builder.AppendLine("#walletname=<string>");
             builder.AppendLine("#Password to unlock the wallet.");
             builder.AppendLine("#walletpassword=<string>");
+            builder.AppendLine("#Maximum block size (in bytes) for the miner to generate.");
+            builder.AppendLine($"#blockmaxsize={network.Consensus.Options.MaxBlockSerializedSize}");
+            builder.AppendLine("#Maximum block weight (in weight units) for the miner to generate.");
+            builder.AppendLine($"#blockmaxweight={network.Consensus.Options.MaxBlockWeight}");
         }
     }
 }

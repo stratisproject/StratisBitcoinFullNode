@@ -259,7 +259,7 @@ namespace NBitcoin.DataEncoders
             return new int[0];
         }
 
-        internal Bech32Encoder(string hrp) : this(hrp == null ? null : Encoders.ASCII.DecodeData(hrp))
+        public Bech32Encoder(string hrp) : this(hrp == null ? null : Encoders.ASCII.DecodeData(hrp))
         {
         }
         public Bech32Encoder(byte[] hrp)

@@ -14,13 +14,13 @@ namespace Stratis.SmartContracts.Core.Util
     public static class GetSenderUtil
     {
         /// <summary>
-        /// Get the 'sender' of a transaction. 
+        /// Get the 'sender' of a transaction.
         /// </summary>
         /// <param name="tx"></param>
         /// <param name="coinView"></param>
         /// <param name="blockTxs"></param>
         /// <returns></returns>
-        public static GetSenderResult GetSender(Transaction tx, CoinView coinView, IList<Transaction> blockTxs)
+        public static GetSenderResult GetSender(Transaction tx, ICoinView coinView, IList<Transaction> blockTxs)
         {
             OutPoint prevOut = tx.Inputs[0].PrevOut;
 

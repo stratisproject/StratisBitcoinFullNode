@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.adjustedTimeOffset = TimeSpan.Zero;
             this.startFrom = new DateTime(2018, 1, 1);
 
-            signals.SubscribeForBlocks(this);
+            signals.SubscribeForBlocksConnected(this);
         }
 
         public long GetTime()
@@ -57,10 +57,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>
-        /// This gets called when the coin stake block gets created in <see cref="Features.Miner.PosMinting"/>.
+        /// This gets called when the coin stake block gets created in <see cref="PosMinting"/>.
         /// This gets called when the transaction's time gets set in <see cref="Features.Miner.PowBlockDefinition"/>.
         /// <para>
-        /// Please see the <see cref="Features.Miner.PosMinting.GenerateBlocksAsync"/> method.
+        /// Please see the <see cref="PosMinting.GenerateBlocksAsync"/> method.
         /// </para>
         /// <para>
         /// Please see the <see cref="Features.Miner.PowBlockDefinition.CreateCoinbase"/> method.

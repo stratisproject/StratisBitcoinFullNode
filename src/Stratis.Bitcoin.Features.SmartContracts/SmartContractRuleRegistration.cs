@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
@@ -7,13 +8,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public sealed class SmartContractRuleRegistration : IRuleRegistration
     {
-        public SmartContractRuleRegistration()
+        public ICollection<IConsensusRule> GetRules()
         {
-        }
-
-        public IEnumerable<ConsensusRule> GetRules()
-        {
-            var rules = new List<ConsensusRule>
+            var rules = new List<IConsensusRule>
             {
                 new TemporarySetChainHeader(),
                 

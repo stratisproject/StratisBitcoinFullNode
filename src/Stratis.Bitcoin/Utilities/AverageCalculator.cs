@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             return this.samples.Capacity;
         }
-        
+
         /// <summary>Sets the maximum amount of samples that can be used in the calculation of the average value.</summary>
         /// <remarks>This is an expensive operation since it will require recreating an array of samples.</remarks>
         public void SetMaxSamples(int maxSamples)

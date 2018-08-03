@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Notifications
                 if (lookaheadResult.Block != null)
                 {
                     // Broadcast the block to the registered observers.
-                    this.signals.SignalBlock(lookaheadResult.Block);
+                    this.signals.SignalBlockConnected(lookaheadResult.Block);
                     this.tip = this.Chain.GetBlock(lookaheadResult.Block.GetHash());
 
                     continue;

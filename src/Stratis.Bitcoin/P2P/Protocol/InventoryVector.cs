@@ -23,12 +23,14 @@ namespace Stratis.Bitcoin.P2P.Protocol
     public class InventoryVector : Payload, IBitcoinSerializable
     {
         private uint type;
+
         public InventoryType Type
         {
             get
             {
                 return (InventoryType)this.type;
             }
+
             set
             {
                 this.type = (uint)value;
@@ -36,6 +38,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
         }
 
         private uint256 hash = uint256.Zero;
+
         public uint256 Hash { get { return this.hash; } set { this.hash = value; } }
 
         public InventoryVector()

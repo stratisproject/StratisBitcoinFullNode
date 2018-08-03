@@ -310,36 +310,37 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             //uint32_t nFetchFlags = GetFetchFlags(pfrom, chainActive.Tip(), chainparams.GetConsensus());
 
-            var send = new GetDataPayload();
-            foreach (InventoryVector inv in invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX)))
+            var inventoryTxs = invPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_TX));
+
+            lock (this.lockObject)
             {
-                //inv.type |= nFetchFlags;
+                foreach (var inv in inventoryTxs)
+                {
+                    this.filterInventoryKnown.Add(inv.Hash);
+                }
+            }
 
-                // TODO: This is incorrect, in blocks only mode we should just add to known inventory but not relay
-                if (this.isBlocksOnlyMode)
-                    this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
-
-                if (await this.orphans.AlreadyHaveAsync(inv.Hash))
+            var send = new GetDataPayload();
+            foreach (var inv in inventoryTxs)
+            {
+                if (await this.orphans.AlreadyHaveAsync(inv.Hash).ConfigureAwait(false))
                 {
                     this.logger.LogDebug("Transaction ID '{0}' already in orphans, skipped.", inv.Hash);
                     continue;
                 }
 
-                send.Inventory.Add(inv);
-            }
-
-            // add to known inventory
-            lock (this.lockObject)
-            {
-                foreach (InventoryVector inventoryVector in send.Inventory)
+                if (this.isBlocksOnlyMode)
                 {
-                    this.filterInventoryKnown.Add(inventoryVector.Hash);
+                    this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
+                    continue;
                 }
+   
+                send.Inventory.Add(new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), inv.Hash));
             }
 
             if (peer.IsConnected)
             {
-                this.logger.LogTrace("Sending transaction inventory to peer '{0}'.", peer.RemoteSocketEndpoint);
+                this.logger.LogTrace("Asking for transaction data from peer '{0}'.", peer.RemoteSocketEndpoint);
                 await peer.SendMessageAsync(send).ConfigureAwait(false);
             }
 

@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     public class PowConsensusRules : ConsensusRules
     {
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
-        public CoinView UtxoSet { get; }
+        public ICoinView UtxoSet { get; }
 
         /// <summary>A puller that can pull blocks from peers on demand.</summary>
         public ILookaheadBlockPuller Puller { get; }
@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public PowConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, ILookaheadBlockPuller puller)
+        public PowConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, ILookaheadBlockPuller puller)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints)
         {
             this.UtxoSet = utxoSet;
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override Task<uint256> GetBlockHashAsync()
         {
-            return this.UtxoSet.GetBlockHashAsync();
+            return this.UtxoSet.GetTipHashAsync();
         }
 
         /// <inheritdoc />
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
-        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, CoinView utxoSet, ILookaheadBlockPuller puller, IStakeChain stakeChain, IStakeValidator stakeValidator)
+        public PosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, ILookaheadBlockPuller puller, IStakeChain stakeChain, IStakeValidator stakeValidator)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, puller)
         {
             this.StakeChain = stakeChain;

@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     public sealed class SmartContractBlockDefinition : BlockDefinition
     {
         private uint160 coinbaseAddress;
-        private readonly CoinView coinView;
+        private readonly ICoinView coinView;
         private readonly ISmartContractExecutorFactory executorFactory;
         private readonly ILogger logger;
         private readonly List<TxOut> refundOutputs = new List<TxOut>();
@@ -27,16 +27,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private ContractStateRepositoryRoot stateSnapshot;
 
         public SmartContractBlockDefinition(
-            CoinView coinView,
+            ICoinView coinView,
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
             ISmartContractExecutorFactory executorFactory,
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
+            MinerSettings minerSettings,
             Network network,
             ContractStateRepositoryRoot stateRoot)
-            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
+            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.coinView = coinView;
             this.executorFactory = executorFactory;
@@ -47,8 +48,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// Overrides the <see cref="AddToBlock(TxMempoolEntry)"/> behaviour of <see cref="BlockDefinitionProofOfWork"/>.
         /// <para>
-        /// Determine whether or not the mempool entry contains smart contract execution 
-        /// code. If not, then add to the block as per normal. Else extract and deserialize 
+        /// Determine whether or not the mempool entry contains smart contract execution
+        /// code. If not, then add to the block as per normal. Else extract and deserialize
         /// the smart contract code from the TxOut's ScriptPubKey.
         /// </para>
         /// </summary>
@@ -139,7 +140,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// Execute the contract and add all relevant fees and refunds to the block.
         /// </summary>
-        /// <remarks>TODO: At some point we need to change height to a ulong.</remarks> 
+        /// <remarks>TODO: At some point we need to change height to a ulong.</remarks>
         private ISmartContractExecutionResult ExecuteSmartContract(TxMempoolEntry mempoolEntry)
         {
             this.logger.LogTrace("()");

@@ -1,6 +1,6 @@
 ﻿using System.Net;
+using System.Threading;
 using Moq;
-using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.P2P;
@@ -16,7 +16,6 @@ namespace Stratis.Bitcoin.Tests.P2P
     public sealed class PeerAddressManagerBehaviourTests : LogsTestBase
     {
         private readonly ExtendedLoggerFactory extendedLoggerFactory;
-        private readonly Network network;
         private readonly INetworkPeerFactory networkPeerFactory;
 
         public PeerAddressManagerBehaviourTests()
@@ -24,8 +23,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             this.extendedLoggerFactory = new ExtendedLoggerFactory();
             this.extendedLoggerFactory.AddConsoleWithFilters();
 
-            this.network = Networks.Main;
-            this.networkPeerFactory = new NetworkPeerFactory(this.network, DateTimeProvider.Default, this.extendedLoggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
+            this.networkPeerFactory = new NetworkPeerFactory(this.Network, DateTimeProvider.Default, this.extendedLoggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
         }
 
         [Fact]
@@ -48,13 +46,13 @@ namespace Stratis.Bitcoin.Tests.P2P
             var stateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             networkPeer.SetupGet(n => n.StateChanged).Returns(stateChanged); 
 
-            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
+            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer.Object);
 
             var incomingMessage = new IncomingMessage();
             incomingMessage.Message = new Message(new PayloadProvider().DiscoverPayloads())
             {
-                Magic = this.network.Magic,
+                Magic = this.Network.Magic,
                 Payload = new PingPayload(),
             };
 
@@ -85,13 +83,13 @@ namespace Stratis.Bitcoin.Tests.P2P
             var stateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             networkPeer.SetupGet(n => n.StateChanged).Returns(stateChanged);
 
-            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
+            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer.Object);
 
             var incomingMessage = new IncomingMessage();
             incomingMessage.Message = new Message(new PayloadProvider().DiscoverPayloads())
             {
-                Magic = this.network.Magic,
+                Magic = this.Network.Magic,
                 Payload = new PingPayload(),
             };
 
@@ -100,6 +98,82 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             PeerAddress peer = addressManager.FindPeer(endpoint);
             Assert.Equal(DateTimeProvider.Default.GetUtcNow().Date, peer.LastSeen.Value.Date);
+        }
+
+        [Fact]
+        public void PeerAddressManagerBehaviour_DoesntSendAddress_Outbound()
+        {
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint = new IPEndPoint(ipAddress, 80);
+
+            DataFolder peerFolder = CreateDataFolder(this);
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker());
+            addressManager.AddPeer(endpoint, IPAddress.Loopback);
+
+            var networkPeer = new Mock<INetworkPeer>();
+            networkPeer.SetupGet(n => n.PeerEndPoint).Returns(endpoint);
+            networkPeer.SetupGet(n => n.State).Returns(NetworkPeerState.HandShaked);
+            networkPeer.SetupGet(n => n.Inbound).Returns(false); // Outbound
+
+            var messageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
+            networkPeer.SetupGet(n => n.MessageReceived).Returns(messageReceived);
+
+            var stateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
+            networkPeer.SetupGet(n => n.StateChanged).Returns(stateChanged);
+
+            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
+            behaviour.Attach(networkPeer.Object);
+
+            var incomingMessage = new IncomingMessage();
+            incomingMessage.Message = new Message(new PayloadProvider().DiscoverPayloads())
+            {
+                Magic = this.Network.Magic,
+                Payload = new GetAddrPayload(),
+            };
+
+            // Event handler triggered, but SendMessage shouldn't be called as the node is Outbound.
+            networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
+            networkPeer.Verify(x => x.SendMessageAsync(It.IsAny<Payload>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public void PeerAddressManagerBehaviour_DoesntSendAddress_Twice()
+        {
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint = new IPEndPoint(ipAddress, 80);
+
+            DataFolder peerFolder = CreateDataFolder(this);
+            var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker());
+            addressManager.AddPeer(endpoint, IPAddress.Loopback);
+
+            var networkPeer = new Mock<INetworkPeer>();
+            networkPeer.SetupGet(n => n.PeerEndPoint).Returns(endpoint);
+            networkPeer.SetupGet(n => n.State).Returns(NetworkPeerState.HandShaked);
+            networkPeer.SetupGet(n => n.Inbound).Returns(true);
+
+            var messageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
+            networkPeer.SetupGet(n => n.MessageReceived).Returns(messageReceived);
+
+            var stateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
+            networkPeer.SetupGet(n => n.StateChanged).Returns(stateChanged);
+
+            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
+            behaviour.Attach(networkPeer.Object);
+
+            var incomingMessage = new IncomingMessage();
+            incomingMessage.Message = new Message(new PayloadProvider().DiscoverPayloads())
+            {
+                Magic = this.Network.Magic,
+                Payload = new GetAddrPayload(),
+            };
+
+            // Event handler triggered several times 
+            networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
+            networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
+            networkPeer.Object.MessageReceived.ExecuteCallbacksAsync(networkPeer.Object, incomingMessage).GetAwaiter().GetResult();
+
+            // SendMessage should only be called once.
+            networkPeer.Verify(x => x.SendMessageAsync(It.IsAny<Payload>(), It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }
