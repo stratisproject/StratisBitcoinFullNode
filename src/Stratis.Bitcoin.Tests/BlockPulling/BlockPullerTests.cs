@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public async Task CanInitializeAndDisposeAsync()
         {
-            this.puller.Initialize();
+            this.puller.Initialize((hash, block) => { });
 
             // Let dequeue and stalling loops start.
             await Task.Delay(1000);
@@ -503,7 +503,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public async Task AssignDownloadJobs_CalledOnEmptyQueuesAsync()
         {
-            this.puller.Initialize();
+            this.puller.Initialize((hash, block) => { this.helper.CallbacksCalled.Add(hash, block); });
 
             this.puller.ProcessQueuesSignal.Set();
 

@@ -27,9 +27,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>The current tip of the chain that has been validated.</summary>
         ChainedHeader Tip { get; }
 
-        /// <summary>Puller of blocks.</summary>
-        IBlockPuller BlockPuller { get; }
-
         /// <summary>The collection of rules.</summary>
         IConsensusRuleEngine ConsensusRules { get; }
 
@@ -106,12 +103,10 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IPeerBanning peerBanning;
         private readonly IBlockStore blockStore;
         private readonly IFinalizedBlockHeight finalizedBlockHeight;
+        private readonly IBlockPuller blockPuller;
 
         /// <inheritdoc />
         public ChainedHeader Tip { get; private set; }
-
-        /// <inheritdoc />
-        public IBlockPuller BlockPuller { get; private set; }
 
         /// <inheritdoc />
         public IConsensusRuleEngine ConsensusRules => this.consensusRules;
@@ -124,7 +119,7 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly Queue<BlockDownloadRequest> toDownloadQueue;
 
-        /// <summary>Protects access to the <see cref="BlockPuller"/>, <see cref="chainedHeaderTree"/>, <see cref="expectedBlockSizes"/> and <see cref="expectedBlockDataBytes"/>.</summary>
+        /// <summary>Protects access to the <see cref="blockPuller"/>, <see cref="chainedHeaderTree"/>, <see cref="expectedBlockSizes"/> and <see cref="expectedBlockDataBytes"/>.</summary>
         private readonly object peerLock;
 
         private IInitialBlockDownloadState ibdState;
@@ -186,7 +181,7 @@ namespace Stratis.Bitcoin.Consensus
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
             this.ibdState = ibdState;
 
-            this.BlockPuller = blockPuller;
+            this.blockPuller = blockPuller;
         }
 
         /// <inheritdoc />
@@ -194,7 +189,7 @@ namespace Stratis.Bitcoin.Consensus
         /// If <see cref="blockStore"/> is not <c>null</c> (block store is available) then all block headers in
         /// <see cref="chainedHeaderTree"/> will be marked as their block data is available.
         /// If store is not available the <see cref="ConsensusManager"/> won't be able to serve blocks from disk,
-        /// instead all block requests that are not in memory will be sent to the <see cref="BlockPuller"/>.
+        /// instead all block requests that are not in memory will be sent to the <see cref="blockPuller"/>.
         /// </remarks>
         public async Task InitializeAsync(ChainedHeader chainTip)
         {
@@ -224,10 +219,10 @@ namespace Stratis.Bitcoin.Consensus
 
             this.chainedHeaderTree.Initialize(this.Tip, this.blockStore != null);
 
-            this.BlockPuller.Initialize(this.BlockDownloaded);
+            this.blockPuller.Initialize(this.BlockDownloaded);
 
             this.isIbd = this.ibdState.IsInitialBlockDownload();
-            this.BlockPuller.OnIbdStateChanged(this.isIbd);
+            this.blockPuller.OnIbdStateChanged(this.isIbd);
 
             this.logger.LogTrace("(-)");
         }
@@ -244,7 +239,7 @@ namespace Stratis.Bitcoin.Consensus
                 int peerId = peer.Connection.Id;
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
-                this.BlockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
+                this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
 
                 if (!this.peersByPeerId.ContainsKey(peerId))
                 {
@@ -295,7 +290,7 @@ namespace Stratis.Bitcoin.Consensus
             if (removed)
             {
                 this.chainedHeaderTree.PeerDisconnected(peerId);
-                this.BlockPuller.PeerDisconnected(peerId);
+                this.blockPuller.PeerDisconnected(peerId);
                 this.ProcessDownloadQueueLocked();
             }
             else
@@ -852,7 +847,7 @@ namespace Stratis.Bitcoin.Consensus
             bool ibd = this.ibdState.IsInitialBlockDownload();
 
             if (ibd != this.isIbd)
-                this.BlockPuller.OnIbdStateChanged(ibd);
+                this.blockPuller.OnIbdStateChanged(ibd);
 
             this.isIbd = ibd;
 
@@ -1112,7 +1107,7 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
-                long avgSize = (long)this.BlockPuller.GetAverageBlockSizeBytes();
+                long avgSize = (long)this.blockPuller.GetAverageBlockSizeBytes();
                 int blocksToAsk = avgSize != 0 ? (int)(freeBytes / avgSize) : DefaultNumberOfBlocksToAsk;
 
                 this.logger.LogTrace("With {0} average block size, we have {1} download slots available.", avgSize, blocksToAsk);
@@ -1136,7 +1131,7 @@ namespace Stratis.Bitcoin.Consensus
                     request = blockPullerRequest;
                 }
 
-                this.BlockPuller.RequestBlocksDownload(request.BlocksToDownload);
+                this.blockPuller.RequestBlocksDownload(request.BlocksToDownload);
 
                 foreach (ChainedHeader chainedHeader in request.BlocksToDownload)
                     this.expectedBlockSizes.Add(chainedHeader.HashBlock, avgSize);
@@ -1154,7 +1149,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("()");
 
-            this.BlockPuller.Dispose();
+            this.blockPuller.Dispose();
 
             this.reorgLock.Dispose();
 

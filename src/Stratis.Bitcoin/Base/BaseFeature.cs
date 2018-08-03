@@ -108,6 +108,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IConsensusManager consensusManager;
         private readonly IConsensusRuleEngine consensusRules;
         private readonly IPartialValidator partialValidator;
+        private readonly IBlockPuller blockPuller;
         private readonly IBlockStore blockStore;
 
         /// <inheritdoc cref="IFinalizedBlockHeight"/>
@@ -133,6 +134,7 @@ namespace Stratis.Bitcoin.Base
             IConsensusManager consensusManager,
             IConsensusRuleEngine consensusRules,
             IPartialValidator partialValidator,
+            IBlockPuller blockPuller,
             IBlockStore blockStore)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -146,6 +148,7 @@ namespace Stratis.Bitcoin.Base
             this.consensusManager = consensusManager;
             this.consensusRules = consensusRules;
             this.partialValidator = partialValidator;
+            this.blockPuller = blockPuller;
             this.blockStore = blockStore;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
@@ -180,7 +183,7 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
             connectionParameters.TemplateBehaviors.Add(new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.connectionManager, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
-            connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.consensusManager.BlockPuller, this.initialBlockDownloadState, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.initialBlockDownloadState, this.loggerFactory));
 
             this.StartAddressManager(connectionParameters);
 
