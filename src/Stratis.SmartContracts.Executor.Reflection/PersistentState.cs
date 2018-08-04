@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using NBitcoin;
+using Stratis.SmartContracts.Executor.Reflection.Persistence;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -7,7 +8,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class PersistentState : IPersistentState
     {
         public uint160 ContractAddress { get; }
-        private static readonly PersistentStateSerializer serializer = new PersistentStateSerializer();
+        private readonly PersistentStateSerializer serializer;
         private readonly IPersistenceStrategy persistenceStrategy;
         private readonly Network network;
 
@@ -23,6 +24,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.persistenceStrategy = persistenceStrategy;
             this.ContractAddress = contractAddress;
             this.network = network;
+            this.serializer = new PersistentStateSerializer(this);
         }
 
         internal T GetObject<T>(string key)
@@ -34,6 +36,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return default(T);
 
             return serializer.Deserialize<T>(bytes, this.network);
+        }
+
+        public IScMapping<T> LoadMapping<T>(string name)
+        {
+            return new ScMapping<T>(this, name);
+        }
+
+        public IScList<T> LoadList<T>(string name)
+        {
+            return new ScList<T>(this, name);
         }
 
         public byte GetByte(string key)
