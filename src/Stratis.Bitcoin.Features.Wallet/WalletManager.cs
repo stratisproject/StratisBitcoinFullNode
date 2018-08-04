@@ -868,16 +868,16 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 }
 
-                // Update the wallets with the last processed block height.
-                // It's important that updating the height happens after the block processing is complete,
-                // as if the node is stopped, on re-opening it will start updating from the previous height.
-                this.UpdateLastBlockSyncedHeight(chainedHeader);
-
                 if (walletUpdated)
                 {
                     this.SaveWallets();
                 }
             }
+
+            // Update the wallets with the last processed block height.
+            // It's important that updating the height happens after the block processing is complete,
+            // as if the node is stopped, on re-opening it will start updating from the previous height.
+            this.UpdateLastBlockSyncedHeight(chainedHeader);
 
             this.logger.LogTrace("(-)");
         }

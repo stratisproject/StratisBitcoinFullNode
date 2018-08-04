@@ -254,7 +254,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         private async Task ProcessBlockLoopAsync(CancellationToken token)
         {
             this.logger.LogTrace("()");
-            this.logger.LogDebug("(-)[PROCESS_BLOC_LOOP_ASYNC]");
 
             try
             {
@@ -339,7 +338,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         private void ProducerBlock(ITargetBlock<Block> target, Block block)
         {
             this.logger.LogDebug("()");
-            this.logger.LogDebug("(-)[PRODUCER_BLOCK]");
 
             target.Post(block);
 
@@ -350,7 +348,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         private async Task ConsumerBlockAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue)
         {
             this.logger.LogDebug("()");
-            this.logger.LogDebug("(-)[CONSUMER_BLOCK_ASYNC]");
 
             while (await source.OutputAvailableAsync().ConfigureAwait(false))
             {
@@ -365,7 +362,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         private void QueueBlock(Block block)
         {
             this.logger.LogDebug("()");
-            this.logger.LogDebug("(-)[QUEUE_BLOCK]");
 
             Task.Run(() => this.ConsumerBlockAsync(this.BlockBuffer, this.blocksQueue).ConfigureAwait(false));
         
