@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
+    /// <summary>A base skeleton class that is implemented by networks to define and verify the version of blocks.</summary>
     public abstract class HeaderVersionRule : ConsensusRule
     {
         /// <summary>
