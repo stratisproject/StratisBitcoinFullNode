@@ -6,6 +6,7 @@ using NBitcoin;
 using Nethereum.RLP;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
+using Stratis.SmartContracts.Executor.Reflection.Persistence;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
@@ -15,6 +16,19 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// </summary>
     public class PersistentStateSerializer
     {
+        private readonly PersistentState persistentState;
+
+        /// <summary>
+        /// Used only so that SmartContractsController has no compilation issues. If that controller 
+        /// tries to deserialize a struct with an internal mapping, it would break.
+        /// </summary>
+        public PersistentStateSerializer() { }
+
+        public PersistentStateSerializer(PersistentState persistentState)
+        {
+            this.persistentState = persistentState;
+        }
+
         public byte[] Serialize(object o, Network network)
         {
             if (o is null)
@@ -52,6 +66,10 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             
             if (o.GetType().IsValueType)
                 return SerializeType(o, network);
+
+            if (o is PersistenceBase pb)
+                return Encoding.UTF8.GetBytes(pb.Name);
+
                 
             throw new PersistentStateSerializationException(string.Format("{0} is not supported.", o.GetType().Name));
         }
@@ -116,7 +134,28 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             if (type.IsValueType)
                 return DeserializeType(type, stream, network);
-                
+
+            // A few issues with this:
+            // 1) Need to make sure IScList and IscMapping can't be implemented in dev code, could have weird effects
+
+            if (type .GetGenericTypeDefinition()== typeof(IScList<>))
+            {
+                string name = Encoding.UTF8.GetString(stream);
+                Type genericParam = type.GetGenericArguments()[0];
+                Type mappingType = typeof(ScList<>);
+                Type genericMappingType = mappingType.MakeGenericType(genericParam);
+                return Activator.CreateInstance(genericMappingType, new object[] { this.persistentState, name });
+            }
+
+            if (type.GetGenericTypeDefinition() == typeof(IScMapping<>))
+            {
+                string name = Encoding.UTF8.GetString(stream);
+                Type genericParam = type.GetGenericArguments()[0];
+                Type mappingType = typeof(ScMapping<>);
+                Type genericMappingType = mappingType.MakeGenericType(genericParam);
+                return Activator.CreateInstance(genericMappingType, new object[] { this.persistentState, name });
+            }
+
             throw new PersistentStateSerializationException(string.Format("{0} is not supported.", type.Name));
         }
 

@@ -1,12 +1,15 @@
-﻿using System;
-
-namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts
 {
     /// <summary>
     /// Provides functionality for the saving and retrieval of objects inside smart contracts.
     /// </summary>
     public interface IPersistentState
     {
+        // Experiment
+        IScMapping<T> LoadMapping<T>(string name);
+        // Experiment
+        IScList<T> LoadList<T>(string name);
+
         byte GetByte(string key);
 
         byte[] GetByteArray(string key);

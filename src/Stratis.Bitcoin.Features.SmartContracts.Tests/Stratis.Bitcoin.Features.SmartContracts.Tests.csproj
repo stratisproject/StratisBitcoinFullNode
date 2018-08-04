@@ -68,6 +68,9 @@
     <Compile Update="SmartContracts\AsyncVoid.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="SmartContracts\Mappings.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
     <Compile Update="SmartContracts\MultipleConstructor.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
