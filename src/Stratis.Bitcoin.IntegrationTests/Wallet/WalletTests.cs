@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // create a reorg by mining on two different chains
                 // ================================================
-                // advance both chains, one chin is longer
+                // advance both chains, one chain is longer
                 stratisSender.GenerateStratisWithMiner(2);
                 stratisReorg.GenerateStratisWithMiner(10);
                 currentBestHeight = forkblock.Height + 10;
@@ -298,7 +298,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // create a reorg by mining on two different chains
                 // ================================================
-                // advance both chains, one chin is longer
+                // advance both chains, one chain is longer
                 stratisSender.GenerateStratisWithMiner(2);
                 stratisReorg.GenerateStratisWithMiner(10);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
@@ -360,7 +360,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // create a reorg by mining on two different chains
                 // ================================================
-                // advance both chains, one chin is longer
+                // advance both chains, one chain is longer
                 stratisSender.GenerateStratisWithMiner(2);
                 stratisReorg.GenerateStratisWithMiner(10);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
@@ -435,7 +435,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisNodeSync.GenerateStratisWithMiner(10);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
 
-                // set the tip of best chain some blocks in the apst
+                // set the tip of best chain some blocks in the past
                 stratisNodeSync.FullNode.Chain.SetTip(stratisNodeSync.FullNode.Chain.GetBlock(stratisNodeSync.FullNode.Chain.Height - 5));
 
                 // stop the node it will persist the chain with the reset tip
@@ -465,7 +465,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         /// <summary>
-        /// Copies the test wallet into data folder for node if it isnt' already present.
+        /// Copies the test wallet into data folder for node if it isn't already present.
         /// </summary>
         /// <param name="path">The path of the folder to move the wallet to.</param>
         private void InitializeTestWallet(string path)

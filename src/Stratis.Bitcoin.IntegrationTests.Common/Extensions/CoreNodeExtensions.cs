@@ -39,9 +39,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
         
-        public static Money WalletBalance(this CoreNode node, string walletName)
+        public static Money WalletBalance(this CoreNode node, string walletName, bool includeImmature = false)
         {
-            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Sum(s => s.Transaction.Amount);
+            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName, includeImmature: includeImmature).Sum(s => s.Transaction.Amount);
         }
 
         public static int? WalletHeight(this CoreNode node, string walletName)
@@ -49,9 +49,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).First().Transaction.BlockHeight;
         }
 
-        public static int WalletSpendableTransactionCount(this CoreNode node, string walletName)
+        public static int WalletSpendableTransactionCount(this CoreNode node, string walletName, bool includeImmature = false)
         {
-            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Count();
+            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName, includeImmature: includeImmature).Count();
         }
 
         public static Money GetFee(this CoreNode node, TransactionBuildContext transactionBuildContext)

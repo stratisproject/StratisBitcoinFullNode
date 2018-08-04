@@ -60,10 +60,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
-            long balanceIncrease = balanceAfterMining - balanceBeforeMining;
             long immatureBalanceIncrease = immatureBalanceAfterMining - immatureBalanceBeforeMining;
             Money immaturePowReward = node.GetProofOfWorkRewardForMinedBlocks(blockCount, false);
             long calculatedFees = immatureBalanceIncrease - immaturePowReward;
+            long balanceIncrease = balanceAfterMining - balanceBeforeMining - calculatedFees;
+
+            if (balanceIncrease < 0) balanceIncrease = 0;
 
             balanceIncrease.Should().Be(node.GetProofOfWorkRewardForMinedBlocks(blockCount, true));
             calculatedFees.Should().Be(expectedFees);
