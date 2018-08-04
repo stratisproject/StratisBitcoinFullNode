@@ -59,11 +59,6 @@ namespace NBitcoin
         /// <inheritdoc />
         public uint256 MinimumChainWork { get; }
 
-        public long DifficultyAdjustmentInterval
-        {
-            get { return ((long)this.PowTargetTimespan.TotalSeconds / (long)this.PowTargetSpacing.TotalSeconds); }
-        }
-
         public int MinerConfirmationWindow { get; set; }
 
         public int RuleChangeActivationThreshold { get; set; }
