@@ -372,5 +372,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             this.SetObject(key, value);
         }
+
+        // Added just to build. TODO
+        public IScMapping<T> LoadMapping<T>(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        // Added just to build. TODO
+        public IScList<T> LoadList<T>(string name)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

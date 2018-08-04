@@ -138,7 +138,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             // A few issues with this:
             // 1) Need to make sure IScList and IscMapping can't be implemented in dev code, could have weird effects
 
-            if (type == typeof(IScList<>))
+            if (type .GetGenericTypeDefinition()== typeof(IScList<>))
             {
                 string name = Encoding.UTF8.GetString(stream);
                 Type genericParam = type.GetGenericArguments()[0];
@@ -147,7 +147,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return Activator.CreateInstance(genericMappingType, new object[] { this.persistentState, name });
             }
 
-            if (type == typeof(IScMapping<>))
+            if (type.GetGenericTypeDefinition() == typeof(IScMapping<>))
             {
                 string name = Encoding.UTF8.GetString(stream);
                 Type genericParam = type.GetGenericArguments()[0];

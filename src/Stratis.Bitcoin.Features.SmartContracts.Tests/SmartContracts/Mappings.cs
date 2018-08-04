@@ -16,7 +16,7 @@ public class Mappings : SmartContract
 
     public IScList<Example> ListOfStructsWithMappings => this.PersistentState.LoadList<Example>("ListOfStructsWithMappings");
 
-    protected Mappings(ISmartContractState smartContractState) : base(smartContractState) { }
+    public Mappings(ISmartContractState smartContractState) : base(smartContractState) { }
 
     public string BasicMappingTest()
     {
@@ -46,11 +46,11 @@ public class Mappings : SmartContract
         var struct1 = new Example();
         struct1.Id = "Id1";
         struct1.Values = this.PersistentState.LoadMapping<string>("Mapping1");
-        struct1.Values.Put("Key", "Value");
+        struct1.Values.Put("Key1", "Value1");
         ListOfStructsWithMappings.Push(struct1);
 
         var getStructBack = ListOfStructsWithMappings[0];
-        return getStructBack.Values["Key"];
+        return getStructBack.Values["Key1"];
     }
 
 

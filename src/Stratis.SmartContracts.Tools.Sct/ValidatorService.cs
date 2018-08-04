@@ -351,5 +351,17 @@ namespace Stratis.SmartContracts.Tools.Sct
         public void SetSByte(string key, sbyte value)
         {
         }
+
+        // Added just to build. TODO
+        public IScMapping<T> LoadMapping<T>(string name)
+        {
+            throw new NotImplementedException();
+        }
+
+        // Added just to build. TODO
+        public IScList<T> LoadList<T>(string name)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
