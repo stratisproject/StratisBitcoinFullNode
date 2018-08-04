@@ -6,7 +6,6 @@ using System.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -19,7 +18,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     /// Controller providing operations on mining feature.
     /// </summary>
     [Route("api/[controller]")]
-    [HideWhenProofOfWork]
     public class StakingController : Controller
     {
         /// <summary>Instance logger.</summary>

@@ -2,9 +2,7 @@
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
 using Stratis.Bitcoin.Controllers;
-using Stratis.Bitcoin.Features.Apps;
 
 namespace Stratis.Bitcoin.Features.Api
 {
@@ -20,19 +18,6 @@ namespace Stratis.Bitcoin.Features.Api
         {
             // Adds Controllers with API endpoints
             System.Collections.Generic.IEnumerable<ServiceDescriptor> controllerTypes = services.Where(s => s.ServiceType.GetTypeInfo().BaseType == typeof(Controller));
-
-            Network network = services.BuildServiceProvider().GetService<Network>();
-            if (network.Consensus.IsProofOfStake)
-            {
-                // Filters out controllers flagged by HideWhenProofOfStake Attribute.
-                controllerTypes = controllerTypes.Where(u => u.ServiceType.GetCustomAttributes(typeof(HideWhenProofOfStakeAttribute), true).Length == 0);
-            }
-            else
-            {
-                // Filters out controllers flagged by HideWhenProofOfWork Attribute.
-                controllerTypes = controllerTypes.Where(u => u.ServiceType.GetCustomAttributes(typeof(HideWhenProofOfWorkAttribute), true).Length == 0);
-            }
-
             foreach (ServiceDescriptor controllerType in controllerTypes)
             {
                 builder.AddApplicationPart(controllerType.ServiceType.GetTypeInfo().Assembly);
@@ -46,8 +31,7 @@ namespace Stratis.Bitcoin.Features.Api
             }
 
             builder.AddApplicationPart(typeof(NodeController).Assembly);
-            builder.AddApplicationPart(typeof(DashboardController).Assembly);
-            builder.AddApplicationPart(typeof(AppsController).Assembly);
+            builder.AddControllersAsServices();
             return builder;
         }
     }

@@ -86,6 +86,16 @@ namespace Stratis.Bitcoin.Features.Api
                     setup.IncludeXmlComments(walletXmlPath);
                 }
 
+                Network network = services.BuildServiceProvider().GetService<Network>();
+                if (network.Consensus.IsProofOfStake)
+                {
+                    setup.DocumentFilter<HideWhenProofOfStake>();
+                }
+                else
+                {
+                    setup.DocumentFilter<HideWhenProofOfWork>();
+                }
+
                 setup.DescribeAllEnumsAsStrings();
             });
         }
