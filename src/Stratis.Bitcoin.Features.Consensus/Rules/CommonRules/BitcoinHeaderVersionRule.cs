@@ -15,26 +15,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Checks if <see cref="BitcoinMain"/> network block's header has a valid block version.
     /// <seealso cref="BitcoinActivationRule" />
     /// </summary>
-    [HeaderValidationRule(CanSkipValidation = true)]
+    [HeaderValidationRule]
     public class BitcoinHeaderVersionRule : HeaderVersionRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated or otherwise invalid.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Guard.NotNull(context.ConsensusTip, nameof(context.ConsensusTip));
+            // This is a stub rule - all version numbers are valid except those rejected by BitcoinActivationRule based
+            // on the combination of their block height and version number.
 
-            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
-
-            // BIP9 mandates that the top bits of version be 001. So a standard node should never generate
-            // block versions between 4 and 0x20000000. Block versions 5 onwards were never allocated, as the
-            // BIP9 standard became predominant.
-            if ((chainedHeader.Header.Version > 4) && (chainedHeader.Header.Version < ThresholdConditionCache.VersionbitsTopBits))
-            {
-                this.Logger.LogTrace("(-)[BAD_VERSION]");
-                ConsensusErrors.BadVersion.Throw();
-            }
-
+            // All networks need a HeaderVersionRule implementation, as ComputeBlockVersion is used for block creation.
+            
             return Task.CompletedTask;
         }
     }
