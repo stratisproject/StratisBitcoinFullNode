@@ -23,6 +23,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.IntegrationTests.Mempool;
 using Stratis.Bitcoin.Mining;
@@ -63,6 +64,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 new LoggerFactory(),
                 testContext.mempool,
                 testContext.mempoolLock,
+                new MinerSettings(testContext.nodeSettings),
                 testContext.network,
                 testContext.stateRoot);
         }
@@ -121,6 +123,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             public List<Blockinfo> blockinfo;
             public Network network;
+            public NodeSettings nodeSettings;
             public Script scriptPubKey;
             public BlockTemplate newBlock;
             public Transaction tx, tx2;
@@ -180,8 +183,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
 
-                var nodeSettings = NodeSettings.Default();
-                var consensusSettings = new ConsensusSettings(nodeSettings);
+                this.nodeSettings = NodeSettings.Default();
+                var consensusSettings = new ConsensusSettings(this.nodeSettings);
                 consensusSettings.UseCheckpoints = this.useCheckpoints;
 
                 this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
@@ -194,16 +197,12 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
 
                 this.stateRoot = new ContractStateRepositoryRoot(stateDB);
-                this.validator = new SmartContractValidator(new List<ISmartContractValidator>
-                {
-                    new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
-                    new SmartContractDeterminismValidator()
-                });
+                this.validator = new SmartContractValidator();
 
                 this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder));
 
                 this.refundProcessor = new SmartContractResultRefundProcessor(loggerFactory);
-                this.transferProcessor = new SmartContractResultTransferProcessor(loggerFactory, this.network);
+                this.transferProcessor = new SmartContractResultTransferProcessor(dateTimeProvider, loggerFactory, this.network);
 
                 this.serializer = CallDataSerializer.Default;
                 this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
@@ -222,8 +221,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
 
-                var smartContractRuleRegistration = new SmartContractRuleRegistration();
-                ConsensusRules consensusRules = new SmartContractConsensusRules(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, blockPuller, this.cachedCoinView, this.receiptStorage).Register(smartContractRuleRegistration);
+                var smartContractRuleRegistration = new SmartContractPowRuleRegistration();
+                ConsensusRules consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, blockPuller, this.cachedCoinView, this.receiptStorage).Register(smartContractRuleRegistration);
 
                 this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, nodeSettings, peerBanning, consensusRules);
                 await this.consensus.StartAsync();

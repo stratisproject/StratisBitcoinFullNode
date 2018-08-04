@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // signal to peers that this node can serve blocks
             this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network) | NetworkPeerServices.NODE_WITNESS;
 
-            this.signals.SubscribeForBlocks(this.blockStoreSignaled);
+            this.signals.SubscribeForBlocksConnected(this.blockStoreSignaled);
 
             this.blockRepository.InitializeAsync().GetAwaiter().GetResult();
             this.blockStoreQueue.InitializeAsync().GetAwaiter().GetResult();

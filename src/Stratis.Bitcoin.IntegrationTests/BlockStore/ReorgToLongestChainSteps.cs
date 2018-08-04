@@ -140,13 +140,13 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void bobs_transaction_from_shorter_chain_is_now_missing()
         {
             this.nodes[Bob].FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.shorterChainTransaction.GetHash()).Result
-                .Should().BeNull("longest chain comes from selfish miner and shouldn't contain the transaction made on the chain with the other 3 nodes.");
+                .Should().BeNull("longest chain comes from selfish miner and shouldn't contain the transaction made on the chain with the other 3 nodes");
         }
 
-        private void bobs_transaction_is_not_returned_to_the_mem_pool()
+        private void bobs_transaction_is_now_in_the_mem_pool()
         {
             this.nodes[Dave].CreateRPCClient().GetRawMempool()
-                .Should().NotContain(x => x == this.shorterChainTransaction.GetHash(), "it is not implemented yet.");
+                .Should().Contain(x => x == this.shorterChainTransaction.GetHash(), "transaction should be in the mempool when not mined in a longer chain");
         }
 
         private void mining_continues_to_maturity_to_allow_spend()

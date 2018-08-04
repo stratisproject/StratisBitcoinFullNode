@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -160,6 +161,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ICheckpoints checkpoints;
         private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
+        private readonly ISignals signals;
         private readonly IFinalizedBlockHeight finalizedBlockHeight;
 
         /// <inheritdoc />
@@ -207,7 +209,8 @@ namespace Stratis.Bitcoin.Consensus
             ICheckpoints checkpoints,
             IChainState chainState,
             IFinalizedBlockHeight finalizedBlockHeight,
-            ConsensusSettings consensusSettings)
+            ConsensusSettings consensusSettings, 
+            ISignals signals)
         {
             this.network = network;
             this.headerValidator = headerValidator;
@@ -216,6 +219,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chainState = chainState;
             this.finalizedBlockHeight = finalizedBlockHeight;
             this.consensusSettings = consensusSettings;
+            this.signals = signals;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.peerTipsByPeerId = new Dictionary<int, uint256>();
@@ -453,7 +457,6 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
                 this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
-
                 currentHeader = currentHeader.Previous;
             }
 
@@ -765,7 +768,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.logger.LogDebug("Chained header '{0}' is the tip of a chain with more work than our current consensus tip.", latestNewHeader);
 
-                connectNewHeadersResult = this.MarkBetterChainAsRequired(latestNewHeader);
+                connectNewHeadersResult = this.MarkBetterChainAsRequired(latestNewHeader, latestNewHeader);
             }
 
             if (connectNewHeadersResult == null)
@@ -778,16 +781,19 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// A chain with more work than our current consensus tip was found so mark all it's descendants as required.
         /// </summary>
-        /// <param name="latestNewHeader">The new header that represents a longer chain.</param>
+        /// <param name="lastRequiredHeader">Last header that should be required for download.</param>
+        /// <param name="lastNewHeader">Last new header that was created.</param>
         /// <returns>The new headers that need to be downloaded.</returns>
-        private ConnectNewHeadersResult MarkBetterChainAsRequired(ChainedHeader latestNewHeader)
+        private ConnectNewHeadersResult MarkBetterChainAsRequired(ChainedHeader lastRequiredHeader, ChainedHeader lastNewHeader)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(latestNewHeader), latestNewHeader);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(lastRequiredHeader), lastRequiredHeader, nameof(lastNewHeader), lastNewHeader);
 
             var connectNewHeadersResult = new ConnectNewHeadersResult();
-            connectNewHeadersResult.DownloadTo = connectNewHeadersResult.Consumed = latestNewHeader;
+            connectNewHeadersResult.DownloadTo = lastRequiredHeader;
 
-            ChainedHeader current = latestNewHeader;
+            connectNewHeadersResult.Consumed = lastNewHeader;
+
+            ChainedHeader current = lastRequiredHeader;
             ChainedHeader next = current;
 
             while (!this.HeaderWasRequested(current))
@@ -843,7 +849,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.logger.LogDebug("Chained header '{0}' is the tip of a chain with more work than our current consensus tip.", latestNewHeader);
 
                 ChainedHeader latestHeaderToMark = isBelowLastCheckpoint ? assumedValidHeader : latestNewHeader;
-                connectNewHeadersResult = this.MarkBetterChainAsRequired(latestHeaderToMark);
+                connectNewHeadersResult = this.MarkBetterChainAsRequired(latestHeaderToMark, latestNewHeader);
             }
 
             this.MarkTrustedChainAsAssumedValid(assumedValidHeader);
@@ -880,7 +886,7 @@ namespace Stratis.Bitcoin.Consensus
             if (chainedHeader.Height == this.checkpoints.GetLastCheckpointHeight())
                 subchainTip = latestNewHeader;
 
-            ConnectNewHeadersResult connectNewHeadersResult = this.MarkBetterChainAsRequired(subchainTip);
+            ConnectNewHeadersResult connectNewHeadersResult = this.MarkBetterChainAsRequired(subchainTip, latestNewHeader);
             this.MarkTrustedChainAsAssumedValid(chainedHeader);
 
             this.logger.LogTrace("(-):{0}", connectNewHeadersResult);

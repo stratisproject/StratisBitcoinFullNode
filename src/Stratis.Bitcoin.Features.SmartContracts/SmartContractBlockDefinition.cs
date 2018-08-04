@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
@@ -34,9 +35,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
+            MinerSettings minerSettings,
             Network network,
             ContractStateRepositoryRoot stateRoot)
-            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, network)
+            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.coinView = coinView;
             this.executorFactory = executorFactory;

@@ -123,6 +123,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Networks", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.SmartContracts.Wallet", "Stratis.Bitcoin.Features.SmartContracts.Wallet\Stratis.Bitcoin.Features.SmartContracts.Wallet.csproj", "{3E11D03E-1244-43A8-875B-A547249F5B53}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Core.Validation.Tests", "Stratis.SmartContracts.Core.Validation.Tests\Stratis.SmartContracts.Core.Validation.Tests.csproj", "{247C062D-8A16-4DD8-93B4-1D1C3D49B498}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -325,6 +327,10 @@ Global
 		{3E11D03E-1244-43A8-875B-A547249F5B53}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E11D03E-1244-43A8-875B-A547249F5B53}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E11D03E-1244-43A8-875B-A547249F5B53}.Release|Any CPU.Build.0 = Release|Any CPU
+		{247C062D-8A16-4DD8-93B4-1D1C3D49B498}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{247C062D-8A16-4DD8-93B4-1D1C3D49B498}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{247C062D-8A16-4DD8-93B4-1D1C3D49B498}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{247C062D-8A16-4DD8-93B4-1D1C3D49B498}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -371,6 +377,7 @@ Global
 		{FF6DDE2B-CF33-438F-BCC8-B1E109AB2472} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
 		{6A4C72BF-E818-45B1-9DD4-562C7C6F31C8} = {A6FF48E5-310A-4606-B435-D24B6B348F8C}
 		{3E11D03E-1244-43A8-875B-A547249F5B53} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
+		{247C062D-8A16-4DD8-93B4-1D1C3D49B498} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6C780ABA-5872-4B83-AD3F-A5BD423AD907}

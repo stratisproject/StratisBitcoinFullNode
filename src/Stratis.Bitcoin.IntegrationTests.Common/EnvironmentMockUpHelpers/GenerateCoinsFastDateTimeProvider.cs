@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.adjustedTimeOffset = TimeSpan.Zero;
             this.startFrom = new DateTime(2018, 1, 1);
 
-            signals.SubscribeForBlocks(this);
+            signals.SubscribeForBlocksConnected(this);
         }
 
         public long GetTime()

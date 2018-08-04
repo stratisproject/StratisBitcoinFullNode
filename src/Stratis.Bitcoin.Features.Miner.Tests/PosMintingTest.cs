@@ -46,6 +46,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly Mock<IStakeValidator> stakeValidator;
         private readonly MempoolSchedulerLock mempoolSchedulerLock;
         private readonly Mock<ITxMempool> txMempool;
+        private readonly Mock<MinerSettings> minerSettings; 
         private readonly Mock<IWalletManager> walletManager;
         private readonly Mock<IAsyncLoopFactory> asyncLoopFactory;
         private readonly Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
@@ -66,6 +67,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.SetupStakeChain();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.mempoolSchedulerLock = new MempoolSchedulerLock();
+            this.minerSettings = new Mock<MinerSettings>();
             this.txMempool = new Mock<ITxMempool>();
             this.walletManager = new Mock<IWalletManager>();
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
@@ -595,6 +597,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.LoggerFactory.Object,
                 this.txMempool.Object,
                 this.mempoolSchedulerLock,
+                this.minerSettings.Object,
                 this.network,
                 this.stakeChain.Object,
                 this.stakeValidator.Object);

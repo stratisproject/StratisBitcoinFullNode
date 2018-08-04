@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using NBitcoin.Policy;
 using NBitcoin;
+using NBitcoin.Policy;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -30,7 +29,6 @@ using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -114,7 +112,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <summary>
-        /// Configures the node with the smart contract consensus model.
+        /// Configures the node with the smart contract proof of work consensus model.
         /// </summary>
         public static IFullNodeBuilder UseSmartContractConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
@@ -143,9 +141,47 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
 
-                    services.AddSingleton<IConsensusRules, SmartContractConsensusRules>();
-                    services.AddSingleton<IRuleRegistration, SmartContractRuleRegistration>();
+                    services.AddSingleton<IConsensusRules, SmartContractPowConsensusRuleEngine>();
+                    services.AddSingleton<IRuleRegistration, SmartContractPowRuleRegistration>();
                 });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
+        /// Configures the node with the smart contract proof of stake consensus model.
+        /// </summary>
+        public static IFullNodeBuilder UseSmartContractPosConsensus(this IFullNodeBuilder fullNodeBuilder)
+        {
+            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
+            LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
+
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<ConsensusFeature>()
+                    .FeatureServices(services =>
+                    {
+                        fullNodeBuilder.Network.Consensus.Options = new PosConsensusOptions();
+
+                        services.AddSingleton<ICheckpoints, Checkpoints>();
+                        services.AddSingleton<DBreezeCoinView>();
+                        services.AddSingleton<ICoinView, CachedCoinView>();
+                        services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>());
+                        services.AddSingleton<IConsensusLoop, ConsensusLoop>()
+                            .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
+                            .AddSingleton<IGetUnspentTransaction, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop);
+                        services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
+                        services.AddSingleton<IStakeValidator, StakeValidator>();
+                        services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
+                        services.AddSingleton<ConsensusController>();
+                        services.AddSingleton<ConsensusStats>();
+                        services.AddSingleton<ConsensusSettings>();
+
+                        services.AddSingleton<IConsensusRules, SmartContractPosConsensusRuleEngine>();
+                        services.AddSingleton<IRuleRegistration, SmartContractPosRuleRegistration>();
+                    });
             });
 
             return fullNodeBuilder;
@@ -155,7 +191,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// Adds mining to the smart contract node.
         /// <para>We inject <see cref="IPowMining"/> with a smart contract block provider and definition.</para>
         /// </summary>
-        public static IFullNodeBuilder UseSmartContractMining(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UseSmartContractPowMining(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
 
@@ -170,9 +206,39 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     {
                         services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
-                        services.AddSingleton<SmartContractBlockDefinition>();
-                        services.AddSingleton<MinerController>();
-                        services.AddSingleton<MiningRPCController>();
+                        services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
+                        services.AddSingleton<MiningApiController>();
+                        services.AddSingleton<MiningRpcController>();
+                        services.AddSingleton<MinerSettings>();
+                    });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
+        /// Adds mining to the smart contract node.
+        /// <para>We inject <see cref="IPowMining"/> with a smart contract block provider and definition.</para>
+        /// </summary>
+        public static IFullNodeBuilder UseSmartContractPosPowMining(this IFullNodeBuilder fullNodeBuilder)
+        {
+            LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
+
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<MiningFeature>()
+                    .DependOn<MempoolFeature>()
+                    .DependOn<RPCFeature>()
+                    .DependOn<SmartContractWalletFeature>()
+                    .FeatureServices(services =>
+                    {
+                        services.AddSingleton<IPowMining, PowMining>();
+                        services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
+                        services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
+                        services.AddSingleton<BlockDefinition, SmartContractPosPowBlockDefinition>();
+                        services.AddSingleton<MiningApiController>();
+                        services.AddSingleton<MiningRpcController>();
                         services.AddSingleton<MinerSettings>();
                     });
             });
@@ -195,11 +261,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .FeatureServices(services =>
                     {
                         // Validator
-                        ISmartContractValidator validator = new SmartContractValidator(new List<ISmartContractValidator>
-                        {
-                            new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
-                            new SmartContractDeterminismValidator()
-                        });
+                        ISmartContractValidator validator = new SmartContractValidator();
                         services.AddSingleton(validator);
 
                         // Executor et al.

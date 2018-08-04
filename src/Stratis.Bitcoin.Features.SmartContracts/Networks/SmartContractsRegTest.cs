@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.MinRelayTxFee = 1000;
 
             var consensus = new NBitcoin.Consensus();
-            consensus.ConsensusFactory = new SmartContractConsensusFactory();
+            consensus.ConsensusFactory = new SmartContractPowConsensusFactory();
 
             consensus.SubsidyHalvingInterval = 150;
             consensus.MajorityEnforceBlockUpgrade = 750;
@@ -62,9 +63,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             consensus.DefaultAssumeValid = null; // turn off assumevalid for regtest.
 
-            this.Consensus = consensus;
+            // Taken from StratisX.
+            consensus.Options = new PosConsensusOptions(
+                maxBlockBaseSize: 1_000_000,
+                maxStandardVersion: 2,
+                maxStandardTxWeight: 100_000,
+                maxBlockSigopsCost: 20_000
+                );
 
-            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("93867319cf92c86f957a9652c1fbe7cc8cbe70c53a915ac96ee7c59cb80f94b4"));
+            Assert(consensus.HashGenesisBlock == uint256.Parse("93867319cf92c86f957a9652c1fbe7cc8cbe70c53a915ac96ee7c59cb80f94b4"));
+
+            this.Consensus = consensus;
 
             this.Base58Prefixes = new byte[12][];
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };

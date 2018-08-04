@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.IO;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.Apps.Interfaces;
 
@@ -16,17 +18,21 @@ namespace Stratis.Bitcoin.Features.Apps
         private readonly ILogger logger;
         private readonly IAppsStore appsStore;
         private readonly IAppsHost appsHost;
+        private readonly DataFolder dataFolder;
 
-        public AppsFeature(ILoggerFactory loggerFactory, IAppsStore appsStore, IAppsHost appsHost)
+        public AppsFeature(ILoggerFactory loggerFactory, IAppsStore appsStore, IAppsHost appsHost, DataFolder dataFolder)
         {
             this.appsStore = appsStore;
             this.appsHost = appsHost;
+            this.dataFolder = dataFolder;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         public override void Initialize()
         {
             this.logger.LogInformation("Initializing {0}", nameof(AppsFeature));
+
+            Directory.CreateDirectory(this.dataFolder.ApplicationsPath);
 
             this.appsHost.Host(this.appsStore.Applications);
         }
