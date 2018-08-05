@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.AspNetCore.Mvc.Controllers;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using Stratis.Bitcoin.Controllers;
+using Microsoft.AspNetCore.Mvc.Controllers;
 
 namespace Stratis.Bitcoin.Features.Api
 {
@@ -16,13 +15,23 @@ namespace Stratis.Bitcoin.Features.Api
     {
         public void Apply(SwaggerDocument swaggerDoc, DocumentFilterContext context)
         {
-            var pathsToRemove = swaggerDoc.Paths
-                .Where(pathItem => pathItem.Key.Contains("/api/Mining/"))
-                .ToList();
-
-            foreach (KeyValuePair<string, PathItem> item in pathsToRemove)
+            // First get a list of controllers with the proof of work attribute
+            foreach (ApiDescription apiDescription in context.ApiDescriptions)
             {
-                swaggerDoc.Paths.Remove(item.Key);
+                var controllerActionDescriptor = apiDescription.ActionDescriptor as ControllerActionDescriptor;
+                if (!controllerActionDescriptor.ControllerTypeInfo.GetCustomAttributes(typeof(ProofOfWorkAttribute), true).Any())
+                    continue;
+
+                // Next get the path to remove
+                List<KeyValuePair<string, PathItem>> pathsToRemove = swaggerDoc.Paths
+                    .Where(pathItem => pathItem.Key.Contains(controllerActionDescriptor.ControllerName.Replace("Controller", "")))
+                    .ToList();
+
+                // Removing the selected paths from swagger documentation
+                foreach (KeyValuePair<string, PathItem> item in pathsToRemove)
+                {
+                    swaggerDoc.Paths.Remove(item.Key);
+                }
             }
         }
     }
