@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Consensus
         /// Processes any remaining blocks to download.
         /// </summary>
         /// <param name="peerId">The peer that was disconnected.</param>
-        void OnPeerDisconnected(int peerId);
+        void PeerDisconnected(int peerId);
 
         /// <summary>
         /// Provides block data for the given block hashes.
@@ -52,6 +52,12 @@ namespace Stratis.Bitcoin.Consensus
         /// </remarks>
         /// <param name="blockHashes">The block hashes to download.</param>
         /// <param name="onBlockDownloadedCallback">The callback that will be called for each downloaded block.</param>
-        Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, Action<ChainedHeaderBlock> onBlockDownloadedCallback);
+        Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback);
     }
+
+    /// <summary>
+    /// A delegate that is used to send callbacks when a bock is downloaded from the of queued requests to downloading blocks.
+    /// </summary>
+    /// <param name="chainedHeaderBlock">The pair of the block and its chained header.</param>
+    public delegate void OnBlockDownloadedCallback(ChainedHeaderBlock chainedHeaderBlock);
 }

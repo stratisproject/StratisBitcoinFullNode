@@ -2,6 +2,9 @@
 
 namespace Stratis.Bitcoin.Consensus.ValidationResults
 {
+    /// <summary>
+    /// Feedback specific to a partial block validation.
+    /// </summary>
     public class PartialValidationResult : ValidationResult
     {
         public ChainedHeaderBlock ChainedHeaderBlock { get; set; }

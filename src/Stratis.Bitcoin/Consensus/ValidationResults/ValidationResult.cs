@@ -1,5 +1,8 @@
 ﻿namespace Stratis.Bitcoin.Consensus.ValidationResults
 {
+    /// <summary>
+    /// Feedback after a block was validated.
+    /// </summary>
     public class ValidationResult
     {
         public bool Succeeded { get; set; }
