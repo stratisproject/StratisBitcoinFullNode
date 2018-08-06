@@ -141,7 +141,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            var defaults = NodeSettings.Default(network: network);
             builder.AppendLine("####ConnectionManager Settings####");
             builder.AppendLine($"#The default network port to connect to. Default { network.DefaultPort }.");
             builder.AppendLine($"#port={network.DefaultPort}");
