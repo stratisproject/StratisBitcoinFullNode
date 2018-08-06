@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         {
                             token.ThrowIfCancellationRequested();
 
-                            Block nextBlock = this.blockStore.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                            Block nextBlock = await this.blockStore.GetBlockAsync(next.HashBlock).ConfigureAwait(false);
 
                             if (nextBlock == null)
                             {
