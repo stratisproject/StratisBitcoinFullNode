@@ -19,7 +19,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public class BitcoinHeaderVersionRule : HeaderVersionRule
     {
         /// <inheritdoc />
-        /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated or otherwise invalid.</exception>
         public override Task RunAsync(RuleContext context)
         {
             // This is a stub rule - all version numbers are valid except those rejected by BitcoinActivationRule based
