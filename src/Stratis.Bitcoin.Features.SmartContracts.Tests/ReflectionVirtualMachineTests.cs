@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly SmartContractValidator validator;
 
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
-
+        
         public ReflectionVirtualMachineTests()
         {
             this.network = new SmartContractsRegTest();
@@ -40,6 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             var persistenceStrategy = new MeteredPersistenceStrategy(this.state, this.gasMeter, this.keyEncodingStrategy);
             this.persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
+
             this.validator = new SmartContractValidator();
         }
 
@@ -55,6 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             //Set the calldata for the transaction----------
             var callData = new CallData((Gas)5000000, new uint160(1), "StoreData");
+
             Money value = Money.Zero;
             //-------------------------------------------------------
 
@@ -142,6 +144,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //Set the calldata for the transaction----------
             var methodParameters = new object[] { (ulong)5 };
             var callData = new CreateData((Gas)5000000, contractExecutionCode, methodParameters);
+
             Money value = Money.Zero;
             //-------------------------------------------------------            
 

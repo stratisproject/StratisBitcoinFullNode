@@ -10,8 +10,9 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     [Payload("addr")]
     public class AddrPayload : Payload, IBitcoinSerializable
     {
-        private NetworkAddress[] addr_list = new NetworkAddress[0];
-        public NetworkAddress[] Addresses { get { return this.addr_list; } }
+        private NetworkAddress[] addresses = new NetworkAddress[0];
+
+        public NetworkAddress[] Addresses { get { return this.addresses; } }
 
         public AddrPayload()
         {
@@ -19,17 +20,17 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         public AddrPayload(NetworkAddress address)
         {
-            this.addr_list = new NetworkAddress[] { address };
+            this.addresses = new NetworkAddress[] { address };
         }
 
         public AddrPayload(NetworkAddress[] addresses)
         {
-            this.addr_list = addresses.ToArray();
+            this.addresses = addresses.ToArray();
         }
 
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            stream.ReadWrite(ref this.addr_list);
+            stream.ReadWrite(ref this.addresses);
         }
 
         public override string ToString()

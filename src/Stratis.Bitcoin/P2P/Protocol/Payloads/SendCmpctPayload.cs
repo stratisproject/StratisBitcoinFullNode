@@ -6,12 +6,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class SendCmpctPayload : Payload
     {
         private byte preferHeaderAndIDs;
+
         public bool PreferHeaderAndIDs
         {
             get
             {
                 return this.preferHeaderAndIDs == 1;
             }
+
             set
             {
                 this.preferHeaderAndIDs = value ? (byte)1 : (byte)0;
@@ -19,6 +21,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private ulong version = 1;
+
         public ulong Version { get { return this.version; } set { this.version = value; } }
 
         public SendCmpctPayload()

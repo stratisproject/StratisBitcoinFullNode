@@ -92,10 +92,12 @@ namespace Stratis.Bitcoin.Consensus
             {
                 throw new InvalidOperationException("Performance snapshot should be taken from the same point of time");
             }
+
             if (end.Taken < start.Taken)
             {
                 throw new InvalidOperationException("The difference of snapshot can't be negative");
             }
+
             return new ConsensusPerformanceSnapshot(end.TotalProcessedInputs - start.TotalProcessedInputs,
                                             end.TotalProcessedTransactions - start.TotalProcessedTransactions,
                                             end.TotalProcessedBlocks - start.TotalProcessedBlocks,
@@ -141,6 +143,7 @@ namespace Stratis.Bitcoin.Consensus
                 builder.AppendLine("Validation:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.totalBlockValidationTime * 100m / total).ToString("0.00") + " %");
                 builder.AppendLine("Utxo Fetching:".PadRight(LoggingConfiguration.ColumnLength) + ((decimal)this.totalUTXOFetchingTime * 100m / total).ToString("0.00") + " %");
             }
+
             builder.AppendLine("==========================");
             return builder.ToString();
         }

@@ -234,7 +234,7 @@ namespace NBitcoin.Tests
             AssetId goldAssetId = goldScriptPubKey.Hash.ToAssetId();
 
             var issuanceCoin = new IssuanceCoin(
-                new ScriptCoin(RandOutpoint(), new TxOut(new Money(2880), goldScriptPubKey), goldRedeem));
+                new ScriptCoin(RandOutpoint(), new TxOut(new Money(5760), goldScriptPubKey), goldRedeem));
 
             var nico = new Key();
 
@@ -442,7 +442,7 @@ namespace NBitcoin.Tests
             Assert.True(txBuilder.Verify(tx, "0.1"));
 
             //Ensure BTC from the IssuanceCoin are returned
-            Assert.Equal(Money.Parse("0.89994240"), tx.Outputs[2].Value);
+            Assert.Equal(Money.Parse("0.89988480"), tx.Outputs[2].Value);
             Assert.Equal(gold.PubKey.ScriptPubKey, tx.Outputs[2].ScriptPubKey);
 
             //Can issue and send in same transaction
@@ -1387,7 +1387,6 @@ namespace NBitcoin.Tests
             Script scriptHashPubKey2 = PayToScriptHashTemplate.Instance.GenerateScriptPubKey(pubKeyPubKey.Hash);
             Script scriptHashPubKey3 = PayToScriptHashTemplate.Instance.GenerateScriptPubKey(pubKeyHashPubKey.Hash);
 
-
             List<Coin> coins = new[] { multiSigPubKey, pubKeyPubKey, pubKeyHashPubKey }.Select((script, i) =>
                 new Coin
                     (
@@ -1427,7 +1426,7 @@ namespace NBitcoin.Tests
                 )).ToList();
             Money a = witCoins.Select(c => c.Amount).Sum();
             Coin[] allCoins = coins.Concat(scriptCoins).Concat(witCoins).ToArray();
-            BitcoinPubKeyAddress[] destinations = keys.Select(k => k.PubKey.GetAddress(KnownNetworks.Main)).ToArray();
+            BitcoinPubKeyAddress[] destinations = keys.Select(k => k.PubKey.GetAddress(this.stratisMain)).ToArray();
 
             var txBuilder = new TransactionBuilder(0, this.stratisMain);
             txBuilder.StandardTransactionPolicy = EasyPolicy(this.stratisMain);
@@ -1472,7 +1471,7 @@ namespace NBitcoin.Tests
                     .Send(destinations[0], Money.Parse("6") * 2)
                     .Send(destinations[2], Money.Parse("5"))
                     .Send(destinations[2], Money.Parse("0.9998"))
-                    .SendFees(Money.Parse("0.0001"))
+                    .SendFees(Money.Parse("0.0002"))
                     .SetChange(destinations[3])
                     .Shuffle()
                     .BuildTransaction(true);
@@ -1718,7 +1717,7 @@ namespace NBitcoin.Tests
             {
                 MaxTransactionSize = null,
                 MaxTxFee = null,
-                MinRelayTxFee = new FeeRate(Money.Satoshis(5000)),
+                MinRelayTxFee = new FeeRate(Money.Satoshis(network.MinRelayTxFee)),
                 ScriptVerify = ScriptVerify.Standard & ~ScriptVerify.LowS
             };
         }
@@ -2772,7 +2771,6 @@ namespace NBitcoin.Tests
                 {
                     CheckFee = false,
                     MinRelayTxFee = null,
-                    UseConsensusLib = false,
                     CheckScriptPubKey = false
                 }
             }
@@ -3053,7 +3051,7 @@ namespace NBitcoin.Tests
             t.Outputs[0].Value = 501; //dust
             Assert.True(!StandardScripts.IsStandardTransaction(t, this.stratisMain));
 
-            t.Outputs[0].Value = 2730; // not dust
+            t.Outputs[0].Value = 5460; // not dust
             Assert.True(StandardScripts.IsStandardTransaction(t, this.stratisMain));
 
             t.Outputs[0].ScriptPubKey = new Script() + OpcodeType.OP_1;
