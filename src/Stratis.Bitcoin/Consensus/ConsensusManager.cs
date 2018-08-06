@@ -223,7 +223,10 @@ namespace Stratis.Bitcoin.Consensus
                 lock (this.peerLock)
                 {
                     if (block.Header.HashPrevBlock != this.Tip.HashBlock)
+                    {
+                        this.logger.LogError("(-)[BLOCKMINED_INVALID_PREVIOUS_TIP]");
                         return Task.FromResult(partialValidationResult.ChainedHeaderBlock);
+                    }
 
                     chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
                 }
@@ -239,7 +242,14 @@ namespace Stratis.Bitcoin.Consensus
                     }
 
                     if (fullValidationRequired)
-                        this.FullyValidateLockedAsync(partialValidationResult.ChainedHeaderBlock).GetAwaiter().GetResult();
+                    {
+                        var fullValidationResult = this.FullyValidateLockedAsync(partialValidationResult.ChainedHeaderBlock).GetAwaiter().GetResult();
+                        if (!fullValidationResult.Succeeded)
+                        {
+                            this.logger.LogError("Miner produced an invalid block, full validation failed: {0}", fullValidationResult.Error.Message);
+                            throw new Exception(fullValidationResult.Error.Message);
+                        }
+                    }
                 }
                 else
                 {
@@ -248,7 +258,8 @@ namespace Stratis.Bitcoin.Consensus
                         this.chainedHeaderTree.PartialOrFullValidationFailed(chainedHeader);
                     }
 
-                    this.logger.LogError("Miner produced an invalid block.");
+                    this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}", partialValidationResult.Error.Message);
+                    throw new Exception(partialValidationResult.Error.Message);
                 }
             }
 

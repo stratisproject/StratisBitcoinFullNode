@@ -190,6 +190,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
                 BanDurationSeconds = validationContext.BanDurationSeconds,
                 BanReason = validationContext.Error != null ? $"Invalid block received: {validationContext.Error.Message}" : string.Empty,
                 ChainedHeaderBlock = validationContext.Error == null ? chainedHeaderBlock : null,
+                Error = validationContext.Error,
                 Succeeded = validationContext.Error == null
             };
 

@@ -9,6 +9,8 @@
 
         public string BanReason { get; set; }
 
+        public ConsensusError Error { get; set; }
+
         public bool Succeeded { get; set; }
 
         /// <inheritdoc/>

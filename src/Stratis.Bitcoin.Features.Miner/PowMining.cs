@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -178,9 +177,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 if (!this.ValidateAndConnectBlock(context))
                     break;
 
-                if (!this.CheckValidationContextPreviousTip(context))
-                    continue;
-
                 this.OnBlockMined(context);
             }
 
@@ -269,27 +265,19 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private bool ValidateAndConnectBlock(MineBlockContext context)
         {
-            ChainedHeaderBlock chainedHeaderBlock = this.consensusManager.BlockMined(context.BlockTemplate.Block).GetAwaiter().GetResult();
-            if (chainedHeaderBlock == null)
+            context.ChainedHeaderBlock = this.consensusManager.BlockMined(context.BlockTemplate.Block).GetAwaiter().GetResult();
+            if (context.ChainedHeaderBlock == null)
             {
-                this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
+                this.logger.LogTrace("(-)[BLOCK_VALIDATION_ERROR]");
                 return false;
             }
 
             return true;
         }
 
-        private bool CheckValidationContextPreviousTip(MineBlockContext context)
-        {
-            if (context.ValidationContext.Error != null)
-                if (context.ValidationContext.Error == ConsensusErrors.InvalidPrevTip)
-                    return false;
-            return true;
-        }
-
         private void OnBlockMined(MineBlockContext context)
         {
-            this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(context.ValidationContext.Block) ? "POS" : "POW", context.ValidationContext.ChainTipToExtand);
+            this.logger.LogInformation("Mined new {0} block: '{1}'.", BlockStake.IsProofOfStake(context.ChainedHeaderBlock.Block) ? "POS" : "POW", context.ChainedHeaderBlock.ChainedHeader);
 
             context.CurrentHeight++;
 
@@ -326,13 +314,13 @@ namespace Stratis.Bitcoin.Features.Miner
             public List<uint256> Blocks = new List<uint256>();
             public BlockTemplate BlockTemplate { get; set; }
             public ulong ChainHeight { get; set; }
+            public ChainedHeaderBlock ChainedHeaderBlock { get; internal set; }
             public ulong CurrentHeight { get; set; }
             public ChainedHeader ChainTip { get; set; }
             public int ExtraNonce { get; set; }
             public ulong MaxTries { get; set; }
             public bool MiningCanContinue { get { return this.CurrentHeight < this.ChainHeight + this.amountOfBlocksToMine; } }
             public readonly ReserveScript ReserveScript;
-            public ValidationContext ValidationContext { get; set; }
 
             public MineBlockContext(ulong amountOfBlocksToMine, ulong chainHeight, ulong maxTries, ReserveScript reserveScript)
             {
