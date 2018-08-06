@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public Task<Block> GetBlockAsync(uint256 blockHash)
         {
-            throw new System.NotImplementedException();
+            return this.blockRepository.GetAsync(blockHash);
         }
 
         /// <summary>Sets the internal store tip and exposes the store tip to other components through the chain state.</summary>
