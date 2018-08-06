@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.Features.Dns
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
-            repeatEvery: new TimeSpan(0, 0, 30));
+            repeatEvery: TimeSpan.FromSeconds(30));
 
             this.logger.LogTrace("(-)");
         }

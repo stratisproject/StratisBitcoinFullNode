@@ -10,7 +10,8 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class GetDataPayload : Payload
     {
         private List<InventoryVector> inventory = new List<InventoryVector>();
-        public List<InventoryVector> Inventory { set { this.inventory = value; } get { return this.inventory; } }
+
+        public List<InventoryVector> Inventory { get { return this.inventory; } set { this.inventory = value; } }
 
         public GetDataPayload()
         {

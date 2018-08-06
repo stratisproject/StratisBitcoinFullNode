@@ -41,12 +41,14 @@ namespace Stratis.Bitcoin.P2P.Protocol
         }
 
         private byte[] command = new byte[CommandSize];
+
         public string Command
         {
             get
             {
                 return Encoders.ASCII.EncodeData(this.command);
             }
+
             private set
             {
                 this.command = Encoders.ASCII.DecodeData(value.Trim().PadRight(12, '\0'));
@@ -54,12 +56,14 @@ namespace Stratis.Bitcoin.P2P.Protocol
         }
 
         private Payload payloadObject;
+
         public Payload Payload
         {
             get
             {
                 return this.payloadObject;
             }
+
             set
             {
                 this.payloadObject = value;

@@ -19,6 +19,7 @@ namespace Stratis.Bitcoin.Utilities
             {
                 return this.previousBlockHash;
             }
+
             set
             {
                 this.previousBlockHash = value;
@@ -35,6 +36,7 @@ namespace Stratis.Bitcoin.Utilities
             {
                 return this.transactionsToRemove;
             }
+
             set
             {
                 this.transactionsToRemove = value;
@@ -51,6 +53,7 @@ namespace Stratis.Bitcoin.Utilities
             {
                 return this.outputsToRestore;
             }
+
             set
             {
                 this.outputsToRestore = value;

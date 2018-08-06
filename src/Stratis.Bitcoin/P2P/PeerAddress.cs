@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.P2P
         public string BanReason { get; set; }
 
         /// <summary>
-        /// Maintain a count of bad behaviour.  
+        /// Maintain a count of bad behaviour.
         /// <para>
         /// Once a certain score is reached ban the peer.
         /// </para>
@@ -224,14 +224,27 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Resets the amount of <see cref="ConnectionAttempts"/>.
         /// <para>
-        /// This is reset when the amount of failed connection attempts reaches 
-        /// the <see cref="PeerAddress.AttemptThreshold"/> and the last attempt was 
+        /// This is reset when the amount of failed connection attempts reaches
+        /// the <see cref="PeerAddress.AttemptThreshold"/> and the last attempt was
         /// made more than <see cref="PeerAddress.AttemptResetThresholdHours"/> ago.
         /// </para>
         /// </summary>
         internal void ResetAttempts()
         {
             this.ConnectionAttempts = 0;
+        }
+
+        /// <summary>
+        /// Resets the amount of <see cref="HandshakedAttempts"/>.
+        /// <para>
+        /// This is reset when the amount of failed handshake attempts reaches
+        /// the <see cref="PeerAddress.HandshakedAttempts"/> and the last attempt was
+        /// made more than <see cref="PeerAddress.AttempThresholdHours"/> ago.
+        /// </para>
+        /// </summary>
+        internal void ResetHandshakeAttempts()
+        {
+            this.HandshakedAttempts = 0;
         }
 
         /// <summary>
@@ -254,7 +267,7 @@ namespace Stratis.Bitcoin.P2P
             this.HandshakedAttempts += 1;
             this.LastHandshakeAttempt = handshakeAttemptedAt;
         }
-        
+
         /// <summary>
         /// Sets the <see cref="LastConnectionSuccess"/>, <see cref="addressTime"/> and <see cref="NetworkAddress.Time"/> properties.
         /// <para>
@@ -280,7 +293,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Sets the <see cref="LastConnectionHandshake"/> date.</summary>
         internal void SetHandshaked(DateTimeOffset peerHandshakedAt)
         {
-            this.HandshakedAttempts = 0;
+            this.ResetHandshakeAttempts();
             this.LastConnectionHandshake = peerHandshakedAt;
             this.LastHandshakeAttempt = null;
         }

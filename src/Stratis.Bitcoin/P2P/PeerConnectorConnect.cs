@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.P2P
 
                 PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
                 if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
-                    await ConnectAsync(peerAddress).ConfigureAwait(false);
+                    await this.ConnectAsync(peerAddress).ConfigureAwait(false);
             }
         }
     }

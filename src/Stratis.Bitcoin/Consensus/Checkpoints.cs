@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly Network network;
 
         /// <summary>Consensus settings for the full node.</summary>
-        private ConsensusSettings consensusSettings { get; }
+        private readonly ConsensusSettings consensusSettings;
 
         /// <summary>
         /// Initializes a new instance of the object.
