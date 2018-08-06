@@ -7,7 +7,6 @@ using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -113,7 +112,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             int iterations = 0;
 
-            var queue = this.blockStoreQueue.GetMemberValue("BlocksQueue") as AsyncQueue<ChainedHeaderBlock>;
+            var queue = this.blockStoreQueue.GetMemberValue("blocksQueue") as AsyncQueue<ChainedHeaderBlock>;
             
             while (true)
             {

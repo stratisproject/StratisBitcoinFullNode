@@ -322,9 +322,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 }
             }
-            catch (OperationCanceledException operationCanceledException)
+            catch (OperationCanceledException)
             {
-                this.logger.LogError("OperationCanceledException Message: {0}", operationCanceledException.Message);
+                this.logger.LogInformation("Stopping WalletSynceManager...");
             }
             catch (Exception e)
             {
