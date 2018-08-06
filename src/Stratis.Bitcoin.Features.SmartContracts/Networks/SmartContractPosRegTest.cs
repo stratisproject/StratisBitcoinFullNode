@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
@@ -82,11 +83,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 powNoRetargeting: true,
                 powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
                 minimumChainWork: uint256.Zero,
-                isProofOfStake: default(bool),
-                lastPowBlock: default(int),
-                proofOfStakeLimit: null,
-                proofOfStakeLimitV2: null,
-                proofOfStakeReward: Money.Zero
+                isProofOfStake: true,
+                lastPowBlock: 1000000,
+                proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
+                proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
+                proofOfStakeReward: Money.COIN
             );
 
             this.Base58Prefixes = new byte[12][];
