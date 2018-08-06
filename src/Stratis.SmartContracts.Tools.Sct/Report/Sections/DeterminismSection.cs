@@ -26,13 +26,16 @@ namespace Stratis.SmartContracts.Tools.Sct.Report.Sections
             if (!data.DeterminismValid)
             {
                 var grouped = data.DeterminismValidationErrors.GroupBy(x => x.SubjectName);
-                foreach(var method in grouped)
+                
+                foreach (var methodErrorGroup in grouped)
                 {
-                    yield return new ReportElement($"{method.Key}:");
+                    yield return new ReportElement($"{methodErrorGroup.Key}:");
 
-                    foreach(var error in method)
+                    var errors = methodErrorGroup.GroupBy(m => m.Message);
+
+                    foreach(var errorGroup in errors)
                     {
-                        yield return new ReportElement($"   {error.Message}");
+                        yield return new ReportElement($"   {errorGroup.Key}");
                     }
 
                     yield return new NewLineElement();

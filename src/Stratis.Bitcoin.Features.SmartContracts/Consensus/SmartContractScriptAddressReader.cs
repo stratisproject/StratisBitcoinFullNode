@@ -1,10 +1,14 @@
-﻿using NBitcoin;
+﻿using CSharpFunctionalExtensions;
+using NBitcoin;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
 {
+    /// <summary>
+    /// Smart contract specific logic to get the contract address from the <see cref="ContractTxData"/>.
+    /// </summary>
     public sealed class SmartContractScriptAddressReader : IScriptAddressReader
     {
         private readonly IScriptAddressReader baseAddressReader;
@@ -22,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
         {
             if (script.IsSmartContractCreate() || script.IsSmartContractCall())
             {
-                var result = this.callDataSerializer.Deserialize(script.ToBytes());               
+                Result<ContractTxData> result = this.callDataSerializer.Deserialize(script.ToBytes());
                 return result.Value.ContractAddress?.ToAddress(network);
             }
 
