@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
                         services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
-                        services.AddSingleton<MiningApiController>();
+                        services.AddSingleton<MiningController>();
                         services.AddSingleton<MiningRpcController>();
                         services.AddSingleton<MinerSettings>();
                     });
@@ -223,9 +223,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
                         services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
                         services.AddSingleton<BlockDefinition, SmartContractPosPowBlockDefinition>();
-                        services.AddSingleton<MiningApiController>();
                         services.AddSingleton<MiningRpcController>();
                         services.AddSingleton<MiningController>();
+                        services.AddSingleton<StakingController>();
+                        services.AddSingleton<StakingRpcController>();
                         services.AddSingleton<MinerSettings>();
                     });
             });
