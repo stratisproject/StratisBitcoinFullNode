@@ -14,8 +14,11 @@ namespace Stratis.Bitcoin.Features.LightWallet
 {
     public class LightWalletSyncManager : IWalletSyncManager
     {
-        /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
-        private IAsyncLoop asyncLoop;
+        /// <summary>This async loop is used to wait for the chain headers to download. The headers need to at least be downloaded up until the requested sync date.</summary>
+        private IAsyncLoop syncFromDateAsyncLoop;
+
+        /// <summary>This async loop waits for the underlying block puller to re-download blocks once a sync height has been supplied.</summary>
+        private IAsyncLoop syncFromHeightAsyncLoop;
 
         /// <summary>Factory for creating background async loop tasks.</summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -39,6 +42,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         private IDisposable txSub;
 
+        private int syncWalletHeight;
+        private DateTime syncWalletDate = DateTime.MinValue;
         public ChainedHeader WalletTip => this.walletTip;
 
         public LightWalletSyncManager(
@@ -137,10 +142,16 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void Stop()
         {
-            if (this.asyncLoop != null)
+            if (this.syncFromHeightAsyncLoop != null)
             {
-                this.asyncLoop.Dispose();
-                this.asyncLoop = null;
+                this.syncFromHeightAsyncLoop.Dispose();
+                this.syncFromHeightAsyncLoop = null;
+            }
+
+            if (this.syncFromDateAsyncLoop != null)
+            {
+                this.syncFromDateAsyncLoop.Dispose();
+                this.syncFromDateAsyncLoop = null;
             }
 
             if (this.sub != null)
@@ -245,33 +256,57 @@ namespace Stratis.Bitcoin.Features.LightWallet
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(date), date);
 
+            if ((this.syncWalletDate == DateTime.MinValue) || (this.walletTip.Header.BlockTime.LocalDateTime > date))
+            {
+                this.logger.LogTrace("Setting new wallet sync from date to {0}; wallet's previous sync from date was {1}.", date, this.syncWalletDate);
+                this.syncWalletDate = date;
+            }
+            else
+            {
+                this.logger.LogTrace("Ignoring request to sync from date {0} as the wallet is already syncing from older date {1}. Subsequent call to SyncFromHeight might amend the block hight.", date, this.walletTip.Header.BlockTime.LocalDateTime);
+            }
+
+            // Check if the task is already running and don't start another asyncloop call if we are already running one.
+            if (this.syncFromDateAsyncLoop != null)
+            {
+                this.logger.LogTrace("(-)[SYNCFROMDATEASYNCLOOP_NOT_NULL]");
+                return;
+            }
+
             // Before we start syncing we need to make sure that the chain is at a certain level.
             // If the chain is behind the date from which we want to sync, we wait for it to catch up, and then we start syncing.
             // If the chain is already past the date we want to sync from, we don't wait, even though the chain might not be fully downloaded.
-            if (this.chain.Tip.Header.BlockTime.LocalDateTime < date)
+            if (this.chain.Tip.Header.BlockTime.LocalDateTime < this.syncWalletDate)
             {
-                this.logger.LogTrace("The chain tip's date ({0}) is behind the date from which we want to sync ({1}). Waiting for the chain to catch up.", this.chain.Tip.Header.BlockTime.LocalDateTime, date);
+                this.logger.LogTrace("The chain tip's date ({0}) is behind the date from which we want to sync ({1}). Waiting for the chain to catch up.", this.chain.Tip.Header.BlockTime.LocalDateTime, this.syncWalletDate);
 
-                this.asyncLoop = this.asyncLoopFactory.RunUntil("LightWalletSyncManager.SyncFromDate", this.nodeLifetime.ApplicationStopping,
-                    () => this.chain.Tip.Header.BlockTime.LocalDateTime >= date,
+                this.syncFromDateAsyncLoop = this.asyncLoopFactory.RunUntil("LightWalletSyncManager.SyncFromDate", this.nodeLifetime.ApplicationStopping,
+                    () => this.chain.Tip.Header.BlockTime.LocalDateTime >= this.syncWalletDate,
                     () =>
                     {
-                        this.logger.LogTrace("Start syncing from {0}.", date);
-                        this.StartSync(this.chain.GetHeightAtTime(date));
+                        int blockHeightAtDate = this.chain.GetHeightAtTime(this.syncWalletDate);
+                        this.logger.LogTrace("Start syncing from {0} (block: {1}).", this.syncWalletDate, blockHeightAtDate);
+                        SyncFromHeight(blockHeightAtDate);
+
+                        // Set the asyncloop to null so that it can be used again.
+                        this.syncFromDateAsyncLoop = null;
                     },
                     (ex) =>
                     {
-                        // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and
-                        // sync from the current height.
+                        // In case of an exception while waiting for the chain to be at a certain height, we just cut our losses and sync from the current height.
                         this.logger.LogError("Exception occurred while waiting for chain to download: {0}.", ex.Message);
                         this.StartSync(this.chain.Tip.Height);
+
+                        // Set the asyncloop to null so that it could be used again.
+                        this.syncFromDateAsyncLoop = null;
                     },
                     TimeSpans.FiveSeconds);
             }
             else
             {
-                this.logger.LogTrace("Start syncing from {0}", date);
-                this.StartSync(this.chain.GetHeightAtTime(date));
+                int blockHeightAtDate = this.chain.GetHeightAtTime(this.syncWalletDate);
+                this.logger.LogTrace("Start syncing from {0} (block: {1}).", this.syncWalletDate, blockHeightAtDate);
+                SyncFromHeight(blockHeightAtDate);
             }
 
             this.logger.LogTrace("(-)");
@@ -287,33 +322,61 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 throw new WalletException($"Invalid block height {height}. The height must be zero or higher.");
             }
 
+            // Set the syncWalletHeight to the height passed in parameter if one of the conditions is true:
+            // The syncWalletHeight is 0 meaning that the it is the first ever call to current method
+            // The height passed as parameter is equal or lower than current wallet tip
+            if ((this.syncWalletHeight == 0) || (height <= this.walletTip.Height))
+            {
+                // This will update the condition within the async loop below.
+                this.logger.LogTrace("Setting new wallet sync height to {0}; wallet's previous sync height was {1}.", height, this.syncWalletHeight);
+                this.syncWalletHeight = height;
+            }
+            else
+            {
+                this.logger.LogTrace("Ignoring request to sync from block height {0} as the wallet is already syncing from lower block height {1}.", height, this.walletTip.Height);
+                this.logger.LogTrace("(-)[ALREADY_SYNCING_LOWER]");
+                return;
+            }
+
+            // Check if the task is already running and don't start another asyncloop call if we are already running one.
+            if (this.syncFromHeightAsyncLoop != null)
+            {
+                this.logger.LogTrace("(-)[ALREADY_RUNNING]");
+                return;
+            }
+
             // Before we start syncing we need to make sure that the chain is at a certain level.
             // If the chain is behind the height from which we want to sync, we wait for it to catch up, and then we start syncing.
             // If the chain is already past the height we want to sync from, we don't wait, even though the chain might  not be fully downloaded.
-            if (this.chain.Tip.Height < height)
+            if (this.chain.Tip.Height < this.syncWalletHeight)
             {
-                this.logger.LogTrace("The chain tip's height ({0}) is lower than the tip height from which we want to sync ({1}). Waiting for the chain to catch up.", this.chain.Tip.Height, height);
+                this.logger.LogTrace("The chain tip's height ({0}) is lower than the tip height from which we want to sync ({1}). Waiting for the chain to catch up.", this.chain.Tip.Height, this.syncWalletHeight);
 
-                this.asyncLoop = this.asyncLoopFactory.RunUntil("LightWalletSyncManager.SyncFromHeight", this.nodeLifetime.ApplicationStopping,
-                    () => this.chain.Tip.Height >= height,
+                this.syncFromHeightAsyncLoop = this.asyncLoopFactory.RunUntil("LightWalletSyncManager.SyncFromHeight", this.nodeLifetime.ApplicationStopping,
+                    () => this.chain.Tip.Height >= this.syncWalletHeight,
                     () =>
                     {
-                        this.logger.LogTrace("Start syncing from height {0}.", height);
-                        this.StartSync(height);
+                        this.logger.LogTrace("Start syncing from height {0}.", this.syncWalletHeight);
+                        this.StartSync(this.syncWalletHeight);
+
+                        // Set the asyncloop to null so that it can be used again.
+                        this.syncFromHeightAsyncLoop = null;
                     },
                     (ex) =>
                     {
-                        // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and
-                        // sync from the current height.
-                        this.logger.LogError($"Exception occurred while waiting for chain to download: {ex.Message}");
+                        // In case of an exception while waiting for the chain to be at a certain height, we just cut our losses and sync from the current height.
+                        this.logger.LogError("Exception occurred while waiting for chain to download: {0}.", ex.Message);
                         this.StartSync(this.chain.Tip.Height);
+
+                        // Set the asyncloop to null so that it can be used again.
+                        this.syncFromHeightAsyncLoop = null;
                     },
                     TimeSpans.FiveSeconds);
             }
             else
             {
-                this.logger.LogTrace("Start syncing from height {0}.", height);
-                this.StartSync(height);
+                this.logger.LogTrace("Start syncing from height {0}.", this.syncWalletHeight);
+                this.StartSync(this.syncWalletHeight);
             }
 
             this.logger.LogTrace("(-)");
