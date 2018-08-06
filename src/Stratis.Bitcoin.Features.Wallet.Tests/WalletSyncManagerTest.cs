@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -18,10 +21,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
     public class WalletSyncManagerTest : LogsTestBase
     {
         private ConcurrentChain chain;
-        private readonly Mock<IWalletManager> walletManager;
-        private readonly Mock<IBlockStoreCache> blockStoreCache;
-        private readonly Mock<INodeLifetime> nodeLifetime;
-        private readonly StoreSettings storeSettings;
+        private Mock<IWalletManager> walletManager;
+        private Mock<IBlockStoreCache> blockStoreCache;
+        private Mock<INodeLifetime> nodeLifetime;
+        private StoreSettings storeSettings;
+        private Mock<IAsyncLoopFactory> asyncLoopFactory;
 
         public WalletSyncManagerTest()
         {
@@ -30,6 +34,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.walletManager = new Mock<IWalletManager>();
             this.blockStoreCache = new Mock<IBlockStoreCache>();
             this.nodeLifetime = new Mock<INodeLifetime>();
+            this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
         }
 
         [Fact]
@@ -38,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.storeSettings.Prune = true;
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
 
             Assert.Throws<WalletException>(() =>
             {
@@ -55,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 .Returns(this.chain.Tip.Header.GetHash());
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
 
             walletSyncManager.Start();
 
@@ -77,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 .Returns(new Collection<uint256> { forkBlockHash });
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
 
             walletSyncManager.Start();
 
@@ -95,18 +100,30 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void ProcessBlock_NewBlock_PreviousHashSameAsWalletTip_PassesBlockToManagerWithoutReorg()
         {
             (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, KnownNetworks.StratisMain);
+
             this.chain = result.Chain;
+
             List<Block> blocks = result.Blocks;
+
             var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, new AsyncLoopFactory(this.LoggerFactory.Object));
+
             walletSyncManager.SetWalletTip(this.chain.GetBlock(3));
+
+            this.walletManager.Setup(w => w.WalletTipHash).Returns(walletSyncManager.WalletTip.HashBlock);
 
             Block blockToProcess = blocks[3];
             walletSyncManager.ProcessBlock(blockToProcess); //4th block in the list has same prevhash as which is loaded
 
+            // Start() will execute private methods asyncLoopFactory will run() ProcessBlockLoopAsync(), so need to wait some time.
+            walletSyncManager.Start();
+
             uint256 expectedBlockHash = this.chain.GetBlock(4).Header.GetHash();
-            Assert.Equal(expectedBlockHash, walletSyncManager.WalletTip.Header.GetHash());
-            this.walletManager.Verify(w => w.ProcessBlock(It.Is<Block>(b => b.GetHash() == blockToProcess.GetHash()), It.Is<ChainedHeader>(c => c.Header.GetHash() == expectedBlockHash)));
+            WaitLoop(() => expectedBlockHash == walletSyncManager.WalletTip.Header.GetHash(), $"Expected block {expectedBlockHash} does not match tip {walletSyncManager.WalletTip.Header.GetHash()}.");
+
+            walletSyncManager.Stop();
+
+            this.walletManager.Verify(w => w.ProcessBlock(blockToProcess, this.chain.GetBlock(4)));
         }
 
         /// <summary>
@@ -119,12 +136,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void ProcessBlock_NewBlock_BlockNotOnBestChain_ReOrgWalletManagerUsingBlockStoreCache()
         {
             (ConcurrentChain LeftChain, ConcurrentChain RightChain, List<Block> LeftForkBlocks, List<Block> RightForkBlocks) result = WalletTestsHelpers.GenerateForkedChainAndBlocksWithHeight(5, KnownNetworks.StratisMain, 2);
+            
             // left side chain containing the 'old' fork.
             ConcurrentChain leftChain = result.LeftChain;
+
             // right side chain containing the 'new' fork. Work on this.
             this.chain = result.RightChain;
+
             var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, new AsyncLoopFactory(this.LoggerFactory.Object));
+
             // setup blockstorecache to return blocks on the chain.
             this.blockStoreCache.Setup(b => b.GetBlockAsync(It.IsAny<uint256>()))
                 .ReturnsAsync((uint256 hashblock) =>
@@ -134,14 +155,24 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             // set 4th block of the old chain as tip. 2 ahead of the fork thus not being on the right chain.
             walletSyncManager.SetWalletTip(leftChain.GetBlock(result.LeftForkBlocks[3].Header.GetHash()));
+            this.walletManager.Setup(w => w.WalletTipHash).Returns(walletSyncManager.WalletTip.HashBlock);
+
+            this.walletManager.Setup(w => w.GetFirstWalletBlockLocator()).Returns(new List<uint256>{ this.chain.GetBlock(2).HashBlock });
+
             //process 5th block from the right side of the fork in the list does not have same prevhash as which is loaded.
             Block blockToProcess = result.RightForkBlocks[4];
             walletSyncManager.ProcessBlock(blockToProcess);
 
+            // Start() will execute private methods asyncLoopFactory will run() ProcessBlockLoopAsync(), so need to wait some time.
+            walletSyncManager.Start();
+
+            uint256 expectedBlockHash = this.chain.GetBlock(5).Header.GetHash();
+            WaitLoop(() => expectedBlockHash == walletSyncManager.WalletTip.Header.GetHash(), $"Expected block {expectedBlockHash} does not match tip {walletSyncManager.WalletTip.Header.GetHash()}.");
+
+            walletSyncManager.Stop();
+
             // walletmanager removes all blocks up to the fork.
             this.walletManager.Verify(w => w.RemoveBlocks(ExpectChainedBlock(this.chain.GetBlock(2))));
-            uint256 expectedBlockHash = this.chain.GetBlock(5).Header.GetHash();
-            Assert.Equal(expectedBlockHash, walletSyncManager.WalletTip.Header.GetHash());
 
             //verify manager processes each missing block until caught up.
             // height 3
@@ -149,7 +180,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             // height 4
             this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(result.RightForkBlocks[3]), ExpectChainedBlock(this.chain.GetBlock(4))));
             // height 5
-            this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(result.RightForkBlocks[4]), ExpectChainedBlock(this.chain.GetBlock(5))), Times.Exactly(2));
+            this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(result.RightForkBlocks[4]), ExpectChainedBlock(this.chain.GetBlock(5))), Times.Exactly(1));
         }
 
         /// <summary>
@@ -161,10 +192,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void ProcessBlock_NewBlock__BlockOnBestChain_ReOrgWalletManagerUsingBlockStoreCache()
         {
             (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, KnownNetworks.StratisMain);
+
             this.chain = result.Chain;
+
             List<Block> blocks = result.Blocks;
+
             var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, new AsyncLoopFactory(this.LoggerFactory.Object));
+
             // setup blockstorecache to return blocks on the chain.
             this.blockStoreCache.Setup(b => b.GetBlockAsync(It.IsAny<uint256>()))
                 .ReturnsAsync((uint256 hashblock) =>
@@ -174,12 +209,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             // set 2nd block as tip
             walletSyncManager.SetWalletTip(this.chain.GetBlock(2));
+            this.walletManager.Setup(w => w.WalletTipHash).Returns(walletSyncManager.WalletTip.HashBlock);
+
             //process 4th block in the list does not have same prevhash as which is loaded
-            Block blockToProcess = blocks[3];
-            walletSyncManager.ProcessBlock(blockToProcess);
+            walletSyncManager.ProcessBlock(blocks[3]);
+
+            // Start() will execute private methods asyncLoopFactory will run() ProcessBlockLoopAsync(), so need to wait some time.
+            walletSyncManager.Start();
 
             uint256 expectedBlockHash = this.chain.GetBlock(4).Header.GetHash();
-            Assert.Equal(expectedBlockHash, walletSyncManager.WalletTip.Header.GetHash());
+            WaitLoop(() => expectedBlockHash == walletSyncManager.WalletTip.Header.GetHash(), $"Expected block {expectedBlockHash} does not match tip {walletSyncManager.WalletTip.Header.GetHash()}.");
+
+            walletSyncManager.Stop();
+
             //verify manager processes each missing block until caught up.
             // height 3
             this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(blocks[2]), ExpectChainedBlock(this.chain.GetBlock(3))));
@@ -195,11 +237,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void ProcessBlock_NewBlock_BlockArrivesLateInBlockStoreCache_ReOrgWalletManagerUsingBlockStoreCache()
         {
             (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(5, KnownNetworks.StratisMain);
+
             this.chain = result.Chain;
+
             List<Block> blocks = result.Blocks;
+
             var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, new AsyncLoopFactory(this.LoggerFactory.Object));
+
             var blockEmptyCounters = new Dictionary<uint256, int>();
+
             // setup blockstorecache to return blocks on the chain but postpone by 3 rounds for each block.
             this.blockStoreCache.Setup(b => b.GetBlockAsync(It.IsAny<uint256>()))
                 .ReturnsAsync((uint256 hashblock) =>
@@ -222,12 +269,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             // set 2nd block as tip
             walletSyncManager.SetWalletTip(this.chain.GetBlock(2));
-            //process 4th block in the list  does not have same prevhash as which is loaded
-            Block blockToProcess = blocks[3];
-            walletSyncManager.ProcessBlock(blockToProcess);
+            
+            this.walletManager.Setup(w => w.WalletTipHash).Returns(walletSyncManager.WalletTip.HashBlock);
 
-            uint256 expectedBlockHash = this.chain.GetBlock(4).Header.GetHash();
-            Assert.Equal(expectedBlockHash, walletSyncManager.WalletTip.Header.GetHash());
+            //process 4th block in the list does not have same previous hash as which is loaded
+            walletSyncManager.ProcessBlock(blocks[3]);
+            
+            // Start() will execute private methods asyncLoopFactory will run() ProcessBlockLoopAsync(), so need to wait some time.
+            walletSyncManager.Start();
+
+            uint256 expectedBlockHash = this.chain.GetBlock(5).Header.GetHash();
+            WaitLoop(() => expectedBlockHash == walletSyncManager.WalletTip.Header.GetHash(), $"Expected block {expectedBlockHash} does not match tip {walletSyncManager.WalletTip.Header.GetHash()}.");
+
+            walletSyncManager.Stop();
+
             //verify manager processes each missing block until caught up.
             // height 3
             this.walletManager.Verify(w => w.ProcessBlock(ExpectBlock(blocks[2]), ExpectChainedBlock(this.chain.GetBlock(3))));
@@ -239,7 +294,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void ProcessTransaction_CallsWalletManager()
         {
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-               this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+               this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
 
             var transaction = new Transaction
             {
@@ -260,7 +315,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, KnownNetworks.StratisMain);
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
 
             walletSyncManager.SyncFromDate(this.chain.GetBlock(3).Header.BlockTime.DateTime.AddDays(2));
 
@@ -278,7 +333,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, KnownNetworks.StratisMain);
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
 
             walletSyncManager.SyncFromDate(new System.DateTime(1900, 1, 1)); // date before any block.
 
@@ -296,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.chain = new ConcurrentChain(KnownNetworks.StratisMain);
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
 
             walletSyncManager.SyncFromDate(new System.DateTime(1900, 1, 1)); // date before any block.
 
@@ -311,7 +366,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, KnownNetworks.StratisMain);
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
 
             walletSyncManager.SyncFromHeight(2);
 
@@ -326,12 +381,40 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(1, KnownNetworks.StratisMain);
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
-             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object);
+             this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
 
             Assert.Throws<WalletException>(() =>
             {
                 walletSyncManager.SyncFromHeight(2);
             });
+        }
+
+        [Fact]
+        public void ProcessBlock_Sync_Queued_Blocks_Are_Processed_By_WalletManager()
+        {
+            const int blockCount = 5;
+            (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(blockCount, KnownNetworks.StratisMain);
+
+            this.chain = result.Chain;
+
+            var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
+                this.blockStoreCache.Object, this.storeSettings, this.nodeLifetime.Object, new AsyncLoopFactory(this.LoggerFactory.Object));
+
+            walletSyncManager.SetWalletTip(this.chain.GetBlock(0));
+            this.walletManager.Setup(w => w.WalletTipHash).Returns(walletSyncManager.WalletTip.HashBlock);
+            
+            foreach (Block block in result.Blocks)
+                walletSyncManager.ProcessBlock(block);
+
+            walletSyncManager.Start();
+
+            uint256 expectedBlockHash = this.chain.GetBlock(5).Header.GetHash();
+
+            WaitLoop(() => expectedBlockHash == walletSyncManager.WalletTip.Header.GetHash(), $"Expected block {expectedBlockHash} does not match tip {walletSyncManager.WalletTip.Header.GetHash()}.");
+
+            walletSyncManager.Stop();
+
+            this.walletManager.Verify(w => w.ProcessBlock(It.IsAny<Block>(), It.IsAny<ChainedHeader>()), Times.Exactly(blockCount));
         }
 
         private static ChainedHeader ExpectChainedBlock(ChainedHeader block)
@@ -347,14 +430,31 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         private class WalletSyncManagerOverride : WalletSyncManager
         {
             public WalletSyncManagerOverride(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
-                Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
-                : base(loggerFactory, walletManager, chain, network, blockStoreCache, storeSettings, nodeLifetime)
+                Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
+                : base(loggerFactory, walletManager, chain, network, blockStoreCache, storeSettings, nodeLifetime, asyncLoopFactory)
             {
             }
 
             public void SetWalletTip(ChainedHeader tip)
             {
                 this.walletTip = tip;
+            }
+        }
+
+        private static void WaitLoop(Func<bool> act, string failureReason, int millisecondsTimeout = 50)
+        {
+            var cancel = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000);
+            while (!act())
+            {
+                try
+                {
+                    cancel.Token.ThrowIfCancellationRequested();
+                    Thread.Sleep(millisecondsTimeout);
+                }
+                catch (OperationCanceledException e)
+                {
+                    Assert.False(true, $"{failureReason}{Environment.NewLine}{e.Message}");
+                }
             }
         }
     }
