@@ -212,7 +212,49 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public Task<ChainedHeaderBlock> BlockMined(Block block)
         {
-            throw new NotImplementedException();
+            this.logger.LogTrace("({0}:{1})", nameof(block), block.GetHash());
+
+            PartialValidationResult partialValidationResult = null;
+
+            lock (this.reorgLock)
+            {
+                ChainedHeader chainedHeader = null;
+
+                lock (this.peerLock)
+                {
+                    if (block.Header.HashPrevBlock != this.Tip.HashBlock)
+                        return Task.FromResult(partialValidationResult.ChainedHeaderBlock);
+
+                    chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
+                }
+
+                partialValidationResult = this.partialValidator.ValidateSynchronously(block, chainedHeader);
+                if (partialValidationResult.Succeeded)
+                {
+                    bool fullValidationRequired;
+
+                    lock (this.peerLock)
+                    {
+                        this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out fullValidationRequired);
+                    }
+
+                    if (fullValidationRequired)
+                        this.FullyValidateLockedAsync(partialValidationResult.ChainedHeaderBlock).GetAwaiter().GetResult();
+                }
+                else
+                {
+                    lock (this.peerLock)
+                    {
+                        this.chainedHeaderTree.PartialOrFullValidationFailed(chainedHeader);
+                    }
+
+                    this.logger.LogError("Miner produced an invalid block.");
+                }
+            }
+
+            this.logger.LogTrace("(-)");
+
+            return Task.FromResult(partialValidationResult.ChainedHeaderBlock);
         }
 
         /// <summary>
@@ -261,7 +303,7 @@ namespace Stratis.Bitcoin.Consensus
                 partialValidationRequired = this.chainedHeaderTree.BlockDataDownloaded(chainedHeaderBlock.ChainedHeader, chainedHeaderBlock.Block);
             }
 
-            this.logger.LogTrace("Partial validation is{0} required.", partialValidationRequired ? "" : " NOT");
+            this.logger.LogTrace("Partial validation is{0} required.", partialValidationRequired ? string.Empty : " NOT");
 
             if (partialValidationRequired)
                 this.partialValidator.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);

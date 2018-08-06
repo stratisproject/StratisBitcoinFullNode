@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -271,18 +270,11 @@ namespace Stratis.Bitcoin.Features.Miner
         private bool ValidateAndConnectBlock(MineBlockContext context)
         {
             ChainedHeaderBlock chainedHeaderBlock = this.consensusManager.BlockMined(context.BlockTemplate.Block).GetAwaiter().GetResult();
-
             if (chainedHeaderBlock == null)
             {
-                this.logger.LogTrace("(-)[REORG-2]");
+                this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
                 return false;
             }
-
-            //if (context.ValidationContext.Error != null && context.ValidationContext.Error != ConsensusErrors.InvalidPrevTip)
-            //{
-            //    this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
-            //    return false;
-            //}
 
             return true;
         }
