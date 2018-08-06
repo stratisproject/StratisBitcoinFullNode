@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -48,8 +49,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly StakeChainStore stakeChain;
 
-        private readonly IRuleRegistration ruleRegistration;
-
         private readonly ConsensusSettings consensusSettings;
 
         private readonly IConsensusRules consensusRules;
@@ -75,7 +74,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             NodeDeployments nodeDeployments,
             ILoggerFactory loggerFactory,
             ConsensusStats consensusStats,
-            IRuleRegistration ruleRegistration,
             IConsensusRules consensusRules,
             NodeSettings nodeSettings,
             ConsensusSettings consensusSettings,
@@ -93,7 +91,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.consensusStats = consensusStats;
-            this.ruleRegistration = ruleRegistration;
             this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
 
@@ -129,7 +126,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.signals.SubscribeForBlocksConnected(this.consensusStats);
 
-            this.consensusRules.Register(this.ruleRegistration);
+            this.consensusRules.Register();
         }
 
         /// <summary>
@@ -201,7 +198,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<ConsensusSettings>();
                     services.AddSingleton<IConsensusRules, PowConsensusRules>();
-                    services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
+
+                    fullNodeBuilder.Network.Consensus.Rules = new PowConsensusRulesRegistration().GetRules();
                 });
             });
 
@@ -233,7 +231,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<ConsensusSettings>();
                         services.AddSingleton<IConsensusRules, PosConsensusRules>();
-                        services.AddSingleton<IRuleRegistration, PosConsensusRulesRegistration>();
+
+                        fullNodeBuilder.Network.Consensus.Rules = new PosConsensusRulesRegistration().GetRules();
                     });
             });
 
@@ -242,9 +241,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PowConsensusRulesRegistration : IRuleRegistration
         {
-            public IEnumerable<ConsensusRule> GetRules()
+            public ICollection<IConsensusRule> GetRules()
             {
-                return new List<ConsensusRule>
+                return new List<IConsensusRule>
                 {
                     new TemporarySetChainHeader(),
 
@@ -289,9 +288,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PosConsensusRulesRegistration : IRuleRegistration
         {
-            public IEnumerable<ConsensusRule> GetRules()
+            public ICollection<IConsensusRule> GetRules()
             {
-                return new List<ConsensusRule>
+                return new List<IConsensusRule>
                 {
                     new TemporarySetChainHeader(),
 

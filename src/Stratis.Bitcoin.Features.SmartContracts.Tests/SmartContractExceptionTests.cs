@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly ILoggerFactory loggerFactory;
         private SmartContractValidator validator;
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
-
+        
         public SmartContractExceptionTests()
         {
             this.repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));

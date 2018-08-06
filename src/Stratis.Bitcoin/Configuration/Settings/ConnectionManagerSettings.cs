@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly, this.logger);
             this.IpRangeFiltering = config.GetOrDefault<bool>("IpRangeFiltering", true, this.logger);
 
-            var agentPrefix = config.GetOrDefault("agentprefix", string.Empty, this.logger).Replace("-", "");
+            var agentPrefix = config.GetOrDefault("agentprefix", string.Empty, this.logger).Replace("-", string.Empty);
             if (agentPrefix.Length > MaximumAgentPrefixLength)
                 agentPrefix = agentPrefix.Substring(0, MaximumAgentPrefixLength);
 

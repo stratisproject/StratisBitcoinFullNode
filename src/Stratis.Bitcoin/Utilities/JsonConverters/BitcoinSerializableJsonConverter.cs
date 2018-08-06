@@ -27,7 +27,6 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 
             try
             {
-
                 var obj = (IBitcoinSerializable)Activator.CreateInstance(objectType);
                 byte[] bytes = Encoders.Hex.DecodeData((string)reader.Value);
                 obj.ReadWrite(bytes);

@@ -14,7 +14,6 @@ namespace Stratis.SmartContracts.Core.Validation
             ValidationPolicy policy = DeterminismPolicy.Default;
             var validator = new ModulePolicyValidator(policy);
             IEnumerable<ValidationResult> validationResults = validator.Validate(decompilation.ModuleDefinition);
-
             return new SmartContractValidationResult(validationResults);
         }
     }

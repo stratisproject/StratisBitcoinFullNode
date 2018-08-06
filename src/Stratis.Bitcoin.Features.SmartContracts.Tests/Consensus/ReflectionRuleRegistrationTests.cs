@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -36,10 +37,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
                 new Mock<ILookaheadBlockPuller>().Object,
                 new Mock<ICoinView>().Object, receiptStorage.Object);
 
-            var feature = new ReflectionVirtualMachineFeature(consensusRules, loggerFactory);
+            var feature = new ReflectionVirtualMachineFeature(loggerFactory, network);
             feature.Initialize();
 
-            Assert.Single(consensusRules.Rules.Where(r => r.GetType() == typeof(SmartContractFormatRule)));
+            Assert.Single(network.Consensus.Rules.Where(r => r.GetType() == typeof(SmartContractFormatRule)));
         }
     }
 }

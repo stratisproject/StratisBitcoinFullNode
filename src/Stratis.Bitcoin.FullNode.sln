@@ -6,7 +6,10 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{5B331FD3-D493-46A9-928B-B786FC6F3103}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		None.ruleset = None.ruleset
 		Settings.StyleCop = Settings.StyleCop
+		Stratis.ruleset = Stratis.ruleset
+		stylecop.json = stylecop.json
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin", "Stratis.Bitcoin\Stratis.Bitcoin.csproj", "{094AECD5-E0D8-43A9-A0BD-39B01F51A1F2}"

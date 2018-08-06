@@ -10,12 +10,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class GetBlocksPayload : Payload
     {
         private uint version = (uint)ProtocolVersion.PROTOCOL_VERSION;
+
         public ProtocolVersion Version
         {
             get
             {
                 return (ProtocolVersion)this.version;
             }
+
             set
             {
                 this.version = (uint)value;
@@ -23,12 +25,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private BlockLocator blockLocators;
+
         public BlockLocator BlockLocators
         {
             get
             {
                 return this.blockLocators;
             }
+
             set
             {
                 this.blockLocators = value;
@@ -36,6 +40,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         private uint256 hashStop = uint256.Zero;
+
         public uint256 HashStop { get { return this.hashStop; } set { this.hashStop = value; } }
 
         public GetBlocksPayload()

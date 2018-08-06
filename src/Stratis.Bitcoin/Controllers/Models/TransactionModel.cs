@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Controllers.Models
     }
 
     /// <summary>
-    /// Creates a concise transaction model containing the hashed transaction. 
+    /// Creates a concise transaction model containing the hashed transaction.
     /// </summary>
     [JsonConverter(typeof(ToStringJsonConverter))]
     public class TransactionBriefModel : TransactionModel
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Controllers.Models
     }
 
     /// <summary>
-    /// Creates a more robust transaction model. 
+    /// Creates a more robust transaction model.
     /// </summary>
     public class TransactionVerboseModel : TransactionModel
     {
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Controllers.Models
     }
 
     /// <summary>
-    /// A class describing a transaction input. 
+    /// A class describing a transaction input.
     /// </summary>
     public class Vin
     {
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Controllers.Models
         }
 
         /// <summary>
-        /// Initializes a <see cref="Vin"/> instance. 
+        /// Initializes a <see cref="Vin"/> instance.
         /// </summary>
         /// <param name="prevOut">The previous output being used as an input.</param>
         /// <param name="sequence">The transaction's sequence number.</param>
@@ -158,6 +158,7 @@ namespace Stratis.Bitcoin.Controllers.Models
                 this.VOut = prevOut.N;
                 this.ScriptSig = new Script(scriptSig);
             }
+
             this.Sequence = (uint)sequence;
         }
 
@@ -183,7 +184,7 @@ namespace Stratis.Bitcoin.Controllers.Models
     }
 
     /// <summary>
-    /// A class describing a transaction output. 
+    /// A class describing a transaction output.
     /// </summary>
     public class Vout
     {
@@ -192,14 +193,14 @@ namespace Stratis.Bitcoin.Controllers.Models
         }
 
         /// <summary>
-        /// Initializes an instance of the <see cref="Vout"/> class. 
+        /// Initializes an instance of the <see cref="Vout"/> class.
         /// </summary>
-        /// <param name="N">The index of the output.</param>
+        /// <param name="n">The index of the output.</param>
         /// <param name="txout">A <see cref="TxOut"/></param>
         /// <param name="network">The network where the transaction occured.</param>
-        public Vout(int N, TxOut txout, Network network)
+        public Vout(int n, TxOut txout, Network network)
         {
-            this.N = N;
+            this.N = n;
             this.Value = txout.Value.ToDecimal(MoneyUnit.BTC);
             this.ScriptPubKey = new ScriptPubKey(txout.ScriptPubKey, network);
         }
@@ -324,6 +325,7 @@ namespace Stratis.Bitcoin.Controllers.Models
                 case TxOutType.TX_NULL_DATA:
                     return "nulldata";
             }
+
             return "nonstandard";
         }
     }

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 
@@ -67,9 +66,8 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// </summary>
         private readonly List<ConsensusRuleDescriptor> headerValidationRules;
 
-
         /// <inheritdoc />
-        public IEnumerable<ConsensusRule> Rules => this.consensusRules.Values;
+        public List<ConsensusRule> Rules => this.consensusRules.Values.ToList();
 
         /// <summary>
         /// Initializes an instance of the object.
@@ -85,14 +83,15 @@ namespace Stratis.Bitcoin.Consensus.Rules
             Guard.NotNull(checkpoints, nameof(checkpoints));
 
             this.Network = network;
-            this.DateTimeProvider = dateTimeProvider;
+
             this.Chain = chain;
-            this.NodeDeployments = nodeDeployments;
-            this.loggerFactory = loggerFactory;
-            this.ConsensusSettings = consensusSettings;
             this.Checkpoints = checkpoints;
             this.ConsensusParams = this.Network.Consensus;
+            this.ConsensusSettings = consensusSettings;
+            this.DateTimeProvider = dateTimeProvider;
+            this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.NodeDeployments = nodeDeployments;
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
 
             this.consensusRules = new Dictionary<string, ConsensusRule>();
@@ -100,15 +99,14 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.headerValidationRules = new List<ConsensusRuleDescriptor>();
             this.fullValidationRules = new List<ConsensusRuleDescriptor>();
             this.integrityValidationRules = new List<ConsensusRuleDescriptor>();
-
         }
 
         /// <inheritdoc />
-        public ConsensusRules Register(IRuleRegistration ruleRegistration)
+        public ConsensusRules Register()
         {
-            Guard.NotNull(ruleRegistration, nameof(ruleRegistration));
+            Guard.Assert(this.Network.Consensus.Rules.Any());
 
-            foreach (ConsensusRule consensusRule in ruleRegistration.GetRules())
+            foreach (ConsensusRule consensusRule in this.Network.Consensus.Rules)
             {
                 consensusRule.Parent = this;
                 consensusRule.Logger = this.loggerFactory.CreateLogger(consensusRule.GetType().FullName);
@@ -118,7 +116,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
                 List<RuleAttribute> ruleAttributes = Attribute.GetCustomAttributes(consensusRule.GetType()).OfType<RuleAttribute>().ToList();
 
-                if(!ruleAttributes.Any())
+                if (!ruleAttributes.Any())
                     throw new ConsensusException($"The rule {consensusRule.GetType().FullName} must have at least one {nameof(RuleAttribute)}");
 
                 foreach (RuleAttribute ruleAttribute in ruleAttributes)
@@ -144,7 +142,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         {
             // TODO: set a rule that will be invoked when a validation of a block failed.
 
-            // This will allow the creator of the blockchain to provide  
+            // This will allow the creator of the blockchain to provide
             // an error handler rule that is unique to the current blockchain.
             // future sidechains may have additional handling of errors that
             // extend or replace the default current error handling code.

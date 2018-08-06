@@ -110,7 +110,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects access to the <see cref="blockPuller"/>, <see cref="chainedHeaderTree"/>, <see cref="expectedBlockSizes"/> and <see cref="expectedBlockDataBytes"/>.</summary>
         private readonly object peerLock;
 
-        /// <inheritdoc cref="IInitialBlockDownloadState"/>
         private IInitialBlockDownloadState ibdState;
 
         private readonly object blockRequestedLock;
@@ -187,7 +186,7 @@ namespace Stratis.Bitcoin.Consensus
 
             // TODO: consensus store
             // We should consider creating a consensus store class that will internally contain
-            //  coinview and it will abstract the methods `RewindAsync()` `GetBlockHashAsync()`
+            // coinview and it will abstract the methods `RewindAsync()` `GetBlockHashAsync()`
 
             uint256 consensusTipHash = await this.consensusRules.GetBlockHashAsync().ConfigureAwait(false);
 
@@ -935,13 +934,14 @@ namespace Stratis.Bitcoin.Consensus
                         this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
                         return;
                     }
-                    //catch (BlockIntegrityVerificationException)
-                    //{
+
+                    // catch (BlockIntegrityVerificationException)
+                    // {
                     //    // TODO: catch validation exceptions.
                     //    // TODO ban the peer, disconnect, return
                     //    // this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
                     //    return;
-                    //}
+                    // }
                 }
                 else
                 {
