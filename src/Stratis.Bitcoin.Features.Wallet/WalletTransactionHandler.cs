@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly ILogger logger;
 
-        public Network Network { get; }
+        private readonly Network network;
 
         private readonly MemoryCache privateKeyCache;
 
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Network network,
             StandardTransactionPolicy transactionPolicy)
         {
-            this.Network = network;
+            this.network = network;
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Here we try to create a transaction that contains all the spendable coins, leaving no room for the fee.
                 // When the transaction builder throws an exception informing us that we have insufficient funds,
                 // we use the amount we're missing as the fee.
-                var context = new TransactionBuildContext(this.Network, accountReference, recipients, null)
+                var context = new TransactionBuildContext(this.network, accountReference, recipients, null)
                 {
                     FeeType = feeType,
                     MinConfirmations = allowUnconfirmed ? 0 : 1
@@ -376,7 +376,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
             context.TransactionBuilder.Send(opReturnScript, Money.Zero);
         }
-
     }
 
     public class TransactionBuildContext
@@ -384,6 +383,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Initialize a new instance of a <see cref="TransactionBuildContext"/>
         /// </summary>
+        /// <param name="network">The network for which this transaction will be built.</param>
         /// <param name="accountReference">The wallet and account from which to build this transaction</param>
         /// <param name="recipients">The target recipients to send coins to.</param>
         /// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
