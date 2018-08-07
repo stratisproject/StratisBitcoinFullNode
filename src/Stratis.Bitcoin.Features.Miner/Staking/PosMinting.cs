@@ -86,8 +86,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
         /// <summary><c>true</c> if coinstake transaction splits the coin and generates extra UTXO
         /// to prevent halting chain; <c>false</c> to disable coinstake splitting.</summary>
-        /// <remarks>TODO: It should be configurable option, not constant. <see cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/550"/></remarks>
-        public const bool CoinstakeSplitEnabled = true;
+        public readonly bool CoinstakeSplitEnabled;
 
         /// <summary> If <see cref="CoinstakeSplitEnabled"/> is set, the coinstake will be split if
         /// the number of non-empty UTXOs in the wallet is lower than the required coin age for staking plus 1,
@@ -146,13 +145,13 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// to generate a block anyway.
         /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/1180"/>
         /// </summary>
-        public const long MinimumStakingCoinValue = 10 * Money.CENT;
+        public readonly ulong MinimumStakingCoinValue;
 
         /// <summary>When splitting a big utxo, this is the number of smaller utxos we divide it into.</summary>
         internal const int SplitFactor = 8;
 
         /// <summary>Minimum value of a split utxo we are aiming for (after splitting it into <see cref="SplitFactor" /> equal parts).</summary>
-        private const long SplitCoinMinSize = 100 * Money.COIN;
+        private readonly ulong MinimumSplitCoinValue;
 
         /// <summary>
         /// Target reserved balance that will not participate in staking.
@@ -246,7 +245,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             IWalletManager walletManager,
             IAsyncLoopFactory asyncLoopFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            MinerSettings minerSettings)
         {
             this.blockProvider = blockProvider;
             this.consensusLoop = consensusLoop;
@@ -274,6 +274,10 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.currentState = (int)CurrentState.Idle;
 
             this.rpcGetStakingInfoModel = new Models.GetStakingInfoModel();
+
+            this.CoinstakeSplitEnabled = minerSettings.EnableCoinStakeSplitting;
+            this.MinimumStakingCoinValue = minerSettings.MinimumStakingCoinValue;
+            this.MinimumSplitCoinValue = minerSettings.MinimumSplitCoinValue;
         }
 
         /// <inheritdoc/>
@@ -758,7 +762,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             {
                 coinstakeContext.CoinstakeTx.Outputs[1].Value = coinstakeOutputValue;
                 this.logger.LogTrace("Coinstake output value is {0}.", coinstakeContext.CoinstakeTx.Outputs[1].Value);
-                this.logger.LogTrace("(-):{0}", coinstakeContext.CoinstakeTx);
+                this.logger.LogTrace("(-)[NO_SPLIT]:{0}", coinstakeContext.CoinstakeTx);
                 return coinstakeContext.CoinstakeTx;
             }
 
@@ -1141,7 +1145,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <param name="chainHeight">Current height of the chain.</param>
         /// <returns><c>true</c> if the coinstake should be split, <c>false</c> otherwise.</returns>
         /// <remarks>
-        /// We do not split a coin if the value of new coins after the split would be less than <see cref="SplitCoinMinSize" />. Because we split the coin to multiple outputs defined by split factor, we only consider coins with value at least <see cref="SplitCoinMinSize" /> * <see cref="SplitFactor" />.
+        /// We do not split a coin if the value of new coins after the split would be less than <see cref="MinimumSplitCoinValue" />. Because we split the coin to multiple outputs defined by split factor, we only consider coins with value at least <see cref="MinimumSplitCoinValue" /> * <see cref="SplitFactor" />.
         /// <para>
         /// If the above-mentioned criteria is satisfied, then we split the coin if its value is greater than an expected average value of coins that we would have if we have perfect distribution of the value among all our coins while having a specific number of coins that we aim for. The optimal number of coins we are looking for is calculated based on consensus settings of coin maturity and minimum required coin age for staking.
         /// </para>
@@ -1152,7 +1156,13 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         {
             this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5},{6}:{7})", nameof(stakedUtxosCount), stakedUtxosCount, nameof(amountStaked), amountStaked, 
                 nameof(coinValue), coinValue, nameof(chainHeight), chainHeight);
-            
+
+            if (!this.CoinstakeSplitEnabled)
+            {
+                this.logger.LogTrace("(-)[SPLITTING_DISABLED]:{0}", false);
+                return false;
+            }
+
             long coinAgeLimit = ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(chainHeight + 1, this.network);
             long coinMaturityLimit = this.network.Consensus.CoinbaseMaturity;
             long requiredCoinAgeForStaking = Math.Max(coinMaturityLimit, coinAgeLimit);
@@ -1160,7 +1170,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
             long targetCoinDistributionSize = (requiredCoinAgeForStaking + 1) * CoinstakeSplitLimitMultiplier;
 
-            bool coinAboveMinValue = coinValue > SplitFactor * SplitCoinMinSize;
+            bool coinAboveMinValue = coinValue > SplitFactor * (long)this.MinimumSplitCoinValue;
             bool coinAboveTargetAverage = coinValue > (amountStaked / targetCoinDistributionSize) + Money.COIN;
 
             bool shouldSplitCoin = coinAboveMinValue && coinAboveTargetAverage;

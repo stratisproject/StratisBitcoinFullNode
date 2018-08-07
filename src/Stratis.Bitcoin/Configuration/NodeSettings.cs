@@ -360,8 +360,6 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            NodeSettings defaults = Default(network: network);
-
             builder.AppendLine("####Node Settings####");
             builder.AppendLine($"#Test network. Defaults to 0.");
             builder.AppendLine($"testnet={((network.IsTest() && !network.IsRegTest()) ? 1 : 0)}");

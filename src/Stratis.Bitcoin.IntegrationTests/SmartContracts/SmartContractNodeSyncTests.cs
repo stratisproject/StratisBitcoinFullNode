@@ -12,8 +12,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var node1 = builder.CreateSmartContractNode();
-                var node2 = builder.CreateSmartContractNode();
+                var node1 = builder.CreateSmartContractPowNode();
+                var node2 = builder.CreateSmartContractPowNode();
                 builder.StartAll();
                 Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
