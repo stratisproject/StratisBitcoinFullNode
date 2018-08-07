@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Utilities.Extensions
     /// <summary>
     /// Extension methods for command line arguments.
     /// </summary>
-    [DebuggerStepThrough()]
+    [DebuggerStepThrough]
     public static class CommandLineArgsExtensions
     {
         /// <summary>
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         /// <returns>Value of the specified argument or null if no such argument is found among the given list of arguments.</returns>
         public static string GetValueOf(this string[] args, string arg)
         {
-            return args.Where(a => a.StartsWith($"{arg}=")).Select(a => a.Substring($"{arg}=".Length).Replace("\"", "")).FirstOrDefault();
+            return args.Where(a => a.StartsWith($"{arg}=")).Select(a => a.Substring($"{arg}=".Length).Replace("\"", string.Empty)).FirstOrDefault();
         }
     }
 }

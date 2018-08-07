@@ -8,11 +8,11 @@ namespace Stratis.Bitcoin.Utilities
     /// <summary>
     /// Async queue is a thread-safe queue that can operate in callback mode or blocking dequeue mode.
     /// In callback mode it asynchronously executes a user-defined callback when a new item is added to the queue.
-    /// In blocking dequeue mode, <see cref="DequeueAsync(CancellationToken)"/> is used to wait for and dequeue 
+    /// In blocking dequeue mode, <see cref="DequeueAsync(CancellationToken)"/> is used to wait for and dequeue
     /// an item from the queue once it becomes available.
     /// <para>
-    /// In callback mode, the queue guarantees that the user-defined callback is executed only once at the time. 
-    /// If another item is added to the queue, the callback is called again after the current execution 
+    /// In callback mode, the queue guarantees that the user-defined callback is executed only once at the time.
+    /// If another item is added to the queue, the callback is called again after the current execution
     /// is finished.
     /// </para>
     /// </summary>
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// Consumer of the newly added items to the queue that waits for the signal 
+        /// Consumer of the newly added items to the queue that waits for the signal
         /// and then executes the user-defined callback.
         /// <para>
         /// This consumer loop is only used when the queue is operating in the callback mode.
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// Dequeues an item from the queue if there is one. 
+        /// Dequeues an item from the queue if there is one.
         /// If the queue is empty, the method waits until an item is available.
         /// </summary>
         /// <param name="cancellation">Cancellation token that allows aborting the wait if the queue is empty.</param>
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Utilities
                     {
                         await this.signal.WaitAsync(cancellationSource.Token).ConfigureAwait(false);
 
-                        // Note that another thread could consume the message before us, 
+                        // Note that another thread could consume the message before us,
                         // so dequeue safely and loop if nothing is available.
                         if (this.TryDequeue(out item))
                             return item;

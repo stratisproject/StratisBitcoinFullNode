@@ -38,38 +38,38 @@ namespace Stratis.Bitcoin.Connection
         [JsonProperty(PropertyName = "relaytxes")]
         public bool IsRelayTransactions { get; internal set; }
 
-        /// <summary>
-        /// The Unix epoch time of the last send from this node.
+        ///  <summary>
+        ///  The Unix epoch time of the last send from this node.
         /// Currently not populated.
-        /// </summary>
+        ///  </summary>
         [JsonProperty(PropertyName = "lastsend")]
         public int LastSend { get; internal set; }
 
-        /// <summary>
-        /// The Unix epoch time when we last received data from this node.
+        ///  <summary>
+        ///  The Unix epoch time when we last received data from this node.
         /// Currently not populated.
-        /// </summary>
+        ///  </summary>
         [JsonProperty(PropertyName = "lastrecv")]
         public int LastReceive { get; internal set; }
 
-        /// <summary>
-        /// The total number of bytes we’ve sent to this node.
-        /// Currently not populated.
-        /// </summary>
+        ///  <summary>
+        ///  The total number of bytes we’ve sent to this node.
+        ///  Currently not populated.
+        ///  </summary>
         [JsonProperty(PropertyName = "bytessent")]
         public long BytesSent { get; internal set; }
 
-        /// <summary>
-        /// The total number of bytes we’ve received from this node.
-        /// Currently not populated.
-        /// </summary>
+        ///  <summary>
+        ///  The total number of bytes we’ve received from this node.
+        ///  Currently not populated.
+        ///  </summary>
         [JsonProperty(PropertyName = "bytesrecv")]
         public long BytesReceived { get; internal set; }
 
-        /// <summary>
-        /// The connection time in seconds since epoch.
-        /// Currently not populated.
-        /// </summary>
+        ///  <summary>
+        ///  The connection time in seconds since epoch.
+        ///  Currently not populated.
+        ///  </summary>
         [JsonProperty(PropertyName = "conntime")]
         public int ConnectionTime { get; internal set; }
 
@@ -139,10 +139,10 @@ namespace Stratis.Bitcoin.Connection
         [JsonProperty(PropertyName = "banscore")]
         public int BanScore { get; internal set; }
 
-        /// <summary>
-        /// The last header we have in common with this peer.
-        /// Currently not populated.
-        /// </summary>
+        ///  <summary>
+        ///  The last header we have in common with this peer.
+        ///  Currently not populated.
+        ///  </summary>
         [JsonProperty(PropertyName = "synced_headers")]
         public int SynchronizedHeaders { get; internal set; }
 

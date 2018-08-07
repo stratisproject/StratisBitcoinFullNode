@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.P2P
     public interface IPeerSelector
     {
         /// <summary>
-        /// Selects a random peer, via a selection algorithm, from the address 
+        /// Selects a random peer, via a selection algorithm, from the address
         /// manager to connect to.
         /// </summary>
         PeerAddress SelectPeer();
@@ -33,9 +33,9 @@ namespace Stratis.Bitcoin.P2P
         IEnumerable<PeerAddress> SelectPeersForGetAddrPayload(int peerCount);
 
         /// <summary>
-        /// Return peers which have had connection attempts, but none successful. 
+        /// Return peers which have had connection attempts, but none successful.
         /// <para>
-        /// The result filters out peers which satisfies the above condition within the 
+        /// The result filters out peers which satisfies the above condition within the
         /// last 60 seconds and that has had more than 10 failed attempts.
         /// </para>
         /// </summary>
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Return peers which have had successful connection attempts.
         /// <para>
-        /// The result filters out peers which satisfies the above condition within the 
+        /// The result filters out peers which satisfies the above condition within the
         /// last 60 seconds.
         /// </para>
         /// </summary>
@@ -54,14 +54,14 @@ namespace Stratis.Bitcoin.P2P
         IEnumerable<PeerAddress> NotBanned();
 
         /// <summary>
-        /// Return peers which have never had connection attempts. 
+        /// Return peers which have never had connection attempts.
         /// </summary>
         IEnumerable<PeerAddress> Fresh();
 
         /// <summary>
         /// Return peers where a successful connection and handshake was achieved.
         /// <para>
-        /// The result filters out peers which satisfies the above condition within the 
+        /// The result filters out peers which satisfies the above condition within the
         /// last 60 seconds.
         /// </para>
         /// </summary>
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.P2P
         private readonly ILogger logger;
 
         /// <summary>
-        /// The address manager instance that holds the peer list to be queried. 
+        /// The address manager instance that holds the peer list to be queried.
         /// </summary>
         private readonly ConcurrentDictionary<IPEndPoint, PeerAddress> peerAddresses;
 
@@ -210,7 +210,7 @@ namespace Stratis.Bitcoin.P2P
                 this.logger.LogTrace("[RETURN_ATTEMPTED_HC_FAILED]");
                 return attempted;
             }
-            
+
             if (this.HasAllPeersReachedConnectionThreshold())
                 this.ResetConnectionAttemptsOnNotBannedPeers();
 
@@ -275,28 +275,28 @@ namespace Stratis.Bitcoin.P2P
             List<PeerAddress> connectedAndHandshaked = this.Connected().Concat(this.Handshaked()).OrderBy(p => this.random.Next()).ToList();
             List<PeerAddress> freshAndAttempted = this.Attempted().Concat(this.Fresh()).OrderBy(p => this.random.Next()).ToList();
 
-            //If there are connected and/or handshaked peers in the address list,
-            //we need to split the list 50 / 50 between them and
-            //peers we have not yet connected to and/or that are fresh.
+            // If there are connected and/or handshaked peers in the address list,
+            // we need to split the list 50 / 50 between them and
+            // peers we have not yet connected to and/or that are fresh.
             if (connectedAndHandshaked.Any())
             {
-                //50% of the peers to return
+                // 50% of the peers to return
                 int toTake = peerCount / 2;
 
-                //If the amount of connected and/or handshaked peers is less
-                //than 50% of the peers asked for, just take all of them.
+                // If the amount of connected and/or handshaked peers is less
+                // than 50% of the peers asked for, just take all of them.
                 if (connectedAndHandshaked.Count() < toTake)
                     peersToReturn.AddRange(connectedAndHandshaked);
-                //If not take 50% of the amount requested.
+                // If not take 50% of the amount requested.
                 else
                     peersToReturn.AddRange(connectedAndHandshaked.Take(toTake));
 
-                //Fill up the list with the rest.
+                // Fill up the list with the rest.
                 peersToReturn.AddRange(freshAndAttempted.Take(peerCount - peersToReturn.Count()));
             }
 
-            //If there are no connected or handshaked peers in the address list,
-            //just return an amount of peers that has been asked for. 
+            // If there are no connected or handshaked peers in the address list,
+            // just return an amount of peers that has been asked for.
             else
             {
                 peersToReturn.AddRange(freshAndAttempted.Take(peerCount));
@@ -329,9 +329,16 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> FilterBadHandshakedPeers(IEnumerable<PeerAddress> peers)
         {
-            return peers.Where(p => (p.HandshakedAttempts < PeerAddress.AttemptHandshakeThreshold) || 
-                                    p.LastHandshakeAttempt?.AddHours(PeerAddress.AttempThresholdHours) < this.dateTimeProvider.GetUtcNow());
-                                                                                     
+            IEnumerable<PeerAddress> filteredPeers = peers.Where(p => (p.HandshakedAttempts < PeerAddress.AttemptHandshakeThreshold) ||
+                                    p.LastHandshakeAttempt?.AddHours(PeerAddress.AttempThresholdHours) < this.dateTimeProvider.GetUtcNow()).ToList();
+
+            foreach (PeerAddress peer in filteredPeers)
+            {
+                if (peer.HandshakedAttempts == PeerAddress.AttemptHandshakeThreshold)
+                    peer.ResetHandshakeAttempts();
+            }
+
+            return filteredPeers;
         }
 
         public IEnumerable<PeerAddress> NotBanned()
@@ -342,7 +349,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> Connected()
         {
-            return this.peerAddresses.Values.Where(p => p.Connected && 
+            return this.peerAddresses.Values.Where(p => p.Connected &&
                                                         p.LastConnectionSuccess < this.dateTimeProvider.GetUtcNow().AddSeconds(-60) &&
                                                         !this.IsBanned(p));
         }
@@ -356,7 +363,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> Handshaked()
         {
-            return this.peerAddresses.Values.Where(p => p.Handshaked && 
+            return this.peerAddresses.Values.Where(p => p.Handshaked &&
                                                         p.LastConnectionHandshake < this.dateTimeProvider.GetUtcNow().AddSeconds(-60) &&
                                                         !this.IsBanned(p));
         }
