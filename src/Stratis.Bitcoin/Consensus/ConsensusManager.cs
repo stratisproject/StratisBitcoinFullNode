@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             if (triggerDownload && (connectNewHeadersResult.DownloadTo != null))
-                this.DownloadBlocks(connectNewHeadersResult.ToArray(), this.OnBlockDownloaded);
+                this.DownloadBlocks(connectNewHeadersResult.ToArray(), this.ProcessDownloadedBlock);
 
             this.logger.LogTrace("(-):'{0}'", connectNewHeadersResult);
             return connectNewHeadersResult;
@@ -237,7 +237,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// A callback that is triggered when a block that <see cref="ConsensusManager"/> requested was downloaded.
         /// </summary>
-        private void OnBlockDownloaded(ChainedHeaderBlock chainedHeaderBlock)
+        private void ProcessDownloadedBlock(ChainedHeaderBlock chainedHeaderBlock)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
 
@@ -394,7 +394,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             foreach (ConnectNewHeadersResult newHeaders in blocksToDownload)
-                this.DownloadBlocks(newHeaders.ToArray(), this.OnBlockDownloaded);
+                this.DownloadBlocks(newHeaders.ToArray(), this.ProcessDownloadedBlock);
 
             this.logger.LogTrace("(-)");
         }
@@ -955,7 +955,7 @@ namespace Stratis.Bitcoin.Consensus
             if (blocksToDownload.Count != 0)
             {
                 this.logger.LogTrace("Asking block puller for {0} blocks.", blocksToDownload.Count);
-                this.DownloadBlocks(blocksToDownload.ToArray(), this.OnBlockDownloaded);
+                this.DownloadBlocks(blocksToDownload.ToArray(), this.ProcessDownloadedBlock);
             }
 
             this.logger.LogTrace("(-)");

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.P2P.Peer;
@@ -56,7 +55,7 @@ namespace Stratis.Bitcoin.Consensus
     }
 
     /// <summary>
-    /// A delegate that is used to send callbacks when a bock is downloaded from the of queued requests to downloading blocks.
+    /// A delegate that is used to send callbacks when a block is downloaded from the of queued requests to downloading blocks.
     /// </summary>
     /// <param name="chainedHeaderBlock">The pair of the block and its chained header.</param>
     public delegate void OnBlockDownloadedCallback(ChainedHeaderBlock chainedHeaderBlock);
