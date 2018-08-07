@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public CancellationToken ConnectCancellation { get; set; }
 
-        public NetworkPeerBehaviorsCollection TemplateBehaviors { get; } = new NetworkPeerBehaviorsCollection(null);
+        public List<INetworkPeerBehavior> TemplateBehaviors { get; } = new List<INetworkPeerBehavior>();
 
         public NetworkPeerConnectionParameters()
         {
