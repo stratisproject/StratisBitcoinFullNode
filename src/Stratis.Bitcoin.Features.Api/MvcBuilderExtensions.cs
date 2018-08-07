@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Api
                 builder.AddApplicationPart(featureControllerType.ServiceType.GetTypeInfo().Assembly);
             }
 
-            builder.AddApplicationPart(typeof(NodeController).Assembly);
+            builder.AddApplicationPart(typeof(Controllers.NodeController).Assembly);
             builder.AddControllersAsServices();
             return builder;
         }

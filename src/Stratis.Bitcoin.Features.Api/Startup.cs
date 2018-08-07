@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
-using NBitcoin;
 using Swashbuckle.AspNetCore.Swagger;
 
 namespace Stratis.Bitcoin.Features.Api
@@ -84,16 +83,6 @@ namespace Stratis.Bitcoin.Features.Api
                 if (File.Exists(walletXmlPath))
                 {
                     setup.IncludeXmlComments(walletXmlPath);
-                }
-
-                Network network = services.BuildServiceProvider().GetService<Network>();
-                if (network.Consensus.IsProofOfStake)
-                {
-                    setup.DocumentFilter<HideWhenProofOfStake>();
-                }
-                else
-                {
-                    setup.DocumentFilter<HideWhenProofOfWork>();
                 }
 
                 setup.DescribeAllEnumsAsStrings();

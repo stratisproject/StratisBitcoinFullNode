@@ -5,7 +5,6 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet;
@@ -18,7 +17,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     /// <summary>
     /// API controller for calls related to PoW mining and PoS minting.
     /// </summary>
-    [ProofOfWork]
     [Route("api/[controller]")]
     public class MiningController : Controller
     {
