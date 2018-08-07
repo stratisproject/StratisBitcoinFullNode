@@ -86,7 +86,6 @@ namespace Stratis.Bitcoin.Features.Api
                 }
 
                 setup.DescribeAllEnumsAsStrings();
-
             });
         }
 
