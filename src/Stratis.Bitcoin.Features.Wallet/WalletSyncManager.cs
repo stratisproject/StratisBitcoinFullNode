@@ -282,7 +282,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     {
                         token.ThrowIfCancellationRequested();
 
-                        next = tip.GetAncestor(next.Height + 1);
+                        // keep a note of the next ChainHeader.
+                        // This could change if a Wallet sync is carried out
+                        next = tip.GetAncestor(this.walletTip.Height + 1);
 
                         while (true)
                         {
