@@ -1,20 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using FluentAssertions;
 using Moq;
 using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Primitives;
-using Stratis.Bitcoin.Tests.Common;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -37,225 +28,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public int Height { get; }
 
             public BlockHeader Header { get; }
-        }
-
-        public class TestContextBuilder
-        {
-            private readonly TestContext testContext;
-            private bool blockstoreAvailable = true;
-
-            public TestContextBuilder()
-            {
-                this.testContext = new TestContext();
-            }
-
-            internal TestContextBuilder WithInitialChain(int initialChainSize, bool assignBlocks = true)
-            {
-                if (initialChainSize < 0)
-                    throw new ArgumentOutOfRangeException(nameof(initialChainSize), "Size cannot be less than 0.");
-
-                this.testContext.InitialChainTip = this.testContext.ExtendAChain(initialChainSize, assignBlocks: assignBlocks);
-                return this;
-            }
-
-            internal TestContextBuilder UseCheckpoints(bool useCheckpoints = true)
-            {
-                this.testContext.ConsensusSettings.UseCheckpoints = useCheckpoints;
-                return this;
-            }
-
-            internal TestContextBuilder WithBlockStoreDisabled()
-            {
-                this.blockstoreAvailable = false;
-                return this;
-            }
-
-            internal TestContext Build()
-            {
-                if (this.testContext.InitialChainTip != null)
-                    this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip, this.blockstoreAvailable);
-
-                return this.testContext;
-            }
-        }
-
-        public class TestContext
-        {
-            public Network Network = KnownNetworks.RegTest;
-            public Mock<IHeaderValidator> HeaderValidatorMock = new Mock<IHeaderValidator>();
-            public Mock<IIntegrityValidator> IntegrityValidatorMock = new Mock<IIntegrityValidator>();
-            public Mock<ICheckpoints> CheckpointsMock = new Mock<ICheckpoints>();
-            public Mock<IChainState> ChainStateMock = new Mock<IChainState>();
-            public Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
-            public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(KnownNetworks.RegTest));
-            public Mock<ISignals> Signals = new Mock<ISignals>();
-
-            private static int nonceValue;
-
-            internal ChainedHeaderTree ChainedHeaderTree;
-
-            internal ChainedHeader InitialChainTip;
-
-            public TestContext()
-            {
-                this.ChainedHeaderTree = new ChainedHeaderTree(
-                    this.Network,
-                    new ExtendedLoggerFactory(),
-                    this.HeaderValidatorMock.Object,
-                    this.IntegrityValidatorMock.Object,
-                    this.CheckpointsMock.Object,
-                    this.ChainStateMock.Object,
-                    this.FinalizedBlockMock.Object,
-                    this.ConsensusSettings,
-                    this.Signals.Object);
-            }
-
-            internal Target ChangeDifficulty(ChainedHeader header, int difficultyAdjustmentDivisor)
-            {
-                BigInteger newTarget = header.Header.Bits.ToBigInteger();
-                newTarget = newTarget.Divide(BigInteger.ValueOf(difficultyAdjustmentDivisor));
-                return new Target(newTarget);
-            }
-
-            public void SetupCheckpoints(params CheckpointFixture[] checkpoints)
-            {
-                if (checkpoints.GroupBy(h => h.Height).Any(g => g.Count() > 1))
-                    throw new ArgumentException("Checkpoint heights must be unique.");
-
-                if (checkpoints.Any(h => h.Height < 0))
-                    throw new ArgumentException("Checkpoint heights cannot be negative.");
-
-                foreach (CheckpointFixture checkpoint in checkpoints.OrderBy(h => h.Height))
-                {
-                    var checkpointInfo = new CheckpointInfo(checkpoint.Header.GetHash());
-                    this.CheckpointsMock
-                        .Setup(c => c.GetCheckpoint(checkpoint.Height))
-                        .Returns(checkpointInfo);
-                }
-
-                this.CheckpointsMock
-                    .Setup(c => c.GetCheckpoint(It.IsNotIn(checkpoints.Select(h => h.Height))))
-                    .Returns((CheckpointInfo)null);
-                this.CheckpointsMock
-                    .Setup(c => c.GetLastCheckpointHeight())
-                    .Returns(checkpoints.OrderBy(h => h.Height).Last().Height);
-            }
-
-            public ChainedHeader ExtendAChain(
-                int count,
-                ChainedHeader chainedHeader = null,
-                int difficultyAdjustmentDivisor = 1,
-                bool assignBlocks = true,
-                ValidationState? validationState = null)
-            {
-                if (difficultyAdjustmentDivisor == 0) throw new ArgumentException("Divisor cannot be 0");
-
-                ChainedHeader previousHeader = chainedHeader ?? new ChainedHeader(this.Network.GetGenesis().Header, this.Network.GenesisHash, 0);
-
-                for (int i = 0; i < count; i++)
-                {
-                    BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
-                    header.HashPrevBlock = previousHeader.HashBlock;
-                    header.Bits = difficultyAdjustmentDivisor == 1
-                                        ? previousHeader.Header.Bits
-                                        : this.ChangeDifficulty(previousHeader, difficultyAdjustmentDivisor);
-                    header.Nonce = (uint)Interlocked.Increment(ref nonceValue);
-                    var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
-                    if (validationState.HasValue)
-                        newHeader.BlockValidationState = validationState.Value;
-
-                    if (assignBlocks)
-                    {
-                        Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
-                        block.GetSerializedSize();
-                        newHeader.Block = block;
-                    }
-
-                    previousHeader = newHeader;
-                }
-
-                return previousHeader;
-            }
-
-            public Block CreateBlock()
-            {
-                Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
-                block.GetSerializedSize();
-                return block;
-            }
-
-            public List<BlockHeader> ChainedHeaderToList(ChainedHeader chainedHeader, int count)
-            {
-                var list = new List<BlockHeader>();
-
-                ChainedHeader current = chainedHeader;
-
-                for (int i = 0; i < count; i++)
-                {
-                    list.Add(current.Header);
-                    current = current.Previous;
-                }
-
-                list.Reverse();
-
-                return list;
-            }
-
-            public bool NoDownloadRequested(ConnectNewHeadersResult connectNewHeadersResult)
-            {
-                Assert.NotNull(connectNewHeadersResult);
-
-                return (connectNewHeadersResult.DownloadTo == null)
-                       && (connectNewHeadersResult.DownloadFrom == null);
-            }
-
-            /// <summary>
-            /// Initial setup for tests 18-20, 28.
-            /// Chain header tree setup. Initial chain has 4 headers.
-            /// SetUp:
-            ///                        =8d=9d=10d
-            ///                   6a=7a=8a=9a
-            /// GENESIS=1=2=3=4=5=
-            ///                   6b=7b=8b=9b
-            ///             3c=4c=5c
-            /// </summary>
-            /// <param name="cht">ChainHeaderTree.</param>
-            /// <param name="initialChainTip">Initial chain tip.</param>
-            internal void SetupPeersForTest(ChainedHeaderTree cht, ChainedHeader initialChainTip)
-            {
-                int peerAExtension = 4;
-                int peerBExtension = 4;
-                int peerCExtension = 3;
-                int peerDExtension = 3;
-
-                ChainedHeader chainATip = this.ExtendAChain(peerAExtension, initialChainTip); // i.e. (h1=h2=h3=h4=h5)=6a=7a=8a=9a
-                ChainedHeader chainBTip = this.ExtendAChain(peerBExtension, initialChainTip); // i.e. (h1=h2=h3=h4=h5)=6b=7b=8b=9b
-                ChainedHeader chainCTip = this.ExtendAChain(peerCExtension, initialChainTip.GetAncestor(2)); // i.e. (h1=h2)=3c=4c=5c
-                ChainedHeader chainDTip = this.ExtendAChain(peerDExtension, chainATip.GetAncestor(7)); // i.e. ((h1=h2=h3=h4=h5)=6a=7a)=8d=9d=10d
-
-                List<BlockHeader> peerABlockHeaders = this.ChainedHeaderToList(chainATip, chainATip.Height);
-                List<BlockHeader> peerBBlockHeaders = this.ChainedHeaderToList(chainBTip, chainBTip.Height);
-                List<BlockHeader> peerCBlockHeaders = this.ChainedHeaderToList(chainCTip, chainCTip.Height);
-                List<BlockHeader> peerDBlockHeaders = this.ChainedHeaderToList(chainDTip, chainDTip.Height);
-
-                cht.ConnectNewHeaders(0, peerABlockHeaders);
-                cht.ConnectNewHeaders(1, peerBBlockHeaders);
-                cht.ConnectNewHeaders(2, peerCBlockHeaders);
-                cht.ConnectNewHeaders(3, peerDBlockHeaders);
-            }
-
-            internal void SwitchToChain(ChainedHeaderTree cht, ChainedHeader chainTip, ChainedHeader consumedHeader, int extensionSize)
-            {
-                ChainedHeader[] consumedHeaders = consumedHeader.ToArray(extensionSize);
-
-                for (int i = 0; i < extensionSize; i++)
-                {
-                    ChainedHeader currentConsumedCh = consumedHeaders[i];
-                    cht.BlockDataDownloaded(currentConsumedCh, chainTip.GetAncestor(currentConsumedCh.Height).Block);
-                    cht.PartialValidationSucceeded(currentConsumedCh, out bool fullValidationRequired);
-                    cht.ConsensusTipChanged(currentConsumedCh);
-                }
-            }
         }
 
         public class InvalidHeaderTestException : ConsensusException
@@ -425,7 +197,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.ExtendAChain(7);
             chainedHeaderTree.Initialize(chainTip, true);
-            testContext.ChainStateMock.Setup(s => s.ConsensusTip).Returns(chainTip);
+            testContext.ChainState.Setup(s => s.ConsensusTip).Returns(chainTip);
 
             // Peer 1: 1a - 2a - 3a - 4a - 5a - 6a - 7a - 8a
             Assert.True(chainedHeaderTree.GetChainedHeadersByHash().Count == 8);
@@ -539,7 +311,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> listContainingInvalidHeader = testContext.ChainedHeaderToList(invalidChainedHeader, 1);
             BlockHeader invalidBlockHeader = listContainingInvalidHeader[0];
 
-            testContext.HeaderValidatorMock.Setup(x => x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
+            testContext.HeaderValidator.Setup(x => x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
 
             Assert.Throws<InvalidHeaderTestException>(() => chainedHeaderTree.ConnectNewHeaders(1, listContainingInvalidHeader));
 
@@ -594,7 +366,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             int depthOfInvalidHeader = 3;
             BlockHeader invalidBlockHeader = listOfPeerOnesHeaders[depthOfInvalidHeader];
-            testContext.HeaderValidatorMock.Setup(x =>
+            testContext.HeaderValidator.Setup(x =>
                 x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
 
             Assert.Throws<InvalidHeaderTestException>(() => chainedHeaderTree.ConnectNewHeaders(1, listOfPeerOnesHeaders));
@@ -1442,7 +1214,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Extend the chain (chain A) with max reorg headers (500) + 50 extra.
             // Example: h1=h2=h3=h4=(h5)=a6=...=a555.
             const int maxReorg = 500;
-            ctx.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
+            ctx.ChainState.Setup(x => x.MaxReorgLength).Returns(maxReorg);
             ChainedHeader chainATip = ctx.ExtendAChain(maxReorg + 50, initialChainTip);
 
             // Chain A is presented by peer 1.
@@ -1459,7 +1231,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                 cht.BlockDataDownloaded(currentChainTip, block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
-                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
+                ctx.FinalizedBlockHeight.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
                 peerIds.Should().BeEmpty();
             }
@@ -1481,7 +1253,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                 cht.BlockDataDownloaded(currentChainTip, block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
-                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
+                ctx.FinalizedBlockHeight.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
                 if (currentChainTip.Height > maxReorg + initialChainSize)
                 {
@@ -2002,10 +1774,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Setup max reorg of 10.
             const int maxReorg = 10;
-            ctx.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
+            ctx.ChainState.Setup(x => x.MaxReorgLength).Returns(maxReorg);
 
             // Setup finalized block height to 10.
-            ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(10);
+            ctx.FinalizedBlockHeight.Setup(m => m.GetFinalizedBlockHeight()).Returns(10);
 
             // Extend a chain by 50 headers.
             // Example: h1=h2=...=h50.
@@ -2274,7 +2046,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Setup max reorg to 100.
             const int maxReorg = 100;
-            ctx.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
+            ctx.ChainState.Setup(x => x.MaxReorgLength).Returns(maxReorg);
 
             // Extend the chain with (checkpoint + MaxReorg + 10) headers, i.e. 115 headers.
             const int extensionSize = 10;
@@ -2295,7 +2067,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                 cht.BlockDataDownloaded(currentChainTip, block);
                 cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
-                ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
+                ctx.FinalizedBlockHeight.Setup(m => m.GetFinalizedBlockHeight()).Returns(currentChainTip.Height - maxReorg);
                 cht.ConsensusTipChanged(currentChainTip);
             }
 
@@ -3020,11 +2792,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Setup max reorg of 10.
             const int maxReorg = 10;
-            testContext.ChainStateMock.Setup(x => x.MaxReorgLength).Returns(maxReorg);
+            testContext.ChainState.Setup(x => x.MaxReorgLength).Returns(maxReorg);
 
             // Setup finalized block height to 40.
             const int finalizedBlockHeight = 40;
-            testContext.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockHeight()).Returns(finalizedBlockHeight);
+            testContext.FinalizedBlockHeight.Setup(m => m.GetFinalizedBlockHeight()).Returns(finalizedBlockHeight);
 
             // Peer 1 presents headers from 20a to 60b, with fork point 40a.
             const int heightOfFirstFork = 40;

@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:{1})", nameof(block), block.GetHash());
 
-            PartialValidationResult partialValidationResult = null;
+            PartialValidationResult partialValidationResult;
 
             lock (this.reorgLock)
             {
@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.Consensus
                     if (block.Header.HashPrevBlock != this.Tip.HashBlock)
                     {
                         this.logger.LogError("(-)[BLOCKMINED_INVALID_PREVIOUS_TIP]");
-                        return Task.FromResult(partialValidationResult.ChainedHeaderBlock);
+                        return null;
                     }
 
                     chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
