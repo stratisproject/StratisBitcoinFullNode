@@ -165,6 +165,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName);
 
             var httpRequestContent = new StringContent(stakingRequest.ToString(), Encoding.UTF8, JsonContentType);
+
             this.response = this.httpClient.PostAsync($"{this.apiUri}api/staking/startstaking", httpRequestContent).GetAwaiter().GetResult();
 
             this.response.StatusCode.Should().Be(HttpStatusCode.OK);

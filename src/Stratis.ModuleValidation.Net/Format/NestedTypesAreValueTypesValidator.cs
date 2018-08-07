@@ -5,9 +5,9 @@ using Mono.Cecil;
 namespace Stratis.ModuleValidation.Net.Format
 {
     /// <summary>
-    /// Validates that a <see cref="Mono.Cecil.TypeDefinition"/> does not have nested types
+    /// Validates that a <see cref="Mono.Cecil.TypeDefinition"/> does not have top-level nested reference Types
     /// </summary>
-    public class NestedTypeValidator : ITypeDefinitionValidator
+    public class NestedTypesAreValueTypesValidator : ITypeDefinitionValidator
     {
         public IEnumerable<ValidationResult> Validate(TypeDefinition type)
         {
@@ -17,7 +17,7 @@ namespace Stratis.ModuleValidation.Net.Format
                 {
                     return new []
                     {
-                        new TypeDefinitionValidationResult(
+                        new NestedTypeIsValueTypeValidationResult(
                             "Only the compilation of a single class is allowed. Includes nested reference types.")
                     };
                 }
@@ -30,6 +30,14 @@ namespace Stratis.ModuleValidation.Net.Format
         {
             // We allow nested value types but forbid all others
             return !nestedTypes.All(n => n.IsValueType);
+        }
+
+        public class NestedTypeIsValueTypeValidationResult : ValidationResult
+        {
+            public NestedTypeIsValueTypeValidationResult(string message) 
+                : base(message)
+            {
+            }
         }
     }
 }
