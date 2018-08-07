@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 {
@@ -20,7 +21,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// </summary>
         private readonly Dictionary<uint160, uint> nVouts;
 
-
         /// <summary>
         /// Reference to the current smart contract state.
         /// </summary>
@@ -30,6 +30,8 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// Address of the contract that was just called or created.
         /// </summary>
         private readonly uint160 contractAddress;
+
+        private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>
         /// Context for the transaction that has just been executed.
@@ -53,10 +55,11 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
         private readonly Network network;
 
-        public TransactionCondenser(uint160 contractAddress, ILoggerFactory loggerFactory, IList<TransferInfo> transfers, IContractStateRepository stateRepository, Network network, ISmartContractTransactionContext transactionContext)
+        public TransactionCondenser(uint160 contractAddress, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IList<TransferInfo> transfers, IContractStateRepository stateRepository, Network network, ISmartContractTransactionContext transactionContext)
         {
             this.contractAddress = contractAddress;
             this.logger = loggerFactory.CreateLogger(this.GetType());
+            this.dateTimeProvider = dateTimeProvider;
             this.network = network;
             this.transactionContext = transactionContext;
             this.stateRepository = stateRepository;
@@ -82,12 +85,13 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// </summary>
         private Transaction BuildTransaction()
         {
-            var tx = new Transaction();
+            Transaction tx = this.network.CreateTransaction();
+            tx.Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
 
             foreach (ContractUnspentOutput vin in this.unspents)
             {
                 var outpoint = new OutPoint(vin.Hash, vin.Nvout);
-                tx.AddInput(new TxIn(outpoint, new Script(new [] { (byte) ScOpcodeType.OP_SPEND})));
+                tx.AddInput(new TxIn(outpoint, new Script(new[] { (byte)ScOpcodeType.OP_SPEND })));
             }
 
             foreach (TxOut txOut in this.GetOutputs())

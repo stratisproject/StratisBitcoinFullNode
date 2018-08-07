@@ -63,4 +63,10 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="block">The mined block.</param>
         Task<ChainedHeaderBlock> BlockMined(Block block);
     }
+
+    /// <summary>
+    /// A delegate that is used to send callbacks when a block is downloaded from the of queued requests to downloading blocks.
+    /// </summary>
+    /// <param name="chainedHeaderBlock">The pair of the block and its chained header.</param>
+    public delegate void OnBlockDownloadedCallback(ChainedHeaderBlock chainedHeaderBlock);
 }

@@ -1,11 +1,11 @@
 ﻿using Stratis.Bitcoin.Primitives;
 
-namespace Stratis.Bitcoin.Consensus
+namespace Stratis.Bitcoin.Consensus.ValidationResults
 {
     /// <summary>
     /// Feedback specific to a partial block validation.
     /// </summary>
-    public sealed class PartialValidationResult : ValidationResult
+    public class PartialValidationResult : ValidationResult
     {
         public ChainedHeaderBlock ChainedHeaderBlock { get; set; }
 

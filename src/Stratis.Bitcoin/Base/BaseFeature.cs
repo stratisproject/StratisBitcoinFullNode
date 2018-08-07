@@ -15,7 +15,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
@@ -261,6 +260,7 @@ namespace Stratis.Bitcoin.Base
             repeatEvery: TimeSpan.FromMinutes(5.0),
             startAfter: TimeSpan.FromMinutes(5.0));
         }
+
 
         /// <summary>
         /// Initializes node's address manager. Loads previously known peers from the file

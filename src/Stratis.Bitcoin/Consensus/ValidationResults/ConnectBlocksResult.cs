@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Consensus
+namespace Stratis.Bitcoin.Consensus.ValidationResults
 {
     /// <summary>
     /// Information related to the block full validation process.
     /// </summary>
-    public sealed class ConnectBlocksResult : ValidationResult
+    internal class ConnectBlocksResult : ValidationResult
     {
         public bool ConsensusTipChanged { get; private set; }
 

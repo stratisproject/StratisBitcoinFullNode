@@ -1,4 +1,4 @@
-﻿namespace Stratis.Bitcoin.Consensus
+﻿namespace Stratis.Bitcoin.Consensus.ValidationResults
 {
     /// <summary>
     /// Feedback after a block was validated.

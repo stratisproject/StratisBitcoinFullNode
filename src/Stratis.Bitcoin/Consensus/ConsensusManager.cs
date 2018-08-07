@@ -9,6 +9,7 @@ using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus.ValidationResults;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -674,7 +675,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>
         /// In case we failed to retrieve blocks from any of the storages that we have during the process of consensus tip switching we want to disconnect
         /// from all peers and reset consensus tip before the fork point between two chains (one that is ours and another which we tried switch to).
-        /// Disconnection is needed to avoid having CHT in an inconsistent that and to have a high probability of connecting to a new set of peers
+        /// Disconnection is needed to avoid having CHT in an inconsistent state and to increase the probability of connecting to a new set of peers
         /// which claims the same chain because they had enough time to handle the chain split.
         /// </remarks>
         /// <param name="newTip">The new tip.</param>
@@ -1001,10 +1002,8 @@ namespace Stratis.Bitcoin.Consensus
 
             var blocksToDownload = new List<ChainedHeader>();
 
-            for (int i = 0; i < blockHashes.Count; i++)
+            foreach (uint256 blockHash in blockHashes)
             {
-                uint256 blockHash = blockHashes[i];
-
                 ChainedHeaderBlock chainedHeaderBlock = await this.LoadBlockDataAsync(blockHash).ConfigureAwait(false);
 
                 if ((chainedHeaderBlock == null) || (chainedHeaderBlock.Block != null))
@@ -1149,20 +1148,5 @@ namespace Stratis.Bitcoin.Consensus
 
             this.logger.LogTrace("(-)");
         }
-    }
-
-    /// <summary>
-    /// A delegate that is used to send callbacks when a bock is downloaded from the of queued requests to downloading blocks.
-    /// </summary>
-    /// <param name="chainedHeaderBlock">The pair of the block and its chained header.</param>
-    public delegate void OnBlockDownloadedCallback(ChainedHeaderBlock chainedHeaderBlock);
-
-    /// <summary>
-    /// A request that holds information of blocks to download.
-    /// </summary>
-    public class BlockDownloadRequest
-    {
-        /// <summary>The list of block headers to download.</summary>
-        public List<ChainedHeader> BlocksToDownload { get; set; }
     }
 }

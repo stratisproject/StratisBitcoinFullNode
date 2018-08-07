@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -35,7 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
             this.network = new SmartContractsRegTest();
-            this.validator = new SmartContractValidator(new List<ISmartContractValidator>());
+            this.validator = new SmartContractValidator();
         }
 
         [Fact]
@@ -52,16 +51,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
 
-            var address = TestAddress.ToUint160(this.network);
+            uint160 address = TestAddress.ToUint160(this.network);
 
             var callData = new CallData(gasLimit, address, "ThrowException");
             this.repository.SetCode(address, contractCode);
             this.repository.SetContractType(address, "ThrowExceptionContract");
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
 
-            var result = vm.ExecuteMethod(gasMeter, 
-                this.repository, 
-                callData, 
+            VmExecutionResult result = vm.ExecuteMethod(gasMeter,
+                this.repository,
+                callData,
                 transactionContext);
 
             Assert.Equal(typeof(Exception), result.ExecutionException.GetType());
