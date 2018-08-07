@@ -73,11 +73,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chainState = chainState;
         }
 
-        public virtual BlockStoreBehavior BlockStoreBehaviorFactory()
-        {
-            return new BlockStoreBehavior(this.chain, this.blockStoreQueue, this.chainState, this.loggerFactory);
-        }
-
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
@@ -102,7 +97,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.connectionManager.Parameters.TemplateBehaviors.Add(this.BlockStoreBehaviorFactory());
+            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.blockStoreQueue, this.chainState, this.loggerFactory));
 
             // signal to peers that this node can serve blocks
             this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network) | NetworkPeerServices.NODE_WITNESS;

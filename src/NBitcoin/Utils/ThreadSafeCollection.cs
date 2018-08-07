@@ -7,7 +7,7 @@ namespace NBitcoin
 {
     public class ThreadSafeCollection<T> : IEnumerable<T>
     {
-        private ConcurrentDictionary<T, T> _Behaviors = new ConcurrentDictionary<T, T>();
+        private readonly ConcurrentDictionary<T, T> behaviors = new ConcurrentDictionary<T, T>();
 
         /// <summary>
         /// Add an item to the collection
@@ -18,51 +18,54 @@ namespace NBitcoin
         {
             if(item == null)
                 throw new ArgumentNullException("item");
-            OnAdding(item);
-            this._Behaviors.TryAdd(item, item);
-            return new ActionDisposable(() =>
-            {
-            }, () => Remove(item));
+
+            this.OnAdding(item);
+
+            this.behaviors.TryAdd(item, item);
+
+            return new ActionDisposable(() => { }, () => this.Remove(item));
         }
 
         protected virtual void OnAdding(T obj)
         {
         }
+
         protected virtual void OnRemoved(T obj)
         {
         }
 
         public bool Remove(T item)
         {
-            T old;
-            bool removed = this._Behaviors.TryRemove(item, out old);
+            bool removed = this.behaviors.TryRemove(item, out T old);
+
             if(removed)
-                OnRemoved(old);
+                this.OnRemoved(old);
+
             return removed;
-
         }
-
 
         public void Clear()
         {
             foreach(T behavior in this)
-                Remove(behavior);
+                this.Remove(behavior);
         }
 
         public T FindOrCreate<U>() where U : T, new()
         {
-            return FindOrCreate<U>(() => new U());
+            return this.FindOrCreate<U>(() => new U());
         }
+
         public U FindOrCreate<U>(Func<U> create) where U : T
         {
             U result = this.OfType<U>().FirstOrDefault();
             if(result == null)
             {
                 result = create();
-                Add(result);
+                this.Add(result);
             }
             return result;
         }
+
         public U Find<U>() where U : T
         {
             return this.OfType<U>().FirstOrDefault();
@@ -72,28 +75,18 @@ namespace NBitcoin
         {
             foreach(U b in this.OfType<U>())
             {
-                T behavior;
-                this._Behaviors.TryRemove(b, out behavior);
+                this.behaviors.TryRemove(b, out T behavior);
             }
         }
 
-        #region IEnumerable<T> Members
-
         public IEnumerator<T> GetEnumerator()
         {
-            return this._Behaviors.Select(k => k.Key).GetEnumerator();
+            return this.behaviors.Select(k => k.Key).GetEnumerator();
         }
-
-        #endregion
-
-        #region IEnumerable Members
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return GetEnumerator();
+            return this.GetEnumerator();
         }
-
-        #endregion
-
     }
 }
