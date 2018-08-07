@@ -31,8 +31,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </remarks>
         private const int SendCountThresholdLimit = 500;
 
-        private readonly CoinType coinType;
-
         private readonly ILogger logger;
 
         public Network Network { get; }
@@ -55,7 +53,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Network = network;
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
-            this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
             this.TransactionPolicy = transactionPolicy;
@@ -500,26 +497,5 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
         /// </summary>
         public string OpReturnData { get; set; }
-    }
-
-    /// <summary>
-    /// Represents recipients of a payment, used in <see cref="WalletTransactionHandler.BuildTransaction"/>.
-    /// </summary>
-    public class Recipient
-    {
-        /// <summary>
-        /// The destination script.
-        /// </summary>
-        public Script ScriptPubKey { get; set; }
-
-        /// <summary>
-        /// The amount that will be sent.
-        /// </summary>
-        public Money Amount { get; set; }
-
-        /// <summary>
-        /// An indicator if the fee is subtracted from the current recipient.
-        /// </summary>
-        public bool SubtractFeeFromAmount { get; set; }
     }
 }
