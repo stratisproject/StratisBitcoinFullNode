@@ -25,28 +25,38 @@ namespace Stratis.Bitcoin.Tests.Common
 
         public static string AssureEmptyDir(string dir)
         {
-            int deleteAttempts = 0;
-            while (deleteAttempts < 50)
-            {
-                if (Directory.Exists(dir))
-                {
-                    try
-                    {
-                        Directory.Delete(dir, true);
-                        break;
-                    }
-                    catch
-                    {
-                        deleteAttempts++;
-                        Thread.Sleep(200);
-                    }
-                }
-                else
-                    break;
-            }
+            var dirInfo = new DirectoryInfo(dir);
+            DirectoryInfo parentDir = dirInfo.Parent;
 
-            if (deleteAttempts >= 50)
-                throw new Exception(string.Format("The test folder: {0} could not be deleted.", dir));
+            string guidSuffixRegex = "_????????????????????????????????????";
+            string searchPattern = dirInfo.Name.Substring(0, dirInfo.Name.LastIndexOf("_")) + guidSuffixRegex;
+            
+            foreach (DirectoryInfo directoryWithTestNamePrefix in parentDir.EnumerateDirectories(searchPattern))
+            {
+                int deleteAttempts = 0;
+                while (deleteAttempts < 50)
+                {
+                    if (Directory.Exists(directoryWithTestNamePrefix.FullName))
+                    {
+                        try
+                        {
+                            Directory.Delete(directoryWithTestNamePrefix.FullName, true);
+                            break;
+                        }
+                        catch
+                        {
+                            deleteAttempts++;
+                            Thread.Sleep(200);
+                        }
+                    }
+                    else
+                        break;
+                }
+
+                if (deleteAttempts >= 50)
+                    throw new Exception(string.Format("The test folder: {0} could not be deleted.", directoryWithTestNamePrefix));
+
+            }
 
             Directory.CreateDirectory(dir);
             return dir;
