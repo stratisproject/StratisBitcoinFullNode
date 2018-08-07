@@ -2488,27 +2488,26 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void ProcessBlockWithBlockAheadOfWalletThrowsWalletException()
+        public void ProcessBlockWithBlockAheadOfWalletIsIgnored()
         {
-            Assert.Throws<WalletException>(() =>
-            {
-                DataFolder dataFolder = CreateDataFolder(this);
-                Directory.CreateDirectory(dataFolder.WalletPath);
+            DataFolder dataFolder = CreateDataFolder(this);
+            Directory.CreateDirectory(dataFolder.WalletPath);
 
-                Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password");
+            Wallet wallet = this.walletFixture.GenerateBlankWallet("myWallet1", "password");
 
-                var chain = new ConcurrentChain(wallet.Network);
-                (ChainedHeader ChainedHeader, Block Block) chainResult = WalletTestsHelpers.AppendBlock(this.Network, chain.Genesis, chain);
-                (ChainedHeader ChainedHeader, Block Block) chainResult2 = WalletTestsHelpers.AppendBlock(this.Network, chainResult.ChainedHeader, chain);
+            var chain = new ConcurrentChain(wallet.Network);
+            (ChainedHeader ChainedHeader, Block Block) chainResult = WalletTestsHelpers.AppendBlock(this.Network, chain.Genesis, chain);
+            (ChainedHeader ChainedHeader, Block Block) chainResult2 = WalletTestsHelpers.AppendBlock(this.Network, chainResult.ChainedHeader, chain);
 
-                var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
-                    dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
-                walletManager.Wallets.Add(wallet);
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, NodeSettings.Default(), new Mock<WalletSettings>().Object,
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
+            walletManager.Wallets.Add(wallet);
 
-                walletManager.WalletTipHash = wallet.Network.GetGenesis().Header.GetHash();
+            walletManager.WalletTipHash = wallet.Network.GetGenesis().Header.GetHash();
 
-                walletManager.ProcessBlock(chainResult2.Block, chainResult2.ChainedHeader);
-            });
+            walletManager.ProcessBlock(chainResult2.Block, chainResult2.ChainedHeader);
+
+            Assert.NotEqual(chainResult2.ChainedHeader.Header.GetHash(), walletManager.WalletTipHash);
         }
 
         [Fact]
