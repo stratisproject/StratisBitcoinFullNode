@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -178,8 +179,10 @@ namespace Stratis.Bitcoin.Base
 
             this.StartChainAsync().GetAwaiter().GetResult();
 
-            var connectionParameters = this.connectionManager.Parameters;
+            NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
+
+            connectionParameters.TemplateBehaviors.Add(new PingPongBehavior());
             connectionParameters.TemplateBehaviors.Add(new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.connectionManager, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
             connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.initialBlockDownloadState, this.loggerFactory));
@@ -214,25 +217,6 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <summary>
-        /// Prints command-line help.
-        /// </summary>
-        /// <param name="network">The network to extract values from.</param>
-        public static void PrintHelp(Network network)
-        {
-            NodeSettings.PrintHelp(network);
-        }
-
-        /// <summary>
-        /// Get the default configuration.
-        /// </summary>
-        /// <param name="builder">The string builder to add the settings to.</param>
-        /// <param name="network">The network to base the defaults off.</param>
-        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
-        {
-            NodeSettings.BuildDefaultConfigurationFile(builder, network);
-        }
-
-        /// <summary>
         /// Initializes node's chain repository.
         /// Creates periodic task to persist changes to the database.
         /// </summary>
@@ -260,7 +244,6 @@ namespace Stratis.Bitcoin.Base
             repeatEvery: TimeSpan.FromMinutes(5.0),
             startAfter: TimeSpan.FromMinutes(5.0));
         }
-
 
         /// <summary>
         /// Initializes node's address manager. Loads previously known peers from the file

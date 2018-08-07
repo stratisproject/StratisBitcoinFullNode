@@ -35,13 +35,10 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public CancellationToken ConnectCancellation { get; set; }
 
-        private readonly NetworkPeerBehaviorsCollection templateBehaviors = new NetworkPeerBehaviorsCollection(null);
-
-        public NetworkPeerBehaviorsCollection TemplateBehaviors { get { return this.templateBehaviors; } }
+        public NetworkPeerBehaviorsCollection TemplateBehaviors { get; } = new NetworkPeerBehaviorsCollection(null);
 
         public NetworkPeerConnectionParameters()
         {
-            this.TemplateBehaviors.Add(new PingPongBehavior());
             this.Version = ProtocolVersion.PROTOCOL_VERSION;
             this.IsRelay = true;
             this.Services = NetworkPeerServices.Nothing;
