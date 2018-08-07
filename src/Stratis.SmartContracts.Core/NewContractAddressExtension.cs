@@ -10,14 +10,15 @@ namespace Stratis.SmartContracts.Core
         /// Get the address for a newly deployed contract.
         /// </summary>
         /// <param name="transaction"></param>
-        public static uint160 GetNewContractAddress(this Transaction transaction)
+        public static uint160 GetNewContractAddress(this Transaction transaction, ulong nonce)
         {
-            return GetContractAddressFromTransactionHash(transaction.GetHash());
+            return GetContractAddressFromTransactionHash(transaction.GetHash(), nonce);
         }
 
-        public static uint160 GetContractAddressFromTransactionHash(uint256 hash)
+        public static uint160 GetContractAddressFromTransactionHash(uint256 hash, ulong nonce)
         {
-            return new uint160(HashHelper.Keccak256(hash.ToBytes()).Take(20).ToArray());
+            byte[] toHash = hash.ToBytes().Concat(new uint256(nonce).ToBytes()).ToArray();
+            return new uint160(HashHelper.Keccak256(toHash).Take(20).ToArray());
         }
     }
 }

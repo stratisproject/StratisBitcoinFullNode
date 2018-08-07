@@ -8,9 +8,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// Get the address for a newly deployed contract.
         /// </summary>
         /// <param name="transaction"></param>
-        public static uint160 GetNewContractAddress(this SmartContractCarrier carrier)
+        public static uint160 GetNewContractAddress(this SmartContractCarrier carrier, ulong nonce)
         {
-            return Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(carrier.TransactionHash);
+            return Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(carrier.TransactionHash, nonce);
         }
     }
 }
