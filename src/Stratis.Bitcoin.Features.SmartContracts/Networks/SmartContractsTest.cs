@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
@@ -22,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
 
-            var consensusFactory = new SmartContractConsensusFactory();
+            var consensusFactory = new SmartContractPowConsensusFactory();
 
             Block genesisBlock = BitcoinMain.CreateBitcoinGenesisBlock(consensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
             ((SmartContractBlockHeader)genesisBlock.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");

@@ -4,7 +4,7 @@ using System.Reflection;
 using Mono.Cecil;
 using Stratis.ModuleValidation.Net;
 
-namespace Stratis.SmartContracts.Core.Validation
+namespace Stratis.SmartContracts.Core.Validation.Validators.Module
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.ModuleDefinition"/> only references allowed assemblies

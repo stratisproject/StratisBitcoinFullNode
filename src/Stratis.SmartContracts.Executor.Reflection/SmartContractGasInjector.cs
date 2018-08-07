@@ -77,7 +77,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 IEnumerable<MethodDefinition> referencedMethods = method.Body.Instructions
                         .Select(i => i.Operand)
-                        .OfType<MethodDefinition>();
+                        .OfType<MethodDefinition>()
+                        .ToList();
 
                 InjectSpendGasMethod(method, gasMethodReference);
 

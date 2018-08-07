@@ -374,8 +374,10 @@ namespace NBitcoin
             if (lastBlock == null)
                 return proofOfWorkLimit;
 
+            long difficultyAdjustmentInterval = this.GetDifficultyAdjustmentInterval(consensus);
+
             // Only change once per interval.
-            if ((height) % consensus.DifficultyAdjustmentInterval != 0)
+            if ((height) % difficultyAdjustmentInterval != 0)
             {
                 if (consensus.PowAllowMinDifficultyBlocks)
                 {
@@ -387,7 +389,7 @@ namespace NBitcoin
 
                     // Return the last non-special-min-difficulty-rules-block.
                     ChainedHeader chainedHeader = lastBlock;
-                    while ((chainedHeader.Previous != null) && ((chainedHeader.Height % consensus.DifficultyAdjustmentInterval) != 0) && (chainedHeader.Header.Bits == proofOfWorkLimit))
+                    while ((chainedHeader.Previous != null) && ((chainedHeader.Height % difficultyAdjustmentInterval) != 0) && (chainedHeader.Header.Bits == proofOfWorkLimit))
                         chainedHeader = chainedHeader.Previous;
 
                     return chainedHeader.Header.Bits;
@@ -397,7 +399,7 @@ namespace NBitcoin
             }
 
             // Go back by what we want to be 14 days worth of blocks.
-            long pastHeight = lastBlock.Height - (consensus.DifficultyAdjustmentInterval - 1);
+            long pastHeight = lastBlock.Height - (difficultyAdjustmentInterval - 1);
 
             ChainedHeader firstChainedHeader = GetAncestor((int)pastHeight);
             if (firstChainedHeader == null)
@@ -423,6 +425,15 @@ namespace NBitcoin
                 finalTarget = proofOfWorkLimit;
 
             return finalTarget;
+        }
+
+        /// <summary>
+        /// Calculate the difficulty adjustment interval in blocks based on settings defined in <see cref="IConsensus"/>.
+        /// </summary>
+        /// <returns>The difficulty adjustment interval in blocks.</returns>
+        private long GetDifficultyAdjustmentInterval(IConsensus consensus)
+        {
+            return (long)consensus.PowTargetTimespan.TotalSeconds / (long)consensus.PowTargetSpacing.TotalSeconds;
         }
 
         /// <summary>

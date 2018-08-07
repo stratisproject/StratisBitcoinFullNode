@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Mining
 
         public BlockTemplate(Network network)
         {
-            this.Block = network.Consensus.ConsensusFactory.CreateBlock();
+            this.Block = network.CreateBlock();
         }
     }
 }

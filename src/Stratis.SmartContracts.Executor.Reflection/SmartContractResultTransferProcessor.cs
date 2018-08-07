@@ -2,6 +2,7 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
@@ -10,11 +11,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public class SmartContractResultTransferProcessor : ISmartContractResultTransferProcessor
     {
+        private readonly IDateTimeProvider dateTimeProvider;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
 
-        public SmartContractResultTransferProcessor(ILoggerFactory loggerFactory, Network network)
+        public SmartContractResultTransferProcessor(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Network network)
         {
+            this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.network = network;
         }
@@ -53,9 +56,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 return null;
             }
-            // All other cases we need a condensing transaction
 
-            var transactionCondenser = new TransactionCondenser(contractAddress, this.loggerFactory, internalTransfers, stateSnapshot, this.network, transactionContext);
+            // All other cases we need a condensing transaction
+            var transactionCondenser = new TransactionCondenser(contractAddress, this.dateTimeProvider, this.loggerFactory, internalTransfers, stateSnapshot, this.network, transactionContext);
             return transactionCondenser.CreateCondensingTransaction();
         }
 
@@ -65,10 +68,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         private Transaction CreateRefundTransaction(ISmartContractTransactionContext transactionContext)
         {
-            Transaction tx = this.network.Consensus.ConsensusFactory.CreateTransaction();
+            Transaction tx = this.network.CreateTransaction();
+
             // Input from contract call
             var outpoint = new OutPoint(transactionContext.TransactionHash, transactionContext.Nvout);
             tx.AddInput(new TxIn(outpoint, new Script(new[] { (byte)ScOpcodeType.OP_SPEND })));
+
             // Refund output
             Script script = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId(transactionContext.Sender));
             var txOut = new TxOut(new Money(transactionContext.TxOutValue), script);
