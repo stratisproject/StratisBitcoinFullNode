@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public CancellationToken ConnectCancellation { get; set; }
 
-        public List<INetworkPeerBehavior> TemplateBehaviors { get; } = new List<INetworkPeerBehavior>();
+        public List<INetworkPeerBehavior> TemplateBehaviors { get; }
 
         public NetworkPeerConnectionParameters()
         {
@@ -44,6 +44,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.IsRelay = true;
             this.Services = NetworkPeerServices.Nothing;
             this.ConnectCancellation = default(CancellationToken);
+            this.TemplateBehaviors = new List<INetworkPeerBehavior>();
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
