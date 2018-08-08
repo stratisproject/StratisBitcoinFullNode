@@ -25,17 +25,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ILogger logger;
         private readonly Network network;
         private readonly ISmartContractValidator validator;
+        private readonly IAddressGenerator addressGenerator;
         public static int VmVersion = 1;
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             InternalTransactionExecutorFactory internalTransactionExecutorFactory,
             ILoggerFactory loggerFactory,
-            Network network)
+            Network network,
+            IAddressGenerator addressGenerator)
         {
             this.validator = validator;
             this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.network = network;
+            this.addressGenerator = addressGenerator;
         }
 
         /// <summary>
@@ -65,8 +68,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(createData.ContractExecutionCode, decompilation.ContractType.Name);
 
             Type contractType = Load(gasInjectedCode, decompilation.ContractType.Name);
-            
-            uint160 contractAddress = Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(transactionContext.TransactionHash);
+
+            uint160 contractAddress = this.addressGenerator.GenerateAddress(transactionContext.TransactionHash, transactionContext.GetNonceAndIncrement());
 
             // Create an account for the contract in the state repository.
             repository.CreateAccount(contractAddress);
@@ -90,7 +93,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     contractAddress.ToAddress(this.network),
                     transactionContext.From.ToAddress(this.network),
                     transactionContext.Amount,
-                    createData.GasLimit
+                    createData.GasLimit,
+                    gasMeter
                 ),
                 persistentState,
                 gasMeter,
@@ -178,7 +182,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     callData.ContractAddress.ToAddress(this.network),
                     transactionContext.From.ToAddress(this.network),
                     transactionContext.Amount,
-                    callData.GasLimit
+                    callData.GasLimit,
+                    gasMeter
                 ),
                 persistentState,
                 gasMeter,

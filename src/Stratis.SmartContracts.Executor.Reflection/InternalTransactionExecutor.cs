@@ -103,7 +103,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 this.transactionContext.BlockHeight,
                 this.transactionContext.Coinbase,
                 smartContractState.Message.ContractAddress.ToUint160(this.network),
-                amountToTransfer);
+                amountToTransfer,
+                this.transactionContext.GetNonceAndIncrement());
 
             VmExecutionResult result = this.vm.ExecuteMethod(nestedGasMeter, 
                 track, 
