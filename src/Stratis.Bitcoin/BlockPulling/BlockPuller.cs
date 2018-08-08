@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc cref="IDateTimeProvider"/>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <inheritdoc cref="random"/>
+        /// <inheritdoc cref="Random"/>
         private readonly Random random;
 
         /// <summary>Loop that assigns download jobs to the peers.</summary>
@@ -434,7 +434,16 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.logger.LogTrace("{0} jobs partially or fully failed.", failedHashes.Count);
 
             foreach (uint256 failedJob in failedHashes)
+            {
+                // Avoid calling callbacks on shutdown.
+                if (this.cancellationSource.IsCancellationRequested)
+                {
+                    this.logger.LogTrace("Callbacks won't be called because component is being disposed.");
+                    break;
+                }
+
                 this.onDownloadedCallback(failedJob, null);
+            }
 
             this.logger.LogTrace("(-)");
         }

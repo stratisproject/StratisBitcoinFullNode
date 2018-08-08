@@ -979,12 +979,13 @@ namespace Stratis.Bitcoin.Consensus
                 this.RemoveUnclaimedBranch(chainedHeader);
             }
 
+            this.peerTipsByPeerId.Remove(networkPeerId);
+
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Set a new header as a tip for this peer and remove the old tip.
-        /// </summary>
+        /// <summary>Set a new header as a tip for this peer and remove the old tip.</summary>
+        /// <remarks>If the old tip is equal to <paramref name="newTip"/> the method does nothing.</remarks>
         /// <param name="networkPeerId">The peer id that sets a new tip.</param>
         /// <param name="newTip">The new tip to set.</param>
         private void AddOrReplacePeerTip(int networkPeerId, uint256 newTip)
@@ -993,9 +994,13 @@ namespace Stratis.Bitcoin.Consensus
 
             uint256 oldTipHash = this.peerTipsByPeerId.TryGet(networkPeerId);
 
-            this.ClaimPeerTip(networkPeerId, newTip);
+            if (oldTipHash == newTip)
+            {
+                this.logger.LogTrace("(-)[ALREADY_CLAIMED]");
+                return;
+            }
 
-            this.peerTipsByPeerId.AddOrReplace(networkPeerId, newTip);
+            this.ClaimPeerTip(networkPeerId, newTip);
 
             if (oldTipHash != null)
             {
@@ -1010,6 +1015,8 @@ namespace Stratis.Bitcoin.Consensus
 
                 this.RemovePeerClaim(networkPeerId, oldTip);
             }
+
+            this.peerTipsByPeerId.Add(networkPeerId, newTip);
 
             this.logger.LogTrace("(-)");
         }

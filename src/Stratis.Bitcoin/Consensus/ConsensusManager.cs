@@ -1089,8 +1089,6 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("()");
 
-            this.blockPuller.Dispose();
-
             this.reorgLock.Dispose();
 
             this.logger.LogTrace("(-)");
