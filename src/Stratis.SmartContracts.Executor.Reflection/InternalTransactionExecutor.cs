@@ -56,7 +56,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (balance < amountToTransfer)
             {
                 this.logger.LogTrace("(-)[INSUFFICIENT_BALANCE]:{0}={1}", nameof(balance), balance);
-                throw new InsufficientGasException();
+                throw new InsufficientBalanceException();
             }
 
             // Discern whether this is a contract or an ordinary address.
