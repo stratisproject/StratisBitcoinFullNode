@@ -52,6 +52,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected override void AfterTest()
         {
+            this.node.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
+
             this.builder?.Dispose();
         }
 
@@ -60,6 +62,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.node = this.builder.CreateStratisPowNode();
             this.node.Start();
             this.node.NotInIBD();
+
+            this.maturity = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity;
+            this.node.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
         }
 
         private void a_pow_node_to_transact_with()
@@ -89,8 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void some_real_blocks_with_a_uint256_identifier()
         {
-            this.maturity = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity;
-            this.blockIds = this.node.GenerateStratisWithMiner(this.maturity + 1);
+            this.blockIds = this.node.GenerateStratisWithMiner((int)this.node.FullNode.Network.Consensus.CoinbaseMaturity + 1);
         }
 
         private void some_blocks_creating_reward()
@@ -127,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                     this.miningWalletAccountReference,
                     new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } },
                     this.password)
-            { MinConfirmations = this.maturity };
+            { MinConfirmations = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity };
             this.transaction = this.node.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 
             this.node.FullNode.NodeService<WalletController>()

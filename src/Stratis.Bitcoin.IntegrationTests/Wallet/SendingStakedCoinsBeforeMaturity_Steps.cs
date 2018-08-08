@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.proofOfStakeSteps.GenerateCoins();
 
             this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.WalletManager()
-                .GetSpendableTransactionsInWallet(this.proofOfStakeSteps.PremineWallet, includeImmature: true)
+                .GetSpendableTransactionsInWallet(this.proofOfStakeSteps.PremineWallet)
                 .Sum(utxo => utxo.Transaction.Amount)
                 .Should().BeGreaterThan(Money.Coins(OneMillion));
 

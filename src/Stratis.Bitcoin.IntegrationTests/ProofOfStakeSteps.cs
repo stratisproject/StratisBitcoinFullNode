@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NBitcoin;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.IntegrationTests.Common;
@@ -78,12 +79,13 @@ namespace Stratis.Bitcoin.IntegrationTests
             var mineToMaturity = network.Consensus.ProofOfWorkReward * 110;
             var balanceShouldBe = premine + mineToMaturity;
 
-            var spendable = this.nodes[this.PremineNode].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PremineWallet, includeImmature: true);
+            Money balanceBefore = this.nodes[this.PremineNode].FullNode.WalletManager()
+                .GetSpendableTransactionsInWallet(this.PremineWallet).Sum(s => s.Transaction.Amount);
 
             TestHelper.WaitLoop(() =>
             {
-                long staked = this.nodes[this.PremineNode].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PremineWallet, includeImmature: true).Sum(s => s.Transaction.Amount);
-                return staked > balanceShouldBe;
+                long staked = this.nodes[this.PremineNode].FullNode.WalletManager().GetSpendableTransactionsInWallet(this.PremineWallet).Sum(s => s.Transaction.Amount);
+                return staked > balanceBefore;
             });
         }
     }

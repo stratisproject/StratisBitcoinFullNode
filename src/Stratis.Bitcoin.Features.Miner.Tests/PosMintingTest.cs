@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.AddAccountWithSpendableOutputs(wallet);
             var spendableTransactions = wallet.GetAllSpendableTransactions(CoinType.Stratis, this.chain.Tip.Height, 0).ToList();
 
-            this.walletManager.Setup(w => w.GetSpendableTransactionsInWallet(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>()))
+            this.walletManager.Setup(w => w.GetSpendableTransactionsInWallet(It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(spendableTransactions);
 
             var fetchedUtxos = spendableTransactions

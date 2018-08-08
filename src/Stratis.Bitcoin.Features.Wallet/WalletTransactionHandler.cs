@@ -264,7 +264,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void AddCoins(TransactionBuildContext context)
         {
-            context.UnspentOutputs = this.walletManager.GetSpendableTransactionsInAccount(context.AccountReference, this.Network.Consensus, context.MinConfirmations, includeImmature: false).ToList();
+            context.UnspentOutputs = this.walletManager.GetSpendableTransactionsInAccount(context.AccountReference, this.Network.Consensus, context.MinConfirmations).ToList();
 
             if (context.UnspentOutputs.Count == 0)
             {

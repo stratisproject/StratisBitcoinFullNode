@@ -135,6 +135,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .NotInIBD()
                 .WithWallet(SecondaryWalletName, WalletPassword)
                 .Build();
+
+            this.nodes[SecondPowNode].FullNode
+                .Network.Consensus.CoinbaseMaturity = 1;
         }
 
         protected void a_block_is_mined_creating_spendable_coins()
