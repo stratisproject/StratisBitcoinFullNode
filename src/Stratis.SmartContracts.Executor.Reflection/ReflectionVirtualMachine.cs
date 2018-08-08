@@ -92,9 +92,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 new Message(
                     contractAddress.ToAddress(this.network),
                     transactionContext.From.ToAddress(this.network),
-                    transactionContext.Amount,
-                    createData.GasLimit,
-                    gasMeter
+                    transactionContext.Amount
                 ),
                 persistentState,
                 gasMeter,
@@ -181,9 +179,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 new Message(
                     callData.ContractAddress.ToAddress(this.network),
                     transactionContext.From.ToAddress(this.network),
-                    transactionContext.Amount,
-                    callData.GasLimit,
-                    gasMeter
+                    transactionContext.Amount
                 ),
                 persistentState,
                 gasMeter,
@@ -270,7 +266,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
             builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress(this.network)));
-            builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.GasLimit), message.GasLimit, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
+            builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
 
             if (callData.MethodParameters != null && callData.MethodParameters.Length > 0)
                 builder.Append(string.Format(",{0}:{1}", nameof(callData.MethodParameters), callData.MethodParameters));

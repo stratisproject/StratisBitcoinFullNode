@@ -113,8 +113,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         public Gas GasLimit { get; set; }
 
-        public Gas GasAvailable { get; set; }
-
         public ulong Value { get; set; }
     }
 

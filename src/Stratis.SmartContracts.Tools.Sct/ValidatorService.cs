@@ -104,7 +104,7 @@ namespace Stratis.SmartContracts.Tools.Sct
     {
         public IBlock Block => new Block();
 
-        public IMessage Message => new Message(new Address("0"), new Address("0"), 0, (Gas)0, null);
+        public IMessage Message => new Message(new Address("0"), new Address("0"), 0);
 
         public IPersistentState PersistentState
         {
