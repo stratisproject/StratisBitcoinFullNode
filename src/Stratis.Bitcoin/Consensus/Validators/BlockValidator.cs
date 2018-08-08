@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
             var chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
             var validationContext = new ValidationContext { Block = block, ChainTipToExtand = chainedHeader };
 
-            await this.consensusRules.PartialValidationAsync(validationContext);
+            await this.consensusRules.PartialValidationAsync(validationContext).ConfigureAwait(false);
 
             var partialValidationResult = new PartialValidationResult
             {

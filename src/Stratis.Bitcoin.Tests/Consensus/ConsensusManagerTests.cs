@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             builder.ConsensusManager.InitializeAsync(chainTip).GetAwaiter().GetResult();
 
             var minedBlock = builder.CreateBlock(chainTip);
-            var result = builder.ConsensusManager.BlockMined(minedBlock).GetAwaiter().GetResult();
+            var result = builder.ConsensusManager.BlockMinedAsync(minedBlock).GetAwaiter().GetResult();
             Assert.NotNull(result);
             Assert.Equal(minedBlock.GetHash(), builder.ConsensusManager.Tip.HashBlock);
         }

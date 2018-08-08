@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private static async Task ValidateBlock(TestChainContext testChainContext, BlockTemplate newBlock)
         {
-            var res = await testChainContext.Consensus.BlockMined(newBlock.Block);
+            var res = await testChainContext.Consensus.BlockMinedAsync(newBlock.Block);
             Assert.NotNull(res);
         }
 

@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Consensus
         /// A new block was mined by the node and is attempted to connect to tip.
         /// </summary>
         /// <param name="block">The mined block.</param>
-        Task<ChainedHeaderBlock> BlockMined(Block block);
+        Task<ChainedHeaderBlock> BlockMinedAsync(Block block);
     }
 
     /// <summary>

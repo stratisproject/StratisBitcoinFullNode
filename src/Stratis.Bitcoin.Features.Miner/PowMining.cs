@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Creates a proof of work or proof of stake block depending on the network the node is running on.
         /// <para>
-        /// If the node is on a POS network, make sure the POS consensus rules are valid. This is required for 
+        /// If the node is on a POS network, make sure the POS consensus rules are valid. This is required for
         /// generation of blocks inside tests, where it is possible to generate multiple blocks within one second.
         /// </para>
         /// </summary>
@@ -265,13 +265,16 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private bool ValidateAndConnectBlock(MineBlockContext context)
         {
-            context.ChainedHeaderBlock = this.consensusManager.BlockMined(context.BlockTemplate.Block).GetAwaiter().GetResult();
+            this.logger.LogTrace("()");
+            context.ChainedHeaderBlock = this.consensusManager.BlockMinedAsync(context.BlockTemplate.Block).GetAwaiter().GetResult();
+
             if (context.ChainedHeaderBlock == null)
             {
-                this.logger.LogTrace("(-)[BLOCK_VALIDATION_ERROR]");
+                this.logger.LogTrace("(-)[BLOCK_VALIDATION_ERROR]:false");
                 return false;
             }
 
+            this.logger.LogTrace("(-):true");
             return true;
         }
 
