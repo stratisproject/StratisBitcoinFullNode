@@ -4,6 +4,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public interface IAddressGenerator
     {
-        uint160 GenerateAddress(ITransactionContext context);
+        uint160 GenerateAddress(uint256 seed, ulong nonce);
     }
 }
