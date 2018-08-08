@@ -237,10 +237,10 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var fetchCoinsResponse = new FetchCoinsResponse(fetchedUtxos, this.chain.Tip.HashBlock);
 
             fetchCoinsResponse.UnspentOutputs
-                .Where(u => u.Outputs.Any(o => o.Value < PosMinting.MinimumStakingCoinValue)).Should()
+                .Where(u => u.Outputs.Any(o => o.Value < this.posMinting.MinimumStakingCoinValue)).Should()
                 .NotBeEmpty("otherwise we are not sure the code actually excludes them");
             fetchCoinsResponse.UnspentOutputs
-                .Where(u => u.Outputs.Any(o => o.Value >= PosMinting.MinimumStakingCoinValue)).Should()
+                .Where(u => u.Outputs.Any(o => o.Value >= this.posMinting.MinimumStakingCoinValue)).Should()
                 .NotBeEmpty("otherwise we are not sure the code actually includes them");
 
             this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
@@ -253,13 +253,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             var utxoStakeDescriptions = await this.posMinting.GetUtxoStakeDescriptionsAsync(walletSecret, ct);
 
 
-            utxoStakeDescriptions.Select(d => d.TxOut.Value).Where(v => v < PosMinting.MinimumStakingCoinValue)
+            utxoStakeDescriptions.Select(d => d.TxOut.Value).Where(v => v < this.posMinting.MinimumStakingCoinValue)
                 .Should().BeEmpty("small coins should not be included");
-            utxoStakeDescriptions.Select(d => d.TxOut.Value).Where(v => v >= PosMinting.MinimumStakingCoinValue)
+            utxoStakeDescriptions.Select(d => d.TxOut.Value).Where(v => v >= this.posMinting.MinimumStakingCoinValue)
                 .Should().NotBeEmpty("big enough coins should be included");
 
             var expectedAmounts = spendableTransactions.Select(s => s.Transaction.Amount)
-                .Where(a => a >= PosMinting.MinimumStakingCoinValue).ToArray();
+                .Where(a => a >= this.posMinting.MinimumStakingCoinValue).ToArray();
             utxoStakeDescriptions.Count.Should().Be(expectedAmounts.Length);
 
             utxoStakeDescriptions.Select(d => d.TxOut.Value).Should().Contain(expectedAmounts);
@@ -268,8 +268,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private void AddAccountWithSpendableOutputs(Wallet.Wallet wallet)
         {
             var account = new HdAccount();
-            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(15), Index = 0, Amount = PosMinting.MinimumStakingCoinValue - 1 } } });
-            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(16), Index = 0, Amount = PosMinting.MinimumStakingCoinValue } } });
+            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(15), Index = 0, Amount = this.posMinting.MinimumStakingCoinValue - 1 } } });
+            account.ExternalAddresses.Add(new HdAddress { Index = 1, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(16), Index = 0, Amount = this.posMinting.MinimumStakingCoinValue } } });
             account.ExternalAddresses.Add(new HdAddress { Index = 2, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(17), Index = 0, Amount = 2 * Money.COIN } } });
             account.ExternalAddresses.Add(new HdAddress { Index = 2, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(18), Index = 0, Amount = 2 * Money.CENT } } });
             account.ExternalAddresses.Add(new HdAddress { Index = 3, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(19), Index = 0, Amount = 1 * Money.NANO } } });
@@ -625,7 +625,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.walletManager.Object,
                 this.asyncLoopFactory.Object,
                 this.timeSyncBehaviorState.Object,
-                this.LoggerFactory.Object);
+                this.LoggerFactory.Object,
+                this.minerSettings.Object);
         }
 
         private static ChainedHeader CreateChainedBlockWithNBits(Network network, uint bits)

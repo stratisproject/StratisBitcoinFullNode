@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
@@ -34,6 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private InternalTransactionExecutorFactory internalTxExecutorFactory;
         private ReflectionVirtualMachine vm;
         private ICallDataSerializer serializer;
+        private readonly AddressGenerator addressGenerator;
 
         public SmartContractExecutorTests()
         {
@@ -43,11 +44,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.network = new SmartContractsRegTest();
             this.refundProcessor = new SmartContractResultRefundProcessor(this.loggerFactory);
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);
-            this.validator = new SmartContractValidator(new ISmartContractValidator[] { });
+            this.transferProcessor = new SmartContractResultTransferProcessor(DateTimeProvider.Default, this.loggerFactory, this.network);
+            this.validator = new SmartContractValidator();
             this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            this.validator = new SmartContractValidator(new List<ISmartContractValidator>());
-            this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network);
+            this.addressGenerator = new AddressGenerator();
+            this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator);
             this.serializer = CallDataSerializer.Default;
         }
 
@@ -140,8 +141,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
             Assert.NotNull(result.Exception);
-            // Base cost + constructor cost
-            Assert.Equal(GasPriceList.BaseCost + 13, result.GasConsumed);
+            // Base cost + constructor cost (21 because that is number of gas to invoke Assert(false);
+            Assert.Equal(GasPriceList.BaseCost + 21, result.GasConsumed);
         }
 
         [Fact]

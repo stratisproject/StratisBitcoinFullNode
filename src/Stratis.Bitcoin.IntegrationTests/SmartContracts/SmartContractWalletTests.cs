@@ -35,8 +35,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractNode();
-                CoreNode scReceiver = builder.CreateSmartContractNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode();
 
                 builder.StartAll();
 
@@ -102,8 +102,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractNode();
-                CoreNode scReceiver = builder.CreateSmartContractNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode();
 
                 builder.StartAll();
 
@@ -162,7 +162,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Ensure that boths nodes has the contract
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
                 ContractStateRepositoryRoot receiverState = scReceiver.FullNode.NodeService<ContractStateRepositoryRoot>();
-                uint160 tokenContractAddress = transferContractTransaction.GetNewContractAddress();
+                IAddressGenerator addressGenerator = scSender.FullNode.NodeService<IAddressGenerator>();
+
+                uint160 tokenContractAddress = addressGenerator.GenerateAddress(transferContractTransaction.GetHash(), 0);
                 Assert.NotNull(senderState.GetCode(tokenContractAddress));
                 Assert.NotNull(receiverState.GetCode(tokenContractAddress));
                 scSender.FullNode.MempoolManager().Clear();
@@ -195,7 +197,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Ensure that boths nodes has the contract
                 senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
                 receiverState = scReceiver.FullNode.NodeService<ContractStateRepositoryRoot>();
-                tokenContractAddress = transferContractTransaction.GetNewContractAddress();
+                tokenContractAddress = addressGenerator.GenerateAddress(transferContractTransaction.GetHash(), 0);
                 Assert.NotNull(senderState.GetCode(tokenContractAddress));
                 Assert.NotNull(receiverState.GetCode(tokenContractAddress));
                 scSender.FullNode.MempoolManager().Clear();
@@ -238,7 +240,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode();
                 builder.StartAll();
 
                 scSender.NotInIBD();
@@ -285,8 +287,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractNode();
-                CoreNode scReceiver = builder.CreateSmartContractNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode();
 
                 builder.StartAll();
 
@@ -458,8 +460,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractNode();
-                CoreNode scReceiver = builder.CreateSmartContractNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode();
 
                 builder.StartAll();
 
