@@ -81,6 +81,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         // CONTRACT EXECUTION ---------------------------------------------------------------
                         services.AddSingleton<InternalTransactionExecutorFactory>();
                         services.AddSingleton<ISmartContractVirtualMachine, ReflectionVirtualMachine>();
+                        services.AddSingleton<IAddressGenerator, AddressGenerator>();
 
                         services.AddSingleton<SmartContractTransactionPolicy>();
 
