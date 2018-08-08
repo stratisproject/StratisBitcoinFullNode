@@ -93,7 +93,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     contractAddress.ToAddress(this.network),
                     transactionContext.From.ToAddress(this.network),
                     transactionContext.Amount,
-                    createData.GasLimit
+                    createData.GasLimit,
+                    gasMeter
                 ),
                 persistentState,
                 gasMeter,
@@ -183,7 +184,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     callData.ContractAddress.ToAddress(this.network),
                     transactionContext.From.ToAddress(this.network),
                     transactionContext.Amount,
-                    callData.GasLimit
+                    callData.GasLimit,
+                    gasMeter
                 ),
                 persistentState,
                 gasMeter,

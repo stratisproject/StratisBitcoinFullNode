@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Lifecycle
             this.loggerFactory = new Mock<ILoggerFactory>().Object;
             this.state = new SmartContractState(
                 new Block(0, new Address()),
-                new Message(new Address(), new Address(), 0, (Gas)0),
+                new Message(new Address(), new Address(), 0, (Gas)0, null),
                 new PersistentState(null, 0, null),
                 new GasMeter((Gas)1000),
                 new InternalTransactionExecutor(null, null, null, null, new BasicKeyEncodingStrategy(), this.loggerFactory, network: null),
