@@ -35,7 +35,6 @@ namespace Stratis.Bitcoin.Features.Api
 
                 var certificate = request.CreateSelfSigned(new DateTimeOffset(DateTime.UtcNow.AddDays(-1)),
                     new DateTimeOffset(DateTime.UtcNow.AddDays(3650)));
-                certificate.FriendlyName = "";
 
                 return new X509Certificate2(certificate.Export(X509ContentType.Pfx, password), password,
                     X509KeyStorageFlags.MachineKeySet);
