@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(block, nameof(block));
 
             // Set-up an asynchronous task to monitor blocks coming in.
-            // Which is then queued up to be processed in ProcessBlockLoopAsync().
+            // Which are then queued up to be processed in ProcessBlockLoopAsync().
             Task.Run(async () =>
             {
                 ISourceBlock<Block> source = this.BlockBuffer;
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
             });
 
-            // Post the in coming block, which is picked up by recievedBlock above.
+            // Post the incoming block, that are picked up by recievedBlock above.
             this.BlockBuffer.Post(block);
 
             this.logger.LogTrace("(-)");
