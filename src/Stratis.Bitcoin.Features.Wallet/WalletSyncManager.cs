@@ -122,11 +122,26 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void ProcessBlock(Block block)
         {
-            this.logger.LogTrace("()");
-
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
-            this.QueueBlock(block);
+            Guard.NotNull(block, nameof(block));
+
+            // Set-up an asynchronous task to monitor blocks coming in.
+            // Which is then queued up to be processed in ProcessBlockLoopAsync().
+            Task.Run(async () =>
+            {
+                ISourceBlock<Block> source = this.BlockBuffer;
+
+                while (await source.OutputAvailableAsync().ConfigureAwait(false))
+                {
+                    Block recievedBlock = source.Receive();
+
+                    this.blocksQueue.Enqueue(recievedBlock);
+                }
+            });
+
+            // Post the in coming block, which is picked up by recievedBlock above.
+            this.BlockBuffer.Post(block);
 
             this.logger.LogTrace("(-)");
         }
@@ -134,40 +149,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
-            this.logger.LogTrace("()");
-
             Guard.NotNull(transaction, nameof(transaction));
 
             this.logger.LogTrace("({0}:'{1}')", nameof(transaction), transaction.GetHash());
 
             this.walletManager.ProcessTransaction(transaction);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <inheritdoc />
-        public virtual void SyncFromDate(DateTime date)
-        {
-            this.logger.LogTrace("()");
-
-            this.logger.LogTrace("({0}:'{1::yyyy-MM-dd HH:mm:ss}')", nameof(date), date);
-
-            int blockSyncStart = this.chain.GetHeightAtTime(date);
-            this.SyncFromHeight(blockSyncStart);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <inheritdoc />
-        public virtual void SyncFromHeight(int height)
-        {
-            this.logger.LogTrace("()");
-
-            this.logger.LogTrace("({0}:{1})", nameof(height), height);
-
-            ChainedHeader chainedHeader = this.chain.GetBlock(height);
-            this.walletTip = chainedHeader ?? throw new WalletException("Invalid block height");
-            this.walletManager.WalletTipHash = chainedHeader.HashBlock;
 
             this.logger.LogTrace("(-)");
         }
@@ -338,39 +324,26 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        private void ProducerBlock(ITargetBlock<Block> target, Block block)
+        public virtual void SyncFromDate(DateTime date)
         {
-            this.logger.LogDebug("()");
+            this.logger.LogTrace("({0}:'{1::yyyy-MM-dd HH:mm:ss}')", nameof(date), date);
 
-            target.Post(block);
+            int blockSyncStart = this.chain.GetHeightAtTime(date);
+            this.SyncFromHeight(blockSyncStart);
 
-            this.logger.LogDebug("(-)");
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
-        private async Task ConsumerBlockAsync(ISourceBlock<Block> source, ConcurrentQueue<Block> queue)
-        {
-            this.logger.LogDebug("()");
+        public virtual void SyncFromHeight(int height)
+        {           
+            this.logger.LogTrace("({0}:{1})", nameof(height), height);
 
-            while (await source.OutputAvailableAsync().ConfigureAwait(false))
-            {
-                Block block = source.Receive();
-                queue.Enqueue(block);
-            }
+            ChainedHeader chainedHeader = this.chain.GetBlock(height);
+            this.walletTip = chainedHeader ?? throw new WalletException("Invalid block height");
+            this.walletManager.WalletTipHash = chainedHeader.HashBlock;
 
-            this.logger.LogDebug("(-)");
-        }
-
-        /// <inheritdoc />
-        private void QueueBlock(Block block)
-        {
-            this.logger.LogDebug("()");
-
-            Task.Run(() => this.ConsumerBlockAsync(this.BlockBuffer, this.blocksQueue).ConfigureAwait(false));
-
-            this.ProducerBlock(this.BlockBuffer, block);
-
-            this.logger.LogDebug("(-)");
+            this.logger.LogTrace("(-)");
         }
     }
 }
