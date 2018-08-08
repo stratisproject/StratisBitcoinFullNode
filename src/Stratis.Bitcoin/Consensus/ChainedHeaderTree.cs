@@ -995,6 +995,12 @@ namespace Stratis.Bitcoin.Consensus
 
             uint256 oldTipHash = this.peerTipsByPeerId.TryGet(networkPeerId);
 
+            if (oldTipHash == newTip)
+            {
+                this.logger.LogDebug("(-)[ALREADY_CLAIMED]");
+                return;
+            }
+
             this.ClaimPeerTip(networkPeerId, newTip);
 
             if (oldTipHash != null)
