@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.loggerFactory.AddConsoleWithFilters();
             this.network = new SmartContractsRegTest();
             this.validator = new SmartContractValidator();
-            this.addressGenerator = new AddressGenerator();;
+            this.addressGenerator = new AddressGenerator();
         }
 
         [Fact]
