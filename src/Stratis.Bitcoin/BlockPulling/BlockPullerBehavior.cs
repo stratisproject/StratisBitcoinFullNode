@@ -171,21 +171,29 @@ namespace Stratis.Bitcoin.BlockPulling
 
             var getDataPayload = new GetDataPayload();
 
+            INetworkPeer peer = this.AttachedPeer;
+
+            if (peer == null)
+            {
+                this.logger.LogTrace("(-)[PEER_DETACHED]");
+                throw new OperationCanceledException("Peer is detached already!");
+            }
+
             foreach (uint256 uint256 in hashes)
             {
                 var vector = new InventoryVector(InventoryType.MSG_BLOCK, uint256);
-                vector.Type = this.AttachedPeer.AddSupportedOptions(vector.Type);
+                vector.Type = peer.AddSupportedOptions(vector.Type);
 
                 getDataPayload.Inventory.Add(vector);
             }
 
-            if (this.AttachedPeer.State != NetworkPeerState.HandShaked)
+            if (peer.State != NetworkPeerState.HandShaked)
             {
                 this.logger.LogTrace("(-)[ATTACHED_PEER]");
                 throw new OperationCanceledException("Peer is in the wrong state!");
             }
 
-            await this.AttachedPeer.SendMessageAsync(getDataPayload).ConfigureAwait(false);
+            await peer.SendMessageAsync(getDataPayload).ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
         }

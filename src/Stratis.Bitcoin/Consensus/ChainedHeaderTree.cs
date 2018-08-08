@@ -979,6 +979,8 @@ namespace Stratis.Bitcoin.Consensus
                 this.RemoveUnclaimedBranch(chainedHeader);
             }
 
+            this.peerTipsByPeerId.Remove(networkPeerId);
+
             this.logger.LogTrace("(-)");
         }
 
@@ -995,8 +997,6 @@ namespace Stratis.Bitcoin.Consensus
 
             this.ClaimPeerTip(networkPeerId, newTip);
 
-            this.peerTipsByPeerId.AddOrReplace(networkPeerId, newTip);
-
             if (oldTipHash != null)
             {
                 ChainedHeader oldTip = this.chainedHeadersByHash.TryGet(oldTipHash);
@@ -1010,6 +1010,8 @@ namespace Stratis.Bitcoin.Consensus
 
                 this.RemovePeerClaim(networkPeerId, oldTip);
             }
+
+            this.peerTipsByPeerId.AddOrReplace(networkPeerId, newTip);
 
             this.logger.LogTrace("(-)");
         }
