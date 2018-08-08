@@ -984,9 +984,8 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Set a new header as a tip for this peer and remove the old tip.
-        /// </summary>
+        /// <summary>Set a new header as a tip for this peer and remove the old tip.</summary>
+        /// <remarks>If the old tip is equal to <paramref name="newTip"/> the method does nothing.</remarks>
         /// <param name="networkPeerId">The peer id that sets a new tip.</param>
         /// <param name="newTip">The new tip to set.</param>
         private void AddOrReplacePeerTip(int networkPeerId, uint256 newTip)
@@ -997,7 +996,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (oldTipHash == newTip)
             {
-                this.logger.LogDebug("(-)[ALREADY_CLAIMED]");
+                this.logger.LogTrace("(-)[ALREADY_CLAIMED]");
                 return;
             }
 
@@ -1017,7 +1016,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.RemovePeerClaim(networkPeerId, oldTip);
             }
 
-            this.peerTipsByPeerId.AddOrReplace(networkPeerId, newTip);
+            this.peerTipsByPeerId.Add(networkPeerId, newTip);
 
             this.logger.LogTrace("(-)");
         }
