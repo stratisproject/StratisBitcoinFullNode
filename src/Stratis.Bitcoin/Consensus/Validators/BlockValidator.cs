@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.ValidationResults;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -45,7 +44,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// </summary>
         /// <param name="block">The block to validate.</param>
         /// <param name="chainedHeader">The chained header to included in validation.</param>
-        PartialValidationResult ValidateSynchronously(Block block, ChainedHeader chainedHeader);
+        Task<PartialValidationResult> ValidateAsync(Block block, ChainedHeader chainedHeader);
     }
 
     public interface IIntegrityValidator
@@ -178,14 +177,14 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         /// <inheritdoc />
-        public PartialValidationResult ValidateSynchronously(Block block, ChainedHeader chainedHeader)
+        public async Task<PartialValidationResult> ValidateAsync(Block block, ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
             var chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
             var validationContext = new ValidationContext { Block = block, ChainTipToExtand = chainedHeader };
 
-            this.consensusRules.PartialValidationAsync(validationContext).GetAwaiter().GetResult();
+            await this.consensusRules.PartialValidationAsync(validationContext);
 
             var partialValidationResult = new PartialValidationResult
             {
@@ -197,7 +196,6 @@ namespace Stratis.Bitcoin.Consensus.Validators
             };
 
             this.logger.LogTrace("(-)");
-
             return partialValidationResult;
         }
 

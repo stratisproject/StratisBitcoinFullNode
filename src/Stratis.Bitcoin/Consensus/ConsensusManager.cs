@@ -211,13 +211,13 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public Task<ChainedHeaderBlock> BlockMined(Block block)
+        public async Task<ChainedHeaderBlock> BlockMined(Block block)
         {
             this.logger.LogTrace("({0}:{1})", nameof(block), block.GetHash());
 
             PartialValidationResult partialValidationResult;
 
-            lock (this.reorgLock)
+            using (await this.reorgLock.LockAsync().ConfigureAwait(false))
             {
                 ChainedHeader chainedHeader = null;
 
@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Consensus
                     chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
                 }
 
-                partialValidationResult = this.partialValidator.ValidateSynchronously(block, chainedHeader);
+                partialValidationResult = await this.partialValidator.ValidateAsync(block, chainedHeader);
                 if (partialValidationResult.Succeeded)
                 {
                     bool fullValidationRequired;
@@ -244,10 +244,11 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (fullValidationRequired)
                     {
-                        var fullValidationResult = this.FullyValidateLockedAsync(partialValidationResult.ChainedHeaderBlock).GetAwaiter().GetResult();
+                        var fullValidationResult = await this.FullyValidateLockedAsync(partialValidationResult.ChainedHeaderBlock);
                         if (!fullValidationResult.Succeeded)
                         {
                             this.logger.LogError("Miner produced an invalid block, full validation failed: {0}", fullValidationResult.Error.Message);
+                            this.logger.LogTrace("(-)");
                             throw new Exception(fullValidationResult.Error.Message);
                         }
                     }
@@ -260,13 +261,13 @@ namespace Stratis.Bitcoin.Consensus
                     }
 
                     this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}", partialValidationResult.Error.Message);
+                    this.logger.LogTrace("(-)");
                     throw new Exception(partialValidationResult.Error.Message);
                 }
             }
 
             this.logger.LogTrace("(-)");
-
-            return Task.FromResult(partialValidationResult.ChainedHeaderBlock);
+            return partialValidationResult.ChainedHeaderBlock;
         }
 
         /// <summary>
