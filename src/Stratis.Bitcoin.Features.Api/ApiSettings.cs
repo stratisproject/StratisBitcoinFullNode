@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Api
         public const int TestStratisApiPort = 38221;
 
         /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
-        public const string DefaultApiHost = "http://localhost";
+        public const string DefaultApiHost = "https://localhost";
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;

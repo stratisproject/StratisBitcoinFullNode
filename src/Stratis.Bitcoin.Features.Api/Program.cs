@@ -1,26 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Stratis.Bitcoin.Api.Tests;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Api
 {
     public class Program
     {
-        public static void Main(string[] args)
-        {
-        }
-
         public static IWebHost Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode, ApiSettings apiSettings)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
 
             Uri apiUri = apiSettings.ApiUri;
 
+            var certificateStore = new CertificateStore(apiSettings, StoreName.Root, StoreLocation.CurrentUser);
+            if (!(certificateStore.TryGet("Stratis", out var certificate)))
+            {
+                certificate = SslCertificate.BuildSelfSignedServerCertificate("Stratis", "password");
+                certificateStore.Add(certificate);
+            }
+
             IWebHost host = new WebHostBuilder()
-                .UseKestrel()
+                .UseKestrel(options =>
+                {
+                    options.Listen(IPAddress.Loopback, apiSettings.ApiPort, listenOptions =>
+                    {
+                        listenOptions.UseHttps(certificate);
+                    });
+                })
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
                 .UseUrls(apiUri.ToString())
