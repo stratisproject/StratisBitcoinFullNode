@@ -42,7 +42,6 @@ using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
 using Key = NBitcoin.Key;
-using NewContractAddressExtension = Stratis.SmartContracts.Core.NewContractAddressExtension;
 
 
 namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
@@ -302,7 +301,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var smartContractCarrier = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, smartContractCarrier, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress(0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress = tx.GetDeployedContractAddress();
             byte[] ownerFromStorage = context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
             byte[] ownerToBytes = context.privateKey.PubKey.GetAddress(context.network).Hash.ToBytes();
             Assert.Equal(ownerFromStorage, ownerToBytes);
@@ -329,7 +328,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress(0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress = tx.GetDeployedContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -391,7 +390,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress(0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress = tx.GetDeployedContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -443,7 +442,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var contractCarrier = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractCarrier, context.txFirst[0].GetHash(), 100_000_000, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress(0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress = tx.GetDeployedContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
             var unspent = context.stateRoot.GetUnspent(newContractAddress);
@@ -469,7 +468,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var contractCarrier = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractCarrier, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress(0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress = tx.GetDeployedContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -523,7 +522,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress(0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress = tx.GetDeployedContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -553,7 +552,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress(0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress = tx.GetDeployedContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -598,7 +597,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress(0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress = tx.GetDeployedContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
             context.mempool.Clear();
@@ -634,7 +633,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress(0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress = tx.GetDeployedContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
             context.mempool.Clear();
@@ -645,7 +644,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             tx = this.AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
             pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress2 = tx.GetNewContractAddress(0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress2 = tx.GetDeployedContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress2));
 
             context.mempool.Clear();
@@ -692,7 +691,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, SmartContractCompiler.CompileFile("SmartContracts/CountContract.cs").Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress(0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress = tx.GetDeployedContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
             context.mempool.Clear();
@@ -700,7 +699,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, SmartContractCompiler.CompileFile("SmartContracts/CallContract.cs").Compilation, gasPrice, gasLimit);
             tx = this.AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
             pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress2 = tx.GetNewContractAddress(0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress2 = tx.GetDeployedContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress2));
 
             context.mempool.Clear();
@@ -737,7 +736,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
             Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress = NewContractAddressExtension.GetContractAddressFromTransactionHash(tx.GetHash(), 0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress = tx.GetDeployedContractAddress();
 
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
@@ -750,7 +749,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
             tx = AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
             pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress2 = NewContractAddressExtension.GetContractAddressFromTransactionHash(tx.GetHash(), 0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress2 = tx.GetDeployedContractAddress();
 
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress2));
 
@@ -803,7 +802,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
 
             // Check all went well. i.e. contract is deployed.
-            uint160 newContractAddress = NewContractAddressExtension.GetContractAddressFromTransactionHash(tx.GetHash(), 0); // nonce is 0 for user contract creation.
+            uint160 newContractAddress = tx.GetDeployedContractAddress();
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
         }
 
