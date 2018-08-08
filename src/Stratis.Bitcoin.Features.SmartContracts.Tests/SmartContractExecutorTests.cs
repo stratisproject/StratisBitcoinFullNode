@@ -34,6 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private InternalTransactionExecutorFactory internalTxExecutorFactory;
         private ReflectionVirtualMachine vm;
         private ICallDataSerializer serializer;
+        private readonly AddressGenerator addressGenerator;
 
         public SmartContractExecutorTests()
         {
@@ -46,7 +47,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.transferProcessor = new SmartContractResultTransferProcessor(DateTimeProvider.Default, this.loggerFactory, this.network);
             this.validator = new SmartContractValidator();
             this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network);
+            this.addressGenerator = new AddressGenerator();
+            this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator);
             this.serializer = CallDataSerializer.Default;
         }
 
