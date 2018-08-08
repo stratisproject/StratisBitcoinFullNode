@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void Execute_InterContractCall_InfiniteLoop_AllGasConsumed()
+        public void Execute_InterContractCall_Internal_InfiniteLoop_Fails()
         {
             // Create contract 1
 
@@ -296,8 +296,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // If you're running with the debugger on this will obviously be a source of failures
             result = RunWithTimeout(3, () => callExecutor.Execute(transactionContext));
 
-            Assert.IsType<OutOfGasException>(result.Exception);
-            Assert.Equal(gasLimit, result.GasConsumed);
+            // Actual call was successful, but internal call failed due to gas - returned false.
+            Assert.False(result.Revert);
+            Assert.False((bool) result.Return);
         }
 
         private static T RunWithTimeout<T>(int timeout, Func<T> execute)

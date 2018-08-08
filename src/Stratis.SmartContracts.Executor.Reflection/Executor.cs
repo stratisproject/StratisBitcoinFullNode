@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
@@ -38,7 +39,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger.LogTrace("()");
 
             // Deserialization can't fail because this has already been through SmartContractFormatRule.
-            CSharpFunctionalExtensions.Result<ContractTxData> callDataDeserializationResult = this.serializer.Deserialize(transactionContext.ScriptPubKey.ToBytes());
+            Result<ContractTxData> callDataDeserializationResult = this.serializer.Deserialize(transactionContext.ScriptPubKey.ToBytes());
             ContractTxData callData = callDataDeserializationResult.Value;
 
             var gasMeter = new GasMeter(callData.GasLimit);
