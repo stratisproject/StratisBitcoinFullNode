@@ -48,7 +48,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.logger.LogTrace("()");
 
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
+            // TODO: Spend Validation + Creation Fee here.
 
             // Decompile the contract execution code and validate it.
             SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(createData.ContractExecutionCode);
@@ -132,8 +132,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ITransactionContext transactionContext)
         {
             this.logger.LogTrace("(){0}:{1}", nameof(callData.MethodName), callData.MethodName);
-
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
             if (callData.MethodName == null)
             {

@@ -11,6 +11,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
     ///<inheritdoc/>
     public sealed class InternalTransactionExecutor : IInternalTransactionExecutor
     {
+        private const ulong DefaultGasLimit = GasPriceList.BaseCost - 1;
+
         private readonly IContractStateRepository contractStateRepository;
         private readonly List<TransferInfo> internalTransferList;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
@@ -48,12 +50,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
 
-            // TODO: The act of calling this should cost a lot of gas!
+            // TODO: Spend BaseFee here
+
             var balance = smartContractState.GetBalance();
             if (balance < amountToTransfer)
             {
                 this.logger.LogTrace("(-)[INSUFFICIENT_BALANCE]:{0}={1}", nameof(balance), balance);
-                throw new InsufficientBalanceException();
+                throw new InsufficientGasException();
             }
 
             // Discern whether this is a contract or an ordinary address.
@@ -83,6 +86,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
 
+            ulong gasBudget = contractDetails.GasBudget == 0 ? DefaultGasLimit : contractDetails.GasBudget;
+
+            // Ensure we have enough gas left to be able to fund the new GasMeter.
+            if (smartContractState.GasMeter.GasAvailable < gasBudget)
+                throw new InsufficientGasException();
+
+            var nestedGasMeter = new GasMeter((Gas)gasBudget);
+
             IContractStateRepository track = this.contractStateRepository.StartTracking();
 
             var callData = new CallData(smartContractState.GasMeter.GasLimit, addressTo.ToUint160(this.network), contractDetails.ContractMethodName, contractDetails.MethodParameters);
@@ -94,10 +105,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 smartContractState.Message.ContractAddress.ToUint160(this.network),
                 amountToTransfer);
 
-            var result = this.vm.ExecuteMethod(smartContractState.GasMeter, 
+            VmExecutionResult result = this.vm.ExecuteMethod(nestedGasMeter, 
                 track, 
                 callData,
                 context);
+
+            // Update parent gas meter.
+            smartContractState.GasMeter.Spend(nestedGasMeter.GasConsumed);
 
             var revert = result.ExecutionException != null;
 

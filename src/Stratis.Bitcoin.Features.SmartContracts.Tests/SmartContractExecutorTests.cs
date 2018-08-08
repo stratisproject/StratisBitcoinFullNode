@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private static readonly uint160 CoinbaseAddress = 0;
         private static readonly uint160 ToAddress = 1;
         private static readonly uint160 SenderAddress = 2;
-        private static readonly Money MempoolFee = new Money(10000); 
+        private static readonly Money MempoolFee = new Money(1_000_000); 
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
@@ -266,7 +266,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             // Invoke infinite loop
 
-            var gasLimit = (Gas)1000000;
+            var gasLimit = (Gas)100_000;
 
             string[] parameters =
             {
