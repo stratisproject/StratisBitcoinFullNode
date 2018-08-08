@@ -66,7 +66,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             Type contractType = Load(gasInjectedCode, decompilation.ContractType.Name);
             
-            uint160 contractAddress = Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(transactionContext.TransactionHash);
+            uint160 contractAddress = Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(transactionContext.TransactionHash, transactionContext.GetNonceAndIncrement());
 
             // Create an account for the contract in the state repository.
             repository.CreateAccount(contractAddress);
