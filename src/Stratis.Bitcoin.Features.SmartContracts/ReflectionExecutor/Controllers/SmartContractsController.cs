@@ -43,9 +43,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly ContractStateRepositoryRoot stateRoot;
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
+        private readonly IAddressGenerator addressGenerator;
 
-        public SmartContractsController(
-            IBroadcasterManager broadcasterManager,
+        public SmartContractsController(IBroadcasterManager broadcasterManager,
             IConsensusLoop consensus,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -53,7 +53,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ISmartContractReceiptStorage receiptStorage,
             ContractStateRepositoryRoot stateRoot,
             IWalletManager walletManager,
-            IWalletTransactionHandler walletTransactionHandler)
+            IWalletTransactionHandler walletTransactionHandler,
+            IAddressGenerator addressGenerator)
         {
             this.receiptStorage = receiptStorage;
             this.stateRoot = stateRoot;
@@ -63,6 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
+            this.addressGenerator = addressGenerator;
         }
 
         [Route("code")]
@@ -279,7 +281,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             try
             {
                 Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
-                uint160 contractAddress = transaction.GetDeployedContractAddress();
+                uint160 contractAddress = this.addressGenerator.GenerateAddress(transaction.GetHash(), 0);
                 return BuildCreateContractTransactionResponse.Succeeded(transaction, context.TransactionFee, contractAddress.ToAddress(this.network));
             }
             catch (Exception exception)
