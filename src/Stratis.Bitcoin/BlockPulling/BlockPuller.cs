@@ -187,16 +187,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc cref="Random"/>
         private readonly Random random;
 
-        /// <inheritdoc cref="INodeLifetime"/>
-        private readonly INodeLifetime lifetime;
-
         /// <summary>Loop that assigns download jobs to the peers.</summary>
         private Task assignerLoop;
 
         /// <summary>Loop that checks if peers failed to deliver important blocks in given time and penalizes them if they did.</summary>
         private Task stallingLoop;
 
-        public BlockPuller(IChainState chainState, NodeSettings nodeSettings, IDateTimeProvider dateTimeProvider, INodeLifetime lifetime, ILoggerFactory loggerFactory)
+        public BlockPuller(IChainState chainState, NodeSettings nodeSettings, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.reassignedJobsQueue = new Queue<DownloadJob>();
             this.downloadJobsQueue = new Queue<DownloadJob>();
@@ -230,7 +227,6 @@ namespace Stratis.Bitcoin.BlockPulling
 
             this.chainState = chainState;
             this.dateTimeProvider = dateTimeProvider;
-            this.lifetime = lifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -437,11 +433,16 @@ namespace Stratis.Bitcoin.BlockPulling
             if (failedHashes.Count != 0)
                 this.logger.LogTrace("{0} jobs partially or fully failed.", failedHashes.Count);
 
-            // Avoid calling callbacks on shutdown.
-            if (!this.lifetime.ApplicationStopping.IsCancellationRequested)
+            foreach (uint256 failedJob in failedHashes)
             {
-                foreach (uint256 failedJob in failedHashes)
-                    this.onDownloadedCallback(failedJob, null);
+                // Avoid calling callbacks on shutdown.
+                if (this.cancellationSource.IsCancellationRequested)
+                {
+                    this.logger.LogTrace("Callbacks won't be called because component is being disposed.");
+                    break;
+                }
+
+                this.onDownloadedCallback(failedJob, null);
             }
 
             this.logger.LogTrace("(-)");
