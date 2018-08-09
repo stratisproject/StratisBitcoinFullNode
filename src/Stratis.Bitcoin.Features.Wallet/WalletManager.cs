@@ -851,8 +851,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // If the block is behind, let it pass.
                 if (chainedHeader.Height > current.Height)
                 {
-                    this.logger.LogTrace("(-)[BLOCK_TOO_FAR]");
-                    throw new WalletException("block too far in the future has arrived to the wallet");
+                    this.logger.LogTrace("(-)[BLOCK_TOO_FAR_AHEAD_RECEIVED]");
+                    return;
                 }
             }
 
