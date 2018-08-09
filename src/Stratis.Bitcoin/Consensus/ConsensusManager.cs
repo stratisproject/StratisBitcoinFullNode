@@ -217,9 +217,73 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public Task<ChainedHeaderBlock> BlockMined(Block block)
+        public async Task<ChainedHeaderBlock> BlockMinedAsync(Block block)
         {
-            throw new NotImplementedException();
+            this.logger.LogTrace("({0}:{1})", nameof(block), block.GetHash());
+
+            PartialValidationResult partialValidationResult;
+
+            using (await this.reorgLock.LockAsync().ConfigureAwait(false))
+            {
+                ChainedHeader chainedHeader;
+
+                lock (this.peerLock)
+                {
+                    if (block.Header.HashPrevBlock != this.Tip.HashBlock)
+                    {
+                        this.logger.LogTrace("(-)[BLOCKMINED_INVALID_PREVIOUS_TIP]:null");
+                        return null;
+                    }
+
+                    chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
+                }
+
+                partialValidationResult = await this.partialValidator.ValidateAsync(block, chainedHeader).ConfigureAwait(false);
+                if (partialValidationResult.Succeeded)
+                {
+                    bool fullValidationRequired;
+
+                    lock (this.peerLock)
+                    {
+                        this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out fullValidationRequired);
+                    }
+
+                    if (fullValidationRequired)
+                    {
+                        ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(partialValidationResult.ChainedHeaderBlock).ConfigureAwait(false);
+                        if (!fullValidationResult.Succeeded)
+                        {
+                            lock (this.peerLock)
+                            {
+                                this.chainedHeaderTree.PartialOrFullValidationFailed(chainedHeader);
+                            }
+
+                            this.logger.LogTrace("Miner produced an invalid block, full validation failed: {0}", fullValidationResult.Error.Message);
+                            this.logger.LogTrace("(-)[FULL_VALIDATION_FAILED]");
+                            throw new ConsensusException(fullValidationResult.Error.Message);
+                        }
+                    }
+                    else
+                    {
+                        this.logger.LogTrace("(-)[FULL_VALIDATION_WAS_NOT_REQUIRED]");
+                        throw new ConsensusException("Full validation was not required.");
+                    }
+                }
+                else
+                {
+                    lock (this.peerLock)
+                    {
+                        this.chainedHeaderTree.PartialOrFullValidationFailed(chainedHeader);
+                    }
+
+                    this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}", partialValidationResult.Error.Message);
+                    this.logger.LogTrace("(-)[PARTIAL_VALIDATION_FAILED]");
+                    throw new ConsensusException(partialValidationResult.Error.Message);
+                }
+            }
+
+            this.logger.LogTrace("(-):{0}", partialValidationResult.ChainedHeaderBlock);
+            return partialValidationResult.ChainedHeaderBlock;
         }
 
         /// <summary>
@@ -268,7 +332,7 @@ namespace Stratis.Bitcoin.Consensus
                 partialValidationRequired = this.chainedHeaderTree.BlockDataDownloaded(chainedHeaderBlock.ChainedHeader, chainedHeaderBlock.Block);
             }
 
-            this.logger.LogTrace("Partial validation is{0} required.", partialValidationRequired ? "" : " NOT");
+            this.logger.LogTrace("Partial validation is{0} required.", partialValidationRequired ? string.Empty : " NOT");
 
             if (partialValidationRequired)
                 this.partialValidator.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);

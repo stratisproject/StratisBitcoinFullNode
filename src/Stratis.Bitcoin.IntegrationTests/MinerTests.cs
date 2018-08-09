@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
-                await this.consensus.BlockMined(this.newBlock.Block);
+                await this.consensus.BlockMinedAsync(this.newBlock.Block);
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     block.Header.Nonce = this.blockinfo[i].nonce;
 
-                    await this.consensus.BlockMined(block);
+                    await this.consensus.BlockMinedAsync(block);
 
                     blocks.Add(block);
                 }

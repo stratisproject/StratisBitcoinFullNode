@@ -522,7 +522,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             }
 
             // Validate the block.
-            ChainedHeaderBlock chainedHeaderBlock = this.consensusManager.BlockMined(block).GetAwaiter().GetResult();
+            ChainedHeaderBlock chainedHeaderBlock = this.consensusManager.BlockMinedAsync(block).GetAwaiter().GetResult();
 
             if (chainedHeaderBlock == null)
             {
