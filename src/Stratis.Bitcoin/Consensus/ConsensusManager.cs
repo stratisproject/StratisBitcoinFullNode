@@ -27,12 +27,15 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private const long MaxUnconsumedBlocksDataBytes = 200 * 1024 * 1024;
 
-        /// <summary>The maximum amount of blocks that can be assigned to <see cref="IBlockPuller"/> at the same time.</summary>
-        private const int MaxBlocksToAskFromPuller = 5000;
-
         /// <summary>Queue consumption threshold in bytes.</summary>
         /// <remarks><see cref="toDownloadQueue"/> consumption will start if only we have more than this value of free memory.</remarks>
         private const long ConsumptionThresholdBytes = MaxUnconsumedBlocksDataBytes / 10;
+
+        /// <summary>The maximum amount of blocks that can be assigned to <see cref="IBlockPuller"/> at the same time.</summary>
+        private const int MaxBlocksToAskFromPuller = 5000;
+
+        /// <summary>The minimum amount of slots that should be available to trigger asking block puller for blocks.</summary>
+        private const int ConsumptionThresholdSlots = MaxBlocksToAskFromPuller / 10;
 
         /// <summary>The default number of blocks to ask when there is no historic data to estimate average block size.</summary>
         private const int DefaultNumberOfBlocksToAsk = 10;
@@ -1060,30 +1063,36 @@ namespace Stratis.Bitcoin.Consensus
                 }
 
                 long avgSize = (long)this.blockPuller.GetAverageBlockSizeBytes();
-                int blocksToAsk = avgSize != 0 ? (int)(freeBytes / avgSize) : DefaultNumberOfBlocksToAsk;
+                int maxBlocksToAsk = avgSize != 0 ? (int)(freeBytes / avgSize) : DefaultNumberOfBlocksToAsk;
 
                 int emptySlots = MaxBlocksToAskFromPuller - awaitingBlocksCount;
 
-                if (blocksToAsk > emptySlots)
-                    blocksToAsk = emptySlots;
+                if (maxBlocksToAsk > emptySlots)
+                    maxBlocksToAsk = emptySlots;
 
-                this.logger.LogTrace("With {0} average block size, we have {1} download slots available.", avgSize, blocksToAsk);
+                if (maxBlocksToAsk < ConsumptionThresholdSlots)
+                {
+                    this.logger.LogTrace("(-)[NOT_ENOUGH_CLOTS]");
+                    return;
+                }
 
-                if (request.BlocksToDownload.Count <= blocksToAsk)
+                this.logger.LogTrace("With {0} average block size, we have {1} download slots available.", avgSize, maxBlocksToAsk);
+
+                if (request.BlocksToDownload.Count <= maxBlocksToAsk)
                 {
                     this.toDownloadQueue.Dequeue();
                 }
                 else
                 {
-                    this.logger.LogTrace("Splitting enqueued job of size {0} into 2 pieces of sizes {1} and {2}.", request.BlocksToDownload.Count, blocksToAsk, request.BlocksToDownload.Count - blocksToAsk);
+                    this.logger.LogTrace("Splitting enqueued job of size {0} into 2 pieces of sizes {1} and {2}.", request.BlocksToDownload.Count, maxBlocksToAsk, request.BlocksToDownload.Count - maxBlocksToAsk);
 
                     // Split queue item in 2 pieces: one of size blocksToAsk and second is the rest. Ask BP for first part, leave 2nd part in the queue.
                     var blockPullerRequest = new BlockDownloadRequest()
                     {
-                        BlocksToDownload = new List<ChainedHeader>(request.BlocksToDownload.GetRange(0, blocksToAsk))
+                        BlocksToDownload = new List<ChainedHeader>(request.BlocksToDownload.GetRange(0, maxBlocksToAsk))
                     };
 
-                    request.BlocksToDownload.RemoveRange(0, blocksToAsk);
+                    request.BlocksToDownload.RemoveRange(0, maxBlocksToAsk);
 
                     request = blockPullerRequest;
                 }
