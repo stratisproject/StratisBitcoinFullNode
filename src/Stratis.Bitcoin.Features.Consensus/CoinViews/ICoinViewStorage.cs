@@ -32,7 +32,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// it means that the ouputs are newly created in the new block. If it is not <c>null</c>, it holds information about which outputs of the transaction were previously spent
         /// and which were not.</param>
         /// <param name="rewindDataCollection">List of rewind data items to persist.</param>
-        Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, List<RewindData> rewindDataCollection);
+        /// <param name="oldBlockHash"></param>
+        /// <param name="nextBlockHash"></param>
+        Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash);
 
         /// <summary>
         /// Obtains information about unspent outputs for specific transactions and also retrieves information about the coinview's tip.

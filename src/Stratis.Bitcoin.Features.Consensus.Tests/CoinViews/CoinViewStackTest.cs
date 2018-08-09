@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
@@ -26,8 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         [Fact]
         public void Constructor_CoinViewWithBackedCoinViews_SetsTopAndBottom()
         {
-            var nonBackedCoinView = new NonBackedCoinView();
-            var backedCoinView2 = new BackedCoinView2(nonBackedCoinView);
+            var backedCoinView2 = new Mock<ICoinViewStorage>().Object;
             var backedCoinView1 = new BackedCoinView1(backedCoinView2);
 
             var stack = new CoinViewStack(backedCoinView1);
@@ -39,8 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         [Fact]
         public void GetElements_CoinViewWithBackedCoinViews_ReturnsStack()
         {
-            var nonBackedCoinView = new NonBackedCoinView();
-            var backedCoinView2 = new BackedCoinView2(nonBackedCoinView);
+            var backedCoinView2 = new Mock<ICoinViewStorage>().Object;
             var backedCoinView1 = new BackedCoinView1(backedCoinView2);
 
             var stack = new CoinViewStack(backedCoinView1);
@@ -56,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         [Fact]
         public void GetElements_NullCoinViewWithinStack_ReturnsNonNullCoinViews()
         {
-            var backedCoinView2 = new BackedCoinView2(null);
+            var backedCoinView2 = new Mock<ICoinViewStorage>().Object;
             var backedCoinView1 = new BackedCoinView1(backedCoinView2);
 
             var stack = new CoinViewStack(backedCoinView1);
@@ -71,9 +70,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         [Fact]
         public void Find_CoinViewTop_ReturnsCoinView()
         {
-            var nonBackedCoinView = new NonBackedCoinView();
-            var backedCoinView2 = new BackedCoinView2(nonBackedCoinView, 3);
-            var backedCoinView1 = new BackedCoinView1(backedCoinView2, 4);
+            var backedCoinView2 = new BackedCoinView2(new Mock<ICoinViewStorage>().Object, 3);
+            var backedCoinView1 = new BackedCoinView1(new Mock<ICoinViewStorage>().Object, 4);
 
             var stack = new CoinViewStack(backedCoinView1);
 
@@ -86,9 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         [Fact]
         public void Find_CoinViewWithinStack_ReturnsCoinView()
         {
-            var nonBackedCoinView = new NonBackedCoinView();
-            var backedCoinView2 = new BackedCoinView2(nonBackedCoinView, 3);
-            var backedCoinView1 = new BackedCoinView1(backedCoinView2, 4);
+            var backedCoinView1 = new BackedCoinView1(new Mock<ICoinViewStorage>().Object, 4);
 
             var stack = new CoinViewStack(backedCoinView1);
 
@@ -110,7 +106,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             Assert.Null(coinView);
         }
 
-        private class NonBackedCoinView : ICoinViewStorage
+        private class NonBackedCoinView : ICoinView
         {
             public NonBackedCoinView()
             {
@@ -122,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 throw new NotImplementedException();
             }
 
-            public Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, List<RewindData> rewindDataCollection)
+            public Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, ChainedHeader currentBlock)
             {
                 throw new NotImplementedException();
             }

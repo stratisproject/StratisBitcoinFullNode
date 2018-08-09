@@ -26,10 +26,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             this.Top = top;
             ICoinView current = top;
-            while (current is IBackedCoinView)
-            {
-                current = ((IBackedCoinView)current).CoinViewStorage;
-            }
             this.Bottom = current;
         }
 
@@ -40,12 +36,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public IEnumerable<ICoinView> GetElements()
         {
             ICoinView current = this.Top;
-            while (current is IBackedCoinView)
-            {
-                yield return current;
-
-                current = ((IBackedCoinView)current).CoinViewStorage;
-            }
 
             if (current != null)
                 yield return current;
@@ -61,13 +51,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             ICoinView current = this.Top;
             if (current is T)
                 return (T)(object)current;
-
-            while (current is IBackedCoinView)
-            {
-                current = ((IBackedCoinView)current).CoinViewStorage;
-                if (current is T)
-                    return (T)(object)current;
-            }
 
             return default(T);
         }

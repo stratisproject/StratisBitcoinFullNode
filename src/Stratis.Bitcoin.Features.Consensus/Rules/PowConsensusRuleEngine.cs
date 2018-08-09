@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override Task Initialize()
         {
-            return ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner).InitializeAsync();
+            return ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).CoinViewStorage).InitializeAsync();
         }
 
         public override void Dispose()
@@ -61,11 +61,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             if (cache != null)
             {
                 this.logger.LogInformation("Flushing Cache CoinView...");
-                cache.FlushAsync().GetAwaiter().GetResult();
                 cache.Dispose();
             }
 
-            ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner).Dispose();
+            ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).CoinViewStorage).Dispose();
         }
     }
 }

@@ -34,23 +34,17 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Hash of the block which is currently the tip of the coinview.</summary>
         private uint256 blockHash;
 
-        /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
-        private readonly BackendPerformanceCounter performanceCounter;
-
-        private const string RewindCollectionKey = "RewindDataCollection";
+        private const string RewindDataKey = "RewindData";
 
         private const string CoinsKey = "Coins";
 
         private const string BlockHashKey = "BlockHash";
 
         /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
-        public BackendPerformanceCounter PerformanceCounter
-        {
-            get { return this.performanceCounter; }
-        }
+        public BackendPerformanceCounter PerformanceCounter { get; }
 
         /// <summary>Provider of time functions.</summary>
-        protected readonly IDateTimeProvider dateTimeProvider;
+        protected readonly IDateTimeProvider DateTimeProvider;
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -82,8 +76,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dbreeze = new DBreezeEngine(folder);
             this.network = network;
-            this.dateTimeProvider = dateTimeProvider;
-            this.performanceCounter = new BackendPerformanceCounter(this.dateTimeProvider);
+            this.DateTimeProvider = dateTimeProvider;
+            this.PerformanceCounter = new BackendPerformanceCounter(this.DateTimeProvider);
         }
 
         /// <summary>
@@ -213,17 +207,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, List<RewindData> rewindDataCollection)
+        public Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash)
         {
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
 
             List<UnspentOutputs> allUnspentOutputs = unspentOutputs.ToList();
-            this.logger.LogTrace("({unspentOutputsName}.Count():{allUnspentOutputsCount},{originalOutputsName}.Count():{originalOutputsCount},{oldBlockHashName}:'{oldBlockHashValue}',{nextBlockHashName}:'{nextBlockHashValue}')", nameof(unspentOutputs), allUnspentOutputs.Count, nameof(originalOutputs), originalOutputs?.Count(), nameof(oldBlock), oldBlock.HashBlock, nameof(nextBlock), nextBlock.HashBlock);
+            this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}.Count():'{5}',{6}:{7},{8}:{9})", nameof(unspentOutputs), allUnspentOutputs.Count, nameof(originalOutputs), originalOutputs?.Count(), nameof(rewindDataCollection), rewindDataCollection.Count, nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
 
-            RewindData rewindData = originalOutputs != null ? new RewindData(oldBlock.HashBlock) : null;
             int insertedEntities = 0;
-            
-            Dictionary<uint256, TxOut[]> unspentToOriginal = this.MapOutputTransactionIdsToListOfOriginalOutputs(originalOutputs, allUnspentOutputs);
 
             Task task = Task.Run(() =>
             {
@@ -232,19 +223,19 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
-                    transaction.SynchronizeTables(BlockHashKey, CoinsKey, RewindCollectionKey);
+                    transaction.SynchronizeTables(BlockHashKey, CoinsKey, RewindDataKey);
                     transaction.Technical_SetTable_OverwriteIsNotAllowed(CoinsKey);
 
                     using (new StopwatchDisposable(o => this.PerformanceCounter.AddInsertTime(o)))
                     {
                         uint256 current = this.GetTipHash(transaction);
-                        if (current != oldBlock.HashBlock)
+                        if (current != oldBlockHash)
                         {
                             this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
                             throw new InvalidOperationException("Invalid oldBlockHash");
                         }
 
-                        this.SetBlockHash(transaction, nextBlock.HashBlock);
+                        this.SetBlockHash(transaction, nextBlockHash);
 
                         allUnspentOutputs.Sort(UnspentOutputsComparer.Instance);
                         foreach (UnspentOutputs coin in allUnspentOutputs)
@@ -252,32 +243,19 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                             this.logger.LogTrace("Outputs of transaction ID '{transactionId}' are {prunableState} and will be {action} to the database.", coin.TransactionId, coin.IsPrunable ? "PRUNABLE" : "NOT PRUNABLE", coin.IsPrunable ? "removed" : "inserted");
                             if (coin.IsPrunable) transaction.RemoveKey(CoinsKey, coin.TransactionId.ToBytes(false));
                             else transaction.Insert(CoinsKey, coin.TransactionId.ToBytes(false), coin.ToCoins());
-
-                            if (originalOutputs == null) continue;
-
-                            unspentToOriginal.TryGetValue(coin.TransactionId, out TxOut[] original);
-                            if (original == null)
-                            {
-                                // This one haven't existed before, if we rewind, delete it.
-                                rewindData.TransactionsToRemove.Add(coin.TransactionId);
-                            }
-                            else
-                            {
-                                // We'll need to restore the original outputs.
-                                UnspentOutputs clone = coin.Clone();
-                                clone.Outputs = original.ToArray();
-                                rewindData.OutputsToRestore.Add(clone);
-                            }
                         }
 
-                        int nextRewindIndex = 0;
-                        if (this.TryGetRewindIndex(transaction, out int currentRewindIndex))
+                        foreach (RewindData rewindData in rewindDataCollection)
                         {
-                            nextRewindIndex = currentRewindIndex + 1;
-                        }
+                            int nextRewindIndex = 0;
+                            if (this.TryGetRewindIndex(transaction, out int currentRewindIndex))
+                            {
+                                nextRewindIndex = currentRewindIndex + 1;
+                            }
 
-                        this.logger.LogTrace("Rewind state #{0} created.", nextRewindIndex);
-                        transaction.Insert(RewindCollectionKey, nextRewindIndex, rewindData);
+                            this.logger.LogTrace("Rewind state #{0} created.", nextRewindIndex);
+                            transaction.Insert(RewindDataKey, nextRewindIndex, rewindData);
+                        }
 
                         insertedEntities += allUnspentOutputs.Count;
                         transaction.Commit();
@@ -323,7 +301,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             bool prevLazySettings = transaction.ValuesLazyLoadingIsOn;
 
             transaction.ValuesLazyLoadingIsOn = true;
-            Row<int, RewindData> firstRow = transaction.SelectBackward<int, RewindData>(RewindCollectionKey).FirstOrDefault();
+            Row<int, RewindData> firstRow = transaction.SelectBackward<int, RewindData>(RewindDataKey).FirstOrDefault();
             transaction.ValuesLazyLoadingIsOn = prevLazySettings;
 
             if (firstRow == null)
@@ -346,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 uint256 res = null;
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    transaction.SynchronizeTables(BlockHashKey, CoinsKey, RewindCollectionKey);
+                    transaction.SynchronizeTables(BlockHashKey, CoinsKey, RewindDataKey);
                     if (!this.TryGetRewindIndex(transaction, out int _))
                     {
                         transaction.RemoveAllKeys(CoinsKey, true);
@@ -358,8 +336,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     {
                         transaction.ValuesLazyLoadingIsOn = false;
 
-                        Row<int, RewindData> firstRow = transaction.SelectBackward<int, RewindData>(RewindCollectionKey).FirstOrDefault();
-                        transaction.RemoveKey(RewindCollectionKey, firstRow.Key);
+                        Row<int, RewindData> firstRow = transaction.SelectBackward<int, RewindData>(RewindDataKey).FirstOrDefault();
+                        transaction.RemoveKey(RewindDataKey, firstRow.Key);
                         this.SetBlockHash(transaction, firstRow.Value.PreviousBlockHash);
 
                         foreach (uint256 txId in firstRow.Value.TransactionsToRemove)

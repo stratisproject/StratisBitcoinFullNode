@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Statistics of hits and misses in the cache.</summary>
         public CachePerformanceCounter PerformanceCounter { get; set; }
 
-        /// <summary>Lock object to protect access to <see cref="unspents"/>, <see cref="blockHash"/>, and <see cref="innerBlockHash"/>.</summary>
+        /// <summary>Lock object to protect access to <see cref="unspents"/>, <see cref="blockHash"/>, and <see cref="persistedBlockHash"/>.</summary>
         private readonly AsyncLock lockobj;
 
         /// <summary>Hash of the block headers of the tip of the coinview.</summary>
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Hash of the block headers of the tip of the underlaying coinview.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
-        private uint256 innerBlockHash;
+        private uint256 persistedBlockHash;
 
         /// <summary>Coin view at one layer below this implementaiton.</summary>
         public ICoinViewStorage CoinViewStorage { get; }
@@ -176,8 +176,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             {
                 FetchCoinsResponse response = await this.FetchCoinsAsync(new uint256[0], cancellationToken).ConfigureAwait(false);
 
-                this.innerBlockHash = response.BlockHash;
-                this.blockHash = this.innerBlockHash;
+                this.persistedBlockHash = response.BlockHash;
+                this.blockHash = this.persistedBlockHash;
             }
 
             this.logger.LogTrace("(-):'{0}'", this.blockHash);
@@ -227,8 +227,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 if (this.blockHash == null)
                 {
                     Debug.Assert(this.unspents.Count == 0);
-                    this.innerBlockHash = innerblockHash;
-                    this.blockHash = this.innerBlockHash;
+                    this.persistedBlockHash = innerblockHash;
+                    this.blockHash = this.persistedBlockHash;
                 }
 
                 for (int i = 0; i < miss.Count; i++)
@@ -361,8 +361,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             this.logger.LogTrace("()");
 
-            if (this.innerBlockHash == null)
-                this.innerBlockHash = await this.CoinViewStorage.GetTipHashAsync().ConfigureAwait(false);
+            if (this.persistedBlockHash == null)
+                this.persistedBlockHash = await this.CoinViewStorage.GetTipHashAsync().ConfigureAwait(false);
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
@@ -380,7 +380,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 } 
 
                 uint256 hash = await this.CoinViewStorage.Rewind().ConfigureAwait(false);
-                this.innerBlockHash = hash;
+                this.persistedBlockHash = hash;
                 this.blockHash = hash;
 
                 this.logger.LogTrace("(-):'{0}'", hash);
@@ -500,7 +500,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
-                if (this.innerBlockHash == null)
+                if (this.persistedBlockHash == null)
                 {
                     this.logger.LogTrace("(-)[NULL_INNER_TIP]");
                     return;
@@ -517,14 +517,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 }
 
                 // Update signature to only store rewind data
-                await this.CoinViewStorage.PersistDataAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.rewindDataBatch).ConfigureAwait(false);
+                await this.CoinViewStorage.PersistDataAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.rewindDataBatch, this.persistedBlockHash, this.blockHash).ConfigureAwait(false);
 
                 // Remove prunable entries from cache as they were flushed down.
                 IEnumerable<KeyValuePair<uint256, CacheItem>> prunableEntries = unspent.Where(c => (c.Value.UnspentOutputs != null) && c.Value.UnspentOutputs.IsPrunable);
                 foreach (KeyValuePair<uint256, CacheItem> entry in prunableEntries)
                     this.unspents.Remove(entry.Key);
 
-                this.innerBlockHash = this.blockHash;
+                this.persistedBlockHash = this.blockHash;
             }
 
             this.logger.LogTrace("(-)");
