@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             public readonly Mock<IChainState> ChainStateMock = new Mock<IChainState>();
             public readonly Mock<IConsensusRuleEngine> ConsensusRulesMock = new Mock<IConsensusRuleEngine>();
 
-            public readonly Mock<IFinalizedBlockHeight> FinalizedBlockMock = new Mock<IFinalizedBlockHeight>();
+            public readonly Mock<IFinalizedBlockInfo> FinalizedBlockMock = new Mock<IFinalizedBlockInfo>();
             public readonly ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(KnownNetworks.RegTest));
             public readonly Mock<IInitialBlockDownloadState> ibdStateLock = new Mock<IInitialBlockDownloadState>();
 

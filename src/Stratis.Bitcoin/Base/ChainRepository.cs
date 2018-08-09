@@ -24,14 +24,14 @@ namespace Stratis.Bitcoin.Base
     /// Blocks with height greater than finalized height can be reorged.
     /// <para>Finalized block height value is always <c>0</c> for blockchains without max reorg property.</para>
     /// </remarks>
-    public interface IFinalizedBlockHeight
+    public interface IFinalizedBlockInfo
     {
         /// <summary>Gets the finalized block hash and height.</summary>
         /// <returns>Hash and height of a block that can't be reorged away from.</returns>
-        HashHeightPair GetFinalizedBlockHashAndHeight();
+        HashHeightPair GetFinalizedBlockInfo();
 
-        /// <summary>Loads the finalised block height from the database.</summary>
-        Task LoadFinalizedBlockHeightAsync(Network network);
+        /// <summary>Loads the finalised block hash and height from the database.</summary>
+        Task LoadFinalizedBlockInfoAsync(Network network);
 
         /// <summary>Saves the finalized block hash and height to the database if height is greater than the previous value.</summary>
         /// <param name="hash">Block hash.</param>
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Base
         Task<bool> SaveFinalizedBlockHashAndHeightAsync(uint256 hash, int height);
     }
 
-    public class ChainRepository : IChainRepository, IFinalizedBlockHeight
+    public class ChainRepository : IChainRepository, IFinalizedBlockInfo
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Base
         private static readonly byte[] finalizedBlockKey = new byte[0];
 
         /// <summary>Height and hash of a block that can't be reorged away from.</summary>
-        private HashHeightPair finalizedBlock;
+        private HashHeightPair finalizedBlockInfo;
 
         public ChainRepository(string folder, ILoggerFactory loggerFactory)
         {
@@ -72,13 +72,13 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
-        public HashHeightPair GetFinalizedBlockHashAndHeight()
+        public HashHeightPair GetFinalizedBlockInfo()
         {
-            return this.finalizedBlock;
+            return this.finalizedBlockInfo;
         }
 
         /// <inheritdoc />
-        public Task LoadFinalizedBlockHeightAsync(Network network)
+        public Task LoadFinalizedBlockInfoAsync(Network network)
         {
             this.logger.LogTrace("()");
 
@@ -93,13 +93,13 @@ namespace Stratis.Bitcoin.Base
                     Row<byte[], HashHeightPair> row = transaction.Select<byte[], HashHeightPair>("FinalizedBlock", finalizedBlockKey);
                     if (!row.Exists)
                     {
-                        this.finalizedBlock = new HashHeightPair(network.GenesisHash, 0);
+                        this.finalizedBlockInfo = new HashHeightPair(network.GenesisHash, 0);
                         this.logger.LogTrace("Finalized block height doesn't exist in the database.");
                     }
                     else
-                        this.finalizedBlock = row.Value;
+                        this.finalizedBlockInfo = row.Value;
 
-                    this.logger.LogTrace("(-):{0}={1}", nameof(this.finalizedBlock), this.finalizedBlock);
+                    this.logger.LogTrace("(-):{0}='{1}'", nameof(this.finalizedBlockInfo), this.finalizedBlockInfo);
                 }
             });
 
@@ -112,13 +112,13 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:{1})", nameof(height), height);
 
-            if (height <= this.finalizedBlock.Height)
+            if (height <= this.finalizedBlockInfo.Height)
             {
                 this.logger.LogTrace("(-)[CANT_GO_BACK]:false");
                 return Task.FromResult(false);
             }
 
-            this.finalizedBlock = new HashHeightPair(hash, height);
+            this.finalizedBlockInfo = new HashHeightPair(hash, height);
 
             Task<bool> task = Task.Run(() =>
             {
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Base
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    transaction.Insert<byte[], HashHeightPair>("FinalizedBlock", finalizedBlockKey, this.finalizedBlock);
+                    transaction.Insert<byte[], HashHeightPair>("FinalizedBlock", finalizedBlockKey, this.finalizedBlockInfo);
                     transaction.Commit();
                 }
 

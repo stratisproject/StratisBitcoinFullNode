@@ -127,7 +127,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 await this.blockRepository.ReIndexAsync().ConfigureAwait(false);
             }
 
-            // TODO ACTIVATION consider using height there
             ChainedHeader initializationTip = this.chain.GetBlock(this.blockRepository.TipHashAndHeight.Hash);
             this.SetStoreTip(initializationTip);
 
@@ -214,7 +213,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             var blockStoreResetList = new List<uint256>();
 
-            // TODO ACTIVATION consider using height there
             uint256 resetBlockHash = this.blockRepository.TipHashAndHeight.Hash;
             Block resetBlock = await this.blockRepository.GetBlockAsync(resetBlockHash).ConfigureAwait(false);
 

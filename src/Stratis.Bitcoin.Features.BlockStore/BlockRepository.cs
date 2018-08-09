@@ -33,9 +33,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task<List<Block>> GetBlocksAsync(List<uint256> hashes);
 
         /// <summary>
-        /// Wipe our blocks and their transactions then replace with a new block.
+        /// Wipe out blocks and their transactions then replace with a new block.
         /// </summary>
-        /// <param name="newTip">Hash and height of the new repository's tip.</param>
+        /// <param name="newTip">New repository's tip.</param>
         /// <param name="hashes">List of all block hashes to be deleted.</param>
         Task DeleteAsync(HashHeightPair newTip, List<uint256> hashes);
 

@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
         private readonly ISignals signals;
-        private readonly IFinalizedBlockHeight finalizedBlockHeight;
+        private readonly IFinalizedBlockInfo finalizedBlockInfo;
 
         /// <inheritdoc />
         public long UnconsumedBlocksDataBytes { get; private set; }
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Consensus
             IIntegrityValidator integrityValidator,
             ICheckpoints checkpoints,
             IChainState chainState,
-            IFinalizedBlockHeight finalizedBlockHeight,
+            IFinalizedBlockInfo finalizedBlockInfo,
             ConsensusSettings consensusSettings,
             ISignals signals)
         {
@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Consensus
             this.integrityValidator = integrityValidator;
             this.checkpoints = checkpoints;
             this.chainState = chainState;
-            this.finalizedBlockHeight = finalizedBlockHeight;
+            this.finalizedBlockInfo = finalizedBlockInfo;
             this.consensusSettings = consensusSettings;
             this.signals = signals;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -515,8 +515,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     ChainedHeader fork = this.FindForkIfChainedHeadersNotOnSameChain(peerTip, consensusTip);
 
-                    // TODO ACTIVATION use hash too
-                    int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHashAndHeight().Height;
+                    int finalizedHeight = this.finalizedBlockInfo.GetFinalizedBlockInfo().Height;
 
                     // Do nothing in case peer's tip is on our consensus chain.
                     if ((fork != null) && (fork.Height < finalizedHeight))
@@ -1166,8 +1165,7 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     int reorgLength = consensusTip.Height - fork.Height;
 
-                    // TODO ACTIVATION use hash too
-                    int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHashAndHeight().Height;
+                    int finalizedHeight = this.finalizedBlockInfo.GetFinalizedBlockInfo().Height;
 
                     if (fork.Height < finalizedHeight)
                     {

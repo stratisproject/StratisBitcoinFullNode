@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly Signals.Signals signals;
         private readonly IPeerBanning peerBanning;
         private readonly IBlockStore blockStore;
-        private readonly IFinalizedBlockHeight finalizedBlockHeight;
+        private readonly IFinalizedBlockInfo finalizedBlockInfo;
         private readonly IBlockPuller blockPuller;
 
         /// <inheritdoc />
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Consensus
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
             IConsensusRuleEngine consensusRules,
-            IFinalizedBlockHeight finalizedBlockHeight,
+            IFinalizedBlockInfo finalizedBlockInfo,
             Signals.Signals signals,
             IPeerBanning peerBanning,
             NodeSettings nodeSettings,
@@ -106,11 +106,11 @@ namespace Stratis.Bitcoin.Consensus
             this.signals = signals;
             this.peerBanning = peerBanning;
             this.blockStore = blockStore;
-            this.finalizedBlockHeight = finalizedBlockHeight;
+            this.finalizedBlockInfo = finalizedBlockInfo;
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockHeight, consensusSettings, signals);
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, signals);
 
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
@@ -587,7 +587,7 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         uint256 newFinalizedHash = newTip.GetAncestor(newFinalizedHeight).HashBlock;
 
-                        await this.finalizedBlockHeight.SaveFinalizedBlockHashAndHeightAsync(newFinalizedHash, newFinalizedHeight).ConfigureAwait(false);
+                        await this.finalizedBlockInfo.SaveFinalizedBlockHashAndHeightAsync(newFinalizedHash, newFinalizedHeight).ConfigureAwait(false);
                     }
                 }
 
