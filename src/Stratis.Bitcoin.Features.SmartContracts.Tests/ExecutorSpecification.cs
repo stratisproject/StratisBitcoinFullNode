@@ -17,20 +17,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Create_Contract_Success()
         {
-            var newContractAddress = uint160.One;
+            uint160 newContractAddress = uint160.One;
             var gasConsumed = (Gas) 100;
             var code = new byte[] {0xAA, 0xBB, 0xCC};
             var contractTxData = new ContractTxData(1, 1, (Gas) 1000, code);
             var script = new Script(code);
             var refund = new Money(0);
             const ulong mempoolFee = 2UL; // MOQ doesn't like it when you use a type with implicit conversions (Money)
-            var context = Mock.Of<ISmartContractTransactionContext>(c => 
+            ISmartContractTransactionContext context = Mock.Of<ISmartContractTransactionContext>(c => 
                 c.ScriptPubKey == script &&
                 c.MempoolFee == mempoolFee &&
                 c.Sender == uint160.One);
 
             var logger = new Mock<ILogger>();
-            var loggerFactory = Mock.Of<ILoggerFactory>
+            ILoggerFactory loggerFactory = Mock.Of<ILoggerFactory>
                     (l => l.CreateLogger(It.IsAny<string>()) == logger.Object);
 
             var serializer = new Mock<ICallDataSerializer>();            
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var state = new Mock<IContractStateRepository>();
             var transferProcessor = new Mock<ISmartContractResultTransferProcessor>();
 
-            var refundResult = (refund, new List<TxOut>());
+            (Money refund, List<TxOut>) refundResult = (refund, new List<TxOut>());
             var refundProcessor = new Mock<ISmartContractResultRefundProcessor>();
             refundProcessor
                 .Setup(r => r.Process(
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Returns(refundResult);
 
             var vm = new Mock<ISmartContractVirtualMachine>();
-            vm.Setup(v => v.Create(It.IsAny<IGasMeter>(),
+            vm.Setup(v => v.Create(It.Is<IGasMeter>(x => x.GasConsumed == GasPriceList.BaseCost),
                 It.IsAny<IContractStateRepository>(),
                 It.IsAny<ICreateData>(),
                 It.IsAny<ITransactionContext>()))
