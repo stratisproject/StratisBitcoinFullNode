@@ -102,9 +102,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Depending on the WalletTip and incoming block height, this method will decide whether the block will be processed by the <see cref="WalletManager"/>.
         /// </summary>
         /// <param name="block">Block to be processed.</param>
-        /// <param name="cancellationtoken">The cancellation token.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
-        private Task OnProcessBlockAsync(Block block, CancellationToken cancellationtoken)
+        private Task OnProcessBlockAsync(Block block, CancellationToken cancellationToken)
         {
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.logger.LogTrace("()");
 
-            this.blocksQueue?.Dispose();
+            this.blocksQueue.Dispose();
 
             this.logger.LogTrace("(-)");
         }

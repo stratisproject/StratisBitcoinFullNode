@@ -108,9 +108,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Block blockToProcess = blocks[3];
             walletSyncManager.ProcessBlock(blockToProcess); //4th block in the list has same prevhash as which is loaded
 
-            uint256 expectedBlockHash = this.ExpectedBlockHash(walletSyncManager, 4);
+            uint256 expectedBlockHash = this.AssertTipBlockHash(walletSyncManager, 4);
 
-            this.ExpectedBlockHash(walletSyncManager, 4);
+            this.AssertTipBlockHash(walletSyncManager, 4);
 
             this.walletManager.Verify(w => w.ProcessBlock(It.Is<Block>(b => b.GetHash() == blockToProcess.GetHash()), It.Is<ChainedHeader>(c => c.Header.GetHash() == expectedBlockHash)));
         }
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Block blockToProcess = result.RightForkBlocks[4];
             walletSyncManager.ProcessBlock(blockToProcess);
 
-            this.ExpectedBlockHash(walletSyncManager, 5);
+            this.AssertTipBlockHash(walletSyncManager, 5);
 
             // walletmanager removes all blocks up to the fork.
             this.walletManager.Verify(w => w.RemoveBlocks(ExpectChainedBlock(this.chain.GetBlock(2))));
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Block blockToProcess = blocks[3];
             walletSyncManager.ProcessBlock(blockToProcess);
 
-            this.ExpectedBlockHash(walletSyncManager, 4);
+            this.AssertTipBlockHash(walletSyncManager, 4);
 
             //verify manager processes each missing block until caught up.
             // height 3
@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Block blockToProcess = blocks[3];
             walletSyncManager.ProcessBlock(blockToProcess);
 
-            this.ExpectedBlockHash(walletSyncManager, 4);
+            this.AssertTipBlockHash(walletSyncManager, 4);
 
             //verify manager processes each missing block until caught up.
             // height 3
@@ -384,7 +384,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             }
         }
 
-        private uint256 ExpectedBlockHash(IWalletSyncManager walletSyncManager, int blockHeight)
+        private uint256 AssertTipBlockHash(IWalletSyncManager walletSyncManager, int blockHeight)
         {
             uint256 expectedBlockHash = this.chain.GetBlock(blockHeight).Header.GetHash();
 
