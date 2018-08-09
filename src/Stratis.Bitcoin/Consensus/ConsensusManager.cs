@@ -1045,14 +1045,13 @@ namespace Stratis.Bitcoin.Consensus
                 int awaitingBlocksCount = this.expectedBlockSizes.Count;
 
                 int freeSlots = MaxBlocksToAskFromPuller - awaitingBlocksCount;
+                this.logger.LogTrace("{0} slots are available.", freeSlots);
 
                 if (freeSlots < ConsumptionThresholdSlots)
                 {
                     this.logger.LogTrace("(-)[NOT_ENOUGH_SLOTS]");
                     return;
                 }
-
-                BlockDownloadRequest request = this.toDownloadQueue.Peek();
 
                 long freeBytes = MaxUnconsumedBlocksDataBytes - this.chainedHeaderTree.UnconsumedBlocksDataBytes - this.expectedBlockDataBytes;
                 this.logger.LogTrace("{0} bytes worth of blocks is available for download.", freeBytes);
@@ -1066,12 +1065,12 @@ namespace Stratis.Bitcoin.Consensus
                 long avgSize = (long)this.blockPuller.GetAverageBlockSizeBytes();
                 int maxBlocksToAsk = avgSize != 0 ? (int)(freeBytes / avgSize) : DefaultNumberOfBlocksToAsk;
 
-                int emptySlots = MaxBlocksToAskFromPuller - awaitingBlocksCount;
-
-                if (maxBlocksToAsk > emptySlots)
-                    maxBlocksToAsk = emptySlots;
+                if (maxBlocksToAsk > freeSlots)
+                    maxBlocksToAsk = freeSlots;
 
                 this.logger.LogTrace("With {0} average block size, we have {1} download slots available.", avgSize, maxBlocksToAsk);
+
+                BlockDownloadRequest request = this.toDownloadQueue.Peek();
 
                 if (request.BlocksToDownload.Count <= maxBlocksToAsk)
                 {
