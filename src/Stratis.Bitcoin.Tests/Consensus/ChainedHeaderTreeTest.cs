@@ -2024,6 +2024,19 @@ namespace Stratis.Bitcoin.Tests.Consensus
             }
 
             Assert.Equal(chainHeaders.Count, allConnectedHeaders.Count);
+
+            // Make sure there are no tips of peers that are not connected.
+            Assert.Equal(cht.GetPeerTipsByPeerId().Count, connectedPeers.Count + 1);
+
+            foreach (int peerId in cht.GetPeerTipsByPeerId().Keys)
+            {
+                if (peerId == ChainedHeaderTree.LocalPeerId)
+                    continue;
+
+                Assert.Contains(peerId, connectedPeers);
+            }
+
+            Assert.Contains(ChainedHeaderTree.LocalPeerId, cht.GetPeerTipsByPeerId().Keys);
         }
 
         /// <summary>
@@ -3000,6 +3013,46 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Equal(headersToPresent.Last().GetHash(), connectNewHeadersResult.Consumed.HashBlock);
             Assert.Equal(headers[initialChainSize].GetHash(), connectNewHeadersResult.DownloadFrom.HashBlock);
             Assert.Equal(headersToPresent.Last().GetHash(), connectNewHeadersResult.DownloadTo.HashBlock);
+        }
+
+        [Fact]
+        public void PeerPresentedSameHeadersTwiceMakeSurePeerTipIequalToLastHeader()
+        {
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+            ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
+
+            ChainedHeader peerChainTip = ctx.ExtendAChain(20, initialChainTip);
+
+            List<BlockHeader> peerHeaders = ctx.ChainedHeaderToList(peerChainTip, peerChainTip.Height);
+
+            cht.ConnectNewHeaders(1, peerHeaders);
+            ConnectNewHeadersResult result = cht.ConnectNewHeaders(1, peerHeaders);
+
+            Assert.Equal(cht.GetPeerTipChainedHeaderByPeerId(1).HashBlock, result.Consumed.HashBlock);
+
+            this.CheckChainedHeaderTreeConsistency(cht, ctx, consensusTip, new HashSet<int>() { 1 });
+        }
+
+        [Fact]
+        public void TreeIsConsistentAfterPeerDisconnected()
+        {
+            const int initialChainSize = 5;
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
+            ChainedHeader initialChainTip = ctx.InitialChainTip;
+            ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
+
+            ChainedHeader peerChainTip = ctx.ExtendAChain(20, initialChainTip);
+
+            List<BlockHeader> peerHeaders = ctx.ChainedHeaderToList(peerChainTip, peerChainTip.Height);
+
+            cht.ConnectNewHeaders(1, peerHeaders);
+            cht.PeerDisconnected(1);
+
+            this.CheckChainedHeaderTreeConsistency(cht, ctx, consensusTip, new HashSet<int>() { });
         }
     }
 }
