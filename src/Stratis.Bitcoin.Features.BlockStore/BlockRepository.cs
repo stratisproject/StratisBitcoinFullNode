@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Persist the next block hash and insert new blocks into the database.
         /// </summary>
-        /// <param name="newTip">New repository's tip.</param>
+        /// <param name="newTip">Hash and height of the new repository's tip.</param>
         /// <param name="blocks">Blocks to be inserted.</param>
         Task PutAsync(HashHeightPair newTip, List<Block> blocks);
 
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task<List<Block>> GetBlocksAsync(List<uint256> hashes);
 
         /// <summary>
-        /// Wipe our blocks and their transactions then replace with a new block.
+        /// Wipe out blocks and their transactions then replace with a new block.
         /// </summary>
         /// <param name="newTip">Hash and height of the new repository's tip.</param>
         /// <param name="hashes">List of all block hashes to be deleted.</param>
