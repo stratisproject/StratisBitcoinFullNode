@@ -66,10 +66,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (context.Shuffle)
                 context.TransactionBuilder.Shuffle();
 
-            context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
+            Transaction transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
 
-            if (context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
-                return context.Transaction;
+            if (context.TransactionBuilder.Verify(transaction, out TransactionPolicyError[] errors))
+                return transaction;
 
             string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
             this.logger.LogError($"Build transaction failed: {errorsMessage}");
@@ -443,11 +443,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The total fee on the transaction.
         /// </summary>
         public Money TransactionFee { get; set; }
-
-        /// <summary>
-        /// The final transaction.
-        /// </summary>
-        public Transaction Transaction { get; set; }
 
         /// <summary>
         /// The password that protects the wallet in <see cref="WalletAccountReference"/>.
