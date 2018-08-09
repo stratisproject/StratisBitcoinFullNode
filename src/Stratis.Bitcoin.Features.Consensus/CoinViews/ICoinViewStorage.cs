@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     /// <summary>
     /// Database of UTXOs.
     /// </summary>
-    public interface ICoinView
+    public interface ICoinViewStorage
     {
         /// <summary>
         /// Retrieves the block hash of the current tip of the coinview.
@@ -18,8 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
-        /// Persists changes to the coinview (with the tip hash <paramref name="oldBlockHash"/>) when a new block
-        /// (hash <paramref name="nextBlockHash"/>) is added and becomes the new tip of the coinview.
+        /// Persists changes to the coinview storage.
         /// <para>
         /// This method is provided (in <paramref name="unspentOutputs"/> parameter) with information about all
         /// transactions that are either new or were changed in the new block. It is also provided with information
@@ -32,14 +31,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="originalOutputs">Information about the previous state of outputs of transactions inside <paramref name="unspentOutputs"/>. If an item here is <c>null</c>,
         /// it means that the ouputs are newly created in the new block. If it is not <c>null</c>, it holds information about which outputs of the transaction were previously spent
         /// and which were not.</param>
-        /// <param name="oldBlockHash">Block hash of the current tip of the coinview.</param>
-        /// <param name="nextBlockHash">Block hash of the tip of the coinview after the change is applied.</param>
-        Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash);
+        /// <param name="rewindDataCollection">List of rewind data items to persist.</param>
+        Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, List<RewindData> rewindDataCollection);
 
         /// <summary>
         /// Obtains information about unspent outputs for specific transactions and also retrieves information about the coinview's tip.
         /// </summary>
         /// <param name="txIds">Transaction identifiers for which to retrieve information about unspent outputs.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// Coinview tip's hash and information about unspent outputs in the requested transactions.
         /// <para>

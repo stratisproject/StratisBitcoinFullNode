@@ -30,13 +30,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Constructs a memory pool coin view.
         /// </summary>
-        /// <param name="inner">The backing coin view.</param>
+        /// <param name="coinViewStorage">The backing coin view.</param>
         /// <param name="memPool">Transaction memory pool for managing transactions in the memory pool.</param>
         /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
         /// <param name="mempoolValidator">Memory pool validator for validating transactions.</param>
-        public MempoolCoinView(ICoinView inner, ITxMempool memPool, SchedulerLock mempoolLock, IMempoolValidator mempoolValidator)
+        public MempoolCoinView(ICoinViewStorage coinViewStorage, ITxMempool memPool, SchedulerLock mempoolLock, IMempoolValidator mempoolValidator)
         {
-            this.Inner = inner;
+            this.CoinViewStorage = coinViewStorage;
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
             this.mempoolValidator = mempoolValidator;
@@ -51,11 +51,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Backing coin view instance.
         /// </summary>
-        public ICoinView Inner { get; }
+        public ICoinViewStorage CoinViewStorage { get; }
 
         /// <inheritdoc />
-        public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash,
-            uint256 nextBlockHash)
+        public Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, ChainedHeader currentBlock)
         {
             throw new NotImplementedException();
         }
@@ -86,7 +85,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             // lookup all ids (duplicate ids are ignored in case a trx spends outputs from the same parent).
             List<uint256> ids = trx.Inputs.Select(n => n.PrevOut.Hash).Distinct().Concat(new[] { trx.GetHash() }).ToList();
-            FetchCoinsResponse coins = await this.Inner.FetchCoinsAsync(ids.ToArray());
+            FetchCoinsResponse coins = await this.CoinViewStorage.FetchCoinsAsync(ids.ToArray());
             // find coins currently in the mempool
             List<Transaction> mempoolcoins = await this.mempoolLock.ReadAsync(() =>
             {

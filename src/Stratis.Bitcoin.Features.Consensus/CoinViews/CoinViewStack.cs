@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
     /// <summary>
-    /// Stack of coinview layers. All classes in the stack have to be based on <see cref="CoinView"/> class
+    /// Stack of coinview layers. All classes in the stack have to be based on <see cref="ICoinView"/> interface
     /// and all classes except for the stack bottom class have to implement <see cref="IBackedCoinView"/>
     /// interface.
     /// </summary>
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             ICoinView current = top;
             while (current is IBackedCoinView)
             {
-                current = ((IBackedCoinView)current).Inner;
+                current = ((IBackedCoinView)current).CoinViewStorage;
             }
             this.Bottom = current;
         }
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             {
                 yield return current;
 
-                current = ((IBackedCoinView)current).Inner;
+                current = ((IBackedCoinView)current).CoinViewStorage;
             }
 
             if (current != null)
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             while (current is IBackedCoinView)
             {
-                current = ((IBackedCoinView)current).Inner;
+                current = ((IBackedCoinView)current).CoinViewStorage;
                 if (current is T)
                     return (T)(object)current;
             }

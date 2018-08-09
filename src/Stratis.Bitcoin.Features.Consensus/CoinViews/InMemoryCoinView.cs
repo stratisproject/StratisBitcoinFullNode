@@ -60,18 +60,17 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+        public Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, ChainedHeader currentBlock)
         {
-            Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
-            Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
+            Guard.NotNull(currentBlock, nameof(currentBlock));
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
 
             using (this.lockobj.LockWrite())
             {
-                if ((this.tipHash != null) && (oldBlockHash != this.tipHash))
+                if (this.tipHash != null)
                     return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
 
-                this.tipHash = nextBlockHash;
+                this.tipHash = currentBlock.HashBlock;
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
                     UnspentOutputs existing;

@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             Assert.Null(coinView);
         }
 
-        private class NonBackedCoinView : ICoinView
+        private class NonBackedCoinView : ICoinViewStorage
         {
             public NonBackedCoinView()
             {
@@ -122,17 +122,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 throw new NotImplementedException();
             }
 
+            public Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, List<RewindData> rewindDataCollection)
+            {
+                throw new NotImplementedException();
+            }
+
             public Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
             public Task<uint256> Rewind()
-            {
-                throw new NotImplementedException();
-            }
-
-            public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
             {
                 throw new NotImplementedException();
             }
@@ -140,16 +140,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
         private class BackedCoinView1 : ICoinView, IBackedCoinView
         {
-            private BackedCoinView2 inner;
-
-            public BackedCoinView1(BackedCoinView2 inner, int outputCount = 0)
+            public BackedCoinView1(ICoinViewStorage coinViewStorage, int outputCount = 0)
             {
-                this.inner = inner;
+                this.CoinViewStorage = coinViewStorage;
                 this.OutputCount = outputCount;
             }
 
             public int OutputCount { get; }
-            public ICoinView Inner => this.inner;
+            public ICoinViewStorage CoinViewStorage { get; }
 
             /// <inheritdoc />
             public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -167,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 throw new NotImplementedException();
             }
 
-            public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+            public Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, ChainedHeader currentBlock)
             {
                 throw new NotImplementedException();
             }
@@ -175,16 +173,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
         private class BackedCoinView2 : ICoinView, IBackedCoinView
         {
-            private NonBackedCoinView inner;
-
-            public BackedCoinView2(NonBackedCoinView inner, int outputCount = 0)
+            public BackedCoinView2(ICoinViewStorage inner, int outputCount = 0)
             {
-                this.inner = inner;
+                this.CoinViewStorage = inner;
                 this.OutputCount = outputCount;
             }
 
             public int OutputCount { get; }
-            public ICoinView Inner => this.inner;
+            public ICoinViewStorage CoinViewStorage { get; }
 
             /// <inheritdoc />
             public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -202,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 throw new NotImplementedException();
             }
 
-            public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+            public Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, ChainedHeader currentBlock)
             {
                 throw new NotImplementedException();
             }

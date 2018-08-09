@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
@@ -23,18 +22,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
-            uint256 oldBlockHash = context.ValidationContext.ChainTipToExtand.Previous.HashBlock;
-            uint256 nextBlockHash = context.ValidationContext.ChainTipToExtand.HashBlock;
+            ChainedHeader currentBlock = context.ValidationContext.ChainTipToExtand;
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.
             this.Logger.LogTrace("Saving coinview changes.");
             var utxoRuleContext = context as UtxoRuleContext;
-            await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash).ConfigureAwait(false);
-
-            bool forceFlush = this.FlushRequired(context.ValidationContext.ChainTipToExtand);
-            if (this.PowParent.UtxoSet is CachedCoinView cachedCoinView)
-                await cachedCoinView.FlushAsync(forceFlush).ConfigureAwait(false);
+            await this.PowParent.UtxoSet.AddRewindDataAsync(utxoRuleContext?.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, currentBlock).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -70,6 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             var utxoRuleContext = context as UtxoRuleContext;
+            // TODO: Do we need to check if utxoRuleContext is null? Can it ever be null
 
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.

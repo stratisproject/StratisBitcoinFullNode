@@ -18,14 +18,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
-            uint256 oldBlockHash = context.ValidationContext.ChainTipToExtand.Previous.HashBlock;
-            uint256 nextBlockHash = context.ValidationContext.ChainTipToExtand.HashBlock;
+            ChainedHeader oldBlock = context.ValidationContext.ChainTipToExtand.Previous;
+            ChainedHeader nextBlock = context.ValidationContext.ChainTipToExtand;
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.
             this.Logger.LogTrace("Saving coinview changes.");
             var utxoRuleContext = context as UtxoRuleContext;
-            await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash).ConfigureAwait(false);
+            await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlock, nextBlock).ConfigureAwait(false);
         }
     }
 
