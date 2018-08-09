@@ -270,7 +270,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ulong totalFee = (gasPrice * gasLimit) + Money.Parse(request.FeeAmount);
             var walletAccountReference = new WalletAccountReference(request.WalletName, request.AccountName);
             var recipient = new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(carrier.Serialize()) };
-            var context = new TransactionBuildContext(this.network, walletAccountReference, new[] { recipient }.ToList(), request.Password)
+            var context = new TransactionBuildOptions(walletAccountReference, request.Password, new[] { recipient }.ToList())
             {
                 TransactionFee = totalFee,
                 ChangeAddress = senderAddress,
@@ -320,10 +320,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             }
 
             ulong totalFee = (gasPrice * gasLimit) + Money.Parse(request.FeeAmount);
-            var context = new TransactionBuildContext(this.network,
-                new WalletAccountReference(request.WalletName, request.AccountName),
-                new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(carrier.Serialize()) } }.ToList(),
-                request.Password)
+            var context = new TransactionBuildOptions(new WalletAccountReference(request.WalletName, request.AccountName), 
+                request.Password, new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(carrier.Serialize()) } }.ToList())
             {
                 TransactionFee = totalFee,
                 ChangeAddress = senderAddress,

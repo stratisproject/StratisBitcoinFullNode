@@ -41,9 +41,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Count();
         }
 
-        public static Money GetFee(this CoreNode node, TransactionBuildContext transactionBuildContext)
+        public static Money GetFee(this CoreNode node, TransactionBuildOptions transactionBuildOptions)
         {
-            return node.FullNode.WalletTransactionHandler().EstimateFee(transactionBuildContext);
+            return node.FullNode.WalletTransactionHandler().EstimateFee(transactionBuildOptions);
         }
 
         public static int GetApiPort(this CoreNode coreNode)

@@ -95,13 +95,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private void a_nulldata_transaction()
         {
             var maturity = (int)this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
-            var transactionBuildContext = new TransactionBuildContext(
-                this.senderNode.FullNode.Network,
-                this.sendingWalletAccountReference,
-                new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } },
-                this.password, this.opReturnContent)
-            { MinConfirmations = maturity };
-            this.transaction = this.senderNode.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
+            var transactionBuildOptions = new TransactionBuildOptions(
+                this.sendingWalletAccountReference, this.password,
+                new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } })
+            {
+                MinConfirmations = maturity,
+                OpReturnData = this.opReturnContent
+            };
+            this.transaction = this.senderNode.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildOptions);
 
             this.transaction.Outputs.Single(t => t.ScriptPubKey.IsUnspendable).Value.Should().Be(Money.Zero);
         }

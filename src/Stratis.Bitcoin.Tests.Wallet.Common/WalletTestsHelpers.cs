@@ -113,13 +113,12 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return (last, block);
         }
 
-        public static TransactionBuildContext CreateContext(Network network, WalletAccountReference accountReference, string password,
+        public static TransactionBuildOptions CreateOptions(WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
         {
-            return new TransactionBuildContext(
-                network,
-                accountReference,
-                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), password)
+            return new TransactionBuildOptions(
+                accountReference, password,
+                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList())
             {
                 MinConfirmations = minConfirmations,
                 FeeType = feeType

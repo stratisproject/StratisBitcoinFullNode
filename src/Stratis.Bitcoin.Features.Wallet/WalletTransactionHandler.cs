@@ -31,8 +31,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </remarks>
         private const int SendCountThresholdLimit = 500;
 
-        private readonly CoinType coinType;
-
         private readonly ILogger logger;
 
         public Network Network { get; }
@@ -55,32 +53,43 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Network = network;
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
-            this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
             this.TransactionPolicy = transactionPolicy;
         }
 
         /// <inheritdoc />
-        public Transaction BuildTransaction(TransactionBuildContext context)
+        public Transaction BuildTransaction(TransactionBuildOptions options)
         {
-            this.InitializeTransactionBuilder(context);
-
-            if (context.Shuffle)
-                context.TransactionBuilder.Shuffle();
-
-            context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
-
-            if (context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
-                return context.Transaction;
-
-            string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
-            this.logger.LogError($"Build transaction failed: {errorsMessage}");
-            throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
+            var transactionBuildContext = new TransactionBuildContext(this.Network, options);
+            return BuildTransactionInternal(transactionBuildContext);
         }
 
         /// <inheritdoc />
-        public void FundTransaction(TransactionBuildContext context, Transaction transaction)
+        public void FundTransaction(TransactionBuildOptions options, Transaction transaction)
+        {
+            var context = new TransactionBuildContext(this.Network, options);
+
+            TransferTransactionDetailsToContext(transaction, context);
+
+            Transaction newTransaction = this.BuildTransactionInternal(context);
+
+            UpdateTransactionFromBuiltTransaction(transaction, newTransaction, context);
+        }
+
+        /// <inheritdoc />
+        public Money EstimateFee(TransactionBuildOptions options)
+        {
+            var context = new TransactionBuildContext(this.Network, options);
+            this.InitializeTransactionBuilder(context);
+            return context.TransactionFee;
+        }
+
+        /// <summary>
+        /// Given a <see cref="Transaction"/> that we wish to recreate in some form, move all of its properties to a <see cref="TransactionBuildContext"/>
+        /// which we can use to build a new Transaction with the same properties. i.e. in the case of calling <see cref="FundTransaction(TransactionBuildOptions, Transaction)"/>.
+        /// </summary>
+        private void TransferTransactionDetailsToContext(Transaction transaction, TransactionBuildContext context)
         {
             if (context.Recipients.Any())
                 throw new WalletException("Adding outputs is not allowed.");
@@ -98,9 +107,17 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             foreach (TxIn transactionInput in transaction.Inputs)
                 context.SelectedInputs.Add(transactionInput.PrevOut);
+        }
 
-            Transaction newTransaction = this.BuildTransaction(context);
-
+        /// <summary>
+        /// In the case of funding a <see cref="Transaction"/>,  ensures all the features of the transaction are transferred over from 
+        /// a transaction that was built via <see cref="BuildTransactionInternal(TransactionBuildContext)"/>.
+        /// </summary>
+        /// <param name="transaction"></param>
+        /// <param name="newTransaction"></param>
+        /// <param name="context"></param>
+        private void UpdateTransactionFromBuiltTransaction(Transaction transaction, Transaction newTransaction, TransactionBuildContext context)
+        {
             if (context.ChangeAddress != null)
             {
                 // find the position of the change and move it over.
@@ -130,6 +147,29 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        /// <summary>
+        /// The core transaction building method. Given a <see cref="TransactionBuildContext"/>, creates a new transaction.
+        /// This context may be constructed from just the available options, or may also have had a previous transaction as input
+        /// (i.e. when calling <see cref="FundTransaction(TransactionBuildOptions, Transaction)"/>).
+        /// </summary>
+        private Transaction BuildTransactionInternal(TransactionBuildContext context)
+        {
+            this.InitializeTransactionBuilder(context);
+
+            if (context.Shuffle)
+                context.TransactionBuilder.Shuffle();
+
+            context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
+
+            if (context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
+                return context.Transaction;
+
+            string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
+            this.logger.LogError($"Build transaction failed: {errorsMessage}");
+            throw new WalletException($"Could not build the transaction. Details: {errorsMessage}");
+        }
+
+
         /// <inheritdoc />
         public (Money maximumSpendableAmount, Money Fee) GetMaximumSpendableAmount(WalletAccountReference accountReference, FeeType feeType, bool allowUnconfirmed)
         {
@@ -155,11 +195,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Here we try to create a transaction that contains all the spendable coins, leaving no room for the fee.
                 // When the transaction builder throws an exception informing us that we have insufficient funds,
                 // we use the amount we're missing as the fee.
-                var context = new TransactionBuildContext(this.Network, accountReference, recipients, null)
+                var options = new TransactionBuildOptions(accountReference, recipients)
                 {
                     FeeType = feeType,
                     MinConfirmations = allowUnconfirmed ? 0 : 1
                 };
+                var context = new TransactionBuildContext(this.Network, options);
 
                 this.AddRecipients(context);
                 this.AddCoins(context);
@@ -176,19 +217,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             return (maxSpendableAmount - fee, fee);
         }
 
-        /// <inheritdoc />
-        public Money EstimateFee(TransactionBuildContext context)
-        {
-            this.InitializeTransactionBuilder(context);
-
-            return context.TransactionFee;
-        }
-
         /// <summary>
         /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.
         /// </summary>
         /// <param name="context">Transaction build context.</param>
-        public virtual void InitializeTransactionBuilder(TransactionBuildContext context)
+        protected virtual void InitializeTransactionBuilder(TransactionBuildContext context)
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
@@ -247,14 +280,35 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Find the next available change address.
+        /// If a ChangeAddress was set in the options, check it is from the wallet given and use that for the transaction.
+        /// Otherwise find the next available change address and use that for the transaction.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void FindChangeAddress(TransactionBuildContext context)
         {
-            // Get an address to send the change to.
-            context.ChangeAddress = this.walletManager.GetUnusedChangeAddress(new WalletAccountReference(context.AccountReference.WalletName, context.AccountReference.AccountName));
+            if (context.BuildOptions.ChangeAddress != null)
+            {
+                CheckAddressIsFromSameWallet(context.BuildOptions.WalletAccountReference.WalletName, context.BuildOptions.ChangeAddress);
+                context.ChangeAddress = context.BuildOptions.ChangeAddress;
+            }
+            else
+            {
+                context.ChangeAddress = this.walletManager.GetUnusedChangeAddress(new WalletAccountReference(context.AccountReference.WalletName, context.AccountReference.AccountName));
+            }
+
             context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
+        }
+
+        /// <summary>
+        /// Throws a <see cref="WalletException"/> if the ChangeAddress does not belong to the given wallet.
+        /// </summary>
+        protected void CheckAddressIsFromSameWallet(string walletName, HdAddress changeAddress)
+        {
+            Wallet wallet = this.walletManager.GetWalletByName(walletName);
+            if (!wallet.ContainsAddress(changeAddress))
+            {
+                throw new WalletException("Change address given does not belong to this wallet.");
+            }
         }
 
         /// <summary>
@@ -380,146 +434,128 @@ namespace Stratis.Bitcoin.Features.Wallet
             context.TransactionBuilder.Send(opReturnScript, Money.Zero);
         }
 
-    }
-
-    public class TransactionBuildContext
-    {
         /// <summary>
-        /// Initialize a new instance of a <see cref="TransactionBuildContext"/>
+        /// A mutable settings object to hold data when building a transaction.
         /// </summary>
-        /// <param name="accountReference">The wallet and account from which to build this transaction</param>
-        /// <param name="recipients">The target recipients to send coins to.</param>
-        /// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
-        /// <param name="opReturnData">Optional transaction data <see cref="OpReturnData"/></param>
-        public TransactionBuildContext(Network network, WalletAccountReference accountReference, List<Recipient> recipients, string walletPassword = "", string opReturnData = null)
+        protected class TransactionBuildContext
         {
-            Guard.NotNull(recipients, nameof(recipients));
+            public TransactionBuildContext(Network network, TransactionBuildOptions options)
+            {
+                this.TransactionBuilder = new TransactionBuilder(network);
+                this.BuildOptions = options;
 
-            this.TransactionBuilder = new TransactionBuilder(network);
-            this.AccountReference = accountReference;
-            this.Recipients = recipients;
-            this.WalletPassword = walletPassword;
-            this.FeeType = FeeType.Medium;
-            this.MinConfirmations = 1;
-            this.SelectedInputs = new List<OutPoint>();
-            this.AllowOtherInputs = false;
-            this.Sign = !string.IsNullOrEmpty(walletPassword);
-            this.OpReturnData = opReturnData;
+                this.AccountReference = options.WalletAccountReference;
+                this.Recipients = options.Recipients;
+                this.WalletPassword = options.WalletPassword;
+                this.TransactionFee = options.TransactionFee;
+                this.FeeType = options.FeeType;
+                this.MinConfirmations = options.MinConfirmations;
+                this.SelectedInputs = options.SelectedInputs;
+                this.AllowOtherInputs = false;
+                this.Sign = !string.IsNullOrEmpty(this.WalletPassword);
+                this.OpReturnData = options.OpReturnData;
+                this.OverrideFeeRate = options.OverrideFeeRate;
+            }
+
+            /// <summary>
+            /// Options defined to use when constructing the transaction.
+            /// </summary>
+            public TransactionBuildOptions BuildOptions { get; }
+
+            /// <summary>
+            /// The wallet account to use for building a transaction.
+            /// </summary>
+            public WalletAccountReference AccountReference { get; set; }
+
+            /// <summary>
+            /// The recipients to send Bitcoin to.
+            /// </summary>
+            public List<Recipient> Recipients { get; set; }
+
+            /// <summary>
+            /// An indicator to estimate how much fee to spend on a transaction.
+            /// </summary>
+            /// <remarks>
+            /// The higher the fee the faster a transaction will get in to a block.
+            /// </remarks>
+            public FeeType FeeType { get; set; }
+
+            /// <summary>
+            /// The minimum number of confirmations an output must have to be included as an input.
+            /// </summary>
+            public int MinConfirmations { get; set; }
+
+            /// <summary>
+            /// Coins that are available to be spent.
+            /// </summary>
+            public List<UnspentOutputReference> UnspentOutputs { get; set; }
+
+            /// <summary>
+            /// The builder used to build the current transaction.
+            /// </summary>
+            public readonly TransactionBuilder TransactionBuilder;
+
+            /// <summary>
+            /// The change address, where any remaining funds will be sent to.
+            /// </summary>
+            /// <remarks>
+            /// A Bitcoin has to spend the entire UTXO, if total value is greater then the send target
+            /// the rest of the coins go in to a change address that is under the senders control.
+            /// </remarks>
+            public HdAddress ChangeAddress { get; set; }
+
+            /// <summary>
+            /// The total fee on the transaction.
+            /// </summary>
+            public Money TransactionFee { get; set; }
+
+            /// <summary>
+            /// The final transaction.
+            /// </summary>
+            public Transaction Transaction { get; set; }
+
+            /// <summary>
+            /// The password that protects the wallet in <see cref="WalletAccountReference"/>.
+            /// </summary>
+            /// <remarks>
+            /// TODO: replace this with System.Security.SecureString (https://github.com/dotnet/corefx/tree/master/src/System.Security.SecureString)
+            /// More info (https://github.com/dotnet/corefx/issues/1387)
+            /// </remarks>
+            public string WalletPassword { get; set; }
+
+            /// <summary>
+            /// The inputs that must be used when building the transaction.
+            /// </summary>
+            /// <remarks>
+            /// The inputs are required to be part of the wallet.
+            /// </remarks>
+            public List<OutPoint> SelectedInputs { get; set; }
+
+            /// <summary>
+            /// If false, allows unselected inputs, but requires all selected inputs be used.
+            /// </summary>
+            public bool AllowOtherInputs { get; set; }
+
+            /// <summary>
+            /// Specify whether to sign the transaction.
+            /// </summary>
+            public bool Sign { get; set; }
+
+            /// <summary>
+            /// Allows the context to specify a <see cref="FeeRate"/> when building a transaction.
+            /// </summary>
+            public FeeRate OverrideFeeRate { get; set; }
+
+            /// <summary>
+            /// Shuffles transaction inputs and outputs for increased privacy.
+            /// </summary>
+            public bool Shuffle { get; set; }
+
+            /// <summary>
+            /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
+            /// </summary>
+            public string OpReturnData { get; set; }
         }
 
-        /// <summary>
-        /// The wallet account to use for building a transaction.
-        /// </summary>
-        public WalletAccountReference AccountReference { get; set; }
-
-        /// <summary>
-        /// The recipients to send Bitcoin to.
-        /// </summary>
-        public List<Recipient> Recipients { get; set; }
-
-        /// <summary>
-        /// An indicator to estimate how much fee to spend on a transaction.
-        /// </summary>
-        /// <remarks>
-        /// The higher the fee the faster a transaction will get in to a block.
-        /// </remarks>
-        public FeeType FeeType { get; set; }
-
-        /// <summary>
-        /// The minimum number of confirmations an output must have to be included as an input.
-        /// </summary>
-        public int MinConfirmations { get; set; }
-
-        /// <summary>
-        /// Coins that are available to be spent.
-        /// </summary>
-        public List<UnspentOutputReference> UnspentOutputs { get; set; }
-
-        /// <summary>
-        /// The builder used to build the current transaction.
-        /// </summary>
-        public readonly TransactionBuilder TransactionBuilder;
-
-        /// <summary>
-        /// The change address, where any remaining funds will be sent to.
-        /// </summary>
-        /// <remarks>
-        /// A Bitcoin has to spend the entire UTXO, if total value is greater then the send target
-        /// the rest of the coins go in to a change address that is under the senders control.
-        /// </remarks>
-        public HdAddress ChangeAddress { get; set; }
-
-        /// <summary>
-        /// The total fee on the transaction.
-        /// </summary>
-        public Money TransactionFee { get; set; }
-
-        /// <summary>
-        /// The final transaction.
-        /// </summary>
-        public Transaction Transaction { get; set; }
-
-        /// <summary>
-        /// The password that protects the wallet in <see cref="WalletAccountReference"/>.
-        /// </summary>
-        /// <remarks>
-        /// TODO: replace this with System.Security.SecureString (https://github.com/dotnet/corefx/tree/master/src/System.Security.SecureString)
-        /// More info (https://github.com/dotnet/corefx/issues/1387)
-        /// </remarks>
-        public string WalletPassword { get; set; }
-
-        /// <summary>
-        /// The inputs that must be used when building the transaction.
-        /// </summary>
-        /// <remarks>
-        /// The inputs are required to be part of the wallet.
-        /// </remarks>
-        public List<OutPoint> SelectedInputs { get; set; }
-
-        /// <summary>
-        /// If false, allows unselected inputs, but requires all selected inputs be used.
-        /// </summary>
-        public bool AllowOtherInputs { get; set; }
-
-        /// <summary>
-        /// Specify whether to sign the transaction.
-        /// </summary>
-        public bool Sign { get; set; }
-
-        /// <summary>
-        /// Allows the context to specify a <see cref="FeeRate"/> when building a transaction.
-        /// </summary>
-        public FeeRate OverrideFeeRate { get; set; }
-
-        /// <summary>
-        /// Shuffles transaction inputs and outputs for increased privacy.
-        /// </summary>
-        public bool Shuffle { get; set; }
-
-        /// <summary>
-        /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
-        /// </summary>
-        public string OpReturnData { get; set; }
-    }
-
-    /// <summary>
-    /// Represents recipients of a payment, used in <see cref="WalletTransactionHandler.BuildTransaction"/>.
-    /// </summary>
-    public class Recipient
-    {
-        /// <summary>
-        /// The destination script.
-        /// </summary>
-        public Script ScriptPubKey { get; set; }
-
-        /// <summary>
-        /// The amount that will be sent.
-        /// </summary>
-        public Money Amount { get; set; }
-
-        /// <summary>
-        /// An indicator if the fee is subtracted from the current recipient.
-        /// </summary>
-        public bool SubtractFeeFromAmount { get; set; }
     }
 }

@@ -84,8 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             HdAddress nodeCReceivingAddress = this.GetSecondUnusedAddressToAvoidClashWithMiningAddress(this.nodes[Charlie]);
 
-            TransactionBuildContext transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
-                this.nodes[Bob].FullNode.Network,
+            TransactionBuildOptions transactionBuildOptions = SharedSteps.CreateTransactionBuildOptions(
                 WalletZero,
                 AccountZero,
                 WalletPassword,
@@ -98,8 +97,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 FeeType.Medium
                 , 1);
 
-            this.shorterChainTransaction = this.nodes[Bob].FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
-            this.shortChainTransactionFee = this.nodes[Bob].FullNode.WalletTransactionHandler().EstimateFee(transactionBuildContext);
+            this.shorterChainTransaction = this.nodes[Bob].FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildOptions);
+            this.shortChainTransactionFee = this.nodes[Bob].FullNode.WalletTransactionHandler().EstimateFee(transactionBuildOptions);
 
             this.nodes[Bob].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.shorterChainTransaction.ToHex()));
         }

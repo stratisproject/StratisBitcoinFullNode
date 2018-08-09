@@ -8,7 +8,6 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
@@ -666,8 +665,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
-                var context = new TransactionBuildContext(
-                    this.network,
+                var options = new TransactionBuildOptions(
                     new WalletAccountReference(request.WalletName, request.AccountName),
                     new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList())
                 {
@@ -675,7 +673,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
                 };
 
-                return this.Json(this.walletTransactionHandler.EstimateFee(context));
+                return this.Json(this.walletTransactionHandler.EstimateFee(options));
             }
             catch (Exception e)
             {
@@ -704,28 +702,29 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
-                var context = new TransactionBuildContext(
-                    this.network,
+
+                var txBuildOptions = new TransactionBuildOptions(
                     new WalletAccountReference(request.WalletName, request.AccountName),
-                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
-                    request.Password, request.OpReturnData)
+                    request.Password,
+                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList())
                 {
+                    OpReturnData = request.OpReturnData,
                     TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                    Shuffle = request.ShuffleOutputs ?? true // We shuffle transaction outputs by default as it's better for anonymity.
+                    ShuffleOutputs = request.ShuffleOutputs ?? true
                 };
 
                 if (!string.IsNullOrEmpty(request.FeeType))
                 {
-                    context.FeeType = FeeParser.Parse(request.FeeType);
+                    txBuildOptions.FeeType = FeeParser.Parse(request.FeeType);
                 }
 
-                Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
+                Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(txBuildOptions);
 
                 var model = new WalletBuildTransactionModel
                 {
                     Hex = transactionResult.ToHex(),
-                    Fee = context.TransactionFee,
+                    Fee = txBuildOptions.TransactionFee,
                     TransactionId = transactionResult.GetHash()
                 };
 
