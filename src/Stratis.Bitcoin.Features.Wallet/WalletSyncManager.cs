@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.blocksQueue = new AsyncQueue<Block>(this.OnEnqueueAsync);
+            this.blocksQueue = new AsyncQueue<Block>(this.OnProcessBlockAsync);
         }
 
         /// <inheritdoc />
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="block">Block to be processed.</param>
         /// <param name="cancellationtoken">The cancellation token.</param>
         /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
-        private Task OnEnqueueAsync(Block block, CancellationToken cancellationtoken)
+        private Task OnProcessBlockAsync(Block block, CancellationToken cancellationtoken)
         {
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
