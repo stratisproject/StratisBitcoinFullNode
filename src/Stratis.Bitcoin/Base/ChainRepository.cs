@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Base
         Task SaveAsync(ConcurrentChain chain);
     }
 
-    /// <summary>Provider of the last finalized block height.</summary>
+    /// <summary>Provider of the last finalized block's height and hash.</summary>
     /// <remarks>
     /// Finalized block height is the height of the last block that can't be reorged.
     /// Blocks with height greater than finalized height can be reorged.
