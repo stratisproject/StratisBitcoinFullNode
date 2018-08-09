@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
 using Stratis.Bitcoin.Features.Api;
@@ -37,25 +36,22 @@ namespace Stratis.Bitcoin.Api.Tests
                 store.Close();
             }
         }
-
+            
         [Fact]
-        public void AddToStore_WhenCertNotInSettings_AndNotInStore_CreatesAndAddsToStore()
+        public void AddToStore_WhenNotInStore_CreatesAndAddsToStore_Then_TryGetFindsIt()
         {
-            var apiSettings = new ApiSettings();
+            ICertificateStore certStore = new CertificateStore(StoreName.My, StoreLocation.CurrentUser);
 
-            ICertificateStore certStore = new CertificateStore(apiSettings, StoreName.My, StoreLocation.CurrentUser);
+            certStore.TryGet(TestCertSubjectName, out var _)
+                .Should().BeFalse();
 
-            var certToAdd = SslCertificate.BuildSelfSignedServerCertificate(TestCertSubjectName, TestCertSubjectName);
+            var certToAdd = certStore.BuildSelfSignedServerCertificate(TestCertSubjectName, "password");
             certStore.Add(certToAdd);
 
-            certStore.TryGet(TestCertSubjectName, out var certificateFromStore).Should().BeTrue();
-            certificateFromStore.Thumbprint.Should().Be(certToAdd.Thumbprint);
-        }
+            certStore.TryGet(TestCertSubjectName, out var certificateFromStore)
+                .Should().BeTrue();
 
-        [Fact]
-        public void AddToStore_WhenCertNotInSettings_AndInStore_FindsIt()
-        {
-            //todo: get some mug to write it
+            certificateFromStore.Thumbprint.Should().Be(certToAdd.Thumbprint);
         }
     }
 }

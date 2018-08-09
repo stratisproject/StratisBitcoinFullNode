@@ -40,6 +40,12 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>URI to node's API interface.</summary>
         public Timer KeepaliveTimer { get; private set; }
 
+        /// <summary>The Https certificate subject name.</summary>
+        public string HttpsCertificateSubjectName { get; set; }
+
+        /// <summary>The default certificate subject name.</summary>
+        public const string DefaultCertificateSubjectName = "StratisApi";
+
         /// <summary>
         /// Initializes an instance of the object from the default configuration.
         /// </summary>
@@ -133,6 +139,8 @@ namespace Stratis.Bitcoin.Features.Api
             builder.AppendLine($"#apiport={ GetDefaultPort(network) }");
             builder.AppendLine($"#Keep Alive interval (set in seconds). Default: 0 (no keep alive)");
             builder.AppendLine($"#keepalive=0");
+            builder.AppendLine($"#Subject name of the certificate in store to use for https traffic encryption");
+            builder.AppendLine($"#certificatesubjectname={DefaultCertificateSubjectName}");
         }
     }
 }
