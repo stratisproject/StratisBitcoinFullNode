@@ -113,12 +113,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisBitcoinPowApiRunner(this.GetNextDataFolderName(), network), start);
         }
 
-        public CoreNode CreateStratisPosNode()
-        {
-            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName()), false, "stratis.conf");
-        }
-
-
         public CoreNode CreateStratisPosNode(Network network)
         {
             return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), network), false, "stratis.conf");

@@ -18,6 +18,13 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class NodeSyncTests
     {
+        private Network network;
+
+        public NodeSyncTests()
+        {
+            this.network = KnownNetworks.StratisRegTest;
+        }
+
         [Fact]
         public void NodesCanConnectToEachOthers()
         {
@@ -143,9 +150,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisMiner = builder.CreateStratisPosNode();
-                CoreNode stratisSyncer = builder.CreateStratisPosNode();
-                CoreNode stratisReorg = builder.CreateStratisPosNode();
+                CoreNode stratisMiner = builder.CreateStratisPosNode(this.network);
+                CoreNode stratisSyncer = builder.CreateStratisPosNode(this.network);
+                CoreNode stratisReorg = builder.CreateStratisPosNode(this.network);
 
                 builder.StartAll();
                 stratisMiner.NotInIBD();
@@ -228,10 +235,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // This represents local node.
-                CoreNode stratisMinerLocal = builder.CreateStratisPosNode();
+                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(this.network);
 
                 // This represents remote, which blocks are received by local node using its puller.
-                CoreNode stratisMinerRemote = builder.CreateStratisPosNode();
+                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(this.network);
 
                 builder.StartAll();
                 stratisMinerLocal.NotInIBD();
