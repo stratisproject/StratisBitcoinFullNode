@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -43,7 +44,19 @@ namespace Stratis.Bitcoin.Utilities
         /// <inheritdoc />
         public override string ToString()
         {
-            return this.hash + "-" + this.height;
+            return this.height + "-" + this.hash;
+        }
+
+        public static HashHeightPair Load(byte[] hex)
+        {
+            if (hex == null)
+                throw new ArgumentNullException(nameof(hex));
+
+            var pair = new HashHeightPair();
+
+            pair.ReadWrite(hex);
+
+            return pair;
         }
     }
 }
