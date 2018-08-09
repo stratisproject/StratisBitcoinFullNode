@@ -583,7 +583,12 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     int newFinalizedHeight = newTip.Height - (int)this.network.Consensus.MaxReorgLength;
 
-                    await this.finalizedBlockHeight.SaveFinalizedBlockHeightAsync(newFinalizedHeight).ConfigureAwait(false);
+                    if (newFinalizedHeight > 0)
+                    {
+                        uint256 newFinalizedHash = newTip.GetAncestor(newFinalizedHeight).HashBlock;
+
+                        await this.finalizedBlockHeight.SaveFinalizedBlockHashAndHeightAsync(newFinalizedHash, newFinalizedHeight).ConfigureAwait(false);
+                    }
                 }
 
                 // TODO: change signal to take ChainedHeaderBlock

@@ -105,6 +105,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
+        /// <inheritdoc cref="Network"/>
+        private readonly Network network;
+
         private readonly IConsensusManager consensusManager;
         private readonly IConsensusRuleEngine consensusRules;
         private readonly IPartialValidator partialValidator;
@@ -135,7 +138,8 @@ namespace Stratis.Bitcoin.Base
             IConsensusRuleEngine consensusRules,
             IPartialValidator partialValidator,
             IBlockPuller blockPuller,
-            IBlockStore blockStore)
+            IBlockStore blockStore,
+            Network network)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -150,6 +154,7 @@ namespace Stratis.Bitcoin.Base
             this.partialValidator = partialValidator;
             this.blockPuller = blockPuller;
             this.blockStore = blockStore;
+            this.network = network;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
@@ -229,7 +234,7 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.logger.LogInformation("Loading finalized block height");
-            await this.finalizedBlockHeight.LoadFinalizedBlockHeightAsync().ConfigureAwait(false);
+            await this.finalizedBlockHeight.LoadFinalizedBlockHeightAsync(this.network).ConfigureAwait(false);
 
             this.logger.LogInformation("Loading chain");
             await this.chainRepository.LoadAsync(this.chain).ConfigureAwait(false);

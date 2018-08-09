@@ -515,7 +515,8 @@ namespace Stratis.Bitcoin.Consensus
 
                     ChainedHeader fork = this.FindForkIfChainedHeadersNotOnSameChain(peerTip, consensusTip);
 
-                    int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHeight();
+                    // TODO ACTIVATION use hash too
+                    int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHashAndHeight().Height;
 
                     // Do nothing in case peer's tip is on our consensus chain.
                     if ((fork != null) && (fork.Height < finalizedHeight))
@@ -1165,7 +1166,8 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     int reorgLength = consensusTip.Height - fork.Height;
 
-                    int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHeight();
+                    // TODO ACTIVATION use hash too
+                    int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHashAndHeight().Height;
 
                     if (fork.Height < finalizedHeight)
                     {
