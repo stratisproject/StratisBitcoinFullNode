@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     if (block.Header.HashPrevBlock != this.Tip.HashBlock)
                     {
-                        this.logger.LogError("(-)[BLOCKMINED_INVALID_PREVIOUS_TIP]");
+                        this.logger.LogTrace("(-)[BLOCKMINED_INVALID_PREVIOUS_TIP]:null");
                         return null;
                     }
 
@@ -253,8 +253,13 @@ namespace Stratis.Bitcoin.Consensus
                         ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(partialValidationResult.ChainedHeaderBlock).ConfigureAwait(false);
                         if (!fullValidationResult.Succeeded)
                         {
-                            this.logger.LogError("Miner produced an invalid block, full validation failed: {0}", fullValidationResult.Error.Message);
-                            this.logger.LogTrace("(-)[FULL_VALIDATION_FALIED]");
+                            lock (this.peerLock)
+                            {
+                                this.chainedHeaderTree.PartialOrFullValidationFailed(chainedHeader);
+                            }
+
+                            this.logger.LogTrace("Miner produced an invalid block, full validation failed: {0}", fullValidationResult.Error.Message);
+                            this.logger.LogTrace("(-)[FULL_VALIDATION_FAILED]:null");
                             throw new ConsensusException(fullValidationResult.Error.Message);
                         }
                     }
@@ -267,12 +272,12 @@ namespace Stratis.Bitcoin.Consensus
                     }
 
                     this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}", partialValidationResult.Error.Message);
-                    this.logger.LogTrace("(-)[PARTIAL_VALIDATION_FALIED]");
+                    this.logger.LogTrace("(-)[PARTIAL_VALIDATION_FAILED]:null");
                     throw new ConsensusException(partialValidationResult.Error.Message);
                 }
             }
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-):{0}", partialValidationResult.ChainedHeaderBlock.ToString());
             return partialValidationResult.ChainedHeaderBlock;
         }
 
