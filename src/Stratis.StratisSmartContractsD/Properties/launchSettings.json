@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Stratis.StratisSmartContractsD": {
-      "commandName": "Project",
-      "commandLineArgs": "-mine=1 mineaddress=SdYDiHd4WhpXkHFAVaiPYVT6UH5ZA4MmRi"
+      "commandName": "Project"
     }
   }
 }
