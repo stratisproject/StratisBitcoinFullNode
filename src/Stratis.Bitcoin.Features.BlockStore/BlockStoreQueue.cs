@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 await this.blockRepository.ReIndexAsync().ConfigureAwait(false);
             }
 
-            ChainedHeader initializationTip = this.chain.GetBlock(this.blockRepository.BlockHash);
+            ChainedHeader initializationTip = this.chain.GetBlock(this.blockRepository.TipHashAndHeight.Hash);
             this.SetStoreTip(initializationTip);
 
             if (this.storeTip == null)
@@ -212,7 +212,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
 
             var blockStoreResetList = new List<uint256>();
-            uint256 resetBlockHash = this.blockRepository.BlockHash;
+
+            uint256 resetBlockHash = this.blockRepository.TipHashAndHeight.Hash;
             Block resetBlock = await this.blockRepository.GetBlockAsync(resetBlockHash).ConfigureAwait(false);
 
             while (this.chain.GetBlock(resetBlockHash) == null)
@@ -239,7 +240,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ChainedHeader newTip = this.chain.GetBlock(resetBlockHash);
 
             if (blockStoreResetList.Count != 0)
-                await this.blockRepository.DeleteAsync(newTip.HashBlock, blockStoreResetList).ConfigureAwait(false);
+                await this.blockRepository.DeleteAsync(new HashHeightPair(newTip.HashBlock, newTip.Height), blockStoreResetList).ConfigureAwait(false);
 
             this.SetStoreTip(newTip);
 
@@ -385,7 +386,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogDebug("Saving batch of {0} blocks, total size: {1} bytes.", clearedBatch.Count, this.currentBatchSizeBytes);
 
-            await this.blockRepository.PutAsync(newTip.HashBlock, clearedBatch.Select(b => b.Block).ToList()).ConfigureAwait(false);
+            await this.blockRepository.PutAsync(new HashHeightPair(newTip.HashBlock, newTip.Height), clearedBatch.Select(b => b.Block).ToList()).ConfigureAwait(false);
 
             this.SetStoreTip(newTip);
             this.logger.LogDebug("Store tip set to '{0}'.", this.storeTip);
@@ -444,7 +445,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogDebug("Block store reorg detected. Removing {0} blocks from the database.", blocksToDelete.Count);
 
-            await this.blockRepository.DeleteAsync(currentHeader.HashBlock, blocksToDelete).ConfigureAwait(false);
+            await this.blockRepository.DeleteAsync(new HashHeightPair(currentHeader.HashBlock, currentHeader.Height), blocksToDelete).ConfigureAwait(false);
 
             this.SetStoreTip(expectedStoreTip);
             this.logger.LogDebug("Store tip rewound to '{0}'.", this.storeTip);

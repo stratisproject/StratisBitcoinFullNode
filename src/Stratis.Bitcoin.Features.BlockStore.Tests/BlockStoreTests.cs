@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private readonly NodeLifetime nodeLifetime;
         private ConcurrentChain chain;
         private readonly Network network;
-        private uint256 repositoryBlockHash;
+        private HashHeightPair repositoryTipHashAndHeight;
         private int repositorySavesCount = 0;
         private int repositoryTotalBlocksSaved = 0;
         private int repositoryTotalBlocksDeleted = 0;
@@ -46,17 +46,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.nodeLifetime = new NodeLifetime();
 
             var blockRepositoryMock = new Mock<IBlockRepository>();
-            blockRepositoryMock.Setup(x => x.PutAsync(It.IsAny<uint256>(), It.IsAny<List<Block>>()))
-                .Returns((uint256 nextBlockHash, List<Block> blocks) =>
+            blockRepositoryMock.Setup(x => x.PutAsync(It.IsAny<HashHeightPair>(), It.IsAny<List<Block>>()))
+                .Returns((HashHeightPair newTip, List<Block> blocks) =>
             {
-                this.repositoryBlockHash = nextBlockHash;
+                this.repositoryTipHashAndHeight = newTip;
                 this.repositorySavesCount++;
                 this.repositoryTotalBlocksSaved += blocks.Count;
                 return Task.CompletedTask;
             });
 
-            blockRepositoryMock.Setup(x => x.DeleteAsync(It.IsAny<uint256>(), It.IsAny<List<uint256>>()))
-                .Returns((uint256 nextBlockHash, List<uint256> blocks) =>
+            blockRepositoryMock.Setup(x => x.DeleteAsync(It.IsAny<HashHeightPair>(), It.IsAny<List<uint256>>()))
+                .Returns((HashHeightPair newTip, List<uint256> blocks) =>
             {
                 this.repositoryTotalBlocksDeleted += blocks.Count;
                 return Task.CompletedTask;
@@ -73,9 +73,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 return Task.FromResult(block);
             });
 
-            blockRepositoryMock.Setup(x => x.BlockHash).Returns(() =>
+            blockRepositoryMock.Setup(x => x.TipHashAndHeight).Returns(() =>
             {
-                return this.repositoryBlockHash;
+                return this.repositoryTipHashAndHeight;
             });
 
             var chainStateMoq = new Mock<IChainState>();
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public async Task BlockStoreInitializesTipAtHashOfLastSavedBlockAsync()
         {
             ChainedHeader initializationHeader = this.chain.Tip.Previous.Previous.Previous;
-            this.repositoryBlockHash = initializationHeader.HashBlock;
+            this.repositoryTipHashAndHeight = new HashHeightPair(initializationHeader.HashBlock, initializationHeader.Height);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             Assert.Equal(initializationHeader, this.chainState.BlockStoreTip);
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public async Task BlockStoreRecoversToLastCommonBlockOnInitializationAsync()
         {
-            this.repositoryBlockHash = uint256.One;
+            this.repositoryTipHashAndHeight = new HashHeightPair(uint256.One, 1);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
 
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             int count = BlockStoreQueue.BatchThresholdSizeBytes / blockSize + 2;
 
             ConcurrentChain longChain = this.CreateChain(count);
-            this.repositoryBlockHash = longChain.Genesis.HashBlock;
+            this.repositoryTipHashAndHeight = new HashHeightPair(longChain.Genesis.HashBlock, 0);
 
             var dateTimeProvider = new Mock<IDateTimeProvider>();
             var dataFolder = new Mock<DataFolder>();
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public async Task BatchIsSavedOnShutdownAsync()
         {
-            this.repositoryBlockHash = this.chain.Genesis.HashBlock;
+            this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
 
@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public async Task BatchIsSavedWhenAtConsensusTipAsync()
         {
-            this.repositoryBlockHash = this.chain.Genesis.HashBlock;
+            this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.consensusTip = this.chain.Tip;
@@ -243,7 +243,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public async Task ReorgedBlocksAreNotSavedAsync()
         {
-            this.repositoryBlockHash = this.chain.Genesis.HashBlock;
+            this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
 
@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public async Task ReorgedBlocksAreDeletedFromRepositoryIfReorgDetectedAsync()
         {
             this.chain = this.CreateChain(1000);
-            this.repositoryBlockHash = this.chain.Genesis.HashBlock;
+            this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
 
             var dateTimeProvider = new Mock<IDateTimeProvider>();
             var dataFolder = new Mock<DataFolder>();
@@ -374,7 +374,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public async Task ThrowIfConsensusIsInitializedBeforeBlockStoreAsync()
         {
-            this.repositoryBlockHash = this.chain.Genesis.HashBlock;
+            this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
             this.consensusTip = this.chain.Tip;
 
             await Assert.ThrowsAsync<BlockStoreException>(async () =>

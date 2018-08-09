@@ -105,14 +105,17 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
+        /// <inheritdoc cref="Network"/>
+        private readonly Network network;
+
         private readonly IConsensusManager consensusManager;
         private readonly IConsensusRuleEngine consensusRules;
         private readonly IPartialValidator partialValidator;
         private readonly IBlockPuller blockPuller;
         private readonly IBlockStore blockStore;
 
-        /// <inheritdoc cref="IFinalizedBlockHeight"/>
-        private readonly IFinalizedBlockHeight finalizedBlockHeight;
+        /// <inheritdoc cref="IFinalizedBlockInfo"/>
+        private readonly IFinalizedBlockInfo finalizedBlockInfo;
 
         public BaseFeature(
             NodeSettings nodeSettings,
@@ -122,7 +125,7 @@ namespace Stratis.Bitcoin.Base
             IChainState chainState,
             IConnectionManager connectionManager,
             IChainRepository chainRepository,
-            IFinalizedBlockHeight finalizedBlockHeight,
+            IFinalizedBlockInfo finalizedBlockInfo,
             IDateTimeProvider dateTimeProvider,
             IAsyncLoopFactory asyncLoopFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
@@ -135,11 +138,12 @@ namespace Stratis.Bitcoin.Base
             IConsensusRuleEngine consensusRules,
             IPartialValidator partialValidator,
             IBlockPuller blockPuller,
-            IBlockStore blockStore)
+            IBlockStore blockStore,
+            Network network)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
-            this.finalizedBlockHeight = Guard.NotNull(finalizedBlockHeight, nameof(finalizedBlockHeight));
+            this.finalizedBlockInfo = Guard.NotNull(finalizedBlockInfo, nameof(finalizedBlockInfo));
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
@@ -150,6 +154,7 @@ namespace Stratis.Bitcoin.Base
             this.partialValidator = partialValidator;
             this.blockPuller = blockPuller;
             this.blockStore = blockStore;
+            this.network = network;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
@@ -229,7 +234,7 @@ namespace Stratis.Bitcoin.Base
             }
 
             this.logger.LogInformation("Loading finalized block height");
-            await this.finalizedBlockHeight.LoadFinalizedBlockHeightAsync().ConfigureAwait(false);
+            await this.finalizedBlockInfo.LoadFinalizedBlockInfoAsync(this.network).ConfigureAwait(false);
 
             this.logger.LogInformation("Loading chain");
             await this.chainRepository.LoadAsync(this.chain).ConfigureAwait(false);
@@ -330,7 +335,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
                     services.AddSingleton<IInvalidBlockHashStore, InvalidBlockHashStore>();
                     services.AddSingleton<IChainState, ChainState>();
-                    services.AddSingleton<IChainRepository, ChainRepository>().AddSingleton<IFinalizedBlockHeight, ChainRepository>(provider => provider.GetService<IChainRepository>() as ChainRepository);
+                    services.AddSingleton<IChainRepository, ChainRepository>().AddSingleton<IFinalizedBlockInfo, ChainRepository>(provider => provider.GetService<IChainRepository>() as ChainRepository);
                     services.AddSingleton<ITimeSyncBehaviorState, TimeSyncBehaviorState>();
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
                     services.AddSingleton<NodeDeployments>();

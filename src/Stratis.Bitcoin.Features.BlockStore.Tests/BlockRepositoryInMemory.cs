@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
     public class BlockRepositoryInMemory : IBlockRepository
     {
         private ConcurrentDictionary<uint256, Block> store;
-        public uint256 BlockHash { get; private set; }
+        public HashHeightPair TipHashAndHeight { get; private set; }
         public bool TxIndex { get; private set; }
         public BlockStoreRepositoryPerformanceCounter PerformanceCounter { get; private set; }
 
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             return Task.FromResult<object>(null);
         }
 
-        public Task DeleteAsync(uint256 newlockHash, List<uint256> hashes)
+        public Task DeleteAsync(HashHeightPair newTip, List<uint256> hashes)
         {
             Block block = null;
 
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.store.TryRemove(hash, out block);
             }
 
-            this.SetBlockHashAsync(newlockHash);
+            this.TipHashAndHeight = newTip;
 
             return Task.FromResult<object>(null);
         }
@@ -58,21 +58,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             return Task.FromResult(hashes.Select(hash => this.store.TryGetValue(hash, out Block block) ? block : null).ToList());
         }
 
-        public Task PutAsync(uint256 nextBlockHash, List<Block> blocks)
+        public Task PutAsync(HashHeightPair newTip, List<Block> blocks)
         {
             foreach (Block block in blocks)
             {
                 this.store.TryAdd(block.Header.GetHash(), block);
             }
 
-            this.SetBlockHashAsync(nextBlockHash);
-
-            return Task.FromResult<object>(null);
-        }
-
-        public Task SetBlockHashAsync(uint256 nextBlockHash)
-        {
-            this.BlockHash = nextBlockHash;
+            this.TipHashAndHeight = newTip;
 
             return Task.FromResult<object>(null);
         }
