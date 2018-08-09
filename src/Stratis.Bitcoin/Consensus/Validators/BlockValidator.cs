@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
                 Succeeded = validationContext.Error == null
             };
 
-            this.logger.LogTrace("(-):{0}", partialValidationResult, partialValidationResult);
+            this.logger.LogTrace("(-):{0}", partialValidationResult);
             return partialValidationResult;
         }
 
