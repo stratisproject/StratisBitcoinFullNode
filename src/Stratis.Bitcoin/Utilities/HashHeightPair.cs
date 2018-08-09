@@ -6,6 +6,14 @@ namespace Stratis.Bitcoin.Utilities
     /// <summary>Pair of block hash and block height.</summary>
     public class HashHeightPair : IBitcoinSerializable
     {
+        private uint256 hash;
+
+        private int height;
+
+        public uint256 Hash => this.hash;
+
+        public int Height => this.height;
+
         public HashHeightPair()
         {
         }
@@ -18,21 +26,16 @@ namespace Stratis.Bitcoin.Utilities
             this.height = height;
         }
 
-        public uint256 Hash
+        public static HashHeightPair Load(byte[] bytes)
         {
-            get => this.hash;
-            set => this.hash = value;
+            Guard.NotNull(bytes, nameof(bytes));
+
+            var pair = new HashHeightPair();
+
+            pair.ReadWrite(bytes);
+
+            return pair;
         }
-
-        public int Height
-        {
-            get => this.height;
-            set => this.height = value;
-        }
-
-        private uint256 hash;
-
-        private int height;
 
         /// <inheritdoc />
         public void ReadWrite(BitcoinStream stream)
@@ -45,18 +48,6 @@ namespace Stratis.Bitcoin.Utilities
         public override string ToString()
         {
             return this.height + "-" + this.hash;
-        }
-
-        public static HashHeightPair Load(byte[] hex)
-        {
-            if (hex == null)
-                throw new ArgumentNullException(nameof(hex));
-
-            var pair = new HashHeightPair();
-
-            pair.ReadWrite(hex);
-
-            return pair;
         }
     }
 }

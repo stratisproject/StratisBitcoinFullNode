@@ -67,16 +67,16 @@ namespace NBitcoin
             this.nonce = 0;
         }
 
-        public static BlockHeader Load(byte[] hex, Network network)
+        public static BlockHeader Load(byte[] bytes, Network network)
         {
-            if (hex == null)
-                throw new ArgumentNullException(nameof(hex));
+            if (bytes == null)
+                throw new ArgumentNullException(nameof(bytes));
 
             if (network == null)
                 throw new ArgumentNullException(nameof(network));
 
             BlockHeader blockHeader = network.Consensus.ConsensusFactory.CreateBlockHeader();
-            blockHeader.ReadWrite(hex, network.Consensus.ConsensusFactory);
+            blockHeader.ReadWrite(bytes, network.Consensus.ConsensusFactory);
 
             return blockHeader;
         }
