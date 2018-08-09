@@ -27,8 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             var consensusFactory = new SmartContractPosConsensusFactory();
 
-            Block genesis = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
-            genesis.Header.Nonce = 4; // Incremented 09/08
+            Block genesis = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 414098458, 0x1d00ffff, 4, Money.Coins(50m));
 
             this.Genesis = genesis;
 
@@ -59,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 consensusOptions: consensusOptions,
                 coinType: 1,
                 hashGenesisBlock: genesis.Header.GetHash(),
-                subsidyHalvingInterval: 210000,
+                subsidyHalvingInterval: 210_000,
                 majorityEnforceBlockUpgrade: 51,
                 majorityRejectBlockOutdated: 75,
                 majorityWindow: 100,
@@ -73,7 +72,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 maxMoney: long.MaxValue,
                 coinbaseMaturity: 5,
                 premineHeight: 2,
-                premineReward: Money.Coins(1000000),
+                premineReward: Money.Coins(10_000_000),
                 proofOfWorkReward: Money.Coins(50),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(20), // 20 second block time while on testnet
@@ -82,7 +81,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), // Set extremely low difficulty for now.
                 minimumChainWork: uint256.Zero,
                 isProofOfStake: true,
-                lastPowBlock: 100,
+                lastPowBlock: 1_000_000,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeReward: Money.COIN
