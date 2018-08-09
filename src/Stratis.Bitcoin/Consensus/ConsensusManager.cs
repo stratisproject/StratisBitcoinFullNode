@@ -27,6 +27,9 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private const long MaxUnconsumedBlocksDataBytes = 200 * 1024 * 1024;
 
+        /// <summary>The maximum amount of blocks that can be assigned to <see cref="IBlockPuller"/> at the same time.</summary>
+        private const int MaxBlocksToAskFromPuller = 5000;
+
         /// <summary>Queue consumption threshold in bytes.</summary>
         /// <remarks><see cref="toDownloadQueue"/> consumption will start if only we have more than this value of free memory.</remarks>
         private const long ConsumptionThresholdBytes = MaxUnconsumedBlocksDataBytes / 10;
@@ -1028,7 +1031,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <remarks>
         /// Requests that have too many blocks will be split in batches.
-        /// The amount of blocks in 1 batch to downloaded depends on the average value in <see cref="IBlockPuller.AverageBlockSize"/>.
+        /// The amount of blocks in 1 batch to downloaded depends on the average value in <see cref="IBlockPuller.GetAverageBlockSizeBytes"/>.
         /// </remarks>
         private void ProcessDownloadQueueLocked()
         {
@@ -1036,6 +1039,15 @@ namespace Stratis.Bitcoin.Consensus
 
             while (this.toDownloadQueue.Count > 0)
             {
+                int awaitingBlocksCount = this.expectedBlockSizes.Count;
+
+                // Don't assign more blocks to block puller when limit is reached.
+                if (awaitingBlocksCount >= MaxBlocksToAskFromPuller)
+                {
+                    this.logger.LogTrace("(-)[MAX_BLOCKS_TARGET_REACHED]");
+                    return;
+                }
+
                 BlockDownloadRequest request = this.toDownloadQueue.Peek();
 
                 long freeBytes = MaxUnconsumedBlocksDataBytes - this.chainedHeaderTree.UnconsumedBlocksDataBytes - this.expectedBlockDataBytes;
@@ -1049,6 +1061,11 @@ namespace Stratis.Bitcoin.Consensus
 
                 long avgSize = (long)this.blockPuller.GetAverageBlockSizeBytes();
                 int blocksToAsk = avgSize != 0 ? (int)(freeBytes / avgSize) : DefaultNumberOfBlocksToAsk;
+
+                int emptySlots = MaxBlocksToAskFromPuller - awaitingBlocksCount;
+
+                if (blocksToAsk > emptySlots)
+                    blocksToAsk = emptySlots;
 
                 this.logger.LogTrace("With {0} average block size, we have {1} download slots available.", avgSize, blocksToAsk);
 
