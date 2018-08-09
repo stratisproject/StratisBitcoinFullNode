@@ -9,5 +9,4 @@
     public sealed class InsufficientGasException : SmartContractException
     {
     }
-
 }
