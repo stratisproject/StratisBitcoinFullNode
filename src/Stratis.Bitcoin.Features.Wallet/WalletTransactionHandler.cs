@@ -152,10 +152,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Here we try to create a transaction that contains all the spendable coins, leaving no room for the fee.
                 // When the transaction builder throws an exception informing us that we have insufficient funds,
                 // we use the amount we're missing as the fee.
-                var context = new TransactionBuildContext(this.network, accountReference, recipients, null)
+                var context = new TransactionBuildContext(this.network)
                 {
                     FeeType = feeType,
-                    MinConfirmations = allowUnconfirmed ? 0 : 1
+                    MinConfirmations = allowUnconfirmed ? 0 : 1,
+                    Recipients = recipients,
+                    AccountReference = accountReference
                 };
 
                 this.AddRecipients(context);
@@ -384,24 +386,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Initialize a new instance of a <see cref="TransactionBuildContext"/>
         /// </summary>
         /// <param name="network">The network for which this transaction will be built.</param>
-        /// <param name="accountReference">The wallet and account from which to build this transaction</param>
-        /// <param name="recipients">The target recipients to send coins to.</param>
-        /// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
-        /// <param name="opReturnData">Optional transaction data <see cref="OpReturnData"/></param>
-        public TransactionBuildContext(Network network, WalletAccountReference accountReference, List<Recipient> recipients, string walletPassword = "", string opReturnData = null)
+        public TransactionBuildContext(Network network)
         {
-            Guard.NotNull(recipients, nameof(recipients));
-
             this.TransactionBuilder = new TransactionBuilder(network);
-            this.AccountReference = accountReference;
-            this.Recipients = recipients;
-            this.WalletPassword = walletPassword;
+            this.Recipients = new List<Recipient>();
+            this.WalletPassword = string.Empty;
             this.FeeType = FeeType.Medium;
             this.MinConfirmations = 1;
             this.SelectedInputs = new List<OutPoint>();
             this.AllowOtherInputs = false;
-            this.Sign = !string.IsNullOrEmpty(walletPassword);
-            this.OpReturnData = opReturnData;
         }
 
         /// <summary>
@@ -481,7 +474,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Specify whether to sign the transaction.
         /// </summary>
-        public bool Sign { get; set; }
+        public bool Sign => !string.IsNullOrEmpty(this.WalletPassword);
 
         /// <summary>
         /// Allows the context to specify a <see cref="FeeRate"/> when building a transaction.
