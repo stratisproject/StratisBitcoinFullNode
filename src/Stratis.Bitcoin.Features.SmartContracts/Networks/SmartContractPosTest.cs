@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.Name = "SmartContractPosTest";
             this.RootFolderName = StratisMain.StratisRootFolderName;
             this.DefaultConfigFilename = StratisMain.StratisDefaultConfigFilename;
-            this.Magic = 0x0709110E; // Incremented 19/06
+            this.Magic = 0x0709110F; // Incremented 09/08
             this.DefaultPort = 18333;
             this.RPCPort = 18332;
             this.MaxTipAge = BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds;
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             Block genesisBlock = BitcoinMain.CreateBitcoinGenesisBlock(consensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
             ((SmartContractBlockHeader)genesisBlock.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
-            genesisBlock.Header.Nonce = 3; // Incremented 19/06
+            genesisBlock.Header.Nonce = 4; // Incremented 09/08
 
             this.Genesis = genesisBlock;
 
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), // Set extremely low difficulty for now.
                 minimumChainWork: uint256.Zero,
                 isProofOfStake: true,
-                lastPowBlock: 1000000,
+                lastPowBlock: 100,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeReward: Money.COIN
