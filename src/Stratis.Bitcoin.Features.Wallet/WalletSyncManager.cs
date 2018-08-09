@@ -17,8 +17,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         protected readonly ConcurrentChain chain;
 
-        protected readonly CoinType coinType;
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -50,7 +48,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager = walletManager;
             this.chain = chain;
             this.blockStoreCache = blockStoreCache;
-            this.coinType = (CoinType)network.Consensus.CoinType;
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
