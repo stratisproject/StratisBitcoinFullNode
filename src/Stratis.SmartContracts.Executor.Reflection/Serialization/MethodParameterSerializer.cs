@@ -77,7 +77,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         public string ToRaw(string[] parameters)
         {
             IEnumerable<string> escaped = this.EscapePipesAndHashes(parameters);
-            return string.Join('|', escaped);
+            return string.Join("|", escaped);
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                     reconstructed.Add(hashes[i]);
                 }
 
-                var result = string.Join('#', reconstructed).Replace("#", @"\#");
+                var result = string.Join("#", reconstructed).Replace("#", @"\#");
                 return hashes[0].Insert(hashes[0].Length, "#" + result);
             });
 
