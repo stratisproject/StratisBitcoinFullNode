@@ -1041,10 +1041,11 @@ namespace Stratis.Bitcoin.Consensus
             {
                 int awaitingBlocksCount = this.expectedBlockSizes.Count;
 
-                if (this.expectedBlockSizes.Count >= MaxBlocksToAskFromPuller)
+                // Don't assign more blocks to block puller when limit is reached.
+                if (awaitingBlocksCount >= MaxBlocksToAskFromPuller)
                 {
                     this.logger.LogTrace("(-)[MAX_BLOCKS_TARGET_REACHED]");
-                    break;
+                    return;
                 }
 
                 BlockDownloadRequest request = this.toDownloadQueue.Peek();
