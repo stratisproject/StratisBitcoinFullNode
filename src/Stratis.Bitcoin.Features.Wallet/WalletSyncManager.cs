@@ -13,9 +13,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 {
     public class WalletSyncManager : IWalletSyncManager, IDisposable
     {
-        protected readonly IWalletManager walletManager;
+        private readonly IWalletManager walletManager;
 
-        protected readonly ConcurrentChain chain;
+        private readonly ConcurrentChain chain;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                                 if (index > 10)
                                 {
                                     this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
-                                    return Task.CompletedTask; ;
+                                    return Task.CompletedTask;
                                 }
 
                                 // Really ugly hack to let store catch up.
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     if (findTip == null)
                     {
                         this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
-                        return Task.CompletedTask; ;
+                        return Task.CompletedTask;
                     }
 
                     this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
