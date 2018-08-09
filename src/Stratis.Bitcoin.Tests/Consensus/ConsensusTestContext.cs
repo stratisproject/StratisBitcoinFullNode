@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(KnownNetworks.RegTest));
         public IConsensusManager ConsensusManager;
         public readonly Mock<IConsensusRuleEngine> ConsensusRulesEngine = new Mock<IConsensusRuleEngine>();
-        public Mock<IFinalizedBlockHeight> FinalizedBlockHeight = new Mock<IFinalizedBlockHeight>();
+        public Mock<IFinalizedBlockInfo> FinalizedBlockMock = new Mock<IFinalizedBlockInfo>();
         public Mock<IHeaderValidator> HeaderValidator = new Mock<IHeaderValidator>();
         public readonly Mock<IInitialBlockDownloadState> ibdState = new Mock<IInitialBlockDownloadState>();
         internal ChainedHeader InitialChainTip;
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.IntegrityValidator.Object,
                 this.Checkpoints.Object,
                 this.ChainState.Object,
-                this.FinalizedBlockHeight.Object,
+                this.FinalizedBlockMock.Object,
                 this.ConsensusSettings,
                 this.Signals.Object);
 
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.Checkpoints.Object,
                 this.ConsensusSettings,
                 this.ConsensusRulesEngine.Object,
-                this.FinalizedBlockHeight.Object,
+                this.FinalizedBlockMock.Object,
                 new Bitcoin.Signals.Signals(),
                 this.PeerBanning.Object,
                 new NodeSettings(this.Network),
