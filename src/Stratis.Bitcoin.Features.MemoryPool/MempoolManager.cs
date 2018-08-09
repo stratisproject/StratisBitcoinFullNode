@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly ITxMempool memPool;
 
         /// <summary>Coin view of the memory pool.</summary>
-        private readonly ICoinView coinView;
+        private readonly ICoinViewStorage coinViewStorage;
 
         private readonly Network network;
 
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
             IMempoolPersistence mempoolPersistence,
-            ICoinView coinView,
+            ICoinViewStorage coinViewStorage,
             ILoggerFactory loggerFactory,
             Network network)
         {
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolSettings = mempoolSettings;
             this.Validator = validator;
             this.mempoolPersistence = mempoolPersistence;
-            this.coinView = coinView;
+            this.coinViewStorage = coinViewStorage;
             this.network = network;
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 return null;
             }
-            var memPoolCoinView = new MempoolCoinView(this.coinView, this.memPool, this.MempoolLock, this.Validator);
+            var memPoolCoinView = new MempoolCoinView(this.coinViewStorage, this.memPool, this.MempoolLock, this.Validator);
             await memPoolCoinView.LoadViewAsync(txInfo.Trx);
             return memPoolCoinView.GetCoins(trxid);
         }

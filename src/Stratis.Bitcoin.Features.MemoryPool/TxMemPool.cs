@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public void Check(ICoinView pcoins)
+        public void Check(ICoinViewStorage pcoins)
         {
             if (this.checkFrequency == 0)
                 return;
