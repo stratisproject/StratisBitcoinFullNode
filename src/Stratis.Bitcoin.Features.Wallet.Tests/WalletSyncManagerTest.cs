@@ -144,10 +144,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Block blockToProcess = result.RightForkBlocks[4];
             walletSyncManager.ProcessBlock(blockToProcess);
 
+            this.ExpectedBlockHash(walletSyncManager, 5);
+
             // walletmanager removes all blocks up to the fork.
             this.walletManager.Verify(w => w.RemoveBlocks(ExpectChainedBlock(this.chain.GetBlock(2))));
-
-            this.ExpectedBlockHash(walletSyncManager, 5);
 
             //verify manager processes each missing block until caught up.
             // height 3
