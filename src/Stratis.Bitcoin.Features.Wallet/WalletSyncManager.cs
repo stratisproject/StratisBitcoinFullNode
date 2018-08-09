@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly IBlockStoreCache blockStoreCache;
+        private readonly IBlockStore blockStore;
 
         private readonly StoreSettings storeSettings;
 
@@ -35,19 +36,19 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly AsyncQueue<Block> blocksQueue;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
-            Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
+            Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(network, nameof(network));
-            Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
+            Guard.NotNull(blockStore, nameof(blockStore));
             Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
             this.walletManager = walletManager;
             this.chain = chain;
-            this.blockStoreCache = blockStoreCache;
+            this.blockStore = blockStore;
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -175,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         {
                             token.ThrowIfCancellationRequested();
 
-                            nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                            nextblock = this.blockStore.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
                             if (nextblock == null)
                             {
                                 // The idea in this abandoning of the loop is to release consensus to push the block.
