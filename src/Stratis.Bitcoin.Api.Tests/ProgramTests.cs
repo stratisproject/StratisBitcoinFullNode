@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography.X509Certificates;
+using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using NSubstitute;
 using Stratis.Bitcoin.Features.Api;
@@ -58,6 +59,7 @@ namespace Stratis.Bitcoin.Api.Tests
                 .BuildSelfSignedServerCertificate(this.apiSettings.HttpsCertificateSubjectName, Arg.Any<string>())
                 .Returns(this.certificateToUse);
 
+            ///action to throw here
             Program.Initialize(null, new FullNode(), this.apiSettings, this.certificateStore, this.webHostBuilder);
 
             this.certificateStore.DidNotReceive().Add(this.certificateToUse);
