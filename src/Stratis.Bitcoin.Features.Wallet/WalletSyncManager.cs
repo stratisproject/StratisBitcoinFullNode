@@ -229,6 +229,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotNull(block, nameof(block));
 
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
+
             this.blocksQueue.Enqueue(block);
 
             this.logger.LogTrace("(-)");
