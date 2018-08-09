@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.
         /// </summary>
         /// <param name="context">Transaction build context.</param>
-        public virtual void InitializeTransactionBuilder(TransactionBuildContext context)
+        protected virtual void InitializeTransactionBuilder(TransactionBuildContext context)
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
