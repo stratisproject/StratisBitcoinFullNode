@@ -259,9 +259,14 @@ namespace Stratis.Bitcoin.Consensus
                             }
 
                             this.logger.LogTrace("Miner produced an invalid block, full validation failed: {0}", fullValidationResult.Error.Message);
-                            this.logger.LogTrace("(-)[FULL_VALIDATION_FAILED]:null");
+                            this.logger.LogTrace("(-)[FULL_VALIDATION_FAILED]");
                             throw new ConsensusException(fullValidationResult.Error.Message);
                         }
+                    }
+                    else
+                    {
+                        this.logger.LogTrace("(-)[FULL_VALIDATION_WAS_NOT_REQUIRED]");
+                        throw new ConsensusException("Full validation was not required.");
                     }
                 }
                 else
@@ -272,12 +277,12 @@ namespace Stratis.Bitcoin.Consensus
                     }
 
                     this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}", partialValidationResult.Error.Message);
-                    this.logger.LogTrace("(-)[PARTIAL_VALIDATION_FAILED]:null");
+                    this.logger.LogTrace("(-)[PARTIAL_VALIDATION_FAILED]");
                     throw new ConsensusException(partialValidationResult.Error.Message);
                 }
             }
 
-            this.logger.LogTrace("(-):{0}", partialValidationResult.ChainedHeaderBlock.ToString());
+            this.logger.LogTrace("(-):{0}", partialValidationResult.ChainedHeaderBlock);
             return partialValidationResult.ChainedHeaderBlock;
         }
 
