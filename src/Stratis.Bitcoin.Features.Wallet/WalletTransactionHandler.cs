@@ -66,7 +66,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (context.Shuffle)
                 context.TransactionBuilder.Shuffle();
 
-            Transaction transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
+            bool sign = !string.IsNullOrEmpty(context.WalletPassword);
+            Transaction transaction = context.TransactionBuilder.BuildTransaction(sign);
 
             if (context.TransactionBuilder.Verify(transaction, out TransactionPolicyError[] errors))
                 return transaction;
@@ -207,7 +208,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void AddSecrets(TransactionBuildContext context)
         {
-            if (!context.Sign)
+            if (string.IsNullOrEmpty(context.WalletPassword))
                 return;
 
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
@@ -465,11 +466,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// If false, allows unselected inputs, but requires all selected inputs be used.
         /// </summary>
         public bool AllowOtherInputs { get; set; }
-
-        /// <summary>
-        /// Specify whether to sign the transaction.
-        /// </summary>
-        public bool Sign => !string.IsNullOrEmpty(this.WalletPassword);
 
         /// <summary>
         /// Allows the context to specify a <see cref="FeeRate"/> when building a transaction.
