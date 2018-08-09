@@ -1044,10 +1044,11 @@ namespace Stratis.Bitcoin.Consensus
             {
                 int awaitingBlocksCount = this.expectedBlockSizes.Count;
 
-                // Don't assign more blocks to block puller when limit is reached.
-                if (awaitingBlocksCount >= MaxBlocksToAskFromPuller)
+                int freeSlots = MaxBlocksToAskFromPuller - awaitingBlocksCount;
+
+                if (freeSlots < ConsumptionThresholdSlots)
                 {
-                    this.logger.LogTrace("(-)[MAX_BLOCKS_TARGET_REACHED]");
+                    this.logger.LogTrace("(-)[NOT_ENOUGH_SLOTS]");
                     return;
                 }
 
@@ -1069,12 +1070,6 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (maxBlocksToAsk > emptySlots)
                     maxBlocksToAsk = emptySlots;
-
-                if (maxBlocksToAsk < ConsumptionThresholdSlots)
-                {
-                    this.logger.LogTrace("(-)[NOT_ENOUGH_CLOTS]");
-                    return;
-                }
 
                 this.logger.LogTrace("With {0} average block size, we have {1} download slots available.", avgSize, maxBlocksToAsk);
 
