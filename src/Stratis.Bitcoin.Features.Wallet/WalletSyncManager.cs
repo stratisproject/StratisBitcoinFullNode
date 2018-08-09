@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -10,7 +11,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
-    public class WalletSyncManager : IWalletSyncManager
+    public class WalletSyncManager : IWalletSyncManager, IDisposable
     {
         protected readonly IWalletManager walletManager;
 
@@ -32,6 +33,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public ChainedHeader WalletTip => this.walletTip;
 
+        /// <summary>Queue which contains blocks that should be processed by <see cref="WalletManager"/></summary>
+        private readonly AsyncQueue<Block> blocksQueue;
+
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
@@ -50,6 +54,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.blocksQueue = new AsyncQueue<Block>(this.OnEnqueueAsync);
         }
 
         /// <inheritdoc />
@@ -95,8 +100,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
         }
 
-        /// <inheritdoc />
-        public virtual void ProcessBlock(Block block)
+        /// <summary>Called when a block is added to the blocksQueue.
+        /// Depending on the WalletTip and incoming block height, this method will decide whether the block will be processed by the <see cref="WalletManager"/>.
+        /// </summary>
+        /// <param name="block">Block to be processed.</param>
+        /// <param name="cancellationtoken">The cancellation token.</param>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        private Task OnEnqueueAsync(Block block, CancellationToken cancellationtoken)
         {
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
@@ -105,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (newTip == null)
             {
                 this.logger.LogTrace("(-)[NEW_TIP_REORG]");
-                return;
+                return Task.CompletedTask;
             }
 
             // If the new block's previous hash is not the same as the one we have, there might have been a reorg.
@@ -142,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     if (findTip == null)
                     {
                         this.logger.LogTrace("(-)[NEW_TIP_AHEAD_NOT_IN_WALLET]");
-                        return;
+                        return Task.CompletedTask;
                     }
 
                     CancellationToken token = this.nodeLifetime.ApplicationStopping;
@@ -177,7 +187,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                                 if (index > 10)
                                 {
                                     this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
-                                    return;
+                                    return Task.CompletedTask; ;
                                 }
 
                                 // Really ugly hack to let store catch up.
@@ -200,7 +210,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     if (findTip == null)
                     {
                         this.logger.LogTrace("(-)[NEW_TIP_BEHIND_NOT_IN_WALLET]");
-                        return;
+                        return Task.CompletedTask; ;
                     }
 
                     this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip);
@@ -210,6 +220,18 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.walletTip = newTip;
             this.walletManager.ProcessBlock(block, newTip);
+
+            this.logger.LogTrace("(-)");
+
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc />
+        public virtual void ProcessBlock(Block block)
+        {
+            Guard.NotNull(block, nameof(block));
+
+            this.blocksQueue.Enqueue(block);
 
             this.logger.LogTrace("(-)");
         }
@@ -245,6 +267,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             ChainedHeader chainedHeader = this.chain.GetBlock(height);
             this.walletTip = chainedHeader ?? throw new WalletException("Invalid block height");
             this.walletManager.WalletTipHash = chainedHeader.HashBlock;
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.logger.LogTrace("()");
+
+            this.blocksQueue?.Dispose();
 
             this.logger.LogTrace("(-)");
         }
