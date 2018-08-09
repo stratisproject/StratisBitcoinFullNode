@@ -25,8 +25,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly MemoryCache<uint256, Block> cache;
 
-        public BlockStoreCachePerformanceCounter PerformanceCounter { get; }
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -44,13 +42,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.cache = new MemoryCache<uint256, Block>(storeSettings.MaxCacheBlocksCount);
             this.blockRepository = blockRepository;
             this.dateTimeProvider = dateTimeProvider;
-            this.PerformanceCounter = this.BlockStoreCachePerformanceCounterFactory();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-        }
-
-        public virtual BlockStoreCachePerformanceCounter BlockStoreCachePerformanceCounterFactory()
-        {
-            return new BlockStoreCachePerformanceCounter(this.dateTimeProvider);
         }
 
         public async Task<Block> GetBlockAsync(uint256 blockid)
@@ -61,18 +53,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Block block;
             if (this.cache.TryGetValue(blockid, out block))
             {
-                this.PerformanceCounter.AddCacheHitCount(1);
                 this.logger.LogTrace("(-)[CACHE_HIT]:'{0}'", block);
                 return block;
             }
-
-            this.PerformanceCounter.AddCacheMissCount(1);
 
             block = await this.blockRepository.GetBlockAsync(blockid);
             if (block != null)
             {
                 this.cache.AddOrUpdate(blockid, block);
-                this.PerformanceCounter.AddCacheSetCount(1);
             }
 
             this.logger.LogTrace("(-)[CACHE_MISS]:'{0}'", block);
