@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         // TODO: move this to the options
         // Maximum number of headers to announce when relaying blocks with headers message.
-        private const int MAX_BLOCKS_TO_ANNOUNCE = 8;
+        private const int MaxBlocksToAnnounce = 8;
 
         private readonly ConcurrentChain chain;
 
@@ -53,10 +53,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         public bool CanRespondToGetDataPayload { get; set; }
 
-        // local resources
-        public bool PreferHeaders;// public for testing
+        /// <summary>Local resources.</summary>
+        /// <remarks>Public for testing.</remarks>
+        public bool PreferHeaders;
 
-        private bool preferHeaderAndIDs;
+        private readonly bool preferHeaderAndIDs;
 
         /// <summary>Hash of the last block we've sent to the peer in response to "getblocks" message,
         /// or <c>null</c> if the peer haven't used "getblocks" message or if we sent a tip to it already.</summary>
@@ -69,9 +70,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private uint256 getBlocksBatchLastItemHash;
 
         /// <summary>Chained header of the last header sent to the peer.</summary>
-        private ChainedHeader lastHeaderSent;
+        private ChainedHeader lastSentHeader;
 
-        /// <see cref="IChainState"/>
+        /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
 
         public BlockStoreBehavior(ConcurrentChain chain, IBlockStore blockStore, IChainState chainState, ILoggerFactory loggerFactory)
@@ -128,6 +129,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             catch (Exception ex)
             {
                 this.logger.LogError("Exception occurred: {0}", ex.ToString());
+                this.logger.LogTrace("(-)[EXCEPTION]");
                 throw;
             }
 
@@ -180,13 +182,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            //TODO use CMB.BestPeerTip instead. Also when we update LastHeaderSent update CMB.UpdateBestHeaderSent
-            ChainedHeader peerTip = this.consensusManagerBehavior.ExpectedPeerTip;
+            ChainedHeader bestHeader = this.consensusManagerBehavior.BestSentHeader;
 
-            ChainedHeader bestHeader = peerTip;
-
-            if ((bestHeader == null) || ((this.lastHeaderSent != null) && (bestHeader.Height < this.lastHeaderSent.Height)))
-                bestHeader = this.lastHeaderSent;
+            if ((bestHeader == null) || ((this.lastSentHeader != null) && (bestHeader.Height < this.lastSentHeader.Height)))
+                bestHeader = this.lastSentHeader;
 
             this.logger.LogTrace("(-):'{0}'", bestHeader);
             return bestHeader;
@@ -289,7 +288,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (highestHeader?.Height < lastAddedChainedHeader.Height)
                 {
                     this.logger.LogTrace("Setting peer's last block sent to '{0}'.", lastAddedChainedHeader);
-                    this.lastHeaderSent = lastAddedChainedHeader;
+                    this.lastSentHeader = lastAddedChainedHeader;
+                    this.consensusManagerBehavior.UpdateBestSentHeader(this.lastSentHeader);
 
                     // Set last item of the batch (unless we are announcing the tip), which is then used
                     // when the peer sends us "getdata" message. When we detect "getdata" message for this block,
@@ -392,9 +392,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            bool revertToInv = ((!this.PreferHeaders &&
-                                 (!this.preferHeaderAndIDs || blocksToAnnounce.Count > 1)) ||
-                                blocksToAnnounce.Count > MAX_BLOCKS_TO_ANNOUNCE);
+            bool revertToInv = ((!this.PreferHeaders && (!this.preferHeaderAndIDs || blocksToAnnounce.Count > 1)) || blocksToAnnounce.Count > MaxBlocksToAnnounce);
 
             this.logger.LogTrace("Block propagation preferences of the peer '{0}': prefer headers - {1}, prefer headers and IDs - {2}, will{3} revert to 'inv' now.", peer.RemoteSocketEndpoint, this.PreferHeaders, this.preferHeaderAndIDs, revertToInv ? "" : " NOT");
 
@@ -455,7 +453,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         if (headers.Count > 1) this.logger.LogDebug("Sending {0} headers, range {1} - {2}, to peer '{3}'.", headers.Count, headers.First(), headers.Last(), peer.RemoteSocketEndpoint);
                         else this.logger.LogDebug("Sending header '{0}' to peer '{1}'.", headers.First(), peer.RemoteSocketEndpoint);
 
-                        this.lastHeaderSent = bestIndex;
+                        this.lastSentHeader = bestIndex;
+
+                        if (this.lastSentHeader.Height > highestHeader.Height)
+                            this.consensusManagerBehavior.UpdateBestSentHeader(this.lastSentHeader);
 
                         await peer.SendMessageAsync(new HeadersPayload(headers.ToArray())).ConfigureAwait(false);
                         this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
