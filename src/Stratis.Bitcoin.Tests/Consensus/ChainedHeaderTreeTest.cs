@@ -3265,7 +3265,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         [Fact]
-        public void TreeIsCOnsistentAfterPeerDisconnected()
+        public void TreeIsConsistentAfterPeerDisconnected()
         {
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
