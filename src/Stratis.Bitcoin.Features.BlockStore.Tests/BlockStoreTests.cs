@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public async Task BlockStoreInitializesTipAtHashOfLastSavedBlockAsync()
         {
             ChainedHeader initializationHeader = this.chain.Tip.Previous.Previous.Previous;
-            this.repositoryTipHashAndHeight = new HashHeightPair(initializationHeader.HashBlock, initializationHeader.Height);
+            this.repositoryTipHashAndHeight = new HashHeightPair(initializationHeader);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             Assert.Equal(initializationHeader, this.chainState.BlockStoreTip);
