@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Utilities
             if (ReferenceEquals(a, b))
                 return true;
 
-            if ((ReferenceEquals(a, null)) || (ReferenceEquals(b, null)))
+            if (ReferenceEquals(a, null) || ReferenceEquals(b, null))
                 return false;
 
             return ((a.hash == b.hash) && (a.height == b.height));
