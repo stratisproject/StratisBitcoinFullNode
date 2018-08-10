@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Visitors;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
 
@@ -12,6 +13,8 @@ namespace Stratis.Bitcoin.Consensus
     /// </summary>
     public interface IConsensusManager : IDisposable
     {
+        void Accept(IConsensusVisitor visitor);
+
         /// <summary>The current tip of the chain that has been validated.</summary>
         ChainedHeader Tip { get; }
 
