@@ -73,6 +73,7 @@ namespace Stratis.Bitcoin.Utilities
             return !(a == b);
         }
 
+        /// <inheritdoc />
         public override bool Equals(object value)
         {
             if (typeof(HashHeightPair) != value.GetType())
