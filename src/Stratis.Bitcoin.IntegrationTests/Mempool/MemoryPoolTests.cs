@@ -15,6 +15,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 {
     public class MemoryPoolTests
     {
+        private readonly Network network;
+
+        public MemoryPoolTests()
+        {
+            this.network = KnownNetworks.RegTest;
+        }
+
         public class DateTimeProviderSet : DateTimeProvider
         {
             public long time;
@@ -36,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
 
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
@@ -65,7 +72,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -109,7 +116,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -147,7 +154,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
                 stratisNodeSync.FullNode.NodeService<MempoolSettings>().RequireStandard = true; // make sure to test standard tx
@@ -222,7 +229,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
 
                 stratisNode.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNode.FullNode.Network));
@@ -289,7 +296,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -331,9 +338,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(KnownNetworks.RegTest);
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(KnownNetworks.RegTest);
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
 
                 stratisNodeSync.NotInIBD();
