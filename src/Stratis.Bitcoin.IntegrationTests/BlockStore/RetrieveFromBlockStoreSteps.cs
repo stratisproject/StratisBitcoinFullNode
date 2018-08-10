@@ -40,6 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private Transaction wontRetrieveTransaction;
         private uint256 retrievedBlockId;
         private Transaction wontRetrieveBlockId;
+        private readonly Network network = KnownNetworks.RegTest;
 
         public RetrieveFromBlockStoreSpecification(ITestOutputHelper output) : base(output)
         {
@@ -58,14 +59,14 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void a_pow_node_running()
         {
-            this.node = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
+            this.node = this.builder.CreateStratisPowNode(this.network);
             this.node.Start();
             this.node.NotInIBD();
         }
 
         private void a_pow_node_to_transact_with()
         {
-            this.transactionNode = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
+            this.transactionNode = this.builder.CreateStratisPowNode(this.network);
             this.transactionNode.Start();
             this.transactionNode.NotInIBD();
 
