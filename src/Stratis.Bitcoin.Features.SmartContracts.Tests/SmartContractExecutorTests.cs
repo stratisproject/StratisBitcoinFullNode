@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private static readonly uint160 CoinbaseAddress = 0;
         private static readonly uint160 ToAddress = 1;
         private static readonly uint160 SenderAddress = 2;
-        private static readonly Money MempoolFee = new Money(10000); 
+        private static readonly Money MempoolFee = new Money(1_000_000); 
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
@@ -34,6 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private InternalTransactionExecutorFactory internalTxExecutorFactory;
         private ReflectionVirtualMachine vm;
         private ICallDataSerializer serializer;
+        private readonly AddressGenerator addressGenerator;
 
         public SmartContractExecutorTests()
         {
@@ -46,7 +47,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.transferProcessor = new SmartContractResultTransferProcessor(DateTimeProvider.Default, this.loggerFactory, this.network);
             this.validator = new SmartContractValidator();
             this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network);
+            this.addressGenerator = new AddressGenerator();
+            this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator);
             this.serializer = CallDataSerializer.Default;
         }
 
@@ -205,7 +207,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void Execute_InterContractCall_InfiniteLoop_AllGasConsumed()
+        public void Execute_InterContractCall_Internal_InfiniteLoop_Fails()
         {
             // Create contract 1
 
@@ -266,7 +268,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             // Invoke infinite loop
 
-            var gasLimit = (Gas)1000000;
+            var gasLimit = (Gas)100_000;
 
             string[] parameters =
             {
@@ -294,8 +296,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // If you're running with the debugger on this will obviously be a source of failures
             result = RunWithTimeout(3, () => callExecutor.Execute(transactionContext));
 
-            Assert.IsType<OutOfGasException>(result.Exception);
-            Assert.Equal(gasLimit, result.GasConsumed);
+            // Actual call was successful, but internal call failed due to gas - returned false.
+            Assert.False(result.Revert);
+            Assert.False((bool) result.Return);
         }
 
         private static T RunWithTimeout<T>(int timeout, Func<T> execute)

@@ -88,7 +88,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Ensure that boths nodes has the contract
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
                 ContractStateRepositoryRoot receiverState = scReceiver.FullNode.NodeService<ContractStateRepositoryRoot>();
-                uint160 tokenContractAddress = transferContractTransaction.GetNewContractAddress();
+                IAddressGenerator addressGenerator = scSender.FullNode.NodeService<IAddressGenerator>();
+
+                uint160 tokenContractAddress = addressGenerator.GenerateAddress(transferContractTransaction.GetHash(), 0);
                 Assert.NotNull(senderState.GetCode(tokenContractAddress));
                 Assert.NotNull(receiverState.GetCode(tokenContractAddress));
                 scSender.FullNode.MempoolManager().Clear();
@@ -124,7 +126,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Ensure that boths nodes has the contract
                 senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
                 receiverState = scReceiver.FullNode.NodeService<ContractStateRepositoryRoot>();
-                tokenContractAddress = transferContractTransaction.GetNewContractAddress();
+
+                tokenContractAddress = addressGenerator.GenerateAddress(transferContractTransaction.GetHash(), 0); // nonce is 0 for user contract creation.
                 Assert.NotNull(senderState.GetCode(tokenContractAddress));
                 Assert.NotNull(receiverState.GetCode(tokenContractAddress));
                 scSender.FullNode.MempoolManager().Clear();

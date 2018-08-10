@@ -61,6 +61,9 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         {
             try
             {
+                if (!this.fullNode.Network.Consensus.IsProofOfStake)
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Stake");
+
                 GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetGetStakingInfoModel() : new GetStakingInfoModel();
 
                 return this.Json(model);
@@ -84,7 +87,10 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             Guard.NotNull(request, nameof(request));
 
             try
-            {              
+            {
+                if (!this.fullNode.Network.Consensus.IsProofOfStake)
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Stake");
+
                 if (!this.ModelState.IsValid)
                 {
                     IEnumerable<string> errors = this.ModelState.Values.SelectMany(e => e.Errors.Select(m => m.ErrorMessage));
@@ -124,6 +130,9 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         {
             try
             {
+                if (!this.fullNode.Network.Consensus.IsProofOfStake)
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Stake");
+
                 this.fullNode.NodeFeature<MiningFeature>(true).StopStaking();
                 return this.Ok();
             }
