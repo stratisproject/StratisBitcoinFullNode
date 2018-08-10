@@ -2,17 +2,8 @@
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.ValidationResults;
 
-namespace Stratis.Bitcoin.Consensus
+namespace Stratis.Bitcoin.Consensus.Visitors
 {
-    public interface IConsensusVisitor
-    {
-        ConsensusVisitorResult Visit(ConsensusManager consensusManager);
-    }
-
-    public sealed class ConsensusVisitorResult
-    {
-    }
-
     public sealed class BlockMinedConsensusVisitor : IConsensusVisitor
     {
         public Block Block { get; set; }
