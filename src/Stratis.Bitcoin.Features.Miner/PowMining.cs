@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Visitors;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -266,7 +267,8 @@ namespace Stratis.Bitcoin.Features.Miner
         private bool ValidateAndConnectBlock(MineBlockContext context)
         {
             this.logger.LogTrace("()");
-            context.ChainedHeaderBlock = this.consensusManager.BlockMinedAsync(context.BlockTemplate.Block).GetAwaiter().GetResult();
+            var result = this.consensusManager.AcceptAsync(new BlockMinedConsensusVisitor(this.loggerFactory, context.BlockTemplate.Block)).GetAwaiter().GetResult();
+            context.ChainedHeaderBlock = result.ChainedHeaderBlock;
 
             if (context.ChainedHeaderBlock == null)
             {

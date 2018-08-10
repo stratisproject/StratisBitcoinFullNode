@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Visitors;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
@@ -274,11 +275,11 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <inheritdoc />
-        public void PeerDisconnected(int networkPeerId)
+        public async void PeerDisconnected(int networkPeerId)
         {
             this.logger.LogTrace("({0}:{1})", nameof(networkPeerId), networkPeerId);
 
-            this.consensusManager.PeerDisconnected(networkPeerId);
+            await this.consensusManager.AcceptAsync(new PeerDisconnectedVisitor(this.loggerFactory, networkPeerId));
 
             this.logger.LogTrace("(-)");
         }

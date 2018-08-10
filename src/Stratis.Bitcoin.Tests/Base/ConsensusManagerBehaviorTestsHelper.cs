@@ -6,14 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Visitors;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -63,7 +62,6 @@ namespace Stratis.Bitcoin.Tests.Base
         /// <param name="expectedPeerTip">Behavior's expected tip's initial value.</param>
         /// <param name="peerState">Peer connection state returned by the <see cref="INetworkPeer.State"/>.</param>
         /// <param name="connectNewHeadersMethod">Method which is invoked when behavior calls <see cref="IConsensusManager.HeadersPresented"/>.</param>
-        /// <returns></returns>
         public ConsensusManagerBehavior CreateAndAttachBehavior(ChainedHeader consensusTip, List<BlockHeader> cache = null,
             ChainedHeader expectedPeerTip = null, NetworkPeerState peerState = NetworkPeerState.HandShaked,
             Func<List<BlockHeader>, bool, ConnectNewHeadersResult> connectNewHeadersMethod = null)
@@ -79,12 +77,20 @@ namespace Stratis.Bitcoin.Tests.Base
             // Consensus manager
             var cmMock = new Mock<IConsensusManager>();
 
-            cmMock.Setup(x => x.HeadersPresented(It.IsAny<INetworkPeer>(), It.IsAny<List<BlockHeader>>(), It.IsAny<bool>()))
-                .Returns((INetworkPeer p, List<BlockHeader> presentedHeaders, bool triggerDownload) =>
+            //cmMock.Setup(x => x.AcceptAsync(new HeadersPresentedVisitor(this.loggerFactory, It.IsAny<INetworkPeer>(), It.IsAny<List<BlockHeader>>(), It.IsAny<bool>())))
+            //    .Returns(
+            //    (ILoggerFactory loggerFactory, INetworkPeer p, List<BlockHeader> presentedHeaders, bool triggerDownload) =>
+            //    {
+            //        this.HeadersPresentedCalledTimes++;
+            //        return connectNewHeadersMethod?.Invoke(loggerFactory, presentedHeaders, triggerDownload);
+            //    });
+
+            cmMock
+                .Setup(x => x.AcceptAsync(new HeadersPresentedVisitor(this.loggerFactory, It.IsAny<INetworkPeer>(), It.IsAny<List<BlockHeader>>(), It.IsAny<bool>())))
+                .Returns(() =>
                 {
                     this.HeadersPresentedCalledTimes++;
-
-                    return connectNewHeadersMethod?.Invoke(presentedHeaders, triggerDownload);
+                    return Task.FromResult(new ConnectNewHeadersResult());
                 });
 
             cmMock.Setup(x => x.Tip).Returns(consensusTip);
@@ -192,7 +198,7 @@ namespace Stratis.Bitcoin.Tests.Base
             message.Payload = payload;
 
             // Length of 1 is a bogus value used just to successfully initialize the class.
-            await this.MessageReceived.ExecuteCallbacksAsync(this.PeerMock.Object, new IncomingMessage() {Length = 1, Message = message}).ConfigureAwait(false);
+            await this.MessageReceived.ExecuteCallbacksAsync(this.PeerMock.Object, new IncomingMessage() { Length = 1, Message = message }).ConfigureAwait(false);
         }
 
         private class TestPeerBanning : IPeerBanning

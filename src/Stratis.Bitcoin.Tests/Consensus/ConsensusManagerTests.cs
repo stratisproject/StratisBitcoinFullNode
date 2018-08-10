@@ -18,12 +18,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             builder.ConsensusManager.InitializeAsync(chainTip).GetAwaiter().GetResult();
 
             var minedBlock = builder.CreateBlock(chainTip);
-            var blockMinedVisitor = new BlockMinedConsensusVisitor(new ExtendedLoggerFactory());
-            blockMinedVisitor.Block = minedBlock;
-            builder.ConsensusManager.Accept(blockMinedVisitor);
+            var blockMinedVisitor = new BlockMinedConsensusVisitor(new ExtendedLoggerFactory(), minedBlock);
+            var result = builder.ConsensusManager.AcceptAsync(blockMinedVisitor);
 
-            var result = new ConsensusVisitorResult();
-            Assert.NotNull(result);
+            Assert.NotNull(result.Result.ChainedHeaderBlock);
             Assert.Equal(minedBlock.GetHash(), builder.ConsensusManager.Tip.HashBlock);
         }
     }

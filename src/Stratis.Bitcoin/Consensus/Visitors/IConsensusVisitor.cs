@@ -2,8 +2,8 @@
 
 namespace Stratis.Bitcoin.Consensus.Visitors
 {
-    public interface IConsensusVisitor
+    public interface IConsensusVisitor<T>
     {
-        Task<ConsensusVisitorResult> VisitAsync(ConsensusManager consensusManager);
+        Task<T> VisitAsync(ConsensusManager consensusManager);
     }
 }

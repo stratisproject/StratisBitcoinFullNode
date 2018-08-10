@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -164,37 +163,9 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        #region OldCode
-
-        /// <inheritdoc />
-        public async Task<ChainedHeaderBlock> BlockMinedAsync(Block block)
+        public async Task<T> AcceptAsync<T>(IConsensusVisitor<T> visitor)
         {
-            throw new Exception();
-        }
-
-        /// <inheritdoc />
-        public async Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback)
-        {
-            throw new Exception();
-        }
-
-        /// <inheritdoc />
-        public ConnectNewHeadersResult HeadersPresented(INetworkPeer peer, List<BlockHeader> headers, bool triggerDownload = true)
-        {
-            throw new Exception();
-        }
-
-        /// <inheritdoc />
-        public void PeerDisconnected(int peerId)
-        {
-            throw new Exception();
-        }
-
-        #endregion
-
-        public void Accept(IConsensusVisitor visitor)
-        {
-            visitor.VisitAsync(this);
+            return await visitor.VisitAsync(this);
         }
 
         /// <summary>

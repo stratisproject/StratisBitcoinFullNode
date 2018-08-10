@@ -2,23 +2,28 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.ValidationResults;
+using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.Consensus.Visitors
 {
-    public sealed class BlockMinedConsensusVisitor : IConsensusVisitor
+    /// <summary>
+    /// A new block was mined by the node and is attempted to connect to tip.
+    /// </summary>
+    /// <param name="block">The mined block.</param>
+    public sealed class BlockMinedConsensusVisitor : IConsensusVisitor<BlockMinedConsensusVisitorResult>
     {
-        public Block Block { get; set; }
-
+        private readonly Block block;
         private readonly ILogger logger;
 
-        public BlockMinedConsensusVisitor(ILoggerFactory loggerFactory)
+        public BlockMinedConsensusVisitor(ILoggerFactory loggerFactory, Block block)
         {
+            this.block = block;
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
 
-        public async Task<ConsensusVisitorResult> VisitAsync(ConsensusManager consensusManager)
+        public async Task<BlockMinedConsensusVisitorResult> VisitAsync(ConsensusManager consensusManager)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(this.Block), this.Block.GetHash());
+            this.logger.LogTrace("({0}:{1})", nameof(this.block), this.block.GetHash());
 
             PartialValidationResult partialValidationResult;
 
@@ -28,16 +33,16 @@ namespace Stratis.Bitcoin.Consensus.Visitors
 
                 lock (consensusManager.PeerLock)
                 {
-                    if (this.Block.Header.HashPrevBlock != consensusManager.Tip.HashBlock)
+                    if (this.block.Header.HashPrevBlock != consensusManager.Tip.HashBlock)
                     {
                         this.logger.LogTrace("(-)[BLOCKMINED_INVALID_PREVIOUS_TIP]:null");
                         return null;
                     }
 
-                    chainedHeader = consensusManager.ChainedHeaderTree.CreateChainedHeaderWithBlock(this.Block);
+                    chainedHeader = consensusManager.ChainedHeaderTree.CreateChainedHeaderWithBlock(this.block);
                 }
 
-                partialValidationResult = await consensusManager.PartialValidator.ValidateAsync(this.Block, chainedHeader).ConfigureAwait(false);
+                partialValidationResult = await consensusManager.PartialValidator.ValidateAsync(this.block, chainedHeader).ConfigureAwait(false);
                 if (partialValidationResult.Succeeded)
                 {
                     bool fullValidationRequired;
@@ -82,8 +87,17 @@ namespace Stratis.Bitcoin.Consensus.Visitors
             }
 
             this.logger.LogTrace("(-):{0}", partialValidationResult.ChainedHeaderBlock);
-            //return partialValidationResult.ChainedHeaderBlock;
-            return new ConsensusVisitorResult();
+            return new BlockMinedConsensusVisitorResult(partialValidationResult.ChainedHeaderBlock);
         }
+    }
+
+    public class BlockMinedConsensusVisitorResult
+    {
+        public BlockMinedConsensusVisitorResult(ChainedHeaderBlock chainedHeaderBlock)
+        {
+            this.ChainedHeaderBlock = chainedHeaderBlock;
+        }
+
+        public ChainedHeaderBlock ChainedHeaderBlock { get; private set; }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace Stratis.Bitcoin.Consensus.Visitors
 {
-    public sealed class ConsensusVisitorResult
+    public interface IConsensusVisitorResult
     {
     }
 }

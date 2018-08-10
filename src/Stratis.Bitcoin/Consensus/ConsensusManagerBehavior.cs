@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus.Visitors;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
@@ -377,7 +378,8 @@ namespace Stratis.Bitcoin.Consensus
 
             try
             {
-                result = this.consensusManager.HeadersPresented(peer, headers, triggerDownload);
+                var visitor = new HeadersPresentedVisitor(this.loggerFactory, peer, headers, triggerDownload);
+                result = await this.consensusManager.AcceptAsync(visitor);
             }
             catch (ConnectHeaderException)
             {

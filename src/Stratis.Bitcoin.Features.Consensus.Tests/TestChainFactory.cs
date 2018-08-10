@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Consensus.Visitors;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -185,7 +186,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             TryFindNonceForProofOfWork(testChainContext, newBlock);
 
-            if (!getMutatedBlock) await ValidateBlock(testChainContext, newBlock);
+            if (!getMutatedBlock) await ValidateBlockAsync(testChainContext, newBlock);
             else CheckBlockIsMutated(newBlock);
 
             return newBlock;
@@ -236,11 +237,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             isMutated.Should().Be(true);
         }
 
-        private static async Task ValidateBlock(TestChainContext testChainContext, BlockTemplate newBlock)
+        private static async Task ValidateBlockAsync(TestChainContext testChainContext, BlockTemplate newBlock)
         {
-            var res = await testChainContext.Consensus.BlockMinedAsync(newBlock.Block);
+            var res = await testChainContext.Consensus.AcceptAsync(new BlockMinedConsensusVisitor(testChainContext.LoggerFactory, newBlock.Block));
             Assert.NotNull(res);
         }
-
     }
 }

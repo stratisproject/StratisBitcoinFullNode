@@ -9,6 +9,7 @@ using NBitcoin.Crypto;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Visitors;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -522,7 +523,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             }
 
             // Validate the block.
-            ChainedHeaderBlock chainedHeaderBlock = this.consensusManager.BlockMinedAsync(block).GetAwaiter().GetResult();
+            var result = this.consensusManager.AcceptAsync(new BlockMinedConsensusVisitor(this.loggerFactory, block)).GetAwaiter().GetResult();
+            ChainedHeaderBlock chainedHeaderBlock = result.ChainedHeaderBlock;
 
             if (chainedHeaderBlock == null)
             {
@@ -1153,7 +1155,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <seealso cref="SplitFactor" />                                                                                                                                              
         internal bool ShouldSplitStake(int stakedUtxosCount, long amountStaked, long coinValue, int chainHeight)
         {
-            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5},{6}:{7})", nameof(stakedUtxosCount), stakedUtxosCount, nameof(amountStaked), amountStaked, 
+            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5},{6}:{7})", nameof(stakedUtxosCount), stakedUtxosCount, nameof(amountStaked), amountStaked,
                 nameof(coinValue), coinValue, nameof(chainHeight), chainHeight);
 
             if (!this.CoinstakeSplitEnabled)
