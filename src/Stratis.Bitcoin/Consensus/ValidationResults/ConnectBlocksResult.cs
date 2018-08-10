@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Consensus.ValidationResults
     /// <summary>
     /// Information related to the block full validation process.
     /// </summary>
-    internal class ConnectBlocksResult : ValidationResult
+    public class ConnectBlocksResult : ValidationResult
     {
         public bool ConsensusTipChanged { get; private set; }
 
