@@ -110,18 +110,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             HdAddress sendToNodeOne = this.nodes[NodeOne].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccountName));
 
-            this.transactionBuildContext = new TransactionBuildContext(
-                this.nodes[NodeOne].FullNode.Network,
-                new WalletAccountReference(WalletName, WalletAccountName),
-                new[]
-                {
-                    new Recipient
-                    {
-                        Amount = this.nodeTwoBalance - Money.COIN,
-                        ScriptPubKey = sendToNodeOne.ScriptPubKey
-                    }
-                }.ToList(),
-                WalletPassword);
+            this.transactionBuildContext = new TransactionBuildContext(this.nodes[NodeOne].FullNode.Network)
+            {
+                AccountReference = new WalletAccountReference(WalletName, WalletAccountName),
+                WalletPassword = WalletPassword,
+                Recipients = new[] { new Recipient { Amount = this.nodeTwoBalance - Money.COIN, ScriptPubKey = sendToNodeOne.ScriptPubKey } }.ToList()
+            };
 
             Transaction transaction = this.nodes[NodeTwo].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
 
