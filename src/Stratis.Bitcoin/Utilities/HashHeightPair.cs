@@ -1,5 +1,4 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -60,7 +59,10 @@ namespace Stratis.Bitcoin.Utilities
 
         public static bool operator ==(HashHeightPair a, HashHeightPair b)
         {
-            if ((a == null) || (b == null))
+            if (ReferenceEquals(a, b))
+                return true;
+
+            if (ReferenceEquals(a, null) || ReferenceEquals(b, null))
                 return false;
 
             return ((a.hash == b.hash) && (a.height == b.height));
@@ -69,6 +71,15 @@ namespace Stratis.Bitcoin.Utilities
         public static bool operator !=(HashHeightPair a, HashHeightPair b)
         {
             return !(a == b);
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object value)
+        {
+            if (typeof(HashHeightPair) != value.GetType())
+                return false;
+
+            return this == (HashHeightPair)value;
         }
     }
 }
