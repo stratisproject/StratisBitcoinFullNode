@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// When block store is being initialized we delete blocks that are not on the best chain.
     /// </para>
     /// </remarks>
-    public class BlockStoreQueue : IBlockStore
+    public class BlockStoreQueue : IblockStoreQueue
     {
         /// <summary>Maximum interval between saving batches.</summary>
         /// <remarks>Interval value is a prime number that wasn't used as an interval in any other component. That prevents having CPU consumption spikes.</remarks>
@@ -252,10 +252,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-
-        /// <summary>Shows the stats to the console.</summary>
+        /// <inheritdoc />
         public void ShowStats(StringBuilder benchLog)
         {
+            this.logger.LogTrace("()");
+
             if (this.storeTip != null)
             {
                 benchLog.AppendLine();
@@ -263,12 +264,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 benchLog.AppendLine($"Pending Blocks: {this.batch.Count}");
                 benchLog.AppendLine($"Batch Size: {this.currentBatchSizeBytes / 1000} kb / {BatchThresholdSizeBytes / 1000} kb");
             }
+
+            this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Adds a block to the saving queue.
-        /// </summary>
-        /// <param name="chainedHeaderBlock">The block and its chained header pair to be added to pending storage.</param>
+        /// <inheritdoc />
         public void AddToPending(ChainedHeaderBlock chainedHeaderBlock)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock.ChainedHeader);

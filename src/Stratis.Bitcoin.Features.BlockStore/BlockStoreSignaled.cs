@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreSignaled : SignalObserver<Block>
     {
-        private readonly BlockStoreQueue blockStoreQueue;
+        private readonly IblockStoreQueue blockStoreQueue;
 
         private readonly ConcurrentChain chain;
 
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly Task dequeueLoopTask;
 
         public BlockStoreSignaled(
-            BlockStoreQueue blockStoreQueue,
+            IblockStoreQueue blockStoreQueue,
             ConcurrentChain chain,
             StoreSettings storeSettings,
             IChainState chainState,
