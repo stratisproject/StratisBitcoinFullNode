@@ -1,9 +1,12 @@
-﻿using System.Security.Cryptography.X509Certificates;
+﻿using System;
+using System.IO;
+using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using NSubstitute;
 using Stratis.Bitcoin.Features.Api;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Stratis.Bitcoin.Api.Tests
 {
@@ -16,15 +19,18 @@ namespace Stratis.Bitcoin.Api.Tests
 
         public ProgramTest()
         {
-            this.apiSettings = new ApiSettings { HttpsCertificateSubjectName = ApiSettings.DefaultCertificateSubjectName};
+            this.apiSettings = new ApiSettings { };
             this.certificateToUse = new X509Certificate2();
             this.certificateStore = Substitute.For<ICertificateStore>();
             this.webHostBuilder = Substitute.For<IWebHostBuilder>();
         }
 
-        [Fact]
-        public void Initialize_WhenCertificateAlreadyInStore_UsesCertificateOnHttpsWithKestrel()
+        [Theory]
+        [InlineData("CustomCertificate")]
+        [InlineData(ApiSettings.DefaultCertificateSubjectName)]
+        public void Initialize_WhenCertificateAlreadyInStore_UsesCertificateOnHttpsWithKestrel(string certificateName)
         {
+            this.apiSettings.HttpsCertificateSubjectName = certificateName;
             this.SetCertificateInStore(true);
             
             Program.Initialize(null, new FullNode(), this.apiSettings, this.certificateStore, this.webHostBuilder);
@@ -34,11 +40,10 @@ namespace Stratis.Bitcoin.Api.Tests
         }
 
         [Fact]
-        public void Initialize_WhenCertificateNotInStore_CreatesCertificate_And_AddsItToStore()
+        public void Initialize_WhenDefaultCertificateNotInStore_CreatesCertificate_And_AddsItToStore()
         {
             this.SetCertificateInStore(false);
-
-
+            
             this.certificateStore
                 .BuildSelfSignedServerCertificate(this.apiSettings.HttpsCertificateSubjectName, Arg.Any<string>())
                 .Returns(this.certificateToUse);
@@ -49,19 +54,22 @@ namespace Stratis.Bitcoin.Api.Tests
         }
 
         [Fact]
-        public void Initialize_WhenCertificateInApiSettings_ButNotInStore_ShouldError()
+        public void Initialize_WhenCertificateIsNotDefault_AndNotInStore_ShouldError()
         {
             this.SetCertificateInStore(false);
 
-            this.apiSettings.HttpsCertificateSubjectName = "NOT" + ApiSettings.DefaultCertificateSubjectName;
+            var nonDefaultCertificateName = "NOT" + ApiSettings.DefaultCertificateSubjectName;
+            this.apiSettings.HttpsCertificateSubjectName = nonDefaultCertificateName;
 
             this.certificateStore
                 .BuildSelfSignedServerCertificate(this.apiSettings.HttpsCertificateSubjectName, Arg.Any<string>())
                 .Returns(this.certificateToUse);
 
-            ///action to throw here
-            Program.Initialize(null, new FullNode(), this.apiSettings, this.certificateStore, this.webHostBuilder);
+            var initialiseAction = new Action(
+                () => Program.Initialize(null, new FullNode(), this.apiSettings, this.certificateStore, this.webHostBuilder));
 
+            initialiseAction.Should().Throw<FileNotFoundException>().And.Message.Should()
+                .Contain(nonDefaultCertificateName);
             this.certificateStore.DidNotReceive().Add(this.certificateToUse);
         }
 

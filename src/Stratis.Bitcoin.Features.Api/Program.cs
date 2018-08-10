@@ -68,16 +68,15 @@ namespace Stratis.Bitcoin.Features.Api
         {
             var certificateSubjectName = apiSettings.HttpsCertificateSubjectName;
 
-            if (!(store.TryGet(certificateSubjectName, out var certificate)))
-            {
-                if (certificateSubjectName != ApiSettings.DefaultCertificateSubjectName)
-                {
-                    throw new FileNotFoundException("Unable to find certificate with name: " + certificateSubjectName);
-                }
+            if (store.TryGet(certificateSubjectName, out var certificate))
+                return certificate;
 
-                certificate = store.BuildSelfSignedServerCertificate(certificateSubjectName, "password");
-                store.Add(certificate);
-            }
+            if (certificateSubjectName != ApiSettings.DefaultCertificateSubjectName)
+                throw new FileNotFoundException("Unable to find certificate with name: " + certificateSubjectName);
+            
+
+            certificate = store.BuildSelfSignedServerCertificate(certificateSubjectName, Guid.NewGuid().ToString());
+            store.Add(certificate);
 
             return certificate;
         }

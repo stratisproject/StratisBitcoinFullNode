@@ -96,6 +96,8 @@ namespace Stratis.Bitcoin.Features.Api
                 };
             }
 
+            this.HttpsCertificateSubjectName = config.GetOrDefault("certificatesubjectname", DefaultCertificateSubjectName);
+
             this.logger.LogTrace("(-)");
         }
 
@@ -118,9 +120,10 @@ namespace Stratis.Bitcoin.Features.Api
         {
             var builder = new StringBuilder();
 
-            builder.AppendLine($"-apiuri=<string>          URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
-            builder.AppendLine($"-apiport=<0-65535>        Port of node's API interface. Defaults to { GetDefaultPort(network) }.");
-            builder.AppendLine($"-keepalive=<seconds>      Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
+            builder.AppendLine($"-apiuri=<string>                     URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
+            builder.AppendLine($"-apiport=<0-65535>                   Port of node's API interface. Defaults to { GetDefaultPort(network) }.");
+            builder.AppendLine($"-keepalive=<seconds>                 Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
+            builder.AppendLine($"-certificatesubjectname=<string>     Subject name of the certificate to use for https traffic encryption. Defaults to { DefaultCertificateSubjectName }.");
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
@@ -139,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Api
             builder.AppendLine($"#apiport={ GetDefaultPort(network) }");
             builder.AppendLine($"#Keep Alive interval (set in seconds). Default: 0 (no keep alive)");
             builder.AppendLine($"#keepalive=0");
-            builder.AppendLine($"#Subject name of the certificate in store to use for https traffic encryption");
+            builder.AppendLine($"#Subject name of the certificate to use for https traffic encryption");
             builder.AppendLine($"#certificatesubjectname={DefaultCertificateSubjectName}");
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,21 +53,21 @@ namespace Stratis.Bitcoin.Features.Api
             this.logger.LogInformation("API starting on URL '{0}'.", this.apiSettings.ApiUri);
             this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.apiSettings, this.certificateStore);
 
+            if (this.apiSettings.KeepaliveTimer == null)
+                return;
+
             // Start the keepalive timer, if set.
             // If the timer expires, the node will shut down.
-            if (this.apiSettings.KeepaliveTimer != null)
+            this.apiSettings.KeepaliveTimer.Elapsed += (sender, args) =>
             {
-                this.apiSettings.KeepaliveTimer.Elapsed += (sender, args) =>
-                {
-                    this.logger.LogInformation($"The application will shut down because the keepalive timer has elapsed.");
+                this.logger.LogInformation($"The application will shut down because the keepalive timer has elapsed.");
 
-                    this.apiSettings.KeepaliveTimer.Stop();
-                    this.apiSettings.KeepaliveTimer.Enabled = false;
-                    this.fullNode.NodeLifetime.StopApplication();
-                };
+                this.apiSettings.KeepaliveTimer.Stop();
+                this.apiSettings.KeepaliveTimer.Enabled = false;
+                this.fullNode.NodeLifetime.StopApplication();
+            };
 
-                this.apiSettings.KeepaliveTimer.Start();
-            }
+            this.apiSettings.KeepaliveTimer.Start();
         }
 
         /// <summary>
@@ -124,6 +125,8 @@ namespace Stratis.Bitcoin.Features.Api
             var options = new ApiFeatureOptions();
             optionsAction?.Invoke(options);
 
+            var certificateStore = new CertificateStore(StoreName.Root, StoreLocation.CurrentUser);
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -133,6 +136,7 @@ namespace Stratis.Bitcoin.Features.Api
                         services.AddSingleton(fullNodeBuilder);
                         services.AddSingleton(options);
                         services.AddSingleton<ApiSettings>();
+                        services.AddSingleton<ICertificateStore>(certificateStore);
                     });
             });
 

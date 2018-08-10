@@ -260,5 +260,27 @@ namespace Stratis.Bitcoin.Api.Tests
             // Assert.
             Assert.Equal(ApiSettings.TestStratisApiPort, settings.ApiPort);
         }
+
+        /// <summary>
+        /// .
+        /// </summary>
+        [Fact]
+        public void GivenHttpsCertificateSubjectName_ThenUsesTheCorrectHttpsCertificateSubjectName()
+        {
+            // Arrange.
+            var certificateCustomName = "good morning";
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new[] { $"-certificatesubjectname={certificateCustomName}" });
+
+            // Act.
+            var settings = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseApi()
+                .Build()
+                .NodeService<ApiSettings>();
+
+            // Assert.
+            settings.HttpsCertificateSubjectName.Should().Be(certificateCustomName);
+        }
+
     }
 }
