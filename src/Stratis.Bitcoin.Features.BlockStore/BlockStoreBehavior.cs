@@ -341,11 +341,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private async Task SendAsBlockInventoryAsync(INetworkPeer peer, IEnumerable<uint256> blocks)
+        private async Task SendAsBlockInventoryAsync(INetworkPeer peer, List<ChainedHeader> blocks)
         {
             this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(peer), peer.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
 
-            var queue = new Queue<InventoryVector>(blocks.Select(s => new InventoryVector(InventoryType.MSG_BLOCK, s)));
+            // TODO please don't use queue here. Refactor it.
+            var queue = new Queue<InventoryVector>(blocks.Select(s => new InventoryVector(InventoryType.MSG_BLOCK, s.HashBlock)));
             while (queue.Count > 0)
             {
                 InventoryVector[] items = queue.TakeAndRemove(ConnectionManager.MaxInventorySize).ToArray();
@@ -383,7 +384,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("Block propagation preferences of the peer '{0}': prefer headers - {1}, prefer headers and IDs - {2}, will{3} revert to 'inv' now.", peer.RemoteSocketEndpoint, this.PreferHeaders, this.preferHeaderAndIDs, revertToInv ? "" : " NOT");
 
             var headers = new List<BlockHeader>();
-            var inventoryBlockToSend = new List<uint256>();
+            var inventoryBlockToSend = new List<ChainedHeader>();
 
             try
             {
@@ -463,7 +464,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         {
                             if ((bestSentHeader == null) || (bestSentHeader.GetAncestor(chainedHeader.Height) == null))
                             {
-                                inventoryBlockToSend.Add(chainedHeader.HashBlock);
+                                inventoryBlockToSend.Add(chainedHeader);
                                 this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", chainedHeader.HashBlock, peer.RemoteSocketEndpoint);
                             }
                         }
@@ -472,6 +473,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 if (inventoryBlockToSend.Any())
                 {
+                    this.lastSentHeader = inventoryBlockToSend.Last();
+                    this.consensusManagerBehavior.UpdateBestSentHeader(this.lastSentHeader);
+
                     await this.SendAsBlockInventoryAsync(peer, inventoryBlockToSend).ConfigureAwait(false);
                     this.logger.LogTrace("(-)[SEND_INVENTORY]");
                     return;
