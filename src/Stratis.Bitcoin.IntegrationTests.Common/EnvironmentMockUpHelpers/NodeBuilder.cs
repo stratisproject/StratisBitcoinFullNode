@@ -84,10 +84,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), start: false, useCookieAuth: useCookieAuth);
         }
 
-        public CoreNode CreateStratisPowNode(bool start = false)
-        {
-            return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), KnownNetworks.RegTest), start);
-        }
+        //public CoreNode CreateStratisPowNode(Network network, bool start = false)
+        //{
+        //    return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), KnownNetworks.RegTest), start);
+        //}
 
         public CoreNode CreateStratisPowNode(Network network, bool start = false)
         {

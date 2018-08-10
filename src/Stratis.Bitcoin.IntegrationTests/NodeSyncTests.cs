@@ -30,8 +30,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPowNode();
-                CoreNode node2 = builder.CreateStratisPowNode();
+                CoreNode node1 = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode node2 = builder.CreateStratisPowNode(KnownNetworks.RegTest);
                 builder.StartAll();
                 Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode();
+                CoreNode stratisNode = builder.CreateStratisPowNode(KnownNetworks.RegTest);
                 CoreNode coreNode = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
 
@@ -85,8 +85,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode();
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode();
+                CoreNode stratisNode = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(KnownNetworks.RegTest);
                 CoreNode coreCreateNode = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
 
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode();
+                CoreNode stratisNode = builder.CreateStratisPowNode(KnownNetworks.RegTest);
                 CoreNode coreNodeSync = builder.CreateBitcoinCoreNode();
                 CoreNode coreCreateNode = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
