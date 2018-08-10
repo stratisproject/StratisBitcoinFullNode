@@ -141,6 +141,8 @@ namespace Stratis.Bitcoin.Connection
 
             this.StartNodeServer();
 
+            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(null, this);
+
             this.logger.LogTrace("(-)");
         }
 
@@ -161,6 +163,17 @@ namespace Stratis.Bitcoin.Connection
 
             foreach (NodeServerEndpoint listen in this.ConnectionSettings.Listen)
             {
+                IPEndPoint connectionSettingsExternalEndpoint = this.ConnectionSettings.ExternalEndpoint;
+                if (connectionSettingsExternalEndpoint != null && connectionSettingsExternalEndpoint.Address.Equals(IPAddress.Loopback))
+                {
+                    if (this.ConnectionSettings.Listen != null)
+                    {
+                        IPEndPoint nodeServerEndpoints = this.ConnectionSettings.Listen
+                            .FirstOrDefault(x => x.Endpoint.Address.IsRoutable(false))?.Endpoint;
+                        this.ConnectionSettings.ExternalEndpoint = nodeServerEndpoints;
+                    }
+                }
+
                 NetworkPeerConnectionParameters cloneParameters = this.Parameters.Clone();
                 NetworkPeerServer server = this.NetworkPeerFactory.CreateNetworkPeerServer(listen.Endpoint, this.ConnectionSettings.ExternalEndpoint);
 
@@ -408,6 +421,9 @@ namespace Stratis.Bitcoin.Connection
             {
                 this.peerAddressManager.PeerAttempted(ipEndpoint, this.dateTimeProvider.GetUtcNow());
                 await peer.VersionHandshakeAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+
+                // Set external address in self endpoint tracker to peer in version payload.
+                this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(peer.PeerVersion.AddressFrom, this);
             }
             catch (Exception e)
             {
