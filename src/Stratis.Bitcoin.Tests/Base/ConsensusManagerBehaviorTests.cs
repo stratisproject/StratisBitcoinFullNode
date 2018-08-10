@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -51,14 +50,14 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ConsensusTipChanged_CachedHeadersConsumedFullyAsync()
         {
-            var cache = new List<BlockHeader>() {this.headers[11].Header, this.headers[12].Header};
+            var cache = new List<BlockHeader>() { this.headers[11].Header, this.headers[12].Header };
 
             ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
                 (presentedHeaders, triggerDownload) =>
                 {
                     Assert.Equal(this.headers[12].Header, presentedHeaders.Last());
 
-                    return new ConnectNewHeadersResult() {Consumed = this.headers[12]};
+                    return new ConnectNewHeadersResult() { Consumed = this.headers[12] };
                 });
 
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
@@ -89,7 +88,7 @@ namespace Stratis.Bitcoin.Tests.Base
                 {
                     Assert.Equal(this.headers[50].Header, presentedHeaders.Last());
 
-                    return new ConnectNewHeadersResult() {Consumed = this.headers[40]};
+                    return new ConnectNewHeadersResult() { Consumed = this.headers[40] };
                 });
 
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
@@ -222,7 +221,7 @@ namespace Stratis.Bitcoin.Tests.Base
             this.helper.CreateAndAttachBehavior(this.headers[10]);
 
             List<ChainedHeader> bogusHeaders = ChainedHeadersHelper.CreateConsecutiveHeaders(5);
-            var payload = new GetHeadersPayload(new BlockLocator() { Blocks = bogusHeaders.Select(x => x.HashBlock).ToList()});
+            var payload = new GetHeadersPayload(new BlockLocator() { Blocks = bogusHeaders.Select(x => x.HashBlock).ToList() });
 
             await this.helper.ReceivePayloadAsync(payload);
 
@@ -264,14 +263,17 @@ namespace Stratis.Bitcoin.Tests.Base
 
             List<ChainedHeader> chainBSuffix = ChainedHeadersHelper.CreateConsecutiveHeaders(50, this.headers[55]);
 
-            var payload = new GetHeadersPayload(new BlockLocator() { Blocks = new List<uint256>()
+            var payload = new GetHeadersPayload(new BlockLocator()
+            {
+                Blocks = new List<uint256>()
             {
                 chainBSuffix.Single(x => x.Height == 90).HashBlock,
                 chainBSuffix.Single(x => x.Height == 60).HashBlock,
                 this.headers[50].HashBlock,
                 this.headers[30].HashBlock,
                 this.headers[10].HashBlock
-            }});
+            }
+            });
 
             await this.helper.ReceivePayloadAsync(payload);
 
