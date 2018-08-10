@@ -38,9 +38,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected void nodeA_nodeB_and_nodeC()
         {
-            this.nodeA = this.nodeBuilder.CreateStratisPowNode(KnownNetworks.RegTest);
-            this.nodeB = this.nodeBuilder.CreateStratisPowNode(KnownNetworks.RegTest);
-            this.nodeC = this.nodeBuilder.CreateStratisPowNode(KnownNetworks.RegTest);
+            Network regTest = KnownNetworks.RegTest;
+
+            this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest);
+            this.nodeB = this.nodeBuilder.CreateStratisPowNode(regTest);
+            this.nodeC = this.nodeBuilder.CreateStratisPowNode(regTest);
 
             this.nodeBuilder.StartAll();
             this.nodeA.NotInIBD();
