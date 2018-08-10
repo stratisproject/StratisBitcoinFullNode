@@ -647,6 +647,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             if (!stakingUtxoDescriptions.Any())
             {
                 this.rpcGetStakingInfoModel.Staking = false;
+                this.rpcGetStakingInfoModel.Weight = balance;
+                this.rpcGetStakingInfoModel.ExpectedTime = balance != 0 ? StakeValidator.TargetSpacingSeconds * this.networkWeight / this.rpcGetStakingInfoModel.Weight : 0;
                 this.logger.LogTrace("(-)[NO_SELECTION]:false");
                 return false;
             }
