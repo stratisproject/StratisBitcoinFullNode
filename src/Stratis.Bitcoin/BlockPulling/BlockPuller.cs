@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 double avgSize = this.GetAverageBlockSizeBytes();
                 double totalDeliveryRate = this.pullerBehaviorsByPeerId.Sum(x => x.Value.BlockDeliveryRate);
 
-                return (int) (avgSize * totalDeliveryRate);
+                return (int)(avgSize * totalDeliveryRate);
             }
         }
 
@@ -1030,13 +1030,13 @@ namespace Stratis.Bitcoin.BlockPulling
 
             /*
             just for logging
-	        show it as a part of nodestats, not separated spammer:
-		        avg download speed
-		        peer quality score (sort by quality score)
-		        number of assigned blocks
-		        MaxBlocksBeingDownloaded
-		        amount of blocks being downloaded
-		        show actual speed (no 1mb limit)
+            show it as a part of nodestats, not separated spammer:
+                avg download speed
+                peer quality score (sort by quality score)
+                number of assigned blocks
+                MaxBlocksBeingDownloaded
+                amount of blocks being downloaded
+                show actual speed (no 1mb limit)
             */
 
             statsBuilder.AppendLine("TODO");

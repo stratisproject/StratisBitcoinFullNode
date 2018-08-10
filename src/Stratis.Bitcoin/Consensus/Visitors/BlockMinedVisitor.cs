@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.ValidationResults;
 
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.Consensus.Visitors
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
 
-        public async ConsensusVisitorResult Visit(ConsensusManager consensusManager)
+        public async Task<ConsensusVisitorResult> VisitAsync(ConsensusManager consensusManager)
         {
             this.logger.LogTrace("({0}:{1})", nameof(this.Block), this.Block.GetHash());
 
@@ -81,7 +82,8 @@ namespace Stratis.Bitcoin.Consensus.Visitors
             }
 
             this.logger.LogTrace("(-):{0}", partialValidationResult.ChainedHeaderBlock);
-            return partialValidationResult.ChainedHeaderBlock;
+            //return partialValidationResult.ChainedHeaderBlock;
+            return new ConsensusVisitorResult();
         }
     }
 }

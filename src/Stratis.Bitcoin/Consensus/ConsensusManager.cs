@@ -22,36 +22,24 @@ namespace Stratis.Bitcoin.Consensus
     /// <inheritdoc cref="IConsensusManager"/>
     public class ConsensusManager : IConsensusManager
     {
-        /// <summary>
-        /// Maximum memory in bytes that can be taken by the blocks that were downloaded but
-        /// not yet validated or included to the consensus chain.
-        /// </summary>
-        private const long MaxUnconsumedBlocksDataBytes = 200 * 1024 * 1024;
-
-        /// <summary>Queue consumption threshold in bytes.</summary>
-        /// <remarks><see cref="ToDownloadQueue"/> consumption will start if only we have more than this value of free memory.</remarks>
-        private const long ConsumptionThresholdBytes = MaxUnconsumedBlocksDataBytes / 10;
-
-        /// <summary>The maximum amount of blocks that can be assigned to <see cref="IBlockPuller"/> at the same time.</summary>
-        private const int MaxBlocksToAskFromPuller = 5000;
-
-        /// <summary>The minimum amount of slots that should be available to trigger asking block puller for blocks.</summary>
-        private const int ConsumptionThresholdSlots = MaxBlocksToAskFromPuller / 10;
-
-        /// <summary>The default number of blocks to ask when there is no historic data to estimate average block size.</summary>
-        private const int DefaultNumberOfBlocksToAsk = 10;
-
         private readonly Network network;
         private readonly ILogger logger;
+
         internal IChainedHeaderTree ChainedHeaderTree { get; private set; }
+
         private readonly IChainState chainState;
+
         internal IPartialValidator PartialValidator { get; private set; }
+
         private readonly ConsensusSettings consensusSettings;
         private readonly IConsensusRuleEngine consensusRules;
         private readonly Signals.Signals signals;
         private readonly IPeerBanning peerBanning;
+
         internal IBlockStore BlockStore { get; private set; }
+
         private readonly IFinalizedBlockInfo finalizedBlockInfo;
+
         internal IBlockPuller BlockPuller { get; private set; }
 
         /// <inheritdoc />
@@ -77,13 +65,13 @@ namespace Stratis.Bitcoin.Consensus
 
         internal AsyncLock ReorgLock { get; private set; }
 
-        private long expectedBlockDataBytes;
-
-        private readonly Dictionary<uint256, long> expectedBlockSizes;
-
         private readonly ConcurrentChain chain;
 
         private bool isIbd;
+
+        public ConsensusBlockDownloader BlockDownloader { get; private set; }
+
+        public ConsensusBlockLoader BlockLoader { get; private set; }
 
         public ConsensusManager(
             Network network,
@@ -122,8 +110,6 @@ namespace Stratis.Bitcoin.Consensus
             this.PeerLock = new object();
             this.ReorgLock = new AsyncLock();
             this.BlockRequestedLock = new object();
-            this.expectedBlockDataBytes = 0;
-            this.expectedBlockSizes = new Dictionary<uint256, long>();
 
             this.CallbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
             this.PeersByPeerId = new Dictionary<int, INetworkPeer>();
@@ -131,6 +117,8 @@ namespace Stratis.Bitcoin.Consensus
             this.ibdState = ibdState;
 
             this.BlockPuller = blockPuller;
+            this.BlockDownloader = new ConsensusBlockDownloader(this, loggerFactory);
+            this.BlockLoader = new ConsensusBlockLoader(loggerFactory);
         }
 
         /// <inheritdoc />
@@ -168,7 +156,7 @@ namespace Stratis.Bitcoin.Consensus
 
             this.ChainedHeaderTree.Initialize(this.Tip, this.BlockStore != null);
 
-            this.BlockPuller.Initialize(this.BlockDownloaded);
+            this.BlockPuller.Initialize(this.BlockDownloader.BlockDownloaded);
 
             this.isIbd = this.ibdState.IsInitialBlockDownload();
             this.BlockPuller.OnIbdStateChanged(this.isIbd);
@@ -206,39 +194,34 @@ namespace Stratis.Bitcoin.Consensus
 
         public void Accept(IConsensusVisitor visitor)
         {
-            visitor.Visit(this);
+            visitor.VisitAsync(this);
         }
 
         /// <summary>
-        /// A callback that is triggered when a block that <see cref="ConsensusManager"/> requested was downloaded.
+        /// Called after a peer was disconnected.
+        /// Informs underlying components about the even.
+        /// Processes any remaining blocks to download.
         /// </summary>
-        internal void ProcessDownloadedBlock(ChainedHeaderBlock chainedHeaderBlock)
+        /// <remarks>Have to be locked by <see cref="PeerLock"/>.</remarks>
+        internal void PeerDisconnectedLocked(int peerId)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
+            this.logger.LogTrace("({0}:{1})", nameof(peerId), peerId);
 
-            if (chainedHeaderBlock == null)
+            bool removed = this.PeersByPeerId.Remove(peerId);
+
+            if (removed)
             {
-                // Peers failed to deliver the block.
-                this.logger.LogTrace("(-)[DOWNLOAD_FAILED]");
-                return;
+                this.ChainedHeaderTree.PeerDisconnected(peerId);
+                this.BlockPuller.PeerDisconnected(peerId);
+                this.BlockDownloader.ProcessDownloadQueueLocked();
             }
-
-            bool partialValidationRequired = false;
-
-            lock (this.PeerLock)
-            {
-                partialValidationRequired = this.ChainedHeaderTree.BlockDataDownloaded(chainedHeaderBlock.ChainedHeader, chainedHeaderBlock.Block);
-            }
-
-            this.logger.LogTrace("Partial validation is{0} required.", partialValidationRequired ? string.Empty : " NOT");
-
-            if (partialValidationRequired)
-                this.PartialValidator.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);
+            else
+                this.logger.LogTrace("Peer {0} was already removed.", peerId);
 
             this.logger.LogTrace("(-)");
         }
 
-        private async Task OnPartialValidationCompletedCallbackAsync(PartialValidationResult validationResult)
+        internal async Task OnPartialValidationCompletedCallbackAsync(PartialValidationResult validationResult)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(validationResult), validationResult);
 
@@ -325,7 +308,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 lock (this.PeerLock)
                 {
-                    this.ProcessDownloadQueueLocked();
+                    this.BlockDownloader.ProcessDownloadQueueLocked();
                 }
             }
 
@@ -380,7 +363,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             foreach (ConnectNewHeadersResult newHeaders in blocksToDownload)
-                this.DownloadBlocks(newHeaders.ToArray(), this.ProcessDownloadedBlock);
+                this.BlockDownloader.DownloadBlocks(newHeaders.ToArray(), this.BlockDownloader.ProcessDownloadedBlock);
 
             this.logger.LogTrace("(-)");
         }
@@ -721,7 +704,7 @@ namespace Stratis.Bitcoin.Consensus
 
             while (currentHeader.Height >= heightOfFirstBlock)
             {
-                ChainedHeaderBlock chainedHeaderBlock = await this.LoadBlockDataAsync(currentHeader.HashBlock).ConfigureAwait(false);
+                ChainedHeaderBlock chainedHeaderBlock = await this.BlockLoader.LoadBlockDataAsync(this, currentHeader.HashBlock).ConfigureAwait(false);
 
                 if (chainedHeaderBlock == null)
                 {
@@ -768,153 +751,6 @@ namespace Stratis.Bitcoin.Consensus
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(peerIdsToResync.Count), peerIdsToResync.Count);
             return peerIdsToResync;
-        }
-
-        private void BlockDownloaded(uint256 blockHash, Block block)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
-
-            ChainedHeader chainedHeader = null;
-
-            lock (this.PeerLock)
-            {
-                if (this.expectedBlockSizes.TryGetValue(blockHash, out long expectedSize))
-                {
-                    this.expectedBlockDataBytes -= expectedSize;
-                    this.expectedBlockSizes.Remove(blockHash);
-                    this.logger.LogTrace("Expected block data bytes was set to {0} and we are expecting {1} blocks to be delivered.", this.expectedBlockDataBytes, this.expectedBlockSizes.Count);
-                }
-                else
-                {
-                    // This means the puller has not filtered blocks correctly.
-                    this.logger.LogError("Unsolicited block '{0}'.", blockHash);
-                    this.logger.LogTrace("(-)[UNSOLICITED_BLOCK]");
-                    throw new InvalidOperationException("Unsolicited block");
-                }
-
-                if (block != null)
-                {
-                    try
-                    {
-                        chainedHeader = this.ChainedHeaderTree.FindHeaderAndVerifyBlockIntegrity(block);
-                    }
-                    catch (BlockDownloadedForMissingChainedHeaderException)
-                    {
-                        this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
-                        return;
-                    }
-
-                    // catch (BlockIntegrityVerificationException)
-                    // {
-                    //    // TODO: catch validation exceptions.
-                    //    // TODO ban the peer, disconnect, return
-                    //    // this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
-                    //    return;
-                    // }
-                }
-                else
-                {
-                    this.logger.LogDebug("Block '{0}' failed to be delivered.", blockHash);
-                }
-            }
-
-            List<OnBlockDownloadedCallback> listOfCallbacks = null;
-
-            lock (this.BlockRequestedLock)
-            {
-                if (this.CallbacksByBlocksRequestedHash.TryGetValue(blockHash, out listOfCallbacks))
-                    this.CallbacksByBlocksRequestedHash.Remove(blockHash);
-            }
-
-            if (listOfCallbacks != null)
-            {
-                ChainedHeaderBlock chainedHeaderBlock = null;
-
-                if (block != null)
-                    chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
-
-                this.logger.LogTrace("Calling {0} callbacks for block '{1}'.", listOfCallbacks.Count, chainedHeader);
-                foreach (OnBlockDownloadedCallback blockDownloadedCallback in listOfCallbacks)
-                    blockDownloadedCallback(chainedHeaderBlock);
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Processes items in the <see cref="ToDownloadQueue"/> and ask the block puller for blocks to download.
-        /// If the tree has too many unconsumed blocks we will not ask block puller for more until some blocks are consumed.
-        /// </summary>
-        /// <remarks>
-        /// Requests that have too many blocks will be split in batches.
-        /// The amount of blocks in 1 batch to downloaded depends on the average value in <see cref="IBlockPuller.GetAverageBlockSizeBytes"/>.
-        /// </remarks>
-        internal void ProcessDownloadQueueLocked()
-        {
-            this.logger.LogTrace("()");
-
-            while (this.ToDownloadQueue.Count > 0)
-            {
-                int awaitingBlocksCount = this.expectedBlockSizes.Count;
-
-                int freeSlots = MaxBlocksToAskFromPuller - awaitingBlocksCount;
-                this.logger.LogTrace("{0} slots are available.", freeSlots);
-
-                if (freeSlots < ConsumptionThresholdSlots)
-                {
-                    this.logger.LogTrace("(-)[NOT_ENOUGH_SLOTS]");
-                    return;
-                }
-
-                long freeBytes = MaxUnconsumedBlocksDataBytes - this.ChainedHeaderTree.UnconsumedBlocksDataBytes - this.expectedBlockDataBytes;
-                this.logger.LogTrace("{0} bytes worth of blocks is available for download.", freeBytes);
-
-                if (freeBytes <= ConsumptionThresholdBytes)
-                {
-                    this.logger.LogTrace("(-)[THRESHOLD_NOT_MET]");
-                    return;
-                }
-
-                long avgSize = (long)this.BlockPuller.GetAverageBlockSizeBytes();
-                int maxBlocksToAsk = avgSize != 0 ? (int)(freeBytes / avgSize) : DefaultNumberOfBlocksToAsk;
-
-                if (maxBlocksToAsk > freeSlots)
-                    maxBlocksToAsk = freeSlots;
-
-                this.logger.LogTrace("With {0} average block size, we have {1} download slots available.", avgSize, maxBlocksToAsk);
-
-                BlockDownloadRequest request = this.ToDownloadQueue.Peek();
-
-                if (request.BlocksToDownload.Count <= maxBlocksToAsk)
-                {
-                    this.ToDownloadQueue.Dequeue();
-                }
-                else
-                {
-                    this.logger.LogTrace("Splitting enqueued job of size {0} into 2 pieces of sizes {1} and {2}.", request.BlocksToDownload.Count, maxBlocksToAsk, request.BlocksToDownload.Count - maxBlocksToAsk);
-
-                    // Split queue item in 2 pieces: one of size blocksToAsk and second is the rest. Ask BP for first part, leave 2nd part in the queue.
-                    var blockPullerRequest = new BlockDownloadRequest()
-                    {
-                        BlocksToDownload = new List<ChainedHeader>(request.BlocksToDownload.GetRange(0, maxBlocksToAsk))
-                    };
-
-                    request.BlocksToDownload.RemoveRange(0, maxBlocksToAsk);
-
-                    request = blockPullerRequest;
-                }
-
-                this.BlockPuller.RequestBlocksDownload(request.BlocksToDownload);
-
-                foreach (ChainedHeader chainedHeader in request.BlocksToDownload)
-                    this.expectedBlockSizes.Add(chainedHeader.HashBlock, avgSize);
-
-                this.expectedBlockDataBytes += request.BlocksToDownload.Count * avgSize;
-
-                this.logger.LogTrace("Expected block data bytes was set to {0} and we are expecting {1} blocks to be delivered.", this.expectedBlockDataBytes, this.expectedBlockSizes.Count);
-            }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
