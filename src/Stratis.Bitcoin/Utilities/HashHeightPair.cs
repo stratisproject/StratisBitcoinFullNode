@@ -60,7 +60,10 @@ namespace Stratis.Bitcoin.Utilities
 
         public static bool operator ==(HashHeightPair a, HashHeightPair b)
         {
-            if ((a == null) || (b == null))
+            if (ReferenceEquals(a, b))
+                return true;
+
+            if ((ReferenceEquals(a, null)) || (ReferenceEquals(b, null)))
                 return false;
 
             return ((a.hash == b.hash) && (a.height == b.height));

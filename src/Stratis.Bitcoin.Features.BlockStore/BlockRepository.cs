@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     bool doCommit = false;
 
-                    if (this.LoadBlockHash(transaction) == null)
+                    if (this.LoadTipHashAndHeight(transaction) == null)
                     {
                         this.SaveTipHashAndHeight(transaction, new HashHeightPair(genesis.GetHash(), 0));
                         doCommit = true;
@@ -392,7 +392,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return task;
         }
 
-        private HashHeightPair LoadBlockHash(DBreeze.Transactions.Transaction dbreezeTransaction)
+        private HashHeightPair LoadTipHashAndHeight(DBreeze.Transactions.Transaction dbreezeTransaction)
         {
             this.logger.LogTrace("()");
 
