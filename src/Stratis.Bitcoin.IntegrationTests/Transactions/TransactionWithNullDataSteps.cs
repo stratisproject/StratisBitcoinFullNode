@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -48,8 +49,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
         private void two_proof_of_work_nodes()
         {
-            this.senderNode = this.builder.CreateStratisPowNode();
-            this.receiverNode = this.builder.CreateStratisPowNode();
+            this.senderNode = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
+            this.receiverNode = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
             this.builder.StartAll();
             this.senderNode.NotInIBD();
             this.receiverNode.NotInIBD();
