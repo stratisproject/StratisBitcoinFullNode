@@ -1,4 +1,5 @@
-﻿using NBitcoin.Protocol;
+﻿using System.Security.Cryptography.X509Certificates;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                             .UseMempool()
                             .AddPowPosMining()
                             .UseWallet()
-                            .UseApi()
+                            .UseApi(option => option.CertificateStoreName = StoreName.My)
                             .AddRPC()
                             .Build();
         }

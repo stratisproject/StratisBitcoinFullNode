@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Builder;
+﻿using System.Security.Cryptography.X509Certificates;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 .AddMining()
                 .UseWallet()
                 .AddRPC()
-                .UseApi()
+                .UseApi(option => option.CertificateStoreName = StoreName.My)
                 .MockIBD()
                 .Build();
         }

@@ -25,13 +25,9 @@ namespace Stratis.Bitcoin.Tests.Common
 
         public static string AssureEmptyDir(string dir)
         {
-            var dirInfo = new DirectoryInfo(dir);
-            DirectoryInfo parentDir = dirInfo.Parent;
+            var directoriesToDelete = GetDirectoriesToDelete(dir);
 
-            string guidSuffixRegex = "_????????????????????????????????????";
-            string searchPattern = dirInfo.Name.Substring(0, dirInfo.Name.LastIndexOf("_")) + guidSuffixRegex;
-            
-            foreach (DirectoryInfo directoryWithTestNamePrefix in parentDir.EnumerateDirectories(searchPattern))
+            foreach (DirectoryInfo directoryWithTestNamePrefix in directoriesToDelete)
             {
                 int deleteAttempts = 0;
                 while (deleteAttempts < 50)
@@ -60,6 +56,25 @@ namespace Stratis.Bitcoin.Tests.Common
 
             Directory.CreateDirectory(dir);
             return dir;
+        }
+
+        private static IEnumerable<DirectoryInfo> GetDirectoriesToDelete(string dir)
+        {
+            var dirInfo = new DirectoryInfo(dir);
+            var parentDirInfo = dirInfo.Parent;
+
+            var directoriesToDelete = Enumerable.Empty<DirectoryInfo>();
+
+            var enumerateDirectories = parentDirInfo != null && parentDirInfo.Exists;
+            if (enumerateDirectories)
+            {
+                string guidSuffixPattern = "_????????-????-????-????-????????????";
+                string searchPattern = dirInfo.Name.Substring(0, dirInfo.Name.LastIndexOf("_")) + guidSuffixPattern;
+
+                directoriesToDelete = parentDirInfo.EnumerateDirectories(searchPattern);
+            }
+
+            return directoriesToDelete;
         }
 
         /// <summary>

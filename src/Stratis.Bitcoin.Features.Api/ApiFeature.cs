@@ -112,6 +112,12 @@ namespace Stratis.Bitcoin.Features.Api
 
     public sealed class ApiFeatureOptions
     {
+        public StoreName CertificateStoreName { get; set; }
+
+        public ApiFeatureOptions(StoreName storeName = StoreName.Root)
+        {
+            this.CertificateStoreName = storeName;
+        }
     }
 
     /// <summary>
@@ -125,7 +131,7 @@ namespace Stratis.Bitcoin.Features.Api
             var options = new ApiFeatureOptions();
             optionsAction?.Invoke(options);
 
-            var certificateStore = new CertificateStore(StoreName.Root, StoreLocation.CurrentUser);
+            var certificateStore = new CertificateStore(options.CertificateStoreName, StoreLocation.CurrentUser);
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
