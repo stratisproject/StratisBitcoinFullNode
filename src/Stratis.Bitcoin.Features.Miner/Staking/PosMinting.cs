@@ -270,7 +270,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.systemTimeOutOfSyncSleep = 7000;
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
-            this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
+            this.targetReserveBalance = 0; // TODO:settings.targetReserveBalance
             this.currentState = (int)CurrentState.Idle;
 
             this.rpcGetStakingInfoModel = new Models.GetStakingInfoModel();
@@ -366,7 +366,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.logger.LogTrace("(-)");
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public async Task GenerateBlocksAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
             Guard.NotNull(walletSecret, nameof(walletSecret));
@@ -1045,7 +1045,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             return this.chain.Tip.Height - chainedBlock.Height + 1;
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public double GetDifficulty(ChainedHeader block)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block);
