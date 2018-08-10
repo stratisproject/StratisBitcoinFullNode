@@ -80,9 +80,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IChainState chainState,
             StoreSettings storeSettings,
             INodeLifetime nodeLifetime,
-            Network network,
-            DataFolder dataFolder,
-            IDateTimeProvider dateTimeProvider,
+            IBlockRepository blockRepository,
             ILoggerFactory loggerFactory)
         {
             Guard.NotNull(chain, nameof(chain));
@@ -95,7 +93,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeLifetime = nodeLifetime;
             this.storeSettings = storeSettings;
             this.chain = chain;
-            this.blockRepository = new BlockRepository(network, dataFolder, dateTimeProvider, loggerFactory);
+            this.blockRepository = blockRepository;
             this.batch = new List<ChainedHeaderBlock>();
             this.getBlockLock = new object();
 

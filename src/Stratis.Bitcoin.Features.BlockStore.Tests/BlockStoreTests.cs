@@ -35,6 +35,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         public BlockStoreTests()
         {
+            var serializer = new DBreezeSerializer();
+            serializer.Initialize(new StratisMain());
+
             this.listOfSavedBlocks = new Dictionary<uint256, Block>();
             this.listOfSavedBlocks.Add(uint256.One, Block.Parse(this.testBlockHex, KnownNetworks.StratisMain));
 
@@ -83,11 +86,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             chainStateMoq.SetupProperty(x => x.BlockStoreTip, null);
 
             this.chainState = chainStateMoq.Object;
-            var dateTimeProvider = new Mock<IDateTimeProvider>();
-            var dataFolder = new Mock<DataFolder>();
 
             this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(),
-                this.nodeLifetime, this.network, dataFolder.Object, dateTimeProvider.Object, new LoggerFactory());
+                this.nodeLifetime, new Mock<IBlockRepository>().Object, new LoggerFactory());
         }
 
         private ConcurrentChain CreateChain(int blocksCount)
@@ -164,12 +165,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             ConcurrentChain longChain = this.CreateChain(count);
             this.repositoryTipHashAndHeight = new HashHeightPair(longChain.Genesis.HashBlock, 0);
 
-            var dateTimeProvider = new Mock<IDateTimeProvider>();
-            var dataFolder = new Mock<DataFolder>();
-
             this.blockStoreQueue = new BlockStoreQueue(longChain, this.chainState, new StoreSettings(),
-                this.nodeLifetime, this.network, dataFolder.Object, dateTimeProvider.Object, new LoggerFactory());
-
+                this.nodeLifetime, new Mock<IBlockRepository>().Object, new LoggerFactory());
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.consensusTip = longChain.Tip;
@@ -293,11 +290,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.chain = this.CreateChain(1000);
             this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
 
-            var dateTimeProvider = new Mock<IDateTimeProvider>();
-            var dataFolder = new Mock<DataFolder>();
-
             this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(),
-                this.nodeLifetime, this.network, dataFolder.Object, dateTimeProvider.Object, new LoggerFactory());
+                this.nodeLifetime, new Mock<IBlockRepository>().Object, new LoggerFactory());
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.consensusTip = this.chain.Tip;
