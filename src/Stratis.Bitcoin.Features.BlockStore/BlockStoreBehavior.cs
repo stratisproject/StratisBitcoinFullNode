@@ -177,20 +177,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Gets the best header between the header of the last block that was sent to a peer and the expected peer's tip.</summary>
-        private ChainedHeader GetBestHeader()
-        {
-            this.logger.LogTrace("()");
-
-            ChainedHeader bestHeader = this.consensusManagerBehavior.BestSentHeader;
-
-            if ((bestHeader == null) || ((this.lastSentHeader != null) && (bestHeader.Height < this.lastSentHeader.Height)))
-                bestHeader = this.lastSentHeader;
-
-            this.logger.LogTrace("(-):'{0}'", bestHeader);
-            return bestHeader;
-        }
-
         /// <summary>
         /// Processes "getblocks" message received from the peer.
         /// </summary>
@@ -283,7 +269,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             int count = inv.Inventory.Count;
             if (count > 0)
             {
-                ChainedHeader highestHeader = this.GetBestHeader();
+                ChainedHeader highestHeader = this.consensusManagerBehavior.BestSentHeader;
 
                 if (highestHeader?.Height < lastAddedChainedHeader.Height)
                 {
@@ -401,7 +387,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             try
             {
-                ChainedHeader highestHeader = this.GetBestHeader();
+                ChainedHeader bestSentHeader = this.consensusManagerBehavior.BestSentHeader;
 
                 ChainedHeader bestIndex = null;
                 if (!revertToInv)
@@ -418,14 +404,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
                             this.logger.LogTrace("Checking is the peer '{0}' can connect header '{1}'.", peer.RemoteSocketEndpoint, chainedHeader);
 
                             // Peer doesn't have a block at the height of our block and with the same hash?
-                            if (highestHeader?.FindAncestorOrSelf(chainedHeader) != null)
+                            if (bestSentHeader?.FindAncestorOrSelf(chainedHeader) != null)
                             {
                                 this.logger.LogTrace("Peer '{0}' already has header '{1}'.", peer.RemoteSocketEndpoint, chainedHeader.Previous);
                                 continue;
                             }
 
                             // Peer doesn't have a block at the height of our block.Previous and with the same hash?
-                            if (highestHeader?.FindAncestorOrSelf(chainedHeader.Previous) == null)
+                            if (bestSentHeader?.FindAncestorOrSelf(chainedHeader.Previous) == null)
                             {
                                 // Peer doesn't have this header or the prior one - nothing will connect, so bail out.
                                 this.logger.LogTrace("Neither the header nor its previous header found for peer '{0}', reverting to 'inv'.", peer.RemoteSocketEndpoint);
@@ -454,9 +440,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         else this.logger.LogDebug("Sending header '{0}' to peer '{1}'.", headers.First(), peer.RemoteSocketEndpoint);
 
                         this.lastSentHeader = bestIndex;
-
-                        if (this.lastSentHeader.Height > highestHeader.Height)
-                            this.consensusManagerBehavior.UpdateBestSentHeader(this.lastSentHeader);
+                        this.consensusManagerBehavior.UpdateBestSentHeader(this.lastSentHeader);
 
                         await peer.SendMessageAsync(new HeadersPayload(headers.ToArray())).ConfigureAwait(false);
                         this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
@@ -477,7 +461,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         ChainedHeader chainedHeader = blocksToAnnounce.Last();
                         if (chainedHeader != null)
                         {
-                            if ((highestHeader == null) || (highestHeader.GetAncestor(chainedHeader.Height) == null))
+                            if ((bestSentHeader == null) || (bestSentHeader.GetAncestor(chainedHeader.Height) == null))
                             {
                                 inventoryBlockToSend.Add(chainedHeader.HashBlock);
                                 this.logger.LogDebug("Sending inventory hash '{0}' to peer '{1}'.", chainedHeader.HashBlock, peer.RemoteSocketEndpoint);
