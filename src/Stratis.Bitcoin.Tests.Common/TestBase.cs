@@ -25,56 +25,31 @@ namespace Stratis.Bitcoin.Tests.Common
 
         public static string AssureEmptyDir(string dir)
         {
-            var directoriesToDelete = GetDirectoriesToDelete(dir);
-
-            foreach (DirectoryInfo directoryWithTestNamePrefix in directoriesToDelete)
+            int deleteAttempts = 0;
+            while (deleteAttempts < 50)
             {
-                int deleteAttempts = 0;
-                while (deleteAttempts < 50)
+                if (Directory.Exists(dir))
                 {
-                    if (Directory.Exists(directoryWithTestNamePrefix.FullName))
+                    try
                     {
-                        try
-                        {
-                            Directory.Delete(directoryWithTestNamePrefix.FullName, true);
-                            break;
-                        }
-                        catch
-                        {
-                            deleteAttempts++;
-                            Thread.Sleep(200);
-                        }
-                    }
-                    else
+                        Directory.Delete(dir, true);
                         break;
+                    }
+                    catch
+                    {
+                        deleteAttempts++;
+                        Thread.Sleep(200);
+                    }
                 }
-
-                if (deleteAttempts >= 50)
-                    throw new Exception(string.Format("The test folder: {0} could not be deleted.", directoryWithTestNamePrefix));
-
+                else
+                    break;
             }
+
+            if (deleteAttempts >= 50)
+                throw new Exception(string.Format("The test folder: {0} could not be deleted.", dir));
 
             Directory.CreateDirectory(dir);
             return dir;
-        }
-
-        private static IEnumerable<DirectoryInfo> GetDirectoriesToDelete(string dir)
-        {
-            var dirInfo = new DirectoryInfo(dir);
-            var parentDirInfo = dirInfo.Parent;
-
-            var directoriesToDelete = Enumerable.Empty<DirectoryInfo>();
-
-            var enumerateDirectories = parentDirInfo != null && parentDirInfo.Exists;
-            if (enumerateDirectories)
-            {
-                string guidSuffixPattern = "_????????-????-????-????-????????????";
-                string searchPattern = dirInfo.Name.Substring(0, dirInfo.Name.LastIndexOf("_")) + guidSuffixPattern;
-
-                directoriesToDelete = parentDirInfo.EnumerateDirectories(searchPattern);
-            }
-
-            return directoriesToDelete;
         }
 
         /// <summary>
