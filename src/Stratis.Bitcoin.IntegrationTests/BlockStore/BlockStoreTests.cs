@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         public BlockStoreTests()
         {
             this.loggerFactory = new LoggerFactory();
+
             this.network = KnownNetworks.Main;
             var serializer = new DBreezeSerializer();
             serializer.Initialize(this.network);
@@ -89,9 +90,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(KnownNetworks.RegTest);
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(KnownNetworks.RegTest);
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
                 stratisNode1.NotInIBD();
@@ -131,7 +132,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
@@ -163,9 +164,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(KnownNetworks.RegTest);
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(KnownNetworks.RegTest);
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
                 stratisNode1.NotInIBD();
@@ -216,8 +217,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(KnownNetworks.RegTest);
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
                 stratisNode1.NotInIBD();
                 stratisNode2.NotInIBD();
