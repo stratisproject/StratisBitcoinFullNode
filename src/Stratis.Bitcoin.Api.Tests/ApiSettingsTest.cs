@@ -1,4 +1,5 @@
 ﻿using System;
+using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -60,6 +61,8 @@ namespace Stratis.Bitcoin.Api.Tests
             // Assert.
             Assert.Equal(ApiSettings.DefaultStratisApiPort, settings.ApiPort);
             Assert.Equal(new Uri($"{ApiSettings.DefaultApiHost}:{ApiSettings.DefaultStratisApiPort}"), settings.ApiUri);
+
+            settings.HttpsCertificateSubjectName.Should().Be(ApiSettings.DefaultCertificateSubjectName);
         }
 
         /// <summary>

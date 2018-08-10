@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Utilities;
@@ -9,18 +11,23 @@ namespace Stratis.Bitcoin.Features.Api
 {
     public class Program
     {
-        public static void Main(string[] args)
-        {
-        }
-
-        public static IWebHost Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode, ApiSettings apiSettings)
+        public static IWebHost Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode,
+            ApiSettings apiSettings, ICertificateStore store, IWebHostBuilder webHostBuilder = null)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
 
             Uri apiUri = apiSettings.ApiUri;
 
-            IWebHost host = new WebHostBuilder()
-                .UseKestrel()
+            X509Certificate2 certificate = GetHttpsCertificate(apiSettings, store);
+
+            webHostBuilder = webHostBuilder ?? new WebHostBuilder();
+
+            webHostBuilder
+                .UseKestrel(options =>
+                {
+                    options.Listen(IPAddress.Loopback, apiSettings.ApiPort,
+                        listenOptions => { listenOptions.UseHttps(certificate); });
+                })
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
                 .UseUrls(apiUri.ToString())
@@ -36,7 +43,8 @@ namespace Stratis.Bitcoin.Features.Api
                     foreach (ServiceDescriptor service in services)
                     {
                         object obj = fullNode.Services.ServiceProvider.GetService(service.ServiceType);
-                        if (obj != null && service.Lifetime == ServiceLifetime.Singleton && service.ImplementationInstance == null)
+                        if (obj != null && service.Lifetime == ServiceLifetime.Singleton &&
+                            service.ImplementationInstance == null)
                         {
                             collection.AddSingleton(service.ServiceType, obj);
                         }
@@ -46,12 +54,32 @@ namespace Stratis.Bitcoin.Features.Api
                         }
                     }
                 })
-                .UseStartup<Startup>()
-                .Build();
+                .UseStartup<Startup>();
+
+            var host = webHostBuilder.Build();
+                
 
             host.Start();
-
+           
             return host;
+        }
+
+        private static X509Certificate2 GetHttpsCertificate(ApiSettings apiSettings, ICertificateStore store)
+        {
+            var certificateSubjectName = apiSettings.HttpsCertificateSubjectName;
+
+            if (!(store.TryGet(certificateSubjectName, out var certificate)))
+            {
+                if (certificateSubjectName != ApiSettings.DefaultCertificateSubjectName)
+                {
+                    throw new FileNotFoundException("Unable to find certificate with name: " + certificateSubjectName);
+                }
+
+                certificate = store.BuildSelfSignedServerCertificate(certificateSubjectName, "password");
+                store.Add(certificate);
+            }
+
+            return certificate;
         }
     }
 }

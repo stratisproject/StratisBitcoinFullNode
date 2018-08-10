@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
 
         public NodeGroupBuilder(string testFolder)
         {
-            this.nodeBuilder = NodeBuilder.Create(testFolder);
+            this.nodeBuilder = NodeBuilder.Create(testFolder + "_" + Guid.NewGuid());
             this.nodes = new Dictionary<string, CoreNode>();
             this.NodeMnemonics = new Dictionary<string, Mnemonic>();
         }
