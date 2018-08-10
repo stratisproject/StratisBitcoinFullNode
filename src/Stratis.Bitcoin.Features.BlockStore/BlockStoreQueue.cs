@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// When block store is being initialized we delete blocks that are not on the best chain.
     /// </para>
     /// </remarks>
-    public class BlockStoreQueue : IblockStoreQueue
+    public class BlockStoreQueue : IBlockStoreQueue
     {
         /// <summary>Maximum interval between saving batches.</summary>
         /// <remarks>Interval value is a prime number that wasn't used as an interval in any other component. That prevents having CPU consumption spikes.</remarks>

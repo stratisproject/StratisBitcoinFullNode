@@ -24,6 +24,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private ConcurrentChain chain;
         private readonly Network network;
         private HashHeightPair repositoryTipHashAndHeight;
+        private readonly Mock<IBlockRepository> repository;
         private int repositorySavesCount = 0;
         private int repositoryTotalBlocksSaved = 0;
         private int repositoryTotalBlocksDeleted = 0;
@@ -87,8 +88,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             this.chainState = chainStateMoq.Object;
 
+            this.repository = new Mock<IBlockRepository>();
+            repository.Setup(x => x.TipHashAndHeight).Returns(new HashHeightPair(this.network.GenesisHash, 0));
+
             this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(),
-                this.nodeLifetime, new Mock<IBlockRepository>().Object, new LoggerFactory());
+                this.nodeLifetime, repository.Object, new LoggerFactory());
         }
 
         private ConcurrentChain CreateChain(int blocksCount)
@@ -166,7 +170,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.repositoryTipHashAndHeight = new HashHeightPair(longChain.Genesis.HashBlock, 0);
 
             this.blockStoreQueue = new BlockStoreQueue(longChain, this.chainState, new StoreSettings(),
-                this.nodeLifetime, new Mock<IBlockRepository>().Object, new LoggerFactory());
+                this.nodeLifetime,  this.repository.Object, new LoggerFactory());
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.consensusTip = longChain.Tip;
@@ -291,7 +295,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
 
             this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(),
-                this.nodeLifetime, new Mock<IBlockRepository>().Object, new LoggerFactory());
+                this.nodeLifetime, this.repository.Object, new LoggerFactory());
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.consensusTip = this.chain.Tip;

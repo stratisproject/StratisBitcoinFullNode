@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.Interfaces
 {
-    public interface IblockStoreQueue : IBlockStore
+    public interface IBlockStoreQueue : IBlockStore
     {
         /// <summary>Adds a block to the saving queue.</summary>
         /// <param name="chainedHeaderBlock">The block and its chained header pair to be added to pending storage.</param>
