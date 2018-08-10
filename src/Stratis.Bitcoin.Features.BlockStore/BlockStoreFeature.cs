@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
-        private readonly IblockStoreQueue blockStoreQueue;
+        private readonly IBlockStoreQueue blockStoreQueue;
 
         public BlockStoreFeature(
             ConcurrentChain chain,
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ILoggerFactory loggerFactory,
             StoreSettings storeSettings,
             IChainState chainState,
-            IblockStoreQueue blockStoreQueue)
+            IBlockStoreQueue blockStoreQueue)
         {
             this.chain = chain;
             this.blockStoreQueue = blockStoreQueue;
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 .AddFeature<BlockStoreFeature>()
                 .FeatureServices(services =>
                     {
-                        services.AddSingleton<IblockStoreQueue, BlockStoreQueue>().AddSingleton<IBlockStore>(provider => provider.GetService<IblockStoreQueue>());
+                        services.AddSingleton<IBlockStoreQueue, BlockStoreQueue>().AddSingleton<IBlockStore>(provider => provider.GetService<IBlockStoreQueue>());
                         services.AddSingleton<IBlockRepository, BlockRepository>();
                         services.AddSingleton<BlockStoreSignaled>();
                         services.AddSingleton<StoreSettings>();
