@@ -61,11 +61,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var contractCarrier = SmartContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
 
                 var contractCreateScript = new Script(contractCarrier.Serialize());
-                var txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
+                var txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
+                    AccountReference = new WalletAccountReference(WalletName, AccountName),
                     ChangeAddress = senderAddress,
                     MinConfirmations = maturity,
-                    FeeType = FeeType.High
+                    FeeType = FeeType.High,
+                    WalletPassword = Password,
+                    Recipients = new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList()
                 };
 
                 // Build the transfer contract transaction
@@ -100,11 +103,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.True(compilationResult.Success);
                 contractCarrier = SmartContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
                 contractCreateScript = new Script(contractCarrier.Serialize());
-                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
+                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
+                    AccountReference = new WalletAccountReference(WalletName, AccountName),
                     ChangeAddress = senderAddress,
                     MinConfirmations = maturity,
-                    FeeType = FeeType.High
+                    FeeType = FeeType.High,
+                    WalletPassword = Password,
+                    Recipients = new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList()
                 };
 
                 // Build the transfer contract transaction
@@ -135,11 +141,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Create a call contract transaction which will transfer funds
                 contractCarrier = SmartContractCarrier.CallContract(1, tokenContractAddress, "Test", gasPrice, gasLimit);
                 Script contractCallScript = new Script(contractCarrier.Serialize());
-                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList(), Password)
+                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
+                    AccountReference = new WalletAccountReference(WalletName, AccountName),
                     ChangeAddress = senderAddress,
                     MinConfirmations = maturity,
-                    FeeType = FeeType.High
+                    FeeType = FeeType.High,
+                    WalletPassword = Password,
+                    Recipients = new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList()
                 };
 
                 // Build the transfer contract transaction
