@@ -106,13 +106,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 .DependOn<SmartContractFeature>()
                 .FeatureServices(services =>
                 {
-                    services.AddSingleton<ICheckpoints, Checkpoints>();
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<ICoinView, CachedCoinView>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
-                    services.AddSingleton<ConsensusSettings>();
 
                     services.AddSingleton<IConsensusRuleEngine, SmartContractPowConsensusRuleEngine>();
 
@@ -137,14 +135,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .AddFeature<ConsensusFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<ICheckpoints, Checkpoints>();
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
-                        services.AddSingleton<ConsensusSettings>();
 
                         services.AddSingleton<IConsensusRuleEngine, SmartContractPosConsensusRuleEngine>();
 

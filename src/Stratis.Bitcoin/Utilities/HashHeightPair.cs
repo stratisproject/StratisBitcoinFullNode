@@ -26,6 +26,14 @@ namespace Stratis.Bitcoin.Utilities
             this.height = height;
         }
 
+        public HashHeightPair(ChainedHeader chainedHeader)
+        {
+            Guard.NotNull(chainedHeader, nameof(chainedHeader));
+
+            this.hash = chainedHeader.HashBlock;
+            this.height = chainedHeader.Height;
+        }
+
         public static HashHeightPair Load(byte[] bytes)
         {
             Guard.NotNull(bytes, nameof(bytes));
@@ -48,6 +56,19 @@ namespace Stratis.Bitcoin.Utilities
         public override string ToString()
         {
             return this.height + "-" + this.hash;
+        }
+
+        public static bool operator ==(HashHeightPair a, HashHeightPair b)
+        {
+            if ((a == null) || (b == null))
+                return false;
+
+            return ((a.hash == b.hash) && (a.height == b.height));
+        }
+
+        public static bool operator !=(HashHeightPair a, HashHeightPair b)
+        {
+            return !(a == b);
         }
     }
 }

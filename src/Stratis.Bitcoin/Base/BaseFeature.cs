@@ -341,6 +341,10 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<NodeDeployments>();
                     services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
 
+                    // Consensus
+                    services.AddSingleton<ConsensusSettings>();
+                    services.AddSingleton<ICheckpoints, Checkpoints>();
+
                     // Connection
                     services.AddSingleton<INetworkPeerFactory, NetworkPeerFactory>();
                     services.AddSingleton<NetworkPeerConnectionParameters>();

@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// When block store is being initialized we delete blocks that are not on the best chain.
     /// </para>
     /// </remarks>
-    public class BlockStoreQueue : IBlockStore
+    public class BlockStoreQueue : IBlockStoreQueue
     {
         /// <summary>Maximum interval between saving batches.</summary>
         /// <remarks>Interval value is a prime number that wasn't used as an interval in any other component. That prevents having CPU consumption spikes.</remarks>
@@ -80,9 +80,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IChainState chainState,
             StoreSettings storeSettings,
             INodeLifetime nodeLifetime,
-            Network network,
-            DataFolder dataFolder,
-            IDateTimeProvider dateTimeProvider,
+            IBlockRepository blockRepository,
             ILoggerFactory loggerFactory)
         {
             Guard.NotNull(chain, nameof(chain));
@@ -95,7 +93,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeLifetime = nodeLifetime;
             this.storeSettings = storeSettings;
             this.chain = chain;
-            this.blockRepository = new BlockRepository(network, dataFolder, dateTimeProvider, loggerFactory);
+            this.blockRepository = blockRepository;
             this.batch = new List<ChainedHeaderBlock>();
             this.getBlockLock = new object();
 
@@ -240,7 +238,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ChainedHeader newTip = this.chain.GetBlock(resetBlockHash);
 
             if (blockStoreResetList.Count != 0)
-                await this.blockRepository.DeleteAsync(new HashHeightPair(newTip.HashBlock, newTip.Height), blockStoreResetList).ConfigureAwait(false);
+                await this.blockRepository.DeleteAsync(new HashHeightPair(newTip), blockStoreResetList).ConfigureAwait(false);
 
             this.SetStoreTip(newTip);
 
@@ -252,10 +250,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-
-        /// <summary>Shows the stats to the console.</summary>
+        /// <inheritdoc />
         public void ShowStats(StringBuilder benchLog)
         {
+            this.logger.LogTrace("()");
+
             if (this.storeTip != null)
             {
                 benchLog.AppendLine();
@@ -263,12 +262,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 benchLog.AppendLine($"Pending Blocks: {this.batch.Count}");
                 benchLog.AppendLine($"Batch Size: {this.currentBatchSizeBytes / 1000} kb / {BatchThresholdSizeBytes / 1000} kb");
             }
+
+            this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Adds a block to the saving queue.
-        /// </summary>
-        /// <param name="chainedHeaderBlock">The block and its chained header pair to be added to pending storage.</param>
+        /// <inheritdoc />
         public void AddToPending(ChainedHeaderBlock chainedHeaderBlock)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock.ChainedHeader);
@@ -386,7 +384,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogDebug("Saving batch of {0} blocks, total size: {1} bytes.", clearedBatch.Count, this.currentBatchSizeBytes);
 
-            await this.blockRepository.PutAsync(new HashHeightPair(newTip.HashBlock, newTip.Height), clearedBatch.Select(b => b.Block).ToList()).ConfigureAwait(false);
+            await this.blockRepository.PutAsync(new HashHeightPair(newTip), clearedBatch.Select(b => b.Block).ToList()).ConfigureAwait(false);
 
             this.SetStoreTip(newTip);
             this.logger.LogDebug("Store tip set to '{0}'.", this.storeTip);
@@ -445,7 +443,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogDebug("Block store reorg detected. Removing {0} blocks from the database.", blocksToDelete.Count);
 
-            await this.blockRepository.DeleteAsync(new HashHeightPair(currentHeader.HashBlock, currentHeader.Height), blocksToDelete).ConfigureAwait(false);
+            await this.blockRepository.DeleteAsync(new HashHeightPair(currentHeader), blocksToDelete).ConfigureAwait(false);
 
             this.SetStoreTip(expectedStoreTip);
             this.logger.LogDebug("Store tip rewound to '{0}'.", this.storeTip);
