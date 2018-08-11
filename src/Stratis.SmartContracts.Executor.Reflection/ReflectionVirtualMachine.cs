@@ -242,6 +242,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             List<TransferInfo> internalTransferList)
         {
             Assembly contractAssembly = Assembly.Load(byteCode);
+
             Type type = contractAssembly.ExportedTypes.FirstOrDefault(x => x.Name == typeName);
 
             if (type == null)
