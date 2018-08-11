@@ -226,7 +226,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// Loads the bytecode into an anonymous AssemblyLoadContext and instantiates an uninitialized instance of a contract.
+        /// Loads the bytecode into an anonymous AssemblyLoadContext.
         /// <para>
         /// TODO This functionality will be refactored into its own class
         /// </para>
