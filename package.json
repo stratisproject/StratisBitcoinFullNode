@@ -1,0 +1,28 @@
+{
+    "name": "citychain",
+    "version": "0.0.20",
+    "license": "MIT",
+    "author": {
+      "name": "City Chain Foundation",
+      "email": "citychainmail@gmail.com",
+      "url": "https://citychain.foundation"
+    },
+    "description": "City Chain is the daemon for connecting to City Chain and the Smart City Platform.",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/CityChainFoundation/city-chain.git"
+    },
+    "bugs": {
+      "url": "https://github.com/CityChainFoundation/city-chain/issues"
+    },
+    "homepage": "https://github.com/CityChainFoundation/city-chain#readme",
+    "main": "main.js",
+    "scripts": {
+    },
+    "private": true,
+    "dependencies": {
+    },
+    "devDependencies": {
+    }
+  }
+  

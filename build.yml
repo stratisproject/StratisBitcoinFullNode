@@ -1,0 +1,59 @@
+parameters:
+  name: ''
+  queue: ''
+  platform: ''
+  arch: 'x64' # Only overriden by 32-bit Windows
+  configuration: 'Release' # Only do debug if specified
+
+phases:
+- phase: ${{ parameters.name }}
+  displayName: ${{ format('City Chain ({0}-{1})', parameters.platform, parameters.arch) }}
+  queue: ${{ parameters.queue }}
+  steps:
+
+  - powershell: |
+      $version = (Get-Content package.json) -join "`n" | ConvertFrom-Json | Select -ExpandProperty "version"
+      Write-Host "##vso[task.setvariable variable=Build.BuildNumber]$version"
+      Write-Host "##vso[task.setvariable variable=App.BuildNumber]$version" 
+      Write-Host "BUILD_REASON: $Env:BUILD_REASON"
+      Write-Host "BUILD_SOURCEBRANCH: $Env:BUILD_SOURCEBRANCH"
+      Write-Host "BUILD_SOURCEBRANCHNAME: $Env:BUILD_SOURCEBRANCHNAME"
+      Write-Host "SYSTEM_PULLREQUEST_PULLREQUESTID: $Env:SYSTEM_PULLREQUEST_PULLREQUESTID"
+      Write-Host "SYSTEM_PULLREQUEST_PULLREQUESTNUMBER: $Env:SYSTEM_PULLREQUEST_PULLREQUESTNUMBER"
+      Write-Host "SYSTEM_PULLREQUEST_SOURCEBRANCH: $Env:SYSTEM_PULLREQUEST_SOURCEBRANCH"
+    displayName: version number
+
+  - task: DotNetCoreCLI@2
+    displayName: dotnet publish
+    inputs:
+      command: publish
+      projects: '**/City.Chain.csproj'
+      workingDirectory: 'src/City.Chain'
+      publishWebProjects: false
+      zipAfterPublish: false
+      modifyOutputPath: false
+      arguments: ${{ format('-c {0} -r {1}-{2} -v m', parameters.configuration, parameters.platform, parameters.arch) }}
+
+  - task: ArchiveFiles@2
+    displayName: archive
+    inputs:
+      rootFolderOrFile: ${{ format('src/City.Chain/bin/{0}/netcoreapp2.1/{1}-{2}/publish/', parameters.configuration, parameters.platform, parameters.arch) }}
+      includeRootFolder: false
+
+      ${{ if eq(parameters.platform, 'linux') }}:
+        archiveFile: ${{ format('$(Build.ArtifactStagingDirectory)/City.Chain-$(App.BuildNumber)-{0}-{1}.tar.gz', parameters.platform, parameters.arch) }}
+        archiveType: tar
+      ${{ if ne(parameters.platform, 'linux') }}:
+        archiveFile: ${{ format('$(Build.ArtifactStagingDirectory)/City.Chain-$(App.BuildNumber)-{0}-{1}.zip', parameters.platform, parameters.arch) }}  
+
+  - task: marcelo-formentao.github-tools.github-release-publish-task.GitHubReleasePublish@0
+    displayName: github release
+    condition: and(succeeded(), eq(variables['build.sourcebranch'], 'refs/heads/master'))
+    inputs:
+      githubEndpoint: github
+      githubRepository: 'CityChainFoundation/city-chain'
+      githubReleaseTitle: 'City Chain $(Build.BuildNumber) (Preview Release)'
+      githubReleasePrerelease: true
+      githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/City.Chain*.*'
+      manifestJson: package.json
+      githubEditRelease: true
