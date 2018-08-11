@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private TestContract instance;
         private Type type;
         private uint160 address;
-        private Contract contract;
+        private IContract contract;
 
         public class TestContract : SmartContract
         {
@@ -86,10 +86,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                      && g.Block == block.Object
                      && g.Message == message.Object
                      && g.GetBalance == getBalance);
-            this.instance = new TestContract(this.state);
-            this.type = this.instance.GetType();
+            this.type = typeof(TestContract);
             this.address = uint160.One;
-            this.contract = new Contract(this.instance, this.type, this.address, this.state);
+            this.contract = Contract.CreateUninitialized(this.type, this.state, this.address);
+            this.instance = (TestContract) this.GetPrivateFieldValue(this.contract, "instance");
         }
 
         [Fact]
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(ContractInvocationErrorType.None, result.InvocationErrorType);
             Assert.True(result.IsSuccess);
             // We expect the count to be 2 because we call the constructor when setting up the test as well
-            Assert.Equal(2, this.instance.ConstructorCalledCount);
+            Assert.Equal(1, this.instance.ConstructorCalledCount);
             Assert.Equal(this.state, this.instance.State);
         }
 
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.Equal(ContractInvocationErrorType.None, result.InvocationErrorType);
             Assert.True(result.IsSuccess);
-            Assert.Equal(2, this.instance.ConstructorCalledCount);
+            Assert.Equal(1, this.instance.ConstructorCalledCount);
             Assert.Equal(param, this.instance.Param);
             Assert.Equal(this.state, this.instance.State);
         }
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.Equal(ContractInvocationErrorType.MethodDoesNotExist, result.InvocationErrorType);
             Assert.False(result.IsSuccess);
-            Assert.Equal(1, this.instance.ConstructorCalledCount);
+            Assert.Equal(0, this.instance.ConstructorCalledCount);
         }
 
         [Fact]
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.Equal(ContractInvocationErrorType.MethodDoesNotExist, result.InvocationErrorType);
             Assert.False(result.IsSuccess);
-            Assert.Equal(1, this.instance.ConstructorCalledCount);
+            Assert.Equal(0, this.instance.ConstructorCalledCount);
         }
 
         [Fact]
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.True(result.IsSuccess);
             Assert.True(this.instance.Test1Called);
-            Assert.Equal(1, this.instance.ConstructorCalledCount);
+            Assert.Equal(0, this.instance.ConstructorCalledCount);
         }
 
         [Fact]
@@ -227,8 +227,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private object GetInstancePrivateFieldValue(string fieldName)
         {
-            var field = this.type.BaseType.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            var field = this.instance.GetType().BaseType.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
             return field.GetValue(this.instance);
+        }
+
+        private object GetPrivateFieldValue(object obj, string fieldName)
+        {
+            var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            return field.GetValue(obj);
         }
     }
 }

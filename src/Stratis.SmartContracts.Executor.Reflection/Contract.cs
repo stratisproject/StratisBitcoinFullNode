@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using NBitcoin;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
@@ -28,12 +29,22 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <inheritdoc />
         public ISmartContractState State { get; }
 
-        public Contract(SmartContract instance, Type type, uint160 address, ISmartContractState state)
+        private Contract(SmartContract instance, Type type, ISmartContractState state, uint160 address)
         {
             this.instance = instance;
             this.State = state;
             this.Type = type;
             this.Address = address;
+        }
+
+        /// <summary>
+        /// Creates an <see cref="IContract"/> that represents a smart contract in an uninitialized state.
+        /// </summary>
+        public static IContract CreateUninitialized(Type type, ISmartContractState state, uint160 address)
+        {
+            var contract = (SmartContract)FormatterServices.GetSafeUninitializedObject(type);
+
+            return new Contract(contract, type, state, address);
         }
 
         /// <inheritdoc />

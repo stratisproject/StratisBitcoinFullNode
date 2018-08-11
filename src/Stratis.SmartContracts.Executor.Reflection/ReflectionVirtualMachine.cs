@@ -250,11 +250,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return Result.Fail<IContract>("Type not found!");
             }
 
-            var contract = (SmartContract)FormatterServices.GetSafeUninitializedObject(type);
-
             ISmartContractState contractState = this.SetupState(internalTransferList, gasMeter, repository, transactionContext, address);
 
-            return Result.Ok<IContract>(new Contract(contract, type, address, contractState));
+            IContract contract = Contract.CreateUninitialized(type, contractState, address);
+
+            return Result.Ok(contract);
         }
 
         private void LogException(Exception exception)
