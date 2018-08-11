@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // The mining should add coins to the wallet.
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
+                Assert.Equal(Money.COIN * 6 * 50, total);
 
                 // Create a token contract
                 ulong gasPrice = 1;
