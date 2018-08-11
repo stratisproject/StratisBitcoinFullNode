@@ -231,6 +231,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
+            if (!this.walletManager.ContainsWallets)
+            {
+                this.logger.LogTrace("(-)[NO_WALLET]");
+                return;
+            }
+
             this.blocksQueue.Enqueue(block);
 
             this.logger.LogTrace("(-)");

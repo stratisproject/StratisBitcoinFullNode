@@ -34,6 +34,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             this.walletManager = new Mock<IWalletManager>();
             this.blockStore = new Mock<IBlockStore>();
             this.nodeLifetime = new Mock<INodeLifetime>();
+
+            this.walletManager.Setup(w => w.ContainsWallets).Returns(true);
         }
 
         [Fact]
@@ -338,6 +340,28 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 walletSyncManager.SyncFromHeight(2);
             });
+        }
+
+        /// <summary>
+        /// Don't enqueue new <see cref="Block"/>s - to be processed by <see cref="WalletSyncManager"/> - when there is no Wallet.
+        /// </summary>c
+        [Fact]
+        public void ProcessBlock_With_No_Wallet_Processing_Is_Ignored()
+        {
+            (ConcurrentChain Chain, List<Block> Blocks) result = WalletTestsHelpers.GenerateChainAndBlocksWithHeight(1, KnownNetworks.StratisMain);
+
+            this.chain = result.Chain;
+
+            this.walletManager.Setup(w => w.ContainsWallets).Returns(false);
+
+            var walletSyncManager = new WalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
+                this.blockStore.Object, this.storeSettings, this.nodeLifetime.Object);
+
+            walletSyncManager.SetWalletTip(this.chain.GetBlock(1));
+
+            walletSyncManager.ProcessBlock(result.Blocks[0]);
+
+            this.walletManager.Verify(w => w.ProcessBlock(It.IsAny<Block>(), It.IsAny<ChainedHeader>()), Times.Never);
         }
 
         private static ChainedHeader ExpectChainedBlock(ChainedHeader block)
