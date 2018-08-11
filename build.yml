@@ -1,3 +1,5 @@
+# City Chain - Continuous Integration Setup for VSTS
+
 parameters:
   name: ''
   queue: ''
