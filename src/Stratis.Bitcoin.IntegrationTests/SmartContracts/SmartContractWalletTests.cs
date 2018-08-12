@@ -307,6 +307,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
+                var preserveMaturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
+                scSender.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+                scReceiver.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+
                 scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
                 scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
@@ -315,12 +319,12 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
                 scReceiver.SetDummyMinerSecret(new BitcoinSecret(key, scReceiver.FullNode.Network));
-                var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                scSender.GenerateStratisWithMiner(maturity + 5);
+
+                scSender.GenerateStratisWithMiner(2);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
 
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * (10 - maturity + 1) * 50, total);
+                Assert.Equal(Money.COIN * 2 * 50, total);
 
                 SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
                 SmartContractWalletController senderWalletController = scSender.FullNode.NodeService<SmartContractWalletController>();
@@ -420,6 +424,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var receiptResponse = (JsonResult)senderSmartContractsController.GetReceipt(callResponse.TransactionId.ToString());
                 var receiptModel = (ReceiptModel)receiptResponse.Value;
                 Assert.True(receiptModel.Successful);
+
+                scSender.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
+                scReceiver.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
             }
         }
 
@@ -480,6 +487,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
+                var preserveMaturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
+                scSender.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+                scReceiver.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+
                 scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
                 scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
@@ -488,12 +499,12 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
                 scReceiver.SetDummyMinerSecret(new BitcoinSecret(key, scReceiver.FullNode.Network));
-                var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                scSender.GenerateStratisWithMiner(maturity + 5);
+
+                scSender.GenerateStratisWithMiner(2);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
 
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * (10 - maturity + 1) * 50, total);
+                Assert.Equal(Money.COIN * 2 * 50, total);
 
                 SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
                 SmartContractWalletController senderWalletController = scSender.FullNode.NodeService<SmartContractWalletController>();
@@ -521,6 +532,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
                 Assert.Equal((ulong)30 * 100_000_000, senderState.GetCurrentBalance(new Address(response.NewContractAddress).ToUint160(new SmartContractsRegTest())));
+
+                scSender.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
+                scReceiver.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
             }
         }
     }
