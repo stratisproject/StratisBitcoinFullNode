@@ -23,8 +23,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var rule = this.CreateRule<StratisHeaderVersionRule>();
 
             int MinimalHeaderVersion = 7;
-            this.ruleContext.ValidationContext.ChainTipToExtand = this.concurrentChain.GetBlock(1);
-            this.ruleContext.ValidationContext.ChainTipToExtand.Header.Version = MinimalHeaderVersion - 1;
+            this.ruleContext.ValidationContext.ChainTipToExtend = this.concurrentChain.GetBlock(1);
+            this.ruleContext.ValidationContext.ChainTipToExtend.Header.Version = MinimalHeaderVersion - 1;
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => rule.RunAsync(this.ruleContext));
 
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var rule = this.CreateRule<PosTimeMaskRule>();
 
-            this.ruleContext.ValidationContext.ChainTipToExtand = this.concurrentChain.GetBlock(3);
+            this.ruleContext.ValidationContext.ChainTipToExtend = this.concurrentChain.GetBlock(3);
             this.SetBlockStake();
             this.network.Consensus.LastPOWBlock = 2;
 
@@ -57,11 +57,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.CreateTransaction());
             this.ruleContext.ValidationContext.Block.Transactions[0].Time = (uint)(StratisBigFixPosFutureDriftRule.DriftingBugFixTimestamp);
 
-            this.ruleContext.ValidationContext.ChainTipToExtand = this.concurrentChain.GetBlock(3);
+            this.ruleContext.ValidationContext.ChainTipToExtend = this.concurrentChain.GetBlock(3);
             
             this.network.Consensus.LastPOWBlock = 12500;
             this.ruleContext.ValidationContext.Block.Transactions[1].Time = this.ruleContext.ValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork + 1;
-            this.ruleContext.ValidationContext.ChainTipToExtand.Header.Time = this.ruleContext.ValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork;
+            this.ruleContext.ValidationContext.ChainTipToExtend.Header.Time = this.ruleContext.ValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork;
 
             rule.FutureDriftRule = new StratisBigFixPosFutureDriftRule();
 
@@ -82,10 +82,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.CreateTransaction());
             this.ruleContext.ValidationContext.Block.Transactions[0].Time = (uint)(StratisBigFixPosFutureDriftRule.DriftingBugFixTimestamp);
 
-            this.ruleContext.ValidationContext.ChainTipToExtand = this.concurrentChain.GetBlock(3);
+            this.ruleContext.ValidationContext.ChainTipToExtend = this.concurrentChain.GetBlock(3);
             this.network.Consensus.LastPOWBlock = 12500;
             this.ruleContext.ValidationContext.Block.Transactions[1].Time = this.ruleContext.ValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork;
-            this.ruleContext.ValidationContext.ChainTipToExtand.Header.Time = this.ruleContext.ValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork;
+            this.ruleContext.ValidationContext.ChainTipToExtend.Header.Time = this.ruleContext.ValidationContext.Block.Transactions[0].Time + MaxFutureDriftAfterHardFork;
 
             rule.FutureDriftRule = new StratisBigFixPosFutureDriftRule();
 
@@ -105,14 +105,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.CreateTransaction());
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.CreateTransaction());
 
-            this.ruleContext.ValidationContext.ChainTipToExtand = this.concurrentChain.GetBlock(3);
+            this.ruleContext.ValidationContext.ChainTipToExtend = this.concurrentChain.GetBlock(3);
             this.network.Consensus.LastPOWBlock = 12500;
 
             // time same as previous block.
-            uint previousBlockHeaderTime = this.ruleContext.ValidationContext.ChainTipToExtand.Previous.Header.Time;
+            uint previousBlockHeaderTime = this.ruleContext.ValidationContext.ChainTipToExtend.Previous.Header.Time;
             this.ruleContext.ValidationContext.Block.Transactions[0].Time = previousBlockHeaderTime;
             this.ruleContext.ValidationContext.Block.Transactions[1].Time = previousBlockHeaderTime;
-            this.ruleContext.ValidationContext.ChainTipToExtand.Header.Time = previousBlockHeaderTime;
+            this.ruleContext.ValidationContext.ChainTipToExtend.Header.Time = previousBlockHeaderTime;
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => rule.RunAsync(this.ruleContext));
 
@@ -130,14 +130,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.CreateTransaction());
             this.ruleContext.ValidationContext.Block.Transactions.Add(this.network.CreateTransaction());
 
-            this.ruleContext.ValidationContext.ChainTipToExtand = this.concurrentChain.GetBlock(3);
+            this.ruleContext.ValidationContext.ChainTipToExtend = this.concurrentChain.GetBlock(3);
             this.network.Consensus.LastPOWBlock = 12500;
 
             // time after previous block.
-            uint previousBlockHeaderTime = this.ruleContext.ValidationContext.ChainTipToExtand.Previous.Header.Time;
+            uint previousBlockHeaderTime = this.ruleContext.ValidationContext.ChainTipToExtend.Previous.Header.Time;
             this.ruleContext.ValidationContext.Block.Transactions[0].Time = previousBlockHeaderTime + 62;
             this.ruleContext.ValidationContext.Block.Transactions[1].Time = previousBlockHeaderTime + 64;
-            this.ruleContext.ValidationContext.ChainTipToExtand.Header.Time = previousBlockHeaderTime + 64;
+            this.ruleContext.ValidationContext.ChainTipToExtend.Header.Time = previousBlockHeaderTime + 64;
 
             rule.FutureDriftRule = new StratisBigFixPosFutureDriftRule();
 

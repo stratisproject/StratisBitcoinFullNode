@@ -16,6 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new HeaderTimeChecksRule(),
                 new CheckDifficultyPowRule(),
                 new BitcoinActivationRule(),
+                new BitcoinHeaderVersionRule(),
 
                 // == Integrity ==
                 new BlockMerkleRootRule(),
@@ -24,8 +25,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new SetActivationDeploymentsRule(),
 
                 // == Partial ==
-
-                // rules that are inside the method ContextualCheckBlock
                 new TransactionLocktimeActivationRule(), // implements BIP113
                 new CoinbaseHeightActivationRule(), // implements BIP34
                 new WitnessCommitmentsRule(), // BIP141, BIP144
@@ -35,8 +34,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new EnsureCoinbaseRule(),
                 new CheckPowTransactionRule(),
                 new CheckSigOpsRule(),
-                
-                // == Full ==
+
+                // == Full ==                
 
                 // rules that require the store to be loaded (coinview)
                 new SmartContractLoadCoinviewRule(),

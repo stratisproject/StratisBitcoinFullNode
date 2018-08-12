@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.TimeTooNew">Thrown if block's timestamp too far in the future.</exception>
         public override void Run(RuleContext context)
         {
-            ChainedHeader chainedHeader = context.ValidationContext.ChainTipToExtand;
+            ChainedHeader chainedHeader = context.ValidationContext.ChainTipToExtend;
 
             // Check timestamp against prev.
             if (chainedHeader.Header.BlockTime <= chainedHeader.Previous.GetMedianTimePast())

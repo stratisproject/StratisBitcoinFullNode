@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     new CheckPowTransactionRule(),
                     new CheckPosTransactionRule(),
                     new CheckSigOpsRule(),
-
+                    new PosCoinstakeRule(),
                     // rules that require the store to be loaded (coinview)
                     new SmartContractLoadCoinviewRule(),
                     new TransactionDuplicationActivationRule(), // implements BIP30

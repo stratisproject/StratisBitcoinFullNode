@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Stratis.SmartContracts.Tools.Sct": {
-      "commandName": "Project",
-      "commandLineArgs": "validate \"C:\\Users\\Rowan\\Desktop\\Bingo.cs\""
+      "commandName": "Project"
     }
   }
 }

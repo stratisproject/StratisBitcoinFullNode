@@ -5,18 +5,28 @@ using System.Threading;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.P2P.Peer;
+using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common
 {
     public class TestHelper
     {
-        public static void WaitLoop(Func<bool> act)
+        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int millisecondsTimeout = 50, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var cancel = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000);
+            cancellationToken = cancellationToken == default(CancellationToken)
+                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000).Token
+                : cancellationToken;
             while (!act())
             {
-                cancel.Token.ThrowIfCancellationRequested();
-                Thread.Sleep(50);
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    Thread.Sleep(millisecondsTimeout);
+                }
+                catch (OperationCanceledException e)
+                {
+                    Assert.False(true, $"{failureReason}{Environment.NewLine}{e.Message}");
+                }
             }
         }
 

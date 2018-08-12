@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Consensus
         public const int BanDurationDefaultBan = 0;
 
         /// <summary>Chained header which is a tip of the chain that will be extended with a block being validated.</summary>
-        public ChainedHeader ChainTipToExtand { get; set; }
+        public ChainedHeader ChainTipToExtend { get; set; }
 
         /// <summary>Downloaded or mined block to be validated.</summary>
         public Block Block { get; set; }

@@ -236,13 +236,13 @@ namespace Stratis.Bitcoin.Consensus
             {
                 using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
                 {
-                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainTipToExtand.IsAssumedValid;
+                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainTipToExtend.IsAssumedValid;
 
                     foreach (ConsensusRuleDescriptor ruleDescriptor in rules)
                     {
                         if (ruleContext.SkipValidation && ruleDescriptor.RuleAttribute.CanSkipValidation)
                         {
-                            this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor.Rule), ruleContext.ValidationContext.ChainTipToExtand.Height);
+                            this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor.Rule), ruleContext.ValidationContext.ChainTipToExtend.Height);
                         }
                         else
                         {
@@ -263,13 +263,13 @@ namespace Stratis.Bitcoin.Consensus
             {
                 using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
                 {
-                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainTipToExtand.IsAssumedValid;
+                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainTipToExtend.IsAssumedValid;
 
                     foreach (ConsensusRuleDescriptor ruleDescriptor in rules)
                     {
                         if (ruleContext.SkipValidation && ruleDescriptor.RuleAttribute.CanSkipValidation)
                         {
-                            this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor.Rule), ruleContext.ValidationContext.ChainTipToExtand?.Height);
+                            this.logger.LogTrace("Rule {0} skipped for block at height {1}.", nameof(ruleDescriptor.Rule), ruleContext.ValidationContext.ChainTipToExtend?.Height);
                         }
                         else
                         {

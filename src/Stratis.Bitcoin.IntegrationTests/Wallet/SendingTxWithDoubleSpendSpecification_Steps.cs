@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -27,8 +28,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         protected override void BeforeTest()
         {
             this.builder = NodeBuilder.Create(this);
-            this.stratisSender = this.builder.CreateStratisPowNode();
-            this.stratisReceiver = this.builder.CreateStratisPowNode();
+            this.stratisSender = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
+            this.stratisReceiver = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
             this.mempoolValidationState = new MempoolValidationState(true);
 
             this.builder.StartAll();

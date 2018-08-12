@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Getblockhash_via_rpc_callbyname_returns_the_blockhash()
         {
-            Given(a_pow_node_with_api_enabled);
+            Given(a_proof_of_work_node_with_api_enabled);
             When(calling_rpc_getblockhash_via_callbyname);
             Then(the_blockhash_is_returned);
         }
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Block_with_valid_hash_returns_transaction_block()
         {
-            Given(two_connected_pow_nodes_with_api_enabled);
+            Given(two_connected_proof_of_work_nodes_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
             And(a_real_transaction);
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Getblockcount_returns_tipheight()
         {
-            Given(a_pow_node_with_api_enabled);
+            Given(a_proof_of_work_node_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
             When(calling_getblockcount);
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Getpeerinfo_returns_connected_peer()
         {
-            Given(two_connected_pow_nodes_with_api_enabled);
+            Given(two_connected_proof_of_work_nodes_with_api_enabled);
             When(calling_getpeerinfo);
             Then(a_single_connected_peer_is_returned);
         }
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Getbestblockhash_returns_tip_hash()
         {
-            Given(a_pow_node_with_api_enabled);
+            Given(a_proof_of_work_node_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
             When(calling_getbestblockhash);
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Getblockhash_returns_blockhash_at_given_height()
         {
-            Given(a_pow_node_with_api_enabled);
+            Given(a_proof_of_work_node_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             When(calling_getblockhash);
             Then(the_blockhash_is_returned);
@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Getrawmempool_finds_mempool_transaction()
         {
-            Given(two_connected_pow_nodes_with_api_enabled);
+            Given(two_connected_proof_of_work_nodes_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
             And(a_real_transaction);
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Getblockheader_returns_blockheader()
         {
-            Given(a_pow_node_with_api_enabled);
+            Given(a_proof_of_work_node_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             When(calling_getblockheader);
             Then(the_blockheader_is_returned);
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Getrawtransaction_nonverbose_returns_transaction_hash()
         {
-            Given(two_connected_pow_nodes_with_api_enabled);
+            Given(two_connected_proof_of_work_nodes_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
             And(a_real_transaction);
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Getrawtransaction_verbose_returns_full_transaction()
         {
-            Given(two_connected_pow_nodes_with_api_enabled);
+            Given(two_connected_proof_of_work_nodes_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
             And(a_real_transaction);
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Gettxout_nomempool_returns_txouts()
         {
-            Given(two_connected_pow_nodes_with_api_enabled);
+            Given(two_connected_proof_of_work_nodes_with_api_enabled);
             And(a_block_is_mined_creating_spendable_coins);
             And(more_blocks_mined_past_maturity_of_original_block);
             And(a_real_transaction);
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Validateaddress_confirms_valid_address()
         {
-            Given(a_pow_node_with_api_enabled);
+            Given(a_proof_of_work_node_with_api_enabled);
             When(calling_validateaddress);
             Then(a_valid_address_is_validated);
         }
@@ -173,9 +173,33 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void Status_returns_status_info()
         {
-            Given(a_pow_node_with_api_enabled);
+            Given(a_proof_of_work_node_with_api_enabled);
             When(calling_status);
             Then(status_information_is_returned);
+        }
+
+        [Fact]
+        public void Proof_of_stake_node_calls_getstakinginfo_returns_info()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_getstakinginfo);
+            Then(staking_information_is_returned);
+        }
+
+        [Fact]
+        public void Proof_of_work_node_calls_getstakinginfo_and_receives_error()
+        {
+            Given(a_proof_of_work_node_with_api_enabled);
+            When(calling_getstakinginfo);
+            Then(a_method_not_allowed_error_is_returned);
+        }
+
+        [Fact]
+        public void Proof_of_work_node_calls_generate_and_receives_error()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_generate);
+            Then(a_method_not_allowed_error_is_returned);
         }
     }
 }

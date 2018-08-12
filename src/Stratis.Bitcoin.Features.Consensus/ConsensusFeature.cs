@@ -154,6 +154,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new HeaderTimeChecksRule(),
                     new CheckDifficultyPowRule(),
                     new BitcoinActivationRule(),
+                    new BitcoinHeaderVersionRule(),
 
                     // == Integrity ==
                     new BlockMerkleRootRule(),

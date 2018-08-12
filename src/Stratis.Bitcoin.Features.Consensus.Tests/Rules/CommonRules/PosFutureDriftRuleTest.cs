@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
 
-            this.ruleContext.ValidationContext.ChainTipToExtand = new ChainedHeader(header, header.GetHash(), 0);
+            this.ruleContext.ValidationContext.ChainTipToExtend = new ChainedHeader(header, header.GetHash(), 0);
         }
 
         [Fact]
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             long futureDriftTimestamp = (StratisBigFixPosFutureDriftRule.DriftingBugFixTimestamp - 100);
             this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
                 .Returns(futureDriftTimestamp);
-            this.ruleContext.ValidationContext.ChainTipToExtand.Header.Time = ((uint)futureDriftTimestamp) + MaxFutureDriftBeforeHardFork + 1;
+            this.ruleContext.ValidationContext.ChainTipToExtend.Header.Time = ((uint)futureDriftTimestamp) + MaxFutureDriftBeforeHardFork + 1;
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosFutureDriftRule>().RunAsync(this.ruleContext));
 
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             long futureDriftTimestamp = (StratisBigFixPosFutureDriftRule.DriftingBugFixTimestamp + 100);
             this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
                 .Returns(futureDriftTimestamp);
-            this.ruleContext.ValidationContext.ChainTipToExtand.Header.Time = (uint)futureDriftTimestamp + MaxFutureDriftAfterHardFork + 1;
+            this.ruleContext.ValidationContext.ChainTipToExtend.Header.Time = (uint)futureDriftTimestamp + MaxFutureDriftAfterHardFork + 1;
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosFutureDriftRule>().RunAsync(this.ruleContext));
 
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             long futureDriftTimestamp = (StratisBigFixPosFutureDriftRule.DriftingBugFixTimestamp - 100);
             this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
                 .Returns(futureDriftTimestamp);
-            this.ruleContext.ValidationContext.ChainTipToExtand.Header.Time = ((uint)futureDriftTimestamp) + MaxFutureDriftBeforeHardFork;
+            this.ruleContext.ValidationContext.ChainTipToExtend.Header.Time = ((uint)futureDriftTimestamp) + MaxFutureDriftBeforeHardFork;
 
             await this.consensusRules.RegisterRule<StratisBigFixPosFutureDriftRule>().RunAsync(this.ruleContext);
         }
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             long futureDriftTimestamp = (StratisBigFixPosFutureDriftRule.DriftingBugFixTimestamp + 100);
             this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
                 .Returns(futureDriftTimestamp);
-            this.ruleContext.ValidationContext.ChainTipToExtand.Header.Time = (uint)futureDriftTimestamp + MaxFutureDriftAfterHardFork;
+            this.ruleContext.ValidationContext.ChainTipToExtend.Header.Time = (uint)futureDriftTimestamp + MaxFutureDriftAfterHardFork;
 
             await this.consensusRules.RegisterRule<StratisBigFixPosFutureDriftRule>().RunAsync(this.ruleContext);
         }
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             long futureDriftTimestamp = (StratisBigFixPosFutureDriftRule.DriftingBugFixTimestamp - 100);
             this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
                 .Returns(futureDriftTimestamp);
-            this.ruleContext.ValidationContext.ChainTipToExtand.Header.Time = ((uint)futureDriftTimestamp) + MaxFutureDriftBeforeHardFork - 1;
+            this.ruleContext.ValidationContext.ChainTipToExtend.Header.Time = ((uint)futureDriftTimestamp) + MaxFutureDriftBeforeHardFork - 1;
 
             await this.consensusRules.RegisterRule<StratisBigFixPosFutureDriftRule>().RunAsync(this.ruleContext);
         }
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             long futureDriftTimestamp = (StratisBigFixPosFutureDriftRule.DriftingBugFixTimestamp + 100);
             this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
                 .Returns(futureDriftTimestamp);
-            this.ruleContext.ValidationContext.ChainTipToExtand.Header.Time = (uint)futureDriftTimestamp + MaxFutureDriftAfterHardFork - 1;
+            this.ruleContext.ValidationContext.ChainTipToExtend.Header.Time = (uint)futureDriftTimestamp + MaxFutureDriftAfterHardFork - 1;
 
             await this.consensusRules.RegisterRule<StratisBigFixPosFutureDriftRule>().RunAsync(this.ruleContext);
         }
