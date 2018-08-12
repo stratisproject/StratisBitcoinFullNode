@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(accountReference.AccountName, nameof(accountReference.AccountName));
 
             // Get the total value of spendable coins in the account.
-            long maxSpendableAmount = this.walletManager.GetSpendableTransactionsInAccount(accountReference, this.Network.Consensus, allowUnconfirmed ? 0 : 1).Sum(x => x.Transaction.Amount);
+            long maxSpendableAmount = this.walletManager.GetSpendableTransactionsInAccount(accountReference, this.network.Consensus, allowUnconfirmed ? 0 : 1).Sum(x => x.Transaction.Amount);
 
             // Return 0 if the user has nothing to spend.
             if (maxSpendableAmount == Money.Zero)
@@ -264,7 +264,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void AddCoins(TransactionBuildContext context)
         {
-            context.UnspentOutputs = this.walletManager.GetSpendableTransactionsInAccount(context.AccountReference, this.Network.Consensus, context.MinConfirmations).ToList();
+            context.UnspentOutputs = this.walletManager.GetSpendableTransactionsInAccount(context.AccountReference, this.network.Consensus, context.MinConfirmations).ToList();
 
             if (context.UnspentOutputs.Count == 0)
             {
