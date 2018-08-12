@@ -34,6 +34,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
+                var preserveMaturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
+                scSender.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+                scReceiver.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+
                 scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
                 scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
                 HdAddress senderAddress = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
@@ -167,6 +171,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // The balance should now reflect the transfer
                 Assert.Equal((ulong)900, senderState.GetCurrentBalance(tokenContractAddress));
+
+                scSender.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
+                scReceiver.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
             }
         }
 
