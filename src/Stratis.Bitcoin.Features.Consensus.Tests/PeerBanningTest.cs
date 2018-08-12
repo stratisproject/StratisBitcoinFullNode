@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 .Returns((INetworkPeer)null);
 
             Block badBlock = await createBadBlock(context);
-            await context.Consensus.AcceptAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, badBlock));
+            await context.Consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, badBlock));
 
             Assert.True(context.PeerBanning.IsBanned(peerEndPoint));
         }
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             Block badBlock = await createBadBlock(context);
 
-            await context.Consensus.AcceptAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, badBlock));
+            await context.Consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, badBlock));
 
             Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
         }
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             MockPeerConnection(context, false);
 
             Block badBlock = await createBadBlock(context);
-            await context.Consensus.AcceptAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, badBlock));
+            await context.Consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, badBlock));
 
             Assert.True(context.PeerBanning.IsBanned(peerEndPoint));
         }
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             MockPeerConnection(context, true);
             Block badBlock = await createBadBlock(context);
-            await context.Consensus.AcceptAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, badBlock));
+            await context.Consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, badBlock));
 
             Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
         }
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 BanDurationSeconds = ValidationContext.BanDurationNoBan
             };
 
-            await context.Consensus.AcceptAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, badBlock));
+            await context.Consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, badBlock));
 
             Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
         }
@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 BanDurationSeconds = 1,
             };
 
-            await context.Consensus.AcceptAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, badBlock));
+            await context.Consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, badBlock));
 
             // wait 1 sec for ban to expire.
             Thread.Sleep(1000);

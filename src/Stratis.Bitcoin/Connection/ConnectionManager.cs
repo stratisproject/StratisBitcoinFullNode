@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("({0}:{1})", nameof(networkPeerId), networkPeerId);
 
-            await this.consensusManager.AcceptAsync(new PeerDisconnectedVisitor(this.loggerFactory, networkPeerId));
+            await this.consensusManager.AcceptVisitorAsync(new PeerDisconnectedVisitor(this.loggerFactory, networkPeerId));
 
             this.logger.LogTrace("(-)");
         }

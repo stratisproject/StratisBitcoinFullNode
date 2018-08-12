@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        public async Task<T> AcceptAsync<T>(IConsensusVisitor<T> visitor)
+        public async Task<T> AcceptVisitorAsync<T>(IConsensusVisitor<T> visitor)
         {
             return await visitor.VisitAsync(this);
         }

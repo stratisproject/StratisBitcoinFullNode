@@ -62,9 +62,12 @@ namespace Stratis.Bitcoin.Tests.Base
         /// <param name="expectedPeerTip">Behavior's expected tip's initial value.</param>
         /// <param name="peerState">Peer connection state returned by the <see cref="INetworkPeer.State"/>.</param>
         /// <param name="connectNewHeadersMethod">Method which is invoked when behavior calls <see cref="IConsensusManager.HeadersPresented"/>.</param>
-        public ConsensusManagerBehavior CreateAndAttachBehavior(ChainedHeader consensusTip, List<BlockHeader> cache = null,
-            ChainedHeader expectedPeerTip = null, NetworkPeerState peerState = NetworkPeerState.HandShaked,
-            Func<List<BlockHeader>, bool, ConnectNewHeadersResult> connectNewHeadersMethod = null)
+        public ConsensusManagerBehavior CreateAndAttachBehavior(
+            ChainedHeader consensusTip,
+            List<BlockHeader> cache = null,
+            ChainedHeader expectedPeerTip = null,
+            NetworkPeerState peerState = NetworkPeerState.HandShaked,
+            Func<List<BlockHeader>, ConnectNewHeadersResult> connectNewHeadersMethod = null)
         {
             // Chain
             var chain = new ConcurrentChain(KnownNetworks.StratisMain);
@@ -77,20 +80,12 @@ namespace Stratis.Bitcoin.Tests.Base
             // Consensus manager
             var cmMock = new Mock<IConsensusManager>();
 
-            //cmMock.Setup(x => x.AcceptAsync(new HeadersPresentedVisitor(this.loggerFactory, It.IsAny<INetworkPeer>(), It.IsAny<List<BlockHeader>>(), It.IsAny<bool>())))
-            //    .Returns(
-            //    (ILoggerFactory loggerFactory, INetworkPeer p, List<BlockHeader> presentedHeaders, bool triggerDownload) =>
-            //    {
-            //        this.HeadersPresentedCalledTimes++;
-            //        return connectNewHeadersMethod?.Invoke(loggerFactory, presentedHeaders, triggerDownload);
-            //    });
-
             cmMock
-                .Setup(x => x.AcceptAsync(new HeadersPresentedVisitor(this.loggerFactory, It.IsAny<INetworkPeer>(), It.IsAny<List<BlockHeader>>(), It.IsAny<bool>())))
-                .Returns(() =>
+                .Setup(x => x.AcceptVisitorAsync(It.IsAny<HeadersPresentedVisitor>()))
+                .Returns((HeadersPresentedVisitor headersPresentedVisitor) =>
                 {
                     this.HeadersPresentedCalledTimes++;
-                    return Task.FromResult(new ConnectNewHeadersResult());
+                    return Task.FromResult(connectNewHeadersMethod?.Invoke(headersPresentedVisitor.Headers));
                 });
 
             cmMock.Setup(x => x.Tip).Returns(consensusTip);
@@ -100,8 +95,7 @@ namespace Stratis.Bitcoin.Tests.Base
             var connectionManagerMock = new Mock<IConnectionManager>();
             connectionManagerMock.SetupGet(x => x.ConnectionSettings).Returns(new ConnectionManagerSettings(new NodeSettings(KnownNetworks.StratisMain)));
 
-            var cmBehavior = new ConsensusManagerBehavior(chain, ibdState.Object, cmMock.Object, this.testPeerBanning,
-                connectionManagerMock.Object, this.loggerFactory);
+            var cmBehavior = new ConsensusManagerBehavior(chain, ibdState.Object, cmMock.Object, this.testPeerBanning, connectionManagerMock.Object, this.loggerFactory);
 
             // Peer and behavior
             this.PeerMock = this.CreatePeerMock();

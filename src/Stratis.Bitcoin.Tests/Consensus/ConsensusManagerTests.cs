@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             var minedBlock = builder.CreateBlock(chainTip);
             var blockMinedVisitor = new BlockMinedConsensusVisitor(new ExtendedLoggerFactory(), minedBlock);
-            var result = builder.ConsensusManager.AcceptAsync(blockMinedVisitor);
+            var result = builder.ConsensusManager.AcceptVisitorAsync(blockMinedVisitor);
 
             Assert.NotNull(result.Result.ChainedHeaderBlock);
             Assert.Equal(minedBlock.GetHash(), builder.ConsensusManager.Tip.HashBlock);

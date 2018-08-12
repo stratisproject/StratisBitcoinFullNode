@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Consensus.Visitors
     public sealed class HeadersPresentedVisitor : IConsensusVisitor<ConnectNewHeadersResult>
     {
         private readonly ILogger logger;
-        private readonly List<BlockHeader> headers;
+        public readonly List<BlockHeader> Headers;
         private readonly INetworkPeer peer;
         private readonly bool triggerDownload;
 
@@ -27,13 +27,13 @@ namespace Stratis.Bitcoin.Consensus.Visitors
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.peer = peer;
-            this.headers = headers;
+            this.Headers = headers;
             this.triggerDownload = triggerDownload;
         }
 
         public Task<ConnectNewHeadersResult> VisitAsync(ConsensusManager consensusManager)
         {
-            this.logger.LogTrace("({0}:{1},{2}.{3}:{4},{5}:{6})", nameof(this.peer.Connection.Id), this.peer.Connection.Id, nameof(this.headers), nameof(this.headers.Count), this.headers.Count, nameof(this.triggerDownload), this.triggerDownload);
+            this.logger.LogTrace("({0}:{1},{2}.{3}:{4},{5}:{6})", nameof(this.peer.Connection.Id), this.peer.Connection.Id, nameof(this.Headers), nameof(this.Headers.Count), this.Headers.Count, nameof(this.triggerDownload), this.triggerDownload);
 
             ConnectNewHeadersResult connectNewHeadersResult;
 
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Consensus.Visitors
             {
                 int peerId = this.peer.Connection.Id;
 
-                connectNewHeadersResult = consensusManager.ChainedHeaderTree.ConnectNewHeaders(peerId, this.headers);
+                connectNewHeadersResult = consensusManager.ChainedHeaderTree.ConnectNewHeaders(peerId, this.Headers);
                 consensusManager.BlockPuller.NewPeerTipClaimed(this.peer, connectNewHeadersResult.Consumed);
 
                 if (!consensusManager.PeersByPeerId.ContainsKey(peerId))

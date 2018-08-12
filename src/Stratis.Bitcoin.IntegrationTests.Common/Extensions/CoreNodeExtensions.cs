@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             while (!block.CheckProofOfWork())
                 block.Header.Nonce = ++nonce;
 
-            coreNode.FullNode.ConsensusManager().AcceptAsync(new BlockMinedConsensusVisitor(new ExtendedLoggerFactory(), block)).GetAwaiter().GetResult();
+            coreNode.FullNode.ConsensusManager().AcceptVisitorAsync(new BlockMinedConsensusVisitor(new ExtendedLoggerFactory(), block)).GetAwaiter().GetResult();
 
             return block;
         }

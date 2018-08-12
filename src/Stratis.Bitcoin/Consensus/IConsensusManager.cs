@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Consensus
     /// </summary>
     public interface IConsensusManager : IDisposable
     {
-        Task<T> AcceptAsync<T>(IConsensusVisitor<T> visitor);
+        Task<T> AcceptVisitorAsync<T>(IConsensusVisitor<T> visitor);
 
         /// <summary>The current tip of the chain that has been validated.</summary>
         ChainedHeader Tip { get; }

@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             BlockTemplate newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
 
-            await consensus.AcceptAsync(new BlockMinedConsensusVisitor(loggerFactory, newBlock.Block));
+            await consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(loggerFactory, newBlock.Block));
 
             List<BlockInfo> blockinfo = CreateBlockInfoList();
 
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
 
                 chain.SetTip(currentBlock.Header);
-                await consensus.AcceptAsync(new BlockMinedConsensusVisitor(loggerFactory, currentBlock));
+                await consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(loggerFactory, currentBlock));
                 blocks.Add(currentBlock);
             }
 

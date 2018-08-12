@@ -267,7 +267,7 @@ namespace Stratis.Bitcoin.Features.Miner
         private bool ValidateAndConnectBlock(MineBlockContext context)
         {
             this.logger.LogTrace("()");
-            var result = this.consensusManager.AcceptAsync(new BlockMinedConsensusVisitor(this.loggerFactory, context.BlockTemplate.Block)).GetAwaiter().GetResult();
+            var result = this.consensusManager.AcceptVisitorAsync(new BlockMinedConsensusVisitor(this.loggerFactory, context.BlockTemplate.Block)).GetAwaiter().GetResult();
             context.ChainedHeaderBlock = result.ChainedHeaderBlock;
 
             if (context.ChainedHeaderBlock == null)

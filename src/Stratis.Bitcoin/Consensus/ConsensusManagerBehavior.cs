@@ -379,7 +379,7 @@ namespace Stratis.Bitcoin.Consensus
             try
             {
                 var visitor = new HeadersPresentedVisitor(this.loggerFactory, peer, headers, triggerDownload);
-                result = await this.consensusManager.AcceptAsync(visitor);
+                result = await this.consensusManager.AcceptVisitorAsync(visitor);
             }
             catch (ConnectHeaderException)
             {
