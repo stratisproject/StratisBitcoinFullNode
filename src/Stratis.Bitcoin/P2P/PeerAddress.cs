@@ -235,6 +235,19 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>
+        /// Resets the amount of <see cref="HandshakedAttempts"/>.
+        /// <para>
+        /// This is reset when the amount of failed handshake attempts reaches
+        /// the <see cref="PeerAddress.HandshakedAttempts"/> and the last attempt was
+        /// made more than <see cref="PeerAddress.AttempThresholdHours"/> ago.
+        /// </para>
+        /// </summary>
+        internal void ResetHandshakeAttempts()
+        {
+            this.HandshakedAttempts = 0;
+        }
+
+        /// <summary>
         /// Increments <see cref="ConnectionAttempts"/> and sets the <see cref="LastAttempt"/>.
         /// </summary>
         internal void SetAttempted(DateTime peerAttemptedAt)
@@ -280,7 +293,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Sets the <see cref="LastConnectionHandshake"/> date.</summary>
         internal void SetHandshaked(DateTimeOffset peerHandshakedAt)
         {
-            this.HandshakedAttempts = 0;
+            this.ResetHandshakeAttempts();
             this.LastConnectionHandshake = peerHandshakedAt;
             this.LastHandshakeAttempt = null;
         }

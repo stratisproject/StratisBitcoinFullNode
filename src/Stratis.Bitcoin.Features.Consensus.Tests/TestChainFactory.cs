@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public IChainState ChainState { get; set; }
 
-        public IFinalizedBlockHeight FinalizedBlockHeight { get; set; }
+        public IFinalizedBlockInfo FinalizedBlockInfo { get; set; }
 
         public IInitialBlockDownloadState InitialBlockDownloadState { get; set; }
 
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.PartialValidator = new PartialValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
 
             testChainContext.Consensus = new ConsensusManager(network, testChainContext.LoggerFactory, testChainContext.ChainState, testChainContext.HeaderValidator, testChainContext.IntegrityValidator,
-                testChainContext.PartialValidator, testChainContext.Checkpoints, consensusSettings, testChainContext.ConsensusRules, testChainContext.FinalizedBlockHeight, new Signals.Signals(),
+                testChainContext.PartialValidator, testChainContext.Checkpoints, consensusSettings, testChainContext.ConsensusRules, testChainContext.FinalizedBlockInfo, new Signals.Signals(),
                 testChainContext.PeerBanning, testChainContext.NodeSettings, testChainContext.DateTimeProvider, testChainContext.InitialBlockDownloadState, testChainContext.Chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
 
             await testChainContext.Consensus.InitializeAsync(testChainContext.Chain.Tip);
@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         private static async Task ValidateBlock(TestChainContext testChainContext, BlockTemplate newBlock)
         {
-            var res = await testChainContext.Consensus.BlockMined(newBlock.Block);
+            var res = await testChainContext.Consensus.BlockMinedAsync(newBlock.Block);
             Assert.NotNull(res);
         }
 

@@ -1,15 +1,28 @@
-﻿using NBitcoin;
+﻿using System.Collections.Generic;
+using System.Linq;
+using NBitcoin;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Mining;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public sealed class SmartContractBlockProvider : IBlockProvider
     {
-        private readonly SmartContractBlockDefinition blockDefinition;
+        private readonly Network network;
 
-        public SmartContractBlockProvider(SmartContractBlockDefinition blockDefinition)
+        /// <summary>Defines how proof of work blocks are built.</summary>
+        private readonly SmartContractBlockDefinition powBlockDefinition;
+
+        /// <summary>Defines how proof of work blocks are built on a proof-of-stake network.</summary>
+        private readonly SmartContractPosPowBlockDefinition posPowBlockDefinition;
+
+        public SmartContractBlockProvider(Network network, IEnumerable<BlockDefinition> definitions)
         {
-            this.blockDefinition = blockDefinition;
+            this.network = network;
+
+            this.powBlockDefinition = definitions.OfType<SmartContractBlockDefinition>().FirstOrDefault();
+            this.posPowBlockDefinition = definitions.OfType<SmartContractPosPowBlockDefinition>().FirstOrDefault();
+
         }
 
         /// <inheritdoc/>
@@ -21,7 +34,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <inheritdoc/>
         public BlockTemplate BuildPowBlock(ChainedHeader chainTip, Script script)
         {
-            return this.blockDefinition.Build(chainTip, script);
+            if (this.network.Consensus.IsProofOfStake)
+                return this.posPowBlockDefinition.Build(chainTip, script);
+
+            return this.powBlockDefinition.Build(chainTip, script);
         }
     }
 }

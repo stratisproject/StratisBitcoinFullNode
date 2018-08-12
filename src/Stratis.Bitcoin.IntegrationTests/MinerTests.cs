@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 this.consensus = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(this.ConsensusRules, loggerFactory),
                     new IntegrityValidator(this.ConsensusRules, loggerFactory), new PartialValidator(this.ConsensusRules, loggerFactory), new Checkpoints(), consensusSettings, this.ConsensusRules,
-                    new Mock<IFinalizedBlockHeight>().Object, new Signals.Signals(), peerBanning, nodeSettings, dateTimeProvider, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
+                    new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, nodeSettings, dateTimeProvider, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
 
                 this.entry.Fee(11);
                 this.entry.Height(11);
@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
-                await this.consensus.BlockMined(this.newBlock.Block);
+                await this.consensus.BlockMinedAsync(this.newBlock.Block);
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     block.Header.Nonce = this.blockinfo[i].nonce;
 
-                    await this.consensus.BlockMined(block);
+                    await this.consensus.BlockMinedAsync(block);
 
                     blocks.Add(block);
                 }

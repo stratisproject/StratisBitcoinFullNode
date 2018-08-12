@@ -80,8 +80,7 @@ namespace Stratis.Bitcoin.Consensus
             IDateTimeProvider dateTimeProvider,
             ConcurrentChain chain,
             NodeDeployments nodeDeployments,
-            ConsensusSettings
-            consensusSettings,
+            ConsensusSettings consensusSettings,
             ICheckpoints checkpoints,
             IChainState chainState)
         {

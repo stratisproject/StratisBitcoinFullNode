@@ -4,7 +4,7 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
-using Stratis.SmartContracts;
+using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
             this.network = new SmartContractsRegTest();
-            this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);
+            this.transferProcessor = new SmartContractResultTransferProcessor(DateTimeProvider.Default, this.loggerFactory, this.network);
         }
 
         [Fact]
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var result = new SmartContractExecutionResult();
 
             this.transferProcessor.Process(stateMock.Object, uint160.One, txContextMock.Object, new List<TransferInfo>(), false);
-            
+
             // Ensure unspent was saved, but no condensing transaction was generated.
             Assert.Null(result.InternalTransaction);
             stateMock.Verify(x => x.SetUnspent(new uint160(1), It.IsAny<ContractUnspentOutput>()));

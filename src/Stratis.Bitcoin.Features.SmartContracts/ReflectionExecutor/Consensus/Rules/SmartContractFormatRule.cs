@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
     /// <summary>
     /// Validates that the supplied transaction satoshis are greater than the gas budget satoshis in the contract invocation
     /// </summary>
-    [PartialValidationRule]
+    [FullValidationRule]
     public class SmartContractFormatRule : UtxoStoreConsensusRule, ISmartContractMempoolRule
     {
         public const ulong GasLimitMaximum = 5_000_000;
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 new ConsensusError("invalid-calldata-format", string.Format("Invalid {0} format", typeof(ContractTxData).Name)).Throw();
             }
 
-            var callData = callDataDeserializationResult.Value;
+            ContractTxData callData = callDataDeserializationResult.Value;
 
             if (callData.GasPrice < GasPriceMinimum)
             {

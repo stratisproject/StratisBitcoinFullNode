@@ -1,28 +1,15 @@
-﻿using System.Collections.Generic;
-using Stratis.ModuleValidation.Net;
-
+﻿using System.Linq;
 namespace Stratis.SmartContracts.Core.Validation
 {
     public sealed class SmartContractValidator : ISmartContractValidator
     {
-        private readonly IList<ISmartContractValidator> validators;
-
-        public SmartContractValidator(IList<ISmartContractValidator> validators)
-        {
-            this.validators = validators;
-        }
-
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            var errors = new List<ValidationResult>();
+            var policy = ValidationPolicy.FromExisting(new[] { FormatPolicy.Default, DeterminismPolicy.Default });
+            var validator = new ModulePolicyValidator(policy);
 
-            foreach (ISmartContractValidator validator in this.validators)
-            {
-                SmartContractValidationResult result = validator.Validate(decompilation);
-                errors.AddRange(result.Errors);
-            }
-
-            return new SmartContractValidationResult(errors);
+            var results = validator.Validate(decompilation.ModuleDefinition).ToList();
+            return new SmartContractValidationResult(results);
         }
     }
 }

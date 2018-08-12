@@ -38,12 +38,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly NodeDeployments nodeDeployments;
 
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
-
-        /// <summary>Logger factory to create loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
-
         /// <summary>Consensus statistics logger.</summary>
         private readonly ConsensusStats consensusStats;
 
@@ -54,7 +48,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             Signals.Signals signals,
             IConsensusManager consensusManager,
             NodeDeployments nodeDeployments,
-            ILoggerFactory loggerFactory,
             ConsensusStats consensusStats)
         {
             this.chainState = chainState;
@@ -62,8 +55,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.signals = signals;
             this.consensusManager = consensusManager;
             this.nodeDeployments = nodeDeployments;
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.loggerFactory = loggerFactory;
             this.consensusStats = consensusStats;
 
             this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
@@ -91,25 +82,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.signals.SubscribeForBlocksConnected(this.consensusStats);
         }
 
-        /// <summary>
-        /// Prints command-line help.
-        /// </summary>
-        /// <param name="network">The network to extract values from.</param>
-        public static void PrintHelp(Network network)
-        {
-            ConsensusSettings.PrintHelp(network);
-        }
-
-        /// <summary>
-        /// Get the default configuration.
-        /// </summary>
-        /// <param name="builder">The string builder to add the settings to.</param>
-        /// <param name="network">The network to base the defaults off.</param>
-        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
-        {
-            ConsensusSettings.BuildDefaultConfigurationFile(builder, network);
-        }
-
         /// <inheritdoc />
         public override void Dispose()
         {
@@ -132,13 +104,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                 .AddFeature<ConsensusFeature>()
                 .FeatureServices(services =>
                 {
-                    services.AddSingleton<ICheckpoints, Checkpoints>();
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<ICoinView, CachedCoinView>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
-                    services.AddSingleton<ConsensusSettings>();
                     services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>();
 
                     fullNodeBuilder.Network.Consensus.Rules = new PowConsensusRulesRegistration().GetRules();
@@ -159,14 +129,12 @@ namespace Stratis.Bitcoin.Features.Consensus
                     .AddFeature<ConsensusFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<ICheckpoints, Checkpoints>();
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
-                        services.AddSingleton<ConsensusSettings>();
                         services.AddSingleton<IConsensusRuleEngine, PosConsensusRuleEngine>();
 
                         fullNodeBuilder.Network.Consensus.Rules = new PosConsensusRulesRegistration().GetRules();

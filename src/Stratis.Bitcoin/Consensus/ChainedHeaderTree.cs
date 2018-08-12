@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
         private readonly ISignals signals;
-        private readonly IFinalizedBlockHeight finalizedBlockHeight;
+        private readonly IFinalizedBlockInfo finalizedBlockInfo;
 
         /// <inheritdoc />
         public long UnconsumedBlocksDataBytes { get; private set; }
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Consensus
             IIntegrityValidator integrityValidator,
             ICheckpoints checkpoints,
             IChainState chainState,
-            IFinalizedBlockHeight finalizedBlockHeight,
+            IFinalizedBlockInfo finalizedBlockInfo,
             ConsensusSettings consensusSettings,
             ISignals signals)
         {
@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.Consensus
             this.integrityValidator = integrityValidator;
             this.checkpoints = checkpoints;
             this.chainState = chainState;
-            this.finalizedBlockHeight = finalizedBlockHeight;
+            this.finalizedBlockInfo = finalizedBlockInfo;
             this.consensusSettings = consensusSettings;
             this.signals = signals;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -515,7 +515,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     ChainedHeader fork = this.FindForkIfChainedHeadersNotOnSameChain(peerTip, consensusTip);
 
-                    int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHeight();
+                    int finalizedHeight = this.finalizedBlockInfo.GetFinalizedBlockInfo().Height;
 
                     // Do nothing in case peer's tip is on our consensus chain.
                     if ((fork != null) && (fork.Height < finalizedHeight))
@@ -979,12 +979,13 @@ namespace Stratis.Bitcoin.Consensus
                 this.RemoveUnclaimedBranch(chainedHeader);
             }
 
+            this.peerTipsByPeerId.Remove(networkPeerId);
+
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Set a new header as a tip for this peer and remove the old tip.
-        /// </summary>
+        /// <summary>Set a new header as a tip for this peer and remove the old tip.</summary>
+        /// <remarks>If the old tip is equal to <paramref name="newTip"/> the method does nothing.</remarks>
         /// <param name="networkPeerId">The peer id that sets a new tip.</param>
         /// <param name="newTip">The new tip to set.</param>
         private void AddOrReplacePeerTip(int networkPeerId, uint256 newTip)
@@ -993,9 +994,13 @@ namespace Stratis.Bitcoin.Consensus
 
             uint256 oldTipHash = this.peerTipsByPeerId.TryGet(networkPeerId);
 
-            this.ClaimPeerTip(networkPeerId, newTip);
+            if (oldTipHash == newTip)
+            {
+                this.logger.LogTrace("(-)[ALREADY_CLAIMED]");
+                return;
+            }
 
-            this.peerTipsByPeerId.AddOrReplace(networkPeerId, newTip);
+            this.ClaimPeerTip(networkPeerId, newTip);
 
             if (oldTipHash != null)
             {
@@ -1010,6 +1015,8 @@ namespace Stratis.Bitcoin.Consensus
 
                 this.RemovePeerClaim(networkPeerId, oldTip);
             }
+
+            this.peerTipsByPeerId.Add(networkPeerId, newTip);
 
             this.logger.LogTrace("(-)");
         }
@@ -1158,7 +1165,7 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     int reorgLength = consensusTip.Height - fork.Height;
 
-                    int finalizedHeight = this.finalizedBlockHeight.GetFinalizedBlockHeight();
+                    int finalizedHeight = this.finalizedBlockInfo.GetFinalizedBlockInfo().Height;
 
                     if (fork.Height < finalizedHeight)
                     {

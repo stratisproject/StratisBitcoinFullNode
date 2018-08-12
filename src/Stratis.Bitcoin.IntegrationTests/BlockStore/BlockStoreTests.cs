@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 }
 
                 // put
-                blockRepository.PutAsync(blocks.Last().GetHash(), blocks).GetAwaiter().GetResult();
+                blockRepository.PutAsync(new HashHeightPair(blocks.Last().GetHash(), blocks.Count), blocks).GetAwaiter().GetResult();
 
                 // check the presence of each block in the repository
                 foreach (Block block in blocks)
@@ -64,23 +64,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 }
 
                 // delete
-                blockRepository.DeleteAsync(blocks.ElementAt(2).GetHash(), new[] { blocks.ElementAt(2).GetHash() }.ToList()).GetAwaiter().GetResult();
+                blockRepository.DeleteAsync(new HashHeightPair(blocks.ElementAt(2).GetHash(), 2), new[] { blocks.ElementAt(2).GetHash() }.ToList()).GetAwaiter().GetResult();
                 Block deleted = blockRepository.GetBlockAsync(blocks.ElementAt(2).GetHash()).GetAwaiter().GetResult();
                 Assert.Null(deleted);
-            }
-        }
-
-        [Fact]
-        public void BlockRepositoryBlockHash()
-        {
-            using (var blockRepo = new BlockRepository(this.network, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
-            {
-                blockRepo.InitializeAsync().GetAwaiter().GetResult();
-
-                Assert.Equal(this.network.GenesisHash, blockRepo.BlockHash);
-                uint256 hash = this.network.CreateBlock().GetHash();
-                blockRepo.SetBlockHashAsync(hash).GetAwaiter().GetResult();
-                Assert.Equal(hash, blockRepo.BlockHash);
             }
         }
 

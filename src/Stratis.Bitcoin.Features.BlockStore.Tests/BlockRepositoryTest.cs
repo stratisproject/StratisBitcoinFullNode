@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task task = repository.PutAsync(nextBlockHash, blocks);
+                Task task = repository.PutAsync(new HashHeightPair(nextBlockHash, 100), blocks);
                 task.Wait();
             }
 
@@ -292,32 +292,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
                 Row<byte[], bool> txIndexRow = trans.Select<byte[], bool>("Common", new byte[1]);
                 Assert.False(txIndexRow.Value);
-            }
-        }
-
-        [Fact]
-        public void SetBlockHashUpdatesBlockHash()
-        {
-            string dir = CreateTestDir(this);
-            using (var engine = new DBreezeEngine(dir))
-            {
-                DBreeze.Transactions.Transaction trans = engine.GetTransaction();
-                trans.Insert<byte[], byte[]>("Common", new byte[0], new uint256(41).ToBytes());
-                trans.Commit();
-            }
-
-            using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
-            {
-                Task task = repository.SetBlockHashAsync(new uint256(56));
-                task.Wait();
-            }
-
-            using (var engine = new DBreezeEngine(dir))
-            {
-                DBreeze.Transactions.Transaction trans = engine.GetTransaction();
-
-                Row<byte[], byte[]> blockHashKeyRow = trans.Select<byte[], byte[]>("Common", new byte[0]);
-                Assert.Equal(new uint256(56), new uint256(blockHashKeyRow.Value));
             }
         }
 
@@ -441,9 +415,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 transaction.Commit();
             }
 
+            var tip = new HashHeightPair(new uint256(45), 100);
+
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task task = repository.DeleteAsync(new uint256(45), new List<uint256> { block.GetHash() });
+                Task task = repository.DeleteAsync(tip, new List<uint256> { block.GetHash() });
                 task.Wait();
             }
 
@@ -451,11 +427,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 DBreeze.Transactions.Transaction trans = engine.GetTransaction();
 
-                Row<byte[], uint256> blockHashKeyRow = trans.Select<byte[], uint256>("Common", new byte[0]);
+                Row<byte[], HashHeightPair> blockHashKeyRow = trans.Select<byte[], HashHeightPair>("Common", new byte[0]);
                 Dictionary<byte[], byte[]> blockDict = trans.SelectDictionary<byte[], byte[]>("Block");
                 Dictionary<byte[], byte[]> transDict = trans.SelectDictionary<byte[], byte[]>("Transaction");
 
-                Assert.Equal(new uint256(45), blockHashKeyRow.Value);
+                Assert.Equal(tip, blockHashKeyRow.Value);
                 Assert.Empty(blockDict);
                 Assert.Empty(transDict);
             }
