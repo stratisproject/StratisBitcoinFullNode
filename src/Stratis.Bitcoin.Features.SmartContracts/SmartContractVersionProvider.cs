@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         public string GetVersion()
         {
-            return "0.10.0";
+            return "0.11.0";
         }
     }
 }

@@ -36,7 +36,8 @@ public class CallContract : SmartContract
         Test = "Not Initial!";
         ITransferResult result = TransferFunds(new Address(addressString), 0, new TransferFundsToContract
         {
-            ContractMethodName = "Callback"
+            ContractMethodName = "Callback",
+            GasBudget = 2000
         });
         return (bool)result.ReturnValue;
     }

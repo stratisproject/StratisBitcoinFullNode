@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             RuleContext context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, testContext.Chain);
-            context.ValidationContext.ChainTipToExtand = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), testContext.Chain.Tip);
+            context.ValidationContext.ChainTipToExtend = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), testContext.Chain.Tip);
             context.Time = DateTimeProvider.Default.GetTimeOffset();
 
             // increment the bits.
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             RuleContext context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, testContext.Chain);
-            context.ValidationContext.ChainTipToExtand = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), testContext.Chain.Tip);
+            context.ValidationContext.ChainTipToExtend = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), testContext.Chain.Tip);
             context.Time = DateTimeProvider.Default.GetTimeOffset();
 
             // increment the bits.

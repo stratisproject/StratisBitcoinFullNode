@@ -76,11 +76,11 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            RuleContext context = this.consensusRules.CreateRuleContext(new ValidationContext { Block = this.block, ChainTipToExtand = this.ConsensusManager.Tip });
+            RuleContext context = this.consensusRules.CreateRuleContext(new ValidationContext { Block = this.block, ChainTipToExtend = this.ConsensusManager.Tip });
             context.MinedBlock = true;
 
             // TODO: Is this correct or should we not call validation from rules but from CM
-            this.ConsensusManager.ConsensusRules.PartialValidationAsync(new ValidationContext { Block = this.block, ChainTipToExtand = this.ConsensusManager.Tip });
+            this.ConsensusManager.ConsensusRules.PartialValidationAsync(new ValidationContext { Block = this.block, ChainTipToExtend = this.ConsensusManager.Tip });
 
             this.logger.LogTrace("(-)");
         }
