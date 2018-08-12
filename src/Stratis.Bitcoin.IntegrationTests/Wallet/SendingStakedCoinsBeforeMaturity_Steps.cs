@@ -40,12 +40,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void two_pos_nodes_with_one_node_having_a_wallet_with_premined_coins()
         {
-            this.proofOfStakeSteps.GenerateCoins();
-
-            this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.WalletManager()
-                .GetSpendableTransactionsInWallet(this.proofOfStakeSteps.PremineWallet)
-                .Sum(utxo => utxo.Transaction.Amount)
-                .Should().BeGreaterThan(Money.Coins(OneMillion));
+            this.proofOfStakeSteps.PremineNodeWithWallet();
+            this.proofOfStakeSteps.MineGenesisAndPremineBlocks();
 
             this.receiverNode = this.proofOfStakeSteps.NodeGroupBuilder
                                     .CreateStratisPosNode(NodeReceiver)
@@ -63,15 +59,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             buildTransactionResult.Should().BeOfType<ErrorResult>();
 
-            if (!(buildTransactionResult is ErrorResult))
-                return;
-
             var error = buildTransactionResult as ErrorResult;
             error.StatusCode.Should().Be(400);
 
             var errorResponse = error.Value as ErrorResponse;
             errorResponse?.Errors.Count.Should().Be(1);
-            errorResponse?.Errors[0].Message.Should().Be("Not enough funds.");
+            errorResponse?.Errors[0].Message.Should().Be("No spendable transactions found.");
 
             IActionResult sendTransactionResult = this.SendTransaction(buildTransactionResult);
             sendTransactionResult.Should().BeNull();
