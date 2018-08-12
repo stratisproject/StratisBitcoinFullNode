@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
         
-        public static Money WalletBalance(this CoreNode node, string walletName, bool includeImmature = false)
+        public static Money WalletBalance(this CoreNode node, string walletName)
         {
             return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Sum(s => s.Transaction.Amount);
         }
