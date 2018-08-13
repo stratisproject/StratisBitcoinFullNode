@@ -32,6 +32,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             {
             }
 
+            public Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, ChainedHeader currentBlock)
+            {
+                throw new NotImplementedException();
+            }
+
             public Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
             {
                 var fetchCoinResponse = new FetchCoinsResponse(new UnspentOutputs[0], new uint256(987263876253));
@@ -47,11 +52,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             }
 
             public Task<uint256> Rewind()
-            {
-                throw new NotImplementedException();
-            }
-
-            public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, ChainedHeader oldBlock, ChainedHeader nextBlock)
             {
                 throw new NotImplementedException();
             }

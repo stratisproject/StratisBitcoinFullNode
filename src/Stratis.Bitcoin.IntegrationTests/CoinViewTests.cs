@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
@@ -28,12 +29,16 @@ namespace Stratis.Bitcoin.IntegrationTests
         private readonly Network network;
         private readonly Network regTest;
         private readonly DBreezeSerializer dbreezeSerializer;
+        private readonly ChainState chainState;
 
         /// <summary>
         /// Initializes logger factory for tests in this class.
         /// </summary>
         public CoinViewTests()
         {
+            IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
+            this.chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider));
+
             this.loggerFactory = new LoggerFactory();
             this.network = KnownNetworks.Main;
             this.regTest = KnownNetworks.RegTest;
@@ -49,14 +54,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Block genesis = ctx.Network.GetGenesis();
                 var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash, 0);
                 ChainedHeader chained = this.MakeNext(genesisChainedHeader, ctx.Network);
-                ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock).Wait();
+                ctx.PersistentCoinView.PersistDataAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, new List<RewindData>(), genesisChainedHeader.HashBlock, chained.HashBlock).Wait();
                 Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
                 Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
 
                 ChainedHeader previous = chained;
                 chained = this.MakeNext(this.MakeNext(genesisChainedHeader, ctx.Network), ctx.Network);
                 chained = this.MakeNext(this.MakeNext(genesisChainedHeader, ctx.Network), ctx.Network);
-                ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], null, previous.HashBlock, chained.HashBlock).Wait();
+                ctx.PersistentCoinView.PersistDataAsync(new UnspentOutputs[0], null, new List<RewindData>(), previous.HashBlock, chained.HashBlock).Wait();
                 Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetTipHashAsync().GetAwaiter().GetResult());
                 ctx.ReloadPersistentCoinView();
                 Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetTipHashAsync().GetAwaiter().GetResult());
@@ -73,16 +78,19 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Block genesis = ctx.Network.GetGenesis();
                 var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash, 0);
                 ChainedHeader chained = this.MakeNext(genesisChainedHeader, ctx.Network);
-                var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
+                var cacheCoinView = new CachedCoinView(this.chainState, ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory, new NodeLifetime());
 
-                cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock).Wait();
+                cacheCoinView.AddRewindDataAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, chained).Wait();
                 Assert.NotNull(cacheCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
                 Assert.Null(cacheCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
                 Assert.Equal(chained.HashBlock, cacheCoinView.GetTipHashAsync().Result);
 
                 Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
                 Assert.Equal(chained.Previous.HashBlock, ctx.PersistentCoinView.GetTipHashAsync().Result);
-                cacheCoinView.FlushAsync().GetAwaiter().GetResult();
+
+                // TODO: refactor test as Flush is no longer available
+                // cacheCoinView.FlushAsync().GetAwaiter().GetResult();
+
                 Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
                 Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetTipHashAsync().Result);
                 //Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
@@ -104,7 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeContext ctx = NodeContext.Create(this))
             {
-                var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
+                var cacheCoinView = new CachedCoinView(this.chainState, ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory, new NodeLifetime());
                 var tester = new CoinViewTester(cacheCoinView);
 
                 Coin[] coins = tester.CreateCoins(5);
@@ -112,7 +120,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // 1
                 uint256 h1 = tester.NewBlock();
-                cacheCoinView.FlushAsync().Wait();
+
+                // TODO: refactor test as Flush is no longer available
+                // cacheCoinView.FlushAsync().Wait();
+
+
                 Assert.True(tester.Exists(coins[2]));
                 Assert.True(tester.Exists(coin[0]));
 
@@ -139,7 +151,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 tester.Spend(coin[0]);
                 //2
                 uint256 h2 = tester.NewBlock();
-                cacheCoinView.FlushAsync().Wait();
+
+                // TODO: refactor test as Flush is no longer available
+                // cacheCoinView.FlushAsync().Wait();
+
                 Assert.False(tester.Exists(coins[2]));
                 Assert.False(tester.Exists(coin[0]));
 
@@ -156,7 +171,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 tester.NewBlock();
                 Assert.True(tester.Exists(coins2[1]));
                 Assert.False(tester.Exists(coins2[0]));
-                cacheCoinView.FlushAsync().Wait();
+
+                // TODO: refactor test as Flush is no longer available
+                // cacheCoinView.FlushAsync().Wait();
+
                 //3
                 tester.NewBlock();
                 //2
@@ -190,7 +208,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
                 stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
-                ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
+
+                // TODO: refactor test as Flush is no longer available
+                // ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
 
                 //Core1 discovers 30 blocks, sends to stratis
                 tip = coreNode1.FindBlock(30).Last();
@@ -203,7 +223,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
                 stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
-                ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
+
+                // TODO: refactor test as Flush is no longer available
+                // ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
 
                 TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
             }

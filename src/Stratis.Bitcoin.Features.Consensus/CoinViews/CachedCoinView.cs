@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <remarks>Interval value is a prime number that wasn't used as an interval in any other component. That prevents having CPU consumption spikes.</remarks>
         private const int BatchMaxSaveIntervalSeconds = 37;
 
-        /// <summary>Maximum number of bytes the batch can hold until the downloaded blocks are stored to the disk.</summary>
+        /// <summary>Maximum number of bytes the batch can hold until the rewind data items are stored to the disk.</summary>
         internal const int BatchThresholdSizeBytes = 5 * 1000 * 1000;
 
         /// <summary>Instance logger.</summary>
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <remarks>Write access should be protected by <see cref="getBlockLock"/>.</remarks>
         private readonly List<RewindData> rewindDataBatch;
 
-        /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
+        /// <summary>Task that runs <see cref="DequeueRewindDataContinuouslyAsync"/>.</summary>
         private Task dequeueLoopTask;
 
         /// <summary>Protects the batch from being modifying while <see cref="GetTipHashAsync"/> method is using the batch.</summary>
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
         private uint256 blockHash;
 
-        /// <summary>Hash of the block headers of the tip of the underlaying coinview.</summary>
+        /// <summary>Hash of the block headers of the tip of the underlaying coinview storage.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
         private uint256 persistedBlockHash;
 
@@ -400,15 +400,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         public async Task InitializeAsync()
         {
-            this.dequeueLoopTask = this.DequeueBlocksContinuouslyAsync();
+            this.dequeueLoopTask = this.DequeueRewindDataContinuouslyAsync();
             await Task.FromResult(true);
         }
 
         /// <summary>
-        /// Dequeues the blocks continuously and saves them to the database when max batch size is reached or timer ran out.
+        /// Dequeues the rewind data continuously and saves it to the database when max batch size is reached or timer ran out.
         /// </summary>
         /// <remarks>Batch is always saved on shutdown.</remarks>
-        private async Task DequeueBlocksContinuouslyAsync()
+        private async Task DequeueRewindDataContinuouslyAsync()
         {
             this.logger.LogTrace("()");
 
@@ -438,7 +438,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.logger.LogDebug("Node is shutting down. Save batch.");
                 }
 
-                // Save batch if timer ran out or we've dequeued a new block and reached the consensus tip
+                // Save batch if timer ran out or we've dequeued a new rewind data 
                 // or the max batch size is reached or the node is shutting down.
                 if (dequeueTask.Status == TaskStatus.RanToCompletion)
                 {

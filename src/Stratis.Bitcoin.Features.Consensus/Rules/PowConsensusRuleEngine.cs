@@ -52,7 +52,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override Task Initialize()
         {
-            return ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).CoinViewStorage).InitializeAsync();
+            var cachedCoinView = (CachedCoinView) this.UtxoSet;
+            var dbreezeCoinViewStorage = (DBreezeCoinView) cachedCoinView.CoinViewStorage;
+            Task storageInitializationTask = dbreezeCoinViewStorage.InitializeAsync();
+            Task cachedCoinViewInitializationTask = cachedCoinView.InitializeAsync(); 
+
+            return storageInitializationTask.ContinueWith((t) => cachedCoinViewInitializationTask);
         }
 
         public override void Dispose()

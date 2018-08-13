@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
     /// Coinview that holds all information in the memory, which is used in tests.
     /// </summary>
     /// <remarks>Rewinding is not supported in this implementation.</remarks>
-    public class InMemoryCoinView : ICoinView
+    public class InMemoryCoinView : ICoinViewStorage, ICoinView
     {
         /// <summary>Lock object to protect access to <see cref="unspents"/> and <see cref="tipHash"/>.</summary>
         private readonly ReaderWriterLock lockobj = new ReaderWriterLock();
@@ -38,6 +38,16 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.FromResult(this.tipHash);
+        }
+
+        public Task PersistDataAsync(
+            IEnumerable<UnspentOutputs> unspentOutputs,
+            IEnumerable<TxOut[]> originalOutputs,
+            List<RewindData> rewindDataCollection,
+            uint256 oldBlockHash,
+            uint256 nextBlockHash)
+        {
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
