@@ -292,17 +292,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             };
 
             // create a trx with 3 outputs 50 + 50 + 49 = 149 BTC
-            var context = new TransactionBuildContext(this.Network, walletReference,
-                new[]
+            var context = new TransactionBuildContext(this.Network)
+            {
+                AccountReference = walletReference,
+                MinConfirmations = 0,
+                FeeType = FeeType.Low,
+                WalletPassword = "password",
+                Recipients = new[]
                 {
                     new Recipient { Amount = new Money(50, MoneyUnit.BTC), ScriptPubKey = destinationKeys1.PubKey.ScriptPubKey },
                     new Recipient { Amount = new Money(50, MoneyUnit.BTC), ScriptPubKey = destinationKeys2.PubKey.ScriptPubKey },
                     new Recipient { Amount = new Money(49, MoneyUnit.BTC), ScriptPubKey = destinationKeys3.PubKey.ScriptPubKey }
-                }
-                .ToList(), "password")
-            {
-                MinConfirmations = 0,
-                FeeType = FeeType.Low
+                }.ToList()
             };
 
             Transaction fundTransaction = walletTransactionHandler.BuildTransaction(context);
@@ -318,10 +319,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Single(fundTransaction.Inputs); // 4 inputs
 
             Transaction fundTransactionClone = this.Network.CreateTransaction(fundTransaction.ToBytes());
-            var fundContext = new TransactionBuildContext(this.Network, walletReference, new List<Recipient>(), "password")
+            var fundContext = new TransactionBuildContext(this.Network)
             {
+                AccountReference = walletReference,
                 MinConfirmations = 0,
-                FeeType = FeeType.Low
+                FeeType = FeeType.Low,
+                WalletPassword = "password",
+                Recipients = new List<Recipient>()
             };
 
             fundContext.OverrideFeeRate = overrideFeeRate;
@@ -588,10 +592,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public static TransactionBuildContext CreateContext(Network network, WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations, string opReturnData = null)
         {
-            return new TransactionBuildContext(network, accountReference, new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), password, opReturnData)
+            return new TransactionBuildContext(network)
             {
+                AccountReference = accountReference,
                 MinConfirmations = minConfirmations,
-                FeeType = feeType
+                FeeType = feeType,
+                OpReturnData = opReturnData,
+                WalletPassword = password,
+                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList()
             };
         }
 
