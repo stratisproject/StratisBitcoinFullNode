@@ -189,8 +189,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.LoggerFactory.AddConsoleWithFilters();
 
                 this.nodeSettings = NodeSettings.Default();
-                var consensusSettings = new ConsensusSettings(this.nodeSettings);
-                consensusSettings.UseCheckpoints = this.useCheckpoints;
+                var consensusSettings = new ConsensusSettings(this.nodeSettings)
+                {
+                    UseCheckpoints = this.useCheckpoints
+                };
 
                 this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
 
@@ -230,7 +232,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 this.Consensus = new ConsensusManager(this.network, this.LoggerFactory, chainState, new HeaderValidator(consensusRules, this.LoggerFactory),
                     new IntegrityValidator(consensusRules, this.LoggerFactory), new PartialValidator(consensusRules, this.LoggerFactory), new Checkpoints(), consensusSettings, consensusRules,
-                    new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, this.nodeSettings, dateTimeProvider, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
+                    new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, this.nodeSettings, dateTimeProvider, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, null);
+
+                await this.Consensus.InitializeAsync(this.chain.Tip);
 
                 this.entry.Fee(11);
                 this.entry.Height(11);
