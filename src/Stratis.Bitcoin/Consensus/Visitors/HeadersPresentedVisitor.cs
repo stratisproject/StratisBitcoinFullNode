@@ -6,23 +6,23 @@ using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.Consensus.Visitors
 {
+    /// <summary>
+    /// A list of headers are presented from a given peer,
+    /// we'll attempt to connect the headers to the tree and if new headers are found they will be queued for download.
+    /// </summary>
     public sealed class HeadersPresentedVisitor : IConsensusVisitor<ConnectNewHeadersResult>
     {
         private readonly ILogger logger;
-        public readonly List<BlockHeader> Headers;
+
+        /// <summary>The list of new headers.</summary>
+        public List<BlockHeader> Headers { get; private set; }
+
+        /// <summary>The peer that providing the headers.</summary>
         private readonly INetworkPeer peer;
+
+        /// <summary>Specifies if the download should be scheduled for interesting blocks.</summary>
         private readonly bool triggerDownload;
 
-        /// <summary>
-        /// A list of headers are presented from a given peer,
-        /// we'll attempt to connect the headers to the tree and if new headers are found they will be queued for download.
-        /// </summary>
-        /// <param name="peer">The peer that providing the headers.</param>
-        /// <param name="headers">The list of new headers.</param>
-        /// <param name="triggerDownload">Specifies if the download should be scheduled for interesting blocks.</param>
-        /// <returns>Information about consumed headers.</returns>
-        /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
-        /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
         public HeadersPresentedVisitor(ILoggerFactory loggerFactory, INetworkPeer peer, List<BlockHeader> headers, bool triggerDownload)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Consensus.Visitors
             this.triggerDownload = triggerDownload;
         }
 
+        /// <inheritdoc/>
         public Task<ConnectNewHeadersResult> VisitAsync(ConsensusManager consensusManager)
         {
             this.logger.LogTrace("({0}:{1},{2}.{3}:{4},{5}:{6})", nameof(this.peer.Connection.Id), this.peer.Connection.Id, nameof(this.Headers), nameof(this.Headers.Count), this.Headers.Count, nameof(this.triggerDownload), this.triggerDownload);

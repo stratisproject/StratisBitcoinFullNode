@@ -7,11 +7,13 @@ using Stratis.Bitcoin.Primitives;
 namespace Stratis.Bitcoin.Consensus.Visitors
 {
     /// <summary>
-    /// A new block was mined by the node and is attempted to connect to tip.
+    /// A new block was mined by the node and is attempting to connect to the tip.
     /// </summary>
-    /// <param name="block">The mined block.</param>
     public sealed class BlockMinedConsensusVisitor : IConsensusVisitor<BlockMinedConsensusVisitorResult>
     {
+        /// <summary>
+        /// The block that was mined or staked by the node.
+        /// </summary>
         private readonly Block block;
         private readonly ILogger logger;
 
@@ -21,6 +23,7 @@ namespace Stratis.Bitcoin.Consensus.Visitors
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
 
+        /// <inheritdoc/>
         public async Task<BlockMinedConsensusVisitorResult> VisitAsync(ConsensusManager consensusManager)
         {
             this.logger.LogTrace("({0}:{1})", nameof(this.block), this.block.GetHash());

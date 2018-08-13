@@ -13,14 +13,14 @@ namespace Stratis.Bitcoin.Consensus.Visitors
     /// First we check if the block exists in chained header tree, then it check the block store and if it wasn't found there the block will be scheduled for download.
     /// Given callback is called when the block is obtained. If obtaining the block fails the callback will be called with <c>null</c>.
     /// </remarks>
-    /// <param name="blockHashes">The block hashes to download.</param>
-    /// <param name="onBlockDownloadedCallback">The callback that will be called for each downloaded block.</param>
     public sealed class DownloadBlocksVisitor : IConsensusVisitor<DownloadBlocksVisitorResult>
     {
+        /// <summary>The block hashes to download.</summary>
         public List<uint256> BlockHashes { get; set; }
 
         private readonly ILogger logger;
 
+        /// <summary>The callback that will be called for each downloaded block.</summary>
         public OnBlockDownloadedCallback OnBlockDownloadedCallback { get; set; }
 
         public bool TriggerDownload { get; set; }
@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Consensus.Visitors
             this.TriggerDownload = true;
         }
 
+        /// <inheritdoc/>
         public async Task<DownloadBlocksVisitorResult> VisitAsync(ConsensusManager consensusManager)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(this.BlockHashes), nameof(this.BlockHashes.Count), this.BlockHashes.Count);

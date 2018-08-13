@@ -11,6 +11,14 @@ namespace Stratis.Bitcoin.Consensus
     /// </summary>
     public interface IConsensusManager : IDisposable
     {
+        /// <summary>
+        /// Accepts a visitor instance to the consensus manager.
+        /// <para>
+        /// Visitor classes are able to make changes to the underlying consensus manager properties, most importantly the <see cref="ChainedHeaderTree"/> instance.
+        /// </para>
+        /// </summary>
+        /// <typeparam name="T">The result from visiting consensus.</typeparam>
+        /// <param name="visitor">The visitor making changes to (visiting) consensus.</param>
         Task<T> AcceptVisitorAsync<T>(IConsensusVisitor<T> visitor);
 
         /// <summary>The current tip of the chain that has been validated.</summary>

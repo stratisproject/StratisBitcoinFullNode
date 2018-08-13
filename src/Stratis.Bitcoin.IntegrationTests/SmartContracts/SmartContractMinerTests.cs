@@ -18,6 +18,7 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Consensus.Visitors;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
@@ -58,7 +59,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             return new SmartContractBlockDefinition(
                 testContext.cachedCoinView,
-                testContext.consensus,
+                testContext.Consensus,
                 testContext.date,
                 testContext.executorFactory,
                 new LoggerFactory(),
@@ -122,6 +123,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         public class TestContext
         {
             public List<Blockinfo> blockinfo;
+            public ExtendedLoggerFactory LoggerFactory;
             public Network network;
             public NodeSettings nodeSettings;
             public Script scriptPubKey;
@@ -131,7 +133,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public uint256 hash;
             public TestMemPoolEntryHelper entry;
             public ConcurrentChain chain;
-            public ConsensusManager consensus;
+            public ConsensusManager Consensus;
             public DateTimeProvider date;
             public TxMempool mempool;
             public MempoolSchedulerLock mempoolLock;
@@ -183,8 +185,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
 
-                var loggerFactory = new ExtendedLoggerFactory();
-                loggerFactory.AddConsoleWithFilters();
+                this.LoggerFactory = new ExtendedLoggerFactory();
+                this.LoggerFactory.AddConsoleWithFilters();
 
                 this.nodeSettings = NodeSettings.Default();
                 var consensusSettings = new ConsensusSettings(this.nodeSettings);
@@ -204,30 +206,30 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder));
 
-                this.refundProcessor = new SmartContractResultRefundProcessor(loggerFactory);
-                this.transferProcessor = new SmartContractResultTransferProcessor(dateTimeProvider, loggerFactory, this.network);
+                this.refundProcessor = new SmartContractResultRefundProcessor(this.LoggerFactory);
+                this.transferProcessor = new SmartContractResultTransferProcessor(dateTimeProvider, this.LoggerFactory, this.network);
 
                 this.serializer = CallDataSerializer.Default;
-                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
+                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.LoggerFactory, this.network);
                 this.AddressGenerator = new AddressGenerator();
-                this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, loggerFactory, this.network, this.AddressGenerator);
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(loggerFactory, this.serializer, this.refundProcessor, this.transferProcessor, this.vm);
+                this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.LoggerFactory, this.network, this.AddressGenerator);
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(this.LoggerFactory, this.serializer, this.refundProcessor, this.transferProcessor, this.vm);
 
-                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
-                var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
-                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
-                var connectionSettings = new ConnectionManagerSettings(nodeSettings);
+                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, this.LoggerFactory, new PayloadProvider(), new SelfEndpointTracker());
+                var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, this.LoggerFactory, new SelfEndpointTracker());
+                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.LoggerFactory), this.LoggerFactory, this.network, networkPeerFactory, new NodeLifetime(), this.nodeSettings, peerAddressManager);
+                var connectionSettings = new ConnectionManagerSettings(this.nodeSettings);
                 var selfEndpointTracker = new SelfEndpointTracker();
-                var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new SmartContractVersionProvider());
-                var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
+                var connectionManager = new ConnectionManager(dateTimeProvider, this.LoggerFactory, this.network, networkPeerFactory, this.nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new SmartContractVersionProvider());
+                var peerBanning = new PeerBanning(connectionManager, this.LoggerFactory, dateTimeProvider, peerAddressManager);
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
                 var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider));
 
                 var smartContractRuleRegistration = new SmartContractPowRuleRegistration();
-                ConsensusRuleEngine consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, this.cachedCoinView, this.receiptStorage, new ChainState(new InvalidBlockHashStore(dateTimeProvider))).Register();
+                ConsensusRuleEngine consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, this.LoggerFactory, this.network, nodeDeployments, this.stateRoot, this.cachedCoinView, this.receiptStorage, new ChainState(new InvalidBlockHashStore(dateTimeProvider))).Register();
 
-                this.consensus = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),
-                    new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory), new Checkpoints(), consensusSettings, consensusRules,
+                this.Consensus = new ConsensusManager(this.network, this.LoggerFactory, chainState, new HeaderValidator(consensusRules, this.LoggerFactory),
+                    new IntegrityValidator(consensusRules, this.LoggerFactory), new PartialValidator(consensusRules, this.LoggerFactory), new Checkpoints(), consensusSettings, consensusRules,
                     new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, this.nodeSettings, dateTimeProvider, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
 
                 this.entry.Fee(11);
@@ -242,7 +244,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
                 this.chain.SetTip(this.newBlock.Block.Header);
-                await this.consensus.BlockMinedAsync(this.newBlock.Block);
+                await this.Consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(this.LoggerFactory, this.newBlock.Block));
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
@@ -276,7 +278,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                     this.chain.SetTip(block.Header);
 
-                    await this.consensus.BlockMinedAsync(block);
+                    await this.Consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(this.LoggerFactory, block));
 
                     blocks.Add(block);
                 }
@@ -837,7 +839,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             BlockTemplate pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
             context.chain.SetTip(pblocktemplate.Block.Header);
-            await context.consensus.BlockMinedAsync(pblocktemplate.Block);
+            await context.Consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(context.LoggerFactory, pblocktemplate.Block));
             return pblocktemplate;
         }
     }
