@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -18,6 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             BlockHeader header = context.ValidationContext.ChainTipToExtend.Header;
 
+            // TODO ACTIVATION we should check height of the next block, not the one which is already part of best chain
             int height = context.ValidationContext.ChainTipToExtend.Height;
 
             // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
