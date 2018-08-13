@@ -15,12 +15,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoS header.</exception>
         public override void Run(RuleContext context)
         {
-            if (!context.MinedBlock && !context.ValidationContext.ChainTipToExtand.Header.CheckProofOfWork())
+            if (!context.MinedBlock && !context.ValidationContext.ChainTipToExtend.Header.CheckProofOfWork())
                 ConsensusErrors.HighHash.Throw();
 
-            Target nextWorkRequired = context.ValidationContext.ChainTipToExtand.GetWorkRequired(this.Parent.Network.Consensus);
+            Target nextWorkRequired = context.ValidationContext.ChainTipToExtend.GetWorkRequired(this.Parent.Network.Consensus);
 
-            BlockHeader header = context.ValidationContext.ChainTipToExtand.Header;
+            BlockHeader header = context.ValidationContext.ChainTipToExtend.Header;
 
             // Check proof of work.
             if (header.Bits != nextWorkRequired)

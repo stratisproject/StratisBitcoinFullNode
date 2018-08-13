@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.MinTxFee = 1000;
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
+            this.MaxTimeOffsetSeconds = 25 * 60;
 
             var consensusFactory = new SmartContractPowConsensusFactory();
 

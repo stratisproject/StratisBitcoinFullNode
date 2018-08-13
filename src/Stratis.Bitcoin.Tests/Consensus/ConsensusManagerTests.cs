@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 {
     public class ConsensusManagerTests
     {
-        [Fact]
+        [Fact(Skip = "To be finished")]
         public void BlockMined_PartialValidationOnly_Succeeded_Consensus_TipUpdated()
         {
             TestContext builder = new TestContextBuilder().WithInitialChain(10).BuildOnly();

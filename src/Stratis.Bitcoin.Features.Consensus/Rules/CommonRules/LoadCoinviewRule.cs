@@ -23,8 +23,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
-            uint256 oldBlockHash = context.ValidationContext.ChainTipToExtand.Previous.HashBlock;
-            uint256 nextBlockHash = context.ValidationContext.ChainTipToExtand.HashBlock;
+            uint256 oldBlockHash = context.ValidationContext.ChainTipToExtend.Previous.HashBlock;
+            uint256 nextBlockHash = context.ValidationContext.ChainTipToExtend.HashBlock;
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.
@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             var utxoRuleContext = context as UtxoRuleContext;
             await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash).ConfigureAwait(false);
 
-            bool forceFlush = this.FlushRequired(context.ValidationContext.ChainTipToExtand);
+            bool forceFlush = this.FlushRequired(context.ValidationContext.ChainTipToExtend);
             if (this.PowParent.UtxoSet is CachedCoinView cachedCoinView)
                 await cachedCoinView.FlushAsync(forceFlush).ConfigureAwait(false);
         }

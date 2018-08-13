@@ -163,6 +163,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteWithConsensusOptions(new PosConsensusOptions(), () =>
             {
                 ConcurrentChain chain = GenerateChainWithHeight(5, this.stratisTest, new Key());
+                this.SetupRulesEngine(chain);
 
                 var posBlockAssembler = new PosTestBlockAssembler(this.consensusLoop.Object, this.stratisTest, new MempoolSchedulerLock(), this.mempool.Object, this.minerSettings.Object,
                                                  this.dateTimeProvider.Object, this.stakeChain.Object, this.stakeValidator.Object, this.LoggerFactory.Object);
@@ -170,8 +171,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 (int Height, int Version) result = posBlockAssembler.ComputeBlockVersion(chain.GetBlock(4));
 
                 Assert.Equal(5, result.Height);
-                uint version = ThresholdConditionCache.VersionbitsTopBits;
-                Assert.Equal((int)version, result.Version);
+                Assert.Equal((int)ThresholdConditionCache.VersionbitsTopBits, result.Version);
             });
         }
 
@@ -188,18 +188,23 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.stratisTest.Consensus.BIP9Deployments[0] = new BIP9DeploymentsParameters(19,
                     new DateTimeOffset(new DateTime(2016, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
                     new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
+
+                // As we are effectively using StratisTest the other deployments need to be disabled
+                this.stratisTest.Consensus.BIP9Deployments[BIP9Deployments.CSV] = null;
+                this.stratisTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = null;
+
                 this.stratisTest.Consensus.MinerConfirmationWindow = 2;
                 this.stratisTest.Consensus.RuleChangeActivationThreshold = 2;
 
                 ConcurrentChain chain = GenerateChainWithHeightAndActivatedBip9(5, this.stratisTest, new Key(), this.stratisTest.Consensus.BIP9Deployments[0]);
+                this.SetupRulesEngine(chain);
 
                 var posBlockAssembler = new PosTestBlockAssembler(this.consensusLoop.Object, this.stratisTest, new MempoolSchedulerLock(), this.mempool.Object, this.minerSettings.Object, this.dateTimeProvider.Object, this.stakeChain.Object, this.stakeValidator.Object, this.LoggerFactory.Object);
 
                 (int Height, int Version) result = posBlockAssembler.ComputeBlockVersion(chain.GetBlock(4));
 
                 Assert.Equal(5, result.Height);
-                uint version = ThresholdConditionCache.VersionbitsTopBits;
-                int expectedVersion = (int)(version |= (((uint)1) << 19));
+                int expectedVersion = (int)(ThresholdConditionCache.VersionbitsTopBits | (((uint)1) << 19));
                 Assert.Equal(expectedVersion, result.Version);
                 Assert.NotEqual((int)ThresholdConditionCache.VersionbitsTopBits, result.Version);
             }

@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Connection
             this.selfEndpointTracker = selfEndpointTracker;
             this.versionProvider = versionProvider;
 
-            this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{versionProvider.GetVersion()}";
+            this.Parameters.UserAgent = $"{this.ConnectionSettings.Agent}:{versionProvider.GetVersion()}";
 
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
         }
