@@ -6,6 +6,9 @@ using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.Consensus
 {
+    /// <summary>
+    /// Facilitates block downloading functionality for <see cref="ConsensusManager"/>.
+    /// </summary>
     public sealed class ConsensusBlockDownloader
     {
         private readonly ILogger logger;

@@ -5,6 +5,9 @@ using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.Consensus
 {
+    /// <summary>
+    /// Shared block loading logic used by <see cref="ConsensusManager"/>.
+    /// </summary>
     public sealed class ConsensusBlockLoader
     {
         private readonly ILogger logger;
