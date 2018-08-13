@@ -9,6 +9,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public static class SmartContractGasInjector
     {
         private const string GasMethod = "System.Void Stratis.SmartContracts.SmartContract::SpendGas(System.UInt64)";
+        private const string SmartContractBaseConstructorMethod = "System.Void Stratis.SmartContracts.SmartContract::.ctor(Stratis.SmartContracts.ISmartContractState)";
 
         private static readonly HashSet<OpCode> BranchingOps = new HashSet<OpCode>
         {
@@ -159,21 +160,50 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (!gasToSpendForSegment.ContainsKey(currentSegmentStart))
                 gasToSpendForSegment.Add(currentSegmentStart, gasTally);
 
-            foreach (Instruction instruction in gasToSpendForSegment.Keys)
+            if (methodDefinition.IsConstructor)
             {
-                var injectAfterInstruction = instruction;
+                MethodBody body = methodDefinition.Body;
 
-                // If it's a constructor we need to skip the first 3 instructions. 
-                // These will always be invoking the base constructor
-                // ldarg.0
-                // ldarg.0
-                // call SmartContract::ctor
-                if (methodDefinition.IsConstructor)
+                for (var i = 0; i < gasToSpendForSegment.Keys.Count; i++)
                 {
-                    injectAfterInstruction = instruction.Next.Next.Next;
-                }
+                    Instruction segmentInstruction = gasToSpendForSegment.Keys.ElementAt(i);
+                    Instruction instruction = body.Instructions[i];
 
-                AddSpendGasMethodBeforeInstruction(methodDefinition, gasMethod, injectAfterInstruction, gasToSpendForSegment[instruction]);
+                    if (i == 0)
+                    {
+                        // First segment occurs before base constructor is invoked
+                        // In this special case we want to inject gas spend call after this
+                        // Find the base constructor invocation
+                        while (instruction.OpCode != OpCodes.Call)
+                        {
+                            instruction = instruction.Next;
+                        }
+
+                        if (instruction.OpCode == OpCodes.Call
+                            && instruction.Operand is MethodReference methodReference
+                            && methodReference.FullName == SmartContractBaseConstructorMethod)
+                        {
+                            // We want to spend AFTER the base constructor invocation
+                            Instruction nextInstruction = instruction.Next;
+
+                            AddSpendGasMethodBeforeInstruction(methodDefinition, gasMethod, nextInstruction,
+                                gasToSpendForSegment[segmentInstruction]);
+                        }
+                    }
+                    else
+                    {
+                        AddSpendGasMethodBeforeInstruction(methodDefinition, gasMethod, segmentInstruction,
+                            gasToSpendForSegment[segmentInstruction]);
+                    }
+                }
+            }
+            else
+            {
+                foreach (Instruction instruction in gasToSpendForSegment.Keys)
+                {
+                    AddSpendGasMethodBeforeInstruction(methodDefinition, gasMethod, instruction,
+                        gasToSpendForSegment[instruction]);
+                }
             }
 
             ILProcessor il = methodDefinition.Body.GetILProcessor();

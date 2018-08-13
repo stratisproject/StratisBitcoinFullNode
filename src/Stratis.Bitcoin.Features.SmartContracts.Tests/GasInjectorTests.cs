@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using NBitcoin;
@@ -280,6 +281,51 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.Null(result.ExecutionException);
             Assert.True(result.GasConsumed > 0);
+        }
+
+        [Fact]
+        public void GasInjector_Readonly_Field_Test()
+        {
+            var contract = @"
+using System;
+using Stratis.SmartContracts;  
+
+public class Auction : SmartContract
+{
+    private readonly string test = ""Slugman's test: "";
+    public int TestCallCount = 0;
+
+    public Auction(ISmartContractState smartContractState)
+        : base(smartContractState)
+    {
+        while(TestCallCount < 5)
+        {
+            TestCallCount++;
+        }
+
+    }
+}";
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(contract);
+            Assert.True(compilationResult.Success);
+
+            var gasInjected = SmartContractGasInjector.AddGasCalculationToConstructor(compilationResult.Compilation, "Auction");
+             
+            var assembly = Assembly.Load(gasInjected);
+            var type = assembly.ExportedTypes.FirstOrDefault(t => t.Name == "Auction");
+            var gasMeter = new GasMeter((Gas) 1000);
+            var state = new SmartContractState(null, null, null, gasMeter, null, null, null);
+
+            var obj = Activator.CreateInstance(type, state);
+            var testCallCount = (int) obj.GetType().GetField("TestCallCount").GetValue(obj);
+
+            Assert.NotNull(obj);
+            Assert.Equal(5, testCallCount);
+            // Base constructor invocation: 17
+            // Test Call Count Comparison: 6x 6
+            // While loop body: 5x 8
+            // Ret: 1
+            // Total: 94
+            Assert.Equal((Gas) 94, gasMeter.GasConsumed);
         }
     }
 }
