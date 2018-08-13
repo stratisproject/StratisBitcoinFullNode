@@ -311,7 +311,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             // Create alternative chain with fork point at 450.
             ChainedHeader prevBlock = this.chain.GetBlock(450);
             var alternativeBlocks = new List<ChainedHeader>();
-            BlockHeader blockHeader = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
             for (int i = 0; i < 100; i++)
             {
                 BlockHeader header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
