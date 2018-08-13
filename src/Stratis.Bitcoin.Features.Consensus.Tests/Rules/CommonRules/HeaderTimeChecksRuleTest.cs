@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task ChecBlockPreviousTimestamp_ValidationFailAsync()
+        public void ChecBlockPreviousTimestamp_ValidationFail()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             var rule = testContext.CreateRule<HeaderTimeChecksRule>();
@@ -32,12 +32,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             // increment the bits.
             context.ValidationContext.Block.Header.BlockTime = testContext.Chain.Tip.Header.BlockTime.AddSeconds(-1);
 
-            ConsensusErrorException error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            ConsensusErrorException error = Assert.Throws<ConsensusErrorException>(() => rule.Run(context));
             Assert.Equal(ConsensusErrors.TimeTooOld, error.ConsensusError);
         }
 
         [Fact]
-        public async Task ChecBlockFutureTimestamp_ValidationFailAsync()
+        public void ChecBlockFutureTimestamp_ValidationFail()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             var rule = testContext.CreateRule<HeaderTimeChecksRule>();
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             // increment the bits.
             context.ValidationContext.Block.Header.BlockTime = context.Time.AddHours(3);
 
-            ConsensusErrorException error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            ConsensusErrorException error = Assert.Throws<ConsensusErrorException>(() => rule.Run(context));
             Assert.Equal(ConsensusErrors.TimeTooNew, error.ConsensusError);
         }
     }

@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     public class CalculateWorkRuleTest : TestConsensusRulesUnitTestBase
     {
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorExceptionAsync()
+        public void Run_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorException()
         {
             Block block = this.network.CreateBlock();
             this.ruleContext.ValidationContext = new ValidationContext()
@@ -19,13 +19,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             };
             this.ruleContext.MinedBlock = false;
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyPowRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyPowRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.HighHash, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsBadDiffBitsConsensusErrorExceptionAsync()
+        public void Run_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsBadDiffBitsConsensusErrorException()
         {
             Block block = this.network.CreateBlock();
             this.ruleContext.ValidationContext = new ValidationContext()
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             block.Header.Bits = this.ruleContext.ValidationContext.ChainTipToExtend.GetWorkRequired(this.network.Consensus) + 1;
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyPowRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyPowRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadDiffBits, exception.ConsensusError);
         }
