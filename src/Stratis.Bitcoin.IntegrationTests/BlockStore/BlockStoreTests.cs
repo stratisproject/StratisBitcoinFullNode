@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             {
                 CoreNode stratisNodeSync = builder.CreateStratisPowNode();
                 builder.StartAll();
-                stratisNodeSync.NotInIBD();
+                stratisNodeSync.NotInIBD().WithWallet();
 
                 // generate blocks and wait for the downloader to pickup
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));

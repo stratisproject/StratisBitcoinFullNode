@@ -42,9 +42,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
             this.nodeC = this.nodeBuilder.CreateStratisPowNode();
 
             this.nodeBuilder.StartAll();
-            this.nodeA.NotInIBD();
-            this.nodeB.NotInIBD();
-            this.nodeC.NotInIBD();
+            this.nodeA.NotInIBD().WithWallet();
+            this.nodeB.NotInIBD().WithWallet();
+            this.nodeC.NotInIBD().WithWallet();
 
             this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.CoinbaseMaturity;
         }

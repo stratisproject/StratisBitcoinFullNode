@@ -147,9 +147,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 CoreNode stratisReorg = builder.CreateStratisPosNode();
 
                 builder.StartAll();
-                stratisMiner.NotInIBD();
-                stratisSyncer.NotInIBD();
-                stratisReorg.NotInIBD();
+                stratisMiner.NotInIBD().WithWallet();
+                stratisSyncer.NotInIBD().WithWallet();
+                stratisReorg.NotInIBD().WithWallet();
 
                 // TODO: set the max allowed reorg threshold here
                 // assume a reorg of 10 blocks is not allowed.
@@ -233,8 +233,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 CoreNode stratisMinerRemote = builder.CreateStratisPosNode();
 
                 builder.StartAll();
-                stratisMinerLocal.NotInIBD();
-                stratisMinerRemote.NotInIBD();
+                stratisMinerLocal.NotInIBD().WithWallet();
+                stratisMinerRemote.NotInIBD().WithWallet();
 
                 stratisMinerLocal.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMinerLocal.FullNode.Network));
                 stratisMinerRemote.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMinerRemote.FullNode.Network));
