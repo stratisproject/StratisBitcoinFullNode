@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
 
-            // For now the passphrase is set to be the password by default.
+            // For now the passphrase is set to be the password by default, if not supplied. This should only happen if passphrase is null, not when it is empty string (allowed value).
             if (passphrase == null)
                 passphrase = password;
 
@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(mnemonic, nameof(mnemonic));
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
 
-            // For now the passphrase is set to be the password by default.
+            // For now the passphrase is set to be the password by default, if not supplied. This should only happen if passphrase is null, not when it is empty string (allowed value).
             if (passphrase == null)
                 passphrase = password;
 

@@ -150,8 +150,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 Mnemonic requestMnemonic = string.IsNullOrEmpty(request.Mnemonic) ? null : new Mnemonic(request.Mnemonic);
-
-                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic: requestMnemonic);
+                
+                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, passphrase: request.Passphrase, mnemonic: requestMnemonic);
 
                 // start syncing the wallet from the creation date
                 this.walletSyncManager.SyncFromDate(this.dateTimeProvider.GetUtcNow());
@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate);
+                Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate, passphrase: request.Passphrase);
 
                 this.SyncFromBestHeightForRecoveredWallets(request.CreationDate);
 

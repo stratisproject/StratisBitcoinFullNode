@@ -31,8 +31,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public string Mnemonic { get; set; }
 
+        /// <summary>
+        /// When supplied this password is used to encrypt the wallet.
+        /// </summary>
+        /// <remarks>
+        /// If the account was created previously before passphrase was available, then the password was used as passphrase. It is therefor essential that
+        /// the <see cref="Passphrase"/> is not supplied for older accounts. Make sure <see cref="Passphrase"/> is set to null, not even empty string.
+        /// </remarks>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
+
+        /// <summary>
+        /// When supplied, this passphrase is added as additional seed to the mnemonic. If this property is null, then <see cref="Password"/> is used as additional mnemonic seed.
+        /// </summary>
+        public string Passphrase { get; set; }
 
         public string Network { get; set; }
 
@@ -58,8 +70,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "A mnemonic is required.")]
         public string Mnemonic { get; set; }
 
+        /// <summary>
+        /// Supply the password that was used to create the wallet.
+        /// </summary>
+        /// <remarks>
+        /// If the account was created previously before passphrase was available, then the password was used as passphrase. It is therefor essential that
+        /// the <see cref="Passphrase"/> is not supplied for older accounts. Make sure <see cref="Passphrase"/> is set to null, not even empty string.
+        /// </remarks>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
+
+        /// <summary>
+        /// Supply the passphrase that was used when account was created. If no passphrase was used, make sure this property is null, as empty string is a valid passphrase.
+        /// </summary>
+        public string Passphrase { get; set; }
 
         public string FolderPath { get; set; }
 
