@@ -31,8 +31,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// </summary>
         private readonly uint160 contractAddress;
 
-        private readonly IDateTimeProvider dateTimeProvider;
-
         /// <summary>
         /// Context for the transaction that has just been executed.
         /// </summary>
@@ -55,11 +53,10 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
         private readonly Network network;
 
-        public TransactionCondenser(uint160 contractAddress, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IList<TransferInfo> transfers, IContractStateRepository stateRepository, Network network, ISmartContractTransactionContext transactionContext)
+        public TransactionCondenser(uint160 contractAddress, ILoggerFactory loggerFactory, IList<TransferInfo> transfers, IContractStateRepository stateRepository, Network network, ISmartContractTransactionContext transactionContext)
         {
             this.contractAddress = contractAddress;
             this.logger = loggerFactory.CreateLogger(this.GetType());
-            this.dateTimeProvider = dateTimeProvider;
             this.network = network;
             this.transactionContext = transactionContext;
             this.stateRepository = stateRepository;
@@ -86,7 +83,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         private Transaction BuildTransaction()
         {
             Transaction tx = this.network.CreateTransaction();
-            tx.Time = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+            tx.Time = this.transactionContext.Time; // set to time of actual transaction.
 
             foreach (ContractUnspentOutput vin in this.unspents)
             {
