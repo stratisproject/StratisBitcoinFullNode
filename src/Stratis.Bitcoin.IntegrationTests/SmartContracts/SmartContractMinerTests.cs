@@ -208,8 +208,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder));
 
-                this.refundProcessor = new SmartContractResultRefundProcessor(loggerFactory);
-                this.transferProcessor = new SmartContractResultTransferProcessor(loggerFactory, this.network);
+                this.refundProcessor = new SmartContractResultRefundProcessor(this.LoggerFactory);
+                this.transferProcessor = new SmartContractResultTransferProcessor(this.LoggerFactory, this.network);
 
                 this.serializer = CallDataSerializer.Default;
                 this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.LoggerFactory, this.network);
