@@ -31,61 +31,65 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Lifecycle
         [Fact]
         public void SmartContract_Restorer_NonpublicStateFieldsSetSuccess()
         {
-            LifecycleResult result = SmartContractRestorer
-                .Restore(typeof(NoParamContract), this.state);
-
-            Assert.True(result.Success);
-
-            SmartContract contract = result.Object;
-
-            FieldInfo[] fields = typeof(SmartContract).GetFields(
-                BindingFlags.Instance
-                | BindingFlags.NonPublic
-            );
-
-            foreach (FieldInfo field in fields)
-            {
-                object value = field.GetValue(contract);
-
-                switch (field.Name)
-                {
-                    case "Block":
-                        Assert.Equal(this.state.Block, value);
-                        break;
-                    case "Message":
-                        Assert.Equal(this.state.Message, value);
-                        break;
-                    case "PersistentState":
-                        Assert.Equal(this.state.PersistentState, value);
-                        break;
-                    case "gasMeter":
-                        Assert.Equal(this.state.GasMeter, value);
-                        break;
-                    case "getBalance":
-                        Assert.Equal(this.state.GetBalance, value);
-                        break;
-                    case "internalTransactionExecutor":
-                        Assert.Equal(this.state.InternalTransactionExecutor, value);
-                        break;
-                    case "internalHashHelper":
-                        Assert.Equal(this.state.InternalHashHelper, value);
-                        break;
-                    case "smartContractState":
-                        Assert.Equal(this.state, value);
-                        break;
-                }
-            }
+            Assert.Equal(1,2);
+            //TODO ACTIVATION
+            //LifecycleResult result = SmartContractRestorer
+            //    .Restore(typeof(NoParamContract), this.state);
+            //
+            //Assert.True(result.Success);
+            //
+            //SmartContract contract = result.Object;
+            //
+            //FieldInfo[] fields = typeof(SmartContract).GetFields(
+            //    BindingFlags.Instance
+            //    | BindingFlags.NonPublic
+            //);
+            //
+            //foreach (FieldInfo field in fields)
+            //{
+            //    object value = field.GetValue(contract);
+            //
+            //    switch (field.Name)
+            //    {
+            //        case "Block":
+            //            Assert.Equal(this.state.Block, value);
+            //            break;
+            //        case "Message":
+            //            Assert.Equal(this.state.Message, value);
+            //            break;
+            //        case "PersistentState":
+            //            Assert.Equal(this.state.PersistentState, value);
+            //            break;
+            //        case "gasMeter":
+            //            Assert.Equal(this.state.GasMeter, value);
+            //            break;
+            //        case "getBalance":
+            //            Assert.Equal(this.state.GetBalance, value);
+            //            break;
+            //        case "internalTransactionExecutor":
+            //            Assert.Equal(this.state.InternalTransactionExecutor, value);
+            //            break;
+            //        case "internalHashHelper":
+            //            Assert.Equal(this.state.InternalHashHelper, value);
+            //            break;
+            //        case "smartContractState":
+            //            Assert.Equal(this.state, value);
+            //            break;
+            //    }
+            //}
         }
 
         [Fact]
         public void SmartContract_Restorer_ConstructorNotInvokedSuccess()
         {
-            LifecycleResult result = SmartContractRestorer
-                .Restore(typeof(ConstructorInvokedContract), this.state);
-
-            Assert.True(result.Success);
-            Assert.NotNull(result.Object);
-            Assert.False(((ConstructorInvokedContract)result.Object).ConstructorInvoked);
+            Assert.Equal(1, 2);
+            //TODO ACTIVATION
+            //LifecycleResult result = SmartContractRestorer
+            //    .Restore(typeof(ConstructorInvokedContract), this.state);
+            //
+            //Assert.True(result.Success);
+            //Assert.NotNull(result.Object);
+            //Assert.False(((ConstructorInvokedContract)result.Object).ConstructorInvoked);
         }
     }
 }

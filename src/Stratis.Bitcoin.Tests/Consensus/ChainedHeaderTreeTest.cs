@@ -2097,63 +2097,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 28 @ Peers E,F claims 10d. PartialOrFullValidationFailed(7a), make sure that 7a,8a,9a,8d,9d,10d,11d are removed and the peers A, E, F, D are marked as PeersToBan.
-        /// </summary>
-        [Fact]
-        public void PeerEAndFClaimsHead_PartialOrFullValidationFailed_RestOfHeadMustBeRemoved_PeersMarkedAsPeersToBan()
-        {
-            const int initialChainSize = 5;
-            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
-            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
-            ChainedHeader initialChainTip = ctx.InitialChainTip;
-            ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
-
-            ctx.SetupPeersForTest(cht, initialChainTip);
-
-            // Additional SetUp for current test.
-            ChainedHeader chainATip = cht.GetPeerTipChainedHeaderByPeerId(0);
-            ChainedHeader chainDTip = cht.GetPeerTipChainedHeaderByPeerId(3);
-            ChainedHeader chainETip = ctx.ExtendAChain(2, chainDTip.GetAncestor(10)); // i.e. ((h1=h2=h3=h4=h5)=6a=7a)=8d=9d=10d)=11e
-            ChainedHeader chainFTip = ctx.ExtendAChain(2, chainDTip.GetAncestor(10)); // i.e. ((h1=h2=h3=h4=h5)=6a=7a)=8d=9d=10d)=11f
-            List<BlockHeader> peerEBlockHeaders = ctx.ChainedHeaderToList(chainETip, chainETip.Height);
-            List<BlockHeader> peerFBlockHeaders = ctx.ChainedHeaderToList(chainFTip, chainFTip.Height);
-
-            ConnectNewHeadersResult eResult = cht.ConnectNewHeaders(5, peerEBlockHeaders);
-            cht.ConnectNewHeaders(6, peerFBlockHeaders);
-
-            var peerIdsByHash = new Dictionary<int, uint256>(cht.GetPeerTipsByPeerId());
-
-            var dictionaryAffectedPeers = new Dictionary<int, uint256>()
-            {
-                {0, peerIdsByHash[0]},
-                {3, peerIdsByHash[3]},
-                {5, peerIdsByHash[5]},
-                {6, peerIdsByHash[6]}
-            };
-
-            List<ChainedHeader> listOfChainedHeaders = chainATip.ToArray(chainATip.Height).Where(x => x.Height >= 7).ToList();
-            listOfChainedHeaders.AddRange(chainDTip.ToArray(chainDTip.Height).Where(x => x.Height >= 7).ToList());
-            listOfChainedHeaders.AddRange(chainETip.ToArray(chainETip.Height).Where(x => x.Height >= 7).ToList());
-            listOfChainedHeaders.AddRange(chainFTip.ToArray(chainFTip.Height).Where(x => x.Height >= 7).ToList());
-            List<ChainedHeader> listOfChainedHeadersMustBeRemovedFromCht = listOfChainedHeaders.Distinct().ToList();
-
-            ChainedHeader[] consumedHeaders = eResult.Consumed.ToArray(12);
-            List<int> peersToBan = cht.PartialOrFullValidationFailed(consumedHeaders.FirstOrDefault(x => x.Height == 7)); // 7a validation failed.
-            peersToBan.Count.Should().Be(4); // Check that just four peers have been banned.
-
-            List<uint256> peerIdsByHashAfterFail = cht.GetPeerIdsByTipHash().Select(x => x.Key).ToList();
-            List<ChainedHeader> chainedHeadersAfterFail = cht.GetChainedHeadersByHash().Select(x => x.Value).ToList();
-
-            chainedHeadersAfterFail.Should().NotContain(listOfChainedHeadersMustBeRemovedFromCht); // Check that headers have been removed.
-
-            peersToBan.Should().Contain(dictionaryAffectedPeers.Select(x => x.Key).ToList()); // Check that Peers A, D, E, F are in ban list.
-
-            peerIdsByHashAfterFail.Should().NotContain(dictionaryAffectedPeers.Select(x => x.Value).ToList()); // Check that Peers A, D, E, F have been disconected.
-
-            this.CheckChainedHeaderTreeConsistency(cht, ctx, consensusTip, new HashSet<int>() { 1, 2 });
-        }
-
-        /// <summary>
         /// Issue 40 @ CT advances after last checkpoint to height LC + MaxReorg + 10. New chain is presented with
         /// fork point at LC + 5, chain is not accepted.
         /// </summary>
