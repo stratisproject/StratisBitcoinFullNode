@@ -15,10 +15,9 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
@@ -139,7 +138,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
                 var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider));
 
-                this.cachedCoinView = new CachedCoinView(chainState, new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory(), new NodeLifetime());
+                var coinViewStorageMock = new Mock<ICoinViewStorage>();
+                this.cachedCoinView = new CachedCoinView(chainState, coinViewStorageMock.Object, dateTimeProvider, new LoggerFactory(), new NodeLifetime());
                 this.inMemoryCoinView = new InMemoryCoinView(newBlock.Block.GetHash());
 
                 var loggerFactory = new ExtendedLoggerFactory();

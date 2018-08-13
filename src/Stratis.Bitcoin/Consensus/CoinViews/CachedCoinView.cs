@@ -9,12 +9,12 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus.CoinViews
+namespace Stratis.Bitcoin.Consensus.CoinViews
 {
     /// <summary>
     /// Cache layer for coinview prevents too frequent updates of the data in the underlying storage.
     /// </summary>
-    public class CachedCoinView : ICoinView, IBackedCoinView, IDisposable, IInitializable
+    public class CachedCoinView : ICachedCoinView, IBackedCoinView
     {
         /// <summary>
         /// Item of the coinview cache that holds information about the unspent outputs
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Maximum interval between saving batches.</summary>
         /// <remarks>Interval value is a prime number that wasn't used as an interval in any other component. That prevents having CPU consumption spikes.</remarks>
-        private const int BatchMaxSaveIntervalSeconds = 37;
+        private const int BatchMaxSaveIntervalSeconds = 41;
 
         /// <summary>Maximum number of bytes the batch can hold until the rewind data items are stored to the disk.</summary>
         internal const int BatchThresholdSizeBytes = 5 * 1000 * 1000;
@@ -376,6 +376,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     }
 
                     this.rewindDataBatch.Remove(lastItem);
+
+                    this.logger.LogTrace("(-)[REMOVED_FROM_BATCH]:'{0}'", lastItem.PreviousBlockHash);
                     return lastItem.PreviousBlockHash;
                 } 
 
@@ -398,10 +400,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.dequeueLoopTask?.GetAwaiter().GetResult();
         }
 
-        public async Task InitializeAsync()
+        public void Initialize()
         {
             this.dequeueLoopTask = this.DequeueRewindDataContinuouslyAsync();
-            await Task.FromResult(true);
         }
 
         /// <summary>

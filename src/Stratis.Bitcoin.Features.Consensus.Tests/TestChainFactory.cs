@@ -12,8 +12,8 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Consensus.Validators;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -106,7 +106,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.InitialBlockDownloadState = new InitialBlockDownloadState(testChainContext.ChainState, testChainContext.Network, consensusSettings, new Checkpoints());
 
             var inMemoryCoinView = new InMemoryCoinView(testChainContext.Chain.Tip.HashBlock);
-            var cachedCoinView = new CachedCoinView(testChainContext.ChainState, inMemoryCoinView, DateTimeProvider.Default, testChainContext.LoggerFactory, new NodeLifetime());
+            var coinViewStorageMock = new Mock<ICoinViewStorage>();
+            var cachedCoinView = new CachedCoinView(testChainContext.ChainState, coinViewStorageMock.Object, DateTimeProvider.Default, testChainContext.LoggerFactory, new NodeLifetime());
 
             var dataFolder = new DataFolder(TestBase.AssureEmptyDir(dataDir));
             testChainContext.PeerAddressManager =

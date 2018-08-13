@@ -10,9 +10,9 @@ using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -20,6 +20,7 @@ using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 using static NBitcoin.Transaction;
+using UInt256Comparer = Stratis.Bitcoin.Consensus.UInt256Comparer;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -123,7 +124,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // TODO: refactor test as Flush is no longer available
                 // cacheCoinView.FlushAsync().Wait();
-
+                
 
                 Assert.True(tester.Exists(coins[2]));
                 Assert.True(tester.Exists(coin[0]));

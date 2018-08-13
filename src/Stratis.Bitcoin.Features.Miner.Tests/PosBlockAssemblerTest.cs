@@ -8,9 +8,9 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -432,7 +432,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new NodeDeployments(this.stratisTest, chain),
                 new ConsensusSettings(new NodeSettings(this.stratisTest)),
                 new Checkpoints(),
-                new Mock<ICoinView>().Object,
+                new Mock<ICachedCoinView>().Object,
                 new Mock<IStakeChain>().Object,
                 new Mock<IStakeValidator>().Object,
                 new Mock<IChainState>().Object);

@@ -4,9 +4,9 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Network network,
             NodeDeployments nodeDeployments,
             ContractStateRepositoryRoot originalStateRoot,
-            ICoinView utxoSet,
+            ICachedCoinView utxoSet,
             ISmartContractReceiptStorage receiptStorage,
             IChainState chainState)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState)

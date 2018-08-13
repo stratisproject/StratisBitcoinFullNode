@@ -4,7 +4,7 @@ using System.Threading;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus.CoinViews
+namespace Stratis.Bitcoin.Consensus.CoinViews
 {
     /// <summary>
     /// Statistics to measure the hit rate of the cache.

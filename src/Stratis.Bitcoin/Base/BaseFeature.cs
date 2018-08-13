@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
@@ -113,6 +114,8 @@ namespace Stratis.Bitcoin.Base
         private readonly IPartialValidator partialValidator;
         private readonly IBlockPuller blockPuller;
         private readonly IBlockStore blockStore;
+        private readonly ICachedCoinView cachedCoinView;
+        private readonly ICoinViewStorage coinViewStorage;
 
         /// <inheritdoc cref="IFinalizedBlockInfo"/>
         private readonly IFinalizedBlockInfo finalizedBlockInfo;
@@ -139,6 +142,8 @@ namespace Stratis.Bitcoin.Base
             IPartialValidator partialValidator,
             IBlockPuller blockPuller,
             IBlockStore blockStore,
+            ICachedCoinView cachedCoinView,
+            ICoinViewStorage coinViewStorage,
             Network network)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -154,6 +159,8 @@ namespace Stratis.Bitcoin.Base
             this.partialValidator = partialValidator;
             this.blockPuller = blockPuller;
             this.blockStore = blockStore;
+            this.cachedCoinView = cachedCoinView;
+            this.coinViewStorage = coinViewStorage;
             this.network = network;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
@@ -209,6 +216,10 @@ namespace Stratis.Bitcoin.Base
             // Block store must be initialized before consensus manager.
             // This may be a temporary solution until a better way is found to solve this dependency.
             this.blockStore.InitializeAsync().GetAwaiter().GetResult();
+
+            // Initialize coin view and coin view storage
+            this.coinViewStorage.InitializeAsync().GetAwaiter().GetResult();
+            this.cachedCoinView.Initialize();
 
             this.consensusRules.Initialize().GetAwaiter().GetResult();
 
@@ -299,6 +310,8 @@ namespace Stratis.Bitcoin.Base
             this.blockPuller.Dispose();
 
             this.consensusManager.Dispose();
+            this.coinViewStorage.Dispose();
+            this.cachedCoinView.Dispose();
             this.consensusRules.Dispose();
 
             this.blockStore.Dispose();

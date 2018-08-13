@@ -2,18 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class CoinViewTester
     {
-        private ICoinView coinView;
+        private ICachedCoinView coinView;
         private List<UnspentOutputs> pendingCoins = new List<UnspentOutputs>();
         private uint256 hash;
 
-        public CoinViewTester(ICoinView coinView)
+        public CoinViewTester(ICachedCoinView coinView)
         {
             this.coinView = coinView;
             this.hash = coinView.GetTipHashAsync().Result;

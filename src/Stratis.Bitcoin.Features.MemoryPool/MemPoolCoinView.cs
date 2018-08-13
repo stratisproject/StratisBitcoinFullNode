@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// Memory pool coin view.
     /// Provides coin view representation of memory pool transactions via a backed coin view.
     /// </summary>
-    public class MempoolCoinView : ICoinView, IBackedCoinView
+    public class MempoolCoinView : ICoinView
     {
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="mempoolLock"/>.</remarks>
@@ -30,13 +30,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Constructs a memory pool coin view.
         /// </summary>
-        /// <param name="coinViewStorage">The backing coin view.</param>
+        /// <param name="coinView">The coin view.</param>
         /// <param name="memPool">Transaction memory pool for managing transactions in the memory pool.</param>
         /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
         /// <param name="mempoolValidator">Memory pool validator for validating transactions.</param>
-        public MempoolCoinView(ICoinViewStorage coinViewStorage, ITxMempool memPool, SchedulerLock mempoolLock, IMempoolValidator mempoolValidator)
+        public MempoolCoinView(ICoinView coinView, ITxMempool memPool, SchedulerLock mempoolLock, IMempoolValidator mempoolValidator)
         {
-            this.CoinViewStorage = coinViewStorage;
+            this.CoinView = coinView;
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
             this.mempoolValidator = mempoolValidator;
@@ -51,13 +51,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Backing coin view instance.
         /// </summary>
-        public ICoinViewStorage CoinViewStorage { get; }
-
-        /// <inheritdoc />
-        public Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, ChainedHeader currentBlock)
-        {
-            throw new NotImplementedException();
-        }
+        public ICoinView CoinView { get; }
 
         /// <inheritdoc />
         public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -85,7 +79,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             // lookup all ids (duplicate ids are ignored in case a trx spends outputs from the same parent).
             List<uint256> ids = trx.Inputs.Select(n => n.PrevOut.Hash).Distinct().Concat(new[] { trx.GetHash() }).ToList();
-            FetchCoinsResponse coins = await this.CoinViewStorage.FetchCoinsAsync(ids.ToArray());
+            FetchCoinsResponse coins = await this.CoinView.FetchCoinsAsync(ids.ToArray());
             // find coins currently in the mempool
             List<Transaction> mempoolcoins = await this.mempoolLock.ReadAsync(() =>
             {
@@ -212,5 +206,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             return this.Set.GetOutputFor(input);
         }
+
+        public void Dispose()
+        {
+        }
+
+        public ICoinViewStorage CoinViewStorage { get; }
     }
 }

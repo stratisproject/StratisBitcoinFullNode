@@ -1,10 +1,11 @@
-﻿using NBitcoin;
+﻿using System.Threading;
+using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus.CoinViews
+namespace Stratis.Bitcoin.Consensus.CoinViews
 {
     /// <summary>
-    /// Return value of <see cref="CoinView.FetchCoinsAsync(uint256[])"/>,
+    /// Return value of <see cref="ICoinView.FetchCoinsAsync(uint256[], CancellationToken)"/>,
     /// contains the coinview tip's hash and information about unspent coins in the requested transactions.
     /// </summary>
     public class FetchCoinsResponse

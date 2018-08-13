@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus.CoinViews
+namespace Stratis.Bitcoin.Consensus.CoinViews
 {
     /// <summary>
     /// Stack of coinview layers. All classes in the stack have to be based on <see cref="ICoinView"/> interface

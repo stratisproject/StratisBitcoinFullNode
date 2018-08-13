@@ -5,8 +5,8 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules
@@ -17,12 +17,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     public class PowConsensusRuleEngine : ConsensusRuleEngine
     {
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
-        public ICoinView UtxoSet { get; }
+        public ICachedCoinView UtxoSet { get; }
 
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
-        public PowConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState)
+        public PowConsensusRuleEngine(
+            Network network,
+            ILoggerFactory loggerFactory,
+            IDateTimeProvider dateTimeProvider,
+            ConcurrentChain chain,
+            NodeDeployments nodeDeployments,
+            ConsensusSettings consensusSettings,
+            ICheckpoints checkpoints,
+            ICachedCoinView utxoSet,
+            IChainState chainState)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, chainState)
         {
             this.UtxoSet = utxoSet;
@@ -52,24 +58,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override Task Initialize()
         {
-            var cachedCoinView = (CachedCoinView) this.UtxoSet;
-            var dbreezeCoinViewStorage = (DBreezeCoinView) cachedCoinView.CoinViewStorage;
-            Task storageInitializationTask = dbreezeCoinViewStorage.InitializeAsync();
-            Task cachedCoinViewInitializationTask = cachedCoinView.InitializeAsync(); 
-
-            return storageInitializationTask.ContinueWith((t) => cachedCoinViewInitializationTask);
-        }
-
-        public override void Dispose()
-        {
-            var cache = this.UtxoSet as CachedCoinView;
-            if (cache != null)
-            {
-                this.logger.LogInformation("Flushing Cache CoinView...");
-                cache.Dispose();
-            }
-
-            ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).CoinViewStorage).Dispose();
+            return Task.CompletedTask;
         }
     }
 }

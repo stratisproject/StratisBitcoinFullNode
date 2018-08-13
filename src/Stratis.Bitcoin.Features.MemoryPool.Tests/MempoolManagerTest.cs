@@ -4,8 +4,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -57,7 +56,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                         );
 
                 var mockPersist = new Mock<IMempoolPersistence>();
-                var mockCoinView = new Mock<ICoinViewStorage>();
+                var mockCoinViewStorage = new Mock<ICoinViewStorage>();
+                var mockCoinView = new Mock<ICoinView>();
 
                 return new MempoolManager(new MempoolSchedulerLock(), mempool, mockValidator.Object, dateTime, settings, mockPersist.Object, mockCoinView.Object, loggerFactory, nodeSettings.Network);
             }

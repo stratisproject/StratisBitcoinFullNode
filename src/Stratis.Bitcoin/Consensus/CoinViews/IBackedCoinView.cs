@@ -1,4 +1,4 @@
-﻿namespace Stratis.Bitcoin.Features.Consensus.CoinViews
+﻿namespace Stratis.Bitcoin.Consensus.CoinViews
 {
     /// <summary>
     /// Interface of coin views that are internally based on other, lower level, implementations of coin view.

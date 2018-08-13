@@ -9,8 +9,8 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -88,14 +88,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IStakeChain> stakeChain;
         protected Mock<IStakeValidator> stakeValidator;
         protected Mock<IBlockPuller> lookaheadBlockPuller;
-        protected Mock<ICoinView> coinView;
+        protected Mock<ICachedCoinView> coinView;
 
         public PosConsensusRuleUnitTestBase() : base(KnownNetworks.StratisTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.lookaheadBlockPuller = new Mock<IBlockPuller>();
-            this.coinView = new Mock<ICoinView>();
+            this.coinView = new Mock<ICachedCoinView>();
         }
 
         protected T CreateRule<T>() where T : ConsensusRule, new()
@@ -206,14 +206,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IStakeChain> stakeChain;
         protected Mock<IStakeValidator> stakeValidator;
         protected Mock<IBlockPuller> lookaheadBlockPuller;
-        protected Mock<ICoinView> coinView;
+        protected Mock<ICachedCoinView> coinView;
 
         public TestPosConsensusRulesUnitTestBase() : base(KnownNetworks.StratisTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.lookaheadBlockPuller = new Mock<IBlockPuller>();
-            this.coinView = new Mock<ICoinView>();
+            this.coinView = new Mock<ICachedCoinView>();
             this.consensusRules = InitializeConsensusRules();
         }
 

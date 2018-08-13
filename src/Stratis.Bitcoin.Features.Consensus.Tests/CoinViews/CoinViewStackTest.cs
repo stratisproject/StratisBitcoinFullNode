@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -132,6 +132,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             {
                 throw new NotImplementedException();
             }
+
+            public void Dispose()
+            {  
+            }
         }
 
         private class BackedCoinView1 : ICoinView, IBackedCoinView
@@ -165,6 +169,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             {
                 throw new NotImplementedException();
             }
+
+            public void Dispose()
+            {
+            }
         }
 
         private class BackedCoinView2 : ICoinView, IBackedCoinView
@@ -197,6 +205,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             public Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, ChainedHeader currentBlock)
             {
                 throw new NotImplementedException();
+            }
+
+            public void Dispose()
+            {   
             }
         }
     }

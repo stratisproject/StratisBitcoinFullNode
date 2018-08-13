@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
@@ -100,7 +101,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Interfaces
         /// </summary>
         /// <param name="pcoins">Coin view of the transaction.</param>
         /// <exception cref="NotImplementedException"/>
-        void Check(ICoinViewStorage pcoins);
+        void Check(ICoinView pcoins);
 
         /// <summary>
         /// Clears the collections that contain the memory pool transactions,

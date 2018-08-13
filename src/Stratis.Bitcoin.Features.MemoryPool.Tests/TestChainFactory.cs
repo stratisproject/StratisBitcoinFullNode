@@ -11,10 +11,9 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
@@ -79,11 +78,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chain = new ConcurrentChain(network);
-            InMemoryCoinView inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
+            var inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
 
             var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider));
 
-            var cachedCoinView = new CachedCoinView(chainState, inMemoryCoinView, DateTimeProvider.Default, loggerFactory, new NodeLifetime());
+            var coinViewStorage = new Mock<ICoinViewStorage>();
+            var cachedCoinView = new CachedCoinView(chainState, coinViewStorage.Object, DateTimeProvider.Default, loggerFactory, new NodeLifetime());
             var networkPeerFactory = new NetworkPeerFactory(network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
 
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());

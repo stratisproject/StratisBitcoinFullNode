@@ -12,12 +12,12 @@ using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus.CoinViews
+namespace Stratis.Bitcoin.Consensus.CoinViews
 {
     /// <summary>
     /// Persistent implementation of coinview using DBreeze database.
     /// </summary>
-    public class DBreezeCoinView : ICoinViewStorage, IDisposable
+    public class DBreezeCoinView : ICoinViewStorage
     {
         /// <summary>Database key under which the block hash of the coin view's current tip is stored.</summary>
         private static readonly byte[] blockHashKey = new byte[0];
@@ -80,9 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.PerformanceCounter = new BackendPerformanceCounter(this.DateTimeProvider);
         }
 
-        /// <summary>
-        /// Initializes the database tables used by the coinview.
-        /// </summary>
+        /// <inheritdoc />
         public Task InitializeAsync()
         {
             this.logger.LogTrace("()");
@@ -151,7 +149,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                     using (new StopwatchDisposable(o => this.PerformanceCounter.AddQueryTime(o)))
                     {
-                        uint256 blockHash = this.GetTipHash(transaction);
+                        uint256 currentTipBlockHash = this.GetTipHash(transaction);
                         var result = new UnspentOutputs[txIds.Length];
                         this.PerformanceCounter.AddQueriedEntities(txIds.Length);
 
@@ -163,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                             result[i++] = outputs;
                         }
 
-                        res = new FetchCoinsResponse(result, blockHash);
+                        res = new FetchCoinsResponse(result, currentTipBlockHash);
                     }
                 }
 
@@ -268,26 +266,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             this.logger.LogTrace("(-)");
             return task;
-        }
-
-        private Dictionary<uint256, TxOut[]> MapOutputTransactionIdsToListOfOriginalOutputs(IEnumerable<TxOut[]> originalOutputs, List<UnspentOutputs> allUnspentOutputs)
-        {
-            var unspentToOriginal = new Dictionary<uint256, TxOut[]>(allUnspentOutputs.Count);
-            using (new StopwatchDisposable(o => this.PerformanceCounter.AddInsertTime(o)))
-            {
-                if (originalOutputs == null) return unspentToOriginal;
-
-                using (IEnumerator<TxOut[]> originalEnumerator = originalOutputs.GetEnumerator())
-                {
-                    foreach (UnspentOutputs output in allUnspentOutputs)
-                    {
-                        originalEnumerator.MoveNext(); 
-                        unspentToOriginal.Add(output.TransactionId, originalEnumerator.Current);
-                    }
-                }
-            }
-
-            return unspentToOriginal;
         }
 
         /// <summary>

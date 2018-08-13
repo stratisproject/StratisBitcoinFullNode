@@ -4,7 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
                 chain, new Mock<ICheckpoints>().Object, new Configuration.Settings.ConsensusSettings(),
                 DateTimeProvider.Default, executorFactory.Object, loggerFactory, network,
                 new Base.Deployments.NodeDeployments(network, chain), contractState,
-                new Mock<ICoinView>().Object,
+                new Mock<ICachedCoinView>().Object,
                 receiptStorage.Object,
                 new Mock<IChainState>().Object);
 

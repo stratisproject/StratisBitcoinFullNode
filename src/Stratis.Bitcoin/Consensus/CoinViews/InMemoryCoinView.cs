@@ -6,13 +6,13 @@ using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using ReaderWriterLock = NBitcoin.ReaderWriterLock;
 
-namespace Stratis.Bitcoin.Features.Consensus.CoinViews
+namespace Stratis.Bitcoin.Consensus.CoinViews
 {
     /// <summary>
     /// Coinview that holds all information in the memory, which is used in tests.
     /// </summary>
     /// <remarks>Rewinding is not supported in this implementation.</remarks>
-    public class InMemoryCoinView : ICoinViewStorage, ICoinView
+    public class InMemoryCoinView : ICachedCoinView
     {
         /// <summary>Lock object to protect access to <see cref="unspents"/> and <see cref="tipHash"/>.</summary>
         private readonly ReaderWriterLock lockobj = new ReaderWriterLock();
@@ -102,10 +102,18 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             return Task.FromResult(true);
         }
 
+        public void Initialize()
+        {  
+        }
+
         /// <inheritdoc />
         public Task<uint256> Rewind()
         {
             throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {   
         }
     }
 }

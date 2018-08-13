@@ -8,8 +8,7 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -126,7 +125,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly ConcurrentChain chain;
 
         /// <summary>Coin view of the memory pool.</summary>
-        private readonly ICoinViewStorage coinViewStorage;
+        private readonly ICoinView coinView;
 
         /// <inheritdoc cref="IConsensusRuleEngine" />
         private readonly IConsensusRuleEngine consensusRules;
@@ -162,7 +161,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="dateTimeProvider">Date and time information provider.</param>
         /// <param name="mempoolSettings">Settings from the memory pool.</param>
         /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
-        /// <param name="coinViewStorage">Coin view storage of the memory pool.</param>
+        /// <param name="coinView">Coin view of the memory pool.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
         /// <param name="nodeSettings">Full node settings.</param>
         /// <param name="consensusRules">Consensus rules engine.</param>
@@ -172,7 +171,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
             ConcurrentChain chain,
-            ICoinViewStorage coinViewStorage,
+            ICoinView coinView,
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
             IConsensusRuleEngine consensusRules)
@@ -183,7 +182,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolSettings = mempoolSettings;
             this.chain = chain;
             this.network = chain.Network;
-            this.coinViewStorage = coinViewStorage;
+            this.coinView = coinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             // TODO: Implement later with CheckRateLimit()
             // this.freeLimiter = new FreeLimiterSection();
@@ -238,7 +237,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public Task SanityCheck()
         {
-            return this.mempoolLock.ReadAsync(() => this.memPool.Check(this.coinViewStorage));
+            return this.mempoolLock.ReadAsync(() => this.memPool.Check(this.coinView));
         }
 
         /// <summary>
@@ -433,7 +432,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.PreMempoolChecks(context);
 
             // create the MemPoolCoinView and load relevant utxoset
-            context.View = new MempoolCoinView(this.coinViewStorage, this.memPool, this.mempoolLock, this);
+            context.View = new MempoolCoinView(this.coinView, this.memPool, this.mempoolLock, this);
             await context.View.LoadViewAsync(context.Transaction).ConfigureAwait(false);
 
             // adding to the mem pool can only be done sequentially
