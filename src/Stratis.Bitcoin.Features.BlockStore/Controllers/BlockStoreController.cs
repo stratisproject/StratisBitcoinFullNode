@@ -27,17 +27,27 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// <summary>An interface that provides information about the chain and validation.</summary>
         private readonly IChainState chainState;
 
-        public BlockStoreController(ILoggerFactory loggerFactory, 
-            IBlockStoreCache blockStoreCache, IChainState chainState)
+        /// <summary>
+        /// Current network for the active controller instance.
+        /// </summary>
+        private readonly Network network;
+
+        public BlockStoreController(Network network, 
+            ILoggerFactory loggerFactory, 
+            IBlockStoreCache blockStoreCache, 
+            IChainState chainState)
         {
+            Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
             Guard.NotNull(chainState, nameof(chainState));
 
+            this.network = network;
             this.blockStoreCache = blockStoreCache;
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
+
         /// <summary>
         /// Retrieves a given block given a block hash.
         /// </summary>
@@ -57,10 +67,22 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
             try
             {
                 Block block = await this.blockStoreCache.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);
-                if(block == null) return new NotFoundObjectResult("Block not found");
-                return query.OutputJson 
-                    ? this.Json(new BlockModel(block))
-                    : this.Json(block);
+
+                if (block == null)
+                {
+                    return new NotFoundObjectResult("Block not found");
+                }
+
+                if (!query.OutputJson)
+                {
+                    return this.Json(block);
+                }
+                else
+                {
+                    return query.Verbose
+                    ? this.Json(new BlockVerboseModel(block, this.network))
+                    : this.Json(new BlockModel(block));
+                }
             } 
             catch (Exception e)
             {
