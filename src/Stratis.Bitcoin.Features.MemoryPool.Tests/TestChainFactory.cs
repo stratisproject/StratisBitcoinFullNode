@@ -11,8 +11,8 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Consensus.Visitors;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(), inMemoryCoinView, chainState).Register();
 
             var consensus = new ConsensusManager(network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),
-                new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory),new Checkpoints(), consensusSettings, consensusRules,
+                new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory), new Checkpoints(), consensusSettings, consensusRules,
                 new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, nodeSettings, dateTimeProvider, new Mock<IInitialBlockDownloadState>().Object, chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
 
             var blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             BlockTemplate newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
             chain.SetTip(newBlock.Block.Header);
 
-            await consensus.BlockMinedAsync(newBlock.Block);
+            await consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(loggerFactory, newBlock.Block));
 
             List<BlockInfo> blockinfo = CreateBlockInfoList();
 
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
 
                 chain.SetTip(currentBlock.Header);
-                await consensus.BlockMinedAsync(currentBlock);
+                await consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(loggerFactory, currentBlock));
                 blocks.Add(currentBlock);
             }
 

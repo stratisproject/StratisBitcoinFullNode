@@ -1,5 +1,7 @@
 ﻿using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Consensus.Visitors;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Consensus
@@ -16,8 +18,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             builder.ConsensusManager.InitializeAsync(chainTip).GetAwaiter().GetResult();
 
             var minedBlock = builder.CreateBlock(chainTip);
-            var result = builder.ConsensusManager.BlockMinedAsync(minedBlock).GetAwaiter().GetResult();
-            Assert.NotNull(result);
+            var blockMinedVisitor = new BlockMinedConsensusVisitor(new ExtendedLoggerFactory(), minedBlock);
+            var result = builder.ConsensusManager.AcceptVisitorAsync(blockMinedVisitor);
+
+            Assert.NotNull(result.Result.ChainedHeaderBlock);
             Assert.Equal(minedBlock.GetHash(), builder.ConsensusManager.Tip.HashBlock);
         }
     }

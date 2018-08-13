@@ -15,8 +15,8 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Consensus.Visitors;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Simple block creation, nothing special yet:
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
-                await this.consensus.BlockMinedAsync(this.newBlock.Block);
+                await this.consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(loggerFactory, newBlock.Block));
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     block.Header.Nonce = this.blockinfo[i].nonce;
 
-                    await this.consensus.BlockMinedAsync(block);
+                    await this.consensus.AcceptVisitorAsync(new BlockMinedConsensusVisitor(loggerFactory, block));
 
                     blocks.Add(block);
                 }

@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -51,14 +50,14 @@ namespace Stratis.Bitcoin.Tests.Base
         [Fact]
         public async Task ConsensusTipChanged_CachedHeadersConsumedFullyAsync()
         {
-            var cache = new List<BlockHeader>() {this.headers[11].Header, this.headers[12].Header};
+            var cache = new List<BlockHeader>() { this.headers[11].Header, this.headers[12].Header };
 
             ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
-                (presentedHeaders, triggerDownload) =>
+                (presentedHeaders) =>
                 {
                     Assert.Equal(this.headers[12].Header, presentedHeaders.Last());
 
-                    return new ConnectNewHeadersResult() {Consumed = this.headers[12]};
+                    return new ConnectNewHeadersResult() { Consumed = this.headers[12] };
                 });
 
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
@@ -85,11 +84,11 @@ namespace Stratis.Bitcoin.Tests.Base
                 cache.Add(this.headers[i].Header);
 
             ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
-                (presentedHeaders, triggerDownload) =>
+                (presentedHeaders) =>
                 {
                     Assert.Equal(this.headers[50].Header, presentedHeaders.Last());
 
-                    return new ConnectNewHeadersResult() {Consumed = this.headers[40]};
+                    return new ConnectNewHeadersResult() { Consumed = this.headers[40] };
                 });
 
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
@@ -119,7 +118,7 @@ namespace Stratis.Bitcoin.Tests.Base
             var cache = new List<BlockHeader>() { this.headers[14].Header, this.headers[15].Header };
 
             ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], cache, this.headers[10], NetworkPeerState.HandShaked,
-                (presentedHeaders, triggerDownload) =>
+                (presentedHeaders) =>
                 {
                     Assert.Equal(this.headers[14].Header, presentedHeaders.First());
 
@@ -222,7 +221,7 @@ namespace Stratis.Bitcoin.Tests.Base
             this.helper.CreateAndAttachBehavior(this.headers[10]);
 
             List<ChainedHeader> bogusHeaders = ChainedHeadersHelper.CreateConsecutiveHeaders(5);
-            var payload = new GetHeadersPayload(new BlockLocator() { Blocks = bogusHeaders.Select(x => x.HashBlock).ToList()});
+            var payload = new GetHeadersPayload(new BlockLocator() { Blocks = bogusHeaders.Select(x => x.HashBlock).ToList() });
 
             await this.helper.ReceivePayloadAsync(payload);
 
@@ -264,14 +263,17 @@ namespace Stratis.Bitcoin.Tests.Base
 
             List<ChainedHeader> chainBSuffix = ChainedHeadersHelper.CreateConsecutiveHeaders(50, this.headers[55]);
 
-            var payload = new GetHeadersPayload(new BlockLocator() { Blocks = new List<uint256>()
+            var payload = new GetHeadersPayload(new BlockLocator()
+            {
+                Blocks = new List<uint256>()
             {
                 chainBSuffix.Single(x => x.Height == 90).HashBlock,
                 chainBSuffix.Single(x => x.Height == 60).HashBlock,
                 this.headers[50].HashBlock,
                 this.headers[30].HashBlock,
                 this.headers[10].HashBlock
-            }});
+            }
+            });
 
             await this.helper.ReceivePayloadAsync(payload);
 
@@ -383,7 +385,7 @@ namespace Stratis.Bitcoin.Tests.Base
         public async Task ProcessHeadersAsync_SyncWhenCacheIsEmptyAsync()
         {
             this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
-                (presentedHeaders, triggerDownload) => { throw new ConnectHeaderException(); });
+                (presentedHeaders) => { throw new ConnectHeaderException(); });
 
             await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(13).Take(8).Select(x => x.Header).ToArray()));
 
@@ -398,7 +400,7 @@ namespace Stratis.Bitcoin.Tests.Base
         public async Task ProcessHeadersAsync_PeerThatViolatesCheckpointIsBannedAsync()
         {
             this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
-                (presentedHeaders, triggerDownload) => { throw new CheckpointMismatchException(); });
+                (presentedHeaders) => { throw new CheckpointMismatchException(); });
 
             await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Take(50).Select(x => x.Header).ToArray()));
 
@@ -414,7 +416,7 @@ namespace Stratis.Bitcoin.Tests.Base
         public async Task ProcessHeadersAsync_PeerThatSentInvalidHeaderIsBannedAsync()
         {
             this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
-                (presentedHeaders, triggerDownload) => { throw new ConsensusException(""); });
+                (presentedHeaders) => { throw new ConsensusException(""); });
 
             await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header).ToArray()));
 
@@ -430,7 +432,7 @@ namespace Stratis.Bitcoin.Tests.Base
         public async Task ProcessHeadersAsync_ConsumeAllHeadersAndAskForMoreAsync()
         {
             ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
-                (presentedHeaders, triggerDownload) =>
+                (presentedHeaders) =>
                 {
                     return new ConnectNewHeadersResult() { Consumed = this.headers.Single(x => x.HashBlock == presentedHeaders.Last().GetHash()) };
                 });
@@ -450,7 +452,7 @@ namespace Stratis.Bitcoin.Tests.Base
         public async Task ProcessHeadersAsync_DontSyncAfterSomeHeadersConsumedAndSomeCachedAsync()
         {
             ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
-                (presentedHeaders, triggerDownload) =>
+                (presentedHeaders) =>
                 {
                     return new ConnectNewHeadersResult() { Consumed = this.headers[40] };
                 });
@@ -472,8 +474,7 @@ namespace Stratis.Bitcoin.Tests.Base
         public async Task ProcessHeadersAsync_BanPeerThatViolatedMaxHeadersCountAsync()
         {
             this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
-                (presentedHeaders, triggerDownload) => { throw new ConsensusException(""); });
-
+                (presentedHeaders) => { throw new ConsensusException(string.Empty); });
 
             int maxHeaders = typeof(ConsensusManagerBehavior).GetPrivateConstantValue<int>("MaxItemsPerHeadersMessage");
 

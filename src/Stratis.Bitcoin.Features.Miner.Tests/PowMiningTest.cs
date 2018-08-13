@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Visitors;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Mining;
@@ -188,12 +189,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
 
             ValidationContext callbackValidationContext = null;
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>()))
-                .Callback<Block>((context) =>
-                {
-                })
-                .Returns(Task.FromResult(new ChainedHeaderBlock(blockTemplate.Block, new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip))));
 
+            var visitor = new BlockMinedConsensusVisitor(this.LoggerFactory.Object, blockTemplate.Block);
+            this.consensusManager.Setup(c => c.AcceptVisitorAsync(visitor))
+                .Callback<Block>((context) => { })
+                .Returns(Task.FromResult(new BlockMinedConsensusVisitorResult(new ChainedHeaderBlock(blockTemplate.Block, new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip)))));
 
             this.chain.SetTip(this.chain.GetBlock(0));
 
@@ -214,7 +214,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
             var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
 
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader)));
+            var visitor = new BlockMinedConsensusVisitor(this.LoggerFactory.Object, blockTemplate.Block);
+            this.consensusManager.Setup(c => c.AcceptVisitorAsync(visitor)).Returns(Task.FromResult(new BlockMinedConsensusVisitorResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader))));
 
             this.chain.SetTip(this.chain.GetBlock(0));
 
@@ -233,7 +234,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
             var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
 
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader)));
+            var visitor = new BlockMinedConsensusVisitor(this.LoggerFactory.Object, blockTemplate.Block);
+            this.consensusManager.Setup(c => c.AcceptVisitorAsync(visitor)).Returns(Task.FromResult(new BlockMinedConsensusVisitorResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader))));
 
             this.chain.SetTip(this.chain.GetBlock(0));
 
@@ -252,7 +254,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
             var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
 
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader)));
+            var visitor = new BlockMinedConsensusVisitor(this.LoggerFactory.Object, blockTemplate.Block);
+            this.consensusManager.Setup(c => c.AcceptVisitorAsync(visitor)).Returns(Task.FromResult(new BlockMinedConsensusVisitorResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader))));
+
             this.chain.SetTip(this.chain.GetBlock(0));
 
             Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
@@ -272,7 +276,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
             var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
 
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader)));
+            var visitor = new BlockMinedConsensusVisitor(this.LoggerFactory.Object, blockTemplate.Block);
+            this.consensusManager.Setup(c => c.AcceptVisitorAsync(visitor)).Returns(Task.FromResult(new BlockMinedConsensusVisitorResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader))));
+
             blockTemplate.Block.Header.Nonce = 0;
             blockTemplate.Block.Header.Bits = KnownNetworks.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
 
@@ -305,7 +311,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
             var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
 
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader)));
+            var visitor = new BlockMinedConsensusVisitor(this.LoggerFactory.Object, blockTemplate.Block);
+            this.consensusManager.Setup(c => c.AcceptVisitorAsync(visitor)).Returns(Task.FromResult(new BlockMinedConsensusVisitorResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader))));
 
             BlockTemplate blockTemplate2 = this.CreateBlockTemplate(this.fixture.Block2);
 
@@ -321,8 +328,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     {
                         if (attempts == 10)
                         {
-                                // sometimes the PoW nonce we generate in the fixture is not accepted resulting in an infinite loop. Retry.
-                                this.fixture.Block1 = this.fixture.PrepareValidBlock(this.chain.Tip, 1, this.fixture.Key.ScriptPubKey);
+                            // sometimes the PoW nonce we generate in the fixture is not accepted resulting in an infinite loop. Retry.
+                            this.fixture.Block1 = this.fixture.PrepareValidBlock(this.chain.Tip, 1, this.fixture.Key.ScriptPubKey);
                             this.fixture.ChainedHeader1 = new ChainedHeader(this.fixture.Block1.Header, this.fixture.Block1.GetHash(), this.chain.Tip);
                             this.fixture.Block2 = this.fixture.PrepareValidBlock(this.fixture.ChainedHeader1, 2, this.fixture.Key.ScriptPubKey);
                             this.fixture.ChainedHeader2 = new ChainedHeader(this.fixture.Block2.Header, this.fixture.Block2.GetHash(), this.fixture.ChainedHeader1);
@@ -355,7 +362,9 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
             var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
 
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader)));
+            var visitor = new BlockMinedConsensusVisitor(this.LoggerFactory.Object, blockTemplate.Block);
+            this.consensusManager.Setup(c => c.AcceptVisitorAsync(visitor)).Returns(Task.FromResult(new BlockMinedConsensusVisitorResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader))));
+
             BlockTemplate blockTemplate2 = this.CreateBlockTemplate(this.fixture.Block2);
 
             this.chain.SetTip(this.chain.GetBlock(0));
@@ -381,7 +390,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
             var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
 
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader)));
+            var visitor = new BlockMinedConsensusVisitor(this.LoggerFactory.Object, blockTemplate.Block);
+            this.consensusManager.Setup(c => c.AcceptVisitorAsync(visitor)).Returns(Task.FromResult(new BlockMinedConsensusVisitorResult(new ChainedHeaderBlock(blockTemplate.Block, chainedHeader))));
 
             BlockTemplate blockTemplate2 = this.CreateBlockTemplate(this.fixture.Block2);
 
