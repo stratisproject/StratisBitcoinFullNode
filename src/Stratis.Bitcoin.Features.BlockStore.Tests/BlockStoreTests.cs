@@ -334,10 +334,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
+                if (header == alternativeBlocks.Last())
+                    this.chainState.IsAtBestChainTip = true;
+
                 this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, header));
             }
 
             await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
+
+            this.chainState.IsAtBestChainTip = false;
 
             // Make sure only longest chain is saved.
             Assert.Equal(1, this.repositorySavesCount);
@@ -351,6 +356,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
+
+                if (i == this.chain.Height)
+                    this.chainState.IsAtBestChainTip = true;
 
                 this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
             }
