@@ -30,22 +30,21 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private int repositoryTotalBlocksDeleted = 0;
 
         private Dictionary<uint256, Block> listOfSavedBlocks;
-        private ChainedHeader consensusTip;
 
         private readonly string testBlockHex = "07000000af72d939050259913e440b23bee62e3b9604129ec8424d265a6ee4916e060000a5a2cbad28617657336403daf202b797bfc4b9c5cfc65a258f32ec33ec9ad485314ea957ffff0f1e812b07000101000000184ea957010000000000000000000000000000000000000000000000000000000000000000ffffffff03510101ffffffff010084d717000000001976a9140099e795d9ee809dc74dce32c79d26db0265072488ac0000000000";
 
         public BlockStoreTests()
         {
+            this.network = KnownNetworks.StratisMain;
+            this.repositoryTipHashAndHeight = new HashHeightPair(this.network.GenesisHash, 0);
+
             var serializer = new DBreezeSerializer();
             serializer.Initialize(new StratisMain());
 
             this.listOfSavedBlocks = new Dictionary<uint256, Block>();
             this.listOfSavedBlocks.Add(uint256.One, Block.Parse(this.testBlockHex, KnownNetworks.StratisMain));
 
-            this.network = KnownNetworks.StratisMain;
-
             this.chain = CreateChain(10);
-            this.consensusTip = null;
 
             this.nodeLifetime = new NodeLifetime();
 
@@ -82,13 +81,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 return this.repositoryTipHashAndHeight;
             });
 
-            var chainStateMoq = new Mock<IChainState>();
-            chainStateMoq.Setup(x => x.ConsensusTip).Returns(() => this.consensusTip);
-            chainStateMoq.SetupProperty(x => x.BlockStoreTip, null);
-
-            this.chainState = chainStateMoq.Object;
-
-            this.blockRepositoryMock.Setup(x => x.TipHashAndHeight).Returns(new HashHeightPair(this.network.GenesisHash, 0));
+            this.chainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider()));
 
             this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(),
                 this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory());
@@ -161,7 +154,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             Block block = Block.Load(Encoders.Hex.DecodeData(this.testBlockHex), KnownNetworks.StratisMain);
             int blockSize = block.GetSerializedSize();
-            this.consensusTip = null;
+            this.chainState.ConsensusTip = null;
 
             int count = BlockStoreQueue.BatchThresholdSizeBytes / blockSize + 2;
 
@@ -172,7 +165,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.nodeLifetime,  this.blockRepositoryMock.Object, new LoggerFactory());
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
-            this.consensusTip = longChain.Tip;
+            this.chainState.ConsensusTip = longChain.Tip;
 
             // Send all the blocks to the block store except for the last one because that will trigger batch saving because of reaching the tip.
             for (int i = 1; i < count; i++)
@@ -223,7 +216,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
-            this.consensusTip = this.chain.Tip;
+            this.chainState.ConsensusTip = this.chain.Tip;
+            this.chainState.IsAtBestChainTip = false;
 
             for (int i = 1; i <= this.chain.Height; i++)
             {
@@ -231,10 +225,16 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
+                if (i == this.chain.Height)
+                {
+                    await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
+                    this.chainState.IsAtBestChainTip = true;
+                }
+
                 this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, lastHeader));
             }
 
-            await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
+            await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
 
             Assert.Equal(this.chainState.BlockStoreTip, this.chain.Tip);
             Assert.Equal(1, this.repositorySavesCount);
@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory());
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
-            this.consensusTip = this.chain.Tip;
+            this.chainState.ConsensusTip = this.chain.Tip;
 
             // Sending 500 blocks to the queue.
             for (int i = 1; i < 500; i++)
@@ -327,7 +327,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             ChainedHeader savedHeader = this.chain.Tip;
 
             this.chain.SetTip(alternativeBlocks.Last());
-            this.consensusTip = this.chain.Tip;
+            this.chainState.ConsensusTip = this.chain.Tip;
 
             // Present alternative chain and trigger save.
             foreach (ChainedHeader header in alternativeBlocks)
@@ -346,7 +346,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             // Present a new longer chain that will reorg the repository.
             this.chain.SetTip(savedHeader);
-            this.consensusTip = this.chain.Tip;
+            this.chainState.ConsensusTip = this.chain.Tip;
 
             for (int i = 451; i <= this.chain.Height; i++)
             {
@@ -372,7 +372,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public async Task ThrowIfConsensusIsInitializedBeforeBlockStoreAsync()
         {
             this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
-            this.consensusTip = this.chain.Tip;
+            this.chainState.ConsensusTip = this.chain.Tip;
 
             await Assert.ThrowsAsync<BlockStoreException>(async () =>
             {

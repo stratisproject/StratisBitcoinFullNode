@@ -24,10 +24,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
 
-                Row<byte[], uint256> blockRow = transaction.Select<byte[], uint256>("Common", new byte[0]);
+                Row<byte[], HashHeightPair> blockRow = transaction.Select<byte[], HashHeightPair>("Common", new byte[0]);
                 Row<byte[], bool> txIndexRow = transaction.Select<byte[], bool>("Common", new byte[1]);
 
-                Assert.Equal(this.Network.GetGenesis().GetHash(), blockRow.Value);
+                Assert.Equal(this.Network.GetGenesis().GetHash(), blockRow.Value.Hash);
                 Assert.False(txIndexRow.Value);
             }
         }
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
 
-                transaction.Insert<byte[], byte[]>("Common", new byte[0], new uint256(56).ToBytes());
+                transaction.Insert<byte[], HashHeightPair>("Common", new byte[0], new HashHeightPair(new uint256(56), 1));
                 transaction.Insert<byte[], bool>("Common", new byte[1], true);
                 transaction.Commit();
             }
@@ -54,10 +54,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
 
-                Row<byte[], uint256> blockRow = transaction.Select<byte[], uint256>("Common", new byte[0]);
+                Row<byte[], HashHeightPair> blockRow = transaction.Select<byte[], HashHeightPair>("Common", new byte[0]);
                 Row<byte[], bool> txIndexRow = transaction.Select<byte[], bool>("Common", new byte[1]);
 
-                Assert.Equal(new uint256(56), blockRow.Value);
+                Assert.Equal(new HashHeightPair(new uint256(56), 1), blockRow.Value);
                 Assert.True(txIndexRow.Value);
             }
         }
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
 
-                transaction.Insert<byte[], byte[]>("Common", new byte[0], uint256.Zero.ToBytes());
+                transaction.Insert<byte[], HashHeightPair>("Common", new byte[0], new HashHeightPair(uint256.Zero, 1));
                 transaction.Insert<byte[], bool>("Common", new byte[1], false);
                 transaction.Commit();
             }
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
                 var blockId = new uint256(8920);
-                transaction.Insert<byte[], byte[]>("Common", new byte[0], uint256.Zero.ToBytes());
+                transaction.Insert<byte[], HashHeightPair>("Common", new byte[0], new HashHeightPair(uint256.Zero, 1));
                 transaction.Insert<byte[], bool>("Common", new byte[1], true);
                 transaction.Commit();
             }
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
                 transaction.Insert<byte[], byte[]>("Block", block.Header.GetHash().ToBytes(), block.ToBytes());
                 transaction.Insert<byte[], byte[]>("Transaction", trans.GetHash().ToBytes(), block.Header.GetHash().ToBytes());
-                transaction.Insert<byte[], byte[]>("Common", new byte[0], uint256.Zero.ToBytes());
+                transaction.Insert<byte[], HashHeightPair>("Common", new byte[0], new HashHeightPair(uint256.Zero, 1));
                 transaction.Insert<byte[], bool>("Common", new byte[1], true);
                 transaction.Commit();
             }
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
-                transaction.Insert<byte[], byte[]>("Common", new byte[0], uint256.Zero.ToBytes());
+                transaction.Insert<byte[], HashHeightPair>("Common", new byte[0], new HashHeightPair(uint256.Zero, 1));
                 transaction.Insert<byte[], bool>("Common", new byte[1], false);
                 transaction.Commit();
             }
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
-                transaction.Insert<byte[], byte[]>("Common", new byte[0], uint256.Zero.ToBytes());
+                transaction.Insert<byte[], HashHeightPair>("Common", new byte[0], new HashHeightPair(uint256.Zero, 1));
                 transaction.Insert<byte[], bool>("Common", new byte[1], true);
                 transaction.Commit();
             }
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
                 transaction.Insert<byte[], byte[]>("Transaction", new uint256(26).ToBytes(), new uint256(42).ToBytes());
-                transaction.Insert<byte[], byte[]>("Common", new byte[0], uint256.Zero.ToBytes());
+                transaction.Insert<byte[], HashHeightPair>("Common", new byte[0], new HashHeightPair(uint256.Zero, 1));
                 transaction.Insert<byte[], bool>("Common", new byte[1], true);
                 transaction.Commit();
             }
@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction trans = engine.GetTransaction();
-                trans.Insert<byte[], byte[]>("Common", new byte[0], uint256.Zero.ToBytes());
+                trans.Insert<byte[], HashHeightPair>("Common", new byte[0], new HashHeightPair(uint256.Zero, 1));
                 trans.Insert<byte[], bool>("Common", new byte[1], true);
                 trans.Commit();
             }
@@ -247,11 +247,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 DBreeze.Transactions.Transaction trans = engine.GetTransaction();
 
-                Row<byte[], uint256> blockHashKeyRow = trans.Select<byte[], uint256>("Common", new byte[0]);
+                Row<byte[], HashHeightPair> blockHashKeyRow = trans.Select<byte[], HashHeightPair>("Common", new byte[0]);
                 Dictionary<byte[], byte[]> blockDict = trans.SelectDictionary<byte[], byte[]>("Block");
                 Dictionary<byte[], byte[]> transDict = trans.SelectDictionary<byte[], byte[]>("Transaction");
 
-                Assert.Equal(nextBlockHash, blockHashKeyRow.Value);
+                Assert.Equal(new HashHeightPair(nextBlockHash, 100), blockHashKeyRow.Value);
                 Assert.Equal(2, blockDict.Count);
                 Assert.Equal(3, transDict.Count);
 
