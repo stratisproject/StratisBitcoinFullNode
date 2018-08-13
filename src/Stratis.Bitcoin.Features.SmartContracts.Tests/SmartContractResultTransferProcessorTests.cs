@@ -4,7 +4,6 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
-using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
@@ -24,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
             this.network = new SmartContractsRegTest();
-            this.transferProcessor = new SmartContractResultTransferProcessor(DateTimeProvider.Default, this.loggerFactory, this.network);
+            this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);
         }
 
         [Fact]

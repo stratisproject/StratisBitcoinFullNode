@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 coreNode.ConfigParameters.AddOrReplace("printtoconsole", "0");
                 coreNode.Start();
 
-                CoreNode stratisNode = builder.CreateStratisPowNode(start: true);
+                CoreNode stratisNode = builder.CreateStratisPowNode(KnownNetworks.RegTest, start: true);
 
                 RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
                 RPCClient coreRpc = coreNode.CreateRPCClient();
