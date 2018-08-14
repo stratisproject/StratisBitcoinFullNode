@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         protected override void BeforeTest()
         {
             this.sharedSteps = new SharedSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
+            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.RegTest);
         }
 
         protected override void AfterTest()
@@ -109,18 +110,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             HdAddress sendToNodeOne = this.nodes[NodeOne].FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccountName));
 
-            this.transactionBuildContext = new TransactionBuildContext(
-                this.nodes[NodeOne].FullNode.Network,
-                new WalletAccountReference(WalletName, WalletAccountName),
-                new[]
-                {
-                    new Recipient
-                    {
-                        Amount = this.nodeTwoBalance - Money.COIN,
-                        ScriptPubKey = sendToNodeOne.ScriptPubKey
-                    }
-                }.ToList(),
-                WalletPassword);
+            this.transactionBuildContext = new TransactionBuildContext(this.nodes[NodeOne].FullNode.Network)
+            {
+                AccountReference = new WalletAccountReference(WalletName, WalletAccountName),
+                WalletPassword = WalletPassword,
+                Recipients = new[] { new Recipient { Amount = this.nodeTwoBalance - Money.COIN, ScriptPubKey = sendToNodeOne.ScriptPubKey } }.ToList()
+            };
 
             Transaction transaction = this.nodes[NodeTwo].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
 

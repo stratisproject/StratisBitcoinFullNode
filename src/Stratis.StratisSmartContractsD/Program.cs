@@ -33,7 +33,6 @@ namespace Stratis.StratisSmartContractsD
                 Bitcoin.IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
-                    .UseMempool()
                     .AddRPC()
                         .AddSmartContracts()
                         .UseSmartContractPosConsensus()
@@ -41,6 +40,7 @@ namespace Stratis.StratisSmartContractsD
                         .UseSmartContractWallet()
                         .UseReflectionExecutor()
                     .UseApi()
+                    .UseMempool()
                     .Build();
 
                 await node.RunAsync();

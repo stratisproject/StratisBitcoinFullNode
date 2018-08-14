@@ -30,10 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             var consensusFactory = new SmartContractPosConsensusFactory();
 
-            Block genesisBlock = BitcoinMain.CreateBitcoinGenesisBlock(consensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
-            ((SmartContractBlockHeader)genesisBlock.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
-
-            this.Genesis = genesisBlock;
+            this.Genesis = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
 
             // Taken from StratisX.
             var consensusOptions = new PosConsensusOptions(
@@ -61,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
                 coinType: default(int),
-                hashGenesisBlock: genesisBlock.Header.GetHash(),
+                hashGenesisBlock: this.Genesis.GetHash(),
                 subsidyHalvingInterval: 150,
                 majorityEnforceBlockUpgrade: 750,
                 majorityRejectBlockOutdated: 950,
@@ -85,7 +82,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
                 minimumChainWork: uint256.Zero,
                 isProofOfStake: true,
-                lastPowBlock: 1000000,
+                lastPowBlock: 1_000_000,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeReward: Money.COIN
