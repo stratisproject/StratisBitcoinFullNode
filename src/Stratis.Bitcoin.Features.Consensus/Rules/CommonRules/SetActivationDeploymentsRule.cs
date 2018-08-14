@@ -9,9 +9,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Set the <see cref="RuleContext.Flags"/> property that defines what deployments have been activated.
     /// </summary>
-    [PartialValidationRule]
-    [FullValidationRule]
-    public class SetActivationDeploymentsRule : ConsensusRule
+    /// <remarks>This is partial AND full validation rule.</remarks>
+    public class SetActivationDeploymentsRule : AsyncConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.InvalidPrevTip">The tip is invalid because a reorg has been detected.</exception>

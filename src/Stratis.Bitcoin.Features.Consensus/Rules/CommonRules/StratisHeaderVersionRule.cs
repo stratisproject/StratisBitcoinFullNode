@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -9,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Checks if <see cref="StratisMain"/> network block's header has a valid block version.
     /// </summary>
-    [HeaderValidationRule]
+    /// <remarks>This is header validation rule.</remarks>
     public class StratisHeaderVersionRule : HeaderVersionRule
     {
         /// <inheritdoc />

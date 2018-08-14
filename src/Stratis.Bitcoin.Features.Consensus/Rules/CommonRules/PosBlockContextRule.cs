@@ -6,8 +6,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Context checks on a POS block.
     /// </summary>
-    [PartialValidationRule]
-    public class PosBlockContextRule : StakeStoreConsensusRule
+    /// <remarks>This is partial validation rule.</remarks>
+    public class PosBlockContextRule : AsyncConsensusRule
     {
         /// <inheritdoc />
         public override Task RunAsync(RuleContext context)

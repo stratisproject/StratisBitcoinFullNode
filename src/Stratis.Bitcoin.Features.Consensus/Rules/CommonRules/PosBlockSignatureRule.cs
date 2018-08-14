@@ -12,8 +12,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that will validate the signature of a PoS block.
     /// </summary>
-    [IntegrityValidationRule]
-    public class PosBlockSignatureRule : StakeStoreConsensusRule
+    /// <remarks>This is integrity validation rule.</remarks>
+    public class PosBlockSignatureRule : SyncConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadBlockSignature">The block signature is invalid.</exception>

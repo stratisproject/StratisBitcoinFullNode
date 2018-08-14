@@ -81,7 +81,7 @@ namespace NBitcoin
 
         /// <inheritdoc />
         public ConsensusFactory ConsensusFactory { get; }
-        
+
         /// <inheritdoc />
         public List<IAsyncBaseConsensusRule> PartialValidationRules { get; set; }
 
@@ -128,7 +128,6 @@ namespace NBitcoin
             Money proofOfStakeReward
             )
         {
-            this.Rules = new List<ISyncBaseConsensusRule>();
             this.PartialValidationRules = new List<IAsyncBaseConsensusRule>();
             this.FullValidationRules = new List<IAsyncBaseConsensusRule>();
             this.HeaderValidationRules = new List<ISyncBaseConsensusRule>();

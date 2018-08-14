@@ -15,6 +15,9 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 {
+    // TODO ACTIVATION
+    /*
+
     public class ConsensusRulesTest : TestConsensusRulesUnitTestBase
     {
         [Fact]
@@ -337,4 +340,5 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             }
         }
     }
+     */
 }

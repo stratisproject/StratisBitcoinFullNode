@@ -21,9 +21,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Instance logger.</summary>
         protected readonly ILogger logger;
 
-        /// TODO ACTIVATION
-        //private readonly Dictionary<string, ConsensusRule> consensusRules;
-
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; }
 
@@ -52,16 +49,16 @@ namespace Stratis.Bitcoin.Consensus
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
         /// <summary>Group of rules that are used during partial block validation.</summary>
-        private List<AsyncBaseConsensusRule> partialValidationRules;
+        private List<AsyncConsensusRule> partialValidationRules;
 
         /// <summary>Group of rules that are used during full validation (connection of a new block).</summary>
-        private List<AsyncBaseConsensusRule> fullValidationRules;
+        private List<AsyncConsensusRule> fullValidationRules;
 
         /// <summary>Group of rules that are used during block integrity validation.</summary>
-        private List<SyncBaseConsensusRule> integrityValidationRules;
+        private List<SyncConsensusRule> integrityValidationRules;
 
         /// <summary>Group of rules that are used during block's header validation.</summary>
-        private List<SyncBaseConsensusRule> headerValidationRules;
+        private List<SyncConsensusRule> headerValidationRules;
 
         protected ConsensusRuleEngine(
             Network network,
@@ -98,10 +95,10 @@ namespace Stratis.Bitcoin.Consensus
             this.NodeDeployments = nodeDeployments;
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
 
-            this.partialValidationRules = new List<AsyncBaseConsensusRule>();
-            this.headerValidationRules = new List<SyncBaseConsensusRule>();
-            this.fullValidationRules = new List<AsyncBaseConsensusRule>();
-            this.integrityValidationRules = new List<SyncBaseConsensusRule>();
+            this.partialValidationRules = new List<AsyncConsensusRule>();
+            this.headerValidationRules = new List<SyncConsensusRule>();
+            this.fullValidationRules = new List<AsyncConsensusRule>();
+            this.integrityValidationRules = new List<SyncConsensusRule>();
         }
 
         /// <inheritdoc />
@@ -118,26 +115,24 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public ConsensusRuleEngine Register()
         {
-            Guard.Assert(this.Network.Consensus.Rules.Any());
+            this.headerValidationRules = this.Network.Consensus.HeaderValidationRules.Select(x => x as SyncConsensusRule).ToList();
+            this.SetupConsensusRules(this.headerValidationRules.Select(x => x as ConsensusRuleBase));
 
-            this.headerValidationRules = this.Network.Consensus.HeaderValidationRules.Select(x => x as SyncBaseConsensusRule).ToList();
-            this.SetupConsensusRules(this.headerValidationRules.Select(x => x as BaseConsensusRuleBase));
+            this.integrityValidationRules = this.Network.Consensus.IntegrityValidationRules.Select(x => x as SyncConsensusRule).ToList();
+            this.SetupConsensusRules(this.integrityValidationRules.Select(x => x as ConsensusRuleBase));
 
-            this.integrityValidationRules = this.Network.Consensus.IntegrityValidationRules.Select(x => x as SyncBaseConsensusRule).ToList();
-            this.SetupConsensusRules(this.integrityValidationRules.Select(x => x as BaseConsensusRuleBase));
+            this.partialValidationRules = this.Network.Consensus.PartialValidationRules.Select(x => x as AsyncConsensusRule).ToList();
+            this.SetupConsensusRules(this.partialValidationRules.Select(x => x as ConsensusRuleBase));
 
-            this.partialValidationRules = this.Network.Consensus.PartialValidationRules.Select(x => x as AsyncBaseConsensusRule).ToList();
-            this.SetupConsensusRules(this.partialValidationRules.Select(x => x as BaseConsensusRuleBase));
-
-            this.fullValidationRules = this.Network.Consensus.FullValidationRules.Select(x => x as AsyncBaseConsensusRule).ToList();
-            this.SetupConsensusRules(this.fullValidationRules.Select(x => x as BaseConsensusRuleBase));
+            this.fullValidationRules = this.Network.Consensus.FullValidationRules.Select(x => x as AsyncConsensusRule).ToList();
+            this.SetupConsensusRules(this.fullValidationRules.Select(x => x as ConsensusRuleBase));
 
             return this;
         }
 
-        private void SetupConsensusRules(IEnumerable<BaseConsensusRuleBase> rules)
+        private void SetupConsensusRules(IEnumerable<ConsensusRuleBase> rules)
         {
-            foreach (BaseConsensusRuleBase rule in rules)
+            foreach (ConsensusRuleBase rule in rules)
             {
                 rule.Parent = this;
                 rule.Logger = this.loggerFactory.CreateLogger(rule.GetType().FullName);
@@ -211,7 +206,7 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
-        private async Task ExecuteRulesAsync(List<AsyncBaseConsensusRule> asyncRules, RuleContext ruleContext)
+        private async Task ExecuteRulesAsync(List<AsyncConsensusRule> asyncRules, RuleContext ruleContext)
         {
             try
             {
@@ -219,7 +214,7 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     ruleContext.SkipValidation = ruleContext.ValidationContext.ChainTipToExtend.IsAssumedValid;
 
-                    foreach (AsyncBaseConsensusRule rule in asyncRules)
+                    foreach (AsyncConsensusRule rule in asyncRules)
                         await rule.RunAsync(ruleContext).ConfigureAwait(false);
                 }
             }
@@ -229,7 +224,7 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
-        private void ExecuteRules(List<SyncBaseConsensusRule> rules, RuleContext ruleContext)
+        private void ExecuteRules(List<SyncConsensusRule> rules, RuleContext ruleContext)
         {
             try
             {
@@ -237,7 +232,7 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     ruleContext.SkipValidation = ruleContext.ValidationContext.ChainTipToExtend.IsAssumedValid;
 
-                    foreach (SyncBaseConsensusRule rule in rules)
+                    foreach (SyncConsensusRule rule in rules)
                         rule.Run(ruleContext);
                 }
             }
@@ -256,12 +251,21 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public abstract Task<RewindState> RewindAsync();
 
-        //TODO ACTIVATION 4 groups of rules
-        /// <inheritdoc />
-        //public T GetRule<T>() where T : SyncBaseConsensusRule
-        //{
-        //    return (T)this.Rules.Single(r => r is T);
-        //}
+        public T GetRule<T>() where T : ConsensusRuleBase
+        {
+            object rule = this.headerValidationRules.SingleOrDefault(r => r is T);
+
+            if (rule == null)
+                rule = this.integrityValidationRules.SingleOrDefault(r => r is T);
+
+            if (rule == null)
+                rule = this.partialValidationRules.SingleOrDefault(r => r is T);
+
+            if (rule == null)
+                rule = this.fullValidationRules.SingleOrDefault(r => r is T);
+
+            return rule as T;
+        }
     }
 
     /// <summary>
