@@ -5,7 +5,6 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>Checks if <see cref="PosBlock"/> timestamp is greater than previous block timestamp.</summary>
-    /// <remarks>This is header validation rule.</remarks>
     public class HeaderTimeChecksPosRule : HeaderValidationConsensusRule
     {
         /// <inheritdoc />

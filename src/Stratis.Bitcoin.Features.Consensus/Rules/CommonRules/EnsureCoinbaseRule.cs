@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>Ensures a block follows the coinbase rules.</summary>
-    /// <remarks>This is partial validation rule.</remarks>
     public class EnsureCoinbaseRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />

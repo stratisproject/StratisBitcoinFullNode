@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>A rule that validates witness commitments.</summary>
-    /// <remarks>This is partial validation rule.</remarks>
     public class WitnessCommitmentsRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />

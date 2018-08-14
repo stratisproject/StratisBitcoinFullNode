@@ -12,7 +12,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that will validate the signature of a PoS block.
     /// </summary>
-    /// <remarks>This is integrity validation rule.</remarks>
     public class PosBlockSignatureRule : IntegrityValidationConsensusRule
     {
         /// <inheritdoc />

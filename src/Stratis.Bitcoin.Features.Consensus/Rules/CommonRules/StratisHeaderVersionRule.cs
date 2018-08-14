@@ -10,7 +10,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Checks if <see cref="StratisMain"/> network block's header has a valid block version.
     /// </summary>
-    /// <remarks>This is header validation rule.</remarks>
     public class StratisHeaderVersionRule : HeaderVersionRule
     {
         /// <inheritdoc />

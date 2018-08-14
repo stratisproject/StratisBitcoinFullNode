@@ -1,13 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
-using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Consensus.Rules;
+﻿using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -15,7 +7,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Checks if <see cref="BitcoinMain"/> network block's header has a valid block version.
     /// <seealso cref="BitcoinActivationRule" />
     /// </summary>
-    /// <remarks>This is header validation rule.</remarks>
     public class BitcoinHeaderVersionRule : HeaderVersionRule
     {
         /// <inheritdoc />

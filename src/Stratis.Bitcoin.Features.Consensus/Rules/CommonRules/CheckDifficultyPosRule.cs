@@ -9,7 +9,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Calculate the difficulty for a POS block and check that it is correct.
     /// This rule is only activated after the POW epoch is finished according to the value in <see cref="Consensus.LastPOWBlock"/>.
     /// </summary>
-    /// <remarks>This is header validation rule.</remarks>
     public class CheckDifficultyPosRule : HeaderValidationConsensusRule
     {
         /// <summary>Allow access to the POS parent.</summary>

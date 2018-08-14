@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    /// <remarks>This is full validation rule.</remarks>
     public class SaveCoinviewRule : UtxoStoreConsensusRule
     {
         /// <summary>
@@ -54,8 +53,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             return false;
         }
     }
-
-    /// <remarks>This is full validation rule.</remarks>
+    
     public class LoadCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />

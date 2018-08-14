@@ -5,7 +5,6 @@ using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    /// <remarks>This is partial validation rule.</remarks>
     public class CheckSigOpsRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />

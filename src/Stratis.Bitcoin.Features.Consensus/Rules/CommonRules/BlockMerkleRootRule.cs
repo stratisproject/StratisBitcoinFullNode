@@ -24,7 +24,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// kind of blocks.
     /// <seealso cref="https://bitcointalk.org/index.php?topic=102395.0"/>
     /// </remarks>
-    /// <remarks>This is integrity validation rule.</remarks>
     public class BlockMerkleRootRule : IntegrityValidationConsensusRule
     {
         /// <inheritdoc />

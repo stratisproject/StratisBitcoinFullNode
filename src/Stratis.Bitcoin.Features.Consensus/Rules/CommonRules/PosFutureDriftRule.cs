@@ -10,7 +10,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// A rule that will verify the block time drift is according to the PoS consensus rules for the <see cref="StratisMain"/> network (and its test networks).
     /// New networks must use the <see cref="PosFutureDriftRule"/>.
     /// </summary>
-    /// <remarks>This is header validation rule.</remarks>
     public class StratisBigFixPosFutureDriftRule : PosFutureDriftRule
     {
         /// <summary>Drifting Bug Fix, hardfork on Sat, 19 Nov 2016 00:00:00 GMT.</summary>
@@ -49,7 +48,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that will verify the block time drift is according to the PoS consensus rules.
     /// </summary>
-    /// <remarks>This is header validation rule.</remarks>
     public class PosFutureDriftRule : HeaderValidationConsensusRule
     {
         /// <summary>The future drift in seconds.</summary>

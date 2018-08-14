@@ -8,7 +8,6 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>Context checks on a POS block.</summary>
-    /// <remarks>This is partial validation rule.</remarks>
     public class PosCoinstakeRule : PartialValidationConsensusRule
     {
         /// <summary>Allow access to the POS parent.</summary>
