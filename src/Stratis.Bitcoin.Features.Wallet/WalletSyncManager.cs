@@ -119,8 +119,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
-            Interlocked.Add(ref this.blocksQueueSize, -block.BlockSize.Value);
-            this.logger.LogInformation("Queue sized changed to {0} bytes.", this.blocksQueueSize);
+            long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, -block.BlockSize.Value);            
+            this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
 
             ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
 
@@ -267,8 +267,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (!this.maxQueueSizeReached)
             {
-                Interlocked.Add(ref this.blocksQueueSize, block.BlockSize.Value);
-                this.logger.LogTrace("Queue sized changed to {0} bytes.", this.blocksQueueSize);
+                long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, block.BlockSize.Value);
+                this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
 
                 this.blocksQueue.Enqueue(block);
             }
