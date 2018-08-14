@@ -101,7 +101,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 {
                     if (!this.transactionsBeforeStaking.Contains(transactionData.Id))
                     {
-                        this.nodes[this.PremineNode].FullNode.WalletManager().SaveWallets();
                         return true;
                     }
                 }
