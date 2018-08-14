@@ -95,20 +95,6 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// Number of elements contained in the queue.
-        /// </summary>
-        public long Count
-        {
-            get
-            {
-                lock (this.lockObject)
-                {
-                    return this.items.Count;
-                }
-            }
-        }
-
-        /// <summary>
         /// Add a new item to the queue and signal to the consumer task.
         /// </summary>
         /// <param name="item">Item to be added to the queue.</param>
