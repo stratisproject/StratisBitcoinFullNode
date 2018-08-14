@@ -127,9 +127,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network);
 
                 builder.StartAll();
-                stratisSender.NotInIBD();
-                stratisReceiver.NotInIBD();
-                stratisReorg.NotInIBD();
+                stratisSender.NotInIBD().WithWallet();
+                stratisReceiver.NotInIBD().WithWallet();
+                stratisReorg.NotInIBD().WithWallet();
 
                 // get a key from the wallet
                 Mnemonic mnemonic1 = stratisSender.FullNode.WalletManager().CreateWallet("123456", "mywallet");
@@ -280,9 +280,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network);
 
                 builder.StartAll();
-                stratisSender.NotInIBD();
-                stratisReceiver.NotInIBD();
-                stratisReorg.NotInIBD();
+                stratisSender.NotInIBD().WithWallet();
+                stratisReceiver.NotInIBD().WithWallet();
+                stratisReorg.NotInIBD().WithWallet();
 
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisSender.FullNode.Network));
                 stratisReorg.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisReorg.FullNode.Network));
@@ -342,9 +342,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network);
 
                 builder.StartAll();
-                stratisSender.NotInIBD();
-                stratisReceiver.NotInIBD();
-                stratisReorg.NotInIBD();
+                stratisSender.NotInIBD().WithWallet();
+                stratisReceiver.NotInIBD().WithWallet();
+                stratisReorg.NotInIBD().WithWallet();
 
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisSender.FullNode.Network));
                 stratisReorg.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisReorg.FullNode.Network));
