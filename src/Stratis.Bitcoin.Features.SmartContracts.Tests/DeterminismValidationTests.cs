@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using Mono.Cecil;
-using Stratis.ModuleValidation.Net;
 using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Core.Validation.Validators;
@@ -816,6 +812,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
             SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_Determinism_CanUseByteHelper()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, @"ByteConverter.ToBool(new byte());").Replace(ReplaceReferencesString, "using Stratis.SmartContracts.ByteHelper;");
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+
             Assert.True(result.IsValid);
         }
     }
