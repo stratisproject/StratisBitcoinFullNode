@@ -268,7 +268,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (!this.maxQueueSizeReached)
             {
                 Interlocked.Add(ref this.blocksQueueSize, block.BlockSize.Value);
-                this.logger.LogInformation("Queue sized changed to {0} bytes.", this.blocksQueueSize);
+                this.logger.LogTrace("Queue sized changed to {0} bytes.", this.blocksQueueSize);
 
                 this.blocksQueue.Enqueue(block);
             }
