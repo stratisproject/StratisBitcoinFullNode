@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Key key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;
 
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
-                stratisSender.CreateRPCClient().Generate(2);
+                stratisSender.GenerateStratisWithMiner(2);
 
                 // Wait for block repo for block sync to complete
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
 
                 // Generate two new blocks so the transaction is confirmed
-                stratisSender.CreateRPCClient().Generate(2);
+                stratisSender.GenerateStratisWithMiner(2);
 
                 // Wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
                 stratisReorg.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
 
-                stratisSender.CreateRPCClient().Generate(maturity + 15);
+                stratisSender.GenerateStratisWithMiner(maturity + 15);
 
                 int currentBestHeight = maturity + 15;
 
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // ====================
                 // send coins to the receiver
                 HdAddress sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                Transaction transaction1 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network, new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 1));
+                Transaction transaction1 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network, new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 100, FeeType.Medium, maturity));
 
                 // broadcast to the other node
                 stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction1.ToHex()));
@@ -187,9 +187,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Assert.Null(stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
 
                 // generate two new blocks so the trx is confirmed
-                stratisSender.CreateRPCClient().Generate(1);
+                stratisSender.GenerateStratisWithMiner(1);
                 int transaction1MinedHeight = currentBestHeight + 1;
-                stratisSender.CreateRPCClient().Generate(1);
+                stratisSender.GenerateStratisWithMiner(1);
                 currentBestHeight = currentBestHeight + 2;
 
                 // wait for block repo for block sync to work
@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // send more coins to the wallet
                 sendto = stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
-                Transaction transaction2 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network, new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 10, FeeType.Medium, 1));
+                Transaction transaction2 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network, new WalletAccountReference("mywallet", "account 0"), "123456", sendto.ScriptPubKey, Money.COIN * 10, FeeType.Medium, maturity));
                 stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction2.ToHex()));
                 // wait for the trx to arrive
                 TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
@@ -221,9 +221,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // mine more blocks so its included in the chain
 
-                stratisSender.CreateRPCClient().Generate(1);
+                stratisSender.GenerateStratisWithMiner(1);
                 int transaction2MinedHeight = currentBestHeight + 1;
-                stratisSender.CreateRPCClient().Generate(1);
+                stratisSender.GenerateStratisWithMiner(1);
                 currentBestHeight = currentBestHeight + 2;
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
@@ -233,8 +233,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // create a reorg by mining on two different chains
                 // ================================================
                 // advance both chains, one chain is longer
-                stratisSender.CreateRPCClient().Generate(2);
-                stratisReorg.CreateRPCClient().Generate(10);
+                stratisSender.GenerateStratisWithMiner(2);
+                stratisReorg.GenerateStratisWithMiner(10);
                 currentBestHeight = forkblock.Height + 10;
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
@@ -261,9 +261,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
                 // mine the transaction again
-                stratisSender.CreateRPCClient().Generate(1);
+                stratisSender.GenerateStratisWithMiner(1);
                 transaction2MinedHeight = currentBestHeight + 1;
-                stratisSender.CreateRPCClient().Generate(1);
+                stratisSender.GenerateStratisWithMiner(1);
                 currentBestHeight = currentBestHeight + 2;
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
