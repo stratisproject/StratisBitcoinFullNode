@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public T RegisterRule<T>() where T : ConsensusRule, new()
         {
             var rule = new T();
-            this.Network.Consensus.Rules = new List<IConsensusRule>() { rule };
+            this.Network.Consensus.Rules = new List<IBaseConsensusRule>() { rule };
             this.Register();
             return rule;
         }
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public T RegisterRule<T>() where T : ConsensusRule, new()
         {
             var rule = new T();
-            this.Network.Consensus.Rules = new List<IConsensusRule>() { rule };
+            this.Network.Consensus.Rules = new List<IBaseConsensusRule>() { rule };
             this.Register();
             return rule;
         }

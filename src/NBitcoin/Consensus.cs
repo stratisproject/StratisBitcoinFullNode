@@ -81,21 +81,18 @@ namespace NBitcoin
 
         /// <inheritdoc />
         public ConsensusFactory ConsensusFactory { get; }
+        
+        /// <inheritdoc />
+        public List<IAsyncBaseConsensusRule> PartialValidationRules { get; set; }
 
         /// <inheritdoc />
-        public ICollection<ISyncConsensusRule> Rules { get; set; }
+        public List<IAsyncBaseConsensusRule> FullValidationRules { get; set; }
 
         /// <inheritdoc />
-        public List<IAsyncConsensusRule> PartialValidationRules { get; set; }
+        public List<ISyncBaseConsensusRule> IntegrityValidationRules { get; set; }
 
         /// <inheritdoc />
-        public List<IAsyncConsensusRule> FullValidationRules { get; set; }
-
-        /// <inheritdoc />
-        public List<ISyncConsensusRule> IntegrityValidationRules { get; set; }
-
-        /// <inheritdoc />
-        public List<ISyncConsensusRule> HeaderValidationRules { get; set; }
+        public List<ISyncBaseConsensusRule> HeaderValidationRules { get; set; }
 
         public Consensus(
             ConsensusFactory consensusFactory,
@@ -131,11 +128,11 @@ namespace NBitcoin
             Money proofOfStakeReward
             )
         {
-            this.Rules = new List<ISyncConsensusRule>();
-            this.PartialValidationRules = new List<IAsyncConsensusRule>();
-            this.FullValidationRules = new List<IAsyncConsensusRule>();
-            this.HeaderValidationRules = new List<ISyncConsensusRule>();
-            this.IntegrityValidationRules = new List<ISyncConsensusRule>();
+            this.Rules = new List<ISyncBaseConsensusRule>();
+            this.PartialValidationRules = new List<IAsyncBaseConsensusRule>();
+            this.FullValidationRules = new List<IAsyncBaseConsensusRule>();
+            this.HeaderValidationRules = new List<ISyncBaseConsensusRule>();
+            this.IntegrityValidationRules = new List<ISyncBaseConsensusRule>();
             this.CoinbaseMaturity = coinbaseMaturity;
             this.PremineReward = premineReward;
             this.PremineHeight = premineHeight;

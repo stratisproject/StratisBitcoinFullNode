@@ -7,7 +7,8 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>Validate a PoW transaction.</summary>
-    public class CheckPowTransactionRule : AsyncConsensusRule
+    /// <remarks>This is partial validation rule.</remarks>
+    public class CheckPowTransactionRule : AsyncBaseConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadTransactionNoInput">Thrown if transaction has no inputs.</exception>

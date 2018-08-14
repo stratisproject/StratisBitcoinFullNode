@@ -146,9 +146,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PowConsensusRulesRegistration : IRuleRegistration
         {
-            public ICollection<IConsensusRule> GetRules()
+            public ICollection<IBaseConsensusRule> GetRules()
             {
-                return new List<IConsensusRule>
+                return new List<IBaseConsensusRule>
                 {
                     // == Header ==
                     new HeaderTimeChecksRule(),
@@ -186,9 +186,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PosConsensusRulesRegistration : IRuleRegistration
         {
-            public ICollection<IConsensusRule> GetRules()
+            public ICollection<IBaseConsensusRule> GetRules()
             {
-                return new List<IConsensusRule>
+                return new List<IBaseConsensusRule>
                 {
                     // == Header ==
                     new HeaderTimeChecksRule(),

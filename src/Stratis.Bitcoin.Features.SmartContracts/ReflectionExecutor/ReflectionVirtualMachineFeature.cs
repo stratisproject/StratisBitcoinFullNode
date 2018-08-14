@@ -19,8 +19,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
 
         public override void Initialize()
         {
-            ICollection<IConsensusRule> rulesToAdd = new ReflectionRuleRegistration().GetRules();
-            foreach (IConsensusRule rule in rulesToAdd)
+            ICollection<IBaseConsensusRule> rulesToAdd = new ReflectionRuleRegistration().GetRules();
+            foreach (IBaseConsensusRule rule in rulesToAdd)
             {
                 this.network.Consensus.Rules.Add(rule);
             }

@@ -17,6 +17,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// with the engine, this is important for rules with dependencies on other rules.
         /// Rules are executed in the same order they are registered with the engine.
         /// </remarks>
-        ICollection<IConsensusRule> GetRules();
+        ICollection<IBaseConsensusRule> GetRules();
     }
 }

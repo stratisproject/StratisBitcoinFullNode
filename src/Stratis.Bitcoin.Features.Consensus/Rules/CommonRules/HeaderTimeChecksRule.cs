@@ -6,7 +6,8 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>Checks if <see cref="Block"/> time stamp is ahead of current consensus and not more then two hours in the future.</summary>
-    public class HeaderTimeChecksRule : SyncConsensusRule
+    /// <remarks>This is header validation rule.</remarks>
+    public class HeaderTimeChecksRule : SyncBaseConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.TimeTooOld">Thrown if block's timestamp is too early.</exception>

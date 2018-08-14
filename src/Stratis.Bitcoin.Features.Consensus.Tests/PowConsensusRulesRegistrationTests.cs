@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 {
     public class PowConsensusRulesRegistrationTests
     {
-        private readonly IEnumerable<IConsensusRule> rules;
+        private readonly IEnumerable<IBaseConsensusRule> rules;
 
         public PowConsensusRulesRegistrationTests()
         {

@@ -9,7 +9,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// This rule will validate the block size and weight.
     /// </summary>
-    public class BlockSizeRule : AsyncConsensusRule
+    /// <remarks>This is partial validation rule.</remarks>
+    public class BlockSizeRule : AsyncBaseConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadBlockWeight">The block weight is higher than the max block weight.</exception>

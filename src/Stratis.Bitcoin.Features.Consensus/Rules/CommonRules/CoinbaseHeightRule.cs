@@ -11,8 +11,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     /// <remarks>
     /// More info here https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki
+    /// <para>
+    /// This is partial validation rule.
+    /// </para>
     /// </remarks>
-    public class CoinbaseHeightRule : AsyncConsensusRule
+    public class CoinbaseHeightRule : AsyncBaseConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadCoinbaseHeight">Thrown if coinbase doesn't start with serialized block height.</exception>

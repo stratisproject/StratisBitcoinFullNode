@@ -5,7 +5,7 @@ using NBitcoin.Rules;
 
 namespace Stratis.Bitcoin.Consensus.Rules
 {
-    public abstract class ConsensusRuleBase : IConsensusRule
+    public abstract class BaseConsensusRuleBase : IBaseConsensusRule
     {
         /// <summary>Instance logger.</summary>
         public ILogger Logger { get; set; }
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
     }
 
     /// <summary>An abstract rule for implementing consensus rules.</summary>
-    public abstract class SyncConsensusRule : ConsensusRuleBase, ISyncConsensusRule
+    public abstract class SyncBaseConsensusRule : BaseConsensusRuleBase, ISyncBaseConsensusRule
     {
         /// <summary>
         /// Execute the logic in the current rule.
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
     }
 
     /// <summary>An abstract rule for implementing consensus rules.</summary>
-    public abstract class AsyncConsensusRule : ConsensusRuleBase, IAsyncConsensusRule
+    public abstract class AsyncBaseConsensusRule : BaseConsensusRuleBase, IAsyncBaseConsensusRule
     {
         /// <summary>
         /// Execute the logic in the current rule in an async approach.

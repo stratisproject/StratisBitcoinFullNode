@@ -6,7 +6,8 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>Validate a PoS transaction.</summary>
-    public class CheckPosTransactionRule : AsyncConsensusRule
+    /// <remarks>This is partial validation rule.</remarks>
+    public class CheckPosTransactionRule : AsyncBaseConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErros.BadTransactionEmptyOutput">The transaction output is empty.</exception>

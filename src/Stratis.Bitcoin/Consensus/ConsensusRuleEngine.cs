@@ -52,16 +52,16 @@ namespace Stratis.Bitcoin.Consensus
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
         /// <summary>Group of rules that are used during partial block validation.</summary>
-        private List<AsyncConsensusRule> partialValidationRules;
+        private List<AsyncBaseConsensusRule> partialValidationRules;
 
         /// <summary>Group of rules that are used during full validation (connection of a new block).</summary>
-        private List<AsyncConsensusRule> fullValidationRules;
+        private List<AsyncBaseConsensusRule> fullValidationRules;
 
         /// <summary>Group of rules that are used during block integrity validation.</summary>
-        private List<SyncConsensusRule> integrityValidationRules;
+        private List<SyncBaseConsensusRule> integrityValidationRules;
 
         /// <summary>Group of rules that are used during block's header validation.</summary>
-        private List<SyncConsensusRule> headerValidationRules;
+        private List<SyncBaseConsensusRule> headerValidationRules;
 
         protected ConsensusRuleEngine(
             Network network,
@@ -98,10 +98,10 @@ namespace Stratis.Bitcoin.Consensus
             this.NodeDeployments = nodeDeployments;
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
 
-            this.partialValidationRules = new List<AsyncConsensusRule>();
-            this.headerValidationRules = new List<SyncConsensusRule>();
-            this.fullValidationRules = new List<AsyncConsensusRule>();
-            this.integrityValidationRules = new List<SyncConsensusRule>();
+            this.partialValidationRules = new List<AsyncBaseConsensusRule>();
+            this.headerValidationRules = new List<SyncBaseConsensusRule>();
+            this.fullValidationRules = new List<AsyncBaseConsensusRule>();
+            this.integrityValidationRules = new List<SyncBaseConsensusRule>();
         }
 
         /// <inheritdoc />
@@ -120,24 +120,24 @@ namespace Stratis.Bitcoin.Consensus
         {
             Guard.Assert(this.Network.Consensus.Rules.Any());
 
-            this.headerValidationRules = this.Network.Consensus.HeaderValidationRules.Select(x => x as SyncConsensusRule).ToList();
-            this.SetupConsensusRules(this.headerValidationRules.Select(x => x as ConsensusRuleBase));
+            this.headerValidationRules = this.Network.Consensus.HeaderValidationRules.Select(x => x as SyncBaseConsensusRule).ToList();
+            this.SetupConsensusRules(this.headerValidationRules.Select(x => x as BaseConsensusRuleBase));
 
-            this.integrityValidationRules = this.Network.Consensus.IntegrityValidationRules.Select(x => x as SyncConsensusRule).ToList();
-            this.SetupConsensusRules(this.integrityValidationRules.Select(x => x as ConsensusRuleBase));
+            this.integrityValidationRules = this.Network.Consensus.IntegrityValidationRules.Select(x => x as SyncBaseConsensusRule).ToList();
+            this.SetupConsensusRules(this.integrityValidationRules.Select(x => x as BaseConsensusRuleBase));
 
-            this.partialValidationRules = this.Network.Consensus.PartialValidationRules.Select(x => x as AsyncConsensusRule).ToList();
-            this.SetupConsensusRules(this.partialValidationRules.Select(x => x as ConsensusRuleBase));
+            this.partialValidationRules = this.Network.Consensus.PartialValidationRules.Select(x => x as AsyncBaseConsensusRule).ToList();
+            this.SetupConsensusRules(this.partialValidationRules.Select(x => x as BaseConsensusRuleBase));
 
-            this.fullValidationRules = this.Network.Consensus.FullValidationRules.Select(x => x as AsyncConsensusRule).ToList();
-            this.SetupConsensusRules(this.fullValidationRules.Select(x => x as ConsensusRuleBase));
+            this.fullValidationRules = this.Network.Consensus.FullValidationRules.Select(x => x as AsyncBaseConsensusRule).ToList();
+            this.SetupConsensusRules(this.fullValidationRules.Select(x => x as BaseConsensusRuleBase));
 
             return this;
         }
 
-        private void SetupConsensusRules(IEnumerable<ConsensusRuleBase> rules)
+        private void SetupConsensusRules(IEnumerable<BaseConsensusRuleBase> rules)
         {
-            foreach (ConsensusRuleBase rule in rules)
+            foreach (BaseConsensusRuleBase rule in rules)
             {
                 rule.Parent = this;
                 rule.Logger = this.loggerFactory.CreateLogger(rule.GetType().FullName);
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
-        private async Task ExecuteRulesAsync(List<AsyncConsensusRule> asyncRules, RuleContext ruleContext)
+        private async Task ExecuteRulesAsync(List<AsyncBaseConsensusRule> asyncRules, RuleContext ruleContext)
         {
             try
             {
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     ruleContext.SkipValidation = ruleContext.ValidationContext.ChainTipToExtend.IsAssumedValid;
 
-                    foreach (AsyncConsensusRule rule in asyncRules)
+                    foreach (AsyncBaseConsensusRule rule in asyncRules)
                         await rule.RunAsync(ruleContext).ConfigureAwait(false);
                 }
             }
@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
-        private void ExecuteRules(List<SyncConsensusRule> rules, RuleContext ruleContext)
+        private void ExecuteRules(List<SyncBaseConsensusRule> rules, RuleContext ruleContext)
         {
             try
             {
@@ -237,7 +237,7 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     ruleContext.SkipValidation = ruleContext.ValidationContext.ChainTipToExtend.IsAssumedValid;
 
-                    foreach (SyncConsensusRule rule in rules)
+                    foreach (SyncBaseConsensusRule rule in rules)
                         rule.Run(ruleContext);
                 }
             }
@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.Consensus
 
         //TODO ACTIVATION 4 groups of rules
         /// <inheritdoc />
-        //public T GetRule<T>() where T : SyncConsensusRule
+        //public T GetRule<T>() where T : SyncBaseConsensusRule
         //{
         //    return (T)this.Rules.Single(r => r is T);
         //}
