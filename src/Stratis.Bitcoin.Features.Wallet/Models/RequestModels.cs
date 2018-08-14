@@ -32,18 +32,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string Mnemonic { get; set; }
 
         /// <summary>
-        /// When supplied this password is used to encrypt the wallet.
+        /// This password is used to encrypt the wallet for secure storage. The password is required. 
+        /// If <see cref="Passphrase"/> is not supplied, then password is used as seed to the mnemonic.
         /// </summary>
-        /// <remarks>
-        /// If the account was created previously before passphrase was available, then the password was used as passphrase. It is therefor essential that
-        /// the <see cref="Passphrase"/> is not supplied for older accounts. Make sure <see cref="Passphrase"/> is set to null, not even empty string.
-        /// </remarks>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
         /// <summary>
         /// When supplied, this passphrase is added as additional seed to the mnemonic. If this property is null, then <see cref="Password"/> is used as additional mnemonic seed.
         /// </summary>
+        /// <remarks>
+        /// Empty string is a valid passphrase.
+        /// </remarks>
         public string Passphrase { get; set; }
 
         public string Network { get; set; }
@@ -74,14 +74,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// Supply the password that was used to create the wallet.
         /// </summary>
         /// <remarks>
-        /// If the account was created previously before passphrase was available, then the password was used as passphrase. It is therefor essential that
-        /// the <see cref="Passphrase"/> is not supplied for older accounts. Make sure <see cref="Passphrase"/> is set to null, not even empty string.
+        /// If the account was created previously before <see cref="Passphrase"/> was available, then the password was used as passphrase. You only need to supply the password for existing wallets,
+        /// the passphrase is only needed for newer account that was created with a passphrase different than the password.
         /// </remarks>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
         /// <summary>
-        /// Supply the passphrase that was used when account was created. If no passphrase was used, make sure this property is null, as empty string is a valid passphrase.
+        /// Supply the passphrase that was used when account was created.
         /// </summary>
         public string Passphrase { get; set; }
 
