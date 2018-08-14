@@ -72,5 +72,46 @@ namespace Stratis.Bitcoin.Features.Miner.Models
 
             return res;
         }
+
+        /// <summary>
+        /// Reset Weight and ExpectedTime values and set Staking to false.
+        /// </summary>
+        public void PauseStaking()
+        {
+            this.Staking = false;
+            this.Weight = 0;
+            this.ExpectedTime = 0;
+        }
+
+        /// <summary>
+        /// Resume staking. Set staking to true.
+        /// </summary>
+        /// <param name="weight">Weight</param>
+        /// <param name="expectedTime">Expected time</param>
+        public void ResumeStaking(long weight, long expectedTime)
+        {
+            this.Staking = true;
+            this.Weight = weight;
+            this.ExpectedTime = expectedTime;
+            this.Errors = null;
+        }
+
+        /// <summary>
+        /// Reset all values to default.
+        /// </summary>
+        public void StopStaking()
+        {
+            this.Enabled = false;
+            this.Staking = false;
+            this.Errors = null;
+            this.CurrentBlockSize = 0;
+            this.CurrentBlockTx = 0;
+            this.PooledTx = 0;
+            this.Difficulty = 0;
+            this.SearchInterval = 0;
+            this.Weight = 0;
+            this.NetStakeWeight = 0;
+            this.ExpectedTime = 0;
+        }
     }
 }
