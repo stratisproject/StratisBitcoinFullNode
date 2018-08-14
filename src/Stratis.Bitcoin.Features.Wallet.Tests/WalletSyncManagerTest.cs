@@ -108,6 +108,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletSyncManager.SetWalletTip(this.chain.GetBlock(3));
 
             Block blockToProcess = blocks[3];
+            blockToProcess.SetPrivatePropertyValue("BlockSize", 1L);
+
             walletSyncManager.ProcessBlock(blockToProcess); //4th block in the list has same prevhash as which is loaded
 
             uint256 expectedBlockHash = this.AssertTipBlockHash(walletSyncManager, 4);
@@ -144,6 +146,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletSyncManager.SetWalletTip(leftChain.GetBlock(result.LeftForkBlocks[3].Header.GetHash()));
             //process 5th block from the right side of the fork in the list does not have same prevhash as which is loaded.
             Block blockToProcess = result.RightForkBlocks[4];
+            blockToProcess.SetPrivatePropertyValue("BlockSize", 1L);
+
             walletSyncManager.ProcessBlock(blockToProcess);
 
             this.AssertTipBlockHash(walletSyncManager, 5);
@@ -184,6 +188,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletSyncManager.SetWalletTip(this.chain.GetBlock(2));
             //process 4th block in the list does not have same prevhash as which is loaded
             Block blockToProcess = blocks[3];
+            blockToProcess.SetPrivatePropertyValue("BlockSize", 1L);
+
             walletSyncManager.ProcessBlock(blockToProcess);
 
             this.AssertTipBlockHash(walletSyncManager, 4);
@@ -232,6 +238,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletSyncManager.SetWalletTip(this.chain.GetBlock(2));
             //process 4th block in the list  does not have same prevhash as which is loaded
             Block blockToProcess = blocks[3];
+            blockToProcess.SetPrivatePropertyValue("BlockSize", 1L);
+
             walletSyncManager.ProcessBlock(blockToProcess);
 
             this.AssertTipBlockHash(walletSyncManager, 4);
