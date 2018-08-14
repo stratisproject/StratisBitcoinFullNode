@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 Process[] bitcoinDProcesses = Process.GetProcessesByName("bitcoind");
                 IEnumerable<Process> applicableBitcoinDProcesses = bitcoinDProcesses.Where(b => b.MainModule.FileName.Contains("External Libs"));
                 if (!applicableBitcoinDProcesses.Any())
-                    break; //this would imply we killed all
+                    break;
 
                 foreach (Process process in applicableBitcoinDProcesses)
                 {
