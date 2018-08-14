@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.P2P.Peer;
@@ -11,17 +12,25 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 {
     public class TestHelper
     {
+        static async Task AsyncTaskDelay(int milisec)
+        {
+            await Task.Delay(milisec);
+        }
+
         public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int millisecondsTimeout = 50, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken = cancellationToken == default(CancellationToken)
                 ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000).Token
                 : cancellationToken;
+
+
             while (!act())
             {
                 try
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    Thread.Sleep(millisecondsTimeout);
+                    AsyncTaskDelay(millisecondsTimeout).Wait();
+                    //Thread.Sleep(millisecondsTimeout);
                 }
                 catch (OperationCanceledException e)
                 {

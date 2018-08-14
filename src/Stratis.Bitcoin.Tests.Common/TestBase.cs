@@ -33,13 +33,13 @@ namespace Stratis.Bitcoin.Tests.Common
                     try
                     {
                         Directory.Delete(dir, true);
-                        break;
+                        //break;
                     }
                     catch
                     {
                         deleteAttempts++;
-                        Thread.Sleep(200);
                     }
+                    Thread.Sleep(200);
                 }
                 else
                     break;
