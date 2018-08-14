@@ -18,7 +18,197 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             Given(a_proof_of_stake_node_with_api_enabled);
             When(calling_startstaking);
             Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
         }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_01()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_02()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_03()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_04()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_05()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_06()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_07()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_08()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_09()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_10()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_11()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_12()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_13()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_14()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_15()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_16()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_17()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_18()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_19()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_21()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
+        [Fact]
+        public void Startstaking_enables_staking_but_nothing_staked_22()
+        {
+            Given(a_proof_of_stake_node_with_api_enabled);
+            When(calling_startstaking);
+            Then(staking_is_enabled_but_nothing_is_staked);
+            //this.AfterTest();
+        }
+
 
         [Fact]
         public void Getblockhash_via_rpc_callbyname_returns_the_blockhash()
