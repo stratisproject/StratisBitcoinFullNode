@@ -17,8 +17,8 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Consensus.Validators;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
@@ -180,8 +180,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.network.Consensus.Rules = new SmartContractPowRuleRegistration().GetRules();
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
+                var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider));
 
-                this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
+                var coinViewStorageMock = new Mock<ICoinViewStorage>();
+                this.cachedCoinView = new CachedCoinView(chainState, coinViewStorageMock.Object, dateTimeProvider, new LoggerFactory(), new NodeLifetime());
 
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
@@ -221,7 +223,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new SmartContractVersionProvider());
                 var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
-                var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider));
 
                 var smartContractRuleRegistration = new SmartContractPowRuleRegistration();
                 ConsensusRuleEngine consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, this.cachedCoinView, this.receiptStorage, new ChainState(new InvalidBlockHashStore(dateTimeProvider))).Register();
