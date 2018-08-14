@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly AsyncQueue<Block> blocksQueue;
 
         /// <summary>Current <see cref="blocksQueue"/> size in bytes.</summary>
-        private long? blocksQueueSize;
+        private long blocksQueueSize;
 
         /// <summary>Flag to determine when the <see cref="MaxQueueSize"/> is reached.</summary>
         private bool maxQueueSizeReached;
@@ -119,7 +119,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
-            this.blocksQueueSize -= block.BlockSize;
+            if (block.BlockSize != null)
+                this.blocksQueueSize -= block.BlockSize.Value;
 
             ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
 
@@ -248,7 +249,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
             }
 
-            this.blocksQueueSize += block.BlockSize;
+            if (block.BlockSize != null)
+                this.blocksQueueSize += block.BlockSize.Value;
 
             // If the queue reaches the maximum limit, ignore incoming blocks until the queue is empty.
             if (!this.maxQueueSizeReached)
