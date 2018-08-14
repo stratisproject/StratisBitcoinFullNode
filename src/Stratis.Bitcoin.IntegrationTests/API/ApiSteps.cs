@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.sharedSteps = new SharedSteps();
             this.httpHandler = new HttpClientHandler() { ServerCertificateCustomValidationCallback = (request, cert, chain, errors) => true };
-            this.httpClient = new HttpClient(httpHandler);
+            this.httpClient = new HttpClient(this.httpHandler);
             this.httpClient.DefaultRequestHeaders.Accept.Clear();
             this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
 
