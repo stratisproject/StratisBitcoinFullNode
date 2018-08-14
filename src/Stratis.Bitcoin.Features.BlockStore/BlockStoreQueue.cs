@@ -69,7 +69,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
         private Task dequeueLoopTask;
-
         public BlockStoreQueue(
             IBlockRepository blockRepository,
             ConcurrentChain chain,
@@ -168,9 +167,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public Task<Block> GetBlockAsync(uint256 blockHash)
+        public async Task<Block> GetBlockAsync(uint256 blockHash)
         {
-            throw new System.NotImplementedException();
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
+
+            Block block = await this.blockRepository.GetAsync(blockHash).ConfigureAwait(false);
+
+            this.logger.LogTrace("(-)");
+
+            return block;
         }
 
         /// <summary>Sets the internal store tip and exposes the store tip to other components through the chain state.</summary>

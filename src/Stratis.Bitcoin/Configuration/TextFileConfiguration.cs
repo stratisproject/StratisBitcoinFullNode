@@ -199,6 +199,11 @@ namespace Stratis.Bitcoin.Configuration
                 return (T)(object)int.Parse(str, CultureInfo.InvariantCulture);
             }
 
+            if (typeof(T) == typeof(ulong))
+            {
+                return (T)(object)ulong.Parse(str, CultureInfo.InvariantCulture);
+            }
+
             if (typeof(T) == typeof(Uri))
             {
                 return (T)(object)new Uri(str);

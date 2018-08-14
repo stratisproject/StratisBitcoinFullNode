@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
@@ -28,6 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string Bob = "Bob";
         private const string Charlie = "Charlie";
         private const string Dave = "Dave";
+        private int preserveMaturity;
 
         public ReorgToLongestChainSpecification(ITestOutputHelper output) : base(output)
         {
@@ -36,11 +38,16 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         protected override void BeforeTest()
         {
             this.sharedSteps = new SharedSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
+            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.RegTest);
         }
 
         protected override void AfterTest()
         {
+            this.nodes[JingTheFastMiner].FullNode.Network.Consensus.CoinbaseMaturity = this.preserveMaturity;
+            this.nodes[Bob].FullNode.Network.Consensus.CoinbaseMaturity = this.preserveMaturity;
+            this.nodes[Charlie].FullNode.Network.Consensus.CoinbaseMaturity = this.preserveMaturity;
+            this.nodes[Dave].FullNode.Network.Consensus.CoinbaseMaturity = this.preserveMaturity;
+
             this.nodeGroupBuilder.Dispose();
         }
 
@@ -57,6 +64,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                     .Connect(Charlie, Dave)
                     .AndNoMoreConnections()
                 .Build();
+
+            this.preserveMaturity = (int)this.nodes[JingTheFastMiner].FullNode.Network.Consensus.CoinbaseMaturity;
+            this.nodes[JingTheFastMiner].FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+            this.nodes[Bob].FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+            this.nodes[Charlie].FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+            this.nodes[Dave].FullNode.Network.Consensus.CoinbaseMaturity = 1L;
         }
 
         private void each_mine_a_block()

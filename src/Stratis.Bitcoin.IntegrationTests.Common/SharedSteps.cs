@@ -18,10 +18,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             FeeType feeType,
             int minConfirmations)
         {
-            return new TransactionBuildContext(network, new WalletAccountReference(sendingWalletName, sendingAccountName), recipients.ToList(), sendingPassword)
+            return new TransactionBuildContext(network)
             {
+                AccountReference = new WalletAccountReference(sendingWalletName, sendingAccountName),
                 MinConfirmations = minConfirmations,
-                FeeType = feeType
+                FeeType = feeType,
+                WalletPassword = sendingPassword,
+                Recipients = recipients.ToList()
             };
         }
 
@@ -33,11 +36,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
             long balanceBeforeMining = node.FullNode.WalletManager()
                 .GetSpendableTransactionsInWallet(toWalletName)
-                .Where(x => x.Address == address)
-                .Sum(s => s.Transaction.Amount);
-
-            long immatureBalanceBeforeMining = node.FullNode.WalletManager()
-                .GetSpendableTransactionsInWallet(toWalletName, includeImmature: true)
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
@@ -55,17 +53,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
-            long immatureBalanceAfterMining = node.FullNode.WalletManager()
-                .GetSpendableTransactionsInWallet(toWalletName, includeImmature: true)
-                .Where(x => x.Address == address)
-                .Sum(s => s.Transaction.Amount);
-
+            Money powReward = node.GetProofOfWorkRewardForMinedBlocks(blockCount, true);
             long balanceIncrease = balanceAfterMining - balanceBeforeMining;
-            long immatureBalanceIncrease = immatureBalanceAfterMining - immatureBalanceBeforeMining;
-            Money immaturePowReward = node.GetProofOfWorkRewardForMinedBlocks(blockCount, false);
-            long calculatedFees = immatureBalanceIncrease - immaturePowReward;
+            long calculatedFees = balanceIncrease - powReward;
 
-            balanceIncrease.Should().Be(node.GetProofOfWorkRewardForMinedBlocks(blockCount, true));
+            balanceIncrease.Should().Be(powReward + calculatedFees);
             calculatedFees.Should().Be(expectedFees);
         }
 
@@ -82,12 +74,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
             this.WaitForNodeToSync(node);
 
-            IEnumerable<UnspentOutputReference> spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName, includeImmature: true);
+            // Since the premine will not be immediately spendable, the transactions have to be counted directly from the address.
+            unusedAddress.Transactions.Count().Should().Be(2);
 
-            // The premine and other block rewards are not mature yet.
             Money amountShouldBe = node.FullNode.Network.Consensus.PremineReward + node.FullNode.Network.Consensus.ProofOfWorkReward;
 
-            spendable.Sum(s => s.Transaction.Amount).Should().Be(amountShouldBe);
+            unusedAddress.Transactions.Sum(s => s.Amount).Should().Be(amountShouldBe);
         }
 
         public void WaitForNodeToSync(params CoreNode[] nodes)

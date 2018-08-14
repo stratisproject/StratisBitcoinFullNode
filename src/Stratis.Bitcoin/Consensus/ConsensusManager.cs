@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Consensus.ValidationResults;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -19,54 +20,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
-    /// <summary>
-    /// TODO add a big nice comment.
-    /// </summary>
-    public interface IConsensusManager
-    {
-        /// <summary>The current tip of the chain that has been validated.</summary>
-        ChainedHeader Tip { get; }
-
-        /// <summary>
-        /// Set the tip of <see cref="ConsensusManager"/>, if the given <paramref name="chainTip"/> is not equal to <see cref="Tip"/>
-        /// then rewind consensus until a common header is found.
-        /// </summary>
-        /// <param name="chainTip">Last common header between chain repository and block store if it's available,
-        /// if the store is not available it is the chain repository tip.</param>
-        Task InitializeAsync(ChainedHeader chainTip);
-
-        /// <summary>
-        /// A list of headers are presented from a given peer,
-        /// we'll attempt to connect the headers to the tree and if new headers are found they will be queued for download.
-        /// </summary>
-        /// <param name="peer">The peer that providing the headers.</param>
-        /// <param name="headers">The list of new headers.</param>
-        /// <param name="triggerDownload">Specifies if the download should be scheduled for interesting blocks.</param>
-        /// <returns>Information about consumed headers.</returns>
-        /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
-        /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
-        ConnectNewHeadersResult HeadersPresented(INetworkPeer peer, List<BlockHeader> headers, bool triggerDownload = true);
-
-        /// <summary>
-        /// Called after a peer was disconnected.
-        /// Informs underlying components about the even.
-        /// Processes any remaining blocks to download.
-        /// </summary>
-        /// <param name="peerId">The peer that was disconnected.</param>
-        void PeerDisconnected(int peerId);
-
-        /// <summary>
-        /// Provides block data for the given block hashes.
-        /// </summary>
-        /// <remarks>
-        /// First we check if the block exists in chained header tree, then it check the block store and if it wasn't found there the block will be scheduled for download.
-        /// Given callback is called when the block is obtained. If obtaining the block fails the callback will be called with <c>null</c>.
-        /// </remarks>
-        /// <param name="blockHashes">The block hashes to download.</param>
-        /// <param name="onBlockDownloadedCallback">The callback that will be called for each downloaded block.</param>
-        Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback);
-    }
-
     /// <inheritdoc cref="IConsensusManager"/>
     public class ConsensusManager : IConsensusManager, IDisposable
     {
@@ -653,7 +606,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>
         /// In case we failed to retrieve blocks from any of the storages that we have during the process of consensus tip switching we want to disconnect
         /// from all peers and reset consensus tip before the fork point between two chains (one that is ours and another which we tried switch to).
-        /// Disconnection is needed to avoid having CHT in an inconsistent that and to have a high probability of connecting to a new set of peers
+        /// Disconnection is needed to avoid having CHT in an inconsistent state and to increase the probability of connecting to a new set of peers
         /// which claims the same chain because they had enough time to handle the chain split.
         /// </remarks>
         /// <param name="newTip">The new tip.</param>
@@ -721,12 +674,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Attempts to connect a block to a chain with specified tip.
         /// </summary>
-        /// <param name="chainTipToExtand">Tip of the chain to extend.</param>
+        /// <param name="chainTipToExtend">Tip of the chain to extend.</param>
         /// <param name="blockToConnect">Block to connect.</param>
         /// <exception cref="ConsensusException">Thrown in case CHT is not in a consistent state.</exception>
-        private async Task<ConnectBlocksResult> ConnectBlockAsync(ChainedHeader chainTipToExtand, ChainedHeaderBlock blockToConnect)
+        private async Task<ConnectBlocksResult> ConnectBlockAsync(ChainedHeader chainTipToExtend, ChainedHeaderBlock blockToConnect)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(chainTipToExtand), chainTipToExtand, nameof(blockToConnect), blockToConnect);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(chainTipToExtend), chainTipToExtend, nameof(blockToConnect), blockToConnect);
 
             if ((blockToConnect.ChainedHeader.BlockValidationState != ValidationState.PartiallyValidated) &&
                 (blockToConnect.ChainedHeader.BlockValidationState != ValidationState.FullyValidated))
@@ -739,7 +692,7 @@ namespace Stratis.Bitcoin.Consensus
             var validationContext = new ValidationContext() { Block = blockToConnect.Block };
 
             // Call the validation engine.
-            await this.consensusRules.FullValidationAsync(validationContext, chainTipToExtand).ConfigureAwait(false);
+            await this.consensusRules.FullValidationAsync(validationContext, chainTipToExtend).ConfigureAwait(false);
 
             if (validationContext.Error != null)
             {
@@ -979,10 +932,8 @@ namespace Stratis.Bitcoin.Consensus
 
             var blocksToDownload = new List<ChainedHeader>();
 
-            for (int i = 0; i < blockHashes.Count; i++)
+            foreach (uint256 blockHash in blockHashes)
             {
-                uint256 blockHash = blockHashes[i];
-
                 ChainedHeaderBlock chainedHeaderBlock = await this.LoadBlockDataAsync(blockHash).ConfigureAwait(false);
 
                 if ((chainedHeaderBlock == null) || (chainedHeaderBlock.Block != null))
@@ -1120,84 +1071,6 @@ namespace Stratis.Bitcoin.Consensus
         public void Dispose()
         {
             this.reorgLock.Dispose();
-        }
-
-        /// <summary>
-        /// Information related to the block full validation process.
-        /// </summary>
-        private class ConnectBlocksResult : ValidationResult
-        {
-            public bool ConsensusTipChanged { get; private set; }
-
-            /// <summary>List of peer IDs to be banned and disconnected.</summary>
-            /// <remarks><c>null</c> in case <see cref="ValidationResult.Succeeded"/> is <c>false</c>.</remarks>
-            public List<int> PeersToBan { get; private set; }
-
-            public ChainedHeader LastValidatedBlockHeader { get; set; }
-
-            public ConnectBlocksResult(bool succeeded, bool consensusTipChanged = true, List<int> peersToBan = null, string banReason = null, int banDurationSeconds = 0)
-            {
-                this.ConsensusTipChanged = consensusTipChanged;
-                this.Succeeded = succeeded;
-                this.PeersToBan = peersToBan;
-                this.BanReason = banReason;
-                this.BanDurationSeconds = banDurationSeconds;
-            }
-
-            public override string ToString()
-            {
-                if (this.Succeeded)
-                    return $"{nameof(this.Succeeded)}={this.Succeeded}";
-
-                return $"{nameof(this.Succeeded)}={this.Succeeded},{nameof(this.ConsensusTipChanged)}={this.ConsensusTipChanged},{nameof(this.PeersToBan)}.{nameof(this.PeersToBan.Count)}={this.PeersToBan.Count},{nameof(this.BanReason)}={this.BanReason},{nameof(this.BanDurationSeconds)}={this.BanDurationSeconds}";
-            }
-        }
-    }
-
-    /// <summary>
-    /// A delegate that is used to send callbacks when a bock is downloaded from the of queued requests to downloading blocks.
-    /// </summary>
-    /// <param name="chainedHeaderBlock">The pair of the block and its chained header.</param>
-    public delegate void OnBlockDownloadedCallback(ChainedHeaderBlock chainedHeaderBlock);
-
-    /// <summary>
-    /// A request that holds information of blocks to download.
-    /// </summary>
-    public class BlockDownloadRequest
-    {
-        /// <summary>The list of block headers to download.</summary>
-        public List<ChainedHeader> BlocksToDownload { get; set; }
-    }
-
-    public class PartialValidationResult : ValidationResult
-    {
-        public ChainedHeaderBlock ChainedHeaderBlock { get; set; }
-
-        /// <inheritdoc/>
-        public override string ToString()
-        {
-            if (this.Succeeded)
-                return base.ToString();
-
-            return base.ToString() + $",{nameof(this.ChainedHeaderBlock)}={this.ChainedHeaderBlock}";
-        }
-    }
-
-    public class ValidationResult
-    {
-        public bool Succeeded { get; set; }
-
-        public int BanDurationSeconds { get; set; }
-
-        public string BanReason { get; set; }
-
-        /// <inheritdoc/>
-        public override string ToString()
-        {
-            if (this.Succeeded)
-                return $"{nameof(this.Succeeded)}={this.Succeeded}";
-
-            return $"{nameof(this.Succeeded)}={this.Succeeded},{nameof(this.BanReason)}={this.BanReason},{nameof(this.BanDurationSeconds)}={this.BanDurationSeconds}";
         }
     }
 }

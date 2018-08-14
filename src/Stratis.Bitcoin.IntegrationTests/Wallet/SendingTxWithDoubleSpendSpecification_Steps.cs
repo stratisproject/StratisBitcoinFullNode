@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -21,23 +22,31 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private Transaction transaction;
         private MempoolValidationState mempoolValidationState;
         private HdAddress receivingAddress;
+        private long coinbaseMaturity;
 
         public SendingTransactionWithDoubleSpend(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
         protected override void BeforeTest()
         {
             this.builder = NodeBuilder.Create(this);
-            this.stratisSender = this.builder.CreateStratisPowNode();
-            this.stratisReceiver = this.builder.CreateStratisPowNode();
+            this.stratisSender = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
+            this.stratisReceiver = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
             this.mempoolValidationState = new MempoolValidationState(true);
 
             this.builder.StartAll();
             this.stratisSender.NotInIBD();
             this.stratisReceiver.NotInIBD();
+
+            this.coinbaseMaturity = this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
+            this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+            this.stratisReceiver.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
         }
 
         protected override void AfterTest()
         {
+            this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity = this.coinbaseMaturity;
+            this.stratisReceiver.FullNode.Network.Consensus.CoinbaseMaturity = this.coinbaseMaturity;
+
             this.builder.Dispose();
         }
 
@@ -60,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.stratisSender));
 
             var total = this.stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
-            total.Should().Equals(Money.COIN * (105 - maturity + 1) * 50);
+            total.Should().Equals(Money.COIN * 6 * 50);
 
             // sync both nodes
             this.stratisSender.CreateRPCClient().AddNode(this.stratisReceiver.Endpoint, true);
@@ -72,7 +81,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.receivingAddress = this.stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
 
             this.transaction = this.stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(WalletTests.CreateContext(this.stratisSender.FullNode.Network,
-                new WalletAccountReference("mywallet", "account 0"), "123456", this.receivingAddress.ScriptPubKey, Money.COIN * 100, FeeType.Medium, 101));
+                new WalletAccountReference("mywallet", "account 0"), "123456", this.receivingAddress.ScriptPubKey, Money.COIN * 100, FeeType.Medium, (int)this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity));
 
             this.stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
 
@@ -99,8 +108,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void trx_is_mined_into_a_block_and_removed_from_mempools()
         {
-            new SharedSteps().MineBlocks(1, this.stratisSender, "account 0", "mywallet", "123456", 16360L);
-
+            new SharedSteps().MineBlocks(1, this.stratisSender, "account 0", "mywallet", "123456", 19320L);
             new SharedSteps().WaitForNodeToSync(this.stratisSender, this.stratisReceiver);
 
             this.stratisSender.FullNode.MempoolManager().GetMempoolAsync().Result.Should().NotContain(this.transaction.GetHash());

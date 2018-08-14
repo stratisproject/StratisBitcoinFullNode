@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).First().Transaction.BlockHeight;
         }
 
-        public static int WalletSpendableTransactionCount(this CoreNode node, string walletName)
+        public static int WalletSpendableTransactionCount(this CoreNode node, string walletName, bool includeImmature = false)
         {
             return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Count();
         }

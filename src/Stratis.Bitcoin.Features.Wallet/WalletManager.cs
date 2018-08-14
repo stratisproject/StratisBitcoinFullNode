@@ -749,7 +749,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0, bool includeImmature = false)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletName), walletName, nameof(confirmations), confirmations);
@@ -758,7 +758,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             UnspentOutputReference[] res = null;
             lock (this.lockObject)
             {
-                res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations, includeImmature).ToArray();
+                res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", res.Count());
@@ -766,7 +766,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, NBitcoin.Consensus consensus, int confirmations = 0, bool includeImmature = false)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, NBitcoin.Consensus consensus, int confirmations = 0)
         {
             Guard.NotNull(walletAccountReference, nameof(walletAccountReference));
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletAccountReference), walletAccountReference, nameof(confirmations), confirmations);
@@ -784,7 +784,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         $"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
                 }
 
-                res = account.GetSpendableTransactions(this.chain.Tip.Height, consensus, confirmations, includeImmature).ToArray();
+                res = account.GetSpendableTransactions(this.chain.Tip.Height, consensus, confirmations).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", res.Count());
@@ -1224,12 +1224,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                // Update the wallets with the last processed block height.
-                foreach (AccountRoot accountRoot in wallet.AccountsRoot.Where(a => a.CoinType == this.coinType))
-                {
-                    accountRoot.LastBlockSyncedHeight = chainedHeader.Height;
-                    accountRoot.LastBlockSyncedHash = chainedHeader.HashBlock;
-                }
+                wallet.SetLastBlockDetailsByCoinType(this.coinType, chainedHeader);
             }
 
             this.logger.LogTrace("(-)");

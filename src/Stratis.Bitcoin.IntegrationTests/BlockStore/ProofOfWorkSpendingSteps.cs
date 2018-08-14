@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
@@ -34,12 +35,15 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected override void BeforeTest()
         {
-            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
+            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.RegTest);
             this.sharedSteps = new SharedSteps();
         }
 
         protected override void AfterTest()
         {
+            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = this.coinbaseMaturity;
+            this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = this.coinbaseMaturity;
+
             this.nodeGroupBuilder.Dispose();
         }
 
@@ -61,6 +65,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             this.coinbaseMaturity = (int)this.sendingStratisBitcoinNode.FullNode
                 .Network.Consensus.CoinbaseMaturity;
+
+            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = 5L;
+            this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = 5L;
         }
 
         protected void a_block_is_mined_creating_spendable_coins()
@@ -70,12 +77,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void more_blocks_mined_to_just_BEFORE_maturity_of_original_block()
         {
-            this.sharedSteps.MineBlocks(this.coinbaseMaturity - 1, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
+            this.sharedSteps.MineBlocks((int)this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity - 1, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
         }
 
         protected void more_blocks_mined_to_just_AFTER_maturity_of_original_block()
         {
-            this.sharedSteps.MineBlocks(this.coinbaseMaturity, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
+            this.sharedSteps.MineBlocks((int)this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
 
         }
 
@@ -97,7 +104,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                             ScriptPubKey = sendtoAddress.ScriptPubKey
                         }
                     },
-                    FeeType.Medium, 101);
+                    FeeType.Medium, (int)this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity + 1);
 
                 this.lastTransaction = this.sendingStratisBitcoinNode.FullNode.WalletTransactionHandler()
                     .BuildTransaction(transactionBuildContext);

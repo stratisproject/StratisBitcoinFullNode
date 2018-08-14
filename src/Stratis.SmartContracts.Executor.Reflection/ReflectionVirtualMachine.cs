@@ -25,17 +25,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ILogger logger;
         private readonly Network network;
         private readonly ISmartContractValidator validator;
+        private readonly IAddressGenerator addressGenerator;
         public static int VmVersion = 1;
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             InternalTransactionExecutorFactory internalTransactionExecutorFactory,
             ILoggerFactory loggerFactory,
-            Network network)
+            Network network,
+            IAddressGenerator addressGenerator)
         {
             this.validator = validator;
             this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.network = network;
+            this.addressGenerator = addressGenerator;
         }
 
         /// <summary>
@@ -48,7 +51,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.logger.LogTrace("()");
 
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
+            // TODO: Spend Validation + Creation Fee here.
 
             // Decompile the contract execution code and validate it.
             SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(createData.ContractExecutionCode);
@@ -65,8 +68,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(createData.ContractExecutionCode, decompilation.ContractType.Name);
 
             Type contractType = Load(gasInjectedCode, decompilation.ContractType.Name);
-            
-            uint160 contractAddress = Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(transactionContext.TransactionHash);
+
+            uint160 contractAddress = this.addressGenerator.GenerateAddress(transactionContext.TransactionHash, transactionContext.GetNonceAndIncrement());
 
             // Create an account for the contract in the state repository.
             repository.CreateAccount(contractAddress);
@@ -89,8 +92,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 new Message(
                     contractAddress.ToAddress(this.network),
                     transactionContext.From.ToAddress(this.network),
-                    transactionContext.Amount,
-                    createData.GasLimit
+                    transactionContext.Amount
                 ),
                 persistentState,
                 gasMeter,
@@ -132,8 +134,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ITransactionContext transactionContext)
         {
             this.logger.LogTrace("(){0}:{1}", nameof(callData.MethodName), callData.MethodName);
-
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
             if (callData.MethodName == null)
             {
@@ -179,8 +179,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 new Message(
                     callData.ContractAddress.ToAddress(this.network),
                     transactionContext.From.ToAddress(this.network),
-                    transactionContext.Amount,
-                    callData.GasLimit
+                    transactionContext.Amount
                 ),
                 persistentState,
                 gasMeter,
@@ -267,7 +266,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
             builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress(this.network)));
-            builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.GasLimit), message.GasLimit, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
+            builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
 
             if (callData.MethodParameters != null && callData.MethodParameters.Length > 0)
                 builder.Append(string.Format(",{0}:{1}", nameof(callData.MethodParameters), callData.MethodParameters));

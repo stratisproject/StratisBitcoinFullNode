@@ -273,11 +273,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="currentChainHeight">Height of the current chain, used in calculating the number of confirmations.</param>
         /// <param name="confirmations">The number of confirmations required to consider a transaction spendable.</param>
         /// <returns>A collection of spendable outputs.</returns>
-        public IEnumerable<UnspentOutputReference> GetAllSpendableTransactions(CoinType coinType, int currentChainHeight, int confirmations = 0, bool includeImmature = false)
+        public IEnumerable<UnspentOutputReference> GetAllSpendableTransactions(CoinType coinType, int currentChainHeight, int confirmations = 0)
         {
             IEnumerable<HdAccount> accounts = this.GetAccountsByCoinType(coinType);
 
-            return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network.Consensus, confirmations, includeImmature));
+            return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network.Consensus, confirmations));
         }
     }
 
@@ -709,7 +709,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="currentChainHeight">The current height of the chain. Used for calculating the number of confirmations a transaction has.</param>
         /// <param name="confirmations">The minimum number of confirmations required for transactions to be considered.</param>
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, NBitcoin.Consensus consensus, int confirmations = 0, bool includeImmature = false)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, NBitcoin.Consensus consensus, int confirmations = 0)
         {
             // This will take all the spendable coins that belong to the account and keep the reference to the HDAddress and HDAccount.
             // This is useful so later the private key can be calculated just from a given UTXO.
@@ -731,7 +731,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     bool isCoinBase = transactionData.IsCoinBase ?? false;
                     bool isCoinStake = transactionData.IsCoinStake ?? false;
 
-                    if (includeImmature || (!isCoinBase && !isCoinStake))
+                    if (!isCoinBase && !isCoinStake)
                     {
                         // This output can unconditionally be included in the results.
 
@@ -743,7 +743,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         };
                     }
 
-                    if (!includeImmature && (isCoinBase || isCoinStake) && (confirmationCount >= consensus.CoinbaseMaturity))
+                    if ((isCoinBase || isCoinStake) && (confirmationCount >= consensus.CoinbaseMaturity))
                     {
                         // This output is a CoinBase or CoinStake and has reached maturity.
 

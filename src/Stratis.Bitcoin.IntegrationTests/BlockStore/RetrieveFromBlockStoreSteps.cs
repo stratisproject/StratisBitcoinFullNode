@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -39,6 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private Transaction wontRetrieveTransaction;
         private uint256 retrievedBlockId;
         private Transaction wontRetrieveBlockId;
+        private readonly Network network = KnownNetworks.RegTest;
 
         public RetrieveFromBlockStoreSpecification(ITestOutputHelper output) : base(output)
         {
@@ -52,19 +54,24 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected override void AfterTest()
         {
+            this.node.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
+
             this.builder?.Dispose();
         }
 
         private void a_pow_node_running()
         {
-            this.node = this.builder.CreateStratisPowNode();
+            this.node = this.builder.CreateStratisPowNode(this.network);
             this.node.Start();
             this.node.NotInIBD();
+
+            this.maturity = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity;
+            this.node.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
         }
 
         private void a_pow_node_to_transact_with()
         {
-            this.transactionNode = this.builder.CreateStratisPowNode();
+            this.transactionNode = this.builder.CreateStratisPowNode(this.network);
             this.transactionNode.Start();
             this.transactionNode.NotInIBD();
 
@@ -89,8 +96,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void some_real_blocks_with_a_uint256_identifier()
         {
-            this.maturity = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity;
-            this.blockIds = this.node.GenerateStratisWithMiner(this.maturity + 1);
+            this.blockIds = this.node.GenerateStratisWithMiner((int)this.node.FullNode.Network.Consensus.CoinbaseMaturity + 1);
         }
 
         private void some_blocks_creating_reward()
@@ -122,12 +128,14 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void a_real_transaction()
         {
-            var transactionBuildContext = new TransactionBuildContext(
-                    this.node.FullNode.Network,
-                    this.miningWalletAccountReference,
-                    new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } },
-                    this.password)
-            { MinConfirmations = this.maturity };
+            var transactionBuildContext = new TransactionBuildContext(this.node.FullNode.Network)
+            {
+                AccountReference = this.miningWalletAccountReference,
+                MinConfirmations = this.maturity,
+                WalletPassword = this.password,
+                Recipients = new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } }
+            };
+
             this.transaction = this.node.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 
             this.node.FullNode.NodeService<WalletController>()

@@ -102,8 +102,9 @@ If a shortcut does not exist, you can simply use the full name of a class or a n
 
 ### NLog.config
 
-If you don't want to use the debug option, or you need a more complex set of rules, you can use `NLog.config` file. You need to create `NLog.config` file in the folder where 
-you have your DLL files - e.g. `Stratis.Bitcoin.dll`. The path to this folder is usually something like `StratisBitcoinFullNode/Stratis.BitcoinD/bin/Debug/netcoreapp1.1`.
+If you don't want to use the debug option, or you need a more complex set of rules, you can use an `NLog.config` file. You will need to create the `NLog.config` file and place it one of these locations:
+* in the folder where you have your DLL files - e.g. `Stratis.Bitcoin.dll`. The path to this folder is usually something like `StratisBitcoinFullNode/Stratis.BitcoinD/bin/Debug/netcoreapp1.1`, or
+* in the `$DATADIR` directory
 
 Here is the very basic `NLog.config` configuration file that you can start with:
 
