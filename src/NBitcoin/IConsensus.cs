@@ -104,7 +104,7 @@ namespace NBitcoin
         /// </summary>
         ConsensusFactory ConsensusFactory { get; }
 
-        /// <summary>Group of rules that are used during block's header validation specific to the given network.</summary>
+        /// <summary>Group of rules that are used during block header validation specific to the given network.</summary>
         List<IHeaderValidationConsensusRule> HeaderValidationRules { get; set; }
 
         /// <summary>Group of rules that are used during block integrity validation specific to the given network.</summary>

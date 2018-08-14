@@ -7,6 +7,7 @@
     public interface IHeaderValidationConsensusRule : IBaseConsensusRule
     {
     }
+
     public interface IIntegrityValidationConsensusRule : IBaseConsensusRule
     {
     }

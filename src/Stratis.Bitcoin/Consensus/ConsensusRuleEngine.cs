@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
-        /// <summary>Group of rules that are used during block's header validation.</summary>
+        /// <summary>Group of rules that are used during block header validation.</summary>
         private List<HeaderValidationConsensusRule> headerValidationRules;
 
         /// <summary>Group of rules that are used during block integrity validation.</summary>
