@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
                 minimumChainWork: uint256.Zero,
                 isProofOfStake: true,
-                lastPowBlock: 10,
+                lastPowBlock: 1_000_000,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeReward: Money.COIN
