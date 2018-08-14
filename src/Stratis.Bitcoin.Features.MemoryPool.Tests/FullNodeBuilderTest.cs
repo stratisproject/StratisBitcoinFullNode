@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
@@ -21,7 +20,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             // This test is put in the mempool feature because the 
             // mempool requires all the features to be a fullnode
-
 
             var nodeSettings = new NodeSettings(args: new string[] {
                 $"-datadir=Stratis.Bitcoin.Features.MemoryPool.Tests/TestData/FullNodeBuilderTest/CanHaveAllServicesTest" });
@@ -40,7 +38,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var chainState = serviceProvider.GetService<IChainState>() as ChainState;
             var blockStoreManager = serviceProvider.GetService<BlockStoreManager>();
             var consensusRules = serviceProvider.GetService<IConsensusRules>();
-            consensusRules.Register(serviceProvider.GetService<IRuleRegistration>());
+            consensusRules.Register();
             var mempoolManager = serviceProvider.GetService<MempoolManager>();
             var connectionManager = serviceProvider.GetService<IConnectionManager>() as ConnectionManager;
 

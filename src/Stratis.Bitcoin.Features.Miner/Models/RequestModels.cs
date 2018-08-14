@@ -35,4 +35,16 @@ namespace Stratis.Bitcoin.Features.Miner.Models
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
     }
+
+    /// <summary>
+    /// Model for the "generate" mining request.
+    /// </summary>
+    public class MiningRequest : RequestModel
+    {
+        /// <summary>
+        /// Number of blocks to mine.
+        /// </summary>
+        [Required(ErrorMessage = "The number of blocks to mine required.")]
+        public int BlockCount { get; set; }
+    }
 }

@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
@@ -34,7 +35,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected override void BeforeTest()
         {
-            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
+            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.RegTest);
             this.sharedSteps = new SharedSteps();
         }
 
@@ -87,6 +88,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             try
             {
                 TransactionBuildContext transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
+                    this.sendingStratisBitcoinNode.FullNode.Network,
                     SendingWalletName,
                     AccountName,
                     WalletPassword,

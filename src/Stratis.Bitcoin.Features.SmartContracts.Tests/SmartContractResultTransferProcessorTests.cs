@@ -4,7 +4,6 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
@@ -31,13 +30,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TransferProcessor_NoBalance_NoTransfers()
         {
             // Scenario where contract was sent 0, doesn't yet have any UTXO assigned, and no transfers were made.
-            var callData = new CallData(1, 1, (Gas) 100_000, uint160.One, "Test");
             var stateMock = new Mock<IContractStateRepository>();
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
             var txContextMock = new Mock<ISmartContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
             var result = new SmartContractExecutionResult();
-            this.transferProcessor.Process(stateMock.Object, callData, txContextMock.Object, new List<TransferInfo>(), false);
+            this.transferProcessor.Process(stateMock.Object, uint160.One, txContextMock.Object, new List<TransferInfo>(), false);
 
             // Ensure no state changes were made and no transaction has been added
             Assert.Null(result.InternalTransaction);
@@ -47,14 +45,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TransferProcessor_NoBalance_ReceivedFunds()
         {
             // Scenario where contract was sent some funds, doesn't yet have any UTXO assigned, and no transfers were made.
-            var callData = new CallData(1, 1, (Gas)100_000, uint160.One, "Test");
             var stateMock = new Mock<IContractStateRepository>();
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
             var txContextMock = new Mock<ISmartContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
             var result = new SmartContractExecutionResult();
-            this.transferProcessor.Process(stateMock.Object, callData, txContextMock.Object, new List<TransferInfo>(), false);
-            
+
+            this.transferProcessor.Process(stateMock.Object, uint160.One, txContextMock.Object, new List<TransferInfo>(), false);
+
             // Ensure unspent was saved, but no condensing transaction was generated.
             Assert.Null(result.InternalTransaction);
             stateMock.Verify(x => x.SetUnspent(new uint160(1), It.IsAny<ContractUnspentOutput>()));

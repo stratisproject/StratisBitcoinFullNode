@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
+using static NBitcoin.Consensus;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.Block;
-            var options = context.Consensus.Option<PowConsensusOptions>();
+            var options = context.Consensus.Options;
 
             // Check transactions
             foreach (Transaction tx in block.Transactions)
@@ -34,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             return Task.CompletedTask;
         }
 
-        public virtual void CheckTransaction(Network network, PowConsensusOptions options, Transaction tx)
+        public virtual void CheckTransaction(Network network, ConsensusOptions options, Transaction tx)
         {
             // Basic checks that don't depend on any context.
             if (tx.Inputs.Count == 0)

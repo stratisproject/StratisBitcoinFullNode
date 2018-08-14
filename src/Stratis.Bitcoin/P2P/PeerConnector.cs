@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -10,6 +11,7 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -153,10 +155,10 @@ namespace Stratis.Bitcoin.P2P
         private void AddPeer(INetworkPeer peer)
         {
             Guard.NotNull(peer, nameof(peer));
-            
+
             this.ConnectorPeers.Add(peer);
 
-            if (this.asyncLoop != null && this.ConnectorPeers.Count >= this.ConnectionSettings.BurstModeTargetConnections)
+            if ((this.asyncLoop != null) && (this.ConnectorPeers.Count >= this.ConnectionSettings.BurstModeTargetConnections))
                 this.asyncLoop.RepeatEvery = this.defaultConnectionInterval;
         }
 
@@ -230,6 +232,13 @@ namespace Stratis.Bitcoin.P2P
                 return;
             }
 
+            // Connect if local, ip range filtering disabled or ip range filtering enabled and peer in a different group.
+            if (peerAddress.Endpoint.Address.IsRoutable(false) && this.ConnectionSettings.IpRangeFiltering && this.PeerIsPartOfExistingGroup(peerAddress))
+            {
+                this.logger.LogTrace("(-)[RANGE_FILTERED]");
+                return;
+            }
+
             INetworkPeer peer = null;
 
             try
@@ -258,16 +267,41 @@ namespace Stratis.Bitcoin.P2P
                 else
                 {
                     this.logger.LogDebug("Peer {0} connection timeout.", peerAddress.Endpoint);
+                    peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                     peer?.Disconnect("Connection timeout");
                 }
+            }
+            catch (NBitcoin.Protocol.ProtocolException)
+            {
+                this.logger.LogDebug("Handshake rejected by peer '{0}'.", peerAddress.Endpoint);
+                peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
+                peer?.Disconnect("Error while handshaking");
             }
             catch (Exception exception)
             {
                 this.logger.LogTrace("Exception occurred while connecting: {0}", exception.ToString());
+                peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                 peer?.Disconnect("Error while connecting", exception);
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        private bool PeerIsPartOfExistingGroup(PeerAddress peerAddress)
+        {
+            if (this.connectedPeers == null)
+                return false;
+
+            byte[] peerAddressGroup = peerAddress.Endpoint.MapToIpv6().Address.GetGroup();
+
+            foreach (INetworkPeer endPoint in this.connectedPeers)
+            {
+                byte[] endPointGroup = endPoint.PeerEndPoint.MapToIpv6().Address.GetGroup();
+                if (endPointGroup.SequenceEqual(peerAddressGroup))
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>

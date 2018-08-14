@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.Tests.Wallet.Common
 {
@@ -71,7 +72,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             var key = new Key();
             var address = new HdAddress
             {
-                Address = key.PubKey.GetAddress(Network.Main).ToString(),
+                Address = key.PubKey.GetAddress(KnownNetworks.Main).ToString(),
                 HdPath = hdPath,
                 ScriptPubKey = key.ScriptPubKey
             };
@@ -112,14 +113,16 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             return (last, block);
         }
 
-        public static TransactionBuildContext CreateContext(WalletAccountReference accountReference, string password,
+        public static TransactionBuildContext CreateContext(Network network, WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations)
         {
-            return new TransactionBuildContext(accountReference,
-                new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList(), password)
+            return new TransactionBuildContext(network)
             {
+                AccountReference = accountReference,
                 MinConfirmations = minConfirmations,
-                FeeType = feeType
+                FeeType = feeType,
+                WalletPassword = password,
+                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList()
             };
         }
 
@@ -146,11 +149,11 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             var walletFile = new Features.Wallet.Wallet
             {
                 Name = name,
-                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, Network.Main).ToWif(),
+                EncryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, KnownNetworks.Main).ToWif(),
                 ChainCode = extendedKey.ChainCode,
                 CreationTime = DateTimeOffset.Now,
-                Network = Network.Main,
-                AccountsRoot = new List<AccountRoot> { new AccountRoot() { Accounts = new List<HdAccount>(), CoinType = (CoinType)Network.Main.Consensus.CoinType } },
+                Network = KnownNetworks.Main,
+                AccountsRoot = new List<AccountRoot> { new AccountRoot() { Accounts = new List<HdAccount>(), CoinType = (CoinType)KnownNetworks.Main.Consensus.CoinType } },
             };
 
             return (walletFile, extendedKey);
@@ -375,10 +378,10 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
 
         public static ConcurrentChain PrepareChainWithBlock()
         {
-            var chain = new ConcurrentChain(Network.StratisMain);
+            var chain = new ConcurrentChain(KnownNetworks.StratisMain);
             uint nonce = RandomUtils.GetUInt32();
-            Block block = Network.StratisMain.Consensus.ConsensusFactory.CreateBlock();
-            block.AddTransaction(Network.StratisMain.CreateTransaction());
+            Block block = KnownNetworks.StratisMain.CreateBlock();
+            block.AddTransaction(KnownNetworks.StratisMain.CreateTransaction());
             block.UpdateMerkleRoot();
             block.Header.HashPrevBlock = chain.Genesis.HashBlock;
             block.Header.Nonce = nonce;

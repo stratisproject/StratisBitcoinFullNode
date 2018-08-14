@@ -12,8 +12,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var node1 = builder.CreateSmartContractNode();
-                var node2 = builder.CreateSmartContractNode();
+                var node1 = builder.CreateSmartContractPowNode();
+                var node2 = builder.CreateSmartContractPowNode();
                 builder.StartAll();
                 Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
@@ -22,10 +22,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.Single(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Single(node2.FullNode.ConnectionManager.ConnectedPeers);
 
-                var behavior = node1.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<ConnectionManagerBehavior>();
+                var behavior = node1.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<IConnectionManagerBehavior>();
                 Assert.False(behavior.Inbound);
                 Assert.True(behavior.OneTry);
-                behavior = node2.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<ConnectionManagerBehavior>();
+                behavior = node2.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<IConnectionManagerBehavior>();
                 Assert.True(behavior.Inbound);
                 Assert.False(behavior.OneTry);
             }

@@ -45,10 +45,10 @@ namespace Stratis.Bitcoin.Features.Consensus
     public class StakeValidator : IStakeValidator
     {
         /// <summary>Expected (or target) block time in seconds.</summary>
-        public const int TargetSpacingSeconds = 64;
+        public const uint TargetSpacingSeconds = 64;
 
         /// <summary>Time interval in minutes that is used in the retarget calculation.</summary>
-        private const int RetargetIntervalMinutes = 16;
+        private const uint RetargetIntervalMinutes = 16;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ConcurrentChain chain;
 
         /// <summary>Consensus' view of UTXO set.</summary>
-        private readonly CoinView coinView;
+        private readonly ICoinView coinView;
 
         /// <summary>Defines a set of options that are used by the consensus rules of Proof Of Stake (POS).</summary>
         private readonly PosConsensusOptions consensusOptions;
@@ -74,14 +74,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="chain">Chain of headers.</param>
         /// <param name="coinView">Used for getting UTXOs.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public StakeValidator(Network network, IStakeChain stakeChain, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory)
+        public StakeValidator(Network network, IStakeChain stakeChain, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
             this.chain = chain;
             this.coinView = coinView;
             this.network = network;
-            this.consensusOptions = network.Consensus.Option<PosConsensusOptions>();
+            this.consensusOptions = network.Consensus.Options as PosConsensusOptions;
         }
 
         /// <inheritdoc/>
@@ -104,6 +104,39 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
+        public Target CalculateRetarget(uint firstBlockTime, Target firstBlockTarget, uint secondBlockTime, BigInteger targetLimit)
+        {
+            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5},{6}:{7})", nameof(firstBlockTime), firstBlockTime, nameof(firstBlockTarget), firstBlockTarget, nameof(secondBlockTime), secondBlockTime, nameof(targetLimit), targetLimit);
+
+            uint targetSpacing = TargetSpacingSeconds;
+            uint actualSpacing = firstBlockTime > secondBlockTime ? firstBlockTime - secondBlockTime : targetSpacing;
+
+            if (actualSpacing > targetSpacing * 10)
+                actualSpacing = targetSpacing * 10;
+
+            uint targetTimespan = RetargetIntervalMinutes * 60;
+            uint interval = targetTimespan / targetSpacing;
+
+            BigInteger target = firstBlockTarget.ToBigInteger();
+
+            long multiplyBy = (interval - 1) * targetSpacing + actualSpacing + actualSpacing;
+            target = target.Multiply(BigInteger.ValueOf(multiplyBy));
+
+            long divideBy = (interval + 1) * targetSpacing;
+            target = target.Divide(BigInteger.ValueOf(divideBy));
+
+            this.logger.LogTrace("The next target difficulty will be {0} times higher (easier to satisfy) than the previous target.", (double)multiplyBy / (double)divideBy);
+
+            if ((target.CompareTo(BigInteger.Zero) <= 0) || (target.CompareTo(targetLimit) >= 1))
+                target = targetLimit;
+
+            var finalTarget = new Target(target);
+
+            this.logger.LogTrace("(-):'{0}'", finalTarget);
+            return finalTarget;
+        }
+
+        /// <inheritdoc/>
         public Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, NBitcoin.Consensus consensus, bool proofOfStake)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(chainedHeader), chainedHeader, nameof(proofOfStake), proofOfStake);
@@ -122,7 +155,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 : consensus.PowLimit.ToBigInteger();
 
             // First block.
-            ChainedHeader lastPowPosBlock = GetLastPowPosChainedBlock(stakeChain, chainedHeader, proofOfStake);
+            ChainedHeader lastPowPosBlock = this.GetLastPowPosChainedBlock(stakeChain, chainedHeader, proofOfStake);
             if (lastPowPosBlock.Previous == null)
             {
                 var res = new Target(targetLimit);
@@ -131,7 +164,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Second block.
-            ChainedHeader prevLastPowPosBlock = GetLastPowPosChainedBlock(stakeChain, lastPowPosBlock.Previous, proofOfStake);
+            ChainedHeader prevLastPowPosBlock = this.GetLastPowPosChainedBlock(stakeChain, lastPowPosBlock.Previous, proofOfStake);
             if (prevLastPowPosBlock.Previous == null)
             {
                 var res = new Target(targetLimit);
@@ -146,31 +179,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return lastPowPosBlock.Header.Bits;
             }
 
-            int targetSpacing = TargetSpacingSeconds;
-            int actualSpacing = (int)(lastPowPosBlock.Header.Time - prevLastPowPosBlock.Header.Time);
-            if (actualSpacing < 0)
-                actualSpacing = targetSpacing;
+            Target finalTarget = this.CalculateRetarget(lastPowPosBlock.Header.Time, lastPowPosBlock.Header.Bits, prevLastPowPosBlock.Header.Time, targetLimit);
 
-            if (actualSpacing > targetSpacing * 10)
-                actualSpacing = targetSpacing * 10;
-
-            int targetTimespan = RetargetIntervalMinutes * 60;
-            int interval = targetTimespan / targetSpacing;
-
-            BigInteger target = lastPowPosBlock.Header.Bits.ToBigInteger();
-
-            long multiplyBy = (interval - 1) * targetSpacing + actualSpacing + actualSpacing;
-            target = target.Multiply(BigInteger.ValueOf(multiplyBy));
-
-            long divideBy = (interval + 1) * targetSpacing;
-            target = target.Divide(BigInteger.ValueOf(divideBy));
-
-            this.logger.LogTrace("The next target difficulty will be {0} times higher (easier to satisfy) than the previous target.", (double)multiplyBy / (double)divideBy);
-
-            if ((target.CompareTo(BigInteger.Zero) <= 0) || (target.CompareTo(targetLimit) >= 1))
-                target = targetLimit;
-
-            var finalTarget = new Target(target);
             this.logger.LogTrace("(-):'{0}'", finalTarget);
             return finalTarget;
         }
@@ -443,3 +453,4 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
     }
 }
+

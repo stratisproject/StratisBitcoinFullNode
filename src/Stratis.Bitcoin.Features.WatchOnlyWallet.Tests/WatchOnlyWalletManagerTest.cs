@@ -6,6 +6,7 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -14,11 +15,11 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
 {
     public class WatchOnlyWalletManagerTest : LogsTestBase
     {
-        private readonly Network network;
+        private readonly Network networkTestNet;
 
         public WatchOnlyWalletManagerTest()
         {
-            this.network = Network.TestNet;
+            this.networkTestNet = KnownNetworks.TestNet;
         }
 
         [Fact]
@@ -28,7 +29,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             DataFolder dataFolder = CreateDataFolder(this);
             WatchOnlyWallet wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
 
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
             walletManager.Initialize();
 
             // Retrieve the wallet.
@@ -45,12 +46,12 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             DataFolder dataFolder = CreateDataFolder(this);
             WatchOnlyWallet wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
 
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
             walletManager.Initialize();
 
             // create the wallet
             Script newScript = new Key().ScriptPubKey;
-            string newAddress = newScript.GetDestinationAddress(Network.TestNet).ToString();
+            string newAddress = newScript.GetDestinationAddress(this.networkTestNet).ToString();
             walletManager.WatchAddress(newAddress);
 
             WatchOnlyWallet returnedWallet = walletManager.GetWatchOnlyWallet();
@@ -69,15 +70,15 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             WatchOnlyWallet wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
 
             // Create the address to watch.
-            Script newScript = BitcoinAddress.Create("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE", Network.TestNet).ScriptPubKey;
-            string newAddress = newScript.GetDestinationAddress(Network.TestNet).ToString();
+            Script newScript = BitcoinAddress.Create("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE", this.networkTestNet).ScriptPubKey;
+            string newAddress = newScript.GetDestinationAddress(this.networkTestNet).ToString();
 
             // Create a transaction to be received.
             string transactionHex = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff230384041200fe0eb3a959fe1af507000963676d696e6572343208000000000000000000ffffffff02155e8b09000000001976a9144bfe90c8e6c6352c034b3f57d50a9a6e77a62a0788ac0000000000000000266a24aa21a9ed0bc6e4bfe82e04a1c52e66b72b199c5124794dd8c3c368f6ab95a0ba6cde277d0120000000000000000000000000000000000000000000000000000000000000000000000000";
-            Transaction transaction = this.network.CreateTransaction(transactionHex);
+            Transaction transaction = this.networkTestNet.CreateTransaction(transactionHex);
 
             // Act.
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
             walletManager.Initialize();
             walletManager.WatchAddress("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE");
             walletManager.ProcessTransaction(transaction);
@@ -108,18 +109,18 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             WatchOnlyWallet wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
 
             // Create the address to watch.
-            Script newScript = BitcoinAddress.Create("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE", Network.TestNet).ScriptPubKey;
-            string newAddress = newScript.GetDestinationAddress(Network.TestNet).ToString();
+            Script newScript = BitcoinAddress.Create("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE", this.networkTestNet).ScriptPubKey;
+            string newAddress = newScript.GetDestinationAddress(this.networkTestNet).ToString();
 
             // Create a transaction to be received.
             string transactionHex = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff230384041200fe0eb3a959fe1af507000963676d696e6572343208000000000000000000ffffffff02155e8b09000000001976a9144bfe90c8e6c6352c034b3f57d50a9a6e77a62a0788ac0000000000000000266a24aa21a9ed0bc6e4bfe82e04a1c52e66b72b199c5124794dd8c3c368f6ab95a0ba6cde277d0120000000000000000000000000000000000000000000000000000000000000000000000000";
-            Transaction transaction = this.network.CreateTransaction(transactionHex);
-            Block block = Network.TestNet.Consensus.ConsensusFactory.CreateBlock();
+            Transaction transaction = this.networkTestNet.CreateTransaction(transactionHex);
+            Block block = this.networkTestNet.Consensus.ConsensusFactory.CreateBlock();
             block.AddTransaction(transaction);
             block.UpdateMerkleRoot();
 
             // Act.
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
             walletManager.Initialize();
             walletManager.WatchAddress("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE");
             walletManager.ProcessBlock(block);
@@ -150,18 +151,18 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             WatchOnlyWallet wallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
 
             // Create the address to watch.
-            Script newScript = BitcoinAddress.Create("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE", Network.TestNet).ScriptPubKey;
-            string newAddress = newScript.GetDestinationAddress(Network.TestNet).ToString();
+            Script newScript = BitcoinAddress.Create("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE", this.networkTestNet).ScriptPubKey;
+            string newAddress = newScript.GetDestinationAddress(this.networkTestNet).ToString();
 
             // Create a transaction to be received.
             string transactionHex = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff230384041200fe0eb3a959fe1af507000963676d696e6572343208000000000000000000ffffffff02155e8b09000000001976a9144bfe90c8e6c6352c034b3f57d50a9a6e77a62a0788ac0000000000000000266a24aa21a9ed0bc6e4bfe82e04a1c52e66b72b199c5124794dd8c3c368f6ab95a0ba6cde277d0120000000000000000000000000000000000000000000000000000000000000000000000000";
-            Transaction transaction = this.network.CreateTransaction(transactionHex);
-            Block block = Network.TestNet.Consensus.ConsensusFactory.CreateBlock();
+            Transaction transaction = this.networkTestNet.CreateTransaction(transactionHex);
+            Block block = this.networkTestNet.Consensus.ConsensusFactory.CreateBlock();
             block.AddTransaction(transaction);
             block.UpdateMerkleRoot();
 
             // Act.
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
             walletManager.Initialize();
             walletManager.WatchAddress("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE");
             walletManager.ProcessBlock(block);
@@ -188,15 +189,15 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
                 "0100000001dd19f894733ab950ae8e772ef781fe299f80f4e813ee4cb6ac067fedea3a052c000000006b483045022100d4d6570c054bcbafa8178e9074f2be32b078e0761537bfe4fb7ad1eea949ab66022022e31d6f43d9418b6dc02147aefb380a4730386364bd406365e790826400570b012102a31bf228b4508abe3f0aa5f91c53732dfd49233c2fef3c5cfa68f2aa12cc71b4ffffffff029e90bf00000000001976a914128240d302a4aadcdd08d241b54fa4ef11acb21388ace0c810000000000017a914188d767b139ef64ce4efa091c2957c6137fbe0ce8700000000"
             };
 
-            var block = this.network.Consensus.ConsensusFactory.CreateBlock();
+            var block = this.networkTestNet.Consensus.ConsensusFactory.CreateBlock();
             foreach (string transactionHex in transactionsHex)
             {
-                block.AddTransaction(this.network.CreateTransaction(transactionHex));
+                block.AddTransaction(this.networkTestNet.CreateTransaction(transactionHex));
             }
 
             block.UpdateMerkleRoot();
 
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
             walletManager.Initialize();
             walletManager.WatchAddress("moFoZk1figjfEe1Z49GUePXy2KqYr6DioL");
             walletManager.ProcessBlock(block);
@@ -222,16 +223,16 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             WatchOnlyWallet watchOnlyWallet = this.CreateAndPersistAWatchOnlyWallet(dataFolder);
 
             // Only need to watch a single address/transaction
-            Script newScript = BitcoinAddress.Create("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE", Network.TestNet).ScriptPubKey;
+            Script newScript = BitcoinAddress.Create("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE", this.networkTestNet).ScriptPubKey;
             string transactionHex = "010000000001010000000000000000000000000000000000000000000000000000000000000000ffffffff230384041200fe0eb3a959fe1af507000963676d696e6572343208000000000000000000ffffffff02155e8b09000000001976a9144bfe90c8e6c6352c034b3f57d50a9a6e77a62a0788ac0000000000000000266a24aa21a9ed0bc6e4bfe82e04a1c52e66b72b199c5124794dd8c3c368f6ab95a0ba6cde277d0120000000000000000000000000000000000000000000000000000000000000000000000000";
 
             // Ensure transaction appears in block
-            Transaction transaction = this.network.CreateTransaction(transactionHex);
-            Block block = Network.TestNet.Consensus.ConsensusFactory.CreateBlock();
+            Transaction transaction = this.networkTestNet.CreateTransaction(transactionHex);
+            Block block = this.networkTestNet.Consensus.ConsensusFactory.CreateBlock();
             block.AddTransaction(transaction);
             block.UpdateMerkleRoot();
             
-            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, Network.TestNet, dataFolder);
+            var walletManager = new WatchOnlyWalletManager(DateTimeProvider.Default, this.LoggerFactory.Object, this.networkTestNet, dataFolder);
             walletManager.Initialize();
             walletManager.WatchAddress("mnSmvy2q4dFNKQF18EBsrZrS7WEy6CieEE");
             walletManager.StoreTransaction(new TransactionData()
@@ -276,7 +277,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             var wallet = new WatchOnlyWallet
             {
                 CoinType = CoinType.Bitcoin,
-                Network = Network.TestNet,
+                Network = this.networkTestNet,
                 CreationTime = now,
                 WatchedAddresses = new ConcurrentDictionary<string, WatchedAddress>()
             };
@@ -284,13 +285,13 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
             wallet.WatchedAddresses.AddOrReplace(script.ToString(), new WatchedAddress
             {
                 Script = script,
-                Address = script.GetDestinationAddress(Network.TestNet).ToString(),
+                Address = script.GetDestinationAddress(this.networkTestNet).ToString(),
                 Transactions = new ConcurrentDictionary<string, TransactionData>()
             });
 
             wallet.WatchedAddresses[script.ToString()].Transactions.AddOrReplace(transactionHash.ToString(), new TransactionData
             {
-                Id = this.network.CreateTransaction(transactionHex).GetHash(),
+                Id = this.networkTestNet.CreateTransaction(transactionHex).GetHash(),
                 BlockHash = uint256.Zero,
                 Hex = transactionHex
             });

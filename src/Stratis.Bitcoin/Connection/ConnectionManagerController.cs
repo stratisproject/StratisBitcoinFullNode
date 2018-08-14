@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <summary>
-        /// RPC method for adding a node connection. 
+        /// RPC method for adding a node connection.
         /// </summary>
         /// <param name="command">The command to run. {add, remove, onetry}</param>
         /// <param name="endpointStr">The endpoint in string format.</param>
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Connection
                         peerNode.StartingHeight = peer.MyVersion.StartHeight;
                     }
 
-                    var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                    var connectionManagerBehavior = peer.Behavior<IConnectionManagerBehavior>();
                     if (connectionManagerBehavior != null)
                     {
                         peerNode.Inbound = connectionManagerBehavior.Inbound;

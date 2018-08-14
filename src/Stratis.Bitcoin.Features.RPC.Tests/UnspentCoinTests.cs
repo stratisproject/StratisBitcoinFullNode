@@ -1,6 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -22,7 +23,7 @@ namespace NBitcoin.Tests
     ""spendable"" : false
 }";
             JObject testData = JObject.Parse(testJson);
-            var unspentCoin = new UnspentCoin(testData, Network.TestNet);
+            var unspentCoin = new UnspentCoin(testData, KnownNetworks.TestNet);
 
             Assert.Equal("test label", unspentCoin.Account);
             Assert.False(unspentCoin.IsSpendable);
@@ -43,7 +44,7 @@ namespace NBitcoin.Tests
     ""confirmations"" : 6210
 }";
             JObject testData = JObject.Parse(testJson);
-            var unspentCoin = new UnspentCoin(testData, Network.TestNet);
+            var unspentCoin = new UnspentCoin(testData, KnownNetworks.TestNet);
 
             // Versions prior to 0.10.0 were always spendable (but had no JSON field).
             Assert.True(unspentCoin.IsSpendable);
@@ -65,7 +66,7 @@ namespace NBitcoin.Tests
     ""spendable"" : true
 }";
             JObject testData = JObject.Parse(testJson);
-            var unspentCoin = new UnspentCoin(testData, Network.TestNet);
+            var unspentCoin = new UnspentCoin(testData, KnownNetworks.TestNet);
 
             Console.WriteLine("Redeem Script: {0}", unspentCoin.RedeemScript);
             Assert.NotNull(unspentCoin.RedeemScript);

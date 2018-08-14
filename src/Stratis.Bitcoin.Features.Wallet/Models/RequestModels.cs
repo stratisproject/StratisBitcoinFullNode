@@ -72,6 +72,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public DateTime CreationDate { get; set; }
     }
 
+    public class WalletExtPubRecoveryRequest : RequestModel
+    {
+        [Required(ErrorMessage = "An extended public key is required.")]
+        public string ExtPubKey { get; set; }
+
+        [Required(ErrorMessage = "An account number is required. E.g. 0.")]
+        public int AccountIndex { get; set; }
+
+        public string FolderPath { get; set; }
+
+        [Required(ErrorMessage = "The name of the wallet is missing.")]
+        public string Name { get; set; }
+
+        public string Network { get; set; }
+
+        [JsonConverter(typeof(IsoDateTimeConverter))]
+        public DateTime CreationDate { get; set; }
+    }
+
     public class WalletHistoryRequest : RequestModel
     {
         [Required(ErrorMessage = "The name of the wallet is missing.")]
@@ -259,5 +278,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         [Required]
         public string Password { get; set; }
+    }
+
+    /// <summary>
+    /// Object used to synchronize a wallet
+    /// </summary>
+    public class WalletSyncFromDateRequest : RequestModel
+    {
+        [JsonConverter(typeof(IsoDateTimeConverter))]
+        public DateTime Date { get; set; }
     }
 }

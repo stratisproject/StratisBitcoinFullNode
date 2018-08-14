@@ -4,6 +4,7 @@ using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -58,7 +59,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 { // For each fee
                     for (int k = 0; k < 4; k++)
                     { // add 4 fee txs
-                        Transaction tx = Network.Main.CreateTransaction(txf.ToHex());
+                        Transaction tx = KnownNetworks.Main.CreateTransaction(txf.ToHex());
                         tx.Inputs[0].PrevOut.N = (uint)(10000 * blocknum + 100 * j + k); // make transaction unique
                         uint256 hash = tx.GetHash();
                         mpool.AddUnchecked(hash, entry.Fee(feeV[j]).Time(dateTimeSet.GetTime()).Priority(0).Height(blocknum).FromTx(tx, mpool));
@@ -145,7 +146,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 { // For each fee multiple
                     for (int k = 0; k < 4; k++)
                     { // add 4 fee txs
-                        Transaction tx = Network.Main.CreateTransaction(txf.ToHex());
+                        Transaction tx = KnownNetworks.Main.CreateTransaction(txf.ToHex());
                         tx.Inputs[0].PrevOut.N = (uint)(10000 * blocknum + 100 * j + k);
                         uint256 hash = tx.GetHash();
                         mpool.AddUnchecked(hash, entry.Fee(feeV[j]).Time(dateTimeSet.GetTime()).Priority(0).Height(blocknum).FromTx(tx, mpool));
@@ -189,7 +190,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 { // For each fee multiple
                     for (int k = 0; k < 4; k++)
                     { // add 4 fee txs
-                        Transaction tx = Network.Main.CreateTransaction(txf.ToHex());
+                        Transaction tx = KnownNetworks.Main.CreateTransaction(txf.ToHex());
                         tx.Inputs[0].PrevOut.N = (uint)(10000 * blocknum + 100 * j + k);
                         uint256 hash = tx.GetHash();
                         mpool.AddUnchecked(hash, entry.Fee(feeV[j]).Time(dateTimeSet.GetTime()).Priority(0).Height(blocknum).FromTx(tx, mpool));

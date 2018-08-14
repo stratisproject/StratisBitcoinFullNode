@@ -6,9 +6,9 @@ using System.Net;
 using System.Security;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Helpers;
@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Bitcoin.Utilities.ModelStateErrors;
 
 namespace Stratis.Bitcoin.Features.Wallet.Controllers
 {
@@ -143,12 +144,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
             {
-                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic: request.Mnemonic);
+                Mnemonic requestMnemonic = string.IsNullOrEmpty(request.Mnemonic) ? null : new Mnemonic(request.Mnemonic);
+
+                Mnemonic mnemonic = this.walletManager.CreateWallet(request.Password, request.Name, mnemonic: requestMnemonic);
 
                 // start syncing the wallet from the creation date
                 this.walletSyncManager.SyncFromDate(this.dateTimeProvider.GetUtcNow());
@@ -172,7 +175,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Loads a wallet previously created by the user.
         /// </summary>
         /// <param name="request">The name of the wallet to load.</param>
-        /// <returns></returns>
         [Route("load")]
         [HttpPost]
         public IActionResult Load([FromBody]WalletLoadRequest request)
@@ -182,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -212,25 +214,24 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Recovers a wallet.
         /// </summary>
         /// <param name="request">The object containing the parameters used to recover a wallet.</param>
-        /// <returns></returns>
         [Route("recover")]
         [HttpPost]
         public IActionResult Recover([FromBody]WalletRecoveryRequest request)
         {
             Guard.NotNull(request, nameof(request));
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(request), nameof(request.Name), request.Name);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
             {
                 Wallet wallet = this.walletManager.RecoverWallet(request.Password, request.Name, request.Mnemonic, request.CreationDate);
 
-                // start syncing the wallet from the creation date
-                this.walletSyncManager.SyncFromDate(request.CreationDate);
+                this.SyncFromBestHeightForRecoveredWallets(request.CreationDate);
 
                 return this.Ok();
             }
@@ -251,6 +252,65 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
+            finally
+            {
+                this.logger.LogTrace("(-)");
+            }
+        }
+
+        /// <summary>
+        /// Recovers a wallet using only the extended public key.
+        /// </summary>
+        /// <param name="request">The object containing the parameters used to recover a wallet.</param>
+        [Route("recover-via-extpubkey")]
+        [HttpPost]
+        public IActionResult RecoverViaExtPubKey([FromBody]WalletExtPubRecoveryRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(request), nameof(request.Name), request.Name);
+
+            if (!this.ModelState.IsValid)
+            {
+                this.logger.LogTrace("(-)[MODEL_STATE_INVALID]");
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                string accountExtPubKey =
+                    this.network.IsBitcoin()
+                        ? request.ExtPubKey
+                        : LegacyExtPubKeyConverter.ConvertIfInLegacyStratisFormat(request.ExtPubKey, this.network);
+
+                this.walletManager.RecoverWallet(request.Name, ExtPubKey.Parse(accountExtPubKey), request.AccountIndex,
+                    request.CreationDate);
+
+                this.SyncFromBestHeightForRecoveredWallets(request.CreationDate);
+
+                this.logger.LogTrace("(-)");
+                return this.Ok();
+            }
+            catch (WalletException e)
+            {
+                // Wallet already exists.
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Conflict, e.Message, e.ToString());
+            }
+            catch (FileNotFoundException e)
+            {
+                // Wallet does not exist.
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.NotFound, "Wallet not found.", e.ToString());
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+            finally
+            {
+                this.logger.LogTrace("(-)");
+            }
         }
 
         /// <summary>
@@ -267,7 +327,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -315,10 +375,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             Guard.NotNull(request, nameof(request));
 
-            // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -486,7 +545,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -531,7 +590,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // Checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -566,7 +625,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -601,18 +660,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
             {
                 Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
-                var context = new TransactionBuildContext(
-                    new WalletAccountReference(request.WalletName, request.AccountName),
-                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList())
+                var context = new TransactionBuildContext(this.network)
                 {
+                    AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
                     FeeType = FeeParser.Parse(request.FeeType),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
+                    Recipients = new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList()
                 };
 
                 return this.Json(this.walletTransactionHandler.EstimateFee(context));
@@ -638,20 +697,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
             {
                 Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
-                var context = new TransactionBuildContext(
-                    new WalletAccountReference(request.WalletName, request.AccountName),
-                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
-                    request.Password, request.OpReturnData)
+                var context = new TransactionBuildContext(this.network)
                 {
+                    AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
                     TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                    Shuffle = request.ShuffleOutputs ?? true // We shuffle transaction outputs by default as it's better for anonymity.
+                    Shuffle = request.ShuffleOutputs ?? true, // We shuffle transaction outputs by default as it's better for anonymity.
+                    OpReturnData = request.OpReturnData,
+                    WalletPassword = request.Password,
+                    Recipients = new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList()
                 };
 
                 if (!string.IsNullOrEmpty(request.FeeType))
@@ -691,7 +751,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             if (!this.connectionManager.ConnectedPeers.Any())
@@ -710,11 +770,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 foreach (TxOut output in transaction.Outputs)
                 {
                     bool isUnspendable = output.ScriptPubKey.IsUnspendable;
-
-                    string address = GetAddressFromScriptPubKey(output);
                     model.Outputs.Add(new TransactionOutputModel
                     {
-                        Address = address,
+                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
                         Amount = output.Value,
                         OpReturnData = isUnspendable ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData) : null
                     });
@@ -778,13 +836,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
             {
                 HdAccount result = this.walletManager.GetUnusedAccount(request.WalletName, request.Password);
                 return this.Json(result.Name);
+            }
+            catch (CannotAddAccountToXpubKeyWalletException e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, e.Message, string.Empty);
             }
             catch (Exception e)
             {
@@ -806,7 +869,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -834,7 +897,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -862,7 +925,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -889,7 +952,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -928,7 +991,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -942,7 +1005,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 else
                 {
                     IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
-                    result = this.walletManager.RemoveTransactionsByIds(request.WalletName, ids);
+                    result = this.walletManager.RemoveTransactionsByIdsLocked(request.WalletName, ids);
                 }
 
                 // If the user chose to resync the wallet after removing transactions.
@@ -988,7 +1051,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             // checks the request is valid
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
@@ -1004,7 +1067,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Starts sending block to the wallet for synchronisation.
+        /// Request the node to sync back from a given block hash.
         /// This is for demo and testing use only.
         /// </summary>
         /// <param name="model">The hash of the block from which to start syncing.</param>
@@ -1015,7 +1078,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         {
             if (!this.ModelState.IsValid)
             {
-                return BuildErrorResponse(this.ModelState);
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             ChainedHeader block = this.chain.GetBlock(uint256.Parse(model.Hash));
@@ -1030,35 +1093,35 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Retrieves a string that represents the receiving address for an output. For smart contract transactions,
-        /// returns the opcode that was sent i.e. OP_CALL or OP_CREATE
+        /// Request the node to sync back from a given date.
         /// </summary>
-        private string GetAddressFromScriptPubKey(TxOut output)
+        /// <param name="request">The model containing the date from which to start syncing.</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("syncfromdate")]
+        public IActionResult SyncFromDate([FromBody] WalletSyncFromDateRequest request)
         {
-            if (output.ScriptPubKey.IsSmartContractExec())
+            if (!this.ModelState.IsValid)
             {
-                return output.ScriptPubKey.ToOps().First().Code.ToString();
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
-            if (!output.ScriptPubKey.IsUnspendable)
-            {
-                return output.ScriptPubKey.GetDestinationAddress(this.network).ToString();
-            }
+            this.walletSyncManager.SyncFromDate(request.Date);
 
-            return null;
+            return this.Ok();
         }
 
-        /// <summary>
-        /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
-        /// </summary>
-        /// <returns>A result containing the errors.</returns>
-        private static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
+        private void SyncFromBestHeightForRecoveredWallets(DateTime walletCreationDate)
         {
-            List<ModelError> errors = modelState.Values.SelectMany(e => e.Errors).ToList();
-            return ErrorHelpers.BuildErrorResponse(
-                HttpStatusCode.BadRequest,
-                string.Join(Environment.NewLine, errors.Select(m => m.ErrorMessage)),
-                string.Join(Environment.NewLine, errors.Select(m => m.Exception?.Message)));
+            // After recovery the wallet needs to be synced.
+            // We only sync if the syncing process needs to go back.
+            int blockHeightToSyncFrom = this.chain.GetHeightAtTime(walletCreationDate);
+            int currentSyncingHeight = this.walletSyncManager.WalletTip.Height;
+
+            if (blockHeightToSyncFrom < currentSyncingHeight)
+            {
+                this.walletSyncManager.SyncFromHeight(blockHeightToSyncFrom);
+            }
         }
     }
 }

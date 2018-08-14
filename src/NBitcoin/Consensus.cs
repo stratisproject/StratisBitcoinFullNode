@@ -1,178 +1,156 @@
 ﻿using System;
+using System.Collections.Generic;
 using NBitcoin.BouncyCastle.Math;
+using NBitcoin.Rules;
 
 namespace NBitcoin
 {
-    public enum BuriedDeployments
+    public class Consensus : IConsensus
     {
-        /// <summary>
-        /// Height in coinbase.
-        /// </summary>
-        BIP34,
-
-        /// <summary>
-        /// Height in OP_CLTV.
-        /// </summary>
-        BIP65,
-
-        /// <summary>
-        /// Strict DER signature.
-        /// </summary>
-        BIP66
-    }
-
-    public class Consensus
-    {
-        /// <summary>
-        /// An extension to <see cref="Consensus"/> to enable additional options to the consensus data.
-        /// </summary>
-        public class ConsensusOptions
-        {
-        }
-
-        /// <summary>
-        /// How many blocks should be on top of a coinbase transaction until its outputs are considered spendable.
-        /// </summary>
+        /// <inheritdoc />
         public long CoinbaseMaturity { get; set; }
 
-        /// <summary>
-        /// Amount of coins mined when a new network is bootstrapped.
-        /// Set to Money.Zero when there is no premine.
-        /// </summary>
-        public Money PremineReward { get; set; }
+        /// <inheritdoc />
+        public Money PremineReward { get; }
 
-        /// <summary>
-        /// The height of the block in which the pre-mined coins should be.
-        /// Set to 0 when there is no premine.
-        /// </summary>
-        public long PremineHeight { get; set; }
+        /// <inheritdoc />
+        public long PremineHeight { get; }
 
-        /// <summary>
-        /// The reward that goes to the miner when a block is mined using proof-of-work.
-        /// </summary>
-        public Money ProofOfWorkReward { get; set; }
+        /// <inheritdoc />
+        public Money ProofOfWorkReward { get; }
 
-        /// <summary>
-        /// The reward that goes to the miner when a block is mined using proof-of-stake.
-        /// </summary>
-        public Money ProofOfStakeReward { get; set; }
+        /// <inheritdoc />
+        public Money ProofOfStakeReward { get; }
 
-        /// <summary>
-        /// Maximal length of reorganization that the node is willing to accept, or 0 to disable long reorganization protection.
-        /// </summary>
-        public uint MaxReorgLength { get; set; }
+        /// <inheritdoc />
+        public uint MaxReorgLength { get; }
 
-        /// <summary>
-        /// The maximum amount of coins in any transaction.
-        /// </summary>
-        public long MaxMoney { get; set; }
+        /// <inheritdoc />
+        public long MaxMoney { get; }
 
         public ConsensusOptions Options { get; set; }
 
-        public class BuriedDeploymentsArray
-        {
-            private readonly int[] heights;
+        public BuriedDeploymentsArray BuriedDeployments { get; }
 
-            public BuriedDeploymentsArray()
-            {
-                this.heights = new int[Enum.GetValues(typeof(BuriedDeployments)).Length];
-            }
+        public BIP9DeploymentsArray BIP9Deployments { get; }
 
-            public int this[BuriedDeployments index]
-            {
-                get => this.heights[(int)index];
-                set => this.heights[(int)index] = value;
-            }
-        }
+        public int SubsidyHalvingInterval { get; }
 
-        public class BIP9DeploymentsArray
-        {
-            private readonly BIP9DeploymentsParameters[] parameters;
+        public int MajorityEnforceBlockUpgrade { get; }
 
-            public BIP9DeploymentsArray()
-            {
-                this.parameters = new BIP9DeploymentsParameters[Enum.GetValues(typeof(BIP9Deployments)).Length];
-            }
+        public int MajorityRejectBlockOutdated { get; }
 
-            public BIP9DeploymentsParameters this[BIP9Deployments index]
-            {
-                get => this.parameters[(int)index];
-                set => this.parameters[(int)index] = value;
-            }
-        }
+        public int MajorityWindow { get; }
 
-        public Consensus()
-        {
-            this.BuriedDeployments = new BuriedDeploymentsArray();
-            this.BIP9Deployments = new BIP9DeploymentsArray();
+        public uint256 BIP34Hash { get; }
 
-            this.ConsensusFactory = new ConsensusFactory()
-            {
-                Consensus = this
-            };
-        }
+        public Target PowLimit { get; }
 
-        public BuriedDeploymentsArray BuriedDeployments { get; set; }
+        public TimeSpan PowTargetTimespan { get; }
 
-        public BIP9DeploymentsArray BIP9Deployments { get; set; }
+        public TimeSpan PowTargetSpacing { get; }
 
-        public int SubsidyHalvingInterval { get; set; }
+        public bool PowAllowMinDifficultyBlocks { get; }
 
-        public int MajorityEnforceBlockUpgrade { get; set; }
+        public bool PowNoRetargeting { get; }
 
-        public int MajorityRejectBlockOutdated { get; set; }
+        public uint256 HashGenesisBlock { get; }
 
-        public int MajorityWindow { get; set; }
-
-        public uint256 BIP34Hash { get; set; }
-
-        public Target PowLimit { get; set; }
-
-        public TimeSpan PowTargetTimespan { get; set; }
-
-        public TimeSpan PowTargetSpacing { get; set; }
-
-        public bool PowAllowMinDifficultyBlocks { get; set; }
-
-        public bool PowNoRetargeting { get; set; }
-
-        public uint256 HashGenesisBlock { get; set; }
-
-        /// <summary> The minimum amount of work the best chain should have. </summary>
-        public uint256 MinimumChainWork { get; set; }
-
-        public long DifficultyAdjustmentInterval
-        {
-            get { return ((long)this.PowTargetTimespan.TotalSeconds / (long)this.PowTargetSpacing.TotalSeconds); }
-        }
+        /// <inheritdoc />
+        public uint256 MinimumChainWork { get; }
 
         public int MinerConfirmationWindow { get; set; }
 
         public int RuleChangeActivationThreshold { get; set; }
 
-        /// <summary>
-        /// Specify the BIP44 coin type for this network
-        /// </summary>
-        public int CoinType { get; set; }
+        /// <inheritdoc />
+        public int CoinType { get; }
 
-        public BigInteger ProofOfStakeLimit { get; set; }
+        public BigInteger ProofOfStakeLimit { get; }
 
-        public BigInteger ProofOfStakeLimitV2 { get; set; }
+        public BigInteger ProofOfStakeLimitV2 { get; }
 
-        /// <summary>PoW blocks are not accepted after block with height <see cref="Consensus.LastPOWBlock"/>.</summary>
+        /// <inheritdoc />        
         public int LastPOWBlock { get; set; }
 
-        /// <summary>
-        /// An indicator whether this is a Proof Of Stake network.
-        /// </summary>
-        public bool IsProofOfStake { get; set; }
+        /// <inheritdoc />
+        public bool IsProofOfStake { get; }
 
-        /// <summary>The default hash to use for assuming valid blocks.</summary>
-        public uint256 DefaultAssumeValid { get; set; }
+        /// <inheritdoc />
+        public uint256 DefaultAssumeValid { get; }
 
-        /// <summary>
-        /// A factory that enables overloading base types.
-        /// </summary>
-        public ConsensusFactory ConsensusFactory { get; set; }
+        /// <inheritdoc />
+        public ConsensusFactory ConsensusFactory { get; }
+
+        /// <inheritdoc />
+        public ICollection<IConsensusRule> Rules { get; set; }
+
+        public Consensus(
+            ConsensusFactory consensusFactory,
+            ConsensusOptions consensusOptions,
+            int coinType,            
+            uint256 hashGenesisBlock,
+            int subsidyHalvingInterval,
+            int majorityEnforceBlockUpgrade,
+            int majorityRejectBlockOutdated,
+            int majorityWindow,
+            BuriedDeploymentsArray buriedDeployments,
+            BIP9DeploymentsArray bip9Deployments,
+            uint256 bip34Hash,
+            int ruleChangeActivationThreshold,
+            int minerConfirmationWindow,
+            uint maxReorgLength,
+            uint256 defaultAssumeValid,
+            long maxMoney,
+            long coinbaseMaturity,
+            long premineHeight,
+            Money premineReward,
+            Money proofOfWorkReward,
+            TimeSpan powTargetTimespan,
+            TimeSpan powTargetSpacing,
+            bool powAllowMinDifficultyBlocks,
+            bool powNoRetargeting,
+            Target powLimit,
+            uint256 minimumChainWork,
+            bool isProofOfStake,
+            int lastPowBlock,
+            BigInteger proofOfStakeLimit,
+            BigInteger proofOfStakeLimitV2,
+            Money proofOfStakeReward
+            )
+        {
+            this.Rules = new List<IConsensusRule>();
+            this.CoinbaseMaturity = coinbaseMaturity;
+            this.PremineReward = premineReward;
+            this.PremineHeight = premineHeight;
+            this.ProofOfWorkReward = proofOfWorkReward;
+            this.ProofOfStakeReward = proofOfStakeReward;
+            this.MaxReorgLength = maxReorgLength;
+            this.MaxMoney = maxMoney;
+            this.Options = consensusOptions;
+            this.BuriedDeployments = buriedDeployments;
+            this.BIP9Deployments = bip9Deployments;
+            this.SubsidyHalvingInterval = subsidyHalvingInterval;
+            this.MajorityEnforceBlockUpgrade = majorityEnforceBlockUpgrade;
+            this.MajorityRejectBlockOutdated = majorityRejectBlockOutdated;
+            this.MajorityWindow = majorityWindow;
+            this.BIP34Hash = bip34Hash;
+            this.PowLimit = powLimit;
+            this.PowTargetTimespan = powTargetTimespan;
+            this.PowTargetSpacing = powTargetSpacing;
+            this.PowAllowMinDifficultyBlocks = powAllowMinDifficultyBlocks;
+            this.PowNoRetargeting = powNoRetargeting;
+            this.HashGenesisBlock = hashGenesisBlock;
+            this.MinimumChainWork = minimumChainWork;
+            this.MinerConfirmationWindow = minerConfirmationWindow;
+            this.RuleChangeActivationThreshold = ruleChangeActivationThreshold;
+            this.CoinType = coinType;
+            this.ProofOfStakeLimit = proofOfStakeLimit;
+            this.ProofOfStakeLimitV2 = proofOfStakeLimitV2;
+            this.LastPOWBlock = lastPowBlock;
+            this.IsProofOfStake = isProofOfStake;
+            this.DefaultAssumeValid = defaultAssumeValid;
+            this.ConsensusFactory = consensusFactory;
+        }
     }
 }

@@ -13,7 +13,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     /// <summary>
-    /// Provides the same functionality as the original mempool validator with some extra validation. 
+    /// Provides the same functionality as the original mempool validator with some extra validation.
     /// </summary>
     public class SmartContractMempoolValidator : MempoolValidator
     {
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             new SmartContractFormatRule()
         };
 
-        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRules consensusRules)
+        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRules consensusRules)
             : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
         {
         }

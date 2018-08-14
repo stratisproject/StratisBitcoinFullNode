@@ -14,8 +14,9 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-       <Version>1.1.12-beta</Version>
+    <Version>1.1.12-beta</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,10 +31,6 @@
   <ItemGroup>
     <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="CoinViews\" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">

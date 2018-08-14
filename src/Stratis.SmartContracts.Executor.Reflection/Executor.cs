@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Collections.Generic;
+using CSharpFunctionalExtensions;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 
@@ -35,13 +38,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.logger.LogTrace("()");
 
-            var callDataDeserializationResult = this.serializer.Deserialize(transactionContext.ScriptPubKey.ToBytes());
-
-            // TODO Handle deserialization failure
-
-            var callData = callDataDeserializationResult.Value;
+            // Deserialization can't fail because this has already been through SmartContractFormatRule.
+            Result<ContractTxData> callDataDeserializationResult = this.serializer.Deserialize(transactionContext.ScriptPubKey.ToBytes());
+            ContractTxData callData = callDataDeserializationResult.Value;
 
             var gasMeter = new GasMeter(callData.GasLimit);
+            gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
             var context = new TransactionContext(
                 transactionContext.TransactionHash,
@@ -52,20 +54,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var creation = IsCreateContract(callData);
 
-            var result = creation
+            VmExecutionResult result = creation
                 ? this.vm.Create(gasMeter, this.stateSnapshot, callData, context)
                 : this.vm.ExecuteMethod(gasMeter, this.stateSnapshot, callData, context);
 
             var revert = result.ExecutionException != null;
 
-            var internalTransaction = this.transferProcessor.Process(
+            Transaction internalTransaction = this.transferProcessor.Process(
                 this.stateSnapshot,
-                callData,
+                creation ? result.NewContractAddress : callData.ContractAddress,
                 transactionContext,
                 result.InternalTransfers,
                 revert);
 
-            (var fee, var refundTxOuts) = this.refundProcessor.Process(
+            (Money fee, List<TxOut> refundTxOuts) = this.refundProcessor.Process(
                 callData,
                 transactionContext.MempoolFee,
                 transactionContext.Sender,
@@ -99,9 +101,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return executionResult;
         }
 
-        private static bool IsCreateContract(CallData callData)
+        private static bool IsCreateContract(ContractTxData contractTxData)
         {
-            return callData.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT;
+            return contractTxData.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT;
         }
     }
 }

@@ -31,12 +31,13 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                 stream.ReadWrite(ref txCount);
 
                 // Stratis adds an additional byte to the end of a header need to investigate why.
-                if (stream.ConsensusFactory.Consensus.IsProofOfStake)
+                if (stream.ConsensusFactory is PosConsensusFactory)
                     stream.ReadWrite(ref txCount);
             }
         }
 
         private List<BlockHeader> headers = new List<BlockHeader>();
+
         public List<BlockHeader> Headers { get { return this.headers; } }
 
         public HeadersPayload()

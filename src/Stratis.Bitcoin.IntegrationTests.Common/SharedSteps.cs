@@ -10,6 +10,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
     public class SharedSteps
     {
         public static TransactionBuildContext CreateTransactionBuildContext(
+            Network network,
             string sendingWalletName,
             string sendingAccountName,
             string sendingPassword,
@@ -17,10 +18,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             FeeType feeType,
             int minConfirmations)
         {
-            return new TransactionBuildContext(new WalletAccountReference(sendingWalletName, sendingAccountName), recipients.ToList(), sendingPassword)
+            return new TransactionBuildContext(network)
             {
+                AccountReference = new WalletAccountReference(sendingWalletName, sendingAccountName),
                 MinConfirmations = minConfirmations,
-                FeeType = feeType
+                FeeType = feeType,
+                WalletPassword = sendingPassword,
+                Recipients = recipients.ToList()
             };
         }
 

@@ -22,13 +22,13 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Converts <see cref="Microsoft.Extensions.Logging.LogLevel"/> to <see cref="NLog.LogLevel"/>.
         /// </summary>
-        /// <param name="LogLevel">Log level value to convert.</param>
+        /// <param name="logLevel">Log level value to convert.</param>
         /// <returns>NLog value of the log level.</returns>
-        public static NLog.LogLevel ToNLogLevel(this LogLevel LogLevel)
+        public static NLog.LogLevel ToNLogLevel(this LogLevel logLevel)
         {
             NLog.LogLevel res = NLog.LogLevel.Trace;
 
-            switch (LogLevel)
+            switch (logLevel)
             {
                 case LogLevel.Trace: res = NLog.LogLevel.Trace; break;
                 case LogLevel.Debug: res = NLog.LogLevel.Debug; break;

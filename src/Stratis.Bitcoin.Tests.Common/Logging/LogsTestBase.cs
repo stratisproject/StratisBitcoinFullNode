@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Tests.Common.Logging
 {
@@ -12,7 +11,7 @@ namespace Stratis.Bitcoin.Tests.Common.Logging
         /// This class is not able to work concurrently because logs is a static class.
         /// The logs class needs to be refactored first before tests can run in parallel.
         /// </remarks>
-        public LogsTestBase() : base(Network.Main)
+        public LogsTestBase() : base(KnownNetworks.Main)
         {
             this.FullNodeLogger = new Mock<ILogger>();
             this.RPCLogger = new Mock<ILogger>();

@@ -62,8 +62,8 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
 
-        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory, 
-            IDateTimeProvider dateTimeProvider, IChainState chainState, 
+        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory,
+            IDateTimeProvider dateTimeProvider, IChainState chainState,
             NodeSettings nodeSettings, IConnectionManager connectionManager,
             ConcurrentChain chain, Network network, IPooledTransaction pooledTransaction = null,
             IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Controllers
         [Route("status")]
         public IActionResult Status()
         {
-            // Output has been merged with RPC's GetInfo() since they provided similar functionality. 
+            // Output has been merged with RPC's GetInfo() since they provided similar functionality.
             var model = new StatusModel
             {
                 Version = this.fullNode.Version?.ToString() ?? "0",
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Controllers
             // Add the details of connected nodes.
             foreach (INetworkPeer peer in this.connectionManager.ConnectedPeers)
             {
-                var connectionManagerBehavior = peer.Behavior<ConnectionManagerBehavior>();
+                var connectionManagerBehavior = peer.Behavior<IConnectionManagerBehavior>();
                 var chainHeadersBehavior = peer.Behavior<ChainHeadersBehavior>();
 
                 var connectedPeer = new ConnectedPeerModel
@@ -200,8 +200,8 @@ namespace Stratis.Bitcoin.Controllers
         }
 
         /// <summary>
-        /// Gets a raw, possibly pooled, transaction from the full node. 
-        /// API implementation of RPC call. 
+        /// Gets a raw, possibly pooled, transaction from the full node.
+        /// API implementation of RPC call.
         /// </summary>
         /// <param name="trxid">The transaction hash.</param>
         /// <param name="verbose"><c>True if <see cref="TransactionVerboseModel"/> is wanted.</c></param>
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Controllers
                     throw new ArgumentException(nameof(trxid));
                 }
 
-                // First tries to find a pooledTransaction. If can't, will retrieve it from the blockstore if it exists. 
+                // First tries to find a pooledTransaction. If can't, will retrieve it from the blockstore if it exists.
                 Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(txid).ConfigureAwait(false) : null;
                 if (trx == null)
                 {
@@ -271,22 +271,25 @@ namespace Stratis.Bitcoin.Controllers
                 var res = new ValidatedAddress();
                 res.IsValid = false;
                 // P2WPKH
-                if (BitcoinWitPubKeyAddress.IsValid(address, ref this.network, out Exception _))
+                if (BitcoinWitPubKeyAddress.IsValid(address, this.network, out Exception _))
                 {
                     res.IsValid = true;
                 }
+
                 // P2WSH
-                else if (BitcoinWitScriptAddress.IsValid(address, ref this.network, out Exception _))
+                else if (BitcoinWitScriptAddress.IsValid(address, this.network, out Exception _))
                 {
                     res.IsValid = true;
                 }
+
                 // P2PKH
-                else if (BitcoinPubKeyAddress.IsValid(address, ref this.network))
+                else if (BitcoinPubKeyAddress.IsValid(address, this.network))
                 {
                     res.IsValid = true;
                 }
+
                 // P2SH
-                else if (BitcoinScriptAddress.IsValid(address, ref this.network))
+                else if (BitcoinScriptAddress.IsValid(address, this.network))
                 {
                     res.IsValid = true;
                 }
@@ -389,7 +392,7 @@ namespace Stratis.Bitcoin.Controllers
         }
 
         /// <summary>
-        /// Retrieves the difficulty target of the full node's network. 
+        /// Retrieves the difficulty target of the full node's network.
         /// </summary>
         /// <param name="networkDifficulty">The network difficulty interface.</param>
         /// <returns>A network difficulty <see cref="Target"/>. Returns <c>null</c> if fails.</returns>

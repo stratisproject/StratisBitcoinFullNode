@@ -14,8 +14,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
         public DateTimeOffset Time { get; set; }
 
-        public Target NextWorkRequired { get; set; }
-
         public ValidationContext ValidationContext { get; set; }
 
         public DeploymentFlags Flags { get; set; }

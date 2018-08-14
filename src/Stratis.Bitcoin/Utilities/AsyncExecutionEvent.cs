@@ -15,8 +15,8 @@ namespace Stratis.Bitcoin.Utilities
     public delegate Task AsyncExecutionEventCallback<TSender, TArg>(TSender sender, TArg arg);
 
     /// <summary>
-    /// Execution event is a specific moment in the execution flow of that a component 
-    /// that other components are allowed to be subscribed to and get notified about 
+    /// Execution event is a specific moment in the execution flow of that a component
+    /// that other components are allowed to be subscribed to and get notified about
     /// when it occurs.
     /// <para>
     /// This implementation allows components to register asynchronous event handlers.
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Utilities
     /// </summary>
     /// <typeparam name="TSender">Type of event source sender objects.</typeparam>
     /// <typeparam name="TArg">Type of arguments that are passed to callbacks.</typeparam>
-    public class AsyncExecutionEvent<TSender, TArg>: IDisposable
+    public class AsyncExecutionEvent<TSender, TArg> : IDisposable
     {
         /// <summary>
         /// Protects access to <see cref="callbackList"/> and <see cref="callbackToListNodeMapping"/>,
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>Cancellation source to abort waiting for <see cref="asyncLock"/> after <see cref="Dispose"/> has been executed.</summary>
         private readonly CancellationTokenSource cancellationSource;
 
-        /// <summary>Set to <c>1</c> if <see cref="Dispose"/> was called, <c>0</c> otherwise.</summary> 
+        /// <summary>Set to <c>1</c> if <see cref="Dispose"/> was called, <c>0</c> otherwise.</summary>
         private int disposed;
 
         /// <summary>
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Utilities
             {
                 LinkedListNode<AsyncExecutionEventCallback<TSender, TArg>> node;
                 if (!this.callbackToListNodeMapping.TryGetValue(callbackAsync, out node))
-                    throw new ArgumentException("Trying to unregistered callback that is not registered.");
+                    throw new ArgumentException("Trying to unregister callback that is not registered.");
 
                 this.callbackList.Remove(node);
                 this.callbackToListNodeMapping.Remove(callbackAsync);
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="arg">Argument to pass to the callbacks.</param>
         /// <remarks>
         /// It is necessary to hold the lock while calling the callbacks to provide guarantees described in <see cref="Unregister(AsyncExecutionEventCallback{TSender, TArg})"/>.
-        /// However, we do support new callbacks to be registered or unregistered while callbacks are being executed, 
+        /// However, we do support new callbacks to be registered or unregistered while callbacks are being executed,
         /// but this is only possible from the same execution context - i.e. another task or thread is unable to register or unregister callbacks
         /// while callbacks execution is in progress.
         /// </remarks>
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// Acquires <see cref="asyncLock"/> and disposes resources including the lock. 
+        /// Acquires <see cref="asyncLock"/> and disposes resources including the lock.
         /// This lock will never be released, but that is not a problem since it is destroyed.
         /// </summary>
         private void DisposeInternal()

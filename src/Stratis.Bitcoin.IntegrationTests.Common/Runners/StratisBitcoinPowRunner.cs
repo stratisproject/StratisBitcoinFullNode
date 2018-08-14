@@ -12,15 +12,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
     public sealed class StratisBitcoinPowRunner : NodeRunner
     {
-        public StratisBitcoinPowRunner(string dataDir)
+        public StratisBitcoinPowRunner(string dataDir, Network network)
             : base(dataDir)
         {
-            this.Network = Network.RegTest;
+            this.Network = network;
         }
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder });
+            var settings = new NodeSettings(this.Network, args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)

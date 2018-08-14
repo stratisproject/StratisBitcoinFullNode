@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -23,7 +22,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     public interface IMempoolValidator
     {
         /// <summary>Gets the proof of work consensus option.</summary>
-        PowConsensusOptions ConsensusOptions { get; }
+        ConsensusOptions ConsensusOptions { get; }
 
         /// <summary>Gets the memory pool performance counter.</summary>
         MempoolPerformanceCounter PerformanceCounter { get; }
@@ -127,7 +126,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly ConcurrentChain chain;
 
         /// <summary>Coin view of the memory pool.</summary>
-        private readonly CoinView coinView;
+        private readonly ICoinView coinView;
 
         /// <inheritdoc cref="IConsensusRules" />
         private readonly IConsensusRules consensusRules;
@@ -173,7 +172,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
             ConcurrentChain chain,
-            CoinView coinView,
+            ICoinView coinView,
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
             IConsensusRules consensusRules)
@@ -197,7 +196,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public MempoolPerformanceCounter PerformanceCounter { get; }
 
         /// <summary>Gets the consensus options from the <see cref="CoinViewRule"/></summary>
-        public PowConsensusOptions ConsensusOptions => this.network.Consensus.Option<PowConsensusOptions>();
+        public ConsensusOptions ConsensusOptions => this.network.Consensus.Options;
 
         /// <inheritdoc />
         public async Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx)
@@ -223,7 +222,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             catch (ConsensusErrorException consensusError)
             {
                 this.logger.LogTrace("{0}:'{1}' ErrorCode:'{2}',ErrorMessage:'{3}'", nameof(ConsensusErrorException), consensusError.Message, consensusError.ConsensusError?.Code, consensusError.ConsensusError?.Message);
-                state.Error = new MempoolError(consensusError.ConsensusError);                
+                state.Error = new MempoolError(consensusError.ConsensusError);
                 this.logger.LogTrace("(-)[CONSENSUS_EXCEPTION]:false");
                 return false;
             }
@@ -378,18 +377,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <summary>
-        /// Computes the transaction size based on <see cref="PowConsensusOptions"/>.
+        /// Computes the transaction size based on <see cref="ConsensusOptions"/>.
         /// Takes into account witness options in the computation.
         /// </summary>
         /// <param name="tx">Transaction.</param>
         /// <param name="consensusOptions">Proof of work consensus options.</param>
         /// <returns>Transaction weight.</returns>
         /// <seealso cref="Transaction.GetSerializedSize"/>
-        public static int GetTransactionWeight(Transaction tx, PowConsensusOptions consensusOptions)
+        public static int GetTransactionWeight(Transaction tx, ConsensusOptions consensusOptions)
         {
             return tx.GetSerializedSize(
                        (ProtocolVersion)
-                       ((uint)ProtocolVersion.PROTOCOL_VERSION | consensusOptions.SerializeTransactionNoWitness),
+                       ((uint)ProtocolVersion.PROTOCOL_VERSION | ConsensusOptions.SerializeTransactionNoWitness),
                        SerializationType.Network) * (consensusOptions.WitnessScaleFactor - 1) +
                    tx.GetSerializedSize(ProtocolVersion.PROTOCOL_VERSION, SerializationType.Network);
         }
@@ -402,7 +401,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="trx">The transaction.</param>
         /// <param name="consensusOptions">The consensus option, needed to compute the transaction size.</param>
         /// <returns>The new transaction size.</returns>
-        public static int CalculateModifiedSize(int nTxSize, Transaction trx, PowConsensusOptions consensusOptions)
+        public static int CalculateModifiedSize(int nTxSize, Transaction trx, ConsensusOptions consensusOptions)
         {
             // In order to avoid disincentivizing cleaning up the UTXO set we don't count
             // the constant overhead for each txin and up to 110 bytes of scriptSig (which
@@ -410,7 +409,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // Providing any more cleanup incentive than making additional inputs free would
             // risk encouraging people to create junk outputs to redeem later.
             if (nTxSize == 0)
-                nTxSize = (GetTransactionWeight(trx, consensusOptions) + consensusOptions.WitnessScaleFactor - 1) / consensusOptions.WitnessScaleFactor;
+                nTxSize = (GetTransactionWeight(trx, consensusOptions) + (consensusOptions.WitnessScaleFactor) - 1) / consensusOptions.WitnessScaleFactor;
 
             foreach (TxIn txInput in trx.Inputs)
             {

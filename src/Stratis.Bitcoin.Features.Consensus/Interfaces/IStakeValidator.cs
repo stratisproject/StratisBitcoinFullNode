@@ -1,5 +1,6 @@
 ﻿using System;
 using NBitcoin;
+using NBitcoin.BouncyCastle.Math;
 
 namespace Stratis.Bitcoin.Features.Consensus.Interfaces
 {
@@ -58,8 +59,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="consensus">Consensus rules for the current network.</param>
         /// <param name="proofOfStake"><c>true</c> for calculation of PoS difficulty target, <c>false</c> for calculation of PoW difficulty target.</param>
         /// <returns>The difficulty target for the next block after <paramref name="chainedHeader"/>.</returns>
+        Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, NBitcoin.Consensus consensus, bool proofOfStake);
+
+        /// <summary>
+        /// Calculates the difficulty between two block time spans.
+        /// </summary>
+        /// <param name="firstBlockTime">The time of the first block.</param>
+        /// <param name="firstBlockTarget">The target of the first block.</param>
+        /// <param name="secondBlockTime">The block time of the second block.</param>
+        /// <param name="targetLimit">The upper limit of what the target can be.</param>
+        /// <returns>The new difficulty target as the outcome of the previous two blocks.</returns>
         /// <remarks>
-        /// The calculation of the next target is based on the last target value and the block time (aka spacing) of <paramref name="chainedHeader"/>
+        /// The calculation of the next target is based on the last target value and the block time (aka spacing) of <paramref name="firstBlockTime"/>
         /// (i.e. difference in time stamp of this block and its immediate predecessor). The target changes every block and it is adjusted
         /// down (i.e. towards harder to reach, or more difficult) if the time to mine last block was lower than the target block time.
         /// And it is adjusted up if it took longer than the target block time. The adjustments are done in a way the target is moving towards
@@ -75,6 +86,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// And the <c>N</c> determines how strongly will the deviation of the last block time affect the difficulty.
         /// </para>
         /// </remarks>
-        Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, NBitcoin.Consensus consensus, bool proofOfStake);
+        Target CalculateRetarget(uint firstBlockTime, Target firstBlockTarget, uint secondBlockTime, BigInteger targetLimit);
     }
 }

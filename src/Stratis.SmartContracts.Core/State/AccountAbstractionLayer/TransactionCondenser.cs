@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 {
@@ -19,7 +20,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// The index of each address's new balance output.
         /// </summary>
         private readonly Dictionary<uint160, uint> nVouts;
-
 
         /// <summary>
         /// Reference to the current smart contract state.
@@ -82,12 +82,13 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// </summary>
         private Transaction BuildTransaction()
         {
-            var tx = new Transaction();
+            Transaction tx = this.network.CreateTransaction();
+            tx.Time = this.transactionContext.Time; // set to time of actual transaction.
 
             foreach (ContractUnspentOutput vin in this.unspents)
             {
                 var outpoint = new OutPoint(vin.Hash, vin.Nvout);
-                tx.AddInput(new TxIn(outpoint, new Script(new [] { (byte) ScOpcodeType.OP_SPEND})));
+                tx.AddInput(new TxIn(outpoint, new Script(new[] { (byte)ScOpcodeType.OP_SPEND })));
             }
 
             foreach (TxOut txOut in this.GetOutputs())

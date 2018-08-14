@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <inheritdoc cref="ConsensusManager"/>
-        private readonly ConsensusManager consensusManager;
+        private readonly IConsensusManager consensusManager;
 
         /// <inheritdoc cref="ConcurrentChain"/>
         private readonly ConcurrentChain chain;
@@ -48,6 +48,10 @@ namespace Stratis.Bitcoin.Base
         /// </remarks>
         public ChainedHeader ExpectedPeerTip { get; private set; }
 
+        /// <summary>Gets the best header sent using <see cref="HeadersPayload"/>.</summary>
+        /// <remarks>Write access should be protected by <see cref="bestSentHeaderLock"/>.</remarks>
+        public ChainedHeader BestSentHeader { get; private set; }
+
         /// <summary>Timer that periodically tries to sync.</summary>
         private Timer autosyncTimer;
 
@@ -68,7 +72,10 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Protects access to <see cref="cachedHeaders"/>.</summary>
         private readonly AsyncLock asyncLock;
 
-        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, ConsensusManager consensusManager, IPeerBanning peerBanning, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
+        /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
+        private readonly object bestSentHeaderLock;
+
+        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -79,6 +86,7 @@ namespace Stratis.Bitcoin.Base
 
             this.cachedHeaders = new List<BlockHeader>();
             this.asyncLock = new AsyncLock();
+            this.bestSentHeaderLock = new object();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
@@ -105,6 +113,7 @@ namespace Stratis.Bitcoin.Base
                     }
 
                     this.ExpectedPeerTip = result.Consumed;
+                    this.UpdateBestSentHeader(this.ExpectedPeerTip);
 
                     int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
                     this.cachedHeaders.RemoveRange(0, consumedCount);
@@ -166,13 +175,13 @@ namespace Stratis.Bitcoin.Base
             // Ignoring "getheaders" from peers because node is in initial block download unless the peer is whitelisted.
             // We don't want to reveal our position in IBD which can be used by attacker. Also we don't won't to deliver peers any blocks
             // because that will slow down our own syncing process.
-            if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<ConnectionManagerBehavior>().Whitelisted)
+            if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<IConnectionManagerBehavior>().Whitelisted)
             {
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
                 return;
             }
 
-            HeadersPayload headersPayload = this.ConstructHeadersPayload(getHeadersPayload.BlockLocator, getHeadersPayload.HashStop);
+            HeadersPayload headersPayload = this.ConstructHeadersPayload(getHeadersPayload.BlockLocator, getHeadersPayload.HashStop, out ChainedHeader lastHeader);
 
             if (headersPayload != null)
             {
@@ -180,6 +189,8 @@ namespace Stratis.Bitcoin.Base
 
                 try
                 {
+                    this.BestSentHeader = lastHeader;
+
                     await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
@@ -194,12 +205,15 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Constructs the headers from locator to consensus tip.</summary>
         /// <param name="locator">Block locator.</param>
         /// <param name="hashStop">Hash of the block after which constructing headers payload should stop.</param>
+        /// <param name="lastHeader"><see cref="ChainedHeader"/> of the last header that was added to the <see cref="HeadersPayload"/>.</param>
         /// <returns><see cref="HeadersPayload"/> with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
-        private HeadersPayload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop)
+        private HeadersPayload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop, out ChainedHeader lastHeader)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(locator), locator, nameof(hashStop), hashStop);
 
             ChainedHeader fork = this.chain.FindFork(locator);
+
+            lastHeader = null;
 
             if (fork == null)
             {
@@ -211,13 +225,14 @@ namespace Stratis.Bitcoin.Base
 
             foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
             {
+                lastHeader = header;
                 headers.Headers.Add(header.Header);
 
                 if ((header.HashBlock == hashStop) || (headers.Headers.Count == MaxItemsPerHeadersMessage))
                     break;
             }
 
-            this.logger.LogTrace("(-):'{0}'", headers);
+            this.logger.LogTrace("(-):'{0}',{1}='{2}'", headers, nameof(lastHeader), lastHeader);
             return headers;
         }
 
@@ -258,7 +273,7 @@ namespace Stratis.Bitcoin.Base
 
             using (await this.asyncLock.LockAsync().ConfigureAwait(false))
             {
-                if (this.cachedHeaders.Count > CacheSyncHeadersThreshold) //TODO when proven headers are implemented combine this with size threshold of N mb.
+                if (this.cachedHeaders.Count > CacheSyncHeadersThreshold) // TODO when proven headers are implemented combine this with size threshold of N mb.
                 {
                     // Ignore this message because cache is full.
                     this.logger.LogTrace("(-)[CACHE_IS_FULL]");
@@ -285,6 +300,7 @@ namespace Stratis.Bitcoin.Base
                 }
 
                 this.ExpectedPeerTip = result.Consumed;
+                this.UpdateBestSentHeader(this.ExpectedPeerTip);
 
                 if (result.Consumed.Header != headers.Last())
                 {
@@ -377,7 +393,11 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogDebug("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
                 this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer presented header that violates a checkpoint.");
             }
-            //TODO catch more exceptions when validator are implemented and CM.HeadersPresented can throw anything else
+            catch (ConsensusException exception)
+            {
+                this.logger.LogWarning("Header is invalid. Peer will be banned and disconnected. Exception: '{0}'.", exception);
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Invalid header provided.");
+            }
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
@@ -393,16 +413,49 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Resets the expected peer tip and triggers synchronization.</summary>
-        public async Task ResetExpectedPeerTipAndSyncAsync()
+        /// <summary>Resets the expected peer tip and last sent tip and triggers synchronization.</summary>
+        public async Task ResetPeerTipInformationAndSyncAsync()
         {
             this.logger.LogTrace("()");
 
             this.ExpectedPeerTip = null;
+            this.BestSentHeader = null;
 
             await this.ResyncAsync().ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>Updates the best sent header but only if the new value is better or is on a different chain.</summary>
+        /// <param name="header">The new value to set if it is better or on a different chain.</param>
+        public void UpdateBestSentHeader(ChainedHeader header)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(header), header);
+
+            if (header == null)
+            {
+                this.logger.LogTrace("(-)[HEADER_NULL]");
+                return;
+            }
+
+            lock (this.bestSentHeaderLock)
+            {
+                if (this.BestSentHeader != null)
+                {
+                    ChainedHeader ancestorOrSelf = this.BestSentHeader.FindAncestorOrSelf(header);
+
+                    if (ancestorOrSelf == header)
+                    {
+                        // Header is on the same chain and is behind or it is the same as the current best header.
+                        this.logger.LogTrace("(-)[HEADER_BEHIND_OR_SAME]");
+                        return;
+                    }
+                }
+
+                this.BestSentHeader = header;
+            }
+
+            this.logger.LogTrace("(-):{0}='{1}'", nameof(this.BestSentHeader), header);
         }
 
         /// <summary>Tries to sync the chain with the peer by sending it <see cref="GetHeadersPayload"/> in case peer's state is <see cref="NetworkPeerState.HandShaked"/>.</summary>
@@ -435,12 +488,13 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         protected override void AttachCore()
         {
             this.logger.LogTrace("()");
 
             // Initialize auto sync timer.
+            int interval = (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds;
             this.autosyncTimer = new Timer(async (o) =>
             {
                 this.logger.LogTrace("()");
@@ -448,7 +502,7 @@ namespace Stratis.Bitcoin.Base
                 await this.ResyncAsync().ConfigureAwait(false);
 
                 this.logger.LogTrace("(-)");
-            }, null, 0, (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds);
+            }, null, interval, interval);
 
             if (this.AttachedPeer.State == NetworkPeerState.Connected)
                 this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip.Height;
@@ -459,7 +513,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         protected override void DetachCore()
         {
             this.logger.LogTrace("()");
@@ -470,7 +524,7 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogTrace("(-)");
         }
 
-        ///  <inheritdoc />
+        /// <inheritdoc />
         public override void Dispose()
         {
             this.autosyncTimer?.Dispose();

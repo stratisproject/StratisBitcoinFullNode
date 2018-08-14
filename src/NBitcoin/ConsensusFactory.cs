@@ -75,12 +75,6 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Represents the parent of this class.
-        /// For simplicity (and migration from NBitcoin) I made this a property however this design can be revised later.
-        /// </summary>
-        public Consensus Consensus { get; set; }
-
-        /// <summary>
         /// Check weather a type is assignable within the collection of types in the give dictionary.
         /// </summary>
         /// <typeparam name="T">The generic type to check.</typeparam>

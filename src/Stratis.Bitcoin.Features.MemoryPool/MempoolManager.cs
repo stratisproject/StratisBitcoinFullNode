@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly ITxMempool memPool;
 
         /// <summary>Coin view of the memory pool.</summary>
-        private readonly CoinView coinView;
+        private readonly ICoinView coinView;
 
         private readonly Network network;
 
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IDateTimeProvider dateTimeProvider,
             MempoolSettings mempoolSettings,
             IMempoolPersistence mempoolPersistence,
-            CoinView coinView,
+            ICoinView coinView,
             ILoggerFactory loggerFactory,
             Network network)
         {

@@ -6,6 +6,48 @@ namespace NBitcoin.Policy
 {
     public class StandardTransactionPolicy : ITransactionPolicy
     {
+        /// <summary>
+        /// Biggest 'standard' txin is a 15-of-15 P2SH multisig with compressed keys
+        /// (remember the 520 byte limit on redeemScript size).
+        /// That works out to a (15*(33+1))+3=513 byte redeemScript, 513+1+15*(73+1)+3=1627 bytes of scriptSig, 
+        /// which we round off to 1650 bytes for some minor future-proofing. 
+        /// That's also enough to spend a 20-of-20 CHECKMULTISIG scriptPubKey, though such a scriptPubKey is not considered standard.
+        /// </summary>
+        public const int MaxScriptSigLength = 1650;
+
+        /// <summary>
+        /// The maximum size for transactions we're willing to relay/mine.
+        /// </summary>
+        public int? MaxTransactionSize { get; set; }
+
+        /// <summary>
+        /// Safety check, if the FeeRate exceed this value, a policy error is raised.
+        /// </summary>
+        public FeeRate MaxTxFee { get; set; }
+
+        /// <summary>
+        /// Fees smaller than this (in satoshi) are considered zero fee (for relaying).
+        /// </summary>
+        public FeeRate MinRelayTxFee { get; set; }
+
+        public ScriptVerify? ScriptVerify { get; set; }
+
+        /// <summary>
+        /// Check if the transaction is safe from malleability (default: false).
+        /// </summary>
+        public bool CheckMalleabilitySafe { get; set; }
+
+        /// <summary>
+        /// A value indicating whether to include checking the fee as part of checking the transaction.
+        /// This is set to false in some unit tests but otherwise defaults to true.
+        /// </summary>
+        public bool CheckFee { get; set; }
+
+        /// <summary>
+        /// Check the standardness of scriptPubKey.
+        /// </summary>
+        public bool CheckScriptPubKey { get; set; }
+
         private readonly Network network;
 
         public StandardTransactionPolicy(Network network)
@@ -15,56 +57,10 @@ namespace NBitcoin.Policy
             this.MaxTransactionSize = 100000;
             // TODO: replace fee params with whats in Network.
             this.MaxTxFee = new FeeRate(Money.Coins(0.1m));
-            this.MinRelayTxFee = new FeeRate(Money.Satoshis(5000)); // TODO: new FeeRate(Money.Satoshis(network.MinRelayTxFee));
+            this.MinRelayTxFee = new FeeRate(Money.Satoshis(network.MinRelayTxFee));
             this.CheckFee = true;
             this.CheckScriptPubKey = true;
         }
-
-        public int? MaxTransactionSize
-        {
-            get;
-            set;
-        }
-        /// <summary>
-        /// Safety check, if the FeeRate exceed this value, a policy error is raised
-        /// </summary>
-        public FeeRate MaxTxFee
-        {
-            get;
-            set;
-        }
-        public FeeRate MinRelayTxFee
-        {
-            get;
-            set;
-        }
-
-        public ScriptVerify? ScriptVerify
-        {
-            get;
-            set;
-        }
-        /// <summary>
-        /// Check if the transaction is safe from malleability (default: false)
-        /// </summary>
-        public bool CheckMalleabilitySafe
-        {
-            get; set;
-        } = false;
-        public bool CheckFee
-        {
-            get;
-            set;
-        }
-
-        public bool UseConsensusLib
-        {
-            get;
-            set;
-        }
-
-        public const int MaxScriptSigLength = 1650;
-        #region ITransactionPolicy Members
 
         public TransactionPolicyError[] Check(Transaction transaction, ICoin[] spentCoins)
         {
@@ -75,8 +71,6 @@ namespace NBitcoin.Policy
 
             var errors = new List<TransactionPolicyError>();
 
-
-
             foreach (IndexedTxIn input in transaction.Inputs.AsIndexedInputs())
             {
                 ICoin coin = spentCoins.FirstOrDefault(s => s.Outpoint == input.PrevOut);
@@ -84,8 +78,7 @@ namespace NBitcoin.Policy
                 {
                     if (this.ScriptVerify != null)
                     {
-                        ScriptError error;
-                        if (!VerifyScript(input, coin.TxOut.ScriptPubKey, coin.TxOut.Value, this.ScriptVerify.Value, out error))
+                        if(!input.VerifyScript(this.network, coin.TxOut.ScriptPubKey, coin.TxOut.Value, this.ScriptVerify.Value, out ScriptError error))
                         {
                             errors.Add(new ScriptPolicyError(input, error, this.ScriptVerify.Value, coin.TxOut.ScriptPubKey));
                         }
@@ -150,7 +143,7 @@ namespace NBitcoin.Policy
                 }
             }
 
-            CheckMinRelayTxFee(transaction, errors);
+            this.CheckMinRelayTxFee(transaction, errors);
 
             int opReturnCount = transaction.Outputs.Select(o => o.ScriptPubKey.ToBytes(true)).Count(b => IsOpReturn(b));
             if (opReturnCount > 1)
@@ -191,30 +184,7 @@ namespace NBitcoin.Policy
         {
             return bytes.Length > 0 && bytes[0] == (byte)OpcodeType.OP_RETURN;
         }
-
-        private bool VerifyScript(IndexedTxIn input, Script scriptPubKey, Money value, ScriptVerify scriptVerify, out ScriptError error)
-        {
-            if (!this.UseConsensusLib)
-                return input.VerifyScript(this.network, scriptPubKey, value, scriptVerify, out error);
-            else
-            {
-                bool ok = Script.VerifyScriptConsensus(scriptPubKey, input.Transaction, input.Index, scriptVerify);
-                if (!ok)
-                {
-                    if (input.VerifyScript(this.network, scriptPubKey, scriptVerify, out error))
-                        error = ScriptError.UnknownError;
-                    return false;
-                }
-                else
-                {
-                    error = ScriptError.OK;
-                }
-                return true;
-            }
-        }
-
-        #endregion
-
+        
         public StandardTransactionPolicy Clone()
         {
             return new StandardTransactionPolicy(this.network)
@@ -223,20 +193,10 @@ namespace NBitcoin.Policy
                 MaxTxFee = this.MaxTxFee,
                 MinRelayTxFee = this.MinRelayTxFee,
                 ScriptVerify = this.ScriptVerify,
-                UseConsensusLib = this.UseConsensusLib,
                 CheckMalleabilitySafe = this.CheckMalleabilitySafe,
                 CheckScriptPubKey = this.CheckScriptPubKey,
                 CheckFee = this.CheckFee
             };
-        }
-
-        /// <summary>
-        /// Check the standardness of scriptPubKey
-        /// </summary>
-        public bool CheckScriptPubKey
-        {
-            get;
-            set;
         }
     }
 }

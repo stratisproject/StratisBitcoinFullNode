@@ -24,8 +24,6 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </remarks>
     public class WalletTransactionHandler : IWalletTransactionHandler
     {
-        public Network Network { get; }
-
         /// <summary>A threshold that if possible will limit the amount of UTXO sent to the <see cref="ICoinSelector"/>.</summary>
         /// <remarks>
         /// 500 is a safe number that if reached ensures the coin selector will not take too long to complete,
@@ -33,17 +31,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </remarks>
         private const int SendCountThresholdLimit = 500;
 
-        private readonly IWalletManager walletManager;
-
-        private readonly IWalletFeePolicy walletFeePolicy;
-
-        private readonly CoinType coinType;
-
         private readonly ILogger logger;
+
+        private readonly Network network;
 
         private readonly MemoryCache privateKeyCache;
 
-        private readonly StandardTransactionPolicy transactionPolicy;
+        protected readonly StandardTransactionPolicy TransactionPolicy;
+
+        private readonly IWalletManager walletManager;
+
+        private readonly IWalletFeePolicy walletFeePolicy;
 
         public WalletTransactionHandler(
             ILoggerFactory loggerFactory,
@@ -52,13 +50,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             Network network,
             StandardTransactionPolicy transactionPolicy)
         {
-            this.Network = network;
+            this.network = network;
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
-            this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
-            this.transactionPolicy = transactionPolicy;
+            this.TransactionPolicy = transactionPolicy;
         }
 
         /// <inheritdoc />
@@ -67,15 +64,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.InitializeTransactionBuilder(context);
 
             if (context.Shuffle)
-            {
                 context.TransactionBuilder.Shuffle();
-            }
 
-            // build transaction
-            context.Transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
+            bool sign = !string.IsNullOrEmpty(context.WalletPassword);
+            Transaction transaction = context.TransactionBuilder.BuildTransaction(sign);
 
-            if (context.TransactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
-                return context.Transaction;
+            if (context.TransactionBuilder.Verify(transaction, out TransactionPolicyError[] errors))
+                return transaction;
 
             string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
             this.logger.LogError($"Build transaction failed: {errorsMessage}");
@@ -158,11 +153,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Here we try to create a transaction that contains all the spendable coins, leaving no room for the fee.
                 // When the transaction builder throws an exception informing us that we have insufficient funds,
                 // we use the amount we're missing as the fee.
-                var context = new TransactionBuildContext(accountReference, recipients, null)
+                var context = new TransactionBuildContext(this.network)
                 {
                     FeeType = feeType,
                     MinConfirmations = allowUnconfirmed ? 0 : 1,
-                    TransactionBuilder = new TransactionBuilder(this.Network)
+                    Recipients = recipients,
+                    AccountReference = accountReference
                 };
 
                 this.AddRecipients(context);
@@ -192,37 +188,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.
         /// </summary>
         /// <param name="context">Transaction build context.</param>
-        private void InitializeTransactionBuilder(TransactionBuildContext context)
+        protected virtual void InitializeTransactionBuilder(TransactionBuildContext context)
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
             Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
 
-            context.TransactionBuilder = new TransactionBuilder(this.Network)
-            {
-                CoinSelector = new DefaultCoinSelector
-                {
-                    GroupByScriptPubKey = context.UseAllInputs
-                },
-                // Smart contract calls allow dust. Should be an option on TransactionBuildContext in future.
-                DustPrevention = context.DustPrevention,
-                StandardTransactionPolicy = this.transactionPolicy
-            };
-
             this.AddRecipients(context);
             this.AddOpReturnOutput(context);
             this.AddCoins(context);
             this.AddSecrets(context);
-            // Also added for smart contract demo
-            if (!context.ChangeAddressSet)
-            {
-                this.FindChangeAddress(context);
-            }
-            else
-            {
-                context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
-            }
-            // End smart contract change
+            this.FindChangeAddress(context);
             this.AddFee(context);
         }
 
@@ -230,13 +206,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Load's all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void AddSecrets(TransactionBuildContext context)
+        protected void AddSecrets(TransactionBuildContext context)
         {
-            if (!context.Sign)
+            if (string.IsNullOrEmpty(context.WalletPassword))
                 return;
 
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
-            Key privateKey; 
+            Key privateKey;
             // get extended private key
             string cacheKey = wallet.EncryptedSeed;
 
@@ -274,7 +250,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Find the next available change address.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void FindChangeAddress(TransactionBuildContext context)
+        protected void FindChangeAddress(TransactionBuildContext context)
         {
             // Get an address to send the change to.
             context.ChangeAddress = this.walletManager.GetUnusedChangeAddress(new WalletAccountReference(context.AccountReference.WalletName, context.AccountReference.AccountName));
@@ -286,7 +262,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Then add them to the <see cref="TransactionBuildContext.UnspentOutputs"/>.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void AddCoins(TransactionBuildContext context)
+        protected void AddCoins(TransactionBuildContext context)
         {
             context.UnspentOutputs = this.walletManager.GetSpendableTransactionsInAccount(context.AccountReference, context.MinConfirmations).ToList();
 
@@ -356,10 +332,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <remarks>
         /// Add outputs to the <see cref="TransactionBuilder"/> based on the <see cref="Recipient"/> list.
         /// </remarks>
-        private void AddRecipients(TransactionBuildContext context)
+        protected virtual void AddRecipients(TransactionBuildContext context)
         {
-            // Adjusted to allow smart contract transactions through
-            if (context.Recipients.Any(a => a.Amount == Money.Zero && !a.ScriptPubKey.IsSmartContractExec()))
+            if (context.Recipients.Any(a => a.Amount == Money.Zero))
                 throw new WalletException("No amount specified.");
 
             if (context.Recipients.Any(a => a.SubtractFeeFromAmount))
@@ -373,7 +348,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Use the <see cref="FeeRate"/> from the <see cref="walletFeePolicy"/>.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void AddFee(TransactionBuildContext context)
+        protected void AddFee(TransactionBuildContext context)
         {
             Money fee;
 
@@ -396,7 +371,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Add extra unspendable output to the transaction if there is anything in OpReturnData.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        private void AddOpReturnOutput(TransactionBuildContext context)
+        protected void AddOpReturnOutput(TransactionBuildContext context)
         {
             if (string.IsNullOrEmpty(context.OpReturnData)) return;
 
@@ -404,7 +379,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
             context.TransactionBuilder.Send(opReturnScript, Money.Zero);
         }
-
     }
 
     public class TransactionBuildContext
@@ -412,26 +386,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Initialize a new instance of a <see cref="TransactionBuildContext"/>
         /// </summary>
-        /// <param name="accountReference">The wallet and account from which to build this transaction</param>
-        /// <param name="recipients">The target recipients to send coins to.</param>
-        /// <param name="walletPassword">The password that protects the wallet in <see cref="accountReference"/></param>
-        /// <param name="opReturnData">Optional transaction data <see cref="OpReturnData"/></param>
-        public TransactionBuildContext(WalletAccountReference accountReference, List<Recipient> recipients,
-            string walletPassword = "", string opReturnData = null)
+        /// <param name="network">The network for which this transaction will be built.</param>
+        public TransactionBuildContext(Network network)
         {
-            Guard.NotNull(recipients, nameof(recipients));
-
-            this.AccountReference = accountReference;
-            this.Recipients = recipients;
-            this.WalletPassword = walletPassword;
+            this.TransactionBuilder = new TransactionBuilder(network);
+            this.Recipients = new List<Recipient>();
+            this.WalletPassword = string.Empty;
             this.FeeType = FeeType.Medium;
             this.MinConfirmations = 1;
             this.SelectedInputs = new List<OutPoint>();
             this.AllowOtherInputs = false;
-            this.Sign = !string.IsNullOrEmpty(walletPassword);
-            this.OpReturnData = opReturnData;
-            this.UseAllInputs = true;
-            this.DustPrevention = true;
         }
 
         /// <summary>
@@ -465,7 +429,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// The builder used to build the current transaction.
         /// </summary>
-        public TransactionBuilder TransactionBuilder { get; set; }
+        public readonly TransactionBuilder TransactionBuilder;
 
         /// <summary>
         /// The change address, where any remaining funds will be sent to.
@@ -476,23 +440,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </remarks>
         public HdAddress ChangeAddress { get; set; }
 
-        public bool ChangeAddressSet
-        {
-            get
-            {
-                return this.ChangeAddress != null;
-            }
-        }
-
         /// <summary>
         /// The total fee on the transaction.
         /// </summary>
         public Money TransactionFee { get; set; }
-
-        /// <summary>
-        /// The final transaction.
-        /// </summary>
-        public Transaction Transaction { get; set; }
 
         /// <summary>
         /// The password that protects the wallet in <see cref="WalletAccountReference"/>.
@@ -517,11 +468,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool AllowOtherInputs { get; set; }
 
         /// <summary>
-        /// Specify whether to sign the transaction.
-        /// </summary>
-        public bool Sign { get; set; }
-
-        /// <summary>
         /// Allows the context to specify a <see cref="FeeRate"/> when building a transaction.
         /// </summary>
         public FeeRate OverrideFeeRate { get; set; }
@@ -530,42 +476,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Shuffles transaction inputs and outputs for increased privacy.
         /// </summary>
         public bool Shuffle { get; set; }
-        
+
         /// <summary>
         /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
         /// </summary>
         public string OpReturnData { get; set; }
-
-        /// <summary>
-        /// Whether to use all inputs, to preserve privacy, or use only enough to meet the required amount.
-        /// </summary>
-        public bool UseAllInputs { get; set; } 
-
-        /// <summary>
-        /// Used to discern whether the transaction builder should use dust prevention or not.
-        /// </summary>
-        public bool DustPrevention { get; set; }
-    }
-
-    /// <summary>
-    /// Represents recipients of a payment, used in <see cref="WalletTransactionHandler.BuildTransaction"/>.
-    /// </summary>
-    public class Recipient
-    {
-        /// <summary>
-        /// The destination script.
-        /// </summary>
-        public Script ScriptPubKey { get; set; }
-
-        /// <summary>
-        /// The amount that will be sent.
-        /// </summary>
-        public Money Amount { get; set; }
-
-        /// <summary>
-        /// An indicator if the fee is subtracted from the current recipient.
-        /// </summary>
-        public bool SubtractFeeFromAmount { get; set; }
     }
 }
- 

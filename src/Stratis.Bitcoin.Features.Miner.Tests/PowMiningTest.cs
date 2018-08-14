@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -24,10 +25,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private ConcurrentChain chain;
         private readonly Mock<IConsensusLoop> consensusLoop;
         private readonly Mock<IConsensusRules> consensusRules;
-        private readonly NBitcoin.Consensus.ConsensusOptions initialNetworkOptions;
+        private readonly ConsensusOptions initialNetworkOptions;
         private readonly PowMiningTestFixture fixture;
         private readonly Mock<ITxMempool> mempool;
         private readonly MempoolSchedulerLock mempoolLock;
+        private readonly Mock<MinerSettings> minerSettings;
         private readonly Network network;
         private readonly Mock<INodeLifetime> nodeLifetime;
 
@@ -38,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.initialNetworkOptions = this.network.Consensus.Options;
             if (this.initialNetworkOptions == null)
-                this.network.Consensus.Options = new PowConsensusOptions();
+                this.network.Consensus.Options = new ConsensusOptions();
 
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
 
@@ -48,6 +50,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.mempool = new Mock<ITxMempool>();
             this.mempool.SetupGet(mp => mp.MapTx).Returns(new TxMempool.IndexedTransactionSet());
+
+            this.minerSettings = new Mock<MinerSettings>();
 
             this.chain = fixture.Chain;
 
@@ -322,7 +326,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
                 blockTemplate.Block.Header.Nonce = 0;
-                blockTemplate.Block.Header.Bits = Network.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
+                blockTemplate.Block.Header.Bits = KnownNetworks.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
 
                 this.chain.SetTip(this.chain.GetBlock(0));
 
@@ -512,6 +516,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     this.LoggerFactory.Object,
                     this.mempool.Object,
                     this.mempoolLock,
+                    this.minerSettings.Object,
                     this.network,
                     this.consensusRules.Object,
                     null);
@@ -604,7 +609,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PowMiningTestFixture()
         {
-            this.Network = Network.RegTest; // fast mining so use regtest
+            this.Network = KnownNetworks.RegTest; // fast mining so use regtest
             this.Chain = new ConcurrentChain(this.Network);
             this.Key = new Key();
             this.ReserveScript = new ReserveScript(this.Key.ScriptPubKey);

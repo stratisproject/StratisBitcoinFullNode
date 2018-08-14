@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         /// <inheritdoc />
         public Transaction Process(IContractStateRepository stateSnapshot,
-            CallData callData,
+            uint160 contractAddress,
             ISmartContractTransactionContext transactionContext,
             IList<TransferInfo> internalTransfers,
             bool reversionRequired)
@@ -41,13 +41,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return null;
             }
 
-            // TODO we should not be generating addresses in here!
-            uint160 contractAddress = null;
-            if (callData.ContractAddress == uint160.Zero)
-                contractAddress = Core.NewContractAddressExtension.GetContractAddressFromTransactionHash(transactionContext.TransactionHash);
-            else
-                contractAddress = callData.ContractAddress;
-
             // If contract had no balance, received funds, but made no transfers, assign the current UTXO.
             if (stateSnapshot.GetUnspent(contractAddress) == null && transactionContext.TxOutValue > 0 && !internalTransfers.Any())
             {
@@ -60,8 +53,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 return null;
             }
-            // All other cases we need a condensing transaction
 
+            // All other cases we need a condensing transaction
             var transactionCondenser = new TransactionCondenser(contractAddress, this.loggerFactory, internalTransfers, stateSnapshot, this.network, transactionContext);
             return transactionCondenser.CreateCondensingTransaction();
         }
@@ -72,10 +65,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         private Transaction CreateRefundTransaction(ISmartContractTransactionContext transactionContext)
         {
-            Transaction tx = this.network.Consensus.ConsensusFactory.CreateTransaction();
+            Transaction tx = this.network.CreateTransaction();
+
             // Input from contract call
             var outpoint = new OutPoint(transactionContext.TransactionHash, transactionContext.Nvout);
             tx.AddInput(new TxIn(outpoint, new Script(new[] { (byte)ScOpcodeType.OP_SPEND })));
+
             // Refund output
             Script script = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId(transactionContext.Sender));
             var txOut = new TxOut(new Money(transactionContext.TxOutValue), script);

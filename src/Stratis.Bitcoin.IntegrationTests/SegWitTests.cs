@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
@@ -23,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 coreNode.ConfigParameters.AddOrReplace("printtoconsole", "0");
                 coreNode.Start();
 
-                CoreNode stratisNode = builder.CreateStratisPowNode(start: true);
+                CoreNode stratisNode = builder.CreateStratisPowNode(KnownNetworks.RegTest, start: true);
 
                 RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
                 RPCClient coreRpc = coreNode.CreateRPCClient();
@@ -34,15 +36,15 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // core (in version 0.15.1) only mines segwit blocks above a certain height on regtest
                 // future versions of core will change that behaviour so this test may need to be changed in the future
                 // see issue for more details https://github.com/stratisproject/StratisBitcoinFullNode/issues/1028
-                BIP9DeploymentsParameters prevSegwitDeployment = Network.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit];
-                Network.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
+                BIP9DeploymentsParameters prevSegwitDeployment = KnownNetworks.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit];
+                KnownNetworks.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
 
                 try
                 {
                     // generate 450 blocks, block 431 will be segwit activated.
                     coreRpc.Generate(450);
-
-                    TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash());
+                    var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(2)).Token;
+                    TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode.CreateRPCClient().GetBestBlockHash(), cancellationToken: cancellationToken);
 
                     // segwit activation on Bitcoin regtest.
                     // - On regtest deployment state changes every 144 block, the threshold for activating a rule is 108 blocks.
@@ -66,7 +68,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
                 finally
                 {
-                    Network.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = prevSegwitDeployment;
+                    KnownNetworks.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = prevSegwitDeployment;
                 }
             }
         }

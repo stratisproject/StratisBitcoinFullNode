@@ -1,4 +1,4 @@
-﻿using Stratis.Bitcoin.Features.Wallet.Controllers;
+﻿using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 {
     public static class SmartContractSharedSteps
     {
-        public static void SendTransactionAndMine(CoreNode scSender, CoreNode scReceiver, WalletController senderWalletController, string responseHex)
+        public static void SendTransactionAndMine(CoreNode scSender, CoreNode scReceiver, SmartContractWalletController senderWalletController, string responseHex)
         {
             senderWalletController.SendTransaction(new SendTransactionRequest
             {

@@ -122,8 +122,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1, this.logger);
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true, this.logger);
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly, this.logger);
+            this.IpRangeFiltering = config.GetOrDefault<bool>("IpRangeFiltering", true, this.logger);
 
-            var agentPrefix = config.GetOrDefault("agentprefix", string.Empty, this.logger).Replace("-", "");
+            var agentPrefix = config.GetOrDefault("agentprefix", string.Empty, this.logger).Replace("-", string.Empty);
             if (agentPrefix.Length > MaximumAgentPrefixLength)
                 agentPrefix = agentPrefix.Substring(0, MaximumAgentPrefixLength);
 
@@ -140,7 +141,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <param name="network">The network to base the defaults off.</param>
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
-            var defaults = NodeSettings.Default(network: network);
             builder.AppendLine("####ConnectionManager Settings####");
             builder.AppendLine($"#The default network port to connect to. Default { network.DefaultPort }.");
             builder.AppendLine($"#port={network.DefaultPort}");
@@ -162,6 +162,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#agentprefix=<string>");
             builder.AppendLine($"#Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { (DefaultBlocksOnly ? 1 : 0) }.");
             builder.AppendLine($"#blocksonly={ (DefaultBlocksOnly ? 1 : 0) }");
+            builder.AppendLine($"#bantime=<number>");
+            builder.AppendLine($"#Disallow connection to peers in same IP range. Default is 1 for remote hosts.");
+            builder.AppendLine($"#iprangefiltering=<0 or 1>");
         }
 
         /// <summary>
@@ -185,6 +188,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
             builder.AppendLine($"-agentprefix=<string>     An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
             builder.AppendLine($"-blocksonly=<0 or 1>      Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { DefaultBlocksOnly }.");
+            builder.AppendLine($"-iprangefiltering=<0 or 1> Disallow connection to peers in same IP range. Default is 1 for remote hosts.");
 
             defaults.Logger.LogInformation(builder.ToString());
         }
@@ -218,5 +222,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary><c>true</c> to enable bandwidth saving setting to send and received confirmed blocks only.</summary>
         public bool RelayTxes { get; set; }
+
+        /// <summary>Filter peers that are within the same IP range to prevent sybil attacks.</summary>
+        public bool IpRangeFiltering { get; internal set; }
     }
 }

@@ -69,7 +69,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
         private Task dequeueLoopTask;
-
         public BlockStoreQueue(
             IBlockRepository blockRepository,
             ConcurrentChain chain,
@@ -114,8 +113,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (this.storeSettings.ReIndex)
             {
-                this.logger.LogTrace("(-)[REINDEX_NOT_SUPPORTED]");
-                throw new NotSupportedException("Re-indexing the block store in currently not supported.");
+                await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
+                await this.blockRepository.ReIndexAsync().ConfigureAwait(false);
             }
 
             ChainedHeader initializationTip = this.chain.GetBlock(this.blockRepository.BlockHash);
@@ -131,11 +130,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.storeTip != this.chain.Genesis)
                 {
                     this.logger.LogTrace("(-)[REBUILD_REQUIRED]");
-                    throw new BlockStoreException("You need to rebuild the block store database using -reindex-chainstate to change -txindex");
+                    throw new BlockStoreException("You need to rebuild the block store database using -reindex to change -txindex");
                 }
 
-                if (this.storeSettings.TxIndex)
-                    await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
+                // We only reach here in the case where we are syncing with a database with no blocks.
+                // Always set the TxIndex here.
+                await this.blockRepository.SetTxIndexAsync(this.storeSettings.TxIndex).ConfigureAwait(false);
             }
             
             // Throw if block store was initialized after the consensus.
@@ -167,9 +167,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public Task<Block> GetBlockAsync(uint256 blockHash)
+        public async Task<Block> GetBlockAsync(uint256 blockHash)
         {
-            throw new System.NotImplementedException();
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
+
+            Block block = await this.blockRepository.GetAsync(blockHash).ConfigureAwait(false);
+
+            this.logger.LogTrace("(-)");
+
+            return block;
         }
 
         /// <summary>Sets the internal store tip and exposes the store tip to other components through the chain state.</summary>

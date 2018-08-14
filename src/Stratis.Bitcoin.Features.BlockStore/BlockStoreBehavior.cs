@@ -182,20 +182,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Gets the highest header between the header of the last block that was sent to a peer and the expected peer's tip.</summary>
-        private ChainedHeader GetHighestHeader()
+        /// <summary>Gets the best header between the header of the last block that was sent to a peer and the expected peer's tip.</summary>
+        private ChainedHeader GetBestHeader()
         {
             this.logger.LogTrace("()");
 
+            //TODO use CMB.BestPeerTip instead. Also when we update LastHeaderSent update CMB.UpdateBestHeaderSent
             ChainedHeader peerTip = this.headersBehavior.ExpectedPeerTip;
 
-            ChainedHeader highestHeader = peerTip;
+            ChainedHeader bestHeader = peerTip;
 
-            if ((highestHeader == null) || ((this.lastHeaderSent != null) && (highestHeader.Height < this.lastHeaderSent.Height)))
-                highestHeader = this.lastHeaderSent;
+            if ((bestHeader == null) || ((this.lastHeaderSent != null) && (bestHeader.Height < this.lastHeaderSent.Height)))
+                bestHeader = this.lastHeaderSent;
 
-            this.logger.LogTrace("(-):'{0}'", highestHeader);
-            return highestHeader;
+            this.logger.LogTrace("(-):'{0}'", bestHeader);
+            return bestHeader;
         }
 
         /// <summary>
@@ -290,7 +291,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             int count = inv.Inventory.Count;
             if (count > 0)
             {
-                ChainedHeader highestHeader = this.GetHighestHeader();
+                ChainedHeader highestHeader = this.GetBestHeader();
 
                 if (highestHeader?.Height < lastAddedChainedHeader.Height)
                 {
@@ -409,7 +410,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             try
             {
-                ChainedHeader highestHeader = this.GetHighestHeader();
+                ChainedHeader highestHeader = this.GetBestHeader();
 
                 ChainedHeader bestIndex = null;
                 if (!revertToInv)

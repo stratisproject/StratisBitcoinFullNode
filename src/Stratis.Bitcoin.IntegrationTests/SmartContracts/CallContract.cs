@@ -31,25 +31,13 @@ public class CallContract : SmartContract
         return result.Success;
     }
 
-    public bool GetOtherCountValueAndUpdateOurs(string addressString)
-    {
-        ITransferResult result = TransferFunds(new Address(addressString), 100, new TransferFundsToContract
-        {
-            ContractMethodName = "get_Count"
-        });
-
-        if (result.Success)
-            this.NewCount = (int)result.ReturnValue;
-
-        return result.Success;
-    }
-
     public bool Tester(string addressString)
     {
         Test = "Not Initial!";
         ITransferResult result = TransferFunds(new Address(addressString), 0, new TransferFundsToContract
         {
-            ContractMethodName = "Callback"
+            ContractMethodName = "Callback",
+            GasBudget = 2000
         });
         return (bool)result.ReturnValue;
     }
@@ -58,6 +46,4 @@ public class CallContract : SmartContract
     {
         return Test == "Not Initial!";
     }
-
-    public int NewCount { get; set; }
 }

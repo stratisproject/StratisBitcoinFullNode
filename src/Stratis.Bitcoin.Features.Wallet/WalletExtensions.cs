@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet
@@ -53,26 +52,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return blockSyncStart;
-        }
-
-        // TODO Remove this code duplication
-        public enum WalletScOpcodeType : byte
-        {
-            // smart contracts
-            OP_CREATECONTRACT = 0xc0,
-            OP_CALLCONTRACT = 0xc1
-        }
-
-        public static bool IsSmartContractExec(this Script script)
-        {
-            Op firstOp = script.ToOps().FirstOrDefault();
-
-            if (firstOp == null)
-                return false;
-
-            var opCode = (byte)firstOp.Code;
-
-            return opCode == (byte)WalletScOpcodeType.OP_CALLCONTRACT || opCode == (byte)WalletScOpcodeType.OP_CREATECONTRACT;
         }
     }
 }
