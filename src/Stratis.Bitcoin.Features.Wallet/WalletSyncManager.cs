@@ -119,8 +119,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
-            if (block.BlockSize != null)
-                this.blocksQueueSize -= block.BlockSize.Value;
+            this.blocksQueueSize -= block.BlockSize.Value;
 
             ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
 
@@ -249,9 +248,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
             }
 
-            if (block.BlockSize != null)
-                this.blocksQueueSize += block.BlockSize.Value;
-
             // If the queue reaches the maximum limit, ignore incoming blocks until the queue is empty.
             if (!this.maxQueueSizeReached)
             {
@@ -264,12 +260,15 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             else
             {
-                // If queue is empty the reset the maxQueueSizeReached flag.
+                // If queue is empty then reset the maxQueueSizeReached flag.
                 this.maxQueueSizeReached = this.blocksQueueSize > 0;
             }
 
             if (!this.maxQueueSizeReached)
+            {
+                this.blocksQueueSize += block.BlockSize.Value;
                 this.blocksQueue.Enqueue(block);
+            }
 
             this.logger.LogTrace("(-)");
         }
