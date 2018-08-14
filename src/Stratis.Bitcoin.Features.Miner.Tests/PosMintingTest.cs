@@ -24,7 +24,6 @@ using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
-
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Miner.Tests
@@ -32,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
     public class PosMintingTest : LogsTestBase
     {
         protected PosMinting posMinting;
-        private readonly Mock<IConsensusManager> consensusLoop;
+        private readonly Mock<IConsensusManager> consensusManager;
         private ConcurrentChain chain;
         protected Network network;
         private readonly Mock<IDateTimeProvider> dateTimeProvider;
@@ -52,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         public PosMintingTest()
         {
-            this.consensusLoop = new Mock<IConsensusManager>();
+            this.consensusManager = new Mock<IConsensusManager>();
             this.network = KnownNetworks.StratisTest;
             this.network.Consensus.Options = new ConsensusOptions();
             this.chain = new ConcurrentChain(this.network);
@@ -241,7 +240,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(fetchCoinsResponse));
 
-            this.consensusLoop.Setup(c => c.Tip).Returns(this.chain.Tip);
+            this.consensusManager.Setup(c => c.Tip).Returns(this.chain.Tip);
             this.dateTimeProvider.Setup(c => c.GetAdjustedTimeAsUnixTimestamp())
                 .Returns(this.chain.Tip.Header.Time + 16);
             var ct = CancellationToken.None;
@@ -327,7 +326,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void GetDifficulty_BlockNull_UsesConsensusLoopTipAndStakeValidator_FindsBlock_ReturnsDifficulty()
         {
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, this.network);
-            this.consensusLoop.Setup(c => c.Tip)
+            this.consensusManager.Setup(c => c.Tip)
                 .Returns(this.chain.Tip);
 
             ChainedHeader chainedHeader = CreateChainedBlockWithNBits(this.network, 0x12345678);
@@ -343,7 +342,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetDifficulty_BlockNull_NoConsensusTip_ReturnsDefaultDifficulty()
         {
-            this.consensusLoop.Setup(c => c.Tip)
+            this.consensusManager.Setup(c => c.Tip)
                 .Returns((ChainedHeader)null);
 
             double result = this.posMinting.GetDifficulty(null);
@@ -354,7 +353,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GetNetworkWeight_NoConsensusLoopTip_ReturnsZero()
         {
-            this.consensusLoop.Setup(c => c.Tip)
+            this.consensusManager.Setup(c => c.Tip)
                 .Returns((ChainedHeader)null);
 
             double result = this.posMinting.GetNetworkWeight();
@@ -367,7 +366,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.chain = GenerateChainWithBlockTimeAndHeight(75, this.network, 60, 0x1df88f6f);
             this.InitializePosMinting();
-            this.consensusLoop.Setup(c => c.Tip)
+            this.consensusManager.Setup(c => c.Tip)
                 .Returns(this.chain.Tip);
 
             double weight = this.posMinting.GetNetworkWeight();
@@ -380,7 +379,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.chain = GenerateChainWithBlockTimeAndHeight(50, this.network, 60, 0x1df88f6f);
             this.InitializePosMinting();
-            this.consensusLoop.Setup(c => c.Tip)
+            this.consensusManager.Setup(c => c.Tip)
                 .Returns(this.chain.Tip);
 
             double weight = this.posMinting.GetNetworkWeight();
@@ -402,7 +401,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             }
 
             this.InitializePosMinting();
-            this.consensusLoop.Setup(c => c.Tip)
+            this.consensusManager.Setup(c => c.Tip)
                 .Returns(this.chain.Tip);
 
             double weight = this.posMinting.GetNetworkWeight();
@@ -418,7 +417,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             // it skips the first block because it cannot determine it for a single block so we need to add 73.
             AddBlockToChainWithBlockTimeAndDifficulty(this.chain, 73, 60, 0x1df88f6f, this.network);
             this.InitializePosMinting();
-            this.consensusLoop.Setup(c => c.Tip)
+            this.consensusManager.Setup(c => c.Tip)
                 .Returns(this.chain.Tip);
 
             double weight = this.posMinting.GetNetworkWeight();
@@ -590,7 +589,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private PosMinting InitializePosMinting()
         {
             var posBlockAssembler = new Mock<PosBlockDefinition>(
-                this.consensusLoop.Object,
+                this.consensusManager.Object,
                 this.dateTimeProvider.Object,
                 this.LoggerFactory.Object,
                 this.txMempool.Object,
@@ -606,7 +605,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             return new PosMinting(
                 blockBuilder,
-                this.consensusLoop.Object,
+                this.consensusManager.Object,
                 this.chain,
                 this.network,
                 this.dateTimeProvider.Object,

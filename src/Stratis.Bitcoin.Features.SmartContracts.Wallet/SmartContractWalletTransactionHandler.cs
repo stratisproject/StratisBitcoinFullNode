@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// The initialization of the builder is overridden as smart contracts calls allow dust and does not group
         /// inputs by ScriptPubKey.
         /// </summary>
-        public override void InitializeTransactionBuilder(TransactionBuildContext context)
+        protected override void InitializeTransactionBuilder(TransactionBuildContext context)
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(context.Recipients, nameof(context.Recipients));

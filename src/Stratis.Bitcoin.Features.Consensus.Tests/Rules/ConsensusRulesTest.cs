@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var rule = new ConsensusRuleWithSkipValidationAttribute();
             var blockValidationContext = new ValidationContext()
             {
-                ChainTipToExtand = this.concurrentChain.Tip,
+                ChainTipToExtend = this.concurrentChain.Tip,
             };
             TestConsensusRules consensusRules = InitializeConsensusRules();
             this.network.Consensus.Rules = new List<IConsensusRule> { rule };

@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -44,16 +43,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly ContractStateRepositoryRoot stateRoot;
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
+        private readonly IAddressGenerator addressGenerator;
 
-        public SmartContractsController(
-            IBroadcasterManager broadcasterManager,
+        public SmartContractsController(IBroadcasterManager broadcasterManager,
+            IConsensusManager consensusManager,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
             ISmartContractReceiptStorage receiptStorage,
             ContractStateRepositoryRoot stateRoot,
             IWalletManager walletManager,
-            IWalletTransactionHandler walletTransactionHandler)
+            IWalletTransactionHandler walletTransactionHandler,
+            IAddressGenerator addressGenerator)
         {
             this.receiptStorage = receiptStorage;
             this.stateRoot = stateRoot;
@@ -63,6 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
+            this.addressGenerator = addressGenerator;
         }
 
         [Route("code")]
@@ -268,18 +270,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ulong totalFee = (gasPrice * gasLimit) + Money.Parse(request.FeeAmount);
             var walletAccountReference = new WalletAccountReference(request.WalletName, request.AccountName);
             var recipient = new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(carrier.Serialize()) };
-            var context = new TransactionBuildContext(this.network, walletAccountReference, new[] { recipient }.ToList(), request.Password)
+            var context = new TransactionBuildContext(this.network)
             {
+                AccountReference = walletAccountReference,
                 TransactionFee = totalFee,
                 ChangeAddress = senderAddress,
                 SelectedInputs = selectedInputs,
                 MinConfirmations = MinConfirmationsAllChecks,
+                WalletPassword = request.Password,
+                Recipients = new[] { recipient }.ToList()
             };
 
             try
             {
                 Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
-                return BuildCreateContractTransactionResponse.Succeeded(transaction, context.TransactionFee, transaction.GetNewContractAddress().ToAddress(this.network));
+                uint160 contractAddress = this.addressGenerator.GenerateAddress(transaction.GetHash(), 0);
+                return BuildCreateContractTransactionResponse.Succeeded(transaction, context.TransactionFee, contractAddress.ToAddress(this.network));
             }
             catch (Exception exception)
             {
@@ -317,15 +323,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             }
 
             ulong totalFee = (gasPrice * gasLimit) + Money.Parse(request.FeeAmount);
-            var context = new TransactionBuildContext(this.network,
-                new WalletAccountReference(request.WalletName, request.AccountName),
-                new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(carrier.Serialize()) } }.ToList(),
-                request.Password)
+            var context = new TransactionBuildContext(this.network)
             {
+                AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
                 TransactionFee = totalFee,
                 ChangeAddress = senderAddress,
                 SelectedInputs = selectedInputs,
                 MinConfirmations = MinConfirmationsAllChecks,
+                WalletPassword = request.Password,
+                Recipients = new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(carrier.Serialize()) } }.ToList()
             };
 
             try

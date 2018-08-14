@@ -9,35 +9,35 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     public class CalculateWorkRuleTest : TestConsensusRulesUnitTestBase
     {
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorExceptionAsync()
+        public void Run_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorException()
         {
             Block block = this.network.CreateBlock();
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = block,
-                ChainTipToExtand = this.concurrentChain.GetBlock(4)
+                ChainTipToExtend = this.concurrentChain.GetBlock(4)
             };
             this.ruleContext.MinedBlock = false;
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyPowRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyPowRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.HighHash, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsBadDiffBitsConsensusErrorExceptionAsync()
+        public void Run_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsBadDiffBitsConsensusErrorException()
         {
             Block block = this.network.CreateBlock();
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = block,
-                ChainTipToExtand = this.concurrentChain.GetBlock(0)
+                ChainTipToExtend = this.concurrentChain.GetBlock(0)
             };
             this.ruleContext.MinedBlock = true;
 
-            block.Header.Bits = this.ruleContext.ValidationContext.ChainTipToExtand.GetWorkRequired(this.network.Consensus) + 1;
+            block.Header.Bits = this.ruleContext.ValidationContext.ChainTipToExtend.GetWorkRequired(this.network.Consensus) + 1;
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyPowRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyPowRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadDiffBits, exception.ConsensusError);
         }

@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
-            ChainedHeader currentBlock = context.ValidationContext.ChainTipToExtand;
+            ChainedHeader currentBlock = context.ValidationContext.ChainTipToExtend;
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.

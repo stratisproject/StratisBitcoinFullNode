@@ -19,38 +19,38 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task ChecBlockPreviousTimestamp_ValidationFailAsync()
+        public void ChecBlockPreviousTimestamp_ValidationFail()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             var rule = testContext.CreateRule<HeaderTimeChecksRule>();
 
             RuleContext context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, testContext.Chain);
-            context.ValidationContext.ChainTipToExtand = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), testContext.Chain.Tip);
+            context.ValidationContext.ChainTipToExtend = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), testContext.Chain.Tip);
             context.Time = DateTimeProvider.Default.GetTimeOffset();
 
             // increment the bits.
             context.ValidationContext.Block.Header.BlockTime = testContext.Chain.Tip.Header.BlockTime.AddSeconds(-1);
 
-            ConsensusErrorException error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            ConsensusErrorException error = Assert.Throws<ConsensusErrorException>(() => rule.Run(context));
             Assert.Equal(ConsensusErrors.TimeTooOld, error.ConsensusError);
         }
 
         [Fact]
-        public async Task ChecBlockFutureTimestamp_ValidationFailAsync()
+        public void ChecBlockFutureTimestamp_ValidationFail()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             var rule = testContext.CreateRule<HeaderTimeChecksRule>();
 
             RuleContext context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, testContext.Chain);
-            context.ValidationContext.ChainTipToExtand = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), testContext.Chain.Tip);
+            context.ValidationContext.ChainTipToExtend = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), testContext.Chain.Tip);
             context.Time = DateTimeProvider.Default.GetTimeOffset();
 
             // increment the bits.
             context.ValidationContext.Block.Header.BlockTime = context.Time.AddHours(3);
 
-            ConsensusErrorException error = await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            ConsensusErrorException error = Assert.Throws<ConsensusErrorException>(() => rule.Run(context));
             Assert.Equal(ConsensusErrors.TimeTooNew, error.ConsensusError);
         }
     }

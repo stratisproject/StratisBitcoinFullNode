@@ -127,8 +127,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     .AddFeature<ConsensusFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<DBreezeCoinView>();
-                        services.AddSingleton<ICoinView, CachedCoinView>();
+                        services.AddSingleton<ICachedCoinView, CachedCoinView>().AddSingleton<ICoinView>(provider => provider.GetService<ICachedCoinView>());
+                        services.AddSingleton<ICoinViewStorage, DBreezeCoinView>().AddSingleton(provider => (DBreezeCoinView)provider.GetService<ICoinViewStorage>());
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
                         services.AddSingleton<ConsensusController>();
@@ -152,6 +152,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new HeaderTimeChecksRule(),
                     new CheckDifficultyPowRule(),
                     new BitcoinActivationRule(),
+                    new BitcoinHeaderVersionRule(),
 
                     // == Integrity ==
                     new BlockMerkleRootRule(),

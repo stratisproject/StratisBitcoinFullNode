@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -137,30 +134,14 @@ namespace Stratis.Bitcoin.Features.Miner
             this.Configure();
         }
 
-        private int ComputeBlockVersion(ChainedHeader prevChainedHeader, NBitcoin.Consensus consensus)
-        {
-            uint version = ThresholdConditionCache.VersionbitsTopBits;
-            var thresholdConditionCache = new ThresholdConditionCache(consensus);
-
-            IEnumerable<BIP9Deployments> deployments = Enum.GetValues(typeof(BIP9Deployments)).OfType<BIP9Deployments>();
-
-            foreach (BIP9Deployments deployment in deployments)
-            {
-                ThresholdState state = thresholdConditionCache.GetState(prevChainedHeader, deployment);
-                if ((state == ThresholdState.LockedIn) || (state == ThresholdState.Started))
-                    version |= thresholdConditionCache.Mask(deployment);
-            }
-
-            return (int)version;
-        }
-
         /// <summary>
         /// Compute the block version.
         /// </summary>
         protected virtual void ComputeBlockVersion()
         {
             this.height = this.ChainTip.Height + 1;
-            this.block.Header.Version = this.ComputeBlockVersion(this.ChainTip, this.Network.Consensus);
+            var headerVersionRule = this.ConsensusManager.ConsensusRules.GetRule<HeaderVersionRule>();
+            this.block.Header.Version = headerVersionRule.ComputeBlockVersion(this.ChainTip);
         }
 
         /// <summary>

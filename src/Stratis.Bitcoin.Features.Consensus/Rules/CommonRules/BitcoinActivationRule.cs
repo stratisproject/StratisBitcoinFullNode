@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -16,9 +17,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
         public override void Run(RuleContext context)
         {
-            BlockHeader header = context.ValidationContext.ChainTipToExtand.Header;
+            BlockHeader header = context.ValidationContext.ChainTipToExtend.Header;
 
-            int height = context.ValidationContext.ChainTipToExtand.Height;
+            // TODO ACTIVATION we should check height of the next block, not the one which is already part of best chain
+            int height = context.ValidationContext.ChainTipToExtend.Height;
 
             // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
             // check for version 2, 3 and 4 upgrades.

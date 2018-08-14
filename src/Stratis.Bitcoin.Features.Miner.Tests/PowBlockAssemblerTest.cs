@@ -144,14 +144,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.ExecuteWithConsensusOptions(new ConsensusOptions(), () =>
             {
                 ConcurrentChain chain = GenerateChainWithHeight(5, this.testNet, new Key());
+                this.SetupRulesEngine(chain);
 
                 var blockDefinition = new PowTestBlockDefinition(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.minerSettings.Object, this.testNet, this.consensusRules.Object);
 
                 (int Height, int Version) result = blockDefinition.ComputeBlockVersion(chain.GetBlock(4));
 
                 Assert.Equal(5, result.Height);
-                uint version = ThresholdConditionCache.VersionbitsTopBits;
-                Assert.Equal((int)version, result.Version);
+                Assert.Equal((int)ThresholdConditionCache.VersionbitsTopBits, result.Version);
             });
         }
 
@@ -168,19 +168,24 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.testNet.Consensus.BIP9Deployments[0] = new BIP9DeploymentsParameters(19,
                     new DateTimeOffset(new DateTime(2016, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
                     new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
+
+                // As we are effectively using TestNet the other deployments need to be disabled
+                this.testNet.Consensus.BIP9Deployments[BIP9Deployments.CSV] = null;
+                this.testNet.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = null;
+
                 this.testNet.Consensus.MinerConfirmationWindow = 2;
                 this.testNet.Consensus.RuleChangeActivationThreshold = 2;
 
                 ConcurrentChain chain = GenerateChainWithHeightAndActivatedBip9(5, this.testNet, new Key(), this.testNet.Consensus.BIP9Deployments[0]);
+                this.SetupRulesEngine(chain);
 
                 var blockDefinition = new PowTestBlockDefinition(this.consensusLoop.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.minerSettings.Object, this.testNet, this.consensusRules.Object);
 
                 (int Height, int Version) result = blockDefinition.ComputeBlockVersion(chain.GetBlock(4));
 
                 Assert.Equal(5, result.Height);
-                uint version = ThresholdConditionCache.VersionbitsTopBits;
-                int expectedVersion = (int)(version |= (((uint)1) << 19));
-                //Assert.Equal(version, result.Version);
+                int expectedVersion = (int)(ThresholdConditionCache.VersionbitsTopBits | (((uint)1) << 19));
+                Assert.Equal(expectedVersion, result.Version);
                 Assert.NotEqual((int)ThresholdConditionCache.VersionbitsTopBits, result.Version);
             }
             finally

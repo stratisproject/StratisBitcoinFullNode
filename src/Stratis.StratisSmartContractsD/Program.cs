@@ -27,20 +27,20 @@ namespace Stratis.StratisSmartContractsD
         {
             try
             {
-                Network network = NetworkRegistration.Register(new SmartContractsTest());
+                Network network = NetworkRegistration.Register(new SmartContractPosTest());
                 NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, "StratisSC", args: args);
 
                 Bitcoin.IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
-                    .UseMempool()
                     .AddRPC()
                         .AddSmartContracts()
-                        .UseSmartContractConsensus()
+                        .UseSmartContractPosConsensus()
+                        .UseSmartContractPosPowMining()
                         .UseSmartContractWallet()
-                        .UseSmartContractPowMining()
                         .UseReflectionExecutor()
                     .UseApi()
+                    .UseMempool()
                     .Build();
 
                 await node.RunAsync();
