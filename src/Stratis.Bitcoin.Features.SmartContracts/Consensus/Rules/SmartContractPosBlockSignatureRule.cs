@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     /// A rule that will validate the signature of a PoS block.
     /// </summary>
     /// <remarks>This is partial validation rule.</remarks>
-    public class PartialValidationSmartContractPosBlockSignatureRule : AsyncConsensusRule
+    public class PartialValidationSmartContractPosBlockSignatureRule : PartialValidationConsensusRule
     {
         private BlockSignatureChecker checker;
 
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     }
 
     /// <remarks>This is integrity validation rule.</remarks>
-    public class IntegrityValidationSmartContractPosBlockSignatureRule : SyncConsensusRule
+    public class IntegrityValidationSmartContractPosBlockSignatureRule : IntegrityValidationConsensusRule
     {
         private BlockSignatureChecker checker;
 
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadBlockSignature">The block signature is invalid.</exception>
-        public void Run(RuleContext context)
+        public override void Run(RuleContext context)
         {
             Block block = context.ValidationContext.Block;
 

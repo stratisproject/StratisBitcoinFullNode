@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     /// <summary>
     /// Rules that provide easy access to the <see cref="CoinView"/> which is the store for a PoW system.
     /// </summary>
-    public abstract class UtxoStoreConsensusRule : AsyncConsensusRule
+    public abstract class UtxoStoreConsensusRule : FullValidationConsensusRule
     {
         /// <summary>Allow access to the POS parent.</summary>
         protected PowConsensusRuleEngine PowParent;

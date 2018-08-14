@@ -105,15 +105,15 @@ namespace NBitcoin
         ConsensusFactory ConsensusFactory { get; }
 
         /// <summary>Group of rules that are used during block's header validation specific to the given network.</summary>
-        List<ISyncBaseConsensusRule> HeaderValidationRules { get; set; }
+        List<IHeaderValidationConsensusRule> HeaderValidationRules { get; set; }
 
         /// <summary>Group of rules that are used during block integrity validation specific to the given network.</summary>
-        List<ISyncBaseConsensusRule> IntegrityValidationRules { get; set; }
+        List<IIntegrityValidationConsensusRule> IntegrityValidationRules { get; set; }
 
         /// <summary>Group of rules that are used during partial block validation specific to the given network.</summary>
-        List<IAsyncBaseConsensusRule> PartialValidationRules { get; set; }
+        List<IPartialValidationConsensusRule> PartialValidationRules { get; set; }
 
         /// <summary>Group of rules that are used during full validation (connection of a new block) specific to the given network.</summary>
-        List<IAsyncBaseConsensusRule> FullValidationRules { get; set; }
+        List<IFullValidationConsensusRule> FullValidationRules { get; set; }
     }
 }

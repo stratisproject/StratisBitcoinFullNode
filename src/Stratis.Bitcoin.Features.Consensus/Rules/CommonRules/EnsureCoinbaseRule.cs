@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>Ensures a block follows the coinbase rules.</summary>
     /// <remarks>This is partial validation rule.</remarks>
-    public class EnsureCoinbaseRule : AsyncConsensusRule
+    public class EnsureCoinbaseRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadCoinbaseMissing">The coinbase transaction is missing in the block.</exception>

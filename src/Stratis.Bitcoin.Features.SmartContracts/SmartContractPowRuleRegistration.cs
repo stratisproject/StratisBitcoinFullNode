@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         public void RegisterRules(IConsensus consensus)
         {
-            consensus.HeaderValidationRules = new List<ISyncBaseConsensusRule>()
+            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
             {
                 new HeaderTimeChecksRule(),
                 new CheckDifficultyPowRule(),
@@ -19,14 +19,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new BitcoinHeaderVersionRule(),
             };
 
-            consensus.IntegrityValidationRules = new List<ISyncBaseConsensusRule>()
+            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
             {
                 new BlockMerkleRootRule(),
             };
 
-            consensus.PartialValidationRules = new List<IAsyncBaseConsensusRule>()
+            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
             {
-                new SetActivationDeploymentsRule(),
+                new SetActivationDeploymentsPartialValidationRule(),
 
                 new TransactionLocktimeActivationRule(), // implements BIP113
                 new CoinbaseHeightActivationRule(), // implements BIP34
@@ -37,19 +37,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new EnsureCoinbaseRule(),
                 new CheckPowTransactionRule(),
                 new CheckSigOpsRule(),
+
+                // Smart contract specific rules
+                new TxOutSmartContractExecRule(),
+                new OpSpendRule(),
             };
 
-            consensus.FullValidationRules = new List<IAsyncBaseConsensusRule>()
+            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
             {
-                new SetActivationDeploymentsRule(),
+                new SetActivationDeploymentsFullValidationRule(),
 
                 // rules that require the store to be loaded (coinview)
                 new SmartContractLoadCoinviewRule(),
                 new TransactionDuplicationActivationRule(), // implements BIP30
 
-                // Smart contract specific rules
-                new TxOutSmartContractExecRule(),
-                new OpSpendRule(),
                 new SmartContractPowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward
                 new SmartContractSaveCoinviewRule()
             };

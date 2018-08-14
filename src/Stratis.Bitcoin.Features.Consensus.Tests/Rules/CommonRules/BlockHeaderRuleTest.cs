@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task BlockReceived_IsNextBlock_ValidationSucessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            var blockHeaderRule = testContext.CreateRule<SetActivationDeploymentsRule>();
+            var blockHeaderRule = testContext.CreateRule<SetActivationDeploymentsPartialValidationRule>();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = KnownNetworks.RegTest.Consensus.ConsensusFactory.CreateBlock();

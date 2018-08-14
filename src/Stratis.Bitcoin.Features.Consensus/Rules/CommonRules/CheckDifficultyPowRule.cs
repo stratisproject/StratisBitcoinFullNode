@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>Calculate the difficulty for a POW network and check that it is correct.</summary>
     /// <remarks>This is header validation rule.</remarks>
-    public class CheckDifficultyPowRule : SyncConsensusRule
+    public class CheckDifficultyPowRule : HeaderValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoS header.</exception>

@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>Checks if <see cref="PosBlock"/> timestamp is greater than previous block timestamp.</summary>
     /// <remarks>This is header validation rule.</remarks>
-    public class HeaderTimeChecksPosRule : SyncConsensusRule
+    public class HeaderTimeChecksPosRule : HeaderValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BlockTimestampTooEarly">Thrown if block time is equal or behind the previous block.</exception>

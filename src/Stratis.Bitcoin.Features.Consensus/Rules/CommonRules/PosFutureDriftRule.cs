@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// A rule that will verify the block time drift is according to the PoS consensus rules.
     /// </summary>
     /// <remarks>This is header validation rule.</remarks>
-    public class PosFutureDriftRule : SyncConsensusRule
+    public class PosFutureDriftRule : HeaderValidationConsensusRule
     {
         /// <summary>The future drift in seconds.</summary>
         protected const int FutureDriftSeconds = 15;

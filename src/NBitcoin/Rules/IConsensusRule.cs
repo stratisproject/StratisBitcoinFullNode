@@ -4,11 +4,18 @@
     {
     }
 
-    public interface ISyncBaseConsensusRule : IBaseConsensusRule
+    public interface IHeaderValidationConsensusRule : IBaseConsensusRule
+    {
+    }
+    public interface IIntegrityValidationConsensusRule : IBaseConsensusRule
     {
     }
 
-    public interface IAsyncBaseConsensusRule : IBaseConsensusRule
+    public interface IPartialValidationConsensusRule : IBaseConsensusRule
+    {
+    }
+
+    public interface IFullValidationConsensusRule : IBaseConsensusRule
     {
     }
 }

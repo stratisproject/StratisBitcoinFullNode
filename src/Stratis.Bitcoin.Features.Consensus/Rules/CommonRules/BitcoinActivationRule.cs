@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Check that a <see cref="BitcoinMain" /> network block has the correct version according to the defined active deployments.
     /// </summary>
     /// <remarks>This is header validation rule.</remarks>
-    public class BitcoinActivationRule : SyncConsensusRule
+    public class BitcoinActivationRule : HeaderValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>

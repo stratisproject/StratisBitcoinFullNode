@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
     {
         public void RegisterRules(IConsensus consensus)
         {
-            consensus.FullValidationRules = new List<IAsyncBaseConsensusRule>()
+            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
             {
                 new SmartContractFormatRule()
             };

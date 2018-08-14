@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// More info here https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki
     /// </remarks>
     /// <remarks>This is partial validation rule.</remarks>
-    public class TransactionLocktimeActivationRule : AsyncConsensusRule
+    public class TransactionLocktimeActivationRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if one or more transactions are not finalized.</exception>

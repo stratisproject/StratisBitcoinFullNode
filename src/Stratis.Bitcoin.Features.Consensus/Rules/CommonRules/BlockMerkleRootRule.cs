@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <seealso cref="https://bitcointalk.org/index.php?topic=102395.0"/>
     /// </remarks>
     /// <remarks>This is integrity validation rule.</remarks>
-    public class BlockMerkleRootRule : SyncConsensusRule
+    public class BlockMerkleRootRule : IntegrityValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadMerkleRoot">The block merkle root is different from the computed merkle root.</exception>

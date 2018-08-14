@@ -49,16 +49,16 @@ namespace Stratis.Bitcoin.Consensus
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
         /// <summary>Group of rules that are used during block's header validation.</summary>
-        private List<SyncConsensusRule> headerValidationRules;
+        private List<HeaderValidationConsensusRule> headerValidationRules;
 
         /// <summary>Group of rules that are used during block integrity validation.</summary>
-        private List<SyncConsensusRule> integrityValidationRules;
+        private List<IntegrityValidationConsensusRule> integrityValidationRules;
 
         /// <summary>Group of rules that are used during partial block validation.</summary>
-        private List<AsyncConsensusRule> partialValidationRules;
+        private List<PartialValidationConsensusRule> partialValidationRules;
 
         /// <summary>Group of rules that are used during full validation (connection of a new block).</summary>
-        private List<AsyncConsensusRule> fullValidationRules;
+        private List<FullValidationConsensusRule> fullValidationRules;
 
         protected ConsensusRuleEngine(
             Network network,
@@ -95,10 +95,10 @@ namespace Stratis.Bitcoin.Consensus
             this.NodeDeployments = nodeDeployments;
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
 
-            this.headerValidationRules = new List<SyncConsensusRule>();
-            this.integrityValidationRules = new List<SyncConsensusRule>();
-            this.partialValidationRules = new List<AsyncConsensusRule>();
-            this.fullValidationRules = new List<AsyncConsensusRule>();
+            this.headerValidationRules = new List<HeaderValidationConsensusRule>();
+            this.integrityValidationRules = new List<IntegrityValidationConsensusRule>();
+            this.partialValidationRules = new List<PartialValidationConsensusRule>();
+            this.fullValidationRules = new List<FullValidationConsensusRule>();
         }
 
         /// <inheritdoc />
@@ -115,16 +115,16 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public ConsensusRuleEngine Register()
         {
-            this.headerValidationRules = this.Network.Consensus.HeaderValidationRules.Select(x => x as SyncConsensusRule).ToList();
+            this.headerValidationRules = this.Network.Consensus.HeaderValidationRules.Select(x => x as HeaderValidationConsensusRule).ToList();
             this.SetupConsensusRules(this.headerValidationRules.Select(x => x as ConsensusRuleBase));
 
-            this.integrityValidationRules = this.Network.Consensus.IntegrityValidationRules.Select(x => x as SyncConsensusRule).ToList();
+            this.integrityValidationRules = this.Network.Consensus.IntegrityValidationRules.Select(x => x as IntegrityValidationConsensusRule).ToList();
             this.SetupConsensusRules(this.integrityValidationRules.Select(x => x as ConsensusRuleBase));
 
-            this.partialValidationRules = this.Network.Consensus.PartialValidationRules.Select(x => x as AsyncConsensusRule).ToList();
+            this.partialValidationRules = this.Network.Consensus.PartialValidationRules.Select(x => x as PartialValidationConsensusRule).ToList();
             this.SetupConsensusRules(this.partialValidationRules.Select(x => x as ConsensusRuleBase));
 
-            this.fullValidationRules = this.Network.Consensus.FullValidationRules.Select(x => x as AsyncConsensusRule).ToList();
+            this.fullValidationRules = this.Network.Consensus.FullValidationRules.Select(x => x as FullValidationConsensusRule).ToList();
             this.SetupConsensusRules(this.fullValidationRules.Select(x => x as ConsensusRuleBase));
 
             return this;
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
-        private async Task ExecuteRulesAsync(List<AsyncConsensusRule> asyncRules, RuleContext ruleContext)
+        private async Task ExecuteRulesAsync(IEnumerable<AsyncConsensusRule> asyncRules, RuleContext ruleContext)
         {
             try
             {
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
-        private void ExecuteRules(List<SyncConsensusRule> rules, RuleContext ruleContext)
+        private void ExecuteRules(IEnumerable<SyncConsensusRule> rules, RuleContext ruleContext)
         {
             try
             {

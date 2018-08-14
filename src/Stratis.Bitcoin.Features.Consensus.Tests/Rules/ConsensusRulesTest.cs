@@ -51,14 +51,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.loggerFactory.Setup(l => l.CreateLogger(typeof(BlockSizeRule).FullName))
                 .Returns(new Mock<ILogger>().Object)
                 .Verifiable();
-            this.loggerFactory.Setup(l => l.CreateLogger(typeof(SetActivationDeploymentsRule).FullName))
+            this.loggerFactory.Setup(l => l.CreateLogger(typeof(SetActivationDeploymentsPartialValidationRule).FullName))
                 .Returns(new Mock<ILogger>().Object)
                 .Verifiable();
 
             TestConsensusRules consensusRules = InitializeConsensusRules();
             this.network.Consensus.Rules = new List<IBaseConsensusRule> {
                 new BlockSizeRule(),
-                new SetActivationDeploymentsRule()
+                new SetActivationDeploymentsPartialValidationRule()
             };
             consensusRules = consensusRules.Register() as TestConsensusRules;
 
@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public void TryFindRule_RuleNotFound_ReturnsNull()
         {
             TestConsensusRules consensusRules = this.InitializeConsensusRules();
-            this.network.Consensus.Rules = new List<IBaseConsensusRule> { new SetActivationDeploymentsRule() };
+            this.network.Consensus.Rules = new List<IBaseConsensusRule> { new SetActivationDeploymentsPartialValidationRule() };
             consensusRules = consensusRules.Register() as TestConsensusRules;
 
             var rule = consensusRules.Rules.TryFindRule<BlockSizeRule>();
@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             {
                 TestConsensusRules consensusRules = this.InitializeConsensusRules();
                 this.network.Consensus.Rules = new List<IBaseConsensusRule> {
-                    new SetActivationDeploymentsRule()
+                    new SetActivationDeploymentsPartialValidationRule()
                 };
                 consensusRules = consensusRules.Register() as TestConsensusRules;
 

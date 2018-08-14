@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>A base skeleton class that is implemented by networks to define and verify the version of blocks.</summary>
-    public abstract class HeaderVersionRule : SyncConsensusRule
+    public abstract class HeaderVersionRule : HeaderValidationConsensusRule
     {
         /// <summary>
         /// Computes what the block version of a newly created block should be, given a previous header and the

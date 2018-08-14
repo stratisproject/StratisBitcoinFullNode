@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     /// Each transaction should have only 1 'SmartContractExec' output
     /// </summary>
     /// <remarks>This is partial validation rule</remarks>
-    public class TxOutSmartContractExecRule : AsyncConsensusRule, ISmartContractMempoolRule
+    public class TxOutSmartContractExecRule : PartialValidationConsensusRule, ISmartContractMempoolRule
     {
         public override Task RunAsync(RuleContext context)
         {

@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Checks if <see cref="Block"/> has a valid PoS header.
     /// </summary>
     /// <remarks>This is partial validation rule.</remarks>
-    public class PosTimeMaskRule : AsyncConsensusRule
+    public class PosTimeMaskRule : PartialValidationConsensusRule
     {
         /// <summary>PoS block's timestamp mask.</summary>
         /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>

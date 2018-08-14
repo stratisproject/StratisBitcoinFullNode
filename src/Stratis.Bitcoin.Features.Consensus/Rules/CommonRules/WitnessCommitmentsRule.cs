@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>A rule that validates witness commitments.</summary>
     /// <remarks>This is partial validation rule.</remarks>
-    public class WitnessCommitmentsRule : AsyncConsensusRule
+    public class WitnessCommitmentsRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadWitnessNonceSize">The witness nonce size is invalid.</exception>

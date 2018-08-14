@@ -11,9 +11,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         public void RegisterRules(IConsensus consensus)
         {
-            consensus.HeaderValidationRules = new List<ISyncBaseConsensusRule>()
+            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
             {
-
                 new HeaderTimeChecksRule(),
                 new HeaderTimeChecksPosRule(),
                 new StratisBigFixPosFutureDriftRule(),
@@ -21,15 +20,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new StratisHeaderVersionRule(),
             };
 
-            consensus.IntegrityValidationRules = new List<ISyncBaseConsensusRule>()
+            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
             {
                 new BlockMerkleRootRule(),
                 new IntegrityValidationSmartContractPosBlockSignatureRule(),
             };
 
-            consensus.PartialValidationRules = new List<IAsyncBaseConsensusRule>()
+            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
             {
-                new SetActivationDeploymentsRule(),
+                new SetActivationDeploymentsPartialValidationRule(),
 
                 new CheckDifficultykHybridRule(),
                 new PosTimeMaskRule(),
@@ -50,9 +49,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new PosCoinstakeRule(),
             };
 
-            consensus.FullValidationRules = new List<IAsyncBaseConsensusRule>()
+            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
             {
-                new SetActivationDeploymentsRule(),
+                new SetActivationDeploymentsFullValidationRule(),
 
                 // rules that require the store to be loaded (coinview)
                 new SmartContractLoadCoinviewRule(),

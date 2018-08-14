@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <remarks>This is partial validation rule.</remarks>
-    public class CheckSigOpsRule : AsyncConsensusRule
+    public class CheckSigOpsRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadBlockSigOps">The block contains more signature check operations than allowed.</exception>
