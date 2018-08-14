@@ -35,6 +35,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Queue which contains blocks that should be processed by <see cref="WalletManager"/>.</summary>
         private readonly AsyncQueue<Block> blocksQueue;
 
+        /// <summary>Limit blocksQueue size.</summary>
+        private const int MaxQueueSize = 1000;
+
+        /// <summary>Flag to determine when the <see cref="MaxQueueSize"/> is reached.</summary>
+        private bool maxQueueSizeReached;
+
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
             Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
@@ -234,7 +240,24 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
             }
 
-            this.blocksQueue.Enqueue(block);
+            // If the queue reaches the maximum limit, ignore incoming blocks until the queue is empty.
+            if (!this.maxQueueSizeReached)
+            {
+                if (this.blocksQueue.Count == MaxQueueSize)
+                {
+                    this.maxQueueSizeReached = true;
+                    this.logger.LogTrace("(-)[REACHED_MAX_QUEUE_SIZE]");
+                    return;
+                }
+            }
+            else
+            {
+                // If queue is empty the reset the maxQueueSizeReached flag.
+                this.maxQueueSizeReached = this.blocksQueue.Count > 0;
+            }
+
+            if (!this.maxQueueSizeReached)
+                this.blocksQueue.Enqueue(block);
 
             this.logger.LogTrace("(-)");
         }
