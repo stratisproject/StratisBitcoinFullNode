@@ -44,9 +44,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         protected override void AfterTest()
         {
-            foreach (CoreNode node in this.nodes.Values)
-                node.FullNode.Network.Consensus.CoinbaseMaturity = this.CoinBaseMaturity;
-
             this.nodeGroupBuilder.Dispose();
         }
 
@@ -60,10 +57,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     .AndNoMoreConnections()
                 .Build();
 
-            this.CoinBaseMaturity = (int)this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity;
+            this.CoinBaseMaturity = 1;
 
             foreach (CoreNode node in this.nodes.Values)
-                node.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+                node.FullNode.Network.Consensus.CoinbaseMaturity = this.CoinBaseMaturity;
         }
 
         private void node1_sends_funds_to_node2_TO_fifty_addresses()
@@ -79,7 +76,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }).ToList();
 
             this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(this.nodes[NodeOne].FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium,
-                (int)(this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity + 1));
+                this.CoinBaseMaturity + 1);
 
             Transaction transaction = this.nodes[NodeOne].FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
 
@@ -93,7 +90,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void Mine100Coins(CoreNode node)
         {
-            this.sharedSteps.MineBlocks((int)node.FullNode.Network.Consensus.CoinbaseMaturity + 2, node, WalletAccountName, WalletName, WalletPassword);
+            this.sharedSteps.MineBlocks(this.CoinBaseMaturity + 2, node, WalletAccountName, WalletName, WalletPassword);
         }
 
         private void node2_receives_the_funds()
@@ -110,7 +107,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             this.sharedSteps.MineBlocks(1, this.nodes[NodeTwo], WalletAccountName, WalletName, WalletPassword, this.transactionFee.Satoshi);
 
-            this.nodes[NodeTwo].WalletHeight(WalletName).Should().Be((int)this.nodes[NodeTwo].FullNode.Network.Consensus.CoinbaseMaturity + 3);
+            this.nodes[NodeTwo].WalletHeight(WalletName).Should().Be(this.CoinBaseMaturity + 3);
         }
 
         private void node2_sends_funds_to_node1_FROM_fifty_addresses()
@@ -141,7 +138,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             this.nodes[NodeOne].WalletBalance(WalletName).Should().Be(nodeOneBeforeBalance + Money.Coins(49));
 
-            this.nodes[NodeTwo].WalletSpendableTransactionCount(WalletName, true).Should().Be(3);
+            this.nodes[NodeTwo].WalletSpendableTransactionCount(WalletName).Should().Be(3);
         }
 
         private void funds_across_fifty_addresses_on_node2_wallet()

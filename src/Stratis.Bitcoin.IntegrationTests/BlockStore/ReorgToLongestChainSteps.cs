@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string Bob = "Bob";
         private const string Charlie = "Charlie";
         private const string Dave = "Dave";
-        private int preserveMaturity;
+        private int maturity;
 
         public ReorgToLongestChainSpecification(ITestOutputHelper output) : base(output)
         {
@@ -43,11 +43,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected override void AfterTest()
         {
-            this.nodes[JingTheFastMiner].FullNode.Network.Consensus.CoinbaseMaturity = this.preserveMaturity;
-            this.nodes[Bob].FullNode.Network.Consensus.CoinbaseMaturity = this.preserveMaturity;
-            this.nodes[Charlie].FullNode.Network.Consensus.CoinbaseMaturity = this.preserveMaturity;
-            this.nodes[Dave].FullNode.Network.Consensus.CoinbaseMaturity = this.preserveMaturity;
-
             this.nodeGroupBuilder.Dispose();
         }
 
@@ -65,11 +60,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                     .AndNoMoreConnections()
                 .Build();
 
-            this.preserveMaturity = (int)this.nodes[JingTheFastMiner].FullNode.Network.Consensus.CoinbaseMaturity;
-            this.nodes[JingTheFastMiner].FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-            this.nodes[Bob].FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-            this.nodes[Charlie].FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-            this.nodes[Dave].FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+            this.maturity = (int)this.nodes[JingTheFastMiner].FullNode.Network.Consensus.CoinbaseMaturity;
+            this.nodes[JingTheFastMiner].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
+            this.nodes[Bob].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
+            this.nodes[Charlie].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
+            this.nodes[Dave].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
         }
 
         private void each_mine_a_block()
@@ -164,10 +159,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void mining_continues_to_maturity_to_allow_spend()
         {
-            int coinbaseMaturity = (int)this.nodes[Bob].FullNode
-                .Network.Consensus.CoinbaseMaturity;
-
-            this.sharedSteps.MineBlocks(coinbaseMaturity, this.nodes[Bob], AccountZero, WalletZero, WalletPassword);
+            this.sharedSteps.MineBlocks(this.maturity, this.nodes[Bob], AccountZero, WalletZero, WalletPassword);
 
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[JingTheFastMiner]));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[Bob]));

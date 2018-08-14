@@ -43,9 +43,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         protected override void AfterTest()
         {
-            this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity = this.CoinBaseMaturity;
-            this.nodes[NodeTwo].FullNode.Network.Consensus.CoinbaseMaturity = this.CoinBaseMaturity;
-
             this.nodeGroupBuilder.Dispose();
         }
 
@@ -59,10 +56,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     .AndNoMoreConnections()
                 .Build();
 
-            this.CoinBaseMaturity = (int)this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity;
+            this.CoinBaseMaturity = 1;
 
-            this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-            this.nodes[NodeTwo].FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+            this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity = this.CoinBaseMaturity;
+            this.nodes[NodeTwo].FullNode.Network.Consensus.CoinbaseMaturity = this.CoinBaseMaturity;
         }
 
         private void node1_builds_undersize_transaction_to_send_to_node2()
@@ -109,7 +106,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Amount = Money.Coins(0.001m)
             }).ToList();
 
-            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(this.nodes[NodeOne].FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, (int)this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity);
+            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(this.nodes[NodeOne].FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, this.CoinBaseMaturity);
 
             try
             {
@@ -134,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void MineBlocks(CoreNode node)
         {
-            this.sharedSteps.MineBlocks((int)this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity * 2, node, WalletAccountName, WalletName, WalletPassword);
+            this.sharedSteps.MineBlocks(this.CoinBaseMaturity * 2, node, WalletAccountName, WalletName, WalletPassword);
         }
     }
 }

@@ -307,7 +307,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
-                var preserveMaturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 scSender.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
                 scReceiver.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
 
@@ -424,9 +423,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var receiptResponse = (JsonResult)senderSmartContractsController.GetReceipt(callResponse.TransactionId.ToString());
                 var receiptModel = (ReceiptModel)receiptResponse.Value;
                 Assert.True(receiptModel.Successful);
-
-                scSender.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
-                scReceiver.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
             }
         }
 
@@ -487,7 +483,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
-                var preserveMaturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 scSender.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
                 scReceiver.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
 
@@ -532,9 +527,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
                 Assert.Equal((ulong)30 * 100_000_000, senderState.GetCurrentBalance(new Address(response.NewContractAddress).ToUint160(new SmartContractsRegTest())));
-
-                scSender.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
-                scReceiver.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
             }
         }
     }

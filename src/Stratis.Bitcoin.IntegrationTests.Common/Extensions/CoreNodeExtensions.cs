@@ -25,18 +25,22 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             if (considerMaturity)
             {
+                // If insufficient blocks have been mined to exceed the coinbase/stake maturity
+                // threshold, then there is no spendable reward for the block.
                 if ((numberOfBlocks == 1) && (maturity > 1))
                     return 0;
 
+                // Otherwise, return the calculated reward for the block count that does exceed
+                // the maturity threshold.
                 return Enumerable.Range(startBlock,
                         ((numberOfBlocks - maturity + 1) > 0 ? (numberOfBlocks - maturity + 1) : 0))
                     .Sum(p => coinviewRule.GetProofOfWorkReward(p));
             }
-            else
-            {
-                return Enumerable.Range(startBlock, numberOfBlocks)
-                    .Sum(p => coinviewRule.GetProofOfWorkReward(p));
-            }
+
+            // Otherwise the maturity threshold is ignored, just return the calculated reward
+            // for the number of blocks being mined.
+            return Enumerable.Range(startBlock, numberOfBlocks)
+                .Sum(p => coinviewRule.GetProofOfWorkReward(p));
         }
         
         public static Money WalletBalance(this CoreNode node, string walletName)
@@ -49,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).First().Transaction.BlockHeight;
         }
 
-        public static int WalletSpendableTransactionCount(this CoreNode node, string walletName, bool includeImmature = false)
+        public static int WalletSpendableTransactionCount(this CoreNode node, string walletName)
         {
             return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Count();
         }

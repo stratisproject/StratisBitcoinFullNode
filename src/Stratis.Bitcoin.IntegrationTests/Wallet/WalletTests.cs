@@ -36,8 +36,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisSender.NotInIBD();
                 stratisReceiver.NotInIBD();
 
-                // Temporarily override coinbase maturity requirement to speed up test
-                int preserveMaturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 stratisSender.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
                 stratisReceiver.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
 
@@ -88,9 +86,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
 
                 TestHelper.WaitLoop(() => 3 == stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").First().Transaction.BlockHeight);
-
-                stratisSender.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
-                stratisReceiver.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
             }
         }
 
@@ -137,7 +132,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisReceiver.NotInIBD();
                 stratisReorg.NotInIBD();
 
-                int preserveMaturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 stratisSender.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
                 stratisReceiver.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
                 stratisReorg.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
@@ -279,10 +273,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 long newsecondamount = stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
                 Assert.Equal(newamount, newsecondamount);
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Any(b => b.Transaction.BlockHeight == transaction2MinedHeight));
-
-                stratisSender.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
-                stratisReceiver.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
-                stratisReorg.FullNode.Network.Consensus.CoinbaseMaturity = preserveMaturity;
             }
         }
 

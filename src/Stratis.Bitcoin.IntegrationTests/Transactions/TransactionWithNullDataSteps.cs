@@ -28,7 +28,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private Transaction transaction;
         private Key key;
         private uint256 blockWithOpReturnId;
-        private long preserveMaturity;
 
         private readonly string password = "p@ssw0rd";
         private readonly string opReturnContent = "extra informations!";
@@ -45,9 +44,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
         protected override void AfterTest()
         {
-            this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity = this.preserveMaturity;
-            this.receiverNode.FullNode.Network.Consensus.CoinbaseMaturity = this.preserveMaturity;
-
             this.builder?.Dispose();
         }
 
@@ -58,7 +54,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
             this.builder.StartAll();
             this.senderNode.NotInIBD();
             this.receiverNode.NotInIBD();
-            this.preserveMaturity = this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
+
             this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
             this.receiverNode.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
         }

@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.maturity = 1;
 
             this.nodes[FirstPowNode].FullNode
-                .Network.Consensus.CoinbaseMaturity = 1;
+                .Network.Consensus.CoinbaseMaturity = this.maturity;
 
             this.nodes[FirstPowNode].SetDummyMinerSecret(new BitcoinSecret(new Key(), this.nodes[FirstPowNode].FullNode.Network));
 
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .Build();
 
             this.nodes[SecondPowNode].FullNode
-                .Network.Consensus.CoinbaseMaturity = 1;
+                .Network.Consensus.CoinbaseMaturity = this.maturity;
         }
 
         protected void a_block_is_mined_creating_spendable_coins()

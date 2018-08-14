@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private Transaction transaction;
         private MempoolValidationState mempoolValidationState;
         private HdAddress receivingAddress;
-        private long coinbaseMaturity;
+        private int coinbaseMaturity;
 
         public SendingTransactionWithDoubleSpend(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
@@ -37,16 +37,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.stratisSender.NotInIBD();
             this.stratisReceiver.NotInIBD();
 
-            this.coinbaseMaturity = this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
-            this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-            this.stratisReceiver.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+            this.coinbaseMaturity = 1;
+            this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity = this.coinbaseMaturity;
+            this.stratisReceiver.FullNode.Network.Consensus.CoinbaseMaturity = this.coinbaseMaturity;
         }
 
         protected override void AfterTest()
         {
-            this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity = this.coinbaseMaturity;
-            this.stratisReceiver.FullNode.Network.Consensus.CoinbaseMaturity = this.coinbaseMaturity;
-
             this.builder.Dispose();
         }
 
@@ -62,9 +59,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             var key = wallet.GetExtendedPrivateKeyForAddress("123456", addr).PrivateKey;
 
             this.stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, this.stratisSender.FullNode.Network));
-            var maturity = (int)this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
 
-            this.stratisSender.GenerateStratisWithMiner(maturity + 5);
+            this.stratisSender.GenerateStratisWithMiner(this.coinbaseMaturity + 5);
 
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.stratisSender));
 
@@ -81,7 +77,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.receivingAddress = this.stratisReceiver.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
 
             this.transaction = this.stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(WalletTests.CreateContext(this.stratisSender.FullNode.Network,
-                new WalletAccountReference("mywallet", "account 0"), "123456", this.receivingAddress.ScriptPubKey, Money.COIN * 100, FeeType.Medium, (int)this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity));
+                new WalletAccountReference("mywallet", "account 0"), "123456", this.receivingAddress.ScriptPubKey, Money.COIN * 100, FeeType.Medium, this.coinbaseMaturity));
 
             this.stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
 

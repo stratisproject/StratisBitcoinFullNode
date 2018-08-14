@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Lists all spendable transactions from the account specified in <see cref="WalletAccountReference"/>.
         /// </summary>
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
-        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, NBitcoin.Consensus consensus, int confirmations = 0);
+        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInAccount(WalletAccountReference walletAccountReference, int confirmations = 0);
 
         /// <summary>
         /// Creates a wallet and persist it as a file on the local system.

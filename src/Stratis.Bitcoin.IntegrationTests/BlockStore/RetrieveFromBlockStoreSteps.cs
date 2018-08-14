@@ -54,8 +54,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected override void AfterTest()
         {
-            this.node.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
-
             this.builder?.Dispose();
         }
 
@@ -65,8 +63,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.node.Start();
             this.node.NotInIBD();
 
-            this.maturity = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity;
-            this.node.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+            this.maturity = 1;
+            this.node.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
         }
 
         private void a_pow_node_to_transact_with()
@@ -74,6 +72,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.transactionNode = this.builder.CreateStratisPowNode(this.network);
             this.transactionNode.Start();
             this.transactionNode.NotInIBD();
+
+            this.transactionNode.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
 
             this.transactionNode.CreateRPCClient().AddNode(this.node.Endpoint, true);
             this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void some_real_blocks_with_a_uint256_identifier()
         {
-            this.blockIds = this.node.GenerateStratisWithMiner((int)this.node.FullNode.Network.Consensus.CoinbaseMaturity + 1);
+            this.blockIds = this.node.GenerateStratisWithMiner(this.maturity + 1);
         }
 
         private void some_blocks_creating_reward()
