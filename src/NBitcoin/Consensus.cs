@@ -70,7 +70,7 @@ namespace NBitcoin
 
         public BigInteger ProofOfStakeLimitV2 { get; }
 
-        /// <inheritdoc />        
+        /// <inheritdoc />
         public int LastPOWBlock { get; set; }
 
         /// <inheritdoc />
@@ -83,12 +83,24 @@ namespace NBitcoin
         public ConsensusFactory ConsensusFactory { get; }
 
         /// <inheritdoc />
-        public ICollection<IConsensusRule> Rules { get; set; }
+        public ICollection<ISyncConsensusRule> Rules { get; set; }
+
+        /// <inheritdoc />
+        public List<IAsyncConsensusRule> PartialValidationRules { get; set; }
+
+        /// <inheritdoc />
+        public List<IAsyncConsensusRule> FullValidationRules { get; set; }
+
+        /// <inheritdoc />
+        public List<ISyncConsensusRule> IntegrityValidationRules { get; set; }
+
+        /// <inheritdoc />
+        public List<ISyncConsensusRule> HeaderValidationRules { get; set; }
 
         public Consensus(
             ConsensusFactory consensusFactory,
             ConsensusOptions consensusOptions,
-            int coinType,            
+            int coinType,
             uint256 hashGenesisBlock,
             int subsidyHalvingInterval,
             int majorityEnforceBlockUpgrade,
@@ -119,7 +131,11 @@ namespace NBitcoin
             Money proofOfStakeReward
             )
         {
-            this.Rules = new List<IConsensusRule>();
+            this.Rules = new List<ISyncConsensusRule>();
+            this.PartialValidationRules = new List<IAsyncConsensusRule>();
+            this.FullValidationRules = new List<IAsyncConsensusRule>();
+            this.HeaderValidationRules = new List<ISyncConsensusRule>();
+            this.IntegrityValidationRules = new List<ISyncConsensusRule>();
             this.CoinbaseMaturity = coinbaseMaturity;
             this.PremineReward = premineReward;
             this.PremineHeight = premineHeight;

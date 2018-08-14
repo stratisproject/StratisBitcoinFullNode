@@ -2,20 +2,32 @@
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    /// <summary>
-    /// Calculate the difficulty of a POS network for both Pow/POS blocks.
-    /// </summary>
-    [PartialValidationRule(CanSkipValidation = true)]
-    public class CheckDifficultykHybridRule : StakeStoreConsensusRule
+    /// <summary>Calculate the difficulty of a POS network for both Pow/POS blocks.</summary>
+    public class CheckDifficultykHybridRule : AsyncConsensusRule
     {
+        /// <summary>Allow access to the POS parent.</summary>
+        protected PosConsensusRuleEngine PosParent;
+
+        /// <inheritdoc />
+        public override void Initialize()
+        {
+            this.PosParent = this.Parent as PosConsensusRuleEngine;
+
+            Guard.NotNull(this.PosParent, nameof(this.PosParent));
+        }
+
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.HighHash">Thrown if block doesn't have a valid PoW header.</exception>
         /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of stake is incorrect.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            if (context.SkipValidation)
+                return Task.CompletedTask;
+
             var posRuleContext = context as PosRuleContext;
 
             posRuleContext.BlockStake = BlockStake.Load(context.ValidationContext.Block);

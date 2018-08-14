@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -8,13 +9,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// Calculate the difficulty for a POS block and check that it is correct.
     /// This rule is only activated after the POW epoch is finished according to the value in <see cref="Consensus.LastPOWBlock"/>.
     /// </summary>
-    [HeaderValidationRule(CanSkipValidation = true)]
-    public class CheckDifficultyPosRule : StakeStoreConsensusRule
+    public class CheckDifficultyPosRule : SyncConsensusRule
     {
+        /// <summary>Allow access to the POS parent.</summary>
+        protected PosConsensusRuleEngine PosParent;
+
+        /// <inheritdoc />
+        public override void Initialize()
+        {
+            this.PosParent = this.Parent as PosConsensusRuleEngine;
+
+            Guard.NotNull(this.PosParent, nameof(this.PosParent));
+        }
+
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of stake is incorrect.</exception>
         public override void Run(RuleContext context)
         {
+            if (context.SkipValidation)
+                return;
+
             if (this.Parent.Network.Consensus.PowNoRetargeting)
             {
                 this.Logger.LogTrace("(-)[POW_NO_RETARGETING]");

@@ -1,21 +1,19 @@
-﻿using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    /// <summary>
-    /// Checks if <see cref="PosBlock"/> timestamp is greater than previous block timestamp.
-    /// </summary>
-    [HeaderValidationRule(CanSkipValidation = true)]
-    public class HeaderTimeChecksPosRule : ConsensusRule
+    /// <summary>Checks if <see cref="PosBlock"/> timestamp is greater than previous block timestamp.</summary>
+    public class HeaderTimeChecksPosRule : SyncConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BlockTimestampTooEarly">Thrown if block time is equal or behind the previous block.</exception>
         public override void Run(RuleContext context)
         {
+            if (context.SkipValidation)
+                return;
+
             ChainedHeader chainedHeader = context.ValidationContext.ChainTipToExtend;
 
             // Check timestamp against prev.

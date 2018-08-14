@@ -5,10 +5,7 @@ using NBitcoin.Rules;
 
 namespace Stratis.Bitcoin.Consensus.Rules
 {
-    /// <summary>
-    /// An abstract rule for implementing consensus rules.
-    /// </summary>
-    public abstract class ConsensusRule : IConsensusRule
+    public abstract class ConsensusRuleBase : IConsensusRule
     {
         /// <summary>Instance logger.</summary>
         public ILogger Logger { get; set; }
@@ -24,7 +21,25 @@ namespace Stratis.Bitcoin.Consensus.Rules
         public virtual void Initialize()
         {
         }
+    }
 
+    /// <summary>An abstract rule for implementing consensus rules.</summary>
+    public abstract class SyncConsensusRule : ConsensusRuleBase, ISyncConsensusRule
+    {
+        /// <summary>
+        /// Execute the logic in the current rule.
+        /// If the validation of the rule fails a <see cref="ConsensusErrorException"/> will be thrown.
+        /// </summary>
+        /// <param name="context">The context that has all info that needs to be validated.</param>
+        public virtual void Run(RuleContext context)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>An abstract rule for implementing consensus rules.</summary>
+    public abstract class AsyncConsensusRule : ConsensusRuleBase, IAsyncConsensusRule
+    {
         /// <summary>
         /// Execute the logic in the current rule in an async approach.
         /// If the validation of the rule fails a <see cref="ConsensusErrorException"/> will be thrown.
@@ -32,17 +47,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
         /// <param name="context">The context that has all info that needs to be validated.</param>
         /// <returns>The execution task.</returns>
         public virtual Task RunAsync(RuleContext context)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Execute the logic in the current rule.
-        /// If the validation of the rule fails a <see cref="ConsensusErrorException"/> will be thrown.
-        /// </summary>
-        /// <param name="context">The context that has all info that needs to be validated.</param>
-        /// <returns>The execution task.</returns>
-        public virtual void Run(RuleContext context)
         {
             throw new NotImplementedException();
         }

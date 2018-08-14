@@ -15,10 +15,11 @@ namespace Stratis.Bitcoin.Consensus
     /// </remarks>
     public interface IConsensusRuleEngine : IDisposable
     {
-        /// <summary>
-        /// Collection of all the rules that are registered with the engine.
-        /// </summary>
-        List<ConsensusRule> Rules { get; }
+        ////TODO ACTIVATION
+        ///// <summary>
+        ///// Collection of all the rules that are registered with the engine.
+        ///// </summary>
+        //List<ConsensusRule> Rules { get; }
 
         /// <summary>
         /// Keeps track of how much time different actions took to execute and how many times they were executed.
@@ -35,10 +36,11 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         ConsensusRuleEngine Register();
 
+        //TODO ACTIVATION
         /// <summary>
         /// Gets the consensus rule that is assignable to the supplied generic type.
         /// </summary>
-        T GetRule<T>() where T : ConsensusRule;
+        //T GetRule<T>() where T : ConsensusRule;
 
         /// <summary>
         /// Create an instance of the <see cref="RuleContext"/> to be used by consensus validation.

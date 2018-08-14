@@ -5,13 +5,15 @@ using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    [PartialValidationRule(CanSkipValidation = true)]
-    public class CheckSigOpsRule : ConsensusRule
+    public class CheckSigOpsRule : AsyncConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadBlockSigOps">The block contains more signature check operations than allowed.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            if (context.SkipValidation)
+                return Task.CompletedTask;
+
             Block block = context.ValidationContext.Block;
             ConsensusOptions options = this.Parent.Network.Consensus.Options;
 
