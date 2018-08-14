@@ -296,5 +296,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="walletName">The name of the wallet to remove transactions from.</param>
         /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
         HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions(string walletName);
+
+        /// <summary>
+        /// Stream that pumps when wallet balances have changed.
+        /// </summary>
+        IObservable<IReadOnlyList<(string walletName, IReadOnlyList<AccountBalance> balances)>> WalletBalancesChangedStream { get; }
     }
 }

@@ -2,6 +2,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Threading.Tasks;
@@ -88,6 +90,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         private Dictionary<OutPoint, TransactionData> outpointLookup;
         internal Dictionary<Script, HdAddress> keysLookup;
 
+        /// <summary>Pumps when it's determined that wallet balances have changed.</summary>
+        private readonly Subject<IReadOnlyList<(string walletName, IReadOnlyList<AccountBalance> balances)>> 
+            walletBalancesChangedStream = new Subject<IReadOnlyList<(string walletName, IReadOnlyList<AccountBalance> balances)>>();
+
         public WalletManager(
             ILoggerFactory loggerFactory,
             Network network,
@@ -137,6 +143,14 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.keysLookup = new Dictionary<Script, HdAddress>();
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
+
+            this.WalletBalancesChangedStream = this.walletBalancesChangedStream.AsObservable();
+        }
+
+        /// <summary>Pumps when it's determined that wallet balances have changed.</summary>
+        public IObservable<IReadOnlyList<(string walletName, IReadOnlyList<AccountBalance> balances)>> WalletBalancesChangedStream
+        {
+            get;
         }
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
@@ -835,7 +849,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             bool foundReceivingTrx = false, foundSendingTrx = false;
 
             lock (this.lockObject)
-            {
+            { 
                 // Check the outputs.
                 foreach (TxOut utxo in transaction.Outputs)
                 {
@@ -888,9 +902,27 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     this.SaveWallets();
                 }
+
+                var balances = this.GetWalletBalances();
+                if (balances.Any())
+                    this.walletBalancesChangedStream.OnNext(balances);
             }
             
             return foundSendingTrx || foundReceivingTrx;
+        }
+
+        private IReadOnlyList<(string walletName, IReadOnlyList<AccountBalance> balances)> GetWalletBalances()
+        {
+            try
+            {
+                return this.Wallets.Select(w => (w.Name,
+                    (IReadOnlyList<AccountBalance>) this.GetBalances(w.Name).ToList())).ToList();
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Failed to GetWalletBalances: {0}", e.Message);
+                return Enumerable.Empty<(string, IReadOnlyList<AccountBalance>)>().ToList();
+            }
         }
 
         /// <summary>
