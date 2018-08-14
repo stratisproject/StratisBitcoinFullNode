@@ -15,12 +15,6 @@ namespace Stratis.Bitcoin.Consensus
     /// </remarks>
     public interface IConsensusRuleEngine : IDisposable
     {
-        ////TODO ACTIVATION
-        ///// <summary>
-        ///// Collection of all the rules that are registered with the engine.
-        ///// </summary>
-        //List<ConsensusRule> Rules { get; }
-
         /// <summary>
         /// Keeps track of how much time different actions took to execute and how many times they were executed.
         /// </summary>

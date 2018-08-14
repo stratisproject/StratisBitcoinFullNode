@@ -48,17 +48,17 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
+        /// <summary>Group of rules that are used during block's header validation.</summary>
+        private List<SyncConsensusRule> headerValidationRules;
+
+        /// <summary>Group of rules that are used during block integrity validation.</summary>
+        private List<SyncConsensusRule> integrityValidationRules;
+
         /// <summary>Group of rules that are used during partial block validation.</summary>
         private List<AsyncConsensusRule> partialValidationRules;
 
         /// <summary>Group of rules that are used during full validation (connection of a new block).</summary>
         private List<AsyncConsensusRule> fullValidationRules;
-
-        /// <summary>Group of rules that are used during block integrity validation.</summary>
-        private List<SyncConsensusRule> integrityValidationRules;
-
-        /// <summary>Group of rules that are used during block's header validation.</summary>
-        private List<SyncConsensusRule> headerValidationRules;
 
         protected ConsensusRuleEngine(
             Network network,
@@ -95,10 +95,10 @@ namespace Stratis.Bitcoin.Consensus
             this.NodeDeployments = nodeDeployments;
             this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
 
-            this.partialValidationRules = new List<AsyncConsensusRule>();
             this.headerValidationRules = new List<SyncConsensusRule>();
-            this.fullValidationRules = new List<AsyncConsensusRule>();
             this.integrityValidationRules = new List<SyncConsensusRule>();
+            this.partialValidationRules = new List<AsyncConsensusRule>();
+            this.fullValidationRules = new List<AsyncConsensusRule>();
         }
 
         /// <inheritdoc />
@@ -140,15 +140,15 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
-        //public void SetErrorHandler(ConsensusRule errorHandler)
-        //{
-        //    // TODO: set a rule that will be invoked when a validation of a block failed.
-        //
-        //    // This will allow the creator of the blockchain to provide
-        //    // an error handler rule that is unique to the current blockchain.
-        //    // future sidechains may have additional handling of errors that
-        //    // extend or replace the default current error handling code.
-        //}
+        public void SetErrorHandler(ConsensusRuleBase errorHandler)
+        {
+            // TODO: set a rule that will be invoked when a validation of a block failed.
+
+            // This will allow the creator of the blockchain to provide
+            // an error handler rule that is unique to the current blockchain.
+            // future sidechains may have additional handling of errors that
+            // extend or replace the default current error handling code.
+        }
 
         /// <inheritdoc/>
         public void HeaderValidation(ValidationContext validationContext)

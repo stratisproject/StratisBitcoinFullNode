@@ -250,7 +250,7 @@ namespace NBitcoin
             return hash;
         }
 
-        /// /// <inheritdoc />
+        /// <inheritdoc />
         public override uint256 GetPoWHash()
         {
             return HashX13.Instance.Hash(this.ToBytes());

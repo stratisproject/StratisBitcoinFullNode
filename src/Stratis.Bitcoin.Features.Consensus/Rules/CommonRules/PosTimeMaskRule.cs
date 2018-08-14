@@ -21,8 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             base.Initialize();
 
-            //TODO ACTIVATION
-            //this.FutureDriftRule = this.Parent.headervalidationrules.FindRule<PosFutureDriftRule>();
+            this.FutureDriftRule = this.Parent.GetRule<PosFutureDriftRule>();
         }
 
         /// <inheritdoc />

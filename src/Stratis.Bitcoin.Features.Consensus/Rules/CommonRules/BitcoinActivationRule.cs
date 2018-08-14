@@ -1,16 +1,14 @@
-﻿using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
     /// Check that a <see cref="BitcoinMain" /> network block has the correct version according to the defined active deployments.
     /// </summary>
-    /// /// <remarks>This is header validation rule.</remarks>
+    /// <remarks>This is header validation rule.</remarks>
     public class BitcoinActivationRule : SyncConsensusRule
     {
         /// <inheritdoc />
