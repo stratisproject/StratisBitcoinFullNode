@@ -128,7 +128,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Sm
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Core.Validation.Tests", "Stratis.SmartContracts.Core.Validation.Tests\Stratis.SmartContracts.Core.Validation.Tests.csproj", "{247C062D-8A16-4DD8-93B4-1D1C3D49B498}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.ByteHelper", "Stratis.SmartContracts.ByteHelper\Stratis.SmartContracts.ByteHelper.csproj", "{5D5729B0-CB43-4D39-AD77-5A5C6AEE67AC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.ByteHelper", "Stratis.SmartContracts.ByteHelper\Stratis.SmartContracts.ByteHelper.csproj", "{B6413907-3F79-49FD-86C1-024223C0E10C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -336,10 +336,10 @@ Global
 		{247C062D-8A16-4DD8-93B4-1D1C3D49B498}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{247C062D-8A16-4DD8-93B4-1D1C3D49B498}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{247C062D-8A16-4DD8-93B4-1D1C3D49B498}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5D5729B0-CB43-4D39-AD77-5A5C6AEE67AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5D5729B0-CB43-4D39-AD77-5A5C6AEE67AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5D5729B0-CB43-4D39-AD77-5A5C6AEE67AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5D5729B0-CB43-4D39-AD77-5A5C6AEE67AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6413907-3F79-49FD-86C1-024223C0E10C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6413907-3F79-49FD-86C1-024223C0E10C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6413907-3F79-49FD-86C1-024223C0E10C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6413907-3F79-49FD-86C1-024223C0E10C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -387,7 +387,7 @@ Global
 		{6A4C72BF-E818-45B1-9DD4-562C7C6F31C8} = {A6FF48E5-310A-4606-B435-D24B6B348F8C}
 		{3E11D03E-1244-43A8-875B-A547249F5B53} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
 		{247C062D-8A16-4DD8-93B4-1D1C3D49B498} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
-		{5D5729B0-CB43-4D39-AD77-5A5C6AEE67AC} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
+		{B6413907-3F79-49FD-86C1-024223C0E10C} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6C780ABA-5872-4B83-AD3F-A5BD423AD907}

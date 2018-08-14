@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Stratis.SmartContracts.ByteHelper;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Compilation
 {
@@ -21,7 +22,8 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
                 Runtime, 
                 Core, 
                 typeof(SmartContract).Assembly, 
-                typeof(Enumerable).Assembly
+                typeof(Enumerable).Assembly,
+                typeof(ByteConverter).Assembly
             };
     }
 }

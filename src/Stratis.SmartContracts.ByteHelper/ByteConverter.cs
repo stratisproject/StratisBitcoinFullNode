@@ -3,7 +3,10 @@ using System.Text;
 
 namespace Stratis.SmartContracts.ByteHelper
 {
-    public static class ByteHelper
+    /// <summary>
+    /// Provides utilities to transform smart contract primitives into bytes and back.
+    /// </summary>
+    public static class ByteConverter
     {
         #region bool
 
@@ -13,8 +16,8 @@ namespace Stratis.SmartContracts.ByteHelper
         public static byte ToByte(bool val)
         {
             return val
-                ? (byte) 1
-                : (byte) 0;
+                ? (byte)1
+                : (byte)0;
         }
 
         /// <summary>
@@ -147,6 +150,10 @@ namespace Stratis.SmartContracts.ByteHelper
         #endregion
 
         #region Address
+
+        // TODO: Build some infrastructure so we can load Network into this class.
+
+        // That way we can convert addresses to the 20-byte format, as opposed to via the string. 
 
         #endregion
 
