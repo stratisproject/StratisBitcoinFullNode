@@ -50,7 +50,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             this.rules = new List<IBaseConsensusRule>();
             this.ruleRegistration = new Mock<IRuleRegistration>();
-            this.ruleRegistration.Setup(r => r.GetRules()).Returns(() => { return this.rules; });
 
             if (network.Consensus.IsProofOfStake)
                 this.ruleContext = new PosRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
@@ -118,7 +117,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected ConsensusSettings consensusSettings;
         protected Mock<ICheckpoints> checkpoints;
         protected Mock<IChainState> chainState;
-        protected List<ConsensusRule> ruleRegistrations;
         protected Mock<IRuleRegistration> ruleRegistration;
         protected T consensusRules;
         protected RuleContext ruleContext;

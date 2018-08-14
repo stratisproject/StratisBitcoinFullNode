@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -8,23 +9,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public sealed class SmartContractPowRuleRegistration : IRuleRegistration
     {
-        public ICollection<IBaseConsensusRule> GetRules()
+        public void RegisterRules(IConsensus consensus)
         {
-            var rules = new List<IBaseConsensusRule>
+            consensus.HeaderValidationRules = new List<ISyncBaseConsensusRule>()
             {
-                // == Header ==
                 new HeaderTimeChecksRule(),
                 new CheckDifficultyPowRule(),
                 new BitcoinActivationRule(),
                 new BitcoinHeaderVersionRule(),
+            };
 
-                // == Integrity ==
+            consensus.IntegrityValidationRules = new List<ISyncBaseConsensusRule>()
+            {
                 new BlockMerkleRootRule(),
+            };
 
-                // == Partial and Full ==
+            consensus.PartialValidationRules = new List<IAsyncBaseConsensusRule>()
+            {
                 new SetActivationDeploymentsRule(),
 
-                // == Partial ==
                 new TransactionLocktimeActivationRule(), // implements BIP113
                 new CoinbaseHeightActivationRule(), // implements BIP34
                 new WitnessCommitmentsRule(), // BIP141, BIP144
@@ -34,8 +37,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new EnsureCoinbaseRule(),
                 new CheckPowTransactionRule(),
                 new CheckSigOpsRule(),
+            };
 
-                // == Full ==                
+            consensus.FullValidationRules = new List<IAsyncBaseConsensusRule>()
+            {
+                new SetActivationDeploymentsRule(),
 
                 // rules that require the store to be loaded (coinview)
                 new SmartContractLoadCoinviewRule(),
@@ -44,11 +50,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 // Smart contract specific rules
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
-                new SmartContractPowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward 
+                new SmartContractPowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward
                 new SmartContractSaveCoinviewRule()
             };
-
-            return rules;
         }
     }
 }

@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
         }
 
-        protected void WhenExecutingTheRule(ConsensusRule rule, RuleContext ruleContext)
+        protected void WhenExecutingTheRule(ConsensusRuleBase rule, RuleContext ruleContext)
         {
             try
             {
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
                 rule.Parent.PerformanceCounter.ProcessedTransactions.Should().Be(0);
 
-                rule.RunAsync(ruleContext).GetAwaiter().GetResult();
+                (rule as AsyncConsensusRule).RunAsync(ruleContext).GetAwaiter().GetResult();
             }
             catch (Exception e)
             {

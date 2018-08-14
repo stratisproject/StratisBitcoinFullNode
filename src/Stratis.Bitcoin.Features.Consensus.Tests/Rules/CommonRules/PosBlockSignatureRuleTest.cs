@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             Assert.True(BlockStake.IsProofOfWork(this.ruleContext.ValidationContext.Block));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSignature, exception.ConsensusError);
         }
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.Block));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSignature, exception.ConsensusError);
         }
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.Block));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSignature, exception.ConsensusError);
         }
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.Block));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSignature, exception.ConsensusError);
         }
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.Block));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSignature, exception.ConsensusError);
         }
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.Block));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSignature, exception.ConsensusError);
         }
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.Block));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSignature, exception.ConsensusError);
         }
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.Block));
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadBlockSignature, exception.ConsensusError);
         }
@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.Block));
 
-            await this.consensusRules.RegisterRule<PosBlockSignatureRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext);
         }
 
         [Fact]
@@ -280,7 +280,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.Block));
 
-            await this.consensusRules.RegisterRule<PosBlockSignatureRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext);
         }
 
         [Fact]
@@ -304,7 +304,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             Assert.True(BlockStake.IsProofOfWork(this.ruleContext.ValidationContext.Block));
 
-            await this.consensusRules.RegisterRule<PosBlockSignatureRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext);
         }
     }
 }
