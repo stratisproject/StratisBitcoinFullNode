@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
-    /// <remarks>This is full validation rule</remarks>
     public sealed class SmartContractLoadCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />

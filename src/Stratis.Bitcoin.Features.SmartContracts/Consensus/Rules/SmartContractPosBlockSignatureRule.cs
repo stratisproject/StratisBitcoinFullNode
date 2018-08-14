@@ -7,14 +7,12 @@ using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
     /// <summary>
     /// A rule that will validate the signature of a PoS block.
     /// </summary>
-    /// <remarks>This is partial validation rule.</remarks>
     public class PartialValidationSmartContractPosBlockSignatureRule : PartialValidationConsensusRule
     {
         private BlockSignatureChecker checker;
@@ -51,8 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             return Task.CompletedTask;
         }
     }
-
-    /// <remarks>This is integrity validation rule.</remarks>
+    
     public class IntegrityValidationSmartContractPosBlockSignatureRule : IntegrityValidationConsensusRule
     {
         private BlockSignatureChecker checker;

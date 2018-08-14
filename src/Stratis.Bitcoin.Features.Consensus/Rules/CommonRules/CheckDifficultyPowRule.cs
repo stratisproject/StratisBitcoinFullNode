@@ -5,7 +5,6 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>Calculate the difficulty for a POW network and check that it is correct.</summary>
-    /// <remarks>This is header validation rule.</remarks>
     public class CheckDifficultyPowRule : HeaderValidationConsensusRule
     {
         /// <inheritdoc />
