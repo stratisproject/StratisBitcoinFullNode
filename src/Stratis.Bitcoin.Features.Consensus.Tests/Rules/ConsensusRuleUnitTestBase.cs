@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.coinView = new Mock<ICoinView>();
         }
 
-        protected T CreateRule<T>() where T : ConsensusRule, new()
+        protected T CreateRule<T>() where T : ConsensusRuleBase, new()
         {
             return new T()
             {

@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
-    [FullValidationRule]
+    /// <remarks>This is partial validation rule</remarks>
     public sealed class SmartContractSaveCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />

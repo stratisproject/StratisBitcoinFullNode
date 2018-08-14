@@ -19,7 +19,6 @@ using Stratis.SmartContracts.Core.Util;
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     /// <inheritdoc />
-    [FullValidationRule]
     public abstract class SmartContractCoinviewRule : CoinViewRule
     {
         protected List<Transaction> blockTxsProcessed;
