@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // the mining should add coins to the wallet
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * (10 - maturity + 1) * 50, total);
+                Assert.Equal(Money.COIN * 6 * 50, total);
 
                 // sync both nodes
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // The mining should add coins to the wallet.
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * (10 - maturity + 1) * 50, total);
+                Assert.Equal(Money.COIN * 6 * 50, total);
 
                 // Create a token contract
                 ulong gasPrice = 1;
@@ -267,7 +267,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
 
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * (10 - maturity + 1) * 50, total);
+                Assert.Equal(Money.COIN * 6 * 50, total);
 
                 SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
 
