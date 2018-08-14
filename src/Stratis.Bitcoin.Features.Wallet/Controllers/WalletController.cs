@@ -666,13 +666,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
-                var context = new TransactionBuildContext(
-                    this.network,
-                    new WalletAccountReference(request.WalletName, request.AccountName),
-                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList())
+                var context = new TransactionBuildContext(this.network)
                 {
+                    AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
                     FeeType = FeeParser.Parse(request.FeeType),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
+                    Recipients = new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList()
                 };
 
                 return this.Json(this.walletTransactionHandler.EstimateFee(context));
@@ -704,15 +703,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
-                var context = new TransactionBuildContext(
-                    this.network,
-                    new WalletAccountReference(request.WalletName, request.AccountName),
-                    new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList(),
-                    request.Password, request.OpReturnData)
+                var context = new TransactionBuildContext(this.network)
                 {
+                    AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
                     TransactionFee = string.IsNullOrEmpty(request.FeeAmount) ? null : Money.Parse(request.FeeAmount),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                    Shuffle = request.ShuffleOutputs ?? true // We shuffle transaction outputs by default as it's better for anonymity.
+                    Shuffle = request.ShuffleOutputs ?? true, // We shuffle transaction outputs by default as it's better for anonymity.
+                    OpReturnData = request.OpReturnData,
+                    WalletPassword = request.Password,
+                    Recipients = new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList()
                 };
 
                 if (!string.IsNullOrEmpty(request.FeeType))

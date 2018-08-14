@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.Mempool
@@ -37,9 +38,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected void nodeA_nodeB_and_nodeC()
         {
-            this.nodeA = this.nodeBuilder.CreateStratisPowNode();
-            this.nodeB = this.nodeBuilder.CreateStratisPowNode();
-            this.nodeC = this.nodeBuilder.CreateStratisPowNode();
+            Network regTest = KnownNetworks.RegTest;
+
+            this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest);
+            this.nodeB = this.nodeBuilder.CreateStratisPowNode(regTest);
+            this.nodeC = this.nodeBuilder.CreateStratisPowNode(regTest);
 
             this.nodeBuilder.StartAll();
             this.nodeA.NotInIBD().WithWallet();
