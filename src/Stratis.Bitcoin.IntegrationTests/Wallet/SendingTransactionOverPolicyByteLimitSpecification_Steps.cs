@@ -57,7 +57,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .Build();
 
             this.CoinBaseMaturity = 1;
-
             this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity = this.CoinBaseMaturity;
             this.nodes[NodeTwo].FullNode.Network.Consensus.CoinbaseMaturity = this.CoinBaseMaturity;
         }
@@ -106,7 +105,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Amount = Money.Coins(0.001m)
             }).ToList();
 
-            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(this.nodes[NodeOne].FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, this.CoinBaseMaturity);
+            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(this.nodes[NodeOne].FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, this.CoinBaseMaturity + 1);
 
             try
             {

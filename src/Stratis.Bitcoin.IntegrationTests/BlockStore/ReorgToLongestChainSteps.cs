@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                     .AndNoMoreConnections()
                 .Build();
 
-            this.maturity = (int)this.nodes[JingTheFastMiner].FullNode.Network.Consensus.CoinbaseMaturity;
+            this.maturity = 1;
             this.nodes[JingTheFastMiner].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
             this.nodes[Bob].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
             this.nodes[Charlie].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                     }
                 },
                 FeeType.Medium
-                , 1);
+                , this.maturity);
 
             this.shorterChainTransaction = this.nodes[Bob].FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
             this.shortChainTransactionFee = this.nodes[Bob].FullNode.WalletTransactionHandler().EstimateFee(transactionBuildContext);

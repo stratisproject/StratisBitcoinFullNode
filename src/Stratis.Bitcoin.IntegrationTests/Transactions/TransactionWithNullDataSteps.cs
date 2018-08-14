@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private Transaction transaction;
         private Key key;
         private uint256 blockWithOpReturnId;
+        private int maturity;
 
         private readonly string password = "p@ssw0rd";
         private readonly string opReturnContent = "extra informations!";
@@ -55,8 +56,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
             this.senderNode.NotInIBD();
             this.receiverNode.NotInIBD();
 
-            this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-            this.receiverNode.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
+            this.maturity = 1;
+            this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
+            this.receiverNode.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
         }
 
         private void a_sending_and_a_receiving_wallet()
@@ -74,13 +76,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         {
             this.key = this.sendingWallet.GetExtendedPrivateKeyForAddress(this.password, this.senderAddress).PrivateKey;
             this.senderNode.SetDummyMinerSecret(new BitcoinSecret(this.key, this.senderNode.FullNode.Network));
-            int maturity = (int)this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
-            this.senderNode.GenerateStratisWithMiner(maturity + 5);
+            this.senderNode.GenerateStratisWithMiner(this.maturity + 5);
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.senderNode));
 
             this.senderNode.FullNode.WalletManager().GetSpendableTransactionsInWallet("sender")
                 .Sum(utxo => utxo.Transaction.Amount)
-                .Should().Be(Money.COIN * 6 * 50);
+                .Should().Be(Money.COIN * (this.maturity + 5) * 50);
         }
 
         private void no_fund_in_the_receiving_wallet()
