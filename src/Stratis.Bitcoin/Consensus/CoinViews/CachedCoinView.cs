@@ -294,7 +294,13 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
             List<UnspentOutputs> unspentOutputsList = unspentOutputs.ToList();
             this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:'{5}')", nameof(unspentOutputsList), unspentOutputsList.Count, nameof(originalOutputs), originalOutputs?.Count(), nameof(currentBlock), currentBlock.HashBlock);
 
-            RewindData rewindData = originalOutputs != null ? new RewindData(currentBlock.HashBlock) : null;
+            if (originalOutputs == null)
+            {
+                KeyValuePair<uint256, CacheItem>[] unspentMapping = this.unspents.Where(u => u.Value.IsDirty).ToArray();
+                originalOutputs = unspentMapping.Select(u => u.Value.OriginalOutputs).ToList();
+            }
+
+            RewindData rewindData = new RewindData(currentBlock.HashBlock);
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
@@ -333,8 +339,6 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
                         this.unspents.Remove(unspent.TransactionId);
                     }
 
-                    if (originalOutputs == null) continue;
-
                     this.unspents.TryGetValue(unspent.TransactionId, out CacheItem original);
                     if (original == null)
                     {
@@ -348,9 +352,9 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
                         clone.Outputs = original.OriginalOutputs;
                         rewindData.OutputsToRestore.Add(clone);
                     }
-
-                    this.rewindDataQueue.Enqueue(rewindData);
                 }
+
+                this.rewindDataQueue.Enqueue(rewindData);
             }
 
             this.logger.LogTrace("(-)");
