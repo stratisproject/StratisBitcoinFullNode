@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 FeeDelta = item.ModifiedFee - item.Fee
             }).ToList();
 
-            this.logger.LogTrace("(-):{0}.{1}={2}", nameof(infoList), nameof(infoList.Count), infoList?.Count);
+            this.logger.LogTrace("(-):*.{0}={1}", nameof(infoList.Count), infoList.Count);
             return infoList;
         }
 
@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             MemPoolSaveResult saveResult = this.mempoolPersistence.Save(this.network, this.memPool);
 
-            this.logger.LogTrace("(-)[SUCCESS]:{0}.{1}={2},{3}.{4}='{5}'", nameof(MemPoolSaveResult), nameof(saveResult.Succeeded), saveResult.Succeeded, nameof(MemPoolSaveResult), nameof(saveResult.TrxSaved), saveResult.TrxSaved);
+            this.logger.LogTrace("(-):'{0}'", saveResult);
             return saveResult;
         }
 
@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             TxMempoolInfo txInfo = await this.InfoAsync(trxid);
             if (txInfo == null)
             {
-                this.logger.LogTrace("():[TX_IS_NULL]");
+                this.logger.LogTrace("(-):[TX_IS_NULL]");
                 return null;
             }
 
@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             await memPoolCoinView.LoadViewAsync(txInfo.Trx);
             UnspentOutputs unspentOutputs = memPoolCoinView.GetCoins(trxid);
 
-            this.logger.LogTrace("():{0}.{1}='{2}'", nameof(UnspentOutputs), nameof(UnspentOutputs.TransactionId), unspentOutputs?.TransactionId);
+            this.logger.LogTrace("(-):{0}.{1}='{2}'", nameof(UnspentOutputs), nameof(UnspentOutputs.TransactionId), unspentOutputs?.TransactionId);
             return unspentOutputs;
         }
 
