@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 .Where(x => x.Address == address)
                 .Sum(s => s.Transaction.Amount);
 
-            Money powReward = node.GetProofOfWorkRewardForMinedBlocks(blockCount, true);
+            Money powReward = node.GetProofOfWorkRewardForMinedBlocks(blockCount);
             long balanceIncrease = balanceAfterMining - balanceBeforeMining;
             long calculatedFees = balanceIncrease - powReward;
 

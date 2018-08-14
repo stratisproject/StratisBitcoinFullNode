@@ -649,6 +649,38 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 node.SetDummyMinerSecret(new BitcoinSecret(new Key(), node.FullNode.Network));
 
+                node.GenerateStratisWithMiner(1);
+                node.GetProofOfWorkRewardForMinedBlocks(1).Should().Be(Money.Coins(0));
+
+                node.GenerateStratisWithMiner(9);
+                node.GetProofOfWorkRewardForMinedBlocks(9).Should().Be(Money.Coins(0));
+
+                node.GenerateStratisWithMiner(90);
+                node.GetProofOfWorkRewardForMinedBlocks(100).Should().Be(Money.Coins(50));
+
+                node.GenerateStratisWithMiner(100);
+                node.GetProofOfWorkRewardForMinedBlocks(200).Should().Be(Money.Coins(5050));
+
+                node.GenerateStratisWithMiner(200);
+                node.GetProofOfWorkRewardForMinedBlocks(400).Should().Be(Money.Coins(11225));
+            }
+        }
+
+        [Fact]
+        public void GetProofOfWorkRewardForMinedBlocksTestLowMaturity()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                builder.StartAll();
+                node.NotInIBD();
+
+                node.FullNode.Network.Consensus.CoinbaseMaturity = 1;
+
+                node.SetDummyMinerSecret(new BitcoinSecret(new Key(), node.FullNode.Network));
+
+                node.GetProofOfWorkRewardForMinedBlocks(1).Should().Be(Money.Coins(50));
+
                 node.GenerateStratisWithMiner(10);
                 node.GetProofOfWorkRewardForMinedBlocks(10).Should().Be(Money.Coins(500));
 

@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public static class CoreNodeExtensions
     {
-        public static Money GetProofOfWorkRewardForMinedBlocks(this CoreNode node, int numberOfBlocks, bool considerMaturity = false)
+        public static Money GetProofOfWorkRewardForMinedBlocks(this CoreNode node, int numberOfBlocks)
         {
             var coinviewRule = node.FullNode.NodeService<IConsensusRules>().GetRule<CoinViewRule>();
 
@@ -23,23 +23,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             int maturity = (int)node.FullNode.Network.Consensus.CoinbaseMaturity;
 
-            if (considerMaturity)
-            {
-                // If insufficient blocks have been mined to exceed the coinbase/stake maturity
-                // threshold, then there is no spendable reward for the block.
-                if ((numberOfBlocks == 1) && (maturity > 1))
-                    return 0;
-
-                // Otherwise, return the calculated reward for the block count that does exceed
-                // the maturity threshold.
-                return Enumerable.Range(startBlock,
-                        ((numberOfBlocks - maturity + 1) > 0 ? (numberOfBlocks - maturity + 1) : 0))
-                    .Sum(p => coinviewRule.GetProofOfWorkReward(p));
-            }
-
-            // Otherwise the maturity threshold is ignored, just return the calculated reward
-            // for the number of blocks being mined.
-            return Enumerable.Range(startBlock, numberOfBlocks)
+            // If insufficient blocks have been mined to exceed the coinbase/stake maturity
+            // threshold, then there is no spendable reward for the block.
+            // Otherwise, return the calculated reward for the block count that does exceed
+            // the maturity threshold.
+            return Enumerable.Range(startBlock,
+                    ((numberOfBlocks - maturity + 1) > 0 ? (numberOfBlocks - maturity + 1) : 0))
                 .Sum(p => coinviewRule.GetProofOfWorkReward(p));
         }
         
