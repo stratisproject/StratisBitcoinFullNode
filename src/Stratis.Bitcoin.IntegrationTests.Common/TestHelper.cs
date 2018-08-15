@@ -14,15 +14,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
     {
         static async Task AsyncTaskDelay(int milisec)
         {
-            await Task.Delay(milisec);
+            await Task.Delay(milisec).ConfigureAwait(false);
         }
 
-        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int millisecondsTimeout = 50, CancellationToken cancellationToken = default(CancellationToken))
+        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int millisecondsTimeout = 150, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken = cancellationToken == default(CancellationToken)
-                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000).Token
+                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 40 * 1000).Token
                 : cancellationToken;
-
 
             while (!act())
             {
@@ -30,7 +29,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     AsyncTaskDelay(millisecondsTimeout).Wait();
-                    //Thread.Sleep(millisecondsTimeout);
                 }
                 catch (OperationCanceledException e)
                 {

@@ -25,31 +25,10 @@ namespace Stratis.Bitcoin.Tests.Common
 
         public static string AssureEmptyDir(string dir)
         {
-            int deleteAttempts = 0;
-            while (deleteAttempts < 50)
-            {
-                if (Directory.Exists(dir))
-                {
-                    try
-                    {
-                        Directory.Delete(dir, true);
-                        //break;
-                    }
-                    catch
-                    {
-                        deleteAttempts++;
-                    }
-                    Thread.Sleep(200);
-                }
-                else
-                    break;
-            }
-
-            if (deleteAttempts >= 50)
-                throw new Exception(string.Format("The test folder: {0} could not be deleted.", dir));
-
-            Directory.CreateDirectory(dir);
-            return dir;
+            long ticks = DateTime.UtcNow.Ticks;
+            string uniqueDirName = dir + ticks.ToString();
+            Directory.CreateDirectory(uniqueDirName);
+            return uniqueDirName;
         }
 
         /// <summary>
