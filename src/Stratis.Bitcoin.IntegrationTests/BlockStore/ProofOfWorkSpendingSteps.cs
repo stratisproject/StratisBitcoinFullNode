@@ -23,11 +23,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string AccountName = "account 0";
         private CoreNode sendingStratisBitcoinNode;
         private CoreNode receivingStratisBitcoinNode;
+        private int coinbaseMaturity;
         private Exception caughtException;
         private Transaction lastTransaction;
         private SharedSteps sharedSteps;
         private NodeGroupBuilder nodeGroupBuilder;
-        private int coinbaseMaturity;
 
         public ProofOfWorkSpendingSpecification(ITestOutputHelper outputHelper) : base(outputHelper)
         {
@@ -59,10 +59,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.sendingStratisBitcoinNode = nodeGroup["sending"];
             this.receivingStratisBitcoinNode = nodeGroup["receiving"];
 
-            this.coinbaseMaturity = 5;
-
-            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = this.coinbaseMaturity;
-            this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = this.coinbaseMaturity;
+            this.coinbaseMaturity = (int)this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity;
         }
 
         protected void a_block_is_mined_creating_spendable_coins()
@@ -98,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                             ScriptPubKey = sendtoAddress.ScriptPubKey
                         }
                     },
-                    FeeType.Medium, this.coinbaseMaturity + 1);
+                    FeeType.Medium, 101);
 
                 this.lastTransaction = this.sendingStratisBitcoinNode.FullNode.WalletTransactionHandler()
                     .BuildTransaction(transactionBuildContext);

@@ -29,7 +29,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string Bob = "Bob";
         private const string Charlie = "Charlie";
         private const string Dave = "Dave";
-        private int maturity;
 
         public ReorgToLongestChainSpecification(ITestOutputHelper output) : base(output)
         {
@@ -59,12 +58,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                     .Connect(Charlie, Dave)
                     .AndNoMoreConnections()
                 .Build();
-
-            this.maturity = 1;
-            this.nodes[JingTheFastMiner].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
-            this.nodes[Bob].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
-            this.nodes[Charlie].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
-            this.nodes[Dave].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
         }
 
         private void each_mine_a_block()
@@ -104,7 +97,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                     }
                 },
                 FeeType.Medium
-                , this.maturity);
+                , 1);
 
             this.shorterChainTransaction = this.nodes[Bob].FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
             this.shortChainTransactionFee = this.nodes[Bob].FullNode.WalletTransactionHandler().EstimateFee(transactionBuildContext);
@@ -159,7 +152,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void mining_continues_to_maturity_to_allow_spend()
         {
-            this.sharedSteps.MineBlocks(this.maturity, this.nodes[Bob], AccountZero, WalletZero, WalletPassword);
+            int coinbaseMaturity = (int)this.nodes[Bob].FullNode
+                .Network.Consensus.CoinbaseMaturity;
+            
+            this.sharedSteps.MineBlocks(coinbaseMaturity, this.nodes[Bob], AccountZero, WalletZero, WalletPassword);
 
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[JingTheFastMiner]));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[Bob]));

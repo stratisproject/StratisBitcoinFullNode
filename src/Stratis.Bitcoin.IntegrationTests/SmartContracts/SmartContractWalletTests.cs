@@ -43,8 +43,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
-                var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-
                 Mnemonic mnemonic1 = scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
                 Mnemonic mnemonic2 = scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
@@ -52,6 +50,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
+                var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 scSender.GenerateStratisWithMiner(maturity + 5);
 
                 // Wait for block repo for block sync to work.
@@ -59,9 +58,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // The mining should add coins to the wallet.
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
+                Assert.Equal(Money.COIN * 6 * 50, total);
 
-                // Sync both nodes
+                // Sync both nodes.
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
@@ -114,8 +113,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
-                var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-
                 scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
                 scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
@@ -123,6 +120,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
 
                 scSender.SetDummyMinerSecret(new BitcoinSecret(key, scSender.FullNode.Network));
+                var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 scSender.GenerateStratisWithMiner(maturity + 5);
 
                 // Wait for block repo for block sync to work.
@@ -130,7 +128,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // The mining should add coins to the wallet.
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
+                Assert.Equal(Money.COIN * 6 * 50, total);
 
                 // Create a token contract.
                 ulong gasPrice = 1;

@@ -46,10 +46,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
 
-                stratisNodeSync.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratisWithMiner(5);
+                stratisNodeSync.GenerateStratisWithMiner(105); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
@@ -78,10 +76,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
-                stratisNodeSync.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratisWithMiner(5);
+                stratisNodeSync.GenerateStratisWithMiner(105); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
@@ -124,10 +120,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
-                stratisNodeSync.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratisWithMiner(101);
+                stratisNodeSync.GenerateStratisWithMiner(201); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
@@ -163,13 +157,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
-
-                stratisNodeSync.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-
+                
                 stratisNodeSync.FullNode.NodeService<MempoolSettings>().RequireStandard = true; // make sure to test standard tx
 
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratisWithMiner(1);
+                stratisNodeSync.GenerateStratisWithMiner(100); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
@@ -309,10 +301,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 builder.StartAll();
                 stratisNodeSync.NotInIBD();
 
-                stratisNodeSync.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratisWithMiner(2);
+                stratisNodeSync.GenerateStratisWithMiner(101); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusLoop().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.ConsensusTip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
@@ -358,15 +348,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 stratisNode1.NotInIBD();
                 stratisNode2.NotInIBD();
 
-                stratisNodeSync.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-                stratisNode1.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-                stratisNode2.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
-
                 // generate blocks and wait for the downloader to pickup
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratisWithMiner(5);
-                // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisNodeSync));
+                stratisNodeSync.GenerateStratisWithMiner(105); // coinbase maturity = 100
 
                 // sync both nodes
                 stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);

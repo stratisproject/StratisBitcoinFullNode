@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private HttpResponseMessage response;
         private string responseText;
 
-        private int maturity;
+        private int maturity = 1;
         private HdAddress receiverAddress;
         private readonly Money transferAmount = Money.COIN * 1;
         private NodeGroupBuilder powNodeGroupBuilder;
@@ -158,10 +158,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .WithWallet(PrimaryWalletName, WalletPassword)
                 .Build();
 
-            this.maturity = 1;
-
-            this.nodes[FirstPowNode].FullNode
-                .Network.Consensus.CoinbaseMaturity = this.maturity;
+            this.nodes[FirstPowNode].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
 
             this.nodes[FirstPowNode].SetDummyMinerSecret(new BitcoinSecret(new Key(), this.nodes[FirstPowNode].FullNode.Network));
 
@@ -177,8 +174,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .WithWallet(SecondaryWalletName, WalletPassword)
                 .Build();
 
-            this.nodes[SecondPowNode].FullNode
-                .Network.Consensus.CoinbaseMaturity = this.maturity;
+            this.nodes[SecondPowNode].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
         }
 
         protected void a_block_is_mined_creating_spendable_coins()

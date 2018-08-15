@@ -55,15 +55,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     .Connect(NodeOne, NodeTwo)
                     .AndNoMoreConnections()
                 .Build();
-
-            this.CoinBaseMaturity = 1;
-            this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity = this.CoinBaseMaturity;
-            this.nodes[NodeTwo].FullNode.Network.Consensus.CoinbaseMaturity = this.CoinBaseMaturity;
         }
 
         private void node1_builds_undersize_transaction_to_send_to_node2()
         {
-            Node1BuildsTransactionToSendToNode2(2901);
+            Node1BuildsTransactionToSendToNode2(2450);
         }
 
         private void serialized_size_of_transaction_is_close_to_upper_limit()
@@ -84,7 +80,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void node1_builds_oversize_tx_to_send_to_node2()
         {
-            Node1BuildsTransactionToSendToNode2(3500);
+            Node1BuildsTransactionToSendToNode2(2900);
 
         }
 
@@ -95,6 +91,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void Node1BuildsTransactionToSendToNode2(int txoutputs)
         {
+            this.CoinBaseMaturity = (int)this.nodes[NodeOne].FullNode.Network.Consensus.CoinbaseMaturity;
+
             this.MineBlocks(this.nodes[NodeOne]);
 
             var nodeTwoAddresses = this.nodes[NodeTwo].FullNode.WalletManager().GetUnusedAddresses(new WalletAccountReference(WalletName, WalletAccountName), txoutputs);
@@ -102,10 +100,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             var nodeTwoRecipients = nodeTwoAddresses.Select(address => new Recipient
             {
                 ScriptPubKey = address.ScriptPubKey,
-                Amount = Money.Coins(0.001m)
+                Amount = Money.COIN
             }).ToList();
 
-            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(this.nodes[NodeOne].FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, this.CoinBaseMaturity + 1);
+            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(this.nodes[NodeOne].FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, 101);
 
             try
             {
