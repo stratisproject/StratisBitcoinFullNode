@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             ChainedHeader currentBlock = context.ValidationContext.ChainTipToExtend;
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
-            // unless the coinview treashold is reached.
+            // unless the coinview threshold is reached.
             this.Logger.LogTrace("Saving coinview changes.");
             var utxoRuleContext = context as UtxoRuleContext;
             await this.PowParent.UtxoSet.AddRewindDataAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), currentBlock).ConfigureAwait(false);
