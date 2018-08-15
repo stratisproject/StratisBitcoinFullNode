@@ -182,8 +182,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
                 var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider));
 
-                var coinViewStorageMock = new Mock<ICoinViewStorage>();
-                this.cachedCoinView = new CachedCoinView(chainState, coinViewStorageMock.Object, dateTimeProvider, new LoggerFactory(), new NodeLifetime());
+                this.cachedCoinView = new CachedCoinView(chainState, new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory(), new NodeLifetime());
 
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();

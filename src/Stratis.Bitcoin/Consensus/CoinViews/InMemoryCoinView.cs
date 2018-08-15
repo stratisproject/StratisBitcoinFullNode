@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
     /// Coinview that holds all information in the memory, which is used in tests.
     /// </summary>
     /// <remarks>Rewinding is not supported in this implementation.</remarks>
-    public class InMemoryCoinView : ICachedCoinView
+    public class InMemoryCoinView : ICachedCoinView, ICoinViewStorage
     {
         /// <summary>Lock object to protect access to <see cref="unspents"/> and <see cref="tipHash"/>.</summary>
         private readonly ReaderWriterLock lockobj = new ReaderWriterLock();
@@ -41,14 +41,43 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
             return Task.FromResult(this.tipHash);
         }
 
-        public Task PersistDataAsync(
-            IEnumerable<UnspentOutputs> unspentOutputs,
-            IEnumerable<TxOut[]> originalOutputs,
-            List<RewindData> rewindDataCollection,
-            uint256 oldBlockHash,
-            uint256 nextBlockHash)
+        /// <inheritdoc />
+        public Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash)
         {
-            throw new NotImplementedException();
+            Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
+            Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
+            Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
+
+            using (this.lockobj.LockWrite())
+            {
+                if ((this.tipHash != null) && (oldBlockHash != this.tipHash))
+                    return Task.FromException(new InvalidOperationException("Invalid oldBlockHash"));
+
+                this.tipHash = nextBlockHash;
+                foreach (UnspentOutputs unspent in unspentOutputs)
+                {
+                    UnspentOutputs existing;
+                    if (this.unspents.TryGetValue(unspent.TransactionId, out existing))
+                    {
+                        existing.Spend(unspent);
+                    }
+                    else
+                    {
+                        existing = unspent.Clone();
+                        this.unspents.Add(unspent.TransactionId, existing);
+                    }
+
+                    if (existing.IsPrunable)
+                        this.unspents.Remove(unspent.TransactionId);
+                }
+            }
+
+            return Task.FromResult(true);
+        }
+
+        public async Task InitializeAsync()
+        {
+            await Task.CompletedTask;
         }
 
         /// <inheritdoc />
