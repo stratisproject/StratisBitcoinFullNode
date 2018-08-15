@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 ChainedHeader chained = this.MakeNext(genesisChainedHeader, ctx.Network);
                 var cacheCoinView = new CachedCoinView(this.chainState, ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory, new NodeLifetime());
 
-                cacheCoinView.AddRewindDataAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, chained).Wait();
+                cacheCoinView.AddRewindDataAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, chained).Wait();
                 Assert.NotNull(cacheCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
                 Assert.Null(cacheCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
                 Assert.Equal(chained.HashBlock, cacheCoinView.GetTipHashAsync().Result);

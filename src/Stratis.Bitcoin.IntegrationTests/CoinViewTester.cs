@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var newHash = new uint256(RandomUtils.GetBytes(32));
             var chainedHeader = new ChainedHeader(new BlockHeader(), newHash, 0);
-            this.coinView.AddRewindDataAsync(this.pendingCoins, null, chainedHeader).Wait();
+            this.coinView.AddRewindDataAsync(this.pendingCoins, chainedHeader).Wait();
             this.pendingCoins.Clear();
             this.hash = newHash;
             return newHash;

@@ -286,19 +286,13 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public async Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, ChainedHeader currentBlock)
+        public async Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, ChainedHeader currentBlock)
         {
             Guard.NotNull(currentBlock, nameof(currentBlock));
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
 
             List<UnspentOutputs> unspentOutputsList = unspentOutputs.ToList();
-            this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:'{5}')", nameof(unspentOutputsList), unspentOutputsList.Count, nameof(originalOutputs), originalOutputs?.Count(), nameof(currentBlock), currentBlock.HashBlock);
-
-            if (originalOutputs == null)
-            {
-                KeyValuePair<uint256, CacheItem>[] unspentMapping = this.unspents.Where(u => u.Value.IsDirty).ToArray();
-                originalOutputs = unspentMapping.Select(u => u.Value.OriginalOutputs).ToList();
-            }
+            this.logger.LogTrace("({0}.Count():{1},{2}:'{3}')", nameof(unspentOutputsList), unspentOutputsList.Count, nameof(currentBlock), currentBlock.HashBlock);
 
             RewindData rewindData = new RewindData(currentBlock.HashBlock);
 
@@ -331,6 +325,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
                         existing.UnspentOutputs = unspent;
                         this.unspents.Add(unspent.TransactionId, existing);
                     }
+
                     existing.IsDirty = true;
                     // Inner does not need to know pruned unspent that it never saw.
                     if (existing.UnspentOutputs.IsPrunable && !existing.ExistInInner)

@@ -9,6 +9,7 @@ using ReaderWriterLock = NBitcoin.ReaderWriterLock;
 namespace Stratis.Bitcoin.Consensus.CoinViews
 {
     /// <summary>
+    /// TODO Activation: Move to common tests projects as it is only used for tests. Might need to implement ICoinViewStorage
     /// Coinview that holds all information in the memory, which is used in tests.
     /// </summary>
     /// <remarks>Rewinding is not supported in this implementation.</remarks>
@@ -70,7 +71,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, ChainedHeader currentBlock)
+        public Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, ChainedHeader currentBlock)
         {
             Guard.NotNull(currentBlock, nameof(currentBlock));
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
