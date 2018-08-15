@@ -106,10 +106,10 @@ namespace Stratis.SmartContracts
         /// </summary>
         /// <typeparam name="T">Contract type to instantiate</typeparam>
         /// <param name="parameters">Parameters to pass to constructor.</param>
-        /// <param name="value">Amount to send to the new contract during creation.</param>
-        protected ICreateResult Create<T>(object[] parameters = null, ulong value = 0) where T : SmartContract
+        /// <param name="amountToTransfer">Amount to send to the new contract during creation.</param>
+        protected ICreateResult Create<T>(ulong amountToTransfer = 0, CreateContract creationDetails = null) where T : SmartContract
         {
-            return this.internalTransactionExecutor.Create<T>(this.smartContractState, parameters, value);
+            return this.internalTransactionExecutor.Create<T>(this.smartContractState, amountToTransfer, creationDetails);
         }
 
 

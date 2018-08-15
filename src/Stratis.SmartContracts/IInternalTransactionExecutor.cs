@@ -22,8 +22,8 @@
         /// </summary>
         /// <typeparam name="T">Type of contract to create.</typeparam>
         /// <param name="smartContractState">State repository to track and persist changes to the contract.</param>
-        /// <param name="parameters">Parameters to be sent to the constructor.</param>
         /// <param name="amountToTransfer">Amount to send in stratoshi.</param>
-        ICreateResult Create<T>(ISmartContractState smartContractState, object[] parameters, ulong amountToTransfer);
+        /// <param name="creationDetails">Extra settings related to the creation of a contract.</param>
+        ICreateResult Create<T>(ISmartContractState smartContractState, ulong amountToTransfer, CreateContract creationDetails);
     }
 }

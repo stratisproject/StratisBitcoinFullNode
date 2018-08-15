@@ -34,7 +34,9 @@ public class CatOwner : SmartContract
 
     public void CreateCat()
     {
-        var result = Create<Cat>(new object[]{ CatCounter });
+        var result = Create<Cat>(0,new CreateContract{
+            MethodParameters = new object[]{ CatCounter }
+        });
         CatCounter++;
         LastCreatedCat = result.NewContractAddress;
     }
@@ -56,7 +58,7 @@ public class Cat : SmartContract
     }
 
 
-    protected Cat(ISmartContractState smartContractState, int catNumber) : base(smartContractState)
+    public Cat(ISmartContractState smartContractState, int catNumber) : base(smartContractState)
     {
         CatNumber = catNumber;
     }
