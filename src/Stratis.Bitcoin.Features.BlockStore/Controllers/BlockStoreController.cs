@@ -79,9 +79,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 }
                 else
                 {
-                    return query.Verbose
-                    ? this.Json(new BlockVerboseModel(block, this.network))
-                    : this.Json(new BlockModel(block));
+                    return query.ShowTransactionDetails
+                        ? this.Json(new BlockTransactionDetailsModel(block, this.network))
+                        : this.Json(new BlockModel(block));
                 }
             } 
             catch (Exception e)

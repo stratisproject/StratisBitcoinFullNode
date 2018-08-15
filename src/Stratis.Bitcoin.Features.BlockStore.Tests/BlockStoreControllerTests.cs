@@ -130,13 +130,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest)));
 
             Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
-            { Hash = ValidHash, OutputJson = true, Verbose = true });
+            { Hash = ValidHash, OutputJson = true, ShowTransactionDetails = true });
 
             response.Result.Should().BeOfType<JsonResult>();
             var result = (JsonResult)response.Result;
 
-            result.Value.Should().BeOfType<Models.BlockVerboseModel>();
-            ((BlockVerboseModel)result.Value).Transactions.Should().HaveCountGreaterThan(1);
+            result.Value.Should().BeOfType<Models.BlockTransactionDetailsModel>();
+            ((BlockTransactionDetailsModel)result.Value).Transactions.Should().HaveCountGreaterThan(1);
         }
 
         [Fact]
