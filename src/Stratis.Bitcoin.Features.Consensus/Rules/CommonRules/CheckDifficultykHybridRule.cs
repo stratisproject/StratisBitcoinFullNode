@@ -30,20 +30,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             var posRuleContext = context as PosRuleContext;
 
-            posRuleContext.BlockStake = BlockStake.Load(context.ValidationContext.Block);
+            posRuleContext.BlockStake = BlockStake.Load(context.ValidationContext.BlockToValidate);
 
             if (posRuleContext.BlockStake.IsProofOfWork())
             {
-                if (!context.MinedBlock && !context.ValidationContext.Block.Header.CheckProofOfWork())
+                if (!context.MinedBlock && !context.ValidationContext.BlockToValidate.Header.CheckProofOfWork())
                 {
                     this.Logger.LogTrace("(-)[HIGH_HASH]");
                     ConsensusErrors.HighHash.Throw();
                 }
             }
 
-            Target nextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.ValidationContext.ChainedHeader.Previous, this.Parent.Network.Consensus, posRuleContext.BlockStake.IsProofOfStake());
+            Target nextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, context.ValidationContext.ChainedHeaderToValidate.Previous, this.Parent.Network.Consensus, posRuleContext.BlockStake.IsProofOfStake());
 
-            BlockHeader header = context.ValidationContext.Block.Header;
+            BlockHeader header = context.ValidationContext.BlockToValidate.Header;
 
             // Check proof of stake.
             if (header.Bits != nextWorkRequired)

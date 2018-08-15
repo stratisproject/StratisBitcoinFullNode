@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             if (context.SkipValidation)
                 return Task.CompletedTask;
 
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             if (!(block is SmartContractPosBlock posBlock))
             {
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         /// <exception cref="ConsensusErrors.BadBlockSignature">The block signature is invalid.</exception>
         public override void Run(RuleContext context)
         {
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             if (!(block is SmartContractPosBlock posBlock))
             {

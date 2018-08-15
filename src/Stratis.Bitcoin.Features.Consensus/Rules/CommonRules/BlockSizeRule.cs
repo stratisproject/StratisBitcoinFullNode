@@ -29,13 +29,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // large by filling up the coinbase witness, which doesn't change
             // the block hash, so we couldn't mark the block as permanently
             // failed).
-            if (this.GetBlockWeight(context.ValidationContext.Block, options) > options.MaxBlockWeight)
+            if (this.GetBlockWeight(context.ValidationContext.BlockToValidate, options) > options.MaxBlockWeight)
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_WEIGHT]");
                 ConsensusErrors.BadBlockWeight.Throw();
             }
 
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             // Size limits.
             if ((block.Transactions.Count == 0) || (block.Transactions.Count > options.MaxBlockBaseSize) || 

@@ -24,12 +24,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.AddTransaction(CreateCoinStakeTransaction(this.network, new Key(), 6, this.concurrentChain.GetBlock(5).HashBlock));
             this.ruleContext.ValidationContext = new ValidationContext()
             {
-                Block = block,
-                ChainedHeader = this.concurrentChain.GetBlock(4)
+                BlockToValidate = block,
+                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
             };
 
             var target = new Target(0x1f111115);
-            this.ruleContext.ValidationContext.Block.Header.Bits = target;
+            this.ruleContext.ValidationContext.BlockToValidate.Header.Bits = target;
 
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(
                 this.stakeChain.Object,
@@ -59,12 +59,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext = new ValidationContext()
             {
-                Block = block,
-                ChainedHeader = this.concurrentChain.GetBlock(4)
+                BlockToValidate = block,
+                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
             };
             this.ruleContext.MinedBlock = true;
             var target = new Target(0x1f111115);
-            this.ruleContext.ValidationContext.Block.Header.Bits = target;
+            this.ruleContext.ValidationContext.BlockToValidate.Header.Bits = target;
 
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(
                 this.stakeChain.Object,
@@ -94,11 +94,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext = new ValidationContext()
             {
-                Block = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain),
-                ChainedHeader = this.concurrentChain.Tip
+                BlockToValidate = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain),
+                ChainedHeaderToValidate = this.concurrentChain.Tip
             };
             this.ruleContext.MinedBlock = false;
-            var target = this.ruleContext.ValidationContext.Block.Header.Bits;
+            var target = this.ruleContext.ValidationContext.BlockToValidate.Header.Bits;
 
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(
                 this.stakeChain.Object,
@@ -128,8 +128,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext = new ValidationContext()
             {
-                Block = block,
-                ChainedHeader = this.concurrentChain.GetBlock(4)
+                BlockToValidate = block,
+                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
             };
             this.ruleContext.MinedBlock = false;
 

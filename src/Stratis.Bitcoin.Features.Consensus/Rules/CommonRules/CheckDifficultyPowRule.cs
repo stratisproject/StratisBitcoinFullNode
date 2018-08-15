@@ -14,12 +14,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (context.SkipValidation)
                 return;
 
-            if (!context.MinedBlock && !context.ValidationContext.ChainedHeader.Header.CheckProofOfWork())
+            if (!context.MinedBlock && !context.ValidationContext.ChainedHeaderToValidate.Header.CheckProofOfWork())
                 ConsensusErrors.HighHash.Throw();
 
-            Target nextWorkRequired = context.ValidationContext.ChainedHeader.GetWorkRequired(this.Parent.Network.Consensus);
+            Target nextWorkRequired = context.ValidationContext.ChainedHeaderToValidate.GetWorkRequired(this.Parent.Network.Consensus);
 
-            BlockHeader header = context.ValidationContext.ChainedHeader.Header;
+            BlockHeader header = context.ValidationContext.ChainedHeaderToValidate.Header;
 
             // Check proof of work.
             if (header.Bits != nextWorkRequired)

@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (context.SkipValidation)
                 return;
 
-            BlockHeader header = context.ValidationContext.ChainedHeader.Header;
+            BlockHeader header = context.ValidationContext.ChainedHeaderToValidate.Header;
 
             long adjustedTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
 

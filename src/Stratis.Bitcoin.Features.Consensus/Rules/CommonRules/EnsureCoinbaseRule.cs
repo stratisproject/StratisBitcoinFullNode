@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (context.SkipValidation)
                 return Task.CompletedTask;
 
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             // First transaction must be coinbase, the rest must not be
             if ((block.Transactions.Count == 0) || !block.Transactions[0].IsCoinBase)

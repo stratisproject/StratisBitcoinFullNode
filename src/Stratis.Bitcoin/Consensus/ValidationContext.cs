@@ -19,10 +19,10 @@ namespace Stratis.Bitcoin.Consensus
         public const int BanDurationDefaultBan = 0;
 
         /// <summary>Chained header of the block being validated.</summary>
-        public ChainedHeader ChainedHeader { get; set; }
+        public ChainedHeader ChainedHeaderToValidate { get; set; }
 
         /// <summary>Downloaded or mined block to be validated.</summary>
-        public Block Block { get; set; }
+        public Block BlockToValidate { get; set; }
 
         /// <summary>
         /// The peer this block came from, <c>null</c> if the block was mined.

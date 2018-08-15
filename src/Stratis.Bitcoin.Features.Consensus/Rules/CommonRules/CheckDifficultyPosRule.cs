@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // TODO: In the future once we migrated to fully C# network it might be good to consider signaling in the block header the network type.
 
-            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
+            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
 
             // In order to calculate difficulty we need to know the if the block type is POW/POS.
             // This is only available when the block is downloaded (on the coinbase).
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
                 Target nextWorkRequired = this.PosParent.StakeValidator.CalculateRetarget(first.Time, first.Bits, second.Time, this.Parent.Network.Consensus.ProofOfStakeLimitV2);
 
-                BlockHeader header = context.ValidationContext.ChainedHeader.Header;
+                BlockHeader header = context.ValidationContext.ChainedHeaderToValidate.Header;
 
                 // Check proof of stake.
                 if (header.Bits != nextWorkRequired)
