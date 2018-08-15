@@ -129,9 +129,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network);
 
                 builder.StartAll();
-                stratisSender.NotInIBD();
-                stratisReceiver.NotInIBD();
-                stratisReorg.NotInIBD();
+                stratisSender.NotInIBD().WithWallet();
+                stratisReceiver.NotInIBD().WithWallet();
+                stratisReorg.NotInIBD().WithWallet();
 
                 int maturity = 1;
                 stratisSender.FullNode.Network.Consensus.CoinbaseMaturity = maturity;
@@ -287,9 +287,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network);
 
                 builder.StartAll();
-                stratisSender.NotInIBD();
-                stratisReceiver.NotInIBD();
-                stratisReorg.NotInIBD();
+                stratisSender.NotInIBD().WithWallet();
+                stratisReceiver.NotInIBD().WithWallet();
+                stratisReorg.NotInIBD().WithWallet();
 
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisSender.FullNode.Network));
                 stratisReorg.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisReorg.FullNode.Network));
@@ -349,9 +349,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network);
 
                 builder.StartAll();
-                stratisSender.NotInIBD();
-                stratisReceiver.NotInIBD();
-                stratisReorg.NotInIBD();
+                stratisSender.NotInIBD().WithWallet();
+                stratisReceiver.NotInIBD().WithWallet();
+                stratisReorg.NotInIBD().WithWallet();
 
                 stratisSender.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisSender.FullNode.Network));
                 stratisReorg.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisReorg.FullNode.Network));
