@@ -32,9 +32,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
         /// </summary>
         private readonly Network network;
 
-        public BlockStoreController(Network network, 
-            ILoggerFactory loggerFactory, 
-            IBlockStoreCache blockStoreCache, 
+        public BlockStoreController(Network network,
+            ILoggerFactory loggerFactory,
+            IBlockStoreCache blockStoreCache,
             IChainState chainState)
         {
             Guard.NotNull(network, nameof(network));
@@ -77,13 +77,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 {
                     return this.Json(block);
                 }
-                else
-                {
-                    return query.ShowTransactionDetails
-                        ? this.Json(new BlockTransactionDetailsModel(block, this.network))
-                        : this.Json(new BlockModel(block));
-                }
-            } 
+
+                return query.ShowTransactionDetails
+                    ? this.Json(new BlockTransactionDetailsModel(block, this.network))
+                    : this.Json(new BlockModel(block));
+            }
             catch (Exception e)
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
