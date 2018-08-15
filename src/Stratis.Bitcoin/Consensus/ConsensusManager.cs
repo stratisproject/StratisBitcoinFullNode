@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (fullValidationRequired)
                     {
-                        ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(new ChainedHeaderBlock(validationResult.Block, validationResult.ChainTipToExtend)).ConfigureAwait(false);
+                        ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(new ChainedHeaderBlock(validationResult.BlockToValidate, validationResult.ChainedHeaderToValidate)).ConfigureAwait(false);
                         if (!fullValidationResult.Succeeded)
                         {
                             lock (this.peerLock)
@@ -285,7 +285,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
             }
 
-            var headerBlock = new ChainedHeaderBlock(validationResult.Block, validationResult.ChainTipToExtend);
+            var headerBlock = new ChainedHeaderBlock(validationResult.BlockToValidate, validationResult.ChainedHeaderToValidate);
 
             this.logger.LogTrace("(-):{0}", headerBlock);
             return headerBlock;
@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (validationContext.Error == null)
             {
-                await this.OnPartialValidationSucceededAsync(new ChainedHeaderBlock(validationContext.Block, validationContext.ChainTipToExtend)).ConfigureAwait(false);
+                await this.OnPartialValidationSucceededAsync(new ChainedHeaderBlock(validationContext.BlockToValidate, validationContext.ChainedHeaderToValidate)).ConfigureAwait(false);
             }
             else
             {
@@ -359,9 +359,9 @@ namespace Stratis.Bitcoin.Consensus
 
                 lock (this.peerLock)
                 {
-                    List<int> peerIdsToBan = this.chainedHeaderTree.PartialOrFullValidationFailed(validationContext.ChainTipToExtend);
+                    List<int> peerIdsToBan = this.chainedHeaderTree.PartialOrFullValidationFailed(validationContext.ChainedHeaderToValidate);
 
-                    this.logger.LogDebug("Validation of block '{0}' failed, banning and disconnecting {1} peers.", validationContext.ChainTipToExtend, peerIdsToBan.Count);
+                    this.logger.LogDebug("Validation of block '{0}' failed, banning and disconnecting {1} peers.", validationContext.ChainedHeaderToValidate, peerIdsToBan.Count);
 
                     foreach (int peerId in peerIdsToBan)
                     {

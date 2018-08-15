@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             Guard.NotNull(header, nameof(header));
 
-            var validationContext = new ValidationContext { ChainTipToExtend = header };
+            var validationContext = new ValidationContext { ChainedHeaderToValidate = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             this.ExecuteRules(this.headerValidationRules, ruleContext);
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             Guard.NotNull(chainedHeaderBlock, nameof(chainedHeaderBlock));
 
-            var validationContext = new ValidationContext { Block = chainedHeaderBlock.Block, ChainTipToExtend = chainedHeaderBlock.ChainedHeader };
+            var validationContext = new ValidationContext { BlockToValidate = chainedHeaderBlock.Block, ChainedHeaderToValidate = chainedHeaderBlock.ChainedHeader };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             this.ExecuteRules(this.integrityValidationRules, ruleContext);
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             Guard.NotNull(chainedHeaderBlock, nameof(chainedHeaderBlock));
 
-            var validationContext = new ValidationContext { Block = chainedHeaderBlock.Block, ChainTipToExtend = chainedHeaderBlock.ChainedHeader };
+            var validationContext = new ValidationContext { BlockToValidate = chainedHeaderBlock.Block, ChainedHeaderToValidate = chainedHeaderBlock.ChainedHeader };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             await this.ExecuteRulesAsync(this.fullValidationRules, ruleContext).ConfigureAwait(false);
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             Guard.NotNull(chainedHeaderBlock, nameof(chainedHeaderBlock));
 
-            var validationContext = new ValidationContext { Block = chainedHeaderBlock.Block, ChainTipToExtend = chainedHeaderBlock.ChainedHeader };
+            var validationContext = new ValidationContext { BlockToValidate = chainedHeaderBlock.Block, ChainedHeaderToValidate = chainedHeaderBlock.ChainedHeader };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
