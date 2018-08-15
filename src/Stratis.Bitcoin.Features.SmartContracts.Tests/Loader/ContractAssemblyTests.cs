@@ -27,6 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Loader
             var type = contractAssembly.GetType("Test");
 
             Assert.NotNull(type);
+            Assert.Equal("Test", type.Name);
         }
     }
 }
