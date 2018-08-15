@@ -11,14 +11,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     /// <remarks>
     /// More info here https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki
+    /// <para>
+    /// This is partial validation rule.
+    /// </para>
     /// </remarks>
-    [PartialValidationRule(CanSkipValidation = true)]
-    public class CoinbaseHeightRule : ConsensusRule
+    public class CoinbaseHeightRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadCoinbaseHeight">Thrown if coinbase doesn't start with serialized block height.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            if (context.SkipValidation)
+                return Task.CompletedTask;
+
             int newHeight = context.ValidationContext.ChainTipToExtend.Height;
             Block block = context.ValidationContext.Block;
 
@@ -55,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     }
 
     /// <summary>
-    /// With Bitcoin the BIP34 was activated at block 227,835 using the deployment flags, 
+    /// With Bitcoin the BIP34 was activated at block 227,835 using the deployment flags,
     /// this rule allows a chain to have BIP34 activated as a deployment rule.
     /// </summary>
     public class CoinbaseHeightActivationRule : CoinbaseHeightRule

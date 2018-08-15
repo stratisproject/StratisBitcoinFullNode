@@ -12,14 +12,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     /// <remarks>
     /// More info here https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki
-    /// </remarks>   
-    [PartialValidationRule(CanSkipValidation = true)]
-    public class TransactionLocktimeActivationRule : ConsensusRule
+    /// </remarks>
+    public class TransactionLocktimeActivationRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if one or more transactions are not finalized.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            if (context.SkipValidation)
+                return Task.CompletedTask;
+
             DeploymentFlags deploymentFlags = context.Flags;
             int newHeight = context.ValidationContext.ChainTipToExtend.Height;
             Block block = context.ValidationContext.Block;

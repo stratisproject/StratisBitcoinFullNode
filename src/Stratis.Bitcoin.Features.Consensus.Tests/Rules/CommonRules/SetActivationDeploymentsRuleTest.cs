@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.Block = block;
             this.ruleContext.ValidationContext.ChainTipToExtend = this.concurrentChain.Tip;
 
-            await this.consensusRules.RegisterRule<SetActivationDeploymentsRule>().RunAsync(this.ruleContext);
+            await this.consensusRules.RegisterRule<SetActivationDeploymentsPartialValidationRule>().RunAsync(this.ruleContext);
 
             Assert.NotNull(this.ruleContext.Flags);
             Assert.True(this.ruleContext.Flags.EnforceBIP30);

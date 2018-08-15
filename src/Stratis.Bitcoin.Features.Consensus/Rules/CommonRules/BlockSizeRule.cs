@@ -9,8 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// This rule will validate the block size and weight.
     /// </summary>
-    [PartialValidationRule(CanSkipValidation = true)]
-    public class BlockSizeRule : ConsensusRule
+    public class BlockSizeRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadBlockWeight">The block weight is higher than the max block weight.</exception>
@@ -19,6 +18,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadBlockLength">The block does not contain any transactions.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            if (context.SkipValidation)
+                return Task.CompletedTask;
+
             var options = this.Parent.Network.Consensus.Options;
 
             // After the coinbase witness nonce and commitment are verified,

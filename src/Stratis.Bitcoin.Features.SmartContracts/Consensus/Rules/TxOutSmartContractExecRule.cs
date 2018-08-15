@@ -9,10 +9,9 @@ using SmartContractScript = Stratis.SmartContracts.Core.SmartContractScript;
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
     /// <summary>
-    /// Each transaction should have only 1 'SmartContractExec' output
+    /// Each transaction should have only 1 'SmartContractExec' output.
     /// </summary>
-    [PartialValidationRule]
-    public class TxOutSmartContractExecRule : ConsensusRule, ISmartContractMempoolRule
+    public class TxOutSmartContractExecRule : PartialValidationConsensusRule, ISmartContractMempoolRule
     {
         public override Task RunAsync(RuleContext context)
         {

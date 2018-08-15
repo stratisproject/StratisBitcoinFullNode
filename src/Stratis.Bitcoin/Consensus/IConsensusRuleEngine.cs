@@ -16,11 +16,6 @@ namespace Stratis.Bitcoin.Consensus
     public interface IConsensusRuleEngine : IDisposable
     {
         /// <summary>
-        /// Collection of all the rules that are registered with the engine.
-        /// </summary>
-        List<ConsensusRule> Rules { get; }
-
-        /// <summary>
         /// Keeps track of how much time different actions took to execute and how many times they were executed.
         /// </summary>
         ConsensusPerformanceCounter PerformanceCounter { get; }
@@ -38,7 +33,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Gets the consensus rule that is assignable to the supplied generic type.
         /// </summary>
-        T GetRule<T>() where T : ConsensusRule;
+        T GetRule<T>() where T : ConsensusRuleBase;
 
         /// <summary>
         /// Create an instance of the <see cref="RuleContext"/> to be used by consensus validation.
@@ -64,27 +59,19 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Hash of the block header which is now the tip of the chain.</returns>
         Task<RewindState> RewindAsync();
 
-        /// <summary>
-        /// Execute rules that are marked with the <see cref="HeaderValidationRuleAttribute"/>.
-        /// </summary>
+        /// <summary>Execute header validation rules.</summary>
         /// <param name="validationContext">The validation context.</param>
         void HeaderValidation(ValidationContext validationContext);
 
-        /// <summary>
-        /// Execute rules that are marked with the <see cref="IntegrityValidationRuleAttribute"/>.
-        /// </summary>
+        /// <summary>Execute integrity validation rules.</summary>
         /// <param name="validationContext">The validation context.</param>
         void IntegrityValidation(ValidationContext validationContext);
 
-        /// <summary>
-        /// Execute rules that are marked with the <see cref="PartialValidationRuleAttribute"/>.
-        /// </summary>
+        /// <summary>Execute partial validation rules.</summary>
         /// <param name="validationContext">The validation context.</param>
         Task PartialValidationAsync(ValidationContext validationContext);
 
-        /// <summary>
-        /// Execute rules that are marked with the <see cref="FullValidationRuleAttribute"/>.
-        /// </summary>
+        /// <summary>Execute full validation rules.</summary>
         /// <param name="validationContext">The validation context.</param>
         Task FullValidationAsync(ValidationContext validationContext);
     }

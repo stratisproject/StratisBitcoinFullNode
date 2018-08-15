@@ -5,17 +5,17 @@ using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    /// <summary>
-    /// Ensures a block follows the coinbase rules.
-    /// </summary>
-    [PartialValidationRule(CanSkipValidation = true)]
-    public class EnsureCoinbaseRule : ConsensusRule
+    /// <summary>Ensures a block follows the coinbase rules.</summary>
+    public class EnsureCoinbaseRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadCoinbaseMissing">The coinbase transaction is missing in the block.</exception>
         /// <exception cref="ConsensusErrors.BadMultipleCoinbase">The block contains multiple coinbase transactions.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            if (context.SkipValidation)
+                return Task.CompletedTask;
+
             Block block = context.ValidationContext.Block;
 
             // First transaction must be coinbase, the rest must not be

@@ -14,7 +14,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     /// <summary>
     /// Proof of stake override for the coinview rules - BIP68, MaxSigOps and BlockReward checks.
     /// </summary>
-    [FullValidationRule]
     public sealed class SmartContractPosCoinviewRule : SmartContractCoinviewRule
     {
         private NBitcoin.Consensus consensus;
