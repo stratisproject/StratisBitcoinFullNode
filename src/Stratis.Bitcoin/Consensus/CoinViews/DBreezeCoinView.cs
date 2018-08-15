@@ -43,9 +43,6 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
         public BackendPerformanceCounter PerformanceCounter { get; }
 
-        /// <summary>Provider of time functions.</summary>
-        protected readonly IDateTimeProvider DateTimeProvider;
-
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -76,8 +73,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dbreeze = new DBreezeEngine(folder);
             this.network = network;
-            this.DateTimeProvider = dateTimeProvider;
-            this.PerformanceCounter = new BackendPerformanceCounter(this.DateTimeProvider);
+            this.PerformanceCounter = new BackendPerformanceCounter(dateTimeProvider);
         }
 
         /// <inheritdoc />
@@ -303,7 +299,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     transaction.SynchronizeTables(BlockHashKey, CoinsKey, RewindDataKey);
-                    if (!this.TryGetRewindIndex(transaction, out int _))
+                    if (!this.TryGetRewindIndex(transaction, out int unused))
                     {
                         transaction.RemoveAllKeys(CoinsKey, true);
                         this.SetBlockHash(transaction, this.network.GenesisHash);
