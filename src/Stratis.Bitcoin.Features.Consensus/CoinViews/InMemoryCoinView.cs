@@ -60,8 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.tipHash = nextBlockHash;
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
-                    UnspentOutputs existing;
-                    if (this.unspents.TryGetValue(unspent.TransactionId, out existing))
+                    if (this.unspents.TryGetValue(unspent.TransactionId, out UnspentOutputs existing))
                     {
                         existing.Spend(unspent);
                     }
