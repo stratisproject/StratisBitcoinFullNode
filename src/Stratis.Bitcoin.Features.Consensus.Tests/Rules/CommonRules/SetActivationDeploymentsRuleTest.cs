@@ -30,8 +30,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             block.Header.HashPrevBlock = this.concurrentChain.Tip.HashBlock;
             block.Header.Nonce = RandomUtils.GetUInt32();
 
-            this.ruleContext.ValidationContext.Block = block;
-            this.ruleContext.ValidationContext.ChainTipToExtend = this.concurrentChain.Tip;
+            this.ruleContext.ValidationContext.BlockToValidate = block;
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = this.concurrentChain.Tip;
 
             await this.consensusRules.RegisterRule<SetActivationDeploymentsPartialValidationRule>().RunAsync(this.ruleContext);
 

@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadBlockSignature">The block signature is invalid.</exception>
         public override void Run(RuleContext context)
         {
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             if (!(block is PosBlock posBlock))
             {

@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Assert.NotEmpty(blockHashes);
             Assert.True(blockHashes.Count == 1);
-            Assert.Equal(callbackValidationContext.Block.GetHash(), blockHashes[0]);
+            Assert.Equal(callbackValidationContext.BlockToValidate.GetHash(), blockHashes[0]);
         }
 
         [Fact]
@@ -344,8 +344,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Assert.NotEmpty(blockHashes);
             Assert.Equal(2, blockHashes.Count);
-            Assert.Equal(callbackBlockValidationContexts[0].Block.GetHash(), blockHashes[0]);
-            Assert.Equal(callbackBlockValidationContexts[1].Block.GetHash(), blockHashes[1]);
+            Assert.Equal(callbackBlockValidationContexts[0].BlockToValidate.GetHash(), blockHashes[0]);
+            Assert.Equal(callbackBlockValidationContexts[1].BlockToValidate.GetHash(), blockHashes[1]);
         }
 
         [Fact]
@@ -370,7 +370,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Assert.NotEmpty(blockHashes);
             Assert.True(blockHashes.Count == 1);
-            Assert.Equal(callbackBlockValidationContexts[0].Block.GetHash(), blockHashes[0]);
+            Assert.Equal(callbackBlockValidationContexts[0].BlockToValidate.GetHash(), blockHashes[0]);
         }
 
         [Fact]
@@ -398,7 +398,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Assert.NotEmpty(blockHashes);
             Assert.True(blockHashes.Count == 1);
-            Assert.Equal(callbackBlockValidationContexts[0].Block.GetHash(), blockHashes[0]);
+            Assert.Equal(callbackBlockValidationContexts[0].BlockToValidate.GetHash(), blockHashes[0]);
         }
 
         private Mock<PowBlockDefinition> CreateProofOfWorkBlockBuilder()

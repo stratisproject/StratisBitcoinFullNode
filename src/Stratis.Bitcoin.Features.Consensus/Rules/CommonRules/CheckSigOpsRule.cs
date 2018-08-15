@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (context.SkipValidation)
                 return Task.CompletedTask;
 
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
             ConsensusOptions options = this.Parent.Network.Consensus.Options;
 
             long nSigOps = 0;

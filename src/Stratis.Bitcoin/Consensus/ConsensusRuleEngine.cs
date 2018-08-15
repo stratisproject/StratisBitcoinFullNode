@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
                 {
-                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainTipToExtend.IsAssumedValid;
+                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainedHeaderToValidate.IsAssumedValid;
 
                     foreach (AsyncConsensusRule rule in asyncRules)
                         await rule.RunAsync(ruleContext).ConfigureAwait(false);
@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
                 {
-                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainTipToExtend.IsAssumedValid;
+                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainedHeaderToValidate.IsAssumedValid;
 
                     foreach (SyncConsensusRule rule in rules)
                         rule.Run(ruleContext);

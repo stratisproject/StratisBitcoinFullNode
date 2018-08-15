@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override Task RunAsync(RuleContext context)
         {
             // Calculate the consensus flags and check they are valid.
-            context.Flags = this.Parent.NodeDeployments.GetFlags(context.ValidationContext.ChainTipToExtend);
+            context.Flags = this.Parent.NodeDeployments.GetFlags(context.ValidationContext.ChainedHeaderToValidate);
 
             return Task.CompletedTask;
         }
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public override Task RunAsync(RuleContext context)
         {
             // Calculate the consensus flags and check they are valid.
-            context.Flags = this.Parent.NodeDeployments.GetFlags(context.ValidationContext.ChainTipToExtend);
+            context.Flags = this.Parent.NodeDeployments.GetFlags(context.ValidationContext.ChainedHeaderToValidate);
 
             return Task.CompletedTask;
         }
