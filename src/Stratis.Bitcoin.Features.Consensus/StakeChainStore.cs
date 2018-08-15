@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly ConcurrentChain chain;
 
-        private readonly DBreezeCoinView dBreezeCoinView;
+        private readonly ICoinViewStorage coinViewStorage;
 
         private readonly int threshold;
 
@@ -35,12 +35,12 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly BlockStake genesis;
 
-        public StakeChainStore(Network network, ConcurrentChain chain, DBreezeCoinView dBreezeCoinView, ILoggerFactory loggerFactory)
+        public StakeChainStore(Network network, ConcurrentChain chain, ICoinViewStorage coinViewStorage, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.chain = chain;
-            this.dBreezeCoinView = dBreezeCoinView;
+            this.coinViewStorage = coinViewStorage;
             this.threshold = 5000; // Count of items in memory.
             this.thresholdWindow = Convert.ToInt32(this.threshold * 0.4); // A window threshold.
             this.genesis = BlockStake.Load(this.network.GetGenesis());
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogTrace("()");
 
-            uint256 hash = await this.dBreezeCoinView.GetTipHashAsync().ConfigureAwait(false);
+            uint256 hash = await this.coinViewStorage.GetTipHashAsync().ConfigureAwait(false);
             ChainedHeader next = this.chain.GetBlock(hash);
             var load = new List<StakeItem>();
 
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 next = next.Previous;
             }
 
-            await this.dBreezeCoinView.GetStakeAsync(load).ConfigureAwait(false);
+            await this.coinViewStorage.GetStakeAsync(load).ConfigureAwait(false);
 
             // All block stake items should be in store.
             if (load.Any(l => l.BlockStake == null))
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogTrace("({0}:'{1}')", nameof(blockid), blockid);
 
             var stakeItem = new StakeItem { BlockId = blockid };
-            await this.dBreezeCoinView.GetStakeAsync(new[] { stakeItem }).ConfigureAwait(false);
+            await this.coinViewStorage.GetStakeAsync(new[] { stakeItem }).ConfigureAwait(false);
 
             if (stakeItem.BlockStake != null) this.logger.LogTrace("(-):*.{0}='{1}'", nameof(stakeItem.BlockStake.HashProof), stakeItem.BlockStake.HashProof);
             else this.logger.LogTrace("(-):null");
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 // Push to store all items that are not already persisted.
                 ICollection<StakeItem> entries = this.items.Values;
-                await this.dBreezeCoinView.PutStakeAsync(entries.Where(w => !w.InStore)).ConfigureAwait(false);
+                await this.coinViewStorage.PutStakeAsync(entries.Where(w => !w.InStore)).ConfigureAwait(false);
 
                 if (disposeMode)
                     return;

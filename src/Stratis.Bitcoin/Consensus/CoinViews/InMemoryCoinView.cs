@@ -26,6 +26,9 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
         private uint256 tipHash;
 
+        private CachePerformanceCounter performanceCounter;
+        private BackendPerformanceCounter performanceCounter1;
+
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
@@ -78,6 +81,21 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         public async Task InitializeAsync()
         {
             await Task.CompletedTask;
+        }
+
+        BackendPerformanceCounter ICoinViewStorage.PerformanceCounter
+        {
+            get { return this.performanceCounter1; }
+        }
+
+        public Task GetStakeAsync(IEnumerable<StakeItem> blocklist)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task PutStakeAsync(IEnumerable<StakeItem> stakeEntries)
+        {
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
@@ -135,6 +153,14 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         public void Initialize()
         {  
         }
+
+        CachePerformanceCounter ICachedCoinView.PerformanceCounter
+        {
+            get { return this.performanceCounter; }
+            set { this.performanceCounter = value; }
+        }
+
+        public int CacheEntryCount { get; }
 
         /// <inheritdoc />
         public Task<uint256> Rewind()

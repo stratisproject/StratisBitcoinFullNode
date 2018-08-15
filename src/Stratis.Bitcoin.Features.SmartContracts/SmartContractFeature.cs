@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<ICachedCoinView, CachedCoinView>().AddSingleton<ICoinView>(provider => provider.GetService<ICachedCoinView>());
-                        services.AddSingleton<ICoinViewStorage, DBreezeCoinView>().AddSingleton(provider => (DBreezeCoinView)provider.GetService<ICoinViewStorage>());
+                        services.AddSingleton<ICoinViewStorage, DBreezeCoinView>();
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
                         services.AddSingleton<ConsensusController>();
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 {
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<ICachedCoinView, CachedCoinView>().AddSingleton<ICoinView>(provider => provider.GetService<ICachedCoinView>());
-                    services.AddSingleton<ICoinViewStorage, DBreezeCoinView>().AddSingleton(provider => (DBreezeCoinView)provider.GetService<ICoinViewStorage>());
+                    services.AddSingleton<ICoinViewStorage, DBreezeCoinView>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
 

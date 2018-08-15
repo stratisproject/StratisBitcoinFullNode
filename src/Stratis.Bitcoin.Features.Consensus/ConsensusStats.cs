@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Interfaces;
@@ -15,27 +14,19 @@ namespace Stratis.Bitcoin.Features.Consensus
 {
     public class ConsensusStats : SignalObserver<Block>
     {
-        private readonly CachedCoinView cache;
+        private readonly ICachedCoinView cache;
 
-        private readonly DBreezeCoinView dbreeze;
-
-        private readonly ICoinView bottom;
+        private readonly ICoinViewStorage dbreeze;
 
         private ConsensusPerformanceSnapshot lastSnapshot;
 
         private BackendPerformanceSnapshot lastSnapshot2;
 
         private CachePerformanceSnapshot lastSnapshot3;
-
-        private readonly IConsensusManager consensusManager;
         private readonly IConsensusRuleEngine consensusRules;
 
         /// <summary>Provider of IBD state.</summary>
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
-
-        private readonly ConcurrentChain chain;
-
-        private readonly IConnectionManager connectionManager;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -46,30 +37,23 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IBlockPuller blockPuller;
 
         public ConsensusStats(
-            ICoinView coinView,
-            IConsensusManager consensusManager,
+            ICachedCoinView cachedCoinView,
+            ICoinViewStorage coinViewStorage,
             IConsensusRuleEngine consensusRules,
             IInitialBlockDownloadState initialBlockDownloadState,
-            ConcurrentChain chain,
-            IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
             IBlockPuller blockPuller,
             ILoggerFactory loggerFactory)
         {
-            var stack = new CoinViewStack(coinView);
-            this.cache = stack.Find<CachedCoinView>();
-            this.dbreeze = stack.Find<DBreezeCoinView>();
-            this.bottom = stack.Bottom;
+            this.cache = cachedCoinView;
+            this.dbreeze = coinViewStorage;
 
-            this.consensusManager = consensusManager;
             this.consensusRules = consensusRules;
 
             this.lastSnapshot = consensusRules.PerformanceCounter.Snapshot();
             this.lastSnapshot2 = this.dbreeze?.PerformanceCounter.Snapshot();
             this.lastSnapshot3 = this.cache?.PerformanceCounter.Snapshot();
             this.initialBlockDownloadState = initialBlockDownloadState;
-            this.chain = chain;
-            this.connectionManager = connectionManager;
             this.dateTimeProvider = dateTimeProvider;
             this.blockPuller = blockPuller;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);

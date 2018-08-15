@@ -29,5 +29,11 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         /// Initializes this instance.
         /// </summary>
          void Initialize();
+
+        /// <summary>Statistics of hits and misses in the cache.</summary>
+        CachePerformanceCounter PerformanceCounter { get; set; }
+
+        /// <summary>Number of items in the cache.</summary>
+        int CacheEntryCount { get; }
     }
 }

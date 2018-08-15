@@ -33,5 +33,20 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         /// Initializes the database tables used by the coinview.
         /// </summary>
         Task InitializeAsync();
+
+        /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
+        BackendPerformanceCounter PerformanceCounter { get; }
+
+        /// <summary>
+        /// Retrieves POS blocks information from the database.
+        /// </summary>
+        /// <param name="blocklist">List of partially initialized POS block information that is to be fully initialized with the values from the database.</param>
+        Task GetStakeAsync(IEnumerable<StakeItem> blocklist);
+
+        /// <summary>
+        /// Persists unsaved POS blocks information to the database.
+        /// </summary>
+        /// <param name="stakeEntries">List of POS block information to be examined and persists if unsaved.</param>
+        Task PutStakeAsync(IEnumerable<StakeItem> stakeEntries);
     }
 }
