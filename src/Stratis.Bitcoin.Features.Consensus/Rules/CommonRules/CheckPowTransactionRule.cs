@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
-using static NBitcoin.Consensus;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -115,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
         }
 
-        private bool MoneyRange(NBitcoin.Consensus consensus, long nValue)
+        private bool MoneyRange(IConsensus consensus, long nValue)
         {
             return ((nValue >= 0) && (nValue <= consensus.MaxMoney));
         }
