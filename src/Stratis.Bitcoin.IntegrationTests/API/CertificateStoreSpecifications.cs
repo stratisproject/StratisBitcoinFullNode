@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Security;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 
 using FluentAssertions;
-
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Client.Interfaces;
 
 using NBitcoin.Protocol;
 
@@ -34,8 +29,6 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private DirectoryInfo directoryInfo;
 
-        private SecureString expectedPassword;
-
         private CertificateStore certificateStore;
 
         private string fileName;
@@ -52,9 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {}
 
         protected override void AfterTest()
-        {
-            this.expectedPassword?.Dispose();
-        }
+        {}
 
         [Fact]
         public void CertificateStoreCanReadAndWriteCertFiles()
@@ -73,8 +64,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.directoryInfo = new DirectoryInfo(this.dataFolder.RootPath);
 
             var passwordReader = Substitute.For<IPasswordReader>();
-            this.expectedPassword = this.BuildSecureStringPassword();
-            passwordReader.ReadSecurePassword().Returns(this.expectedPassword);
+            passwordReader.ReadSecurePassword(Arg.Any<string>()).Returns(this.BuildSecureStringPassword());
 
             this.certificateStore = new CertificateStore(this.settings, passwordReader);
         }
@@ -101,8 +91,11 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_certificate_file_is_created_on_disk()
         {
-            this.createdCertificate = this.certificateStore.BuildSelfSignedServerCertificate(this.expectedPassword);
-            this.certificateStore.Save(this.createdCertificate, this.fileName, this.expectedPassword);
+            using (var password = this.BuildSecureStringPassword())
+            {
+                this.createdCertificate = this.certificateStore.BuildSelfSignedServerCertificate(password);
+                this.certificateStore.Save(this.createdCertificate, this.fileName, password);
+            }
         }
 
         private void the_certificate_file_should_be_readable()
