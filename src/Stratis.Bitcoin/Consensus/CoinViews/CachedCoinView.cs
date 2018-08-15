@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
             /// <summary>Rewind data to be saved.</summary>
             public RewindData RewindData { get; set; }
 
-            /// <summary>The size of the block in bytes, the block must be serialized for this property to be set.</summary>
+            /// <summary>The size of the rewind data in bytes.</summary>
             public long? DataSize { get; set; }
 
             public static QueuedRewindData Create(RewindData rewindData)
