@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// </summary>
     public class RuleContext
     {
-        public NBitcoin.Consensus Consensus { get; set; }
+        public IConsensus Consensus { get; set; }
 
         public DateTimeOffset Time { get; set; }
 
@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         {
         }
 
-        public RuleContext(ValidationContext validationContext, NBitcoin.Consensus consensus, ChainedHeader consensusTip, DateTimeOffset time) : base()
+        public RuleContext(ValidationContext validationContext, IConsensus consensus, ChainedHeader consensusTip, DateTimeOffset time) : base()
         {
             Guard.NotNull(validationContext, nameof(validationContext));
             Guard.NotNull(consensus, nameof(consensus));
