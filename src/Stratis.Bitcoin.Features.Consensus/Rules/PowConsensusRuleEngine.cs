@@ -58,12 +58,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override async Task Initialize()
         {
-            if (this.UtxoSet is ICoinViewStorage coinViewStorage)
+            if (this.UtxoSet is IBackedCoinView backedCoinView)
             {
-                await coinViewStorage.InitializeAsync();
+                await backedCoinView.CoinViewStorage.InitializeAsync();
             }
 
             this.UtxoSet.Initialize();
+        }
+
+        public override void Dispose()
+        {
+            if (this.UtxoSet is IBackedCoinView backedCoinView)
+            {
+                backedCoinView.CoinViewStorage.Dispose();
+            }
+
+            this.UtxoSet.Dispose();
         }
     }
 }
