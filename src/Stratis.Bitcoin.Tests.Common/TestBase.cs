@@ -25,8 +25,7 @@ namespace Stratis.Bitcoin.Tests.Common
 
         public static string AssureEmptyDir(string dir)
         {
-            long ticks = DateTime.UtcNow.Ticks;
-            string uniqueDirName = dir + ticks.ToString();
+            string uniqueDirName = $"{dir}-{DateTime.UtcNow:ddMMyyyyTHH.mm.ss.fff}";
             Directory.CreateDirectory(uniqueDirName);
             return uniqueDirName;
         }

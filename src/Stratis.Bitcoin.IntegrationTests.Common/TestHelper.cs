@@ -12,11 +12,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 {
     public class TestHelper
     {
-        static async Task AsyncTaskDelay(int milisec)
-        {
-            await Task.Delay(milisec).ConfigureAwait(false);
-        }
-
         public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int millisecondsTimeout = 150, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken = cancellationToken == default(CancellationToken)
@@ -28,7 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 try
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    AsyncTaskDelay(millisecondsTimeout).Wait();
+                    Thread.Sleep(millisecondsTimeout);
                 }
                 catch (OperationCanceledException e)
                 {
