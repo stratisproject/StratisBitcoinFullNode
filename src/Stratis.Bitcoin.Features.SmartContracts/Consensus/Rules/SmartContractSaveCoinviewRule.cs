@@ -12,8 +12,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
-            uint256 oldBlockHash = context.ValidationContext.ChainTipToExtend.Previous.HashBlock;
-            uint256 nextBlockHash = context.ValidationContext.ChainTipToExtend.HashBlock;
+            uint256 oldBlockHash = context.ValidationContext.ChainedHeaderToValidate.Previous.HashBlock;
+            uint256 nextBlockHash = context.ValidationContext.ChainedHeaderToValidate.HashBlock;
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.

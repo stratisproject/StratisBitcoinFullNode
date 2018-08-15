@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            var validationContext = new ValidationContext { ChainTipToExtend = chainedHeader };
+            var validationContext = new ValidationContext { ChainedHeaderToValidate = chainedHeader };
 
             this.consensusRules.HeaderValidation(validationContext);
 
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            var validationContext = new ValidationContext { Block = block, ChainTipToExtend = chainedHeader };
+            var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = chainedHeader };
 
             this.consensusRules.IntegrityValidation(validationContext);
 
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(item), item);
 
-            var validationContext = new ValidationContext { Block = item.ChainedHeaderBlock.Block, ChainTipToExtend = item.ChainedHeaderBlock.ChainedHeader };
+            var validationContext = new ValidationContext { BlockToValidate = item.ChainedHeaderBlock.Block, ChainedHeaderToValidate = item.ChainedHeaderBlock.ChainedHeader };
 
             await this.consensusRules.PartialValidationAsync(validationContext).ConfigureAwait(false);
 
@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
             var chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
-            var validationContext = new ValidationContext { Block = block, ChainTipToExtend = chainedHeader };
+            var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = chainedHeader };
 
             await this.consensusRules.PartialValidationAsync(validationContext).ConfigureAwait(false);
 

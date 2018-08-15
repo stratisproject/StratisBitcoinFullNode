@@ -24,8 +24,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (context.SkipValidation)
                 return Task.CompletedTask;
 
-            int newHeight = context.ValidationContext.ChainTipToExtend.Height;
-            Block block = context.ValidationContext.Block;
+            int newHeight = context.ValidationContext.ChainedHeaderToValidate.Height;
+            Block block = context.ValidationContext.BlockToValidate;
 
             var expect = new Script(Op.GetPushOp(newHeight));
             Script actual = block.Transactions[0].Inputs[0].ScriptSig;

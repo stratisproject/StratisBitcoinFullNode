@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     {
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             IEnumerable<Transaction> opSpendTransactions = block.Transactions.Where(tx =>
                 tx.IsSmartContractSpendTransaction());
