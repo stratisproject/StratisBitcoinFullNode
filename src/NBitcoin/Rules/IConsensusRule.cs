@@ -1,22 +1,22 @@
 ﻿namespace NBitcoin.Rules
 {
-    public interface IBaseConsensusRule
+    public interface IConsensusRuleBase
     {
     }
 
-    public interface IHeaderValidationConsensusRule : IBaseConsensusRule
+    public interface IHeaderValidationConsensusRule : IConsensusRuleBase
     {
     }
 
-    public interface IIntegrityValidationConsensusRule : IBaseConsensusRule
+    public interface IIntegrityValidationConsensusRule : IConsensusRuleBase
     {
     }
 
-    public interface IPartialValidationConsensusRule : IBaseConsensusRule
+    public interface IPartialValidationConsensusRule : IConsensusRuleBase
     {
     }
 
-    public interface IFullValidationConsensusRule : IBaseConsensusRule
+    public interface IFullValidationConsensusRule : IConsensusRuleBase
     {
     }
 }

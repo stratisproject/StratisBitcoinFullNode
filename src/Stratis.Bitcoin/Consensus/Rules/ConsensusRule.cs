@@ -4,7 +4,7 @@ using NBitcoin.Rules;
 
 namespace Stratis.Bitcoin.Consensus.Rules
 {
-    public abstract class ConsensusRuleBase : IBaseConsensusRule
+    public abstract class ConsensusRuleBase : IConsensusRuleBase
     {
         /// <summary>Instance logger.</summary>
         public ILogger Logger { get; set; }
