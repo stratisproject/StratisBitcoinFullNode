@@ -20,7 +20,6 @@ using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 using static NBitcoin.Transaction;
-using UInt256Comparer = Stratis.Bitcoin.Consensus.UInt256Comparer;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {

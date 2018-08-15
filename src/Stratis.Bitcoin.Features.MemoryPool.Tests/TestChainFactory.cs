@@ -152,7 +152,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules);
             newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
 
-            //var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory, nodeSettings, consensusRules);
             var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, new InMemoryCoinView(newBlock.Block.GetHash()), loggerFactory, nodeSettings, consensusRules);
 
             return new TestChainContext { MempoolValidator = mempoolValidator, SrcTxs = srcTxs };

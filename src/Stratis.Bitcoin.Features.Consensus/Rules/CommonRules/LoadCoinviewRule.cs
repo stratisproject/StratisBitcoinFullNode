@@ -27,8 +27,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.
             this.Logger.LogTrace("Saving coinview changes.");
-            var utxoRuleContext = context as UtxoRuleContext;
-            await this.PowParent.UtxoSet.AddRewindDataAsync(utxoRuleContext?.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), currentBlock).ConfigureAwait(false);
+            var utxoRuleContext = (UtxoRuleContext)context;
+            await this.PowParent.UtxoSet.AddRewindDataAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), currentBlock).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -63,8 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 ConsensusErrors.InvalidPrevTip.Throw();
             }
 
-            var utxoRuleContext = context as UtxoRuleContext;
-            // TODO: Do we need to check if utxoRuleContext is null? Can it ever be null
+            var utxoRuleContext = (UtxoRuleContext)context;
 
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.
