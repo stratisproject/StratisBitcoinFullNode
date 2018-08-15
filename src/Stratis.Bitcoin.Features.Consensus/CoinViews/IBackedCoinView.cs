@@ -7,7 +7,7 @@
     /// <seealso cref="CoinViewStack"/>
     public interface IBackedCoinView
     {
-        /// <summary>Coin view at one layer below this implementaiton.</summary>
+        /// <summary>Coin view at one layer below this implementation.</summary>
         ICoinViewStorage CoinViewStorage { get; }
     }
 }
