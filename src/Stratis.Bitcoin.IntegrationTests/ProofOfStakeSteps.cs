@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .GetAllTransactionsByCoinType((CoinType)this.nodes[this.PremineNode].FullNode.Network.Consensus
                         .CoinType))
                 {
-                    if (!this.transactionsBeforeStaking.Contains(transactionData.Id))
+                    if (!this.transactionsBeforeStaking.Contains(transactionData.Id) && (transactionData.IsCoinStake ?? false))
                     {
                         return true;
                     }

@@ -28,7 +28,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private Transaction transaction;
         private Key key;
         private uint256 blockWithOpReturnId;
-        //private int maturity;
 
         private readonly string password = "p@ssw0rd";
         private readonly string opReturnContent = "extra informations!";

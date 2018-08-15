@@ -22,7 +22,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private Transaction transaction;
         private MempoolValidationState mempoolValidationState;
         private HdAddress receivingAddress;
-        //private int coinbaseMaturity;
 
         public SendingTransactionWithDoubleSpend(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
@@ -36,10 +35,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.builder.StartAll();
             this.stratisSender.NotInIBD();
             this.stratisReceiver.NotInIBD();
-
-            //this.coinbaseMaturity = 1;
-            //this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity = this.coinbaseMaturity;
-            //this.stratisReceiver.FullNode.Network.Consensus.CoinbaseMaturity = this.coinbaseMaturity;
         }
 
         protected override void AfterTest()
