@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     /// </summary>
     public sealed class SmartContractPosCoinviewRule : SmartContractCoinviewRule
     {
-        private NBitcoin.Consensus consensus;
+        private IConsensus consensus;
         private SmartContractPosConsensusRuleEngine smartContractPosParent;
         private IStakeChain stakeChain;
         private IStakeValidator stakeValidator;

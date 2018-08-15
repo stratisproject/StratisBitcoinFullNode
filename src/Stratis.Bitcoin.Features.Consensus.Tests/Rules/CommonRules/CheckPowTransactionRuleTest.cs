@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         private ConsensusOptions options;
 
-        private NBitcoin.Consensus consensus;
+        private IConsensus consensus;
 
         public CheckPowTransactionRuleTest()
         {

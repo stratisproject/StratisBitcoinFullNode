@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
         }
 
-        private bool MoneyRange(NBitcoin.Consensus consensus, long nValue)
+        private bool MoneyRange(IConsensus consensus, long nValue)
         {
             return ((nValue >= 0) && (nValue <= consensus.MaxMoney));
         }
