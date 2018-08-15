@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         }
 
         /// <summary>
-        /// Rewind data with block size that will be kept in the queue until it is persisted to a storage
+        /// Rewind data with its byte size that will be kept in the queue until it is persisted to a storage
         /// </summary>
         private class QueuedRewindData
         {
@@ -108,9 +108,6 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         /// <summary>Task that runs <see cref="DequeueRewindDataContinuouslyAsync"/>.</summary>
         private Task dequeueLoopTask;
 
-        /// <summary>Protects the batch from being modifying while <see cref="GetTipHashAsync"/> method is using the batch.</summary>
-        private readonly object getBlockLock;
-
         /// <summary>Maximum number of transactions in the cache.</summary>
         public int MaxItems { get; set; }
 
@@ -164,7 +161,6 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
             this.CoinViewStorage = coinViewStorage;
             this.nodeLifetime = nodeLifetime;
             this.rewindDataBatch = new List<QueuedRewindData>();
-            this.getBlockLock = new object();
             this.rewindDataQueue = new AsyncQueue<QueuedRewindData>();
         }
 
@@ -189,8 +185,12 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
             this.unspents = new Dictionary<uint256, CacheItem>();
             this.PerformanceCounter = new CachePerformanceCounter(dateTimeProvider);
             this.rewindDataBatch = new List<QueuedRewindData>();
-            this.getBlockLock = new object();
             this.rewindDataQueue = new AsyncQueue<QueuedRewindData>();
+        }
+
+        public void Initialize()
+        {
+            this.dequeueLoopTask = this.DequeueRewindDataContinuouslyAsync();
         }
 
         /// <inheritdoc />
@@ -415,21 +415,6 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
             }
         }
 
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.lockobj.Dispose();
-
-            // Let current batch saving task finish.
-            this.rewindDataQueue.Dispose();
-            this.dequeueLoopTask?.GetAwaiter().GetResult();
-        }
-
-        public void Initialize()
-        {
-            this.dequeueLoopTask = this.DequeueRewindDataContinuouslyAsync();
-        }
-
         /// <summary>
         /// Dequeues the rewind data continuously and saves it to the database when max batch size is reached or timer ran out.
         /// </summary>
@@ -473,10 +458,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
                     // Set the dequeue task to null so it can be assigned on the next iteration.
                     dequeueTask = null;
 
-                    lock (this.getBlockLock)
-                    {
-                        this.rewindDataBatch.Add(item);
-                    }
+                    this.rewindDataBatch.Add(item);
 
                     this.currentBatchSizeBytes += item.DataSize ?? 0;
 
@@ -494,10 +476,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
                     {
                         await this.SaveBatchAsync().ConfigureAwait(false);
 
-                        lock (this.getBlockLock)
-                        {
-                            this.rewindDataBatch.Clear();
-                        }
+                        this.rewindDataBatch.Clear();
 
                         this.currentBatchSizeBytes = 0;
                     }
@@ -554,6 +533,16 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.lockobj.Dispose();
+
+            // Let current batch saving task finish.
+            this.rewindDataQueue.Dispose();
+            this.dequeueLoopTask?.GetAwaiter().GetResult();
         }
     }
 }
