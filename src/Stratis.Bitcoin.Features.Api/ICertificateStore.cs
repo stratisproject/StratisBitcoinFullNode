@@ -1,11 +1,14 @@
-﻿using System.Security.Cryptography.X509Certificates;
+﻿using System.Security;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Stratis.Bitcoin.Features.Api
 {
     public interface ICertificateStore
     {
-        void Add(X509Certificate2 cert);
-        bool TryGet(string name, out X509Certificate2 certificate);
-        X509Certificate2 BuildSelfSignedServerCertificate(string subjectName, string password);
+        IPasswordReader PasswordReader { get; }
+        bool TryGet(string fileName, out X509Certificate2 certificate);
+
+        X509Certificate2 BuildSelfSignedServerCertificate(SecureString password);
+        void Save(X509Certificate2 certificate, string fileName, SecureString password);
     }
 }

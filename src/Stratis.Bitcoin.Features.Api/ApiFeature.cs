@@ -112,12 +112,6 @@ namespace Stratis.Bitcoin.Features.Api
 
     public sealed class ApiFeatureOptions
     {
-        public StoreName CertificateStoreName { get; set; }
-
-        public ApiFeatureOptions(StoreName storeName = StoreName.Root)
-        {
-            this.CertificateStoreName = storeName;
-        }
     }
 
     /// <summary>
@@ -131,8 +125,6 @@ namespace Stratis.Bitcoin.Features.Api
             var options = new ApiFeatureOptions();
             optionsAction?.Invoke(options);
 
-            var certificateStore = new CertificateStore(options.CertificateStoreName, StoreLocation.CurrentUser);
-
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -142,7 +134,8 @@ namespace Stratis.Bitcoin.Features.Api
                         services.AddSingleton(fullNodeBuilder);
                         services.AddSingleton(options);
                         services.AddSingleton<ApiSettings>();
-                        services.AddSingleton<ICertificateStore>(certificateStore);
+                        services.AddSingleton<IPasswordReader, ConsolePasswordReader>();
+                        services.AddSingleton<ICertificateStore, CertificateStore>();
                     });
             });
 

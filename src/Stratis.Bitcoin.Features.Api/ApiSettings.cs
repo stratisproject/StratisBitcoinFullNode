@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security;
 using System.Text;
 using System.Timers;
 using Microsoft.Extensions.Logging;
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Api
         public const int TestStratisApiPort = 38221;
 
         /// <summary>The default port used by the API when the node runs on the Stratis network.</summary>
-        public const string DefaultApiHost = "https://localhost";
+        public const string DefaultApiHost = "http://localhost";
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -40,12 +41,15 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>URI to node's API interface.</summary>
         public Timer KeepaliveTimer { get; private set; }
 
-        /// <summary>The Https certificate subject name.</summary>
-        public string HttpsCertificateSubjectName { get; set; }
+        /// <summary>The Https certificate file name.</summary>
+        public string HttpsCertificateFileName { get; set; }
 
-        /// <summary>The default certificate subject name.</summary>
-        public const string DefaultCertificateSubjectName = "StratisApi";
+        /// <summary>The default certificate file name.</summary>
+        public const string DefaultCertificateFileName = "StratisApi.pfx";
 
+        /// <summary>Use HTTPS or not.</summary>
+        public bool UseHttps { get; set; }
+    
         /// <summary>
         /// Initializes an instance of the object from the default configuration.
         /// </summary>
@@ -66,7 +70,14 @@ namespace Stratis.Bitcoin.Features.Api
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
-            string apiHost = config.GetOrDefault("apiuri", DefaultApiHost, this.logger);
+            this.UseHttps = config.GetOrDefault("usehttps", false);
+            this.HttpsCertificateFileName = config.GetOrDefault("certificatefilename", DefaultCertificateFileName);
+
+            var defaultApiHost = this.UseHttps 
+                                     ? DefaultApiHost.Replace(@"http://", @"https://") 
+                                     : DefaultApiHost;
+
+            string apiHost = config.GetOrDefault("apiuri", defaultApiHost, this.logger);
             var apiUri = new Uri(apiHost);
 
             // Find out which port should be used for the API.
@@ -96,8 +107,6 @@ namespace Stratis.Bitcoin.Features.Api
                 };
             }
 
-            this.HttpsCertificateSubjectName = config.GetOrDefault("certificatesubjectname", DefaultCertificateSubjectName);
-
             this.logger.LogTrace("(-)");
         }
 
@@ -120,10 +129,11 @@ namespace Stratis.Bitcoin.Features.Api
         {
             var builder = new StringBuilder();
 
-            builder.AppendLine($"-apiuri=<string>                     URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
-            builder.AppendLine($"-apiport=<0-65535>                   Port of node's API interface. Defaults to { GetDefaultPort(network) }.");
-            builder.AppendLine($"-keepalive=<seconds>                 Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
-            builder.AppendLine($"-certificatesubjectname=<string>     Subject name of the certificate to use for https traffic encryption. Defaults to { DefaultCertificateSubjectName }.");
+            builder.AppendLine($"-apiuri=<string>                  URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
+            builder.AppendLine($"-apiport=<0-65535>                Port of node's API interface. Defaults to { GetDefaultPort(network) }.");
+            builder.AppendLine($"-keepalive=<seconds>              Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
+            builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to { false }.");
+            builder.AppendLine($"-certificatefilename=<string>     Subject name of the certificate to use for https traffic encryption. Defaults to { DefaultCertificateFileName }.");
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
@@ -136,14 +146,16 @@ namespace Stratis.Bitcoin.Features.Api
         public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
         {
             builder.AppendLine("####API Settings####");
-            builder.AppendLine($"#URI to node's API interface. Defaults to '{ DefaultApiHost }'");
+            builder.AppendLine($"#URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
             builder.AppendLine($"#apiuri={ DefaultApiHost }");
-            builder.AppendLine($"#Port of node's API interface. Defaults to { GetDefaultPort(network) }");
+            builder.AppendLine($"#Port of node's API interface. Defaults to { GetDefaultPort(network) }.");
             builder.AppendLine($"#apiport={ GetDefaultPort(network) }");
-            builder.AppendLine($"#Keep Alive interval (set in seconds). Default: 0 (no keep alive)");
+            builder.AppendLine($"#Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
             builder.AppendLine($"#keepalive=0");
-            builder.AppendLine($"#Subject name of the certificate to use for https traffic encryption");
-            builder.AppendLine($"#certificatesubjectname={DefaultCertificateSubjectName}");
+            builder.AppendLine($"#Use HTTPS protocol on the API. Default is { false }.");
+            builder.AppendLine($"#usehttps={DefaultCertificateFileName}");
+            builder.AppendLine($"#Subject name of the certificate to use for https traffic encryption.");
+            builder.AppendLine($"#certificatefilename={DefaultCertificateFileName}");
         }
     }
 }

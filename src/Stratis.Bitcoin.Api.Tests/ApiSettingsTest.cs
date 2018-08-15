@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Linq;
+using System.Security;
+
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
@@ -62,7 +65,8 @@ namespace Stratis.Bitcoin.Api.Tests
             Assert.Equal(ApiSettings.DefaultStratisApiPort, settings.ApiPort);
             Assert.Equal(new Uri($"{ApiSettings.DefaultApiHost}:{ApiSettings.DefaultStratisApiPort}"), settings.ApiUri);
 
-            settings.HttpsCertificateSubjectName.Should().Be(ApiSettings.DefaultCertificateSubjectName);
+            settings.HttpsCertificateFileName.Should().Be(ApiSettings.DefaultCertificateFileName);
+            settings.UseHttps.Should().BeFalse();
         }
 
         /// <summary>
@@ -261,15 +265,12 @@ namespace Stratis.Bitcoin.Api.Tests
             Assert.Equal(ApiSettings.TestStratisApiPort, settings.ApiPort);
         }
 
-        /// <summary>
-        /// .
-        /// </summary>
         [Fact]
-        public void GivenHttpsCertificateSubjectName_ThenUsesTheCorrectHttpsCertificateSubjectName()
+        public void GivenHttpsFileName_ThenUsesTheCorrectHttpsCertificateSubjectName()
         {
             // Arrange.
-            var certificateCustomName = "good morning";
-            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new[] { $"-certificatesubjectname={certificateCustomName}" });
+            var certificateFileName = "good morning";
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new[] { $"-certificatefilename={certificateFileName}" });
 
             // Act.
             var settings = new FullNodeBuilder()
@@ -279,8 +280,45 @@ namespace Stratis.Bitcoin.Api.Tests
                 .NodeService<ApiSettings>();
 
             // Assert.
-            settings.HttpsCertificateSubjectName.Should().Be(certificateCustomName);
+            settings.HttpsCertificateFileName.Should().Be(certificateFileName);
         }
 
+        [Theory]
+        [InlineData(true, @"https://")]
+        [InlineData(false, @"http://")]
+        public void GivenUseHttps_ThenUsesTheCorrectProtocol(bool useHttps, string expectedProtocolPrefix)
+        {
+            // Arrange.
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new[] { $"-usehttps={useHttps}" });
+
+            // Act.
+            var settings = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseApi()
+                .Build()
+                .NodeService<ApiSettings>();
+
+            // Assert.
+            settings.UseHttps.Should().Be(useHttps);
+            settings.ApiUri.ToString().Should().StartWith(expectedProtocolPrefix);
+        }
+
+        [Fact]
+        public void GivenCertificateFileName_ThenUsesTheCorrectFileName()
+        {
+            // Arrange.
+            var certificateFileName = "someCertificate.pfx";
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new[] { $"-certificatefilename={certificateFileName}" });
+
+            // Act.
+            var settings = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseApi()
+                .Build()
+                .NodeService<ApiSettings>();
+
+            // Assert.
+            settings.HttpsCertificateFileName.Should().Be(certificateFileName);
+        }
     }
 }

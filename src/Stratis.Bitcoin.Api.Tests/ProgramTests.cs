@@ -1,83 +1,90 @@
 ﻿using System;
-using System.IO;
+using System.Linq;
+using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using NSubstitute;
+using NSubstitute.Extensions;
+
 using Stratis.Bitcoin.Features.Api;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Stratis.Bitcoin.Api.Tests
 {
-    public class ProgramTest
+    public class ProgramTest : IDisposable
     {
         private readonly X509Certificate2 certificateToUse;
         private readonly ICertificateStore certificateStore;
+        private readonly IPasswordReader passwordReader;
         private readonly IWebHostBuilder webHostBuilder;
         private readonly ApiSettings apiSettings;
 
+        private readonly SecureString certificatePassword;
+
+        private X509Certificate2 certificateRetrieved;
+
         public ProgramTest()
         {
-            this.apiSettings = new ApiSettings { };
+            this.apiSettings = new ApiSettings { UseHttps = true };
             this.certificateToUse = new X509Certificate2();
+            this.passwordReader = Substitute.For<IPasswordReader>();
+            this.certificatePassword = this.BuildSecureStringPassword();
+            this.passwordReader.ReadSecurePassword().ReturnsForAnyArgs(this.certificatePassword);
             this.certificateStore = Substitute.For<ICertificateStore>();
             this.webHostBuilder = Substitute.For<IWebHostBuilder>();
         }
 
+        public void Dispose()
+        {
+            this.certificatePassword?.Dispose();
+        }
+
+        private SecureString BuildSecureStringPassword()
+        {
+            var secureString = new SecureString();
+            "password".ToList().ForEach(c => secureString.AppendChar(c));
+            secureString.MakeReadOnly();
+            return secureString;
+        }
+
         [Theory]
         [InlineData("CustomCertificate")]
-        [InlineData(ApiSettings.DefaultCertificateSubjectName)]
+        [InlineData(ApiSettings.DefaultCertificateFileName)]
         public void Initialize_WhenCertificateAlreadyInStore_UsesCertificateOnHttpsWithKestrel(string certificateName)
         {
-            this.apiSettings.HttpsCertificateSubjectName = certificateName;
+            this.apiSettings.UseHttps = true;
+            this.apiSettings.HttpsCertificateFileName = certificateName;
             this.SetCertificateInStore(true);
-            
-            Program.Initialize(null, new FullNode(), this.apiSettings, this.certificateStore, this.webHostBuilder);
 
-            this.certificateStore.DidNotReceiveWithAnyArgs().BuildSelfSignedServerCertificate(null,null);
-            this.certificateStore.DidNotReceiveWithAnyArgs().Add(null);
-        }
-
-        [Fact]
-        public void Initialize_WhenDefaultCertificateNotInStore_CreatesCertificate_And_AddsItToStore()
-        {
-            this.SetCertificateInStore(false);
-            
-            this.certificateStore
-                .BuildSelfSignedServerCertificate(this.apiSettings.HttpsCertificateSubjectName, Arg.Any<string>())
-                .Returns(this.certificateToUse);
+            this.certificateRetrieved.Should().BeNull();
 
             Program.Initialize(null, new FullNode(), this.apiSettings, this.certificateStore, this.webHostBuilder);
 
-            this.certificateStore.Received().Add(this.certificateToUse);
+            this.certificateStore.DidNotReceiveWithAnyArgs().BuildSelfSignedServerCertificate(null);
+            this.certificateStore.DidNotReceiveWithAnyArgs().Save(null, null, null);
+            this.certificateRetrieved.Should().NotBeNull();
+            this.certificateRetrieved.Should().Be(this.certificateToUse);
         }
 
         [Fact]
-        public void Initialize_WhenCertificateIsNotDefault_AndNotInStore_ShouldError()
+        public void Initialize_WhenNotUsing_Https_ShouldNotLookOrCreateCertificates()
         {
-            this.SetCertificateInStore(false);
+            this.apiSettings.UseHttps = false;
+            this.SetCertificateInStore(true);
 
-            var nonDefaultCertificateName = "NOT" + ApiSettings.DefaultCertificateSubjectName;
-            this.apiSettings.HttpsCertificateSubjectName = nonDefaultCertificateName;
+            Program.Initialize(null, new FullNode(), this.apiSettings, this.certificateStore, this.webHostBuilder);
 
-            this.certificateStore
-                .BuildSelfSignedServerCertificate(this.apiSettings.HttpsCertificateSubjectName, Arg.Any<string>())
-                .Returns(this.certificateToUse);
-
-            var initialiseAction = new Action(
-                () => Program.Initialize(null, new FullNode(), this.apiSettings, this.certificateStore, this.webHostBuilder));
-
-            initialiseAction.Should().Throw<FileNotFoundException>().And.Message.Should()
-                .Contain(nonDefaultCertificateName);
-            this.certificateStore.DidNotReceive().Add(this.certificateToUse);
+            this.certificateStore.DidNotReceiveWithAnyArgs().TryGet(null, out var certificate);
+            this.certificateStore.DidNotReceiveWithAnyArgs().BuildSelfSignedServerCertificate(null);
+            this.certificateStore.DidNotReceiveWithAnyArgs().Save(null, null, null);
         }
 
         private void SetCertificateInStore(bool isCertInStore)
         {
-            this.certificateStore.TryGet(this.apiSettings.HttpsCertificateSubjectName, out X509Certificate2 certificate)
+            this.certificateStore.TryGet(this.apiSettings.HttpsCertificateFileName, out this.certificateRetrieved)
                 .Returns(isCertInStore)
-                .AndDoes(_ => { certificate = this.certificateToUse; });
+                .AndDoes(_ => { this.certificateRetrieved = this.certificateToUse; });
         }
     }
 }

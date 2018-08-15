@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // Add service and create Policy to allow Cross-Origin Requests
+            // Save service and create Policy to allow Cross-Origin Requests
             services.AddCors
             (
                 options =>
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Api
                     );
                 });
 
-            // Add framework services.
+            // Save framework services.
             services.AddMvc(options =>
                 {
                     options.Filters.Add(typeof(LoggingActionFilter));

@@ -1,7 +1,8 @@
 {
   "profiles": {
     "Stratis.StratisD": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -usehttps"
     },
     "Stratis.StratisD Test": {
       "commandName": "Project",

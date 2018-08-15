@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Security;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Utilities;
 
@@ -18,16 +22,19 @@ namespace Stratis.Bitcoin.Features.Api
 
             Uri apiUri = apiSettings.ApiUri;
 
-            X509Certificate2 certificate = GetHttpsCertificate(apiSettings, store);
+            X509Certificate2 certificate = apiSettings.UseHttps ? GetHttpsCertificate(apiSettings, store) : null;
 
             webHostBuilder = webHostBuilder ?? new WebHostBuilder();
 
             webHostBuilder
                 .UseKestrel(options =>
-                {
-                    options.Listen(IPAddress.Loopback, apiSettings.ApiPort,
-                        listenOptions => { listenOptions.UseHttps(certificate); });
-                })
+                    {
+                        if (!apiSettings.UseHttps) return;
+                        options.Listen(
+                            IPAddress.Loopback,
+                            apiSettings.ApiPort,
+                            listenOptions => { listenOptions.UseHttps(certificate); });
+                    })
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
                 .UseUrls(apiUri.ToString())
@@ -64,21 +71,54 @@ namespace Stratis.Bitcoin.Features.Api
             return host;
         }
 
+        private static Action<KestrelServerOptions> GetKestrelConfigurationAction(ApiSettings apiSettings, ICertificateStore store)
+        {
+            if (!apiSettings.UseHttps) return _ => { };
+
+            X509Certificate2 certificate = GetHttpsCertificate(apiSettings, store);
+            return options =>
+                {
+                    options.Listen(
+                        IPAddress.Loopback,
+                        apiSettings.ApiPort,
+                        listenOptions => { listenOptions.UseHttps(certificate); });
+                };
+        }
+
         private static X509Certificate2 GetHttpsCertificate(ApiSettings apiSettings, ICertificateStore store)
         {
-            var certificateSubjectName = apiSettings.HttpsCertificateSubjectName;
+            var certificateFileName = apiSettings.HttpsCertificateFileName;
 
-            if (store.TryGet(certificateSubjectName, out var certificate))
+            if (store.TryGet(certificateFileName, out var certificate))
                 return certificate;
 
-            if (certificateSubjectName != ApiSettings.DefaultCertificateSubjectName)
-                throw new FileNotFoundException("Unable to find certificate with name: " + certificateSubjectName);
-            
-
-            certificate = store.BuildSelfSignedServerCertificate(certificateSubjectName, Guid.NewGuid().ToString());
-            store.Add(certificate);
+            using (var securePasswordString = store.PasswordReader.ReadSecurePassword("Please enter a password for the new self signed certificate."))
+            {
+                certificate = store.BuildSelfSignedServerCertificate(securePasswordString);
+                store.Save(certificate, apiSettings.HttpsCertificateFileName, securePasswordString);
+            }
 
             return certificate;
+        }
+
+        private static readonly char[] charsForPasswords = Enumerable.Range(char.MinValue, char.MaxValue)
+                                                                .Select(x => (char)x)
+                                                                .Where(c => !char.IsControl(c))
+                                                                .ToArray();
+
+        public static SecureString BuildRandomSecureString()
+        {
+            var secureString = new SecureString();
+            using (var rngCryptoServiceProvider = new RNGCryptoServiceProvider())
+            {
+                var thisInt = new byte[sizeof(Int32)];
+                rngCryptoServiceProvider.GetBytes(thisInt);
+                Enumerable.Range(0,32)
+                    .Select(_ => charsForPasswords[BitConverter.ToInt32(thisInt, 0) % charsForPasswords.Length])
+                    .ToList().ForEach(c => secureString.AppendChar(c));
+            }
+            secureString.MakeReadOnly();
+            return secureString;
         }
     }
 }

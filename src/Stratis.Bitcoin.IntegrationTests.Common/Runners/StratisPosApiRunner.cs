@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                             .UseMempool()
                             .AddPowPosMining()
                             .UseWallet()
-                            .UseApi(option => option.CertificateStoreName = StoreName.My)
+                            .UseApi()
                             .AddRPC()
                             .Build();
         }

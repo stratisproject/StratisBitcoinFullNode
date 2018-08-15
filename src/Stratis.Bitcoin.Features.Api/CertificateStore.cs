@@ -1,52 +1,68 @@
 ﻿using System;
+using System.IO;
+using System.IO.Enumeration;
 using System.Net;
+using System.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+
+using Microsoft.Extensions.Logging;
+
+using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Features.Api
 {
     public class CertificateStore : ICertificateStore
     {
-        private readonly StoreName storeName;
-        private readonly StoreLocation storeLocation;
+        private readonly string storageFolder;
 
-        public CertificateStore(StoreName storeName, StoreLocation storeLocation)
+        private readonly ILogger logger;
+
+        public IPasswordReader PasswordReader { get; }
+
+        public CertificateStore(NodeSettings nodeSettings, IPasswordReader passwordReader)
         {
-            this.storeName = storeName;
-            this.storeLocation = storeLocation;
+            this.storageFolder = nodeSettings.DataFolder.RootPath;
+            this.PasswordReader = passwordReader;
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public void Add(X509Certificate2 cert)
+        public void Save(X509Certificate2 certificate, string fileName, SecureString password)
         {
-            using (var store = new X509Store(this.storeName, this.storeLocation))
-            {
-                store.Open(OpenFlags.ReadWrite);
-                store.Add(cert);
-                store.Close();
-            }
+            var targetDirInfo = new DirectoryInfo(this.storageFolder);
+            if(!targetDirInfo.Exists) targetDirInfo.Create();
+            var certificateInBytes = certificate.Export(X509ContentType.Pfx, password);
+            File.WriteAllBytes(Path.Combine(targetDirInfo.FullName, fileName), certificateInBytes);         
         }
 
-        public bool TryGet(string name, out X509Certificate2 certificate)
+        public bool TryGet(string fileName, out X509Certificate2 certificate)
         {
-            using (var store = new X509Store(this.storeName, this.storeLocation))
-            {
-                store.Open(OpenFlags.ReadOnly);
-                foreach (X509Certificate2 cert in store.Certificates)
-                {
-                    if (cert.SubjectName.Name != $"CN={name}")
-                        continue;
-
-                    certificate = cert;
-                    return true;
-                }
-                store.Close();
-            }
-
+            var fullPath = Path.Combine(this.storageFolder, fileName);
+            var fileInfo = new FileInfo(fullPath);
             certificate = null;
-            return false;
+
+            if (!fileInfo.Exists)
+                return false;
+
+            try
+            {
+                var fileInBytes = File.ReadAllBytes(fullPath);
+                var passwordPromptMessage = $"Please enter the password of the certificate in {fullPath}";
+
+                using (var passwordFromConsole = this.PasswordReader.ReadSecurePassword(passwordPromptMessage))
+                {
+                    certificate = new X509Certificate2(fileInBytes, passwordFromConsole);
+                }
+            }
+            catch (Exception exception)
+            {
+                this.logger.LogError(exception, "Failed to read certificate {0}", fullPath);
+                return false;
+            }
+            return true;
         }
 
-        public X509Certificate2 BuildSelfSignedServerCertificate(string subjectName, string password)
+        public X509Certificate2 BuildSelfSignedServerCertificate(SecureString password)
         {
             var sanBuilder = new SubjectAlternativeNameBuilder();
             sanBuilder.AddIpAddress(IPAddress.Loopback);
@@ -54,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Api
             sanBuilder.AddDnsName("localhost");
             sanBuilder.AddDnsName(Environment.MachineName);
 
-            var distinguishedName = new X500DistinguishedName($"CN={subjectName}");
+            var distinguishedName = new X500DistinguishedName($"CN=StratisApiSelfSigned");
 
             using (RSA rsa = RSA.Create(2048))
             {
@@ -72,11 +88,10 @@ namespace Stratis.Bitcoin.Features.Api
 
                 request.CertificateExtensions.Add(sanBuilder.Build());
 
-                var certificate = request.CreateSelfSigned(new DateTimeOffset(DateTime.UtcNow.AddDays(-1)),
+                X509Certificate2 certificate = request.CreateSelfSigned(new DateTimeOffset(DateTime.UtcNow.AddDays(-1)),
                     new DateTimeOffset(DateTime.UtcNow.AddDays(3650)));
 
-                return new X509Certificate2(certificate.Export(X509ContentType.Pfx, password), password,
-                    X509KeyStorageFlags.MachineKeySet);
+                return new X509Certificate2(certificate.Export(X509ContentType.Pfx, password), password, X509KeyStorageFlags.Exportable);
             }
         }
     }
