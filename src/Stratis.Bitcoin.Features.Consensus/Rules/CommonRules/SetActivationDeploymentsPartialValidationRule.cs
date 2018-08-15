@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
     }
 
+    //TODO merge those 2 classes into 1 after activation
     /// <summary>Set the <see cref="RuleContext.Flags"/> property that defines what deployments have been activated.</summary>
     public class SetActivationDeploymentsFullValidationRule : FullValidationConsensusRule
     {
