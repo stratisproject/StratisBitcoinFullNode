@@ -16,61 +16,31 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         private readonly DateTime start;
 
         /// <summary>UTC timestamp when the performance counter was created.</summary>
-        public DateTime Start
-        {
-            get { return this.start; }
-        }
+        public DateTime Start => this.start;
 
         /// <summary>Number of entities inserted to the database.</summary>
         private long insertedEntities;
 
         /// <summary>Number of entities inserted to the database.</summary>
-        public long InsertedEntities
-        {
-            get { return this.insertedEntities; }
-        }
+        public long InsertedEntities => this.insertedEntities;
 
         /// <summary>Number of queried entities from the database.</summary>
         private long queriedEntities;
 
         /// <summary>Number of queried entities from the database.</summary>
-        public long QueriedEntities
-        {
-            get { return this.queriedEntities; }
-        }
-
-        /// <summary>Time span since the performance counter was created.</summary>
-        public TimeSpan Elapsed
-        {
-            get
-            {
-                return this.dateTimeProvider.GetUtcNow() - this.Start;
-            }
-        }
+        public long QueriedEntities => this.queriedEntities;
 
         /// <summary>Time in ticks it took the database to perform insert operations.</summary>
         private long insertTime;
 
         /// <summary>Time it took the database to perform insert operations.</summary>
-        public TimeSpan InsertTime
-        {
-            get
-            {
-                return TimeSpan.FromTicks(this.insertTime);
-            }
-        }
+        public TimeSpan InsertTime => TimeSpan.FromTicks(this.insertTime);
 
         /// <summary>Time in ticks it took the database to perform query operations.</summary>
         private long queryTime;
 
         /// <summary>Time it took the database to perform query operations.</summary>
-        public TimeSpan QueryTime
-        {
-            get
-            {
-                return TimeSpan.FromTicks(this.queryTime);
-            }
-        }
+        public TimeSpan QueryTime => TimeSpan.FromTicks(this.queryTime);
 
         /// <summary>Provider of date time functionality.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
@@ -154,52 +124,31 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         private readonly long totalQueriedEntities;
 
         /// <summary>Number of queried entities from the database.</summary>
-        public long TotalQueriedEntities
-        {
-            get { return this.totalQueriedEntities; }
-        }
+        public long TotalQueriedEntities => this.totalQueriedEntities;
 
         /// <summary>Time in ticks it took the database to perform query operations.</summary>
         private readonly long totalQueryTime;
 
         /// <summary>Time it took the database to perform query operations.</summary>
-        public TimeSpan TotalQueryTime
-        {
-            get { return TimeSpan.FromTicks(this.totalQueryTime); }
-        }
+        public TimeSpan TotalQueryTime => TimeSpan.FromTicks(this.totalQueryTime);
 
         /// <summary>Time in ticks it took the database to perform insert operations.</summary>
         private readonly long totalInsertTime;
 
         /// <summary>Time it took the database to perform insert operations.</summary>
-        public TimeSpan TotalInsertTime
-        {
-            get { return TimeSpan.FromTicks(this.totalInsertTime); }
-        }
+        public TimeSpan TotalInsertTime => TimeSpan.FromTicks(this.totalInsertTime);
 
         /// <summary>Number of entities inserted to the database.</summary>
         internal readonly long totalInsertedEntities;
 
         /// <summary>Number of entities inserted to the database.</summary>
-        public long TotalInsertedEntities
-        {
-            get { return this.totalInsertedEntities; }
-        }
+        public long TotalInsertedEntities => this.totalInsertedEntities;
 
         /// <summary>UTC timestamp when the snapshotted performance counter was created.</summary>
         public DateTime Start { get; set; }
 
         /// <summary>UTC timestamp when the snapshot was taken.</summary>
         public DateTime Taken { get; set; }
-
-        /// <summary>Time span between the creation of the performance counter and the creation of its snapshot.</summary>
-        public TimeSpan Elapsed
-        {
-            get
-            {
-                return this.Taken - this.Start;
-            }
-        }
 
         /// <summary>
         /// Initializes the instance of the object.
