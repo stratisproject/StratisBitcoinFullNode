@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,6 +34,31 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
 
             /// <summary>Original state of the transaction outputs before the change. This is used for rewinding to previous state.</summary>
             public TxOut[] OriginalOutputs;
+        }
+
+        /// <summary>
+        /// Rewind data with block size that will be kept in the queue until it is persisted to a storage
+        /// </summary>
+        private class QueuedRewindData
+        {
+            /// <summary>Rewind data to be saved.</summary>
+            public RewindData RewindData { get; set; }
+
+            /// <summary>The size of the block in bytes, the block must be serialized for this property to be set.</summary>
+            public long? DataSize { get; set; }
+
+            public static QueuedRewindData Create(RewindData rewindData)
+            {
+                long size;
+                using (var ms = new MemoryStream())
+                {
+                    var bitcoinStream = new BitcoinStream(ms, true);
+                    bitcoinStream.ReadWrite(rewindData);
+                    size = bitcoinStream.Serializing ? bitcoinStream.Counter.WrittenBytes : bitcoinStream.Counter.ReadBytes;
+                }
+
+                return new QueuedRewindData { RewindData = rewindData, DataSize = size };
+            }
         }
 
         /// <summary>
@@ -73,11 +99,11 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         private readonly ILogger logger;
 
         /// <summary>Queue which contains rewind data items that should be saved to the database.</summary>
-        private readonly AsyncQueue<RewindData> rewindDataQueue;
+        private readonly AsyncQueue<QueuedRewindData> rewindDataQueue;
 
         /// <summary>Batch of rewind data items which should be saved in the database.</summary>
         /// <remarks>Write access should be protected by <see cref="getBlockLock"/>.</remarks>
-        private readonly List<RewindData> rewindDataBatch;
+        private readonly List<QueuedRewindData> rewindDataBatch;
 
         /// <summary>Task that runs <see cref="DequeueRewindDataContinuouslyAsync"/>.</summary>
         private Task dequeueLoopTask;
@@ -137,9 +163,9 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
             this.chainState = chainState;
             this.CoinViewStorage = coinViewStorage;
             this.nodeLifetime = nodeLifetime;
-            this.rewindDataBatch = new List<RewindData>();
+            this.rewindDataBatch = new List<QueuedRewindData>();
             this.getBlockLock = new object();
-            this.rewindDataQueue = new AsyncQueue<RewindData>();
+            this.rewindDataQueue = new AsyncQueue<QueuedRewindData>();
         }
 
         /// <summary>
@@ -162,9 +188,9 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
             this.lockobj = new AsyncLock();
             this.unspents = new Dictionary<uint256, CacheItem>();
             this.PerformanceCounter = new CachePerformanceCounter(dateTimeProvider);
-            this.rewindDataBatch = new List<RewindData>();
+            this.rewindDataBatch = new List<QueuedRewindData>();
             this.getBlockLock = new object();
-            this.rewindDataQueue = new AsyncQueue<RewindData>();
+            this.rewindDataQueue = new AsyncQueue<QueuedRewindData>();
         }
 
         /// <inheritdoc />
@@ -349,7 +375,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
                     }
                 }
 
-                this.rewindDataQueue.Enqueue(rewindData);
+                this.rewindDataQueue.Enqueue(QueuedRewindData.Create(rewindData));
             }
 
             this.logger.LogTrace("(-)");
@@ -367,8 +393,8 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
             {
                 if (this.rewindDataBatch.Any())
                 {
-                    RewindData lastItem = this.rewindDataBatch.Last();
-                    foreach (uint256 transactionToRemove in lastItem.TransactionsToRemove)
+                    QueuedRewindData lastItem = this.rewindDataBatch.Last();
+                    foreach (uint256 transactionToRemove in lastItem.RewindData.TransactionsToRemove)
                     {
                         if (!this.unspents.ContainsKey(transactionToRemove)) continue;
                         this.unspents.Remove(transactionToRemove);
@@ -376,8 +402,8 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
 
                     this.rewindDataBatch.Remove(lastItem);
 
-                    this.logger.LogTrace("(-)[REMOVED_FROM_BATCH]:'{0}'", lastItem.PreviousBlockHash);
-                    return lastItem.PreviousBlockHash;
+                    this.logger.LogTrace("(-)[REMOVED_FROM_BATCH]:'{0}'", lastItem.RewindData.PreviousBlockHash);
+                    return lastItem.RewindData.PreviousBlockHash;
                 } 
 
                 uint256 hash = await this.CoinViewStorage.Rewind().ConfigureAwait(false);
@@ -412,7 +438,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         {
             this.logger.LogTrace("()");
 
-            Task<RewindData> dequeueTask = null;
+            Task<QueuedRewindData> dequeueTask = null;
             Task timerTask = null;
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
@@ -442,7 +468,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
                 // or the max batch size is reached or the node is shutting down.
                 if (dequeueTask.Status == TaskStatus.RanToCompletion)
                 {
-                    RewindData item = dequeueTask.Result;
+                    QueuedRewindData item = dequeueTask.Result;
 
                     // Set the dequeue task to null so it can be assigned on the next iteration.
                     dequeueTask = null;
@@ -452,7 +478,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
                         this.rewindDataBatch.Add(item);
                     }
 
-                    this.currentBatchSizeBytes += item.BlockSize ?? 0;
+                    this.currentBatchSizeBytes += item.DataSize ?? 0;
 
                     saveBatch = saveBatch || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes) || this.chainState.IsAtBestChainTip;
                 }
@@ -517,7 +543,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
                 }
 
                 // Update signature to only store rewind data
-                await this.CoinViewStorage.PersistDataAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.rewindDataBatch, this.persistedBlockHash, this.blockHash).ConfigureAwait(false);
+                await this.CoinViewStorage.PersistDataAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.rewindDataBatch.Select(r => r.RewindData).ToList(), this.persistedBlockHash, this.blockHash).ConfigureAwait(false);
 
                 // Remove prunable entries from cache as they were flushed down.
                 IEnumerable<KeyValuePair<uint256, CacheItem>> prunableEntries = unspent.Where(c => (c.Value.UnspentOutputs != null) && c.Value.UnspentOutputs.IsPrunable);

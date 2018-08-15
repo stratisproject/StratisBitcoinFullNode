@@ -60,9 +60,6 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
-        /// <summary>The size of the block in bytes, the block must be serialized for this property to be set.</summary>
-        public long? BlockSize { get; protected set; }
-
         /// <summary>
         /// Creates uninitialized instance of the object.
         /// </summary>
@@ -85,8 +82,6 @@ namespace Stratis.Bitcoin.Utilities
             stream.ReadWrite(ref this.previousBlockHash);
             stream.ReadWrite(ref this.transactionsToRemove);
             stream.ReadWrite(ref this.outputsToRestore);
-
-            this.BlockSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
         }
     }
 }
