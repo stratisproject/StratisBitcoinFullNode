@@ -270,7 +270,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.systemTimeOutOfSyncSleep = 7000;
             this.lastCoinStakeSearchTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
             this.lastCoinStakeSearchPrevBlockHash = 0;
-            this.targetReserveBalance = 0; // TOOD:settings.targetReserveBalance
+            this.targetReserveBalance = 0; // TODO:settings.targetReserveBalance
             this.currentState = (int)CurrentState.Idle;
 
             this.rpcGetStakingInfoModel = new Models.GetStakingInfoModel();
@@ -358,15 +358,14 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.stakingLoop = null;
             this.stakeCancellationTokenSource?.Dispose();
             this.stakeCancellationTokenSource = null;
-            this.rpcGetStakingInfoModel = new Models.GetStakingInfoModel();
-            this.rpcGetStakingInfoModel.Enabled = false;
+            this.rpcGetStakingInfoModel.StopStaking();
 
             Interlocked.CompareExchange(ref this.currentState, (int)CurrentState.Idle, (int)CurrentState.StopStakingRequested);
 
             this.logger.LogTrace("(-)");
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public async Task GenerateBlocksAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
             Guard.NotNull(walletSecret, nameof(walletSecret));
@@ -635,7 +634,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             long balance = this.GetMatureBalance(utxoStakeDescriptions).Satoshi;
             if (balance <= this.targetReserveBalance)
             {
-                this.rpcGetStakingInfoModel.Staking = false;
+                this.rpcGetStakingInfoModel.PauseStaking();
 
                 this.logger.LogTrace("Total balance of available UTXOs is {0}, which is less than or equal to reserve balance {1}.", balance, this.targetReserveBalance);
                 this.logger.LogTrace("(-)[BELOW_RESERVE]:false");
@@ -646,7 +645,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             List<UtxoStakeDescription> stakingUtxoDescriptions = this.GetUtxoStakeDescriptionsSuitableForStaking(utxoStakeDescriptions, chainTip, coinstakeContext.CoinstakeTx.Time, balance - this.targetReserveBalance);
             if (!stakingUtxoDescriptions.Any())
             {
-                this.rpcGetStakingInfoModel.Staking = false;
+                this.rpcGetStakingInfoModel.PauseStaking();
+
                 this.logger.LogTrace("(-)[NO_SELECTION]:false");
                 return false;
             }
@@ -657,10 +657,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
             this.logger.LogInformation("Node staking with {0} ({1:0.00} % of the network weight {2}), est. time to find new block is {3}.", new Money(ourWeight), ourPercent, new Money(this.networkWeight), TimeSpan.FromSeconds(expectedTime));
 
-            this.rpcGetStakingInfoModel.Staking = true;
-            this.rpcGetStakingInfoModel.Weight = ourWeight;
-            this.rpcGetStakingInfoModel.ExpectedTime = expectedTime;
-            this.rpcGetStakingInfoModel.Errors = null;
+            this.rpcGetStakingInfoModel.ResumeStaking(ourWeight, expectedTime);
 
             long minimalAllowedTime = chainTip.Header.Time + 1;
             this.logger.LogTrace("Trying to find staking solution among {0} transactions, minimal allowed time is {1}, coinstake time is {2}.", stakingUtxoDescriptions.Count, minimalAllowedTime, coinstakeContext.CoinstakeTx.Time);
@@ -1045,7 +1042,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             return this.chain.Tip.Height - chainedBlock.Height + 1;
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public double GetDifficulty(ChainedHeader block)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block);
