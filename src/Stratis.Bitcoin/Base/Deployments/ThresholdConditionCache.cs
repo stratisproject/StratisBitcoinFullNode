@@ -27,11 +27,11 @@ namespace Stratis.Bitcoin.Base.Deployments
             ArraySize = Enum.GetValues(typeof(BIP9Deployments)).Length;
         }
 
-        private NBitcoin.Consensus consensus;
+        private IConsensus consensus;
 
         private Dictionary<uint256, ThresholdState?[]> cache = new Dictionary<uint256, ThresholdState?[]>();
 
-        public ThresholdConditionCache(NBitcoin.Consensus consensus)
+        public ThresholdConditionCache(IConsensus consensus)
         {
             Guard.NotNull(consensus, nameof(consensus));
 

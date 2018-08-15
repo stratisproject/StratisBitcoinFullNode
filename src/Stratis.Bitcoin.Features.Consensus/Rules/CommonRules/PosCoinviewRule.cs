@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         private IStakeChain stakeChain;
 
         /// <summary>The consensus of the parent Network.</summary>
-        private NBitcoin.Consensus consensus;
+        private IConsensus consensus;
 
         /// <inheritdoc />
         public override void Initialize()

@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public ConsensusOptions ConsensusOptions { get; private set; }
 
         /// <summary>The consensus.</summary>
-        private NBitcoin.Consensus Consensus { get; set; }
+        private IConsensus Consensus { get; set; }
 
         /// <inheritdoc />
         public override void Initialize()

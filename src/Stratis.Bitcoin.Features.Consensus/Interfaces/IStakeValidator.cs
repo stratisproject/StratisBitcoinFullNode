@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="consensus">Consensus rules for the current network.</param>
         /// <param name="proofOfStake"><c>true</c> for calculation of PoS difficulty target, <c>false</c> for calculation of PoW difficulty target.</param>
         /// <returns>The difficulty target for the next block after <paramref name="chainedHeader"/>.</returns>
-        Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, NBitcoin.Consensus consensus, bool proofOfStake);
+        Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, IConsensus consensus, bool proofOfStake);
 
         /// <summary>
         /// Calculates the difficulty between two block time spans.
