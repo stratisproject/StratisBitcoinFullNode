@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = block,
-                ChainTipToExtend = this.concurrentChain.GetBlock(4)
+                ChainedHeader = this.concurrentChain.GetBlock(4)
             };
             this.ruleContext.MinedBlock = false;
 
@@ -31,11 +31,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 Block = block,
-                ChainTipToExtend = this.concurrentChain.GetBlock(0)
+                ChainedHeader = this.concurrentChain.GetBlock(0)
             };
             this.ruleContext.MinedBlock = true;
 
-            block.Header.Bits = this.ruleContext.ValidationContext.ChainTipToExtend.GetWorkRequired(this.network.Consensus) + 1;
+            block.Header.Bits = this.ruleContext.ValidationContext.ChainedHeader.GetWorkRequired(this.network.Consensus) + 1;
 
             ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyPowRule>().Run(this.ruleContext));
 

@@ -47,14 +47,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             this.blockTxsProcessed = new List<Transaction>();
             NBitcoin.Block block = context.ValidationContext.Block;
-            ChainedHeader index = context.ValidationContext.ChainTipToExtend;
+            ChainedHeader index = context.ValidationContext.ChainedHeader;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = ((UtxoRuleContext)context).UnspentOutputSet;
 
             this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
             // Start state from previous block's root
-            this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ValidationContext.ChainTipToExtend.Header).HashStateRoot.ToBytes());
+            this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ValidationContext.ChainedHeader.Header).HashStateRoot.ToBytes());
             IContractStateRepository trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
 
             this.refundCounter = 1;
@@ -269,7 +269,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         private ISmartContractTransactionContext GetSmartContractTransactionContext(RuleContext context, Transaction transaction)
         {
-            ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainTipToExtend.Height);
+            ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainedHeader.Height);
 
             GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(transaction, ((PowConsensusRuleEngine)this.Parent).UtxoSet, this.blockTxsProcessed);
 

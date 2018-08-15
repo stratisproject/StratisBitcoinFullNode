@@ -25,11 +25,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.ValidationContext.Block = KnownNetworks.RegTest.Consensus.ConsensusFactory.CreateBlock();
             context.ValidationContext.Block.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
-            context.ValidationContext.ChainTipToExtend = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), 0);
+            context.ValidationContext.ChainedHeader = new ChainedHeader(context.ValidationContext.Block.Header, context.ValidationContext.Block.Header.GetHash(), 0);
 
             await blockHeaderRule.RunAsync(context);
 
-            Assert.NotNull(context.ValidationContext.ChainTipToExtend);
+            Assert.NotNull(context.ValidationContext.ChainedHeader);
             Assert.NotNull(context.Flags);
         }
     }

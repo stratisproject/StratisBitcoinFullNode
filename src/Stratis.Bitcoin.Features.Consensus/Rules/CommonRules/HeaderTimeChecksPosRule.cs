@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (context.SkipValidation)
                 return;
 
-            ChainedHeader chainedHeader = context.ValidationContext.ChainTipToExtend;
+            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
 
             // Check timestamp against prev.
             if (chainedHeader.Header.Time <= chainedHeader.Previous.Header.Time)
