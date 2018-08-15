@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Consensus
+namespace Stratis.Bitcoin.Features.Consensus
 {
     public class UInt256Comparer : IComparer<uint256>
     {

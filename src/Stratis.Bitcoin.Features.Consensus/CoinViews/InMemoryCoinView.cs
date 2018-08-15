@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Utilities;
 using ReaderWriterLock = NBitcoin.ReaderWriterLock;
 
-namespace Stratis.Bitcoin.Consensus.CoinViews
+namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
     /// <summary>
     /// TODO Activation: Move to common tests projects as it is only used for tests. Might need to implement ICoinViewStorage
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash)
+        public Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));

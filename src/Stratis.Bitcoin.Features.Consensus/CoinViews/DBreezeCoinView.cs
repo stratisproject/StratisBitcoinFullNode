@@ -10,9 +10,10 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Consensus.CoinViews
+namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
     /// <summary>
     /// Persistent implementation of coinview using DBreeze database.
@@ -201,12 +202,12 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash)
+        public Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash)
         {
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
 
             List<UnspentOutputs> allUnspentOutputs = unspentOutputs.ToList();
-            this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}.Count():'{5}',{6}:{7},{8}:{9})", nameof(unspentOutputs), allUnspentOutputs.Count, nameof(originalOutputs), originalOutputs?.Count(), nameof(rewindDataCollection), rewindDataCollection.Count, nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
+            this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:{5},{6}:{7})", nameof(unspentOutputs), allUnspentOutputs.Count, nameof(rewindDataCollection), rewindDataCollection.Count, nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
 
             int insertedEntities = 0;
 

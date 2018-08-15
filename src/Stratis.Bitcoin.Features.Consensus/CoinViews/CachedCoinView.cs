@@ -10,7 +10,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Consensus.CoinViews
+namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
     /// <summary>
     /// Cache layer for coinview prevents too frequent updates of the data in the underlying storage.
@@ -522,7 +522,7 @@ namespace Stratis.Bitcoin.Consensus.CoinViews
                 }
 
                 // Update signature to only store rewind data
-                await this.CoinViewStorage.PersistDataAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.rewindDataBatch.Select(r => r.RewindData).ToList(), this.persistedBlockHash, this.blockHash).ConfigureAwait(false);
+                await this.CoinViewStorage.PersistDataAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), this.rewindDataBatch.Select(r => r.RewindData).ToList(), this.persistedBlockHash, this.blockHash).ConfigureAwait(false);
 
                 // Remove prunable entries from cache as they were flushed down.
                 IEnumerable<KeyValuePair<uint256, CacheItem>> prunableEntries = unspent.Where(c => (c.Value.UnspentOutputs != null) && c.Value.UnspentOutputs.IsPrunable);

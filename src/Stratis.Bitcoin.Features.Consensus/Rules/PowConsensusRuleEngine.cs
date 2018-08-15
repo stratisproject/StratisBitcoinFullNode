@@ -5,8 +5,8 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.CoinViews;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules
@@ -56,9 +56,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override Task Initialize()
+        public override async Task Initialize()
         {
-            return Task.CompletedTask;
+            if (this.UtxoSet is ICoinViewStorage coinViewStorage)
+            {
+                await coinViewStorage.InitializeAsync();
+            }
+
+            this.UtxoSet.Initialize();
         }
     }
 }
