@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -60,19 +61,19 @@ namespace Stratis.Bitcoin.Consensus
         Task<RewindState> RewindAsync();
 
         /// <summary>Execute header validation rules.</summary>
-        /// <param name="validationContext">The validation context.</param>
-        void HeaderValidation(ValidationContext validationContext);
+        /// <param name="header">Header to validate.</param>
+        ValidationContext HeaderValidation(ChainedHeader header);
 
         /// <summary>Execute integrity validation rules.</summary>
-        /// <param name="validationContext">The validation context.</param>
-        void IntegrityValidation(ValidationContext validationContext);
+        /// <param name="chainedHeaderBlock">The block and chained header that are going to be validated.</param>
+        ValidationContext IntegrityValidation(ChainedHeaderBlock chainedHeaderBlock);
 
         /// <summary>Execute partial validation rules.</summary>
-        /// <param name="validationContext">The validation context.</param>
-        Task PartialValidationAsync(ValidationContext validationContext);
+        /// <param name="chainedHeaderBlock">The block and chained header that are going to be validated.</param>
+        Task<ValidationContext> PartialValidationAsync(ChainedHeaderBlock chainedHeaderBlock);
 
         /// <summary>Execute full validation rules.</summary>
-        /// <param name="validationContext">The validation context.</param>
-        Task FullValidationAsync(ValidationContext validationContext);
+        /// <param name="chainedHeaderBlock">The block and chained header that are going to be validated.</param>
+        Task<ValidationContext> FullValidationAsync(ChainedHeaderBlock chainedHeaderBlock);
     }
 }

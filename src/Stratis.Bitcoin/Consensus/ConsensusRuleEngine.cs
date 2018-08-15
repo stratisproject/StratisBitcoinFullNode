@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -151,59 +152,55 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public void HeaderValidation(ValidationContext validationContext)
+        public ValidationContext HeaderValidation(ChainedHeader header)
         {
-            Guard.NotNull(validationContext, nameof(validationContext));
+            Guard.NotNull(header, nameof(header));
 
+            var validationContext = new ValidationContext { ChainTipToExtend = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             this.ExecuteRules(this.headerValidationRules, ruleContext);
+
+            return validationContext;
         }
 
         /// <inheritdoc/>
-        public void IntegrityValidation(ValidationContext validationContext)
+        public ValidationContext IntegrityValidation(ChainedHeaderBlock chainedHeaderBlock)
         {
-            Guard.NotNull(validationContext, nameof(validationContext));
+            Guard.NotNull(chainedHeaderBlock, nameof(chainedHeaderBlock));
 
+            var validationContext = new ValidationContext { Block = chainedHeaderBlock.Block, ChainTipToExtend = chainedHeaderBlock.ChainedHeader };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             this.ExecuteRules(this.integrityValidationRules, ruleContext);
+
+            return validationContext;
         }
 
         /// <inheritdoc/>
-        public async Task FullValidationAsync(ValidationContext validationContext)
+        public async Task<ValidationContext> FullValidationAsync(ChainedHeaderBlock chainedHeaderBlock)
         {
-            Guard.NotNull(validationContext, nameof(validationContext));
+            Guard.NotNull(chainedHeaderBlock, nameof(chainedHeaderBlock));
 
+            var validationContext = new ValidationContext { Block = chainedHeaderBlock.Block, ChainTipToExtend = chainedHeaderBlock.ChainedHeader };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            try
-            {
-                await this.ExecuteRulesAsync(this.fullValidationRules, ruleContext).ConfigureAwait(false);
-            }
-            catch (Exception exception)
-            {
-                this.logger.LogCritical("Full Validation error: {0}", exception.ToString());
-                throw;
-            }
+            await this.ExecuteRulesAsync(this.fullValidationRules, ruleContext).ConfigureAwait(false);
+
+            return validationContext;
         }
 
         /// <inheritdoc/>
-        public async Task PartialValidationAsync(ValidationContext validationContext)
+        public async Task<ValidationContext> PartialValidationAsync(ChainedHeaderBlock chainedHeaderBlock)
         {
-            Guard.NotNull(validationContext, nameof(validationContext));
+            Guard.NotNull(chainedHeaderBlock, nameof(chainedHeaderBlock));
 
+            var validationContext = new ValidationContext { Block = chainedHeaderBlock.Block, ChainTipToExtend = chainedHeaderBlock.ChainedHeader };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            try
-            {
-                await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
-            }
-            catch (Exception exception)
-            {
-                this.logger.LogCritical("Partial Validation error: {0}", exception.ToString());
-                throw;
-            }
+            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
+
+            return validationContext;
         }
 
         private async Task ExecuteRulesAsync(IEnumerable<AsyncConsensusRule> asyncRules, RuleContext ruleContext)
