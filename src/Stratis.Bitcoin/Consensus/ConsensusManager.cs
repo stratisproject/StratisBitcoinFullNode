@@ -187,6 +187,7 @@ namespace Stratis.Bitcoin.Consensus
                 int peerId = peer.Connection.Id;
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
+
                 this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
 
                 if (!this.peersByPeerId.ContainsKey(peerId))
@@ -235,10 +236,12 @@ namespace Stratis.Bitcoin.Consensus
                         return null;
                     }
 
+                    // This might throw HeaderValidationFailedException but we don't wanna catch it because miner should never produce a block with invalid header.
                     chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
                 }
 
                 validationResult = await this.partialValidator.ValidateAsync(new ChainedHeaderBlock(block, chainedHeader)).ConfigureAwait(false);
+
                 if (validationResult.Error == null)
                 {
                     bool fullValidationRequired;
@@ -979,14 +982,13 @@ namespace Stratis.Bitcoin.Consensus
                         this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
                         return;
                     }
+                    catch (IntegrityValidationFailedException integrityException)
+                    {
+                        this.peerBanning.BanAndDisconnectPeer(integrityException.PeerEndPoint, integrityException.BanDurationSeconds, $"Invalid block received: {integrityException.Error.Message}");
 
-                    // catch (BlockIntegrityVerificationException)
-                    // {
-                    //    // TODO: catch validation exceptions.
-                    //    // TODO ban the peer, disconnect, return
-                    //    // this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
-                    //    return;
-                    // }
+                        this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
+                        return;
+                    }
                 }
                 else
                 {

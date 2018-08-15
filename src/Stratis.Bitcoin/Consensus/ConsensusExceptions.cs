@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -37,6 +38,32 @@ namespace Stratis.Bitcoin.Consensus
     public class BlockDownloadedForMissingChainedHeaderException : ConsensusException
     {
         public BlockDownloadedForMissingChainedHeaderException() : base()
+        {
+        }
+    }
+
+    public class IntegrityValidationFailedException : ConsensusException
+    {
+        public IntegrityValidationFailedException(IPEndPoint peer, ConsensusError error, int banDurationSeconds)
+        {
+            this.PeerEndPoint = peer;
+            this.Error = error;
+            this.BanDurationSeconds = banDurationSeconds;
+        }
+
+        /// <summary>The peer this block came from.</summary>
+        public IPEndPoint PeerEndPoint { get; set; }
+
+        /// <summary>Consensus error.</summary>
+        public ConsensusError Error { get; set; }
+
+        /// <summary>Time for which peer should be banned.</summary>
+        public int BanDurationSeconds { get; set; }
+    }
+
+    public class HeaderValidationFailedException : ConsensusException
+    {
+        public HeaderValidationFailedException() : base()
         {
         }
     }

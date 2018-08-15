@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Information about consumed headers.</returns>
         /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
+        /// <exception cref="HeaderValidationFailedException">Thrown if header validation was failed.</exception>
         ConnectNewHeadersResult HeadersPresented(INetworkPeer peer, List<BlockHeader> headers, bool triggerDownload = true);
 
         /// <summary>

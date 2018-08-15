@@ -387,6 +387,11 @@ namespace Stratis.Bitcoin.Consensus
                 // Resync in case can't connect.
                 await this.ResyncAsync().ConfigureAwait(false);
             }
+            catch (HeaderValidationFailedException)
+            {
+                this.logger.LogDebug("Peer's headers is invalid. Peer will be banned and disconnected.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer presented invalid header.");
+            }
             catch (CheckpointMismatchException)
             {
                 this.logger.LogDebug("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
