@@ -119,8 +119,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Lifecycle\" />
-  </ItemGroup>
-
 </Project>
