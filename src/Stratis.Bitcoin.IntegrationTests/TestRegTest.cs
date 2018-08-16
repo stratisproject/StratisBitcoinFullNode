@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Tests.Common;
 namespace Stratis.Bitcoin.IntegrationTests
 {
     /// <summary>
-    /// This network enables an immutable Consensus object for testing only.
+    /// This network enables a mutable Consensus object for testing only.
     /// </summary>
     internal class TestRegTest : BitcoinRegTest
     {
