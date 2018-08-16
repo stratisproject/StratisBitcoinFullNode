@@ -57,6 +57,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>The transaction id that was saved.</summary>
         public uint TrxSaved { get; private set; }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return string.Format("{0}:{1},{2}:{3}", nameof(this.Succeeded), this.Succeeded, nameof(this.TrxSaved), this.TrxSaved);
+        }
     }
 
     /// <summary>

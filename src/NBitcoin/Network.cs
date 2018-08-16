@@ -89,7 +89,7 @@ namespace NBitcoin
         /// <summary>
         /// The consensus for this network.
         /// </summary>
-        public Consensus Consensus { get; protected set; }
+        public IConsensus Consensus { get; protected set; }
 
         /// <summary>
         /// The name of the network.

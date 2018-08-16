@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
-using Stratis.Bitcoin.Utilities;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
@@ -13,6 +12,7 @@ using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
+using Stratis.SmartContracts.Executor.Reflection.Loader;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -35,6 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private ReflectionVirtualMachine vm;
         private ICallDataSerializer serializer;
         private readonly AddressGenerator addressGenerator;
+        private readonly ContractAssemblyLoader assemblyLoader;
 
         public SmartContractExecutorTests()
         {
@@ -44,11 +45,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.network = new SmartContractsRegTest();
             this.refundProcessor = new SmartContractResultRefundProcessor(this.loggerFactory);
             this.state = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            this.transferProcessor = new SmartContractResultTransferProcessor(DateTimeProvider.Default, this.loggerFactory, this.network);
+            this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);
             this.validator = new SmartContractValidator();
             this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             this.addressGenerator = new AddressGenerator();
-            this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator);
+            this.assemblyLoader = new ContractAssemblyLoader();
+            this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator, this.assemblyLoader);
             this.serializer = CallDataSerializer.Default;
         }
 
