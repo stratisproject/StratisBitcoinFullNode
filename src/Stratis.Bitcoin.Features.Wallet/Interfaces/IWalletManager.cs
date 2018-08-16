@@ -298,7 +298,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions(string walletName);
 
         /// <summary>
-        /// Stream that pumps when wallet balances have changed.
+        /// Stream that emits when wallet balances have changed.
         /// </summary>
         IObservable<IReadOnlyList<(string walletName, IReadOnlyList<AccountBalance> balances)>> WalletBalancesChangedStream { get; }
     }

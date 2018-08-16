@@ -3,16 +3,17 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.SignalR;
 using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
@@ -81,18 +82,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The settings for the wallet feature.</summary>
         private readonly IScriptAddressReader scriptAddressReader;
 
-        public uint256 WalletTipHash { get; set; }
+        private readonly ISignalRService signalRService;
+
+        public uint256 WalletTipHash { get; set; }        
 
         // In order to allow faster look-ups of transactions affecting the wallets' addresses,
         // we keep a couple of objects in memory:
         // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
         // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
         private Dictionary<OutPoint, TransactionData> outpointLookup;
-        internal Dictionary<Script, HdAddress> keysLookup;
-
-        /// <summary>Pumps when it's determined that wallet balances have changed.</summary>
-        private readonly Subject<IReadOnlyList<(string walletName, IReadOnlyList<AccountBalance> balances)>> 
-            walletBalancesChangedStream = new Subject<IReadOnlyList<(string walletName, IReadOnlyList<AccountBalance> balances)>>();
+        internal Dictionary<Script, HdAddress> keysLookup;        
 
         public WalletManager(
             ILoggerFactory loggerFactory,
@@ -106,6 +105,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IScriptAddressReader scriptAddressReader,
+            ISignalRService signalRService,
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node will broadcast to.
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -118,6 +118,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(scriptAddressReader, nameof(scriptAddressReader));
+            Guard.NotNull(signalRService, nameof(signalRService));
 
             this.walletSettings = walletSettings;
             this.lockObject = new object();
@@ -143,15 +144,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.keysLookup = new Dictionary<Script, HdAddress>();
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
-
-            this.WalletBalancesChangedStream = this.walletBalancesChangedStream.AsObservable();
         }
 
-        /// <summary>Pumps when it's determined that wallet balances have changed.</summary>
-        public IObservable<IReadOnlyList<(string walletName, IReadOnlyList<AccountBalance> balances)>> WalletBalancesChangedStream
-        {
-            get;
-        }
+        /// <summary> Emits when it's determined that wallet balances have changed. </summary>
+        public IObservable<IReadOnlyList<(string walletName, IReadOnlyList<AccountBalance> balances)>> WalletBalancesChangedStream { get; }
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
         {
@@ -902,26 +898,30 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     this.SaveWallets();
                 }
-
-                var balances = this.GetWalletBalances();
-                if (balances.Any())
-                    this.walletBalancesChangedStream.OnNext(balances);
+                
+                this.PublishWalletBalances();
             }
             
             return foundSendingTrx || foundReceivingTrx;
         }
+        
+        private class JsonWallet
+        {
+            public string Name { get; set; }
+            public IEnumerable<AccountBalance> Balances { get; set; }
+        }
 
-        private IReadOnlyList<(string walletName, IReadOnlyList<AccountBalance> balances)> GetWalletBalances()
+        private void PublishWalletBalances()
         {
             try
             {
-                return this.Wallets.Select(w => (w.Name,
-                    (IReadOnlyList<AccountBalance>) this.GetBalances(w.Name).ToList())).ToList();
+                var wallets = this.Wallets.Select(w => new JsonWallet {Name = w.Name, Balances = this.GetBalances(w.Name)});
+                if (wallets.Any())
+                    this.signalRService.PublishAsync("balances", JsonConvert.SerializeObject(wallets));
             }
             catch (Exception e)
             {
-                this.logger.LogError("Failed to GetWalletBalances: {0}", e.Message);
-                return Enumerable.Empty<(string, IReadOnlyList<AccountBalance>)>().ToList();
+                this.logger.LogError("Failed to PublishWalletBalances: {0}", e.Message);
             }
         }
 

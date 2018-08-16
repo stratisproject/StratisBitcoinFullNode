@@ -116,6 +116,8 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc cref="IPartialValidator"/>
         private readonly IPartialValidator partialValidator;
 
+        /// <summary>SignalR service reference.  Allows for real-time streaming of data to interested clients.</summary>
+        private readonly ISignalRService signalRService;
         public BaseFeature(
             NodeSettings nodeSettings,
             DataFolder dataFolder,
@@ -138,7 +140,8 @@ namespace Stratis.Bitcoin.Base
             IPartialValidator partialValidator,
             IBlockPuller blockPuller,
             IBlockStore blockStore,
-            Network network)
+            Network network,
+			ISignalRService signalRService)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -154,6 +157,7 @@ namespace Stratis.Bitcoin.Base
             this.blockStore = blockStore;
             this.network = network;
             this.partialValidator = partialValidator;
+            this.signalRService = signalRService;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
@@ -176,6 +180,9 @@ namespace Stratis.Bitcoin.Base
             await this.StartChainAsync().ConfigureAwait(false);
 
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
+            this.signalRService.StartAsync().GetAwaiter().GetResult();
+
+            var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
 
             connectionParameters.TemplateBehaviors.Add(new PingPongBehavior());
@@ -350,6 +357,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
                     services.AddSingleton<NodeDeployments>();
                     services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
+                    services.AddSingleton<ISignalRService, SignalRService>();
 
                     // Consensus
                     services.AddSingleton<ConsensusSettings>();

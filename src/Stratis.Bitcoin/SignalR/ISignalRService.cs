@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.Features.SignalR
+namespace Stratis.Bitcoin.SignalR
 {
     public interface ISignalRService
     {
-        string ChannelPrefix { get; }
-
-        Task PublishAsync(string topic, string data);
+        Uri Address { get; }
 
         IObservable<(string topic, string data)> MessageStream { get; }
+
+        Task<bool> StartAsync();
+
+        Task PublishAsync(string topic, string data);
     }
 }
