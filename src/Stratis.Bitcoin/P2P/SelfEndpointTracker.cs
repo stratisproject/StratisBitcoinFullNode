@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.P2P
                 return;
             }
 
-            // If external IP address not supplied take first routeable bind address and set score to 10.
+            // If external IP address not supplied take first routable bind address and set score to 10.
             IPEndPoint nodeServerEndpoint = connectionManager.ConnectionSettings.Listen?.FirstOrDefault(x => x.Endpoint.Address.IsRoutable(false))?.Endpoint;
             if (nodeServerEndpoint != null)
             {
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.P2P
                 return;
             }
 
-            // If none supplied or routableable take from version handshake.
+            // If none supplied or routable take from version handshake.
             if (ipEndPoint == null)
                 return;
 
