@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
-using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Utilities;
+﻿using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {

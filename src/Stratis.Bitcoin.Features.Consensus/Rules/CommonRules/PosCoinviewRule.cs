@@ -138,7 +138,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-
             ChainedHeader chainedHeader = context.ValidationContext.ChainTipToExtend;
             Block block = context.ValidationContext.Block;
 

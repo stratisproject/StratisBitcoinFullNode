@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using NBitcoin;
+﻿using System.Threading.Tasks;
 using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
