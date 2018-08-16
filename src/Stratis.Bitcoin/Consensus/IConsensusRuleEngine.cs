@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Consensus
         Task<RewindState> RewindAsync();
 
         /// <summary>Execute header validation rules.</summary>
-        /// <param name="header">Header to validate.</param>
+        /// <param name="header">The chained header that is going to be validated.</param>
         /// <returns>Context that contains validation result related information.</returns>
         ValidationContext HeaderValidation(ChainedHeader header);
 

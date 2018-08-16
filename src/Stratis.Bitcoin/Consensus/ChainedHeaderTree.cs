@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </returns>
         /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
-        /// <exception cref="ConsensusErrorException">Thrown in case header validation was failed.</exception>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         ConnectNewHeadersResult ConnectNewHeaders(int networkPeerId, List<BlockHeader> headers);
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="block">The block.</param>
         /// <returns>Newly created and connected chained header for the specified block.</returns>
-        /// <exception cref="ConsensusErrorException">Thrown in case header validation was failed.</exception>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         ChainedHeader CreateChainedHeaderWithBlock(Block block);
 
         /// <summary>
@@ -1057,7 +1057,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>A list of newly created chained headers or <c>null</c> if no new headers were found.</returns>
         /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
         /// <exception cref="ConnectHeaderException">Thrown if it wasn't possible to connect the first new header.</exception>
-        /// <exception cref="ConsensusErrorException">Thrown in case header validation was failed.</exception>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(headers), nameof(headers.Count), headers.Count);
@@ -1114,7 +1114,7 @@ namespace Stratis.Bitcoin.Consensus
             return newChainedHeaders;
         }
 
-        /// <exception cref="ConsensusErrorException">Thrown in case header validation was failed.</exception>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         private ChainedHeader CreateAndValidateNewChainedHeader(BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(currentBlockHeader), currentBlockHeader, nameof(previousChainedHeader), previousChainedHeader);
