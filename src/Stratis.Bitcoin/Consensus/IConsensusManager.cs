@@ -62,6 +62,7 @@ namespace Stratis.Bitcoin.Consensus
         /// A new block was mined by the node and is attempted to connect to tip.
         /// </summary>
         /// <param name="block">The mined block.</param>
+        /// <exception cref="ConsensusErrorException">Thrown in case header validation was failed.</exception>
         Task<ChainedHeaderBlock> BlockMinedAsync(Block block);
     }
 

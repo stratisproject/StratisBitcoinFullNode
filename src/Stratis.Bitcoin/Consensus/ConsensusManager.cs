@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Consensus
                         return null;
                     }
 
-                    // This might throw HeaderValidationFailedException but we don't wanna catch it because miner should never produce a block with invalid header.
+                    // This might throw ConsensusErrorException but we don't wanna catch it because miner will catch it.
                     chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
                 }
 

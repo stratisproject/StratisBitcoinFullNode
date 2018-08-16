@@ -60,11 +60,4 @@ namespace Stratis.Bitcoin.Consensus
             this.BanDurationSeconds = banDurationSeconds;
         }
     }
-
-    public class HeaderValidationFailedException : ConsensusException
-    {
-        public HeaderValidationFailedException() : base()
-        {
-        }
-    }
 }
