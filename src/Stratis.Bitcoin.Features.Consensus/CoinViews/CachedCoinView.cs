@@ -352,7 +352,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     {
                         // We'll need to restore the original outputs.
                         UnspentOutputs clone = unspent.Clone();
-                        clone.Outputs = original.OriginalOutputs;
+                        clone.Outputs = original.UnspentOutputs.Outputs;
                         rewindData.OutputsToRestore.Add(clone);
                     }
                 }
