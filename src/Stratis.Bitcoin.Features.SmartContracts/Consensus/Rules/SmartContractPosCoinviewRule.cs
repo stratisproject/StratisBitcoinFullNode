@@ -162,7 +162,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
             ChainedHeader chainedHeader = context.ValidationContext.ChainTipToExtend;
             NBitcoin.Block block = context.ValidationContext.Block;
+
             var posRuleContext = context as PosRuleContext;
+            if (posRuleContext.BlockStake == null)
+                posRuleContext.BlockStake = BlockStake.Load(context.ValidationContext.Block);
+
             BlockStake blockStake = posRuleContext.BlockStake;
 
             // Verify hash target and signature of coinstake tx.

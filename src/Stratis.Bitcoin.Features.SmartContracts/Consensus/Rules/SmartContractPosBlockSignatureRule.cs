@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
@@ -14,13 +13,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     /// <summary>
     /// A rule that will validate the signature of a PoS block.
     /// </summary>
-    [PartialValidationRule(CanSkipValidation = true)]
     [IntegrityValidationRule]
     public class SmartContractPosBlockSignatureRule : StakeStoreConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadBlockSignature">The block signature is invalid.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
             Block block = context.ValidationContext.Block;
 
@@ -36,8 +34,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
                 this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();
             }
-
-            return Task.CompletedTask;
         }
 
         /// <summary>
