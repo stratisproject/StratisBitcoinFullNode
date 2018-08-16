@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Consensus
         /// This operation includes removing the recent transactions
         /// and restoring the chain to an earlier state.
         /// </para>
-        /// </summary>ChainedHeaderBlock c
+        /// </summary>
         /// <returns>Hash of the block header which is now the tip of the chain.</returns>
         Task<RewindState> RewindAsync();
 
