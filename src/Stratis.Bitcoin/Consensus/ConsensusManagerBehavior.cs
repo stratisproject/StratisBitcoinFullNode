@@ -400,7 +400,7 @@ namespace Stratis.Bitcoin.Consensus
             catch (MaxReorgViolationException)
             {
                 this.logger.LogDebug("Peer violates max reorg. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, $"Peer violates max reorg rule.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer violates max reorg rule.");
             }
 
             this.logger.LogTrace("(-):'{0}'", result);
