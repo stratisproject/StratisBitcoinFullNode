@@ -13,4 +13,8 @@
     <ProjectReference Include="..\Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Lifecycle\" />
+  </ItemGroup>
+
 </Project>
