@@ -658,7 +658,7 @@ namespace Stratis.Bitcoin.Consensus
                 throw new BlockDownloadedForMissingChainedHeaderException();
             }
 
-            ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(new ChainedHeaderBlock(block, chainedHeader));
+            ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, block);
 
             if (result.Error != null)
             {

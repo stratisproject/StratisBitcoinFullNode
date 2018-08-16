@@ -984,7 +984,7 @@ namespace Stratis.Bitcoin.Consensus
                     }
                     catch (IntegrityValidationFailedException integrityException)
                     {
-                        this.peerBanning.BanAndDisconnectPeer(integrityException.PeerEndPoint, integrityException.BanDurationSeconds, $"Invalid block received: {integrityException.Error.Message}");
+                        this.peerBanning.BanAndDisconnectPeer(integrityException.PeerEndPoint, integrityException.BanDurationSeconds, $"Integrity validation failed: {integrityException.Error.Message}");
 
                         this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
                         return;

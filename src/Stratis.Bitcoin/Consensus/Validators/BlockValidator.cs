@@ -55,8 +55,9 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// It should be performed even if the block is behind last checkpoint or part of assume valid chain.
         /// TODO specify what exceptions are thrown (add throws xmldoc)
         /// </remarks>
-        /// <param name="chainedHeaderBlock">The block and chained header that are going to be validated.</param>
-        ValidationContext VerifyBlockIntegrity(ChainedHeaderBlock chainedHeaderBlock);
+        /// <param name="header">The chained header that is going to be validated.</param>
+        /// <param name="block">The block that is going to be validated.</param>
+        ValidationContext VerifyBlockIntegrity(ChainedHeader header, Block block);
     }
 
     /// <inheritdoc />
@@ -96,11 +97,11 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         /// <inheritdoc />
-        public ValidationContext VerifyBlockIntegrity(ChainedHeaderBlock chainedHeaderBlock)
+        public ValidationContext VerifyBlockIntegrity(ChainedHeader header, Block block)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(header), header, nameof(block), block);
 
-            ValidationContext result = this.consensusRules.IntegrityValidation(chainedHeaderBlock);
+            ValidationContext result = this.consensusRules.IntegrityValidation(header, block);
 
             this.logger.LogTrace("(-)");
             return result;

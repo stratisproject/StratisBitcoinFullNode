@@ -163,6 +163,7 @@ namespace NBitcoin
             return this.GetPoWHash() <= this.Bits.ToUInt256();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return this.GetHash().ToString();
