@@ -8,6 +8,7 @@
         /// <summary>
         /// The return value of the method called.
         /// </summary>
+        /// <remarks>TODO: We should move this to a different result type in the future.</remarks>
         object ReturnValue { get; }
 
         /// <summary>

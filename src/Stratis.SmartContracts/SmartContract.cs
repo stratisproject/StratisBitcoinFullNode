@@ -90,9 +90,8 @@ namespace Stratis.SmartContracts
 
         /// <summary>
         /// Sends funds to an address.
-        /// <para>
-        /// If the address is a contract and parameters are given, it will execute a method on the contract with the given parameters.
-        /// </para>
+        /// 
+        /// If address belongs to a contract, will invoke the fallback function on this contract. 
         /// </summary>
         /// <param name="addressTo">The address to transfer the funds to.</param>
         /// <param name="amountToTransfer">The amount of funds to transfer in satoshi.</param>
@@ -101,17 +100,26 @@ namespace Stratis.SmartContracts
             return this.internalTransactionExecutor.Transfer(this.smartContractState, addressTo, amountToTransfer);
         }
 
+        /// <summary>
+        /// Call a method on another contract.
+        /// </summary>
+        /// <param name="addressTo">The contract on which to call the method.</param>
+        /// <param name="amountToTransfer">The amount of funds to transfer in satoshi.</param>
+        /// <param name="methodName">The name of the method to call on the contract.</param>
+        /// <param name="parameters">The parameters to inject to the method call.</param>
+        /// <param name="gasLimit">The total amount of gas to allow this call to take up. Default is to use all remaining gas.</param>
         protected ITransferResult CallMethod(Address addressTo, ulong amountToTransfer, string methodName, object[] parameters = null, ulong gasLimit = 0)
         {
             return this.internalTransactionExecutor.CallMethod(this.smartContractState, addressTo, amountToTransfer, methodName, parameters, gasLimit);
         }
 
         /// <summary>
-        /// Creates a new contract
+        /// Creates a new contract.
         /// </summary>
-        /// <typeparam name="T">Contract type to instantiate</typeparam>
-        /// <param name="parameters">Parameters to pass to constructor.</param>
-        /// <param name="amountToTransfer">Amount to send to the new contract during creation.</param>
+        /// <typeparam name="T">Contract type to instantiate.</typeparam>
+        /// <param name="amountToTransfer">The amount of funds to transfer in satoshi.</param>
+        /// <param name="parameters">The parameters to inject to the constructor.</param>
+        /// <param name="gasLimit">The total amount of gas to allow this call to take up. Default is to use all remaining gas.</param>
         protected ICreateResult CreateContract<T>(ulong amountToTransfer = 0, object[] parameters = null, ulong gasLimit = 0) where T : SmartContract
         {
             return this.internalTransactionExecutor.CreateContract<T>(this.smartContractState, amountToTransfer, parameters, gasLimit);

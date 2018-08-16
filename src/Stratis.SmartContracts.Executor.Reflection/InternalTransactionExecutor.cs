@@ -94,6 +94,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return CreateResult.Succeeded(result.NewContractAddress.ToAddress(this.network));
         }
 
+        ///<inheritdoc />
         public ITransferResult CallMethod(
             ISmartContractState smartContractState,
             Address addressTo,
@@ -119,6 +120,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return ExecuteTransferFundsToContract(contractCode, smartContractState, addressTo, amountToTransfer, methodName, parameters, gasBudget);
         }
 
+        ///<inheritdoc />
         public ITransferResult Transfer(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
