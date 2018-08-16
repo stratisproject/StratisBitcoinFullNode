@@ -62,9 +62,11 @@ namespace Stratis.Bitcoin.P2P
             {
                 this.MyExternalAddressPeerScore += 1;
             }
-
-            // If it was different we decrement the score by 1.
-            this.MyExternalAddressPeerScore -= 1;
+            else
+            {
+                // If it was different we decrement the score by 1.
+                this.MyExternalAddressPeerScore -= 1;
+            }
 
             // If the new score is 0 we replace the old one with the new one with score 1.
             if (this.MyExternalAddressPeerScore <= 0)
