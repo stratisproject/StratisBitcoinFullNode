@@ -9,13 +9,17 @@
     public interface IInternalTransactionExecutor
     {
         /// <summary>
-        /// Transfer funds from one contract to another.
+        /// Transfer funds to another address. If address is a contract, will call the fallback function.
         /// </summary>
-        /// <param name="smartContractState">State repository to track and persist changes to the contract.</param>
+        /// <param name="smartContractState">State representing existing contract's context.</param>
         /// <param name="addressTo">Where the funds will be transferred to.</param>
         /// <param name="amountToTransfer">The amount to send in satoshi.</param>
-        /// <param name="transferFundsToContractDetails">If the address to where the funds will be tranferred to is a contract, supply the details (method name etc).</param>
-        ITransferResult TransferFunds(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract transferFundsToContractDetails);
+        ITransferResult Transfer(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer);
+
+        /// <summary>
+        /// Call a method on another contract.
+        /// </summary>
+        ITransferResult CallMethod(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, string methodName, object[] parameters, ulong gasLimit = 0);
 
         /// <summary>
         /// Create a new contract.
@@ -23,7 +27,6 @@
         /// <typeparam name="T">Type of contract to create.</typeparam>
         /// <param name="smartContractState">State repository to track and persist changes to the contract.</param>
         /// <param name="amountToTransfer">Amount to send in stratoshi.</param>
-        /// <param name="creationDetails">Extra settings related to the creation of a contract.</param>
-        ICreateResult Create<T>(ISmartContractState smartContractState, ulong amountToTransfer, CreateContract creationDetails);
+        ICreateResult CreateContract<T>(ISmartContractState smartContractState, ulong amountToTransfer, object[] parameters, ulong gasLimit = 0);
     }
 }

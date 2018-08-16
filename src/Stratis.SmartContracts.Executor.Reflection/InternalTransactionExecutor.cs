@@ -41,11 +41,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         ///<inheritdoc />
-        public ICreateResult Create<T>(ISmartContractState smartContractState, ulong amountToTransfer, CreateContract creationDetails)
+        public ICreateResult CreateContract<T>(ISmartContractState smartContractState,
+            ulong amountToTransfer,
+            object[] parameters,
+            ulong gasLimit = 0)
         {
             // TODO: Expend any neccessary costs.
 
-            ulong gasBudget = creationDetails.GasBudget == 0 ? DefaultGasLimit : creationDetails.GasBudget;
+            ulong gasBudget = (gasLimit != 0) ? gasLimit : DefaultGasLimit;
 
             // Ensure we have enough gas left to be able to fund the new GasMeter.
             if (smartContractState.GasMeter.GasAvailable < gasBudget)
@@ -54,12 +57,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var nestedGasMeter = new GasMeter((Gas)gasBudget);
 
             // Check balance.
-            var balance = smartContractState.GetBalance();
-            if (balance < amountToTransfer)
-            {
-                this.logger.LogTrace("(-)[INSUFFICIENT_BALANCE]:{0}={1}", nameof(balance), balance);
-                throw new InsufficientBalanceException();
-            }
+            EnsureContractHasEnoughBalance(smartContractState, amountToTransfer);
 
             // Build objects for VM
             byte[] contractCode = this.contractStateRepository.GetCode(smartContractState.Message.ContractAddress.ToUint160(this.network)); // TODO: Fix this when calling from constructor.
@@ -74,7 +72,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             IContractStateRepository track = this.contractStateRepository.StartTracking();
 
-            var createData = new CreateData(nestedGasMeter.GasLimit, contractCode, creationDetails.MethodParameters);
+            var createData = new CreateData(nestedGasMeter.GasLimit, contractCode, parameters);
 
             // Do create in vm
             VmExecutionResult result = this.vm.Create(nestedGasMeter, track, createData, context, typeof(T).Name);
@@ -96,19 +94,38 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return CreateResult.Succeeded(result.NewContractAddress.ToAddress(this.network));
         }
 
-        ///<inheritdoc />
-        public ITransferResult TransferFunds(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
+        public ITransferResult CallMethod(
+            ISmartContractState smartContractState,
+            Address addressTo,
+            ulong amountToTransfer,
+            string methodName,
+            object[] parameters,
+            ulong gasLimit = 0)
+        {
+            // TODO: Spend BaseFee here
+
+            EnsureContractHasEnoughBalance(smartContractState, amountToTransfer);
+
+            byte[] contractCode = this.contractStateRepository.GetCode(addressTo.ToUint160(this.network));
+            if (contractCode == null || contractCode.Length == 0)
+            {
+                return TransferResult.Empty();
+            }
+
+            // Here, we know contract has code, so we execute it
+            // For a method call, send all the gas unless an amount was selected.Should only call trusted methods so re - entrance is less problematic.
+            ulong gasBudget = (gasLimit != 0) ? gasLimit : smartContractState.GasMeter.GasAvailable;
+
+            return ExecuteTransferFundsToContract(contractCode, smartContractState, addressTo, amountToTransfer, methodName, parameters, gasBudget);
+        }
+
+        public ITransferResult Transfer(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
 
             // TODO: Spend BaseFee here
 
-            var balance = smartContractState.GetBalance();
-            if (balance < amountToTransfer)
-            {
-                this.logger.LogTrace("(-)[INSUFFICIENT_BALANCE]:{0}={1}", nameof(balance), balance);
-                throw new InsufficientBalanceException();
-            }
+            EnsureContractHasEnoughBalance(smartContractState, amountToTransfer);
 
             // Discern whether this is a contract or an ordinary address.
             byte[] contractCode = this.contractStateRepository.GetCode(addressTo.ToUint160(this.network));
@@ -127,17 +144,27 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.logger.LogTrace("(-)[TRANSFER_TO_CONTRACT]");
 
-            return ExecuteTransferFundsToContract(contractCode, smartContractState, addressTo, amountToTransfer, contractDetails);
+            // Calling a fallback:
+            string methodName = "";
+            object[] parameters = new object[] { };
+            ulong gasBudget = DefaultGasLimit; // for Transfer always send limited gas to prevent re-entrance.
+
+            return ExecuteTransferFundsToContract(contractCode, smartContractState, addressTo, amountToTransfer, methodName, parameters, gasBudget);
         }
 
         /// <summary>
         /// If the address to where the funds will be tranferred to is a contract, instantiate and execute it.
         /// </summary>
-        private ITransferResult ExecuteTransferFundsToContract(byte[] contractCode, ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract contractDetails)
+        private ITransferResult ExecuteTransferFundsToContract(
+            byte[] contractCode,
+            ISmartContractState smartContractState,
+            Address addressTo,
+            ulong amountToTransfer,
+            string methodName,
+            object[] parameters,
+            ulong gasBudget)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
-
-            ulong gasBudget = contractDetails.GasBudget == 0 ? DefaultGasLimit : contractDetails.GasBudget;
 
             // Ensure we have enough gas left to be able to fund the new GasMeter.
             if (smartContractState.GasMeter.GasAvailable < gasBudget)
@@ -147,7 +174,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             IContractStateRepository track = this.contractStateRepository.StartTracking();
 
-            var callData = new CallData((Gas) gasBudget, addressTo.ToUint160(this.network), contractDetails.ContractMethodName, contractDetails.MethodParameters);
+            var callData = new CallData((Gas) gasBudget, addressTo.ToUint160(this.network), methodName, parameters);
             
             var context = new TransactionContext(
                 this.transactionContext.TransactionHash,
@@ -186,6 +213,19 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger.LogTrace("(-)");
 
             return TransferResult.Transferred(result.Result);
+        }
+
+        /// <summary>
+        /// Throws an exception if a contract doesn't have a high enough balance to make this transaction.
+        /// </summary>
+        private void EnsureContractHasEnoughBalance(ISmartContractState smartContractState, ulong amountToTransfer)
+        {
+            ulong balance = smartContractState.GetBalance();
+            if (balance < amountToTransfer)
+            {
+                this.logger.LogTrace("(-)[INSUFFICIENT_BALANCE]:{0}={1}", nameof(balance), balance);
+                throw new InsufficientBalanceException();
+            }
         }
     }
 }

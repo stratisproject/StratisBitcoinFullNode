@@ -6,7 +6,7 @@ namespace MultipleFiles
     {
         protected MultipleFiles1(ISmartContractState smartContractState) : base(smartContractState)
         {
-            var test = Create<MultipleFiles2>();
+            var test = CreateContract<MultipleFiles2>();
         }
     }
 }

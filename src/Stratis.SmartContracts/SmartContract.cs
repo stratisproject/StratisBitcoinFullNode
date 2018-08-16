@@ -96,9 +96,14 @@ namespace Stratis.SmartContracts
         /// </summary>
         /// <param name="addressTo">The address to transfer the funds to.</param>
         /// <param name="amountToTransfer">The amount of funds to transfer in satoshi.</param>
-        protected ITransferResult TransferFunds(Address addressTo, ulong amountToTransfer, TransferFundsToContract transactionDetails = null)
+        protected ITransferResult Transfer(Address addressTo, ulong amountToTransfer)
         {
-            return this.internalTransactionExecutor.TransferFunds(this.smartContractState, addressTo, amountToTransfer, transactionDetails);
+            return this.internalTransactionExecutor.Transfer(this.smartContractState, addressTo, amountToTransfer);
+        }
+
+        protected ITransferResult CallMethod(Address addressTo, ulong amountToTransfer, string methodName, object[] parameters = null, ulong gasLimit = 0)
+        {
+            return this.internalTransactionExecutor.CallMethod(this.smartContractState, addressTo, amountToTransfer, methodName, parameters, gasLimit);
         }
 
         /// <summary>
@@ -107,9 +112,9 @@ namespace Stratis.SmartContracts
         /// <typeparam name="T">Contract type to instantiate</typeparam>
         /// <param name="parameters">Parameters to pass to constructor.</param>
         /// <param name="amountToTransfer">Amount to send to the new contract during creation.</param>
-        protected ICreateResult Create<T>(ulong amountToTransfer = 0, CreateContract creationDetails = null) where T : SmartContract
+        protected ICreateResult CreateContract<T>(ulong amountToTransfer = 0, object[] parameters = null, ulong gasLimit = 0) where T : SmartContract
         {
-            return this.internalTransactionExecutor.Create<T>(this.smartContractState, amountToTransfer, creationDetails);
+            return this.internalTransactionExecutor.CreateContract<T>(this.smartContractState, amountToTransfer, parameters, gasLimit);
         }
 
 
