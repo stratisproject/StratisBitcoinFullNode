@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.callbackRuleContext = null;
 
-            this.consensusLoop.Setup(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ChainedHeaderBlock>())).Callback<RuleContext>(context =>
+            this.consensusLoop.Setup(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ChainedHeader>(), It.IsAny<Block>())).Callback<RuleContext>(context =>
             {
                 this.callbackRuleContext = context;
             });

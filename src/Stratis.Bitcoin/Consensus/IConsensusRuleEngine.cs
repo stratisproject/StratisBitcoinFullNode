@@ -70,8 +70,9 @@ namespace Stratis.Bitcoin.Consensus
         ValidationContext IntegrityValidation(ChainedHeader header, Block block);
 
         /// <summary>Execute partial validation rules.</summary>
-        /// <param name="chainedHeaderBlock">The block and chained header that are going to be validated.</param>
-        Task<ValidationContext> PartialValidationAsync(ChainedHeaderBlock chainedHeaderBlock);
+        /// <param name="header">The chained header that is going to be validated.</param>
+        /// <param name="block">The block that is going to be validated.</param>
+        Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block);
 
         /// <summary>Execute full validation rules.</summary>
         /// <param name="chainedHeaderBlock">The block and chained header that are going to be validated.</param>

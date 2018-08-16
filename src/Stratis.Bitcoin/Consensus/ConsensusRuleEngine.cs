@@ -192,11 +192,12 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public async Task<ValidationContext> PartialValidationAsync(ChainedHeaderBlock chainedHeaderBlock)
+        public async Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block)
         {
-            Guard.NotNull(chainedHeaderBlock, nameof(chainedHeaderBlock));
+            Guard.NotNull(header, nameof(header));
+            Guard.NotNull(block, nameof(block));
 
-            var validationContext = new ValidationContext { BlockToValidate = chainedHeaderBlock.Block, ChainedHeaderToValidate = chainedHeaderBlock.ChainedHeader };
+            var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);

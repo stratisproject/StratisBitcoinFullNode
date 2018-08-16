@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.Consensus
                     chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
                 }
 
-                validationResult = await this.partialValidator.ValidateAsync(new ChainedHeaderBlock(block, chainedHeader)).ConfigureAwait(false);
+                validationResult = await this.partialValidator.ValidateAsync(chainedHeader, block).ConfigureAwait(false);
 
                 if (validationResult.Error == null)
                 {
@@ -340,7 +340,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("Partial validation is{0} required.", partialValidationRequired ? string.Empty : " NOT");
 
             if (partialValidationRequired)
-                this.partialValidator.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);
+                this.partialValidator.StartPartialValidation(chainedHeaderBlock.ChainedHeader, chainedHeaderBlock.Block, this.OnPartialValidationCompletedCallbackAsync);
 
             this.logger.LogTrace("(-)");
         }
@@ -443,7 +443,7 @@ namespace Stratis.Bitcoin.Consensus
                 // Start validating all next blocks that come after the current block,
                 // all headers in this list have the blocks present in the header.
                 foreach (ChainedHeaderBlock toValidate in chainedHeaderBlocksToValidate)
-                    this.partialValidator.StartPartialValidation(toValidate, this.OnPartialValidationCompletedCallbackAsync);
+                    this.partialValidator.StartPartialValidation(toValidate.ChainedHeader, toValidate.Block, this.OnPartialValidationCompletedCallbackAsync);
             }
 
             this.logger.LogTrace("(-)");
