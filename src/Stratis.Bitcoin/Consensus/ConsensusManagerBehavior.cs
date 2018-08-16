@@ -397,10 +397,10 @@ namespace Stratis.Bitcoin.Consensus
                 this.logger.LogDebug("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
                 this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer presented header that violates a checkpoint.");
             }
-            catch (ConsensusException exception)
+            catch (MaxReorgViolationException)
             {
-                this.logger.LogWarning("Header is invalid. Peer will be banned and disconnected. Exception: '{0}'.", exception);
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Invalid header provided.");
+                this.logger.LogDebug("Peer violates max reorg. Peer will be banned and disconnected.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, $"Peer violates max reorg rule.");
             }
 
             this.logger.LogTrace("(-):'{0}'", result);

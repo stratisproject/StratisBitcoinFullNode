@@ -129,6 +129,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
+        /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
         ConnectNewHeadersResult ConnectNewHeaders(int networkPeerId, List<BlockHeader> headers);
 
         /// <summary>
