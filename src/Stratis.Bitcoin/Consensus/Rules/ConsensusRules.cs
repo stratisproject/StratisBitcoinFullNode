@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
         public NodeDeployments NodeDeployments { get; }
 
         /// <summary>A collection of consensus constants.</summary>
-        public NBitcoin.Consensus ConsensusParams { get; }
+        public IConsensus ConsensusParams { get; }
 
         /// <summary>Consensus settings for the full node.</summary>
         public ConsensusSettings ConsensusSettings { get; }

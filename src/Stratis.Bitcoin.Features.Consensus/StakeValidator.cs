@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, NBitcoin.Consensus consensus, bool proofOfStake)
+        public Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, IConsensus consensus, bool proofOfStake)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(chainedHeader), chainedHeader, nameof(proofOfStake), proofOfStake);
 
