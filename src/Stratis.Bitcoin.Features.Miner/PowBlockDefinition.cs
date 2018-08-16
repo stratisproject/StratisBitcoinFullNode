@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -76,6 +77,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
+            throw new Exception("FIX ME");
             // TODO ACTIVATION pass header of a block that is being validated, not CT!
             //RuleContext context = this.consensusRules.CreateRuleContext(new ValidationContext { Block = this.block, ChainTipToExtend = this.ConsensusManager.Tip });
             //context.MinedBlock = true;
