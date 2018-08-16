@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -36,16 +37,17 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <summary>
-        /// Rewind data with number of items in rewind data object that will be kept in the queue until it is persisted to a storage.
+        /// Rewind data with its byte size that will be kept in the queue until it is persisted to a storage.
         /// </summary>
         private class QueuedRewindData
         {
             /// <summary>Rewind data to be saved.</summary>
             public RewindData RewindData { get; set; }
 
-            /// <summary>The count of items in rewind data object.</summary>
-            public long ItemsCount => (this.RewindData.TransactionsToRemove?.Count ?? 0) +
-                                      (this.RewindData.OutputsToRestore?.Count ?? 0);
+            /// <summary>The byte size of items in rewind data object.</summary>
+            public long DataSizeInBytes => (this.RewindData.PreviousBlockHash.Size) +
+                                           (this.RewindData.TransactionsToRemove?.Sum(t => t.Size) ?? 0) +
+                                           (this.RewindData.OutputsToRestore?.Sum(o => o.GetSizeInBytes()) ?? 0);
         }
 
         /// <summary>
@@ -73,14 +75,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public const int CacheMaxItemsDefault = 100_000;
 
         /// <summary>The current batch size in bytes.</summary>
-        private long currentCountOfAllRewindDataItems;
+        private long currentBatchSizeBytes;
 
         /// <summary>Maximum interval between saving batches.</summary>
         /// <remarks>Interval value is a prime number that wasn't used as an interval in any other component. That prevents having CPU consumption spikes.</remarks>
         private const int BatchMaxSaveIntervalSeconds = 41;
 
-        /// <summary>Maximum number of rewind data items the batch can hold until the rewind data items are stored to the disk.</summary>
-        internal const int BatchMaxNumberOfRewindDataItems = 500_000;
+        /// <summary>Maximum number of bytes the batch can hold until the rewind data items are stored to the disk.</summary>
+        internal const int BatchThresholdSizeBytes = 5 * 1_000 * 1_000;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -440,9 +442,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                     this.rewindDataBatch.Add(item);
 
-                    this.currentCountOfAllRewindDataItems += item.ItemsCount;
+                    this.currentBatchSizeBytes += item.DataSizeInBytes;
 
-                    saveBatch = saveBatch || (this.currentCountOfAllRewindDataItems >= BatchMaxNumberOfRewindDataItems) || this.chainState.IsAtBestChainTip;
+                    saveBatch = saveBatch || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes) || this.chainState.IsAtBestChainTip;
                 }
                 else
                 {
@@ -458,7 +460,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         this.rewindDataBatch.Clear();
 
-                        this.currentCountOfAllRewindDataItems = 0;
+                        this.currentBatchSizeBytes = 0;
                     }
 
                     timerTask = null;
