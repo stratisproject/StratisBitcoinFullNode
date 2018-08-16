@@ -735,18 +735,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     bool isCoinStake = transactionData.IsCoinStake ?? false;
 
                     // This output can unconditionally be included in the results.
-                    if (!isCoinBase && !isCoinStake)
-                    {
-                        yield return new UnspentOutputReference
-                        {
-                            Account = this,
-                            Address = address,
-                            Transaction = transactionData
-                        };
-                    }
-
-                    // This output is a CoinBase or CoinStake and has reached maturity.
-                    if ((isCoinBase || isCoinStake) && (confirmationCount >= network.Consensus.CoinbaseMaturity))
+                    // Or this output is a CoinBase or CoinStake and has reached maturity.
+                    if ((!isCoinBase && !isCoinStake) || 
+                        ((isCoinBase || isCoinStake) && (confirmationCount >= network.Consensus.CoinbaseMaturity)))
                     {
                         yield return new UnspentOutputReference
                         {
