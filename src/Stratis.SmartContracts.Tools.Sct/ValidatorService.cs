@@ -4,6 +4,7 @@ using System.Reflection;
 using McMaster.Extensions.CommandLineUtils;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Lifecycle;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
@@ -64,11 +65,12 @@ namespace Stratis.SmartContracts.Tools.Sct
                 methodParameters = serializer.ToObjects(methodParametersRaw);
             }
 
-            validationServiceResult.LifeCycleResult = SmartContractConstructor.Construct(smartContract.ExportedTypes.FirstOrDefault(), new ValidatorSmartContractState(), methodParameters);
-            if (!validationServiceResult.LifeCycleResult.Success)
+            validationServiceResult.ConstructorExists = Contract.ConstructorExists(smartContract.ExportedTypes.FirstOrDefault(), methodParameters);
+
+            if (!validationServiceResult.ConstructorExists)
             {
                 console.WriteLine("Smart contract construction failed.");
-                console.WriteLine("If the smart contract is constructed with parameters, please ensure they are provided.");
+                console.WriteLine("No constructor exists with the provided parameters.");
             }
 
             validationServiceResult.DeterminismValidationResult = new SctDeterminismValidator().Validate(decompilation);
@@ -85,7 +87,7 @@ namespace Stratis.SmartContracts.Tools.Sct
         public SmartContractCompilationResult CompilationResult { get; set; }
         public SmartContractValidationResult DeterminismValidationResult { get; set; }
         public SmartContractValidationResult FormatValidationResult { get; set; }
-        public LifecycleResult LifeCycleResult { get; set; }
+        public bool ConstructorExists { get; set; }
 
         public bool Success
         {
@@ -95,7 +97,7 @@ namespace Stratis.SmartContracts.Tools.Sct
                      this.CompilationResult.Success &&
                      this.FormatValidationResult.IsValid &&
                      this.DeterminismValidationResult.IsValid &&
-                     this.LifeCycleResult.Success;
+                     this.ConstructorExists;
             }
         }
     }
