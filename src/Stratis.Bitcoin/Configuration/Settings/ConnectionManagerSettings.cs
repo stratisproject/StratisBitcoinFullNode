@@ -115,7 +115,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
             if (this.ExternalEndpoint == null)
             {
                 this.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, port);
-                this.ExternalIpFromNodeConfiguration = this.ExternalEndpoint;
             }
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds, this.logger);
@@ -226,8 +225,5 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>Filter peers that are within the same IP range to prevent sybil attacks.</summary>
         public bool IpRangeFiltering { get; internal set; }
-
-        /// <summary>Immutable IP endpoint based on user supplied externalip.</summary>
-        public IPEndPoint ExternalIpFromNodeConfiguration { get; }
     }
 }

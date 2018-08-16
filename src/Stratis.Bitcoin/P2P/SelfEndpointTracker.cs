@@ -19,8 +19,14 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Hashset to hold the endpoints currently known to be itself.</summary>
         private readonly ConcurrentHashSet<IPEndPoint> knownSelfEndpoints = new ConcurrentHashSet<IPEndPoint>();
 
-        /// <summary>External IP address and peer score of the node.</summary>
-        public KeyValuePair<IPEndPoint, int> MyExternalAddress { get; set; }
+        /// <summary>External IP address of the node.</summary>
+        public IPEndPoint MyExternalAddress { get; set; }
+
+        /// <summary>Whether IP address of the node is final or can be updated.</summary>
+        public bool IsMyExternalAddressFinal { get; set; } = false;
+
+        /// <summary>Peer score of external IP address of the node.</summary>
+        public int MyExternalAddressPeerScore { get; set; }
 
         /// <inheritdoc/>
         public void Add(IPEndPoint ipEndPoint)
@@ -35,46 +41,37 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>Updates external IP address and peer score of the node.</summary>
-        public void UpdateAndAssignMyExternalAddress(IPEndPoint ipEndPoint, ConnectionManager connectionManager)
+        public void UpdateAndAssignMyExternalAddress(IPEndPoint ipEndPoint, int? ipEndPointScore = null)
         {
-            // if external IP address supplied this overrides all.
-            if (connectionManager.ConnectionSettings.ExternalIpFromNodeConfiguration != null)
-            {
-                connectionManager.ConnectionSettings.ExternalEndpoint = connectionManager.ConnectionSettings.ExternalIpFromNodeConfiguration;
-                return;
-            }
+            if (this.IsMyExternalAddressFinal)
+               return;
 
-            // If external IP address not supplied take first routeable bind address and set score to 10.
-            IPEndPoint nodeServerEndpoint = connectionManager.ConnectionSettings.Listen?.FirstOrDefault(x => x.Endpoint.Address.IsRoutable(false))?.Endpoint;
-            if (nodeServerEndpoint != null)
-            {
-                this.MyExternalAddress = new KeyValuePair<IPEndPoint, int>(nodeServerEndpoint, 10);
-                connectionManager.ConnectionSettings.ExternalEndpoint = this.MyExternalAddress.Key;
-                return;
-            }
-
-            // If none supplied or routableable take from version handshake.
             if (ipEndPoint == null)
                 return;
 
-            // If it was the same as value that was there we just increment the score by 1.
-            if (ipEndPoint.Equals(this.MyExternalAddress.Key))
+            // Explicitly supplied a score for this endpoint.
+            if (ipEndPointScore.HasValue)
             {
-                this.MyExternalAddress =
-                    new KeyValuePair<IPEndPoint, int>(this.MyExternalAddress.Key, this.MyExternalAddress.Value + 1);
+                this.MyExternalAddress = ipEndPoint;
+                this.MyExternalAddressPeerScore = ipEndPointScore.Value;
+                return;
+            }
+
+            // If it was the same as value that was there we just increment the score by 1.
+            if (ipEndPoint.Equals(this.MyExternalAddress))
+            {
+                this.MyExternalAddressPeerScore += 1;
             }
 
             // If it was different we decrement the score by 1.
-            this.MyExternalAddress =
-                    new KeyValuePair<IPEndPoint, int>(this.MyExternalAddress.Key, this.MyExternalAddress.Value - 1);
+            this.MyExternalAddressPeerScore -= 1;
 
             // If the new score is 0 we replace the old one with the new one with score 1.
-            if (this.MyExternalAddress.Value <= 0)
+            if (this.MyExternalAddressPeerScore <= 0)
             {
-                this.MyExternalAddress = new KeyValuePair<IPEndPoint, int>(ipEndPoint, 1);
+                this.MyExternalAddress = ipEndPoint;
+                this.MyExternalAddressPeerScore = 1;
             }
-
-            connectionManager.ConnectionSettings.ExternalEndpoint = this.MyExternalAddress.Key;
         }
     }
 }
