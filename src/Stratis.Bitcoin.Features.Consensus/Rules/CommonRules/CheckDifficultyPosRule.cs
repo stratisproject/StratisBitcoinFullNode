@@ -26,9 +26,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of stake is incorrect.</exception>
         public override void Run(RuleContext context)
         {
-            if (context.SkipValidation)
-                return;
-
             if (this.Parent.Network.Consensus.PowNoRetargeting)
             {
                 this.Logger.LogTrace("(-)[POW_NO_RETARGETING]");
@@ -49,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Both POW and POW blocks will be checked in the partial validation rule CheckDifficultykHybridRule
             // this rule will have the full block and can determine the algo type.
-            if (chainedHeader.Height + 2 > this.Parent.Network.Consensus.LastPOWBlock)
+            if (chainedHeader.Height + 1 > this.Parent.Network.Consensus.LastPOWBlock)
             {
                 BlockHeader first = chainedHeader.Previous.Header;
                 BlockHeader second = chainedHeader.Previous.Previous.Header;
