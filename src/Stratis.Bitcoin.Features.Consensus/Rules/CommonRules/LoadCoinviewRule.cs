@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    [FullValidationRule]
     public class SaveCoinviewRule : UtxoStoreConsensusRule
     {
         /// <summary>
@@ -48,8 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             return false;
         }
     }
-
-    [FullValidationRule]
+    
     public class LoadCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />
@@ -57,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             // Check that the current block has not been reorged.
             // Catching a reorg at this point will not require a rewind.
-            if (context.ValidationContext.Block.Header.HashPrevBlock != this.Parent.ChainState.ConsensusTip.HashBlock)
+            if (context.ValidationContext.BlockToValidate.Header.HashPrevBlock != this.Parent.ChainState.ConsensusTip.HashBlock)
             {
                 this.Logger.LogTrace("Reorganization detected.");
                 ConsensusErrors.InvalidPrevTip.Throw();
@@ -71,14 +69,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             utxoRuleContext.UnspentOutputSet = new UnspentOutputSet();
             using (new StopwatchDisposable(o => this.Parent.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
-                uint256[] ids = this.GetIdsToFetch(context.ValidationContext.Block, context.Flags.EnforceBIP30);
+                uint256[] ids = this.GetIdsToFetch(context.ValidationContext.BlockToValidate, context.Flags.EnforceBIP30);
                 FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
                 utxoRuleContext.UnspentOutputSet.SetCoins(coins.UnspentOutputs);
             }
         }
 
         /// <summary>
-        /// The transactions identifiers that need to be fetched from store. 
+        /// The transactions identifiers that need to be fetched from store.
         /// </summary>
         /// <param name="block">The block with the transactions.</param>
         /// <param name="enforceBIP30">Whether to enforce look up of the transaction id itself and not only the reference to previous transaction id.</param>

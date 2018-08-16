@@ -7,22 +7,31 @@ using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
     /// <summary>
     /// A rule that will validate the signature of a PoS block.
     /// </summary>
-    [PartialValidationRule(CanSkipValidation = true)]
-    [IntegrityValidationRule]
-    public class SmartContractPosBlockSignatureRule : StakeStoreConsensusRule
+    public class PartialValidationSmartContractPosBlockSignatureRule : PartialValidationConsensusRule
     {
+        private BlockSignatureChecker checker;
+
+        public override void Initialize()
+        {
+            this.checker = new BlockSignatureChecker();
+
+            base.Initialize();
+        }
+
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadBlockSignature">The block signature is invalid.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.ValidationContext.Block;
+            if (context.SkipValidation)
+                return Task.CompletedTask;
+
+            Block block = context.ValidationContext.BlockToValidate;
 
             if (!(block is SmartContractPosBlock posBlock))
             {
@@ -31,7 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             }
 
             // Check proof-of-stake block signature.
-            if (!this.CheckBlockSignature(posBlock))
+            if (!this.checker.CheckBlockSignature(posBlock, this.Logger))
             {
                 this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();
@@ -39,26 +48,61 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
             return Task.CompletedTask;
         }
+    }
+    
+    public class IntegrityValidationSmartContractPosBlockSignatureRule : IntegrityValidationConsensusRule
+    {
+        private BlockSignatureChecker checker;
 
+        public override void Initialize()
+        {
+            this.checker = new BlockSignatureChecker();
+
+            base.Initialize();
+        }
+
+        /// <inheritdoc />
+        /// <exception cref="ConsensusErrors.BadBlockSignature">The block signature is invalid.</exception>
+        public override void Run(RuleContext context)
+        {
+            Block block = context.ValidationContext.BlockToValidate;
+
+            if (!(block is SmartContractPosBlock posBlock))
+            {
+                this.Logger.LogTrace("(-)[INVALID_CAST]");
+                throw new InvalidCastException();
+            }
+
+            // Check proof-of-stake block signature.
+            if (!this.checker.CheckBlockSignature(posBlock, this.Logger))
+            {
+                this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
+                ConsensusErrors.BadBlockSignature.Throw();
+            }
+        }
+    }
+
+    public class BlockSignatureChecker
+    {
         /// <summary>
         /// Checks if block signature is valid.
         /// </summary>
         /// <param name="block">The block.</param>
         /// <returns><c>true</c> if the signature is valid, <c>false</c> otherwise.</returns>
-        private bool CheckBlockSignature(SmartContractPosBlock block)
+        public bool CheckBlockSignature(SmartContractPosBlock block, ILogger logger) //TODO ACTIVATION supply logger factory during creation
         {
-            this.Logger.LogTrace("()");
+            logger.LogTrace("()");
 
             if (BlockStake.IsProofOfWork(block))
             {
                 bool res = block.BlockSignature.IsEmpty();
-                this.Logger.LogTrace("(-)[POW]:{0}", res);
+                logger.LogTrace("(-)[POW]:{0}", res);
                 return res;
             }
 
             if (block.BlockSignature.IsEmpty())
             {
-                this.Logger.LogTrace("(-)[EMPTY]:false");
+                logger.LogTrace("(-)[EMPTY]:false");
                 return false;
             }
 
@@ -68,7 +112,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             {
                 PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(txout.ScriptPubKey);
                 bool res = pubKey.Verify(block.GetHash(), new ECDSASignature(block.BlockSignature.Signature));
-                this.Logger.LogTrace("(-)[P2PK]:{0}", res);
+                logger.LogTrace("(-)[P2PK]:{0}", res);
                 return res;
             }
 
@@ -78,31 +122,31 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             List<Op> ops = txout.ScriptPubKey.ToOps().ToList();
             if (!ops.Any()) // script.GetOp(pc, opcode, vchPushValue))
             {
-                this.Logger.LogTrace("(-)[NO_OPS]:false");
+                logger.LogTrace("(-)[NO_OPS]:false");
                 return false;
             }
 
             if (ops.ElementAt(0).Code != OpcodeType.OP_RETURN) // OP_RETURN)
             {
-                this.Logger.LogTrace("(-)[NO_OP_RETURN]:false");
+                logger.LogTrace("(-)[NO_OP_RETURN]:false");
                 return false;
             }
 
             if (ops.Count < 2) // script.GetOp(pc, opcode, vchPushValue)
             {
-                this.Logger.LogTrace("(-)[NO_SECOND_OP]:false");
+                logger.LogTrace("(-)[NO_SECOND_OP]:false");
                 return false;
             }
 
             byte[] data = ops.ElementAt(1).PushData;
             if (!ScriptEvaluationContext.IsCompressedOrUncompressedPubKey(data))
             {
-                this.Logger.LogTrace("(-)[NO_PUSH_DATA]:false");
+                logger.LogTrace("(-)[NO_PUSH_DATA]:false");
                 return false;
             }
 
             bool verifyRes = new PubKey(data).Verify(block.GetHash(), new ECDSASignature(block.BlockSignature.Signature));
-            this.Logger.LogTrace("(-):{0}", verifyRes);
+            logger.LogTrace("(-):{0}", verifyRes);
             return verifyRes;
         }
     }

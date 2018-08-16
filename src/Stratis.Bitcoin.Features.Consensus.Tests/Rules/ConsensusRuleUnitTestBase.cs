@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected NodeDeployments nodeDeployments;
         protected ConsensusSettings consensusSettings;
         protected Mock<ICheckpoints> checkpoints;
-        protected List<IConsensusRule> rules;
+        protected List<IConsensusRuleBase> rules;
         protected Mock<IChainState> chainState;
         protected Mock<IRuleRegistration> ruleRegistration;
         protected RuleContext ruleContext;
@@ -48,9 +48,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.consensusSettings = new ConsensusSettings();
             this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
 
-            this.rules = new List<IConsensusRule>();
+            this.rules = new List<IConsensusRuleBase>();
             this.ruleRegistration = new Mock<IRuleRegistration>();
-            this.ruleRegistration.Setup(r => r.GetRules()).Returns(() => { return this.rules; });
 
             if (network.Consensus.IsProofOfStake)
                 this.ruleContext = new PosRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
@@ -98,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.coinView = new Mock<ICachedCoinView>();
         }
 
-        protected T CreateRule<T>() where T : ConsensusRule, new()
+        protected T CreateRule<T>() where T : ConsensusRuleBase, new()
         {
             return new T()
             {
@@ -118,7 +117,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected ConsensusSettings consensusSettings;
         protected Mock<ICheckpoints> checkpoints;
         protected Mock<IChainState> chainState;
-        protected List<ConsensusRule> ruleRegistrations;
         protected Mock<IRuleRegistration> ruleRegistration;
         protected T consensusRules;
         protected RuleContext ruleContext;

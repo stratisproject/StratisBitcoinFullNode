@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<IConsensusRuleEngine, SmartContractPosConsensusRuleEngine>();
 
-                        fullNodeBuilder.Network.Consensus.Rules = new SmartContractPosRuleRegistration().GetRules();
+                        new SmartContractPosRuleRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                     });
             });
 
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                     services.AddSingleton<IConsensusRuleEngine, SmartContractPowConsensusRuleEngine>();
 
-                    fullNodeBuilder.Network.Consensus.Rules = new SmartContractPowRuleRegistration().GetRules();
+                    new SmartContractPowRuleRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                 });
             });
 

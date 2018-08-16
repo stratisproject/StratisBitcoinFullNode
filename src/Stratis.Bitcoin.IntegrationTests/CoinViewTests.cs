@@ -341,7 +341,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             var context = new RuleContext
             {
                 Time = DateTimeOffset.UtcNow,
-                ValidationContext = new ValidationContext { Block = block },
+                ValidationContext = new ValidationContext { BlockToValidate = block },
                 Flags = consensusFlags,
             };
 

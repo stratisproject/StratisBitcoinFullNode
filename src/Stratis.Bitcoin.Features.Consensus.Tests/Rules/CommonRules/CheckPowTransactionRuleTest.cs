@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         private ConsensusOptions options;
 
-        private NBitcoin.Consensus consensus;
+        private IConsensus consensus;
 
         public CheckPowTransactionRuleTest()
         {
@@ -208,9 +208,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
             transaction.Outputs.Add(new TxOut(new Money(this.consensus.MaxMoney / 2), (IDestination)null));
 
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
-            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
-            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
             var rule = this.consensusRules.RegisterRule<CheckPowTransactionRule>();
 
@@ -227,9 +227,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             var invalidTransaction = new Transaction();
 
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
-            this.ruleContext.ValidationContext.Block.Transactions.Add(validTransaction);
-            this.ruleContext.ValidationContext.Block.Transactions.Add(invalidTransaction);
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(validTransaction);
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(invalidTransaction);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().RunAsync(this.ruleContext));
 

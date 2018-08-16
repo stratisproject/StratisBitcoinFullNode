@@ -7,7 +7,6 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
-    [FullValidationRule]
     public sealed class SmartContractSaveCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />
@@ -18,7 +17,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview threshold is reached.
             this.Logger.LogTrace("Saving coinview changes.");
-            var utxoRuleContext = context as UtxoRuleContext;
+            var utxoRuleContext = (UtxoRuleContext)context;
             await this.PowParent.UtxoSet.AddRewindDataAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), currentBlock).ConfigureAwait(false);
         }
     }
