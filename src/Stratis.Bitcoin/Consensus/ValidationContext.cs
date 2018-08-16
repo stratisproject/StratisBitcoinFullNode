@@ -47,8 +47,5 @@ namespace Stratis.Bitcoin.Consensus
         /// Setting this value to be <see cref="BanDurationDefaultBan"/> will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
         /// </remarks>
         public int BanDurationSeconds { get; set; }
-
-        /// <summary>The context of the validation processes.</summary>
-        public RuleContext RuleContext { get; set; }
     }
 }
