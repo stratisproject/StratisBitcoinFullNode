@@ -11,11 +11,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 {
     public class TestHelper
     {
-        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int millisecondsTimeout = 50, CancellationToken cancellationToken = default(CancellationToken))
+        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int millisecondsTimeout = 150, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken = cancellationToken == default(CancellationToken)
-                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000).Token
+                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 40 * 1000).Token
                 : cancellationToken;
+
             while (!act())
             {
                 try
