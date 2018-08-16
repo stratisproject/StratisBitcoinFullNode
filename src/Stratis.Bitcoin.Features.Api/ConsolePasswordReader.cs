@@ -16,6 +16,7 @@ namespace Stratis.Bitcoin.Features.Api
                 switch (keyInfo.Key)
                 {
                     case ConsoleKey.Enter:
+                        Console.WriteLine("");
                         waitForInput = false;
                         break;
 

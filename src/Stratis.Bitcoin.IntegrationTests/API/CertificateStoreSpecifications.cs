@@ -2,18 +2,13 @@
 using System.Linq;
 using System.Security;
 using System.Security.Cryptography.X509Certificates;
-
 using FluentAssertions;
-
 using NBitcoin.Protocol;
-
 using NSubstitute;
-
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
-
 using Xunit;
 using Xunit.Abstractions;
 
@@ -21,31 +16,20 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 {
     public class CertificateStoreSpecifications : BddSpecification
     {
-        private string dataDir;
-
-        private DataFolder dataFolder;
-
-        private NodeSettings settings;
-
-        private DirectoryInfo directoryInfo;
-
-        private CertificateStore certificateStore;
-
         private string fileName;
-
+        private DataFolder dataFolder;
+        private NodeSettings settings;
+        private DirectoryInfo directoryInfo;
+        private CertificateStore certificateStore;
         private X509Certificate2 createdCertificate;
-
         private X509Certificate2 retrievedCertificate;
 
         public CertificateStoreSpecifications(ITestOutputHelper output)
-            : base(output)
-        {}
+            : base(output){}
 
-        protected override void BeforeTest()
-        {}
+        protected override void BeforeTest(){}
 
-        protected override void AfterTest()
-        {}
+        protected override void AfterTest(){}
 
         [Fact]
         public void CertificateStoreCanReadAndWriteCertFiles()
@@ -78,7 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.directoryInfo.EnumerateFiles().Should().BeEmpty();
 
             this.fileName = "test.pfx";
-            this.certificateStore.TryGet(this.fileName, out var retrievedCertificate).Should().BeFalse();
+            this.certificateStore.TryGet(this.fileName, out _).Should().BeFalse();
         }
 
         private SecureString BuildSecureStringPassword()

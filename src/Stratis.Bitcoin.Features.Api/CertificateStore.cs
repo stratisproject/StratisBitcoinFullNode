@@ -32,7 +32,11 @@ namespace Stratis.Bitcoin.Features.Api
             var targetDirInfo = new DirectoryInfo(this.storageFolder);
             if(!targetDirInfo.Exists) targetDirInfo.Create();
             var certificateInBytes = certificate.Export(X509ContentType.Pfx, password);
-            File.WriteAllBytes(Path.Combine(targetDirInfo.FullName, fileName), certificateInBytes);         
+            string fullPathToCertificate = Path.Combine(targetDirInfo.FullName, fileName);
+            File.WriteAllBytes(fullPathToCertificate, certificateInBytes);
+
+            this.logger.LogWarning("A certificate file has been created at {0}.", fullPathToCertificate);
+            this.logger.LogWarning("Please make sure this certificate is added to your local trusted root store to remove warnings.", fullPathToCertificate);
         }
 
         public bool TryGet(string fileName, out X509Certificate2 certificate)
@@ -47,11 +51,32 @@ namespace Stratis.Bitcoin.Features.Api
             try
             {
                 var fileInBytes = File.ReadAllBytes(fullPath);
-                var passwordPromptMessage = $"Please enter the password of the certificate in {fullPath}";
-
-                using (var passwordFromConsole = this.PasswordReader.ReadSecurePassword(passwordPromptMessage))
+                var passwordPromptMessage = $"Please type in the password for the certificate at {fullPath} (optional):";
+                int maxTries = 5;
+                int tryCount = 0;
+                while(tryCount <= maxTries)
                 {
-                    certificate = new X509Certificate2(fileInBytes, passwordFromConsole);
+                    try
+                    {
+                        using (var passwordFromConsole = tryCount == 0 
+                                     ? new SecureString()
+                                     : this.PasswordReader.ReadSecurePassword(passwordPromptMessage))
+                        {
+                            certificate = new X509Certificate2(fileInBytes, passwordFromConsole);
+                            break;
+                        }
+                    }
+                    catch (CryptographicException ex)
+                    {
+                        if (!ex.Message.Contains("password", StringComparison.InvariantCultureIgnoreCase))
+                            throw;
+
+                        tryCount++;
+                        if (tryCount == 1)
+                            this.logger.LogWarning("The certificate at {0} requires a password to be read.", fullPath);
+                        else
+                            this.logger.LogWarning(ex.Message);        
+                    }
                 }
             }
             catch (Exception exception)
