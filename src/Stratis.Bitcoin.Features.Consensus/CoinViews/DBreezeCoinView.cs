@@ -202,12 +202,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash)
+        public Task PersistDataAsync(IList<UnspentOutputs> unspentOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash)
         {
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
 
-            List<UnspentOutputs> allUnspentOutputs = unspentOutputs.ToList();
-            this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:{5},{6}:{7})", nameof(unspentOutputs), allUnspentOutputs.Count, nameof(rewindDataCollection), rewindDataCollection.Count, nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
+            this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:{5},{6}:{7})", nameof(unspentOutputs), unspentOutputs.Count, nameof(rewindDataCollection), rewindDataCollection.Count, nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
 
             int insertedEntities = 0;
 
@@ -232,12 +231,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         this.SetBlockHash(transaction, nextBlockHash);
 
-                        allUnspentOutputs.Sort(UnspentOutputsComparer.Instance);
-                        foreach (UnspentOutputs coin in allUnspentOutputs)
+                        foreach (UnspentOutputs unspentOutput in unspentOutputs)
                         {
-                            this.logger.LogTrace("Outputs of transaction ID '{transactionId}' are {prunableState} and will be {action} to the database.", coin.TransactionId, coin.IsPrunable ? "PRUNABLE" : "NOT PRUNABLE", coin.IsPrunable ? "removed" : "inserted");
-                            if (coin.IsPrunable) transaction.RemoveKey(CoinsKey, coin.TransactionId.ToBytes(false));
-                            else transaction.Insert(CoinsKey, coin.TransactionId.ToBytes(false), coin.ToCoins());
+                            this.logger.LogTrace("Outputs of transaction ID '{transactionId}' are {prunableState} and will be {action} to the database.", unspentOutput.TransactionId, unspentOutput.IsPrunable ? "PRUNABLE" : "NOT PRUNABLE", unspentOutput.IsPrunable ? "removed" : "inserted");
+                            if (unspentOutput.IsPrunable) transaction.RemoveKey(CoinsKey, unspentOutput.TransactionId.ToBytes(false));
+                            else transaction.Insert(CoinsKey, unspentOutput.TransactionId.ToBytes(false), unspentOutput.ToCoins());
                         }
 
                         foreach (RewindData rewindData in rewindDataCollection)
@@ -252,7 +250,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                             transaction.Insert(RewindDataKey, nextRewindIndex, rewindData);
                         }
 
-                        insertedEntities += allUnspentOutputs.Count;
+                        insertedEntities += unspentOutputs.Count;
                         transaction.Commit();
                     }
                 }

@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <summary>
-        /// Rewind data with its byte size that will be kept in the queue until it is persisted to a storage
+        /// Rewind data with its byte size that will be kept in the queue until it is persisted to a storage.
         /// </summary>
         private class QueuedRewindData
         {
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 {
                     var bitcoinStream = new BitcoinStream(ms, true);
                     bitcoinStream.ReadWrite(rewindData);
-                    size = bitcoinStream.Serializing ? bitcoinStream.Counter.WrittenBytes : bitcoinStream.Counter.ReadBytes;
+                    size = bitcoinStream.Counter.WrittenBytes;
                 }
 
                 return new QueuedRewindData { RewindData = rewindData, DataSize = size };
@@ -102,7 +102,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         private readonly AsyncQueue<QueuedRewindData> rewindDataQueue;
 
         /// <summary>Batch of rewind data items which should be saved in the database.</summary>
-        /// <remarks>Write access should be protected by <see cref="getBlockLock"/>.</remarks>
         private readonly List<QueuedRewindData> rewindDataBatch;
 
         /// <summary>Task that runs <see cref="DequeueRewindDataContinuouslyAsync"/>.</summary>
@@ -157,11 +156,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         ) : this(chainState, dateTimeProvider, loggerFactory, nodeLifetime)
         {
             Guard.NotNull(coinViewStorage, nameof(coinViewStorage));
-            this.chainState = chainState;
             this.CoinViewStorage = coinViewStorage;
-            this.nodeLifetime = nodeLifetime;
-            this.rewindDataBatch = new List<QueuedRewindData>();
-            this.rewindDataQueue = new AsyncQueue<QueuedRewindData>();
         }
 
         /// <summary>

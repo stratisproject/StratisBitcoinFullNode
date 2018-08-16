@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         {
             if (this.UtxoSet is IBackedCoinView backedCoinView)
             {
-                await backedCoinView.CoinViewStorage.InitializeAsync();
+                await backedCoinView.CoinViewStorage.InitializeAsync().ConfigureAwait(false);
             }
 
             this.UtxoSet.Initialize();

@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="rewindDataCollection">List of rewind data items to persist.</param>
         /// <param name="oldBlockHash">Old block hash.</param>
         /// <param name="nextBlockHash">Next block hash.</param>
-        Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash);
+        Task PersistDataAsync(IList<UnspentOutputs> unspentOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash);
 
         /// <summary>
         /// Initializes the database tables used by the coinview.

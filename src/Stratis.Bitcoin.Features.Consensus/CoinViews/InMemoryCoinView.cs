@@ -27,8 +27,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
         private uint256 tipHash;
 
-        private CachePerformanceCounter performanceCounter;
-        private BackendPerformanceCounter performanceCounter1;
+        private CachePerformanceCounter cachePerformanceCounter;
+        private BackendPerformanceCounter backendPerformanceCounter;
 
         /// <summary>
         /// Initializes an instance of the object.
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task PersistDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash)
+        public Task PersistDataAsync(IList<UnspentOutputs> unspentOutputs, List<RewindData> rewindDataCollection, uint256 oldBlockHash, uint256 nextBlockHash)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         BackendPerformanceCounter ICoinViewStorage.PerformanceCounter
         {
-            get { return this.performanceCounter1; }
+            get { return this.backendPerformanceCounter; }
         }
 
         public Task GetStakeAsync(IEnumerable<StakeItem> blocklist)
@@ -156,8 +156,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         CachePerformanceCounter ICachedCoinView.PerformanceCounter
         {
-            get { return this.performanceCounter; }
-            set { this.performanceCounter = value; }
+            get { return this.cachePerformanceCounter; }
+            set { this.cachePerformanceCounter = value; }
         }
 
         public int CacheEntryCount { get; }

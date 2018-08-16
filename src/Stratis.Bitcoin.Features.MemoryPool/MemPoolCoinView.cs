@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="mempoolValidator">Memory pool validator for validating transactions.</param>
         public MempoolCoinView(ICoinView coinView, ITxMempool memPool, SchedulerLock mempoolLock, IMempoolValidator mempoolValidator)
         {
-            this.CoinView = coinView;
+            this.coinView = coinView;
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
             this.mempoolValidator = mempoolValidator;
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Backing coin view instance.
         /// </summary>
-        public ICoinView CoinView { get; }
+        private readonly ICoinView coinView;
 
         /// <inheritdoc />
         public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             // lookup all ids (duplicate ids are ignored in case a trx spends outputs from the same parent).
             List<uint256> ids = trx.Inputs.Select(n => n.PrevOut.Hash).Distinct().Concat(new[] { trx.GetHash() }).ToList();
-            FetchCoinsResponse coins = await this.CoinView.FetchCoinsAsync(ids.ToArray());
+            FetchCoinsResponse coins = await this.coinView.FetchCoinsAsync(ids.ToArray());
             // find coins currently in the mempool
             List<Transaction> mempoolcoins = await this.mempoolLock.ReadAsync(() =>
             {
@@ -133,13 +133,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             double dResult = 0.0;
             foreach (TxIn txInput in tx.Inputs)
             {
-                UnspentOutputs coins = this.Set.AccessCoins(txInput.PrevOut.Hash);
-                Guard.Assert(coins != null);
-                if (!coins.IsAvailable(txInput.PrevOut.N)) continue;
-                if (coins.Height <= nHeight)
+                UnspentOutputs unspentOutputs = this.Set.AccessCoins(txInput.PrevOut.Hash);
+                Guard.Assert(unspentOutputs != null);
+                if (!unspentOutputs.IsAvailable(txInput.PrevOut.N)) continue;
+                if (unspentOutputs.Height <= nHeight)
                 {
-                    dResult += (double)coins.Outputs[txInput.PrevOut.N].Value.Satoshi * (nHeight - coins.Height);
-                    inChainInputValue += coins.Outputs[txInput.PrevOut.N].Value;
+                    dResult += (double)unspentOutputs.Outputs[txInput.PrevOut.N].Value.Satoshi * (nHeight - unspentOutputs.Height);
+                    inChainInputValue += unspentOutputs.Outputs[txInput.PrevOut.N].Value;
                 }
             }
             return (this.ComputePriority(tx, dResult), inChainInputValue);
@@ -209,8 +209,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         public void Dispose()
         {
+            this.coinView?.Dispose();
         }
-
-        public ICoinViewStorage CoinViewStorage { get; }
     }
 }
