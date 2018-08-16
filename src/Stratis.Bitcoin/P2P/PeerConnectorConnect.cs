@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -63,15 +64,22 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         public override async Task OnConnectAsync()
         {
-            foreach (IPEndPoint ipEndpoint in this.ConnectionSettings.Connect)
-            {
-                if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
-                    return;
-
-                PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
-                if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
-                    await this.ConnectAsync(peerAddress).ConfigureAwait(false);
-            }
+            await this.ConnectionSettings.Connect.ForEachAsync(this.ConnectionSettings.MaxOutboundConnections, this.nodeLifetime.ApplicationStopping,
+                async (ipEndpoint, cancellation) =>
+                {
+                    if (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                    {
+                        PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
+                        if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
+                        {
+                            // Introduce a delay between attempts in case ConnectAsync fails instantly without the usual timeout.
+                            if ((peerAddress.LastAttempt == null) || ((peerAddress.LastAttempt - DateTimeOffset.Now) >= this.defaultConnectionInterval))
+                                await this.ConnectAsync(peerAddress).ConfigureAwait(false);
+                            else
+                                await Task.Delay(this.defaultConnectionInterval, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                        }
+                    }
+                }).ConfigureAwait(false);
         }
     }
 }

@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.P2P
         public NetworkPeerRequirement Requirements { get; internal set; }
 
         /// <summary>Default time interval between making a connection attempt.</summary>
-        private readonly TimeSpan defaultConnectionInterval;
+        protected readonly TimeSpan defaultConnectionInterval;
 
         /// <summary>Burst time interval between making a connection attempt.</summary>
         private readonly TimeSpan burstConnectionInterval;
