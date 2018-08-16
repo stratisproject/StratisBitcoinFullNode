@@ -10,7 +10,7 @@ namespace NBitcoin
         /// <summary>
         /// How many blocks should be on top of a block that includes a coinbase transaction until its outputs are considered spendable.
         /// </summary>
-        long CoinbaseMaturity { get; set; }
+        long CoinbaseMaturity { get; }
 
         /// <summary>
         /// Amount of coins mined when a new network is bootstrapped.

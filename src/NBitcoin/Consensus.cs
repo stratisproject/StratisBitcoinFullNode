@@ -8,7 +8,7 @@ namespace NBitcoin
     public class Consensus : IConsensus
     {
         /// <inheritdoc />
-        public long CoinbaseMaturity { get; set; }
+        public long CoinbaseMaturity { get; }
 
         /// <inheritdoc />
         public Money PremineReward { get; }

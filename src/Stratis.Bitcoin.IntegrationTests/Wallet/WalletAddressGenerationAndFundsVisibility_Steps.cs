@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
+using NBitcoin.Networks;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
@@ -34,14 +35,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         protected override void BeforeTest()
         {
-            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.RegTest);
+            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), NetworkRegistration.Register(new TestRegTest()));
             this.sharedSteps = new SharedSteps();
         }
 
         protected override void AfterTest()
         {
-            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = this.previousCoinBaseMaturity;
-            this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = this.previousCoinBaseMaturity;
+            ((MutableTestConsensus) this.sendingStratisBitcoinNode.FullNode.Network.Consensus).CoinbaseMaturity = this.previousCoinBaseMaturity;
+            ((MutableTestConsensus) this.receivingStratisBitcoinNode.FullNode.Network.Consensus).CoinbaseMaturity = this.previousCoinBaseMaturity;
             this.nodeGroupBuilder.Dispose();
         }
 
@@ -60,8 +61,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             var coinbaseMaturity = 1;
 
-            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = coinbaseMaturity;
-            this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = coinbaseMaturity;
+            ((MutableTestConsensus) this.sendingStratisBitcoinNode.FullNode.Network.Consensus).CoinbaseMaturity = coinbaseMaturity;
+            ((MutableTestConsensus) this.receivingStratisBitcoinNode.FullNode.Network.Consensus).CoinbaseMaturity = coinbaseMaturity;
 
             this.sharedSteps.MineBlocks(coinbaseMaturity + 1, this.sendingStratisBitcoinNode, AccountZero, SendingWalletName,
                 WalletPassword);
