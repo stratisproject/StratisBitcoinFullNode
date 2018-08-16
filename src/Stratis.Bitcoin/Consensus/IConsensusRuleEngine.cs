@@ -56,26 +56,30 @@ namespace Stratis.Bitcoin.Consensus
         /// This operation includes removing the recent transactions
         /// and restoring the chain to an earlier state.
         /// </para>
-        /// </summary>
+        /// </summary>ChainedHeaderBlock c
         /// <returns>Hash of the block header which is now the tip of the chain.</returns>
         Task<RewindState> RewindAsync();
 
         /// <summary>Execute header validation rules.</summary>
         /// <param name="header">Header to validate.</param>
+        /// <returns>Context that contains validation result related information.</returns>
         ValidationContext HeaderValidation(ChainedHeader header);
 
         /// <summary>Execute integrity validation rules.</summary>
         /// <param name="header">The chained header that is going to be validated.</param>
         /// <param name="block">The block that is going to be validated.</param>
+        /// <returns>Context that contains validation result related information.</returns>
         ValidationContext IntegrityValidation(ChainedHeader header, Block block);
 
         /// <summary>Execute partial validation rules.</summary>
         /// <param name="header">The chained header that is going to be validated.</param>
         /// <param name="block">The block that is going to be validated.</param>
+        /// <returns>Context that contains validation result related information.</returns>
         Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block);
 
         /// <summary>Execute full validation rules.</summary>
         /// <param name="chainedHeaderBlock">The block and chained header that are going to be validated.</param>
+        /// <returns>Context that contains validation result related information.</returns>
         Task<ValidationContext> FullValidationAsync(ChainedHeaderBlock chainedHeaderBlock);
     }
 }

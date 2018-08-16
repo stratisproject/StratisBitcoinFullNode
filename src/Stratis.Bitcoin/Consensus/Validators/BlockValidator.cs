@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// Validates a block header.
         /// </summary>
         /// <param name="chainedHeader">The chained header to be validated.</param>
+        /// <returns>Context that contains validation result related information.</returns>
         ValidationContext ValidateHeader(ChainedHeader chainedHeader);
     }
 
@@ -44,6 +45,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// </summary>
         /// <param name="header">The chained header that is going to be validated.</param>
         /// <param name="block">The block that is going to be validated.</param>
+        /// <returns>Context that contains validation result related information.</returns>
         Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block);
     }
 
@@ -59,6 +61,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// </remarks>
         /// <param name="header">The chained header that is going to be validated.</param>
         /// <param name="block">The block that is going to be validated.</param>
+        /// <returns>Context that contains validation result related information.</returns>
         ValidationContext VerifyBlockIntegrity(ChainedHeader header, Block block);
     }
 
@@ -81,7 +84,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
 
             ValidationContext result = this.consensusRules.HeaderValidation(chainedHeader);
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-):'{0}'", result);
             return result;
         }
     }
@@ -105,7 +108,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
 
             ValidationContext result = this.consensusRules.IntegrityValidation(header, block);
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-):'{0}'", result);
             return result;
         }
     }
@@ -172,7 +175,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
 
             ValidationContext result = await this.consensusRules.PartialValidationAsync(header, block).ConfigureAwait(false);
 
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("(-):'{0}'", result);
             return result;
         }
 
