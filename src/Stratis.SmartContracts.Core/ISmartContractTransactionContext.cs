@@ -59,5 +59,10 @@ namespace Stratis.SmartContracts.Core
         /// Whether this transaction is calling a method on a contract.
         /// </summary>
         bool IsCall { get; }
+
+        /// <summary>
+        /// Time as set on transaction.
+        /// </summary>
+        uint Time { get; }
     }
 }

@@ -78,9 +78,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return "cookiefile=" + Path.Combine(this.runner.DataFolder, "regtest", ".cookie");
         }
 
-        public void NotInIBD()
+        public CoreNode NotInIBD()
         {
             ((InitialBlockDownloadStateMock)this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+
+            return this;
+        }
+
+        public Mnemonic WithWallet(string walletPassword = "password", string walletName = "name")
+        {
+            return this.FullNode.WalletManager().CreateWallet(walletPassword, walletName);
         }
 
         public RPCClient CreateRPCClient()

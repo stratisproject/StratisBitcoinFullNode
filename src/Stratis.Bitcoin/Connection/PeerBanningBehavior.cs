@@ -56,7 +56,8 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("()");
 
             INetworkPeer peer = this.AttachedPeer;
-            if (peer.State == NetworkPeerState.Connected)
+            var peerBehavior = peer.Behavior<IConnectionManagerBehavior>();
+            if (peer.State == NetworkPeerState.Connected && !peerBehavior.Whitelisted)
             {
                 if (this.peerBanning.IsBanned(peer.RemoteSocketEndpoint))
                 {
