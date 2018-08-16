@@ -241,7 +241,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(constructorExists);
         }
 
-
         [Fact]
         public void Constructor_Does_Not_Exist_Tests()
         {
