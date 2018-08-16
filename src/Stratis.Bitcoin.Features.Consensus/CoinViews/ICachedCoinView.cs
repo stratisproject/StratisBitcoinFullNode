@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="unspentOutputs">Information about the changes between the old block and the new block. An item in this list represents a list of all outputs
         /// for a specific transaction. If a specific output was spent, the output is <c>null</c>.</param>
         /// <param name="currentBlock">Block of the current tip of the coinview.</param>
-        Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, ChainedHeader currentBlock);
+        Task AddRewindDataAsync(IList<UnspentOutputs> unspentOutputs, ChainedHeader currentBlock);
 
         /// <summary>
         /// Initializes this instance.

@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, ChainedHeader currentBlock)
+        public Task AddRewindDataAsync(IList<UnspentOutputs> unspentOutputs, ChainedHeader currentBlock)
         {
             Guard.NotNull(currentBlock, nameof(currentBlock));
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));

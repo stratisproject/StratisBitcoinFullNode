@@ -307,13 +307,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public async Task AddRewindDataAsync(IEnumerable<UnspentOutputs> unspentOutputs, ChainedHeader currentBlock)
+        public async Task AddRewindDataAsync(IList<UnspentOutputs> unspentOutputs, ChainedHeader currentBlock)
         {
             Guard.NotNull(currentBlock, nameof(currentBlock));
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
 
-            List<UnspentOutputs> unspentOutputsList = unspentOutputs.ToList();
-            this.logger.LogTrace("({0}.Count():{1},{2}:'{3}')", nameof(unspentOutputsList), unspentOutputsList.Count, nameof(currentBlock), currentBlock.HashBlock);
+            this.logger.LogTrace("({0}.Count():{1},{2}:'{3}')", nameof(unspentOutputs), unspentOutputs.Count, nameof(currentBlock), currentBlock.HashBlock);
 
             RewindData rewindData = new RewindData(currentBlock.HashBlock);
 
@@ -326,8 +325,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 }
 
                 this.blockHash = currentBlock.HashBlock;
-                unspentOutputsList.Sort(UnspentOutputsComparer.Instance);
-                foreach (UnspentOutputs unspent in unspentOutputsList)
+                foreach (UnspentOutputs unspent in unspentOutputs)
                 {
                     CacheItem existing;
                     if (this.unspents.TryGetValue(unspent.TransactionId, out existing))
