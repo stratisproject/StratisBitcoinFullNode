@@ -395,6 +395,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     bool foundStartingHeader = false;
 
+                    if (bestSentHeader == null)
+                    {
+                        this.logger.LogTrace("All headers from this batch will be sent to peer '{0}' as we don't have any information about its chain.", peer.RemoteSocketEndpoint);
+                        foundStartingHeader = true;
+                    }
+
                     // Try to find first chained block that the peer doesn't have, and then add all chained blocks past that one.
                     foreach (ChainedHeader chainedHeader in blocksToAnnounce)
                     {

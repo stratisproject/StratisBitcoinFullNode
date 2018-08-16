@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             return Task.CompletedTask;
         }
     }
-    
+
     public class IntegrityValidationSmartContractPosBlockSignatureRule : IntegrityValidationConsensusRule
     {
         private BlockSignatureChecker checker;
