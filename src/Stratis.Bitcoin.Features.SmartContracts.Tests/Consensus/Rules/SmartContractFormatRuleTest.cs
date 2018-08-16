@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.UnspentOutputSet = GetMockOutputSet();
-            context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            context.ValidationContext.BlockToValidate = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
             var gasPriceSatoshis = 20;
             var gasLimit = 4_000_000;
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             Transaction transaction = transactionBuilder.BuildTransaction(false);
 
-            context.ValidationContext.Block.Transactions = new List<Transaction>
+            context.ValidationContext.BlockToValidate.Transactions = new List<Transaction>
             {
                transaction
             };
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 UnspentOutputSet = GetMockOutputSet()
             };
 
-            context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            context.ValidationContext.BlockToValidate = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
             var gasPriceSatoshis = 20;
             var gasLimit = 4000000;
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             Transaction transaction = transactionBuilder.BuildTransaction(false);
 
-            context.ValidationContext.Block.Transactions = new List<Transaction>
+            context.ValidationContext.BlockToValidate.Transactions = new List<Transaction>
             {
                 transaction
             };
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
 
-            context.ValidationContext.Block = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            context.ValidationContext.BlockToValidate = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
 
             var gasPriceSatoshis = 20;
             var gasLimit = 4000000;
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             Transaction transaction = transactionBuilder.BuildTransaction(false);
 
-            context.ValidationContext.Block.Transactions = new List<Transaction>
+            context.ValidationContext.BlockToValidate.Transactions = new List<Transaction>
             {
                 transaction
             };

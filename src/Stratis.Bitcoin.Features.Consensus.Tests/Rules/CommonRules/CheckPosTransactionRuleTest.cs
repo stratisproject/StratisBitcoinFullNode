@@ -99,12 +99,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             {
                 ValidationContext = new ValidationContext()
                 {
-                    Block = this.network.CreateBlock()
+                    BlockToValidate = this.network.CreateBlock()
                 }
             };
 
-            ruleContext.ValidationContext.Block.Transactions.Add(transaction);
-            ruleContext.ValidationContext.Block.Transactions.Add(transaction);
+            ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
+            ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
 
             await this.consensusRules.RegisterRule<CheckPosTransactionRule>().RunAsync(ruleContext);
         }
@@ -135,9 +135,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.False(invalidTransaction.IsCoinBase);
             Assert.False(invalidTransaction.IsCoinStake);
 
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
-            this.ruleContext.ValidationContext.Block.Transactions.Add(validTransaction);
-            this.ruleContext.ValidationContext.Block.Transactions.Add(invalidTransaction);
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(validTransaction);
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(invalidTransaction);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPosTransactionRule>().RunAsync(this.ruleContext));
 

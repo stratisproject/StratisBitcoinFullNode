@@ -10,11 +10,8 @@ using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    /// <summary>
-    /// A rule that validates witness commitments.
-    /// </summary>
-    [PartialValidationRule(CanSkipValidation = true)]
-    public class WitnessCommitmentsRule : ConsensusRule
+    /// <summary>A rule that validates witness commitments.</summary>
+    public class WitnessCommitmentsRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadWitnessNonceSize">The witness nonce size is invalid.</exception>
@@ -22,8 +19,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.UnexpectedWitness">The block does not expect witness transactions but contains a witness transaction.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            if (context.SkipValidation)
+                return Task.CompletedTask;
+
             DeploymentFlags deploymentFlags = context.Flags;
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             // Validation for witness commitments.
             // * We compute the witness hash (which is the hash including witnesses) of all the block's transactions, except the

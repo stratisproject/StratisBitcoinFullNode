@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public IChainState ChainState { get; set; }
 
-        public T CreateRule<T>() where T : ConsensusRule, new()
+        public T CreateRule<T>() where T : ConsensusRuleBase, new()
         {
             var rule = new T();
             rule.Parent = this.ConsensusRuleEngine;
@@ -63,10 +63,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
         }
 
-        public T RegisterRule<T>() where T : ConsensusRule, new()
+        public T RegisterRule<T>() where T : ConsensusRuleBase, new()
         {
             var rule = new T();
-            this.Network.Consensus.Rules = new List<IConsensusRule>() { rule };
+            //TODO ACTIVATION
+            //this.Network.Consensus.Rules = new List<IBaseConsensusRule>() { rule };
             this.Register();
             return rule;
         }
@@ -97,10 +98,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
         }
 
-        public T RegisterRule<T>() where T : ConsensusRule, new()
+        public T RegisterRule<T>() where T : ConsensusRuleBase, new()
         {
             var rule = new T();
-            this.Network.Consensus.Rules = new List<IConsensusRule>() { rule };
+            //TODO ACTIVATION
+            //this.Network.Consensus.Rules = new List<IBaseConsensusRule>() { rule };
             this.Register();
             return rule;
         }
@@ -127,7 +129,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             testRulesContext.LoggerFactory.AddConsoleWithFilters();
             testRulesContext.DateTimeProvider = DateTimeProvider.Default;
             network.Consensus.Options = new ConsensusOptions();
-            network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
+            new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
 
             var consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
