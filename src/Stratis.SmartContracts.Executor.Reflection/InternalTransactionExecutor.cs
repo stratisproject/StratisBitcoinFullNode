@@ -41,7 +41,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         ///<inheritdoc />
-        public ICreateResult CreateContract<T>(ISmartContractState smartContractState,
+        public ICreateResult Create<T>(ISmartContractState smartContractState,
             ulong amountToTransfer,
             object[] parameters,
             ulong gasLimit = 0)
@@ -95,7 +95,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         ///<inheritdoc />
-        public ITransferResult CallMethod(
+        public ITransferResult Call(
             ISmartContractState smartContractState,
             Address addressTo,
             ulong amountToTransfer,

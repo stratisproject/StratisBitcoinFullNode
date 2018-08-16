@@ -23,7 +23,7 @@ public class CallContract : SmartContract
     public bool CallOther(string addressString)
     {
 
-        ITransferResult result = CallMethod(new Address(addressString), 100, "IncrementCount");
+        ITransferResult result = Call(new Address(addressString), 100, "IncrementCount");
 
         return result.Success;
     }
@@ -31,7 +31,7 @@ public class CallContract : SmartContract
     public bool Tester(string addressString)
     {
         Test = "Not Initial!";
-        ITransferResult result = CallMethod(new Address(addressString), 0, "Callback", null, 2000);
+        ITransferResult result = Call(new Address(addressString), 0, "Callback", null, 2000);
         return (bool)result.ReturnValue;
     }
 

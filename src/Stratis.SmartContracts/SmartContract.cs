@@ -108,9 +108,9 @@ namespace Stratis.SmartContracts
         /// <param name="methodName">The name of the method to call on the contract.</param>
         /// <param name="parameters">The parameters to inject to the method call.</param>
         /// <param name="gasLimit">The total amount of gas to allow this call to take up. Default is to use all remaining gas.</param>
-        protected ITransferResult CallMethod(Address addressTo, ulong amountToTransfer, string methodName, object[] parameters = null, ulong gasLimit = 0)
+        protected ITransferResult Call(Address addressTo, ulong amountToTransfer, string methodName, object[] parameters = null, ulong gasLimit = 0)
         {
-            return this.internalTransactionExecutor.CallMethod(this.smartContractState, addressTo, amountToTransfer, methodName, parameters, gasLimit);
+            return this.internalTransactionExecutor.Call(this.smartContractState, addressTo, amountToTransfer, methodName, parameters, gasLimit);
         }
 
         /// <summary>
@@ -120,9 +120,9 @@ namespace Stratis.SmartContracts
         /// <param name="amountToTransfer">The amount of funds to transfer in satoshi.</param>
         /// <param name="parameters">The parameters to inject to the constructor.</param>
         /// <param name="gasLimit">The total amount of gas to allow this call to take up. Default is to use all remaining gas.</param>
-        protected ICreateResult CreateContract<T>(ulong amountToTransfer = 0, object[] parameters = null, ulong gasLimit = 0) where T : SmartContract
+        protected ICreateResult Create<T>(ulong amountToTransfer = 0, object[] parameters = null, ulong gasLimit = 0) where T : SmartContract
         {
-            return this.internalTransactionExecutor.CreateContract<T>(this.smartContractState, amountToTransfer, parameters, gasLimit);
+            return this.internalTransactionExecutor.Create<T>(this.smartContractState, amountToTransfer, parameters, gasLimit);
         }
 
 

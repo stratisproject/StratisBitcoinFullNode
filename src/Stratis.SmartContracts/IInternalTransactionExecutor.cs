@@ -19,7 +19,7 @@
         /// <summary>
         /// Call a method on another contract.
         /// </summary>
-        ITransferResult CallMethod(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, string methodName, object[] parameters, ulong gasLimit = 0);
+        ITransferResult Call(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, string methodName, object[] parameters, ulong gasLimit = 0);
 
         /// <summary>
         /// Create a new contract.
@@ -27,6 +27,6 @@
         /// <typeparam name="T">Type of contract to create.</typeparam>
         /// <param name="smartContractState">State repository to track and persist changes to the contract.</param>
         /// <param name="amountToTransfer">Amount to send in stratoshi.</param>
-        ICreateResult CreateContract<T>(ISmartContractState smartContractState, ulong amountToTransfer, object[] parameters, ulong gasLimit = 0);
+        ICreateResult Create<T>(ISmartContractState smartContractState, ulong amountToTransfer, object[] parameters, ulong gasLimit = 0);
     }
 }

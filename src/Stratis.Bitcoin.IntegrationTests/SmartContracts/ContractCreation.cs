@@ -34,7 +34,7 @@ public class CatOwner : SmartContract
 
     public void CreateCat()
     {
-        var result = CreateContract<Cat>(0, new object[] { CatCounter });
+        var result = Create<Cat>(0, new object[] { CatCounter });
         CatCounter++;
         LastCreatedCat = result.NewContractAddress;
     }
