@@ -9,6 +9,7 @@ using Stratis.ModuleValidation.Net;
 using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Core.Validation.Validators.Type;
+using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
 
