@@ -85,6 +85,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Coin view at one layer below this implementaiton.</summary>
         private readonly ICoinView inner;
 
+        /// <summary>Pending list of rewind data to be persisted to a persistent storage.</summary>
+        private readonly List<RewindData> rewindDataList = new List<RewindData>();
+
         /// <inheritdoc />
         public ICoinView Inner
         {
@@ -296,13 +299,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     u.Value.OriginalOutputs = u.Value.UnspentOutputs?.Outputs.ToArray();
                 }
 
-                await this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.innerBlockHash, this.blockHash).ConfigureAwait(false);
+                await this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.innerBlockHash, this.blockHash, this.rewindDataList).ConfigureAwait(false);
 
                 // Remove prunable entries from cache as they were flushed down.
                 IEnumerable<KeyValuePair<uint256, CacheItem>> prunableEntries = unspent.Where(c => (c.Value.UnspentOutputs != null) && c.Value.UnspentOutputs.IsPrunable);
                 foreach (KeyValuePair<uint256, CacheItem> entry in prunableEntries)
                     this.unspents.Remove(entry.Key);
 
+                this.rewindDataList.Clear();
                 this.innerBlockHash = this.blockHash;
             }
 
@@ -347,6 +351,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
             this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:'{5}',{6}:'{7}')", nameof(unspentOutputs), unspentOutputs.Count(), nameof(originalOutputs), originalOutputs?.Count(), nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
 
+            RewindData rewindData = new RewindData(nextBlockHash);
+
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
                 if ((this.blockHash != null) && (oldBlockHash != this.blockHash))
@@ -376,13 +382,30 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         this.unspents.Add(unspent.TransactionId, existing);
                     }
                     existing.IsDirty = true;
+
                     // Inner does not need to know pruned unspent that it never saw.
                     if (existing.UnspentOutputs.IsPrunable && !existing.ExistInInner)
                     {
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are prunable and not in underlaying coinview, removing from cache.", unspent.TransactionId);
                         this.unspents.Remove(unspent.TransactionId);
                     }
+
+                    this.unspents.TryGetValue(unspent.TransactionId, out CacheItem original);
+                    if (original == null)
+                    {
+                        // This one haven't existed before, if we rewind, delete it.
+                        rewindData.TransactionsToRemove.Add(unspent.TransactionId);
+                    }
+                    else
+                    {
+                        // We'll need to restore the original outputs.
+                        UnspentOutputs clone = unspent.Clone();
+                        clone.Outputs = original.UnspentOutputs.Outputs.ToArray();
+                        rewindData.OutputsToRestore.Add(clone);
+                    }
                 }
+
+                this.rewindDataList.Add(rewindData);
             }
 
             this.logger.LogTrace("(-)");
@@ -401,14 +424,18 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 if (this.blockHash == this.innerBlockHash)
                     this.unspents.Clear();
 
-                if (this.unspents.Count != 0)
+                if (this.rewindDataList.Any())
                 {
-                    // More intelligent version can restore without throwing away the cache. (as the rewind data is in the cache).
-                    this.unspents.Clear();
-                    this.blockHash = this.innerBlockHash;
+                    RewindData lastRewindData = this.rewindDataList.Last();
+                    foreach (uint256 transactionToRemove in lastRewindData.TransactionsToRemove)
+                    {
+                        if (!this.unspents.ContainsKey(transactionToRemove)) continue;
+                        this.unspents.Remove(transactionToRemove);
+                    }
 
-                    this.logger.LogTrace("(-)[REWOUND_TO_INNER]:'{0}'", this.blockHash);
-                    return this.blockHash;
+                    this.rewindDataList.Remove(lastRewindData);
+                    this.logger.LogTrace("(-)[REMOVED_FROM_BATCH]:'{0}'", lastRewindData.PreviousBlockHash);
+                    return lastRewindData.PreviousBlockHash;
                 }
 
                 uint256 hash = await this.inner.Rewind().ConfigureAwait(false);
