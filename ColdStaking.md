@@ -49,11 +49,15 @@ We propose to introduce cold staking to Stratis using a soft fork mechanism that
 
 The new behaviour of this opcode is as follows:
 
-Check if the transaction spending an output, which contains this instruction, is a coinstake transaction. If it is not, the script fails.
-Check that ScriptPubKeys of all inputs of this transaction are the same. If they are not, the script fails.
-Check that ScriptPubKeys of all outputs of this transaction, except for the marker output (a special first output of each coinstake transaction) and the pubkey output (an optional special second output that contains public key in coinstake transaction), are the same as ScriptPubKeys of the inputs. If they are not, the script fails.
-Check that the sum of values of all inputs is smaller or equal to the sum of values of all outputs. If this does not hold, the script fails
-If the above-mentioned checks pass, the instruction does nothing.
+- Check if the transaction spending an output, which contains this instruction, is a coinstake transaction. If it is not, the script fails.
+
+- Check that ScriptPubKeys of all inputs of this transaction are the same. If they are not, the script fails.
+
+- Check that ScriptPubKeys of all outputs of this transaction, except for the marker output (a special first output of each coinstake transaction) and the pubkey output (an optional special second output that contains public key in coinstake transaction), are the same as ScriptPubKeys of the inputs. If they are not, the script fails.
+
+- Check that the sum of values of all inputs is smaller or equal to the sum of values of all outputs. If this does not hold, the script fails
+
+- If the above-mentioned checks pass, the instruction does nothing.
 
 Having the instruction behaviour defined as above, when a hot wallet wants to create a coinstake transaction using cold staking, the ScriptPubKey of its output will look as follows:
 
