@@ -63,33 +63,40 @@ namespace Stratis.SmartContracts.Executor.Reflection
             using (ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(contractByteCode)))
             using (var memoryStream = new MemoryStream())
             {
-                TypeDefinition contractType = moduleDefinition.Types.FirstOrDefault(x => x.Name == typeName);
-                MethodDefinition method = contractType.Methods.FirstOrDefault(m => m.Name == methodName);
+                ModuleDefinition result = AddGasCalculationToContractMethodInternal(moduleDefinition, typeName, methodName);
 
-                if (method == null)
-                    return contractByteCode;
-
-                TypeDefinition baseType = GetContractBaseType(contractType);
-
-                // Get gas spend method
-                MethodDefinition gasMethod = baseType.Methods.First(m => m.FullName == GasMethod);
-                MethodReference gasMethodReference = contractType.Module.ImportReference(gasMethod);
-
-                IEnumerable<MethodDefinition> referencedMethods = method.Body.Instructions
-                        .Select(i => i.Operand)
-                        .OfType<MethodDefinition>()
-                        .ToList();
-
-                InjectSpendGasMethod(method, gasMethodReference);
-
-                foreach (MethodDefinition referencedMethod in referencedMethods)
-                {
-                    InjectSpendGasMethod(referencedMethod, gasMethodReference);
-                }
-
-                moduleDefinition.Write(memoryStream);
+                result.Write(memoryStream);
                 return memoryStream.ToArray();
             }
+        }
+
+        private static ModuleDefinition AddGasCalculationToContractMethodInternal(ModuleDefinition moduleDefinition, string typeName, string methodName)
+        {
+            TypeDefinition contractType = moduleDefinition.Types.FirstOrDefault(x => x.Name == typeName);
+            MethodDefinition method = contractType.Methods.FirstOrDefault(m => m.Name == methodName);
+
+            if (method == null)
+                return moduleDefinition;
+
+            TypeDefinition baseType = GetContractBaseType(contractType);
+
+            // Get gas spend method
+            MethodDefinition gasMethod = baseType.Methods.First(m => m.FullName == GasMethod);
+            MethodReference gasMethodReference = contractType.Module.ImportReference(gasMethod);
+
+            IEnumerable<MethodDefinition> referencedMethods = method.Body.Instructions
+                .Select(i => i.Operand)
+                .OfType<MethodDefinition>()
+                .ToList();
+
+            InjectSpendGasMethod(method, gasMethodReference);
+
+            foreach (MethodDefinition referencedMethod in referencedMethods)
+            {
+                InjectSpendGasMethod(referencedMethod, gasMethodReference);
+            }
+
+            return moduleDefinition;
         }
 
         private static void InjectSpendGasMethod(MethodDefinition methodDefinition, MethodReference gasMethod)
