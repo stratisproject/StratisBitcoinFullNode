@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (fullValidationRequired)
                     {
-                        ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(new ChainedHeaderBlock(validationContext.BlockToValidate, validationContext.ChainedHeaderToValidate)).ConfigureAwait(false);
+                        ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
                         if (!fullValidationResult.Succeeded)
                         {
                             lock (this.peerLock)
@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (validationContext.Error == null)
             {
-                await this.OnPartialValidationSucceededAsync(new ChainedHeaderBlock(validationContext.BlockToValidate, validationContext.ChainedHeaderToValidate)).ConfigureAwait(false);
+                await this.OnPartialValidationSucceededAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
             }
             else
             {
@@ -381,10 +381,10 @@ namespace Stratis.Bitcoin.Consensus
         /// Handles a situation when partial validation of a block was successful. Informs CHT about
         /// finishing partial validation process and starting a new partial validation or full validation.
         /// </summary>
-        /// <param name="chainedHeaderBlock">Block which validation was successful.</param>
-        private async Task OnPartialValidationSucceededAsync(ChainedHeaderBlock chainedHeaderBlock)
+        /// <param name="chainedHeader">Header of a block which validation was successful.</param>
+        private async Task OnPartialValidationSucceededAsync(ChainedHeader chainedHeader)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             List<ChainedHeaderBlock> chainedHeaderBlocksToValidate;
             ConnectBlocksResult connectBlocksResult = null;
@@ -395,14 +395,14 @@ namespace Stratis.Bitcoin.Consensus
 
                 lock (this.peerLock)
                 {
-                    chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeaderBlock.ChainedHeader, out fullValidationRequired);
+                    chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out fullValidationRequired);
                 }
 
                 this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? "" : " NOT");
 
                 if (fullValidationRequired)
                 {
-                    connectBlocksResult = await this.FullyValidateLockedAsync(chainedHeaderBlock).ConfigureAwait(false);
+                    connectBlocksResult = await this.FullyValidateLockedAsync(chainedHeader).ConfigureAwait(false);
                 }
             }
 
@@ -497,14 +497,13 @@ namespace Stratis.Bitcoin.Consensus
         /// It is possible that during connection we find out that blocks that we tried to connect are invalid and we switch back to original chain.
         /// Switching that requires rewinding may fail in case rewind goes beyond fork point and the block data is not available to advance to the fork point.
         /// </remarks>
-        /// <param name="proposedNewTip">Tip of the chain that will become the tip of our consensus chain if full validation will succeed.</param>
+        /// <param name="newTip">Tip of the chain that will become the tip of our consensus chain if full validation will succeed.</param>
         /// <returns>Validation related information.</returns>
-        private async Task<ConnectBlocksResult> FullyValidateLockedAsync(ChainedHeaderBlock proposedNewTip)
+        private async Task<ConnectBlocksResult> FullyValidateLockedAsync(ChainedHeader newTip)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(proposedNewTip), proposedNewTip);
+            this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
 
             ChainedHeader oldTip = this.Tip;
-            ChainedHeader newTip = proposedNewTip.ChainedHeader;
 
             ChainedHeader fork = oldTip.FindFork(newTip);
 
