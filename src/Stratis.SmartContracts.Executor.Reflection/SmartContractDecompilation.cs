@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using Mono.Cecil;
+using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -37,6 +38,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 return (ContractByteCode) ms.ToArray();
             }
+        }
+
+        /// <summary>
+        /// Validates the <see cref="SmartContractDecompilation"/> using the supplied validator.
+        /// </summary>
+        public SmartContractValidationResult Validate(ISmartContractValidator validator)
+        {
+            return validator.Validate(this.ModuleDefinition);
         }
     }
 }
