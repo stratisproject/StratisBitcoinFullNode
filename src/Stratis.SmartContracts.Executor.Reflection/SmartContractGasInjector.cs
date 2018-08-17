@@ -51,15 +51,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return AddGasCalculationToContractMethod(contractByteCode, typeName, ".ctor");
         }
 
-        public static byte[] AddGasCalculationToConstructor(ModuleDefinition moduleDefinition, string typeName)
+        public static ModuleDefinition AddGasCalculationToConstructor(ModuleDefinition moduleDefinition, string typeName)
         {
-            using (var memoryStream = new MemoryStream())
-            {
-                ModuleDefinition result = AddGasCalculationToContractMethodInternal(moduleDefinition, typeName, ".ctor");
-
-                result.Write(memoryStream);
-                return memoryStream.ToArray();
-            }
+            return AddGasCalculationToContractMethodInternal(moduleDefinition, typeName, ".ctor");
         }
 
         /// <summary>
@@ -81,7 +75,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
         }
 
-        private static ModuleDefinition AddGasCalculationToContractMethodInternal(ModuleDefinition moduleDefinition, string typeName, string methodName)
+        public static ModuleDefinition AddGasCalculationToContractMethodInternal(ModuleDefinition moduleDefinition, string typeName, string methodName)
         {
             TypeDefinition contractType = moduleDefinition.Types.FirstOrDefault(x => x.Name == typeName);
             MethodDefinition method = contractType.Methods.FirstOrDefault(m => m.Name == methodName);

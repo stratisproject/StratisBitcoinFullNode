@@ -70,7 +70,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             string typeToInstantiate = typeName ?? decompilation.ContractType.Name;
 
-            ContractByteCode gasInjectedCode = (ContractByteCode) SmartContractGasInjector.AddGasCalculationToConstructor(decompilation.ModuleDefinition, typeToInstantiate);
+            decompilation.InjectConstructorGas();
 
             var internalTransferList = new List<TransferInfo>();
 
@@ -79,7 +79,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ISmartContractState contractState = this.SetupState(internalTransferList, gasMeter, repository, transactionContext, address);
 
             Result<IContract> contractLoadResult = this.Load(
-                gasInjectedCode,
+                decompilation.ToByteCode(),
                 typeToInstantiate,
                 address,
                 contractState);
