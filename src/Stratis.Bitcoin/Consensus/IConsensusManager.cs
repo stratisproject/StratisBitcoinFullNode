@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="block">The mined block.</param>
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
-        Task<ChainedHeaderBlock> BlockMinedAsync(Block block);
+        Task<ChainedHeader> BlockMinedAsync(Block block);
     }
 
     /// <summary>

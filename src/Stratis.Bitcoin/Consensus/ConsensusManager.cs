@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public async Task<ChainedHeaderBlock> BlockMinedAsync(Block block)
+        public async Task<ChainedHeader> BlockMinedAsync(Block block)
         {
             this.logger.LogTrace("({0}:{1})", nameof(block), block.GetHash());
 
@@ -285,10 +285,8 @@ namespace Stratis.Bitcoin.Consensus
                 }
             }
 
-            var headerBlock = new ChainedHeaderBlock(validationContext.BlockToValidate, validationContext.ChainedHeaderToValidate);
-
-            this.logger.LogTrace("(-):{0}", headerBlock);
-            return headerBlock;
+            this.logger.LogTrace("(-):{0}", validationContext.ChainedHeaderToValidate);
+            return validationContext.ChainedHeaderToValidate;
         }
 
         /// <summary>
@@ -784,9 +782,9 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             // Call the validation engine.
-            ValidationContext validationResult = await this.consensusRules.FullValidationAsync(blockToConnect).ConfigureAwait(false);
+            ValidationContext validationContext = await this.consensusRules.FullValidationAsync(blockToConnect).ConfigureAwait(false);
 
-            if (validationResult.Error != null)
+            if (validationContext.Error != null)
             {
                 List<int> badPeers;
 
@@ -795,7 +793,7 @@ namespace Stratis.Bitcoin.Consensus
                     badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
                 }
 
-                var failureResult = new ConnectBlocksResult(false, false, badPeers, validationResult.Error.Message, validationResult.BanDurationSeconds);
+                var failureResult = new ConnectBlocksResult(false, false, badPeers, validationContext.Error.Message, validationContext.BanDurationSeconds);
 
                 this.logger.LogTrace("(-)[FAILED]:'{0}'", failureResult);
                 return failureResult;
