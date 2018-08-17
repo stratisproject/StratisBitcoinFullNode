@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>URI to node's API interface.</summary>
         public Timer KeepaliveTimer { get; private set; }
 
-        /// <summary>The Https certificate file name.</summary>
+        /// <summary>The HTTPS certificate file name.</summary>
         public string HttpsCertificateFilePath { get; set; }
         
         /// <summary>Use HTTPS or not.</summary>

@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Api.Tests
 
 
         [Fact]
-        public void Initialize_WhenCertificateAlreadyInStore_UsesCertificateOnHttpsWithKestrel()
+        public void Initialize_WhenCertificateRetrieved_UsesCertificateOnHttpsWithKestrel()
         {
             this.apiSettings.UseHttps = true;
             this.SetCertificateInStore(true);

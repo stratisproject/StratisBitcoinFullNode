@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Api
                     {
                         if (!apiSettings.UseHttps) return;
                         options.Listen(
-                            IPAddress.Loopback,
+                            IPAddress.Any,
                             apiSettings.ApiPort,
                             listenOptions => { listenOptions.UseHttps(certificate); });
                     })
