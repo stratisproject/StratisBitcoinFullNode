@@ -378,7 +378,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     else
                     {
                         this.logger.LogTrace("Outputs of transaction ID '{0}' not found in cache, inserting them.", unspent.TransactionId);
-                        this.CreateCacheItem(unspent);
+                        existing = new CacheItem();
+                        existing.ExistInInner = !unspent.IsFull; // Seems to be a new created coin (careful, untrue if rewinding).
+                        existing.ExistInInner |= duplicateTransactions.Any(t => unspent.TransactionId == t);
+                        existing.IsDirty = true;
+                        existing.UnspentOutputs = unspent;
+                        this.unspents.Add(unspent.TransactionId, existing);
                         rewindData.TransactionsToRemove.Add(unspent.TransactionId);
                     }
 
@@ -431,7 +436,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         else
                         {
                             this.logger.LogTrace("Outputs of transaction ID '{0}' not found in cache, inserting them.", unspentToRestore.TransactionId);
-                            this.CreateCacheItem(unspentToRestore);
+                            existing = new CacheItem
+                            {
+                                ExistInInner = false,
+                                IsDirty = true,
+                                UnspentOutputs = unspentToRestore
+                            };
+                            this.unspents.Add(unspentToRestore.TransactionId, existing);
                         }
                     }
 
@@ -447,16 +458,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.logger.LogTrace("(-):'{0}'", hash);
                 return hash;
             }
-        }
-
-        private void CreateCacheItem(UnspentOutputs unspentOutputs)
-        {
-            var existing = new CacheItem();
-            existing.ExistInInner = !unspentOutputs.IsFull; // Seems to be a new created coin (careful, untrue if rewinding).
-            existing.ExistInInner |= duplicateTransactions.Any(t => unspentOutputs.TransactionId == t);
-            existing.IsDirty = true;
-            existing.UnspentOutputs = unspentOutputs;
-            this.unspents.Add(unspentOutputs.TransactionId, existing);
         }
 
         /// <inheritdoc />
