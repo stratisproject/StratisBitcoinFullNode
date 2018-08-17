@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 throw new NotImplementedException();
             }
 
-            public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+            public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
             {
                 throw new NotImplementedException();
             }
