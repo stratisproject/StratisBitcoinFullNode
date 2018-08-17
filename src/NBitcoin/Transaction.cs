@@ -631,6 +631,14 @@ namespace NBitcoin
             ret.FromBytes(Encoders.Hex.DecodeData(hex));
             return ret;
         }
+
+        public long GetSizeInBytes()
+        {
+            long scriptSize = this.ScriptPubKey.Length;
+
+            // size of the script + size of all static properties (there is only one)
+            return scriptSize + this.Value.GetSizeInBytes();
+        }
     }
 
     public class IndexedTxIn

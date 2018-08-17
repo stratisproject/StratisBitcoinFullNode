@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -341,7 +340,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are prunable and not in underlaying coinview, removing from cache.", unspent.TransactionId);
                         this.unspents.Remove(unspent.TransactionId);
                     }
-
+                    
                     this.unspents.TryGetValue(unspent.TransactionId, out CacheItem original);
                     if (original == null)
                     {
@@ -352,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     {
                         // We'll need to restore the original outputs.
                         UnspentOutputs clone = unspent.Clone();
-                        clone.Outputs = original.OriginalOutputs;
+                        clone.Outputs = original.UnspentOutputs.Outputs.ToArray();
                         rewindData.OutputsToRestore.Add(clone);
                     }
                 }

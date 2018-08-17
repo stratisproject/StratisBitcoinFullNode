@@ -15,9 +15,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Persists changes to the coinview storage.
         /// <para>
         /// This method is provided (in <paramref name="unspentOutputs"/> parameter) with information about all
-        /// transactions that are either new or were changed in the new block. It is also provided with information
-        /// in original outputs about the previous state of those transactions (if any),
-        /// which is used for <see cref="ICoinView.Rewind"/> operation.
+        /// transactions that are either new or were changed in the new block. It is also provided with a list of rewind data items,
+        /// which are used for <see cref="ICoinView.Rewind"/> operation.
         /// </para>
         /// </summary>
         /// <param name="unspentOutputs">Information about the changes between the old block and the new block. An item in this list represents a list of all outputs

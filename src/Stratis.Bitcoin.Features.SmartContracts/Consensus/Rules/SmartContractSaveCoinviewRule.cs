@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             // unless the coinview threshold is reached.
             this.Logger.LogTrace("Saving coinview changes.");
             var utxoRuleContext = (UtxoRuleContext)context;
-            List<UnspentOutputs> unspentOutputs = utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet)?.ToList();
+            List<UnspentOutputs> unspentOutputs = utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet).ToList();
             await this.PowParent.UtxoSet.AddRewindDataAsync(unspentOutputs, currentBlock).ConfigureAwait(false);
         }
     }

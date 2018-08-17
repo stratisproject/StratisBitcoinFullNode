@@ -11,14 +11,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     public class SaveCoinviewRule : UtxoStoreConsensusRule
     {
-        /// <summary>
-        /// Specifies time threshold which is used to determine if flush is required.
-        /// When consensus tip timestamp is greater than current time minus the threshold the flush is required.
-        /// </summary>
-        /// <remarks>Used only on blockchains without max reorg property.</remarks>
-        private const int FlushRequiredThresholdSeconds = 2 * 24 * 60 * 60;
-
-        /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
             ChainedHeader currentBlock = context.ValidationContext.ChainedHeaderToValidate;
@@ -27,25 +19,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // unless the coinview threshold is reached.
             this.Logger.LogTrace("Saving coinview changes.");
             var utxoRuleContext = (UtxoRuleContext)context;
-            List<UnspentOutputs> unspentOutputs = utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet)?.ToList();
+            List<UnspentOutputs> unspentOutputs = utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet).ToList();
             await this.PowParent.UtxoSet.AddRewindDataAsync(unspentOutputs, currentBlock).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Calculates if coinview flush is required.
-        /// </summary>
-        /// <remarks>
-        /// For blockchains with max reorg property flush is required when consensus tip is less than max reorg blocks behind the chain tip.
-        /// If there is no max reorg property - flush is required when consensus tip timestamp is less than <see cref="FlushRequiredThresholdSeconds"/> behind the adjusted time.
-        /// </remarks>
-        private bool FlushRequired(ChainedHeader tip)
-        {
-            if (tip.Header.Time > this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - FlushRequiredThresholdSeconds)
-            {
-                return true;
-            }
-
-            return false;
         }
     }
     

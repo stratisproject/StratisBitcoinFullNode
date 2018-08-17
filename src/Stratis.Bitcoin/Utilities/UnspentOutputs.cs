@@ -151,6 +151,21 @@ namespace Stratis.Bitcoin.Utilities
             return coins;
         }
 
+        public long GetSizeInBytes()
+        {
+            return
+                sizeof(uint) + // this.Height
+                sizeof(uint) + // this.Version
+                sizeof(uint) + // this.Time
+                sizeof(int) + // this.UnspentCount
+                sizeof(bool) + // this.IsCoinbase
+                sizeof(bool) + // this.IsCoinstake
+                sizeof(bool) + // this.IsFull
+                sizeof(bool) + // this.IsPrunable
+                this.TransactionId.Size + // uint256 - this.TransactionId
+                (this.Outputs?.Sum(o => o.GetSizeInBytes()) ?? 0); // this.Outputs
+        }
+
         public void ReadWrite(BitcoinStream stream)
         {
             stream.ReadWrite(ref this.transactionId);
