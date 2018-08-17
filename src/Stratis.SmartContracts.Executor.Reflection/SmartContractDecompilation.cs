@@ -74,5 +74,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             return validator.Validate(this.ModuleDefinition);
         }
+
+        /// <summary>
+        /// Rewrites the <see cref="ModuleDefinition"/> on the type with this name to include opcodes for measuring gas consumption.
+        /// </summary>
+        /// <remarks>
+        /// TODO - Make this a generic 'rewrite' method and pass in a rewriter.
+        /// </remarks>
+        public void InjectMethodGas(string typeName, string methodName)
+        {
+            this.ModuleDefinition = SmartContractGasInjector.AddGasCalculationToContractMethod(this.ModuleDefinition, typeName, methodName);
+        }
     }
 }

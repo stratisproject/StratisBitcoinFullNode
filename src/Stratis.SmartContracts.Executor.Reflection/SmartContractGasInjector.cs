@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -46,33 +45,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return typeDefinition.BaseType.Resolve();
         }
         
-        public static byte[] AddGasCalculationToConstructor(byte[] contractByteCode, string typeName)
-        {       
-            return AddGasCalculationToContractMethod(contractByteCode, typeName, ".ctor");
-        }
-
         public static ModuleDefinition AddGasCalculationToConstructor(ModuleDefinition moduleDefinition, string typeName)
         {
             return AddGasCalculationToContractMethodInternal(moduleDefinition, typeName, ".ctor");
         }
 
         /// <summary>
-        /// Injects calls to SpendGas into the method of the provided contract byte code. If no method with that
-        /// name exists, returns the original bytecode.
+        /// Rewrites the IL of the given method on the <see cref="ModuleDefinition"/> by injects calls to SpendGas. If no method with that name exists, returns the original <see cref="ModuleDefinition"/>.
         /// </summary>
-        /// <param name="contractByteCode"></param>
-        /// <param name="methodName"></param>
-        /// <returns></returns>
-        public static byte[] AddGasCalculationToContractMethod(byte[] contractByteCode, string typeName, string methodName)
+        public static ModuleDefinition AddGasCalculationToContractMethod(ModuleDefinition moduleDefinition, string typeName, string methodName)
         {
-            using (ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(contractByteCode)))
-            using (var memoryStream = new MemoryStream())
-            {
-                ModuleDefinition result = AddGasCalculationToContractMethodInternal(moduleDefinition, typeName, methodName);
-
-                result.Write(memoryStream);
-                return memoryStream.ToArray();
-            }
+            return AddGasCalculationToContractMethodInternal(moduleDefinition, typeName, methodName);
         }
 
         public static ModuleDefinition AddGasCalculationToContractMethodInternal(ModuleDefinition moduleDefinition, string typeName, string methodName)
