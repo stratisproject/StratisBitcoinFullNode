@@ -19,11 +19,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.ModuleDefinition = moduleDefinition;
         }
 
-        public TypeDefinition BaseType
-        {
-            get { return this.ContractType.BaseType.Resolve(); }
-        }
-
         public List<TypeDefinition> DevelopedTypes => this.developedTypes ?? (this.developedTypes = this.ModuleDefinition.GetDevelopedTypes().ToList());
 
         public TypeDefinition ContractType
