@@ -22,15 +22,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.ModuleDefinition = moduleDefinition;
         }
 
-        /// <summary>
-        /// The <see cref="TypeDefinition"/>s contained in the module, excluding those that are compiler or framework generated.
-        /// </summary>
+        /// <inheritdoc />
         public List<TypeDefinition> DevelopedTypes => this.developedTypes ?? (this.developedTypes = this.ModuleDefinition.GetDevelopedTypes().ToList());
 
-        /// <summary>
-        /// Returns the <see cref="TypeDefinition"/> of the contract denoted as the module's entry point with a <see cref="DeployAttribute"/>.
-        /// If no entry point is defined, the first <see cref="TypeDefinition"/> will be chosen.
-        /// </summary>
+        /// <inheritdoc />
         public TypeDefinition ContractType
         {
             get
@@ -49,9 +44,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
         }
 
-        /// <summary>
-        /// The underlying <see cref="Mono.Cecil.ModuleDefinition"/> representing the contract.
-        /// </summary>
+        /// <inheritdoc />
         public ModuleDefinition ModuleDefinition { get; private set; }
 
         /// <summary>
@@ -65,9 +58,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.ModuleDefinition = SmartContractGasInjector.AddGasCalculationToConstructor(this.ModuleDefinition, this.ContractType.Name);
         }
 
-        /// <summary>
-        /// Serializes the <see cref="ModuleDefinition"/> to contract bytecode.
-        /// </summary>
+        /// <inheritdoc />
         public ContractByteCode ToByteCode()
         {
             using (var ms = new MemoryStream())
@@ -78,9 +69,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
         }
 
-        /// <summary>
-        /// Validates the <see cref="SmartContractDecompilation"/> using the supplied validator.
-        /// </summary>
+        /// <inheritdoc />
         public SmartContractValidationResult Validate(ISmartContractValidator validator)
         {
             return validator.Validate(this.ModuleDefinition);

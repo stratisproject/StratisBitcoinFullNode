@@ -23,12 +23,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         ModuleDefinition ModuleDefinition { get; }
 
-        /// <summary>
-        /// Rewrites the smart contract constructor of the <see cref="SmartContractDecompilation.ModuleDefinition"/> to include opcodes for measuring gas consumption.
-        /// </summary>
-        /// <remarks>
-        /// TODO - Make this a generic 'rewrite' method and pass in a rewriter.
-        /// </remarks>
         void InjectConstructorGas();
 
         /// <summary>
