@@ -66,8 +66,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public T RegisterRule<T>() where T : ConsensusRuleBase, new()
         {
             var rule = new T();
-            //TODO ACTIVATION
-            //this.Network.Consensus.Rules = new List<IBaseConsensusRule>() { rule };
+
+            if (rule is IHeaderValidationConsensusRule validationConsensusRule)
+                this.Network.Consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>() { validationConsensusRule };
+
+            if (rule is IIntegrityValidationConsensusRule consensusRule)
+                this.Network.Consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>() { consensusRule };
+
+            if (rule is IPartialValidationConsensusRule partialValidationConsensusRule)
+                this.Network.Consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>() { partialValidationConsensusRule };
+
+            if (rule is IFullValidationConsensusRule fullValidationConsensusRule)
+                this.Network.Consensus.FullValidationRules = new List<IFullValidationConsensusRule>() { fullValidationConsensusRule };
+
             this.Register();
             return rule;
         }
@@ -101,8 +112,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public T RegisterRule<T>() where T : ConsensusRuleBase, new()
         {
             var rule = new T();
-            //TODO ACTIVATION
-            //this.Network.Consensus.Rules = new List<IBaseConsensusRule>() { rule };
+
+            if (rule is IHeaderValidationConsensusRule validationConsensusRule)
+                this.Network.Consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>() { validationConsensusRule };
+
+            if (rule is IIntegrityValidationConsensusRule consensusRule)
+                this.Network.Consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>() { consensusRule };
+
+            if (rule is IPartialValidationConsensusRule partialValidationConsensusRule)
+                this.Network.Consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>() { partialValidationConsensusRule };
+
+            if (rule is IFullValidationConsensusRule fullValidationConsensusRule)
+                this.Network.Consensus.FullValidationRules = new List<IFullValidationConsensusRule>() { fullValidationConsensusRule };
+
             this.Register();
             return rule;
         }
