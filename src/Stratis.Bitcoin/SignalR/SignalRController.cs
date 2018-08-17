@@ -10,13 +10,11 @@ namespace Stratis.Bitcoin.SignalR
     {
         private readonly ISignalRService signalRService;
 
-        public SignalRController(ISignalRService signalRService)
-        {
-            this.signalRService = signalRService;
-        }
+        public SignalRController(ISignalRService signalRService) => this.signalRService = signalRService;
 
+        /// <summary> Address used by clients when establishing a connection to the fullnode's SignalR hub. </summary>
         [HttpGet]
         [Route("address")]
-        public IActionResult Address() => this.Content(this.signalRService.Address.AbsoluteUri);
+        public IActionResult Address() => this.Content($"{this.signalRService.Address.AbsoluteUri}hub");
     }
 }

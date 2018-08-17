@@ -82,9 +82,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The settings for the wallet feature.</summary>
         private readonly IScriptAddressReader scriptAddressReader;
 
-        private readonly ISignalRService signalRService;
-
-        public uint256 WalletTipHash { get; set; }        
+        public uint256 WalletTipHash { get; set; }
 
         // In order to allow faster look-ups of transactions affecting the wallets' addresses,
         // we keep a couple of objects in memory:
@@ -105,7 +103,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IScriptAddressReader scriptAddressReader,
-            ISignalRService signalRService,
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node will broadcast to.
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -118,7 +115,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(scriptAddressReader, nameof(scriptAddressReader));
-            Guard.NotNull(signalRService, nameof(signalRService));
 
             this.walletSettings = walletSettings;
             this.lockObject = new object();
@@ -899,31 +895,34 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.SaveWallets();
                 }
                 
-                this.PublishWalletBalances();
+                //There is a requirement to publish wallet balances, but we don't want to enable this just yet.
+                //this.PublishWalletBalances();
             }
             
             return foundSendingTrx || foundReceivingTrx;
         }
-        
-        private class JsonWallet
-        {
-            public string Name { get; set; }
-            public IEnumerable<AccountBalance> Balances { get; set; }
-        }
 
-        private void PublishWalletBalances()
-        {
-            try
-            {
-                var wallets = this.Wallets.Select(w => new JsonWallet {Name = w.Name, Balances = this.GetBalances(w.Name)});
-                if (wallets.Any())
-                    this.signalRService.PublishAsync("balances", JsonConvert.SerializeObject(wallets));
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Failed to PublishWalletBalances: {0}", e.Message);
-            }
-        }
+        //*************** There is a requirement to publish wallet balances, but we don't want to enable this just yet. ***************
+        //private class JsonWallet
+        //{
+        //    public string Name { get; set; }
+        //    public IEnumerable<AccountBalance> Balances { get; set; }
+        //}
+
+        //private void PublishWalletBalances()
+        //{
+        //    try
+        //    {
+        //        var wallets = this.Wallets.Select(w => new JsonWallet {Name = w.Name, Balances = this.GetBalances(w.Name)});
+        //        if (wallets.Any())
+        //            this.signalRService.SendAsync("balances", JsonConvert.SerializeObject(wallets));
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        this.logger.LogError("Failed to PublishWalletBalances: {0}", e.Message);
+        //    }
+        //}
+        //******************************************************************************************************************************
 
         /// <summary>
         /// Adds a transaction that credits the wallet with new coins.

@@ -34,5 +34,15 @@ namespace Stratis.Bitcoin.Utilities
                 }
             }
         }
+
+        public static int NextFreePort
+        {
+            get
+            {
+                int[] nextFreePort = { 0 };
+                FindPorts(nextFreePort);
+                return nextFreePort.First();
+            }
+        }
     }
 }
