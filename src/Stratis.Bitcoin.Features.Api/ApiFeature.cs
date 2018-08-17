@@ -134,7 +134,6 @@ namespace Stratis.Bitcoin.Features.Api
                         services.AddSingleton(fullNodeBuilder);
                         services.AddSingleton(options);
                         services.AddSingleton<ApiSettings>();
-                        services.AddSingleton<IPasswordReader, ConsolePasswordReader>();
                         services.AddSingleton<ICertificateStore, CertificateStore>();
                     });
             });

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Security;
 using System.Text;
 using System.Timers;
 using Microsoft.Extensions.Logging;
@@ -42,11 +41,8 @@ namespace Stratis.Bitcoin.Features.Api
         public Timer KeepaliveTimer { get; private set; }
 
         /// <summary>The Https certificate file name.</summary>
-        public string HttpsCertificateFileName { get; set; }
-
-        /// <summary>The default certificate file name.</summary>
-        public const string DefaultCertificateFileName = "StratisApi.pfx";
-
+        public string HttpsCertificateFilePath { get; set; }
+        
         /// <summary>Use HTTPS or not.</summary>
         public bool UseHttps { get; set; }
     
@@ -71,7 +67,9 @@ namespace Stratis.Bitcoin.Features.Api
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.UseHttps = config.GetOrDefault("usehttps", false);
-            this.HttpsCertificateFileName = config.GetOrDefault("certificatefilename", DefaultCertificateFileName);
+            this.HttpsCertificateFilePath = config.GetOrDefault("certificatefilepath", (string)null);
+            if(this.UseHttps && string.IsNullOrWhiteSpace(this.HttpsCertificateFilePath))
+                throw new ConfigurationException("The path to a certificate needs to be provided when using https. Please use the argument 'certificatefilepath' to provide it.");
 
             var defaultApiHost = this.UseHttps 
                                      ? DefaultApiHost.Replace(@"http://", @"https://") 
@@ -133,7 +131,7 @@ namespace Stratis.Bitcoin.Features.Api
             builder.AppendLine($"-apiport=<0-65535>                Port of node's API interface. Defaults to { GetDefaultPort(network) }.");
             builder.AppendLine($"-keepalive=<seconds>              Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
             builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to { false }.");
-            builder.AppendLine($"-certificatefilename=<string>     Subject name of the certificate to use for https traffic encryption. Defaults to { DefaultCertificateFileName }.");
+            builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to <null>.");
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
@@ -153,9 +151,9 @@ namespace Stratis.Bitcoin.Features.Api
             builder.AppendLine($"#Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
             builder.AppendLine($"#keepalive=0");
             builder.AppendLine($"#Use HTTPS protocol on the API. Default is { false }.");
-            builder.AppendLine($"#usehttps={DefaultCertificateFileName}");
+            builder.AppendLine($"#usehttps={ false }");
             builder.AppendLine($"#Subject name of the certificate to use for https traffic encryption.");
-            builder.AppendLine($"#certificatefilename={DefaultCertificateFileName}");
+            builder.AppendLine($"#certificatefilepath=");
         }
     }
 }
