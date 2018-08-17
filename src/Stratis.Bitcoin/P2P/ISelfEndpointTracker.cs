@@ -17,6 +17,9 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>External IP address of the node.</summary>
         IPEndPoint MyExternalAddress { get; set; }
 
+        /// <summary>Peer score of external IP address of the node.</summary>
+        int MyExternalAddressPeerScore { get; set; }
+
         /// <summary>Whether external IP address of the node is final or can be updated.</summary>
         bool IsMyExternalAddressFinal { get; set; }
 
