@@ -8,6 +8,9 @@ using Stratis.SmartContracts.Executor.Reflection.Loader;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
+    /// <summary>
+    /// Represents a low-level contract module that can be modified (via IL rewriting) and validated.
+    /// </summary>
     public sealed class SmartContractDecompilation
     {
         private List<TypeDefinition> developedTypes;
@@ -19,8 +22,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.ModuleDefinition = moduleDefinition;
         }
 
+        /// <summary>
+        /// The <see cref="TypeDefinition"/>s contained in the module, excluding those that are compiler or framework generated.
+        /// </summary>
         public List<TypeDefinition> DevelopedTypes => this.developedTypes ?? (this.developedTypes = this.ModuleDefinition.GetDevelopedTypes().ToList());
 
+        /// <summary>
+        /// Returns the <see cref="TypeDefinition"/> of the contract denoted as the module's entry point with a <see cref="DeployAttribute"/>.
+        /// If no entry point is defined, the first <see cref="TypeDefinition"/> will be chosen.
+        /// </summary>
         public TypeDefinition ContractType
         {
             get
@@ -39,6 +49,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
         }
 
+        /// <summary>
+        /// The underlying <see cref="Mono.Cecil.ModuleDefinition"/> representing the contract.
+        /// </summary>
         public ModuleDefinition ModuleDefinition { get; private set; }
 
         /// <summary>
