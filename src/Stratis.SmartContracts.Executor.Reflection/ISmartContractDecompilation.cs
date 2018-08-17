@@ -34,5 +34,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// Validates the <see cref="SmartContractDecompilation"/> using the supplied validator.
         /// </summary>
         SmartContractValidationResult Validate(ISmartContractValidator validator);
+
+        void InjectMethodGas(string typeName, string methodName);
     }
 }
