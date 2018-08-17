@@ -364,8 +364,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.blockHash = nextBlockHash;
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
-                    CacheItem existing;
-                    if (this.unspents.TryGetValue(unspent.TransactionId, out existing))
+                    if (this.unspents.TryGetValue(unspent.TransactionId, out CacheItem existing))
                     {
                         // We'll need to restore the original outputs.
                         UnspentOutputs clone = unspent.Clone();
@@ -424,6 +423,25 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     {
                         if (!this.unspents.ContainsKey(transactionToRemove)) continue;
                         this.unspents.Remove(transactionToRemove);
+                    }
+
+                    foreach (UnspentOutputs unspentToRestore in lastRewindData.OutputsToRestore)
+                    {
+                        this.logger.LogTrace("Outputs of transaction ID '{0}' will be restored.", unspentToRestore.TransactionId);
+                        if (this.unspents.TryGetValue(unspentToRestore.TransactionId, out CacheItem existing))
+                        {
+                            existing.UnspentOutputs = unspentToRestore;
+                        }
+                        else
+                        {
+                            this.logger.LogTrace("Outputs of transaction ID '{0}' not found in cache, inserting them.", unspentToRestore.TransactionId);
+                            existing = new CacheItem();
+                            existing.ExistInInner = !unspentToRestore.IsFull; // Seems to be a new created coin (careful, untrue if rewinding).
+                            existing.ExistInInner |= duplicateTransactions.Any(t => unspentToRestore.TransactionId == t);
+                            existing.IsDirty = true;
+                            existing.UnspentOutputs = unspentToRestore;
+                            this.unspents.Add(unspentToRestore.TransactionId, existing);
+                        }
                     }
 
                     this.rewindDataList.Remove(lastRewindData);
