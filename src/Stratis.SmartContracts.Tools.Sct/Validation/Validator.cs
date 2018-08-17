@@ -114,7 +114,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 Console.WriteLine($"Validating file {file}...");
                 Console.WriteLine();
 
-                SmartContractValidationResult formatValidationResult = formatValidator.Validate(decompilation);
+                SmartContractValidationResult formatValidationResult = formatValidator.Validate(decompilation.ModuleDefinition);
 
                 validationData.FormatValid = formatValidationResult.IsValid;
 
@@ -132,7 +132,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                     .DeterminismValidationErrors
                     .AddRange(determinismValidationResult.Errors);
 
-                SmartContractValidationResult warningResult = warningValidator.Validate(decompilation);
+                SmartContractValidationResult warningResult = warningValidator.Validate(decompilation.ModuleDefinition);
 
                 validationData
                     .Warnings

@@ -1,14 +1,16 @@
 ﻿using System.Linq;
+using Mono.Cecil;
+
 namespace Stratis.SmartContracts.Core.Validation
 {
     public sealed class SmartContractValidator : ISmartContractValidator
     {
-        public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
+        public SmartContractValidationResult Validate(ModuleDefinition moduleDefinition)
         {
             var policy = ValidationPolicy.FromExisting(new[] { FormatPolicy.Default, DeterminismPolicy.Default });
             var validator = new ModulePolicyValidator(policy);
 
-            var results = validator.Validate(decompilation.ModuleDefinition).ToList();
+            var results = validator.Validate(moduleDefinition).ToList();
             return new SmartContractValidationResult(results);
         }
     }

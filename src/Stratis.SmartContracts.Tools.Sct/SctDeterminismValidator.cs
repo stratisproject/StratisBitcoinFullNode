@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts.Tools.Sct
         
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            return Validator.Validate(decompilation);
+            return Validator.Validate(decompilation.ModuleDefinition);
         }
     }
 }

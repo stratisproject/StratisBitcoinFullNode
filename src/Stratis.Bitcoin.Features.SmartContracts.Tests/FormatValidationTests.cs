@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
@@ -10,7 +8,6 @@ using Mono.Cecil;
 using Stratis.ModuleValidation.Net;
 using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation;
-using Stratis.SmartContracts.Core.Validation.Validators.Module;
 using Stratis.SmartContracts.Core.Validation.Validators.Type;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
@@ -86,7 +83,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void SmartContract_ValidateFormat_FormatValidatorChecksConstructor()
         {
             var validator = new SmartContractFormatValidator();
-            var validationResult = validator.Validate(MultipleConstructorDecompilation);
+            var validationResult = validator.Validate(MultipleConstructorDecompilation.ModuleDefinition);
 
             Assert.Single(validationResult.Errors);
             Assert.False(validationResult.IsValid);
@@ -322,7 +319,7 @@ public class Test : SmartContract
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
 
-            var result = validator.Validate(decomp);
+            var result = validator.Validate(decomp.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
@@ -352,7 +349,7 @@ public class Test2 {
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
 
-            var result = validator.Validate(decomp);
+            var result = validator.Validate(decomp.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Equal(2, result.Errors.Count());
