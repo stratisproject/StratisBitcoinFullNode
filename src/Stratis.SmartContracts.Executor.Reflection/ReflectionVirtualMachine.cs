@@ -49,7 +49,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public VmExecutionResult Create(IGasMeter gasMeter,
             IContractStateRepository repository,
             ICreateData createData,
-            ITransactionContext transactionContext)
+            ITransactionContext transactionContext,
+            string typeName = null)
         {
             this.logger.LogTrace("()");
 
@@ -67,7 +68,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractValidationException(validation.Errors));
             }
 
-            ContractByteCode gasInjectedCode = (ContractByteCode) SmartContractGasInjector.AddGasCalculationToConstructor(createData.ContractExecutionCode, decompilation.ContractType.Name);
+            string typeToInstantiate = typeName ?? decompilation.ContractType.Name;
+
+            ContractByteCode gasInjectedCode = (ContractByteCode) SmartContractGasInjector.AddGasCalculationToConstructor(createData.ContractExecutionCode, typeToInstantiate);
 
             var internalTransferList = new List<TransferInfo>();
 
@@ -77,7 +80,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             Result<IContract> contractLoadResult = this.Load(
                 gasInjectedCode,
-                decompilation.ContractType.Name,
+                typeToInstantiate,
                 address,
                 contractState);
 

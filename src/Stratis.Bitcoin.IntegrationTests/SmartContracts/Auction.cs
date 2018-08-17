@@ -96,7 +96,7 @@ public class Auction : SmartContract
         ulong amount = ReturnBalances[Message.Sender];
         Assert(amount > 0);
         ReturnBalances[Message.Sender] = 0;
-        ITransferResult transferResult = TransferFunds(Message.Sender, amount);
+        ITransferResult transferResult = Transfer(Message.Sender, amount);
         if (!transferResult.Success)
             ReturnBalances[Message.Sender] = amount;
         return transferResult.Success;
@@ -107,6 +107,6 @@ public class Auction : SmartContract
         Assert(Block.Number >= EndBlock);
         Assert(!HasEnded);
         HasEnded = true;
-        TransferFunds(Owner, HighestBid);
+        Transfer(Owner, HighestBid);
     }
 }
