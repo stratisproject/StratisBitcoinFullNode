@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using Mono.Cecil;
-using Stratis.ModuleValidation.Net;
 using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Core.Validation.Validators;
@@ -811,6 +807,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                   }").Replace(ReplaceReferencesString, "");
 
             SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp);
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_ByteArray_Conversion()
+        {
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/ByteArrayConversion.cs");
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;
