@@ -419,27 +419,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 if (this.rewindDataList.Any())
                 {
                     RewindData lastRewindData = this.rewindDataList.Last();
-                    foreach (uint256 transactionToRemove in lastRewindData.TransactionsToRemove)
-                    {
-                        this.logger.LogTrace("Attempt to remove transaction with ID '{0}'.", transactionToRemove);
-                        if (!this.unspents.ContainsKey(transactionToRemove)) continue;
-                        this.unspents.Remove(transactionToRemove);
-                    }
 
-                    foreach (UnspentOutputs unspentToRestore in lastRewindData.OutputsToRestore)
-                    {
-                        this.logger.LogTrace("Outputs of transaction ID '{0}' will be restored.", unspentToRestore.TransactionId);
-                        if (this.unspents.TryGetValue(unspentToRestore.TransactionId, out CacheItem existing))
-                        {
-                            existing.UnspentOutputs = unspentToRestore;
-                        }
-                        else
-                        {
-                            this.logger.LogTrace("Outputs of transaction ID '{0}' not found in cache, inserting them.", unspentToRestore.TransactionId);
-                            existing = new CacheItem { UnspentOutputs = unspentToRestore };
-                            this.unspents.Add(unspentToRestore.TransactionId, existing);
-                        }
-                    }
+                    this.RemoveTransactions(lastRewindData);
+                    this.RestoreOutputs(lastRewindData);
 
                     this.rewindDataList.Remove(lastRewindData);
                     this.logger.LogTrace("(-)[REMOVED_FROM_BATCH]:'{0}'", lastRewindData.PreviousBlockHash);
@@ -452,6 +434,36 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 this.logger.LogTrace("(-):'{0}'", hash);
                 return hash;
+            }
+        }
+
+        private void RestoreOutputs(RewindData rewindData)
+        {
+            foreach (UnspentOutputs unspentToRestore in rewindData.OutputsToRestore)
+            {
+                this.logger.LogTrace("Outputs of transaction ID '{0}' will be restored.", unspentToRestore.TransactionId);
+                if (this.unspents.TryGetValue(unspentToRestore.TransactionId, out CacheItem existing))
+                {
+                    existing.UnspentOutputs = unspentToRestore;
+                }
+                else
+                {
+                    this.logger.LogTrace(
+                        "Outputs of transaction ID '{0}' not found in cache, inserting them.",
+                        unspentToRestore.TransactionId);
+                    existing = new CacheItem {UnspentOutputs = unspentToRestore};
+                    this.unspents.Add(unspentToRestore.TransactionId, existing);
+                }
+            }
+        }
+
+        private void RemoveTransactions(RewindData rewindData)
+        {
+            foreach (uint256 transactionToRemove in rewindData.TransactionsToRemove)
+            {
+                this.logger.LogTrace("Attempt to remove transaction with ID '{0}'.", transactionToRemove);
+                if (!this.unspents.ContainsKey(transactionToRemove)) continue;
+                this.unspents.Remove(transactionToRemove);
             }
         }
 
