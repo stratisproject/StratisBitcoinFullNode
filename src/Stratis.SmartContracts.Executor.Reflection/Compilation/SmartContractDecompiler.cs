@@ -18,24 +18,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
             IAssemblyResolver resolver = assemblyResolver ?? new DefaultAssemblyResolver();
             var moduleDefinition = ModuleDefinition.ReadModule(new MemoryStream(bytes), new ReaderParameters {AssemblyResolver = resolver});
 
-            List<TypeDefinition> developedTypes = moduleDefinition.GetDevelopedTypes().ToList();
-
-            TypeDefinition contractType;
-            if (developedTypes.Count() == 1)
-            {
-                // If there is only one type, take that.
-                contractType = developedTypes.First();
-            }
-            else
-            {
-                // Otherwise, we need the type with DeployAttribute.
-                contractType = developedTypes.FirstOrDefault(x => x.CustomAttributes.Any(y => y.AttributeType.Name == typeof(DeployAttribute).Name));
-            }
-
-            // If contract type wasn't set yet, set the first.
-            contractType = contractType ?? developedTypes.FirstOrDefault();
-
-            return new SmartContractDecompilation(moduleDefinition, contractType);
+            return new SmartContractDecompilation(moduleDefinition);
         }
     }
 }

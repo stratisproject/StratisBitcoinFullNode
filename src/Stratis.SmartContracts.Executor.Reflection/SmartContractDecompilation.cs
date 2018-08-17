@@ -1,5 +1,8 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Mono.Cecil;
+using Stratis.ModuleValidation.Net;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
 
@@ -7,10 +10,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public sealed class SmartContractDecompilation
     {
-        public SmartContractDecompilation(ModuleDefinition moduleDefinition, TypeDefinition contractType)
+        private List<TypeDefinition> developedTypes;
+
+        private TypeDefinition contractType;
+
+        public SmartContractDecompilation(ModuleDefinition moduleDefinition)
         {
             this.ModuleDefinition = moduleDefinition;
-            this.ContractType = contractType;
         }
 
         public TypeDefinition BaseType
@@ -18,7 +24,25 @@ namespace Stratis.SmartContracts.Executor.Reflection
             get { return this.ContractType.BaseType.Resolve(); }
         }
 
-        public TypeDefinition ContractType { get; }
+        public List<TypeDefinition> DevelopedTypes => this.developedTypes ?? (this.developedTypes = this.ModuleDefinition.GetDevelopedTypes().ToList());
+
+        public TypeDefinition ContractType
+        {
+            get
+            {
+                if (this.contractType == null)
+                {
+                    this.contractType = this.DevelopedTypes.Count == 1
+                        ? this.DevelopedTypes.First()
+                        : this.DevelopedTypes.FirstOrDefault(x =>
+                            x.CustomAttributes.Any(y => y.AttributeType.Name == typeof(DeployAttribute).Name));
+
+                    this.contractType = this.contractType ?? this.DevelopedTypes.FirstOrDefault();
+                }
+
+                return this.contractType;
+            }
+        }
 
         public ModuleDefinition ModuleDefinition { get; private set; }
 
