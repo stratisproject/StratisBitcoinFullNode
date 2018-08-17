@@ -34,8 +34,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             new SmartContractFormatRule()
         };
 
-        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules)
-            : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
+        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinViewStorage coinViewStorage, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules)
+            : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinViewStorage, loggerFactory, nodeSettings, consensusRules)
         {
         }
 

@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             Network network,
             NodeDeployments nodeDeployments,
             ContractStateRepositoryRoot originalStateRoot,
-            ICoinView utxoSet,
+            ICachedCoinView utxoSet,
             ISmartContractReceiptStorage receiptStorage,
             IChainState chainState)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState)

@@ -17,12 +17,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
     public class PowConsensusRuleEngine : ConsensusRuleEngine
     {
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
-        public ICoinView UtxoSet { get; }
+        public ICachedCoinView UtxoSet { get; }
 
-        /// <summary>
-        /// Initializes an instance of the object.
-        /// </summary>
-        public PowConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState)
+        public PowConsensusRuleEngine(
+            Network network,
+            ILoggerFactory loggerFactory,
+            IDateTimeProvider dateTimeProvider,
+            ConcurrentChain chain,
+            NodeDeployments nodeDeployments,
+            ConsensusSettings consensusSettings,
+            ICheckpoints checkpoints,
+            ICachedCoinView utxoSet,
+            IChainState chainState)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, chainState)
         {
             this.UtxoSet = utxoSet;
@@ -50,22 +56,24 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override Task Initialize()
+        public override async Task Initialize()
         {
-            return ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner).InitializeAsync();
+            if (this.UtxoSet is IBackedCoinView backedCoinView)
+            {
+                await backedCoinView.CoinViewStorage.InitializeAsync().ConfigureAwait(false);
+            }
+
+            this.UtxoSet.Initialize();
         }
 
         public override void Dispose()
         {
-            var cache = this.UtxoSet as CachedCoinView;
-            if (cache != null)
+            if (this.UtxoSet is IBackedCoinView backedCoinView)
             {
-                this.logger.LogInformation("Flushing Cache CoinView...");
-                cache.FlushAsync().GetAwaiter().GetResult();
-                cache.Dispose();
+                backedCoinView.CoinViewStorage.Dispose();
             }
 
-            ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner).Dispose();
+            this.UtxoSet.Dispose();
         }
     }
 }

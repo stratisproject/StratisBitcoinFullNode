@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
@@ -11,11 +10,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 {
     public class CoinViewTest
     {
-        private TestCoinView coinView;
+        private ICoinView coinView;
 
         public CoinViewTest()
         {
-            this.coinView = new TestCoinView();
+            var coinViewMock = new Mock<ICoinView>();
+            var fetchCoinResponse = new FetchCoinsResponse(new UnspentOutputs[0], new uint256(987263876253));
+            coinViewMock.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fetchCoinResponse);
+            coinViewMock.Setup(c => c.GetTipHashAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fetchCoinResponse.BlockHash);
+            this.coinView = coinViewMock.Object;
         }
 
         [Fact]
@@ -24,37 +29,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             uint256 result = await this.coinView.GetTipHashAsync();
 
             Assert.Equal(new uint256(987263876253), result);
-        }
-
-        private class TestCoinView : ICoinView
-        {
-            public TestCoinView()
-            {
-            }
-
-            public Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
-            {
-                var fetchCoinResponse = new FetchCoinsResponse(new UnspentOutputs[0], new uint256(987263876253));
-                return Task.FromResult(fetchCoinResponse);
-            }
-
-            /// <inheritdoc />
-            public async Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
-            {
-                FetchCoinsResponse response = await this.FetchCoinsAsync(new uint256[0], cancellationToken).ConfigureAwait(false);
-
-                return response.BlockHash;
-            }
-
-            public Task<uint256> Rewind()
-            {
-                throw new NotImplementedException();
-            }
-
-            public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
-            {
-                throw new NotImplementedException();
-            }
         }
     }
 }

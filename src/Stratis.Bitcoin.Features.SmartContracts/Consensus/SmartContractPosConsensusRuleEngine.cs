@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             ISmartContractReceiptStorage receiptStorage,
             IStakeChain stakeChain,
             IStakeValidator stakeValidator,
-            ICoinView utxoSet,
+            ICachedCoinView utxoSet,
             IChainState chainState)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, stakeChain, stakeValidator, chainState)
         {

@@ -9,11 +9,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class CoinViewTester
     {
-        private ICoinView coinView;
+        private ICachedCoinView coinView;
         private List<UnspentOutputs> pendingCoins = new List<UnspentOutputs>();
         private uint256 hash;
 
-        public CoinViewTester(ICoinView coinView)
+        public CoinViewTester(ICachedCoinView coinView)
         {
             this.coinView = coinView;
             this.hash = coinView.GetTipHashAsync().Result;
@@ -65,7 +65,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         public uint256 NewBlock()
         {
             var newHash = new uint256(RandomUtils.GetBytes(32));
-            this.coinView.SaveChangesAsync(this.pendingCoins, null, this.hash, newHash).Wait();
+            var chainedHeader = new ChainedHeader(new BlockHeader(), newHash, 0);
+            this.coinView.AddRewindDataAsync(this.pendingCoins, chainedHeader).Wait();
             this.pendingCoins.Clear();
             this.hash = newHash;
             return newHash;

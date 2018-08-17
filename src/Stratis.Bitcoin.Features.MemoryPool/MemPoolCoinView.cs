@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// Memory pool coin view.
     /// Provides coin view representation of memory pool transactions via a backed coin view.
     /// </summary>
-    public class MempoolCoinView : ICoinView, IBackedCoinView
+    public class MempoolCoinView : ICoinView
     {
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="mempoolLock"/>.</remarks>
@@ -30,13 +30,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Constructs a memory pool coin view.
         /// </summary>
-        /// <param name="inner">The backing coin view.</param>
+        /// <param name="coinView">The coin view.</param>
         /// <param name="memPool">Transaction memory pool for managing transactions in the memory pool.</param>
         /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
         /// <param name="mempoolValidator">Memory pool validator for validating transactions.</param>
-        public MempoolCoinView(ICoinView inner, ITxMempool memPool, SchedulerLock mempoolLock, IMempoolValidator mempoolValidator)
+        public MempoolCoinView(ICoinView coinView, ITxMempool memPool, SchedulerLock mempoolLock, IMempoolValidator mempoolValidator)
         {
-            this.Inner = inner;
+            this.coinView = coinView;
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
             this.mempoolValidator = mempoolValidator;
@@ -51,14 +51,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Backing coin view instance.
         /// </summary>
-        public ICoinView Inner { get; }
-
-        /// <inheritdoc />
-        public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash,
-            uint256 nextBlockHash)
-        {
-            throw new NotImplementedException();
-        }
+        private readonly ICoinView coinView;
 
         /// <inheritdoc />
         public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -86,7 +79,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             // lookup all ids (duplicate ids are ignored in case a trx spends outputs from the same parent).
             List<uint256> ids = trx.Inputs.Select(n => n.PrevOut.Hash).Distinct().Concat(new[] { trx.GetHash() }).ToList();
-            FetchCoinsResponse coins = await this.Inner.FetchCoinsAsync(ids.ToArray());
+            FetchCoinsResponse coins = await this.coinView.FetchCoinsAsync(ids.ToArray());
             // find coins currently in the mempool
             List<Transaction> mempoolcoins = await this.mempoolLock.ReadAsync(() =>
             {
@@ -140,13 +133,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             double dResult = 0.0;
             foreach (TxIn txInput in tx.Inputs)
             {
-                UnspentOutputs coins = this.Set.AccessCoins(txInput.PrevOut.Hash);
-                Guard.Assert(coins != null);
-                if (!coins.IsAvailable(txInput.PrevOut.N)) continue;
-                if (coins.Height <= nHeight)
+                UnspentOutputs unspentOutputs = this.Set.AccessCoins(txInput.PrevOut.Hash);
+                Guard.Assert(unspentOutputs != null);
+                if (!unspentOutputs.IsAvailable(txInput.PrevOut.N)) continue;
+                if (unspentOutputs.Height <= nHeight)
                 {
-                    dResult += (double)coins.Outputs[txInput.PrevOut.N].Value.Satoshi * (nHeight - coins.Height);
-                    inChainInputValue += coins.Outputs[txInput.PrevOut.N].Value;
+                    dResult += (double)unspentOutputs.Outputs[txInput.PrevOut.N].Value.Satoshi * (nHeight - unspentOutputs.Height);
+                    inChainInputValue += unspentOutputs.Outputs[txInput.PrevOut.N].Value;
                 }
             }
             return (this.ComputePriority(tx, dResult), inChainInputValue);
@@ -212,6 +205,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public TxOut GetOutputFor(TxIn input)
         {
             return this.Set.GetOutputFor(input);
+        }
+
+        public void Dispose()
+        {
+            this.coinView?.Dispose();
         }
     }
 }

@@ -437,7 +437,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new NodeDeployments(this.stratisTest, chain),
                 new ConsensusSettings(new NodeSettings(this.stratisTest)),
                 new Checkpoints(),
-                new Mock<ICoinView>().Object,
+                new Mock<ICachedCoinView>().Object,
                 new Mock<IStakeChain>().Object,
                 new Mock<IStakeValidator>().Object,
                 new Mock<IChainState>().Object);

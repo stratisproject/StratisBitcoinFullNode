@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -79,9 +78,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chain = new ConcurrentChain(network);
-            InMemoryCoinView inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
+            var inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
 
-            var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, loggerFactory);
+            var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider));
+
             var networkPeerFactory = new NetworkPeerFactory(network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
 
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
@@ -89,7 +89,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
             var selfEndpointTracker = new SelfEndpointTracker();
             var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider());
-            var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider));
             var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
             var deployments = new NodeDeployments(network, chain);
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(), inMemoryCoinView, chainState).Register();
@@ -151,7 +150,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules);
             newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
 
-            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory, nodeSettings, consensusRules);
+            var mempoolValidator = new MempoolValidator(
+                mempool,
+                mempoolLock,
+                dateTimeProvider,
+                new MempoolSettings(nodeSettings),
+                chain,
+                new InMemoryCoinView(newBlock.Block.GetHash()), loggerFactory, nodeSettings, consensusRules);
 
             return new TestChainContext { MempoolValidator = mempoolValidator, SrcTxs = srcTxs };
         }

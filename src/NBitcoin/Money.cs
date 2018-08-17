@@ -738,6 +738,12 @@ namespace NBitcoin
             return b;
         }
 
+        public long GetSizeInBytes()
+        {
+            // This type only has 1 field Satoshi, which is long
+            return sizeof(long);
+        }
+
         private static void CheckLongMinValue(long value)
         {
             if(value == long.MinValue)

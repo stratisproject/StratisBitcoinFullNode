@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Configuration
         public string AddressManagerFilePath { get; private set; }
 
         /// <summary>Path to the folder with coinview database files.</summary>
-        /// <seealso cref="Features.Consensus.CoinViews.DBreezeCoinView.DBreezeCoinView"/>
+        /// <seealso cref="Stratis.Bitcoin.Features.Consensus.CoinViews.DBreezeCoinView.DBreezeCoinView"/>
         public string CoinViewPath { get; set; }
 
         /// <summary>Path to the folder with node's chain repository database files.</summary>

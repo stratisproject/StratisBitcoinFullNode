@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     /// </summary>
     public class TestPosConsensusRules : PosConsensusRuleEngine
     {
-        public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView uxtoSet, IStakeChain stakeChain, IStakeValidator stakeValidator, IChainState chainState)
+        public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICachedCoinView uxtoSet, IStakeChain stakeChain, IStakeValidator stakeValidator, IChainState chainState)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, uxtoSet, stakeChain, stakeValidator, chainState)
         {
         }

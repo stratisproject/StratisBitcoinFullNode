@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
@@ -12,45 +11,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     public class SaveCoinviewRule : UtxoStoreConsensusRule
     {
-        /// <summary>
-        /// Specifies time threshold which is used to determine if flush is required.
-        /// When consensus tip timestamp is greater than current time minus the threshold the flush is required.
-        /// </summary>
-        /// <remarks>Used only on blockchains without max reorg property.</remarks>
-        private const int FlushRequiredThresholdSeconds = 2 * 24 * 60 * 60;
-
-        /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
-            uint256 oldBlockHash = context.ValidationContext.ChainedHeaderToValidate.Previous.HashBlock;
-            uint256 nextBlockHash = context.ValidationContext.ChainedHeaderToValidate.HashBlock;
+            ChainedHeader currentBlock = context.ValidationContext.ChainedHeaderToValidate;
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
-            // unless the coinview treashold is reached.
+            // unless the coinview threshold is reached.
             this.Logger.LogTrace("Saving coinview changes.");
-            var utxoRuleContext = context as UtxoRuleContext;
-            await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash).ConfigureAwait(false);
-
-            bool forceFlush = this.FlushRequired(context.ValidationContext.ChainedHeaderToValidate);
-            if (this.PowParent.UtxoSet is CachedCoinView cachedCoinView)
-                await cachedCoinView.FlushAsync(forceFlush).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Calculates if coinview flush is required.
-        /// </summary>
-        /// <remarks>
-        /// For blockchains with max reorg property flush is required when consensus tip is less than max reorg blocks behind the chain tip.
-        /// If there is no max reorg property - flush is required when consensus tip timestamp is less than <see cref="FlushRequiredThresholdSeconds"/> behind the adjusted time.
-        /// </remarks>
-        private bool FlushRequired(ChainedHeader tip)
-        {
-            if (tip.Header.Time > this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - FlushRequiredThresholdSeconds)
-            {
-                return true;
-            }
-
-            return false;
+            var utxoRuleContext = (UtxoRuleContext)context;
+            List<UnspentOutputs> unspentOutputs = utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet).ToList();
+            await this.PowParent.UtxoSet.AddRewindDataAsync(unspentOutputs, currentBlock).ConfigureAwait(false);
         }
     }
     
@@ -67,7 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 ConsensusErrors.InvalidPrevTip.Throw();
             }
 
-            var utxoRuleContext = context as UtxoRuleContext;
+            var utxoRuleContext = (UtxoRuleContext)context;
 
             // Load the UTXO set of the current block. UTXO may be loaded from cache or from disk.
             // The UTXO set is stored in the context.

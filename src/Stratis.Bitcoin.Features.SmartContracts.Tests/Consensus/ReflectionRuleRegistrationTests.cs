@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
                 loggerFactory,
                 network,
                 new Base.Deployments.NodeDeployments(network, chain), contractState,
-                new Mock<ICoinView>().Object,
+                new Mock<ICachedCoinView>().Object,
                 receiptStorage.Object,
                 new Mock<IChainState>().Object);
 

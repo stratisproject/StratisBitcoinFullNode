@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
     /// <summary>
-    /// Return value of <see cref="CoinView.FetchCoinsAsync(uint256[])"/>,
+    /// Return value of <see cref="ICoinView.FetchCoinsAsync"/>,
     /// contains the coinview tip's hash and information about unspent coins in the requested transactions.
     /// </summary>
     public class FetchCoinsResponse

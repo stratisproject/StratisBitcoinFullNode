@@ -2,7 +2,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
@@ -10,7 +9,6 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -105,8 +103,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 .FeatureServices(services =>
                 {
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
-                    services.AddSingleton<DBreezeCoinView>();
-                    services.AddSingleton<ICoinView, CachedCoinView>();
+                    services.AddSingleton<ICachedCoinView, CachedCoinView>().AddSingleton<ICoinView>(provider => provider.GetService<ICachedCoinView>());
+                    services.AddSingleton<ICoinViewStorage, DBreezeCoinView>();
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>();
@@ -129,8 +127,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     .AddFeature<ConsensusFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<DBreezeCoinView>();
-                        services.AddSingleton<ICoinView, CachedCoinView>();
+                        services.AddSingleton<ICachedCoinView, CachedCoinView>().AddSingleton<ICoinView>(provider => provider.GetService<ICachedCoinView>());
+                        services.AddSingleton<ICoinViewStorage, DBreezeCoinView>();
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
                         services.AddSingleton<ConsensusController>();

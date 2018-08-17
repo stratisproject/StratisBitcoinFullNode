@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Utilities;
@@ -22,62 +21,56 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// </summary>
         private const int MempoolExpiry = MempoolValidator.DefaultMempoolExpiry;
 
+        private readonly MempoolManager txExpiryManager;
+
         /// <summary>
         /// Creates a mock MempoolManager class for testing tx expiry.
         /// </summary>
-        private MempoolManager TxExpiryManager
+        public MempoolManagerTest()
         {
-            get
+            IDateTimeProvider dateTime = new DateTimeProvider();
+
+            var mockLoggerFactory = new Mock<ILoggerFactory>();
+            mockLoggerFactory.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
+            ILoggerFactory loggerFactory = mockLoggerFactory.Object;
+
+            var settings = new MempoolSettings(NodeSettings.Default())
             {
-                IDateTimeProvider dateTime = new DateTimeProvider();
+                MempoolExpiry = MempoolExpiry
+            };
+            NodeSettings nodeSettings = NodeSettings.Default();
 
-                var mockLoggerFactory = new Mock<ILoggerFactory>();
-                mockLoggerFactory.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
-                ILoggerFactory loggerFactory = mockLoggerFactory.Object;
+            var blockPolicyEstimator = new BlockPolicyEstimator(settings, loggerFactory, nodeSettings);
+            var mempool = new TxMempool(dateTime, blockPolicyEstimator, loggerFactory, nodeSettings);
 
-                var settings = new MempoolSettings(NodeSettings.Default())
-                {
-                    MempoolExpiry = MempoolExpiry
-                };
-                NodeSettings nodeSettings = NodeSettings.Default();
+            var mockValidator = new Mock<IMempoolValidator>();
+            mockValidator.Setup(i =>
+                i.AcceptToMemoryPoolWithTime(It.IsAny<MempoolValidationState>(), It.IsAny<Transaction>()))
+                    .ReturnsAsync((MempoolValidationState state, Transaction tx) =>
+                    {
+                        var consensusOptions = new ConsensusOptions();
+                        mempool.MapTx.Add(new TxMempoolEntry(tx, Money.Zero, 0, 0, 0, Money.Zero, false, 0, null, consensusOptions));
+                        return true;
+                    }
+                    );
 
-                var blockPolicyEstimator = new BlockPolicyEstimator(settings, loggerFactory, nodeSettings);
-                var mempool = new TxMempool(dateTime, blockPolicyEstimator, loggerFactory, nodeSettings);
+            var mockPersist = new Mock<IMempoolPersistence>();
+            var mockCoinView = new Mock<ICoinView>();
 
-                var mockTxMempool = new Mock<TxMempool>();
-                var mockValidator = new Mock<IMempoolValidator>();
-                mockValidator.Setup(i =>
-                    i.AcceptToMemoryPoolWithTime(It.IsAny<MempoolValidationState>(), It.IsAny<Transaction>()))
-                        .ReturnsAsync((MempoolValidationState state, Transaction tx) =>
-                        {
-                            var consensusOptions = new ConsensusOptions();
-                            mempool.MapTx.Add(new TxMempoolEntry(tx, Money.Zero, 0, 0, 0, Money.Zero, false, 0, null, consensusOptions));
-                            return true;
-                        }
-                        );
-
-                var mockPersist = new Mock<IMempoolPersistence>();
-                var mockCoinView = new Mock<ICoinView>();
-
-                return new MempoolManager(new MempoolSchedulerLock(), mempool, mockValidator.Object, dateTime, settings, mockPersist.Object, mockCoinView.Object, loggerFactory, nodeSettings.Network);
-            }
+            this.txExpiryManager = new MempoolManager(new MempoolSchedulerLock(), 
+                mempool, mockValidator.Object, dateTime, settings, mockPersist.Object, 
+                mockCoinView.Object, loggerFactory, nodeSettings.Network);
         }
 
         [Fact]
         public async Task AddMempoolEntriesToMempool_WithNull_ThrowsNoExceptionAsync()
         {
-            MempoolManager manager = this.TxExpiryManager;
-            Assert.NotNull(manager);
-
-            await manager.AddMempoolEntriesToMempoolAsync(null);
+            await this.txExpiryManager.AddMempoolEntriesToMempoolAsync(null);
         }
 
         [Fact]
         public async Task AddMempoolEntriesToMempool_WithExpiredTx_PurgesTxAsync()
         {
-            MempoolManager manager = this.TxExpiryManager;
-            Assert.NotNull(manager);
-
             long expiryInSeconds = MempoolValidator.DefaultMempoolExpiry * 60 * 60;
 
             // tx with expiry twice as long as default expiry
@@ -86,11 +79,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     new MempoolPersistenceEntry
                     {
                     Tx =new Transaction(),
-                    Time = manager.DateTimeProvider.GetTime() - expiryInSeconds*2
+                    Time = this.txExpiryManager.DateTimeProvider.GetTime() - expiryInSeconds*2
                     }
             };
-            await manager.AddMempoolEntriesToMempoolAsync(txs);
-            long entries = await manager.MempoolSize();
+            await this.txExpiryManager.AddMempoolEntriesToMempoolAsync(txs);
+            long entries = await this.txExpiryManager.MempoolSize();
 
             // Should not add it because it's expired
             Assert.Equal(0L, entries);
@@ -99,9 +92,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         [Fact]
         public async Task AddMempoolEntriesToMempool_WithUnexpiredTx_AddsTxAsync()
         {
-            MempoolManager manager = this.TxExpiryManager;
-            Assert.NotNull(manager);
-
             long expiryInSeconds = MempoolValidator.DefaultMempoolExpiry * 60 * 60;
 
             // tx with expiry half as long as default expiry
@@ -110,11 +100,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                     new MempoolPersistenceEntry
                     {
                     Tx =new Transaction(),
-                    Time = manager.DateTimeProvider.GetTime() - expiryInSeconds/2
+                    Time = this.txExpiryManager.DateTimeProvider.GetTime() - expiryInSeconds/2
                     }
             };
-            await manager.AddMempoolEntriesToMempoolAsync(txs);
-            long entries = await manager.MempoolSize();
+            await this.txExpiryManager.AddMempoolEntriesToMempoolAsync(txs);
+            long entries = await this.txExpiryManager.MempoolSize();
 
             // Not expired so should have been added
             Assert.Equal(1L, entries);
