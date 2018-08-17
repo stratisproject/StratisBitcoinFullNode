@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:{1})", nameof(block), block.GetHash());
 
-            ValidationContext validationResult;
+            ValidationContext validationContext;
 
             using (await this.reorgLock.LockAsync().ConfigureAwait(false))
             {
@@ -240,9 +240,9 @@ namespace Stratis.Bitcoin.Consensus
                     chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
                 }
 
-                validationResult = await this.partialValidator.ValidateAsync(chainedHeader, block).ConfigureAwait(false);
+                validationContext = await this.partialValidator.ValidateAsync(chainedHeader, block).ConfigureAwait(false);
 
-                if (validationResult.Error == null)
+                if (validationContext.Error == null)
                 {
                     bool fullValidationRequired;
 
@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (fullValidationRequired)
                     {
-                        ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(new ChainedHeaderBlock(validationResult.BlockToValidate, validationResult.ChainedHeaderToValidate)).ConfigureAwait(false);
+                        ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(new ChainedHeaderBlock(validationContext.BlockToValidate, validationContext.ChainedHeaderToValidate)).ConfigureAwait(false);
                         if (!fullValidationResult.Succeeded)
                         {
                             lock (this.peerLock)
@@ -279,13 +279,13 @@ namespace Stratis.Bitcoin.Consensus
                         this.chainedHeaderTree.PartialOrFullValidationFailed(chainedHeader);
                     }
 
-                    this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}", validationResult.Error.Message);
+                    this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}", validationContext.Error.Message);
                     this.logger.LogTrace("(-)[PARTIAL_VALIDATION_FAILED]");
-                    throw new ConsensusException(validationResult.Error.Message);
+                    throw new ConsensusException(validationContext.Error.Message);
                 }
             }
 
-            var headerBlock = new ChainedHeaderBlock(validationResult.BlockToValidate, validationResult.ChainedHeaderToValidate);
+            var headerBlock = new ChainedHeaderBlock(validationContext.BlockToValidate, validationContext.ChainedHeaderToValidate);
 
             this.logger.LogTrace("(-):{0}", headerBlock);
             return headerBlock;
