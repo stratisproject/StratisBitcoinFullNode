@@ -436,12 +436,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         else
                         {
                             this.logger.LogTrace("Outputs of transaction ID '{0}' not found in cache, inserting them.", unspentToRestore.TransactionId);
-                            existing = new CacheItem
-                            {
-                                ExistInInner = false,
-                                IsDirty = true,
-                                UnspentOutputs = unspentToRestore
-                            };
+                            existing = new CacheItem { UnspentOutputs = unspentToRestore };
                             this.unspents.Add(unspentToRestore.TransactionId, existing);
                         }
                     }
