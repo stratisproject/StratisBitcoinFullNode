@@ -11,7 +11,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Represents a low-level contract module that can be modified (via IL rewriting) and validated.
     /// </summary>
-    public sealed class SmartContractDecompilation
+    public sealed class SmartContractDecompilation : ISmartContractDecompilation
     {
         private List<TypeDefinition> developedTypes;
 
