@@ -7,14 +7,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public sealed class SmartContractDecompilation
     {
+        public SmartContractDecompilation(ModuleDefinition moduleDefinition, TypeDefinition contractType)
+        {
+            this.ModuleDefinition = moduleDefinition;
+            this.ContractType = contractType;
+        }
+
         public TypeDefinition BaseType
         {
             get { return this.ContractType.BaseType.Resolve(); }
         }
 
-        public TypeDefinition ContractType { get; set; }
+        public TypeDefinition ContractType { get; }
 
-        public ModuleDefinition ModuleDefinition { get; set; }
+        public ModuleDefinition ModuleDefinition { get; private set; }
 
         /// <summary>
         /// Rewrites the smart contract constructor of the <see cref="ModuleDefinition"/> to include opcodes for measuring gas consumption.
