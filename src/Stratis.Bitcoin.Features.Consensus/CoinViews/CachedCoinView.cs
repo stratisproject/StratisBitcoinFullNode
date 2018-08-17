@@ -416,6 +416,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 if (this.blockHash == this.innerBlockHash)
                     this.unspents.Clear();
 
+                // Check if rewind data is available in local cache. If it is 
+                // we can rewind and there is no need to check underlying storage.
                 if (this.rewindDataList.Any())
                 {
                     RewindData lastRewindData = this.rewindDataList.Last();
@@ -428,6 +430,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     return lastRewindData.PreviousBlockHash;
                 }
 
+                // Rewind data was not found in cache, try underlying storage.
                 uint256 hash = await this.inner.Rewind().ConfigureAwait(false);
                 this.innerBlockHash = hash;
                 this.blockHash = hash;
