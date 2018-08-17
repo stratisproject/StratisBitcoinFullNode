@@ -51,6 +51,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return AddGasCalculationToContractMethod(contractByteCode, typeName, ".ctor");
         }
 
+        public static byte[] AddGasCalculationToConstructor(ModuleDefinition moduleDefinition, string typeName)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                ModuleDefinition result = AddGasCalculationToContractMethodInternal(moduleDefinition, typeName, ".ctor");
+
+                result.Write(memoryStream);
+                return memoryStream.ToArray();
+            }
+        }
+
         /// <summary>
         /// Injects calls to SpendGas into the method of the provided contract byte code. If no method with that
         /// name exists, returns the original bytecode.
