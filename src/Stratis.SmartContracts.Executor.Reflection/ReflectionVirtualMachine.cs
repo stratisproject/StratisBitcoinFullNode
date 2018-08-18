@@ -59,7 +59,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // Decompile the contract execution code and validate it.
             SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(createData.ContractExecutionCode);
 
-            SmartContractValidationResult validation = this.validator.Validate(decompilation);
+            SmartContractValidationResult validation = decompilation.Validate(this.validator);
 
             // If validation failed, refund the sender any remaining gas.
             if (!validation.IsValid)
@@ -70,7 +70,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             string typeToInstantiate = typeName ?? decompilation.ContractType.Name;
 
-            ContractByteCode gasInjectedCode = (ContractByteCode) SmartContractGasInjector.AddGasCalculationToConstructor(decompilation.ModuleDefinition, typeToInstantiate);
+            decompilation.InjectConstructorGas();
 
             var internalTransferList = new List<TransferInfo>();
 
@@ -79,7 +79,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ISmartContractState contractState = this.SetupState(internalTransferList, gasMeter, repository, transactionContext, address);
 
             Result<IContract> contractLoadResult = this.Load(
-                gasInjectedCode,
+                decompilation.ToByteCode(),
                 typeToInstantiate,
                 address,
                 contractState);
@@ -148,14 +148,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractDoesNotExistException(callData.MethodName));
             }
 
-            ContractByteCode gasInjectedCode = (ContractByteCode) SmartContractGasInjector.AddGasCalculationToContractMethod(contractExecutionCode, typeName, callData.MethodName);
+            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(contractExecutionCode);
+
+            decompilation.InjectMethodGas(typeName, callData.MethodName);
 
             var internalTransferList = new List<TransferInfo>();
 
             ISmartContractState contractState = this.SetupState(internalTransferList, gasMeter, repository, transactionContext, callData.ContractAddress);
 
             Result<IContract> contractLoadResult = this.Load(
-                gasInjectedCode, 
+                decompilation.ToByteCode(),
                 typeName,
                 callData.ContractAddress,
                 contractState);
