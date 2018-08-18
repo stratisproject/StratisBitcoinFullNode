@@ -13,7 +13,6 @@ using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.MockChain;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
@@ -345,9 +344,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, response.Hex);
 
-                var receiptStorage = scReceiver.FullNode.NodeService<ISmartContractReceiptStorage>();
-                Assert.NotNull(receiptStorage.GetReceipt(response.TransactionId));
-
                 // Check wallet history is updating correctly
                 result = (JsonResult)senderWalletController.GetHistory(new WalletHistoryRequest
                 {
@@ -415,11 +411,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 });
                 walletHistoryModel = (WalletHistoryModel)result.Value;
                 Assert.Equal(2, walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send).Count());
-
-                // Check receipts
-                var receiptResponse = (JsonResult)senderSmartContractsController.GetReceipt(callResponse.TransactionId.ToString());
-                var receiptModel = (ReceiptModel)receiptResponse.Value;
-                Assert.True(receiptModel.Successful);
             }
         }
 
