@@ -10,9 +10,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
         private uint256 hashStateRoot;
         public uint256 HashStateRoot { get { return this.hashStateRoot; } set { this.hashStateRoot = value; } }
 
+        /// <summary>
+        /// Root of the receipt trie after execution of this block.
+        /// </summary>
+        private uint256 receiptRoot;
+        public uint256 ReceiptRoot { get { return this.receiptRoot; } set { this.receiptRoot = value; }  }
+
         public SmartContractBlockHeader() : base()
         {
             this.hashStateRoot = 0;
+            this.receiptRoot = 0;
         }
 
         /// <summary>
@@ -22,6 +29,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
         {
             base.ReadWrite(stream);
             stream.ReadWrite(ref this.hashStateRoot);
+            stream.ReadWrite(ref this.receiptRoot);
         }
     }
 }
