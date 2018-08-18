@@ -58,7 +58,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return AddGasCalculationToContractMethodInternal(moduleDefinition, typeName, methodName);
         }
 
-        public static ModuleDefinition AddGasCalculationToContractMethodInternal(ModuleDefinition moduleDefinition, string typeName, string methodName)
+        private static ModuleDefinition AddGasCalculationToContractMethodInternal(ModuleDefinition moduleDefinition, string typeName, string methodName)
         {
             TypeDefinition contractType = moduleDefinition.Types.FirstOrDefault(x => x.Name == typeName);
             MethodDefinition method = contractType.Methods.FirstOrDefault(m => m.Name == methodName);
