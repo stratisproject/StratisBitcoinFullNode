@@ -68,9 +68,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BlockTimestampTooFar">The block timestamp is too far into the future.</exception>
         public override void Run(RuleContext context)
         {
-            if (context.SkipValidation)
-                return;
-
             BlockHeader header = context.ValidationContext.ChainedHeaderToValidate.Header;
 
             long adjustedTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();

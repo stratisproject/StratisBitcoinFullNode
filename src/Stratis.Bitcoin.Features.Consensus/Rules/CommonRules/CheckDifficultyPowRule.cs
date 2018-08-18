@@ -11,9 +11,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoS header.</exception>
         public override void Run(RuleContext context)
         {
-            if (context.SkipValidation)
-                return;
-
             if (!context.MinedBlock && !context.ValidationContext.ChainedHeaderToValidate.Header.CheckProofOfWork())
                 ConsensusErrors.HighHash.Throw();
 

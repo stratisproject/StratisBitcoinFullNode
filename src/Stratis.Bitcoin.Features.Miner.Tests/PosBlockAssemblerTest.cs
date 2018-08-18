@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -151,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                 BlockTemplate blockTemplate = posBlockAssembler.Build(chain.Tip, this.key.ScriptPubKey);
 
-                this.consensusLoop.Verify(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ValidationContext>()), Times.Exactly(0));
+                this.consensusLoop.Verify(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ChainedHeader>(), It.IsAny<Block>()), Times.Exactly(0));
                 Assert.Null(this.callbackRuleContext);
                 this.stakeValidator.Verify();
             });
@@ -420,7 +421,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.callbackRuleContext = null;
 
-            this.consensusLoop.Setup(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ValidationContext>()))
+            this.consensusLoop.Setup(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ChainedHeader>(), It.IsAny<Block>()))
                 .Callback<RuleContext>(c =>
                 {
                     this.callbackRuleContext = c;
