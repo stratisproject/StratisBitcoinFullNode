@@ -173,8 +173,6 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .NotInIBD()
                 .WithWallet(SecondaryWalletName, WalletPassword)
                 .Build();
-
-            this.nodes[SecondPowNode].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
         }
 
         protected void a_block_is_mined_creating_spendable_coins()
@@ -256,8 +254,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             {
                 ExtPubKey = extPubKey,
                 AccountIndex = accountIndex,
-                Name = walletName,
-                CreationDate = DateTime.Now
+                Name = walletName
             };
 
             this.send_api_post_request(RecoverViaExtPubKeyUri, request);

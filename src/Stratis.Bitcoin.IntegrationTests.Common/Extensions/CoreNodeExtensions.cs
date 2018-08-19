@@ -21,14 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             int startBlock = node.FullNode.Chain.Height - numberOfBlocks + 1;
 
-            int maturity = (int)node.FullNode.Network.Consensus.CoinbaseMaturity;
-
-            // If insufficient blocks have been mined to exceed the coinbase/stake maturity
-            // threshold, then there is no spendable reward for the block.
-            // Otherwise, return the calculated reward for the block count that does exceed
-            // the maturity threshold.
-            return Enumerable.Range(startBlock,
-                    ((numberOfBlocks - maturity + 1) > 0 ? (numberOfBlocks - maturity + 1) : 0))
+            return Enumerable.Range(startBlock, numberOfBlocks)
                 .Sum(p => coinviewRule.GetProofOfWorkReward(p));
         }
         
