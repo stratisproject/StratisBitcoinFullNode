@@ -49,6 +49,10 @@ namespace City.Chain
         {
             try
             {
+                // Temporary enforce testnet if anyone launces without -testnet parameter. TODO: Remove before mainnet launch.
+                args = args.Append("-testnet").ToArray();
+
+
                 // To avoid modifying Stratis source, we'll parse the arguments and set some hard-coded defaults for City Chain, like the ports.
                 var configReader = new TextFileConfiguration(args ?? new string[] { });
                 
@@ -82,7 +86,10 @@ namespace City.Chain
                     return;
                 }
 
-                args = args.Append("-apiport=" + networkConfiguration.ApiPort).Append("-wsport=" + networkConfiguration.WsPort).ToArray();
+                args = args
+                    .Append("-apiport=" + networkConfiguration.ApiPort)
+                    .Append("-txindex=1") // Required for History (Block) explorer.
+                    .Append("-wsport=" + networkConfiguration.WsPort).ToArray();
 
                 var nodeSettings = new NodeSettings(
                     args: args,
