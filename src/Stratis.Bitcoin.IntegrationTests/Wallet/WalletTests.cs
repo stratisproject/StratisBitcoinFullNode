@@ -49,6 +49,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 stratisSender.GenerateStratisWithMiner(maturity + 5);
 
+                // Wait for block repo for block sync to work
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
+
                 // The mining should add coins to the wallet
                 long total = stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * 6 * 50, total);
