@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.P2P;
 using Xunit;
 
@@ -7,11 +8,14 @@ namespace Stratis.Bitcoin.Tests.P2P
 {
     public class SelfEndpointTrackerTests
     {
-        private readonly ISelfEndpointTracker selfEndpointTracker;
+        private readonly SelfEndpointTracker selfEndpointTracker;
+
+        private readonly ExtendedLoggerFactory extendedLoggerFactory;
 
         public SelfEndpointTrackerTests()
         {
-            this.selfEndpointTracker = new SelfEndpointTracker();
+            this.extendedLoggerFactory = new ExtendedLoggerFactory();
+            this.selfEndpointTracker = new SelfEndpointTracker(this.extendedLoggerFactory);
         } 
 
         [Fact]
