@@ -71,7 +71,9 @@ namespace Stratis.Bitcoin.Networks
             {
                 [BuriedDeployments.BIP34] = 0,
                 [BuriedDeployments.BIP65] = 0,
-                [BuriedDeployments.BIP66] = 0
+                [BuriedDeployments.BIP66] = 0,
+                // TODO: We have to decide at which height this becomes active 
+                [BuriedDeployments.ColdStaking] = 999999,
             };
 
             var bip9Deployments = new BIP9DeploymentsArray();

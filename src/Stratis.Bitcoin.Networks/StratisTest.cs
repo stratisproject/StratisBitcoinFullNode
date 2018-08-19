@@ -58,7 +58,8 @@ namespace Stratis.Bitcoin.Networks
             {
                 [BuriedDeployments.BIP34] = 0,
                 [BuriedDeployments.BIP65] = 0,
-                [BuriedDeployments.BIP66] = 0
+                [BuriedDeployments.BIP66] = 0,
+                [BuriedDeployments.ColdStaking] = 0
             };
 
             var bip9Deployments = new BIP9DeploymentsArray();
@@ -101,8 +102,12 @@ namespace Stratis.Bitcoin.Networks
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };
 
+            // TODO: Code below commented for testing cold staking locally on a new custom chain. 
+            //       REVERT WHEN DONE!!!
+
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
+                /*
                 { 0, new CheckpointInfo(new uint256("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
                 { 2, new CheckpointInfo(new uint256("0x56959b1c8498631fb0ca5fe7bd83319dccdc6ac003dccb3171f39f553ecfa2f2"), new uint256("0x13f4c27ca813aefe2d9018077f8efeb3766796b9144fcc4cd51803bf4376ab02")) },
                 { 50000, new CheckpointInfo(new uint256("0xb42c18eacf8fb5ed94eac31943bd364451d88da0fd44cc49616ffea34d530ad4"), new uint256("0x824934ddc5f935e854ac59ae7f5ed25f2d29a7c3914cac851f3eddb4baf96d78")) },
@@ -113,22 +118,27 @@ namespace Stratis.Bitcoin.Networks
                 { 300000, new CheckpointInfo(new uint256("0x2409eb5ae72c80d5b37c77903d75a8e742a33843ab633935ce6e5264db962e23"), new uint256("0xf5ec7af55516b8e264ed280e9a5dba0180a4a9d3713351bfea275b18f3f1514e")) },
                 { 350000, new CheckpointInfo(new uint256("0x36811041e9060f4b4c26dc20e0850dca5efaabb60618e3456992e9c0b1b2120e"), new uint256("0xbfda55ef0756bcee8485e15527a2b8ca27ca877aa09c88e363ef8d3253cdfd1c")) },
                 { 400000, new CheckpointInfo(new uint256("0xb6abcb933d3e3590345ca5d3abb697461093313f8886568ac8ae740d223e56f6"), new uint256("0xfaf5fcebee3ec0df5155393a99da43de18b12e620fef5edb111a791ecbfaa63a")) }
+                */
             };
 
             this.DNSSeeds = new List<DNSSeedData>
             {
+                /*
                 new DNSSeedData("testnet1.stratisplatform.com", "testnet1.stratisplatform.com"),
                 new DNSSeedData("testnet2.stratisplatform.com", "testnet2.stratisplatform.com"),
                 new DNSSeedData("testnet3.stratisplatform.com", "testnet3.stratisplatform.com"),
                 new DNSSeedData("testnet4.stratisplatform.com", "testnet4.stratisplatform.com")
+                */
             };
 
             this.SeedNodes = new List<NetworkAddress>
             {
+                /*
                 new NetworkAddress(IPAddress.Parse("51.140.231.125"), this.DefaultPort), // danger cloud node
                 new NetworkAddress(IPAddress.Parse("13.70.81.5"), 3389), // beard cloud node  
                 new NetworkAddress(IPAddress.Parse("191.235.85.131"), 3389), // fassa cloud node  
                 new NetworkAddress(IPAddress.Parse("52.232.58.52"), 26178), // neurosploit public node
+                */
             };
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"));
