@@ -141,11 +141,10 @@ namespace Stratis.Bitcoin.Connection
 
             this.StartNodeServer();
 
-            // if external IP address supplied this overrides all.
+            // If external IP address supplied this overrides all.
             if (this.ConnectionSettings.ExternalEndpoint != null)
             {
-                this.selfEndpointTracker.MyExternalAddress = this.ConnectionSettings.ExternalEndpoint;
-                this.selfEndpointTracker.IsMyExternalAddressFinal = true;
+                this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(this.ConnectionSettings.ExternalEndpoint, true);
             }
             else
             {
@@ -153,7 +152,11 @@ namespace Stratis.Bitcoin.Connection
                 IPEndPoint nodeServerEndpoint = this.ConnectionSettings.Listen?.FirstOrDefault(x => x.Endpoint.Address.IsRoutable(false))?.Endpoint;
                 if (nodeServerEndpoint != null)
                 {
-                    this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(nodeServerEndpoint, 10);
+                    this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(nodeServerEndpoint, false, 10);
+                }
+                else
+                {
+                    this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.Network.DefaultPort), false);
                 }
             }
 
@@ -426,7 +429,7 @@ namespace Stratis.Bitcoin.Connection
                 await peer.VersionHandshakeAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
 
                 // Set external address in self endpoint tracker to peer in version payload.
-                this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(peer.PeerVersion.AddressFrom, null);
+                this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(peer.PeerVersion.AddressFrom, false);
             }
             catch (Exception e)
             {

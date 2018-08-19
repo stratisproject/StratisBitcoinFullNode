@@ -729,7 +729,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                             this.logger.LogTrace("Sending version acknowledgement.");
                             await this.SendMessageAsync(new VerAckPayload(), cancellationToken).ConfigureAwait(false);
-                            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(versionPayload.AddressFrom, null);
+                            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(versionPayload.AddressFrom, false);
                             break;
 
                         case VerAckPayload verAckPayload:

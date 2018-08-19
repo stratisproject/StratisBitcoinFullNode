@@ -12,16 +12,16 @@ namespace Stratis.Bitcoin.P2P
     public interface ISelfEndpointTracker
     {
         /// <summary>Update external IP address and peer score of the node.</summary>
-        void UpdateAndAssignMyExternalAddress(IPEndPoint ipEndPoint, int? ipEndPointPeerScore);
+        /// <param name="ipEndPoint">The endpoint to add.</param>
+        /// <param name="suppliedEndpointIsFinal">Whether the ipEndPoint supplied should be marked final on the endpoint tracker.</param>
+        /// <param name="ipEndPointPeerScore">Peer score of the ipEndPoint supplied.  Default value of 1.</param>
+        void UpdateAndAssignMyExternalAddress(IPEndPoint ipEndPoint, bool suppliedEndpointIsFinal, int ipEndPointPeerScore = 0);
 
         /// <summary>External IP address of the node.</summary>
-        IPEndPoint MyExternalAddress { get; set; }
+        IPEndPoint MyExternalAddress { get; }
 
         /// <summary>Peer score of external IP address of the node.</summary>
         int MyExternalAddressPeerScore { get; set; }
-
-        /// <summary>Whether external IP address of the node is final or can be updated.</summary>
-        bool IsMyExternalAddressFinal { get; set; }
 
         /// <summary>Adds an endpoint to the currently known list.</summary>
         /// <param name="ipEndPoint">The endpoint to add.</param>
