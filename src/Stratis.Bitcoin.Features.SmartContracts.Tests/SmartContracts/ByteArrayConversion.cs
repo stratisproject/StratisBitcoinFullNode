@@ -40,16 +40,6 @@ public class ByteArrayConversion : SmartContract
             | (long)(value[7] << 56);
     }
 
-    public static string BytesToString(byte[] value)
-    {
-        string ret = "";
-        for(int i = 0; i < value.Length; i++)
-        {
-            ret += value[i]; 
-        }
-        return ret;
-    }
-
     public static byte[] IntToBytes(int value)
     {
         unchecked
@@ -108,15 +98,5 @@ public class ByteArrayConversion : SmartContract
             bytes[7] = (byte)(value >> 56);
             return bytes;
         }
-    }
-
-    public static byte[] StringToBytes(string value)
-    {
-        byte[] ret = new byte[value.Length];
-        for(int i=0; i< value.Length; i++)
-        {
-            ret[i] = (byte) value[i];
-        }
-        return ret;
     }
 }
