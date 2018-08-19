@@ -129,6 +129,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false);
 
         /// <summary>
+        /// Gets the first (public) address in the wallet. This is also used as change address in the Single-Address-Mode.
+        /// </summary>
+        /// <param name="accountReference"></param>
+        /// <returns></returns>
+        HdAddress GetFirstAddress(WalletAccountReference accountReference);
+
+        /// <summary>
         /// Gets the history of transactions contained in an account.
         /// If no account name is specified, history will be returned for all accounts in the wallet.
         /// </summary>

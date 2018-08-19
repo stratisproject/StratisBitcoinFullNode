@@ -198,7 +198,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.AddOpReturnOutput(context);
             this.AddCoins(context);
             this.AddSecrets(context);
-            this.FindChangeAddress(context);
+
+            if (context.SingleChangeAddress)
+            {
+                this.FindFirstAddress(context);
+            }
+            else
+            {
+                this.FindChangeAddress(context);
+            }
+
             this.AddFee(context);
         }
 
@@ -254,6 +263,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             // Get an address to send the change to.
             context.ChangeAddress = this.walletManager.GetUnusedChangeAddress(new WalletAccountReference(context.AccountReference.WalletName, context.AccountReference.AccountName));
+            context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
+        }
+
+        /// <summary>
+        /// Find the first change address.
+        /// </summary>
+        /// <param name="context">The context associated with the current transaction being built.</param>
+        protected void FindFirstAddress(TransactionBuildContext context)
+        {
+            context.ChangeAddress = this.walletManager.GetFirstAddress(new WalletAccountReference(context.AccountReference.WalletName, context.AccountReference.AccountName));
             context.TransactionBuilder.SetChange(context.ChangeAddress.ScriptPubKey);
         }
 
@@ -500,6 +519,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
         /// </summary>
         public string OpReturnData { get; set; }
+
+        /// <summary>
+        /// Specify whether to use new change address on every transaction, or reuse a single address.
+        /// </summary>
+        public bool SingleChangeAddress { get; set; }
     }
 
     /// <summary>

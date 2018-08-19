@@ -716,6 +716,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Shuffle = request.ShuffleOutputs ?? true // We shuffle transaction outputs by default as it's better for anonymity.
                 };
 
+                context.SingleChangeAddress = request.SingleChangeAddress;
+
                 if (!string.IsNullOrEmpty(request.FeeType))
                 {
                     context.FeeType = FeeParser.Parse(request.FeeType);
@@ -905,6 +907,34 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             try
             {
                 HdAddress result = this.walletManager.GetUnusedAddress(new WalletAccountReference(request.WalletName, request.AccountName));
+                return this.Json(result.Address);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Gets the first address.
+        /// </summary>
+        /// <returns>The first address (in Base58 format).</returns>
+        [Route("firstaddress")]
+        [HttpGet]
+        public IActionResult GetFirstAddress([FromQuery]GetFirstAddressModel request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                HdAddress result = this.walletManager.GetFirstAddress(new WalletAccountReference(request.WalletName, request.AccountName));
                 return this.Json(result.Address);
             }
             catch (Exception e)

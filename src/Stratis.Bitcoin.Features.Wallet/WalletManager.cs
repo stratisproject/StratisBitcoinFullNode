@@ -491,6 +491,27 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
+        public HdAddress GetFirstAddress(WalletAccountReference accountReference)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(accountReference), accountReference);
+
+            Wallet wallet = this.GetWalletByName(accountReference.WalletName);
+            HdAddress address;
+
+            lock (this.lockObject)
+            {
+                // Get the account.
+                HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
+
+                // Get the very first external address. This is the only used in this wallet mode, as both public address and change address.
+                address = account.ExternalAddresses.First();
+            }
+
+            this.logger.LogTrace("(-)");
+            return address;
+        }
+
+        /// <inheritdoc />
         public IEnumerable<HdAddress> GetUnusedAddresses(WalletAccountReference accountReference, int count, bool isChange = false)
         {
             Guard.NotNull(accountReference, nameof(accountReference));
