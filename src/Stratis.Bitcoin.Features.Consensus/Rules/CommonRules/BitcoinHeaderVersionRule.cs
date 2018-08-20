@@ -1,5 +1,4 @@
 ﻿using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {

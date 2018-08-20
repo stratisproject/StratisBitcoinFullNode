@@ -521,22 +521,16 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             }
 
             // Validate the block.
-            ChainedHeaderBlock chainedHeaderBlock = this.consensusManager.BlockMinedAsync(block).GetAwaiter().GetResult();
+            ChainedHeader chainedHeader = this.consensusManager.BlockMinedAsync(block).GetAwaiter().GetResult();
 
-            if (chainedHeaderBlock == null)
+            if (chainedHeader == null)
             {
                 this.logger.LogTrace("(-)[REORG-2]");
                 return;
             }
 
-            //if (blockValidationContext.Error != null)
-            //{
-            //    this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
-            //    return;
-            //}
-
             this.logger.LogInformation("==================================================================");
-            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock.ChainedHeader.Height);
+            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", chainedHeader.HashBlock, chainedHeader.Height);
             this.logger.LogInformation("==================================================================");
         }
 
@@ -1147,7 +1141,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// </para>
         /// </remarks>
         /// <seealso cref="CoinstakeSplitLimitMultiplier" />
-        /// <seealso cref="SplitFactor" />                                                                                                                                              
+        /// <seealso cref="SplitFactor" />
         internal bool ShouldSplitStake(int stakedUtxosCount, long amountStaked, long coinValue, int chainHeight)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5},{6}:{7})", nameof(stakedUtxosCount), stakedUtxosCount, nameof(amountStaked), amountStaked,

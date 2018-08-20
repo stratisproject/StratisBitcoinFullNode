@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -428,7 +429,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.callbackRuleContext = null;
 
-            this.consensusLoop.Setup(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ValidationContext>())).Callback<RuleContext>(context =>
+            this.consensusLoop.Setup(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ChainedHeader>(), It.IsAny<Block>())).Callback<RuleContext>(context =>
             {
                 this.callbackRuleContext = context;
             });

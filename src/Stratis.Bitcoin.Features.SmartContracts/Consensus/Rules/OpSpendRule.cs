@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     /// <summary>
     /// If OP_SPEND, check that the transaction before is a contract call
     /// </summary>
-    public class OpSpendRule : PartialValidationConsensusRule
+    public class OpSpendRule : FullValidationConsensusRule
     {
         public override Task RunAsync(RuleContext context)
         {

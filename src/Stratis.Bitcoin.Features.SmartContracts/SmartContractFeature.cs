@@ -23,10 +23,10 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Loader;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -38,9 +38,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly Network network;
         private readonly ContractStateRepositoryRoot stateRoot;
 
-        public SmartContractFeature(IConsensusManager consensusManager, ILoggerFactory loggerFactory, Network network, ContractStateRepositoryRoot stateRoot)
+        public SmartContractFeature(IConsensusManager consensusLoop, ILoggerFactory loggerFactory, Network network, ContractStateRepositoryRoot stateRoot)
         {
-            this.consensusManager = consensusManager;
+            this.consensusManager = consensusLoop;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.stateRoot = stateRoot;
@@ -75,7 +75,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     {
                         // STATE ----------------------------------------------------------------------------
                         services.AddSingleton<DBreezeContractStateStore>();
-                        services.AddSingleton<ISmartContractReceiptStorage, DBreezeContractReceiptStorage>();
                         services.AddSingleton<NoDeleteContractStateSource>();
                         services.AddSingleton<ContractStateRepositoryRoot>();
 
@@ -87,6 +86,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<InternalTransactionExecutorFactory>();
                         services.AddSingleton<ISmartContractVirtualMachine, ReflectionVirtualMachine>();
                         services.AddSingleton<IAddressGenerator, AddressGenerator>();
+                        services.AddSingleton<ILoader, ContractAssemblyLoader>();
 
                         services.AddSingleton<SmartContractTransactionPolicy>();
 
@@ -94,6 +94,35 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton(callDataSerializer);
                         services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), new SmartContractScriptAddressReader(new ScriptAddressReader(), callDataSerializer)));
                     });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
+        /// Configures the node with the smart contract proof of work consensus model.
+        /// </summary>
+        public static IFullNodeBuilder UseSmartContractConsensus(this IFullNodeBuilder fullNodeBuilder)
+        {
+            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
+            LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
+
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                .AddFeature<ConsensusFeature>()
+                .DependOn<SmartContractFeature>()
+                .FeatureServices(services =>
+                {
+                    services.AddSingleton<ConsensusOptions, ConsensusOptions>();
+                    services.AddSingleton<DBreezeCoinView>();
+                    services.AddSingleton<ICoinView, CachedCoinView>();
+                    services.AddSingleton<ConsensusController>();
+                    services.AddSingleton<ConsensusStats>();
+                    services.AddSingleton<IConsensusRuleEngine, SmartContractPowConsensusRuleEngine>();
+
+                    new SmartContractPowRuleRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
+                });
             });
 
             return fullNodeBuilder;
@@ -123,36 +152,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                         new SmartContractPosRuleRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                     });
-            });
-
-            return fullNodeBuilder;
-        }
-
-        /// <summary>
-        /// Configures the node with the smart contract proof of stake consensus model.
-        /// </summary>
-        public static IFullNodeBuilder UseSmartContractPowConsensus(this IFullNodeBuilder fullNodeBuilder)
-        {
-            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
-            LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
-
-            fullNodeBuilder.ConfigureFeature(features =>
-            {
-                features
-                .AddFeature<ConsensusFeature>()
-                .DependOn<SmartContractFeature>()
-                .FeatureServices(services =>
-                {
-                    services.AddSingleton<ConsensusOptions, ConsensusOptions>();
-                    services.AddSingleton<DBreezeCoinView>();
-                    services.AddSingleton<ICoinView, CachedCoinView>();
-                    services.AddSingleton<ConsensusController>();
-                    services.AddSingleton<ConsensusStats>();
-
-                    services.AddSingleton<IConsensusRuleEngine, SmartContractPowConsensusRuleEngine>();
-
-                    new SmartContractPowRuleRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
-                });
             });
 
             return fullNodeBuilder;

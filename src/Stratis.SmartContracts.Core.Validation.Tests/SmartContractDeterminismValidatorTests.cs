@@ -3,6 +3,7 @@ using System.Linq;
 using Stratis.ModuleValidation.Net;
 using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Validators;
+using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
 
@@ -36,7 +37,7 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
             // Validate a standard auction contract
             var decompilation = CompileFileToModuleDef(new FileInfo("Contracts/Auction.cs"));
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.True(result.IsValid);
         }
@@ -47,7 +48,7 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
             // Validate a standard auction contract
             var decompilation = CompileFileToModuleDef(new FileInfo("Contracts/Token.cs"));
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.True(result.IsValid);
         }
@@ -69,7 +70,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Empty(result.Errors);
         }
@@ -92,7 +93,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Empty(result.Errors);
         }
@@ -115,7 +116,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Empty(result.Errors);
         }
@@ -139,7 +140,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Contains(result.Errors, e => e is WhitelistValidator.WhitelistValidationResult);
         }
@@ -162,7 +163,7 @@ public class Test : SmartContract
                                             }";
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Contains(result.Errors, e => e is WhitelistValidator.WhitelistValidationResult);
         }
@@ -185,7 +186,7 @@ public class Test : SmartContract
                                             }";
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Single(result.Errors);
             Assert.IsType<TryCatchValidator.TryCatchValidationResult>(result.Errors.Single());
@@ -209,7 +210,7 @@ public class Test : SmartContract
                                             }";
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Single(result.Errors);
             Assert.IsType<TryCatchValidator.TryCatchValidationResult>(result.Errors.Single());
@@ -234,7 +235,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Single(result.Errors);
             Assert.IsType<TryCatchValidator.TryCatchValidationResult>(result.Errors.Single());
@@ -260,7 +261,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Contains(result.Errors, e => e is TryCatchValidator.TryCatchValidationResult);
         }
@@ -285,7 +286,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.True(result.IsValid);
         }
@@ -309,7 +310,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.True(result.IsValid);
         }
@@ -335,7 +336,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
@@ -366,7 +367,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Contains(result.Errors, e => e is TypeHasNestedTypesValidator.TypeHasNestedTypesValidationResult);
@@ -394,7 +395,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
@@ -420,7 +421,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
@@ -446,7 +447,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
@@ -471,7 +472,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Equal(3, result.Errors.Count());
@@ -493,7 +494,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.True(result.IsValid);
         }
@@ -514,7 +515,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Contains(result.Errors, e => e is StaticConstructorValidator.StaticConstructorValidationResult);
@@ -536,7 +537,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             // Use of finalizer override triggers multiple errors because of the way that it's compiled
             Assert.False(result.IsValid);
@@ -559,7 +560,7 @@ public class Test : SmartContract
 
             var decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation);
+            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);

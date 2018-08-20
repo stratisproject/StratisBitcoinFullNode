@@ -101,6 +101,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="block">The block.</param>
         /// <returns>Chained header for a given block.</returns>
         /// <exception cref="BlockDownloadedForMissingChainedHeaderException">Thrown when block data is presented for a chained block that doesn't exist.</exception>
+        /// <exception cref="IntegrityValidationFailedException">Thrown in case integrity validation failed.</exception>
         ChainedHeader FindHeaderAndVerifyBlockIntegrity(Block block);
 
         /// <summary>
@@ -127,6 +128,8 @@ namespace Stratis.Bitcoin.Consensus
         /// </returns>
         /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
+        /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
         ConnectNewHeadersResult ConnectNewHeaders(int networkPeerId, List<BlockHeader> headers);
 
         /// <summary>
@@ -134,6 +137,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="block">The block.</param>
         /// <returns>Newly created and connected chained header for the specified block.</returns>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         ChainedHeader CreateChainedHeaderWithBlock(Block block);
 
         /// <summary>
@@ -655,7 +659,13 @@ namespace Stratis.Bitcoin.Consensus
                 throw new BlockDownloadedForMissingChainedHeaderException();
             }
 
-            this.integrityValidator.VerifyBlockIntegrity(block, chainedHeader);
+            ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, block);
+
+            if (result.Error != null)
+            {
+                this.logger.LogTrace("(-)[INTEGRITY_VALIDATION_FAILED]");
+                throw new IntegrityValidationFailedException(result.Peer, result.Error, result.BanDurationSeconds);
+            }
 
             this.logger.LogTrace("(-):'{0}'", chainedHeader);
             return chainedHeader;
@@ -1048,6 +1058,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>A list of newly created chained headers or <c>null</c> if no new headers were found.</returns>
         /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
         /// <exception cref="ConnectHeaderException">Thrown if it wasn't possible to connect the first new header.</exception>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(headers), nameof(headers.Count), headers.Count);
@@ -1104,16 +1115,27 @@ namespace Stratis.Bitcoin.Consensus
             return newChainedHeaders;
         }
 
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         private ChainedHeader CreateAndValidateNewChainedHeader(BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader)
         {
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(currentBlockHeader), currentBlockHeader, nameof(previousChainedHeader), previousChainedHeader);
+
             var newChainedHeader = new ChainedHeader(currentBlockHeader, currentBlockHeader.GetHash(), previousChainedHeader);
 
-            this.headerValidator.ValidateHeader(newChainedHeader);
+            ValidationContext result = this.headerValidator.ValidateHeader(newChainedHeader);
+
+            if (result.Error != null)
+            {
+                this.logger.LogTrace("(-)[INVALID_HEADER]");
+                result.Error.Throw();
+            }
+
             newChainedHeader.BlockValidationState = ValidationState.HeaderValidated;
 
             previousChainedHeader.Next.Add(newChainedHeader);
             this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);
 
+            this.logger.LogTrace("(-):'{0}'", newChainedHeader);
             return newChainedHeader;
         }
 
