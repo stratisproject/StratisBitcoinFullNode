@@ -1,13 +1,11 @@
-﻿using Mono.Cecil;
-
-namespace Stratis.SmartContracts.Executor.Reflection.Compilation
+﻿namespace Stratis.SmartContracts.Executor.Reflection.Compilation
 {
     public class ContractModuleDefinitionReader : IContractModuleDefinitionReader
     {
         /// <inheritdoc />
-        public IContractModuleDefinition Read(byte[] bytes, IAssemblyResolver assemblyResolver = null)
+        public IContractModuleDefinition Read(byte[] bytes)
         {
-            return SmartContractDecompiler.GetModuleDefinition(bytes, assemblyResolver);
+            return SmartContractDecompiler.GetModuleDefinition(bytes, null);
         }
     }
 }
