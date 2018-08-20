@@ -28,16 +28,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             };
         }
 
-        public void MineBlocks(int blockCount, CoreNode node, string accountName, string toWalletName, string withPassword, long expectedFees = 0)
+        public void MineBlocks(int blockCount, CoreNode node, string accountName, string toWalletName, string withPassword)
         {
             this.WaitForNodeToSync(node);
 
             HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(toWalletName, accountName));
-
-            long balanceBeforeMining = node.FullNode.WalletManager()
-                .GetSpendableTransactionsInWallet(toWalletName)
-                .Where(x => x.Address == address)
-                .Sum(s => s.Transaction.Amount);
 
             Wallet wallet = node.FullNode.WalletManager().GetWalletByName(toWalletName);
             Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(withPassword, address).PrivateKey;
@@ -46,16 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
             node.GenerateStratisWithMiner(blockCount);
 
-            long balanceAfterMining = node.FullNode.WalletManager()
-                .GetSpendableTransactionsInWallet(toWalletName)
-                .Where(x => x.Address == address)
-                .Sum(s => s.Transaction.Amount);
-
-            long balanceIncrease = balanceAfterMining - balanceBeforeMining;
-
             this.WaitForNodeToSync(node);
-
-            balanceIncrease.Should().Be(node.GetProofOfWorkRewardForMinedBlocks(blockCount) + expectedFees);
         }
 
         public void MinePremineBlocks(CoreNode node, string walletName, string walletAccount, string walletPassword)
@@ -71,9 +57,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
             this.WaitForNodeToSync(node);
 
-            IEnumerable<UnspentOutputReference> spendable = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName);
+            // Since the premine will not be immediately spendable, the transactions have to be counted directly from the address.
+            unusedAddress.Transactions.Count().Should().Be(2);
+
             Money amountShouldBe = node.FullNode.Network.Consensus.PremineReward + node.FullNode.Network.Consensus.ProofOfWorkReward;
-            spendable.Sum(s => s.Transaction.Amount).Should().Be(amountShouldBe);
+
+            unusedAddress.Transactions.Sum(s => s.Amount).Should().Be(amountShouldBe);
         }
 
         public void WaitForNodeToSync(params CoreNode[] nodes)

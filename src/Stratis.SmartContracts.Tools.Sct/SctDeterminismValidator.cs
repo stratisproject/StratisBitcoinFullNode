@@ -1,4 +1,5 @@
 ﻿using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.SmartContracts.Tools.Sct
 {
@@ -8,7 +9,7 @@ namespace Stratis.SmartContracts.Tools.Sct
         
         public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
         {
-            return Validator.Validate(decompilation);
+            return Validator.Validate(decompilation.ModuleDefinition);
         }
     }
 }
