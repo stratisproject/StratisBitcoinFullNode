@@ -7,18 +7,12 @@ public class InterContract2 : SmartContract
 
     public void ContractTransfer(string addressString)
     {
-        ITransferResult result = TransferFunds(new Address(addressString), 100, new TransferFundsToContract
-        {
-            ContractMethodName = "ReturnInt"
-        });
+        ITransferResult result = Call(new Address(addressString), 100, "ReturnInt");
     }
 
     public bool ContractTransferWithFail(string addressString)
     {
-        ITransferResult result = TransferFunds(new Address(addressString), 100, new TransferFundsToContract
-        {
-            ContractMethodName = "ThrowException"
-        });
+        ITransferResult result = Call(new Address(addressString), 100, "ThrowException");
 
         return result.Success;
     }
