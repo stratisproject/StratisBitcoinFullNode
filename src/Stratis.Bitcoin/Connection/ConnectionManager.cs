@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Connection
                 }
                 else
                 {
-                    this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.Network.DefaultPort), false);
+                    this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.ConnectionSettings.Port), false);
                 }
             }
 
@@ -427,9 +427,6 @@ namespace Stratis.Bitcoin.Connection
             {
                 this.peerAddressManager.PeerAttempted(ipEndpoint, this.dateTimeProvider.GetUtcNow());
                 await peer.VersionHandshakeAsync(this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
-
-                // Set external address in self endpoint tracker to peer in version payload.
-                this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(peer.PeerVersion.AddressFrom, false);
             }
             catch (Exception e)
             {

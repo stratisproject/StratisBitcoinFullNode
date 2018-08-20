@@ -63,27 +63,12 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         [Fact]
-        public void UpdateExternalAddressAndPeerScore_IsNotFinal_ExternalAddressIsUpdated_AndPeerScoreIsSet()
-        {
-            var oldIpEndpoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1234);
-            var newIpEndpoint = new IPEndPoint(IPAddress.Parse("5.6.7.8"), 5678);
-            const int peerScore = 10;
-
-            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(oldIpEndpoint, false);
-            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(newIpEndpoint, true, peerScore);
-
-            Assert.True(this.selfEndpointTracker.MyExternalAddress.Equals(newIpEndpoint));
-            Assert.Equal(peerScore, this.selfEndpointTracker.MyExternalAddressPeerScore);
-        }
-
-        [Fact]
         public void UpdateWithSameExternalAddress_IsNotFinal_ExternalAddressIsUnchanged_AndPeerScoreIsIncremented()
         {
             var oldIpEndpoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1234);
             const int initialPeerScore = 1;
 
             this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(oldIpEndpoint, false);
-            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(oldIpEndpoint, true, initialPeerScore);
             this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(oldIpEndpoint, false);
 
             Assert.True(this.selfEndpointTracker.MyExternalAddress.Equals(oldIpEndpoint));
@@ -95,11 +80,13 @@ namespace Stratis.Bitcoin.Tests.P2P
         {
             var oldIpEndpoint = new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1234);
             var newIpEndpoint = new IPEndPoint(IPAddress.Parse("5.6.7.8"), 5678);
-            const int initialPeerScore = 10;
+            
+            const int initialPeerScore = 2;
+            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(oldIpEndpoint, false);
+            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(oldIpEndpoint, false);
+            Assert.Equal(initialPeerScore, this.selfEndpointTracker.MyExternalAddressPeerScore);
 
-            this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(oldIpEndpoint, true, initialPeerScore);
             this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(newIpEndpoint, false);
-
             Assert.True(this.selfEndpointTracker.MyExternalAddress.Equals(oldIpEndpoint));
             Assert.Equal(initialPeerScore - 1, this.selfEndpointTracker.MyExternalAddressPeerScore);
         }
