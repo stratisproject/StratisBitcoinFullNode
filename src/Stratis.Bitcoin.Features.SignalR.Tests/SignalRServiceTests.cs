@@ -47,34 +47,10 @@ namespace Stratis.Bitcoin.Features.SignalR.Tests
         }
 
         [Fact]
-        public void Test_MessageStream_pumps_when_SendAsync_is_called()
-        {
-            var signal = new ManualResetEvent(false);
-            this.signalRService.MessageStream.Subscribe(x => signal.Set());
-            this.signalRService.StartAsync().ContinueWith(_ => this.signalRService.SendAsync(It.IsAny<string>(), It.IsAny<string>()));
-            Assert.True(signal.WaitOne(TimeSpan.FromSeconds(5)));
-        }
-
-        [Fact]
-        public void Test_MessageStream_pumps_topic_when_SendAsync_is_called()
+        public void Test_MessageStream_pumps_message_when_SendAsync_is_called()
         {
             var signal = new ManualResetEvent(false);
             const string topic = "thetopic";
-            (string topic, string data) message = ("", "");
-            this.signalRService.MessageStream.Subscribe(x =>
-            {
-                message = x;
-                signal.Set();
-            });
-            this.signalRService.StartAsync().ContinueWith(_ => this.signalRService.SendAsync(topic, It.IsAny<string>()));
-            signal.WaitOne(TimeSpan.FromSeconds(5));
-            Assert.Equal(message.topic, topic);
-        }
-
-        [Fact]
-        public void Test_MessageStream_pumps_data_when_SendAsync_is_called()
-        {
-            var signal = new ManualResetEvent(false);
             const string data = "thedata";
             (string topic, string data) message = ("", "");
             this.signalRService.MessageStream.Subscribe(x =>
@@ -82,9 +58,9 @@ namespace Stratis.Bitcoin.Features.SignalR.Tests
                 message = x;
                 signal.Set();
             });
-            this.signalRService.StartAsync().ContinueWith(_ => this.signalRService.SendAsync(It.IsAny<string>(), data));
+            this.signalRService.StartAsync().ContinueWith(_ => this.signalRService.SendAsync(topic, data));
             signal.WaitOne(TimeSpan.FromSeconds(5));
-            Assert.Equal(message.data, data);
+            Assert.Equal(message, (topic, data));
         }
 
         public void Dispose()
