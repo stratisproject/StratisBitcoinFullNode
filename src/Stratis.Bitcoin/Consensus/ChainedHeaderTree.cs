@@ -154,8 +154,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Chained header for specified block hash if it exists, <c>null</c> otherwise.</returns>
         ChainedHeader GetChainedHeader(uint256 blockHash);
 
-        /// <summary>Returns <c>true</c> if consensus tip is equal to the tip of the most advanced peer node it is connected to.</summary>
-        bool IsAtBestChainTip();
+        /// <summary>Returns <c>true</c> if consensus' height is within <see cref="ChainedHeaderTree.ConsensusIsConsideredToBeSyncedMargin"/> blocks from the best tip's height.</summary>
+        bool IsConsensusConsideredToBeSynced();
     }
 
     /// <inheritdoc />
@@ -170,6 +170,11 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusSettings consensusSettings;
         private readonly ISignals signals;
         private readonly IFinalizedBlockInfo finalizedBlockInfo;
+
+        /// <summary>
+        /// The amount of blocks from consensus the node is considered to be synced.
+        /// </summary>
+        private const int ConsensusIsConsideredToBeSyncedMargin = 5;
 
         /// <inheritdoc />
         public long UnconsumedBlocksDataBytes { get; private set; }
@@ -1028,8 +1033,6 @@ namespace Stratis.Bitcoin.Consensus
 
             this.peerTipsByPeerId.Add(networkPeerId, newTip);
 
-            this.chainState.IsAtBestChainTip = this.IsAtBestChainTip();
-
             this.logger.LogTrace("(-)");
         }
 
@@ -1206,10 +1209,21 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public bool IsAtBestChainTip()
+        public bool IsConsensusConsideredToBeSynced()
         {
             this.logger.LogTrace("()");
 
+            // If the height of consensus is less than the tip margin, the node is considered to be synced.
+            var consensusTip = this.GetConsensusTip();
+            if (consensusTip.Height <= ConsensusIsConsideredToBeSyncedMargin)
+            {
+                this.logger.LogTrace("(-):true");
+                return true;
+            }
+
+            // Otherwise check the distance from the best tip to consensus
+            // and if it is within the margin, the node is also considered to be
+            // synced.
             ChainedHeader bestTip = null;
 
             foreach (uint256 tipHash in this.peerTipsByPeerId.Values)
@@ -1220,12 +1234,10 @@ namespace Stratis.Bitcoin.Consensus
                     bestTip = tip;
             }
 
-            ChainedHeader consensusTip = this.GetConsensusTip();
+            bool isConsideredSynced = consensusTip.Height > (bestTip.Height - ConsensusIsConsideredToBeSyncedMargin);
 
-            bool atBestChainTip = consensusTip == bestTip;
-
-            this.logger.LogTrace("(-):{0}", atBestChainTip);
-            return atBestChainTip;
+            this.logger.LogTrace("(-):{0}", isConsideredSynced);
+            return isConsideredSynced;
         }
     }
 
