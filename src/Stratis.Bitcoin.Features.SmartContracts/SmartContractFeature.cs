@@ -94,6 +94,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                         services.AddSingleton<SmartContractTransactionPolicy>();
 
+                        // RECEIPTS -------------------------------------------------------------------------
+                        services.AddSingleton<IReceiptRepository, ReceiptRepository>();
+
                         ICallDataSerializer callDataSerializer = CallDataSerializer.Default;
                         services.AddSingleton(callDataSerializer);
                         services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), new SmartContractScriptAddressReader(new ScriptAddressReader(), callDataSerializer)));
@@ -136,8 +139,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     services.AddSingleton<ConsensusSettings>();
 
                     services.AddSingleton<IConsensusRules, SmartContractPowConsensusRuleEngine>();
-
-                    services.AddSingleton<IReceiptRepository, ReceiptRepository>();
 
                     fullNodeBuilder.Network.Consensus.Rules = new SmartContractPowRuleRegistration().GetRules();
                 });
