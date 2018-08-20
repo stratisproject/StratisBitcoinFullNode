@@ -63,6 +63,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             TypeDefinition contractType = moduleDefinition.Types.FirstOrDefault(x => x.Name == typeName);
             List<MethodDefinition> methods = contractType.Methods.Where(m => m.Name == methodName).ToList();
 
+            // It's possible that a method references an overload of itself, which means that the overload could potentially be injected twice.
+            // Because of this we need to keep track of which methods have been injected.
+            HashSet<string> injectedMethods = new HashSet<string>();
+
             if (!methods.Any())
                 return moduleDefinition;
 
@@ -81,9 +85,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 InjectSpendGasMethod(method, gasMethodReference);
 
+                injectedMethods.Add(method.FullName);
+
                 foreach (MethodDefinition referencedMethod in referencedMethods)
                 {
+                    if (injectedMethods.Contains(referencedMethod.FullName))
+                        continue;
+
                     InjectSpendGasMethod(referencedMethod, gasMethodReference);
+
+                    injectedMethods.Add(referencedMethod.FullName);
                 }
             }
 
