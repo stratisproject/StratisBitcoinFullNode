@@ -35,7 +35,6 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -148,7 +147,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public SmartContractValidator validator;
             public IKeyEncodingStrategy keyEncodingStrategy;
             public ReflectionSmartContractExecutorFactory executorFactory;
-            public DBreezeContractReceiptStorage receiptStorage;
 
             private bool useCheckpoints = true;
             public Key privateKey;
@@ -203,8 +201,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.stateRoot = new ContractStateRepositoryRoot(stateDB);
                 this.validator = new SmartContractValidator();
 
-                this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder));
-
                 this.refundProcessor = new SmartContractResultRefundProcessor(loggerFactory);
                 this.transferProcessor = new SmartContractResultTransferProcessor(loggerFactory, this.network);
 
@@ -226,7 +222,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
 
                 var smartContractRuleRegistration = new SmartContractPowRuleRegistration();
-                ConsensusRules consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, blockPuller, this.cachedCoinView, this.receiptStorage).Register();
+                ConsensusRules consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, blockPuller, this.cachedCoinView).Register();
 
                 this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, this.nodeSettings, peerBanning, consensusRules);
                 await this.consensus.StartAsync();
@@ -849,16 +845,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             ICoinView coinView,
             ISmartContractExecutorFactory executorFactory,
             ContractStateRepositoryRoot stateRoot,
-            ILoggerFactory loggerFactory,
-            ISmartContractReceiptStorage receiptStorage)
+            ILoggerFactory loggerFactory)
         {
             this.registered = new Dictionary<Type, object>
             {
                 { typeof(ICoinView), coinView },
                 { typeof(ISmartContractExecutorFactory), executorFactory },
                 { typeof(ContractStateRepositoryRoot), stateRoot },
-                { typeof(ILoggerFactory), loggerFactory },
-                { typeof(ISmartContractReceiptStorage), receiptStorage }
+                { typeof(ILoggerFactory), loggerFactory }
             };
         }
 
