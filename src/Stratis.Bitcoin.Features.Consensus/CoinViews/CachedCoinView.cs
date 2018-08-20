@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Statistics of hits and misses in the cache.</summary>
         public CachePerformanceCounter PerformanceCounter { get; set; }
 
-        /// <summary>Lock object to protect access to <see cref="unspents"/>, <see cref="blockHash"/>, and <see cref="innerBlockHash"/>.</summary>
+        /// <summary>Lock object to protect access to <see cref="unspents"/>, <see cref="blockHash"/>, <see cref="cachedRewindDataList"/>, and <see cref="innerBlockHash"/>.</summary>
         private readonly AsyncLock lockobj;
 
         /// <summary>Hash of the block headers of the tip of the coinview.</summary>
@@ -86,7 +86,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         private readonly ICoinView inner;
 
         /// <summary>Pending list of rewind data to be persisted to a persistent storage.</summary>
-        private readonly List<RewindData> cachedRewindDataList = new List<RewindData>();
+        /// <remarks>All access to this list has to be protected by <see cref="lockobj"/>.</remarks>
+        private readonly List<RewindData> cachedRewindDataList;
 
         /// <inheritdoc />
         public ICoinView Inner
@@ -161,6 +162,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.unspents = new Dictionary<uint256, CacheItem>();
             this.PerformanceCounter = new CachePerformanceCounter(this.dateTimeProvider);
             this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
+            this.cachedRewindDataList = new List<RewindData>();
         }
 
         /// <inheritdoc />
@@ -364,33 +366,34 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
-                    if (this.unspents.TryGetValue(unspent.TransactionId, out CacheItem existing))
+                    if (this.unspents.TryGetValue(unspent.TransactionId, out CacheItem cacheItem))
                     {
-                        // We'll need to restore the original outputs.
+                        // We'll need to restore the original outputs, so we clone it
+                        // and save it in rewind data.
                         UnspentOutputs clone = unspent.Clone();
-                        clone.Outputs = existing.UnspentOutputs?.Outputs.ToArray() ?? Array.Empty<TxOut>();
+                        clone.Outputs = cacheItem.UnspentOutputs?.Outputs.ToArray() ?? Array.Empty<TxOut>();
                         rewindData.OutputsToRestore.Add(clone);
 
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
-                        if (existing.UnspentOutputs != null) existing.UnspentOutputs.Spend(unspent);
-                        else existing.UnspentOutputs = unspent;
+                        if (cacheItem.UnspentOutputs != null) cacheItem.UnspentOutputs.Spend(unspent);
+                        else cacheItem.UnspentOutputs = unspent;
                     }
                     else
                     {
                         this.logger.LogTrace("Outputs of transaction ID '{0}' not found in cache, inserting them.", unspent.TransactionId);
-                        existing = new CacheItem();
-                        existing.ExistInInner = !unspent.IsFull; // Seems to be a new created coin (careful, untrue if rewinding).
-                        existing.ExistInInner |= duplicateTransactions.Any(t => unspent.TransactionId == t);
-                        existing.IsDirty = true;
-                        existing.UnspentOutputs = unspent;
-                        this.unspents.Add(unspent.TransactionId, existing);
+                        cacheItem = new CacheItem();
+                        cacheItem.ExistInInner = !unspent.IsFull; // Seems to be a new created coin (careful, untrue if rewinding).
+                        cacheItem.ExistInInner |= duplicateTransactions.Any(t => unspent.TransactionId == t);
+                        cacheItem.IsDirty = true;
+                        cacheItem.UnspentOutputs = unspent;
+                        this.unspents.Add(unspent.TransactionId, cacheItem);
                         rewindData.TransactionsToRemove.Add(unspent.TransactionId);
                     }
 
-                    existing.IsDirty = true;
+                    cacheItem.IsDirty = true;
 
                     // Inner does not need to know pruned unspent that it never saw.
-                    if (existing.UnspentOutputs.IsPrunable && !existing.ExistInInner)
+                    if (cacheItem.UnspentOutputs.IsPrunable && !cacheItem.ExistInInner)
                     {
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are prunable and not in underlaying coinview, removing from cache.", unspent.TransactionId);
                         this.unspents.Remove(unspent.TransactionId);
@@ -413,21 +416,21 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
-                if (this.blockHash == this.innerBlockHash)
-                    this.unspents.Clear();
-
                 // Check if rewind data is available in local cache. If it is 
                 // we can rewind and there is no need to check underlying storage.
-                if (this.cachedRewindDataList.Any())
+                if (this.cachedRewindDataList.Count > 0)
                 {
                     RewindData lastRewindData = this.cachedRewindDataList.Last();
 
                     this.RemoveTransactions(lastRewindData);
                     this.RestoreOutputs(lastRewindData);
 
-                    this.cachedRewindDataList.Remove(lastRewindData);
+                    // Change current block hash to the one from the rewind data.
+                    this.blockHash = lastRewindData.PreviousBlockHash;
+
+                    this.cachedRewindDataList.RemoveAt(this.cachedRewindDataList.Count - 1);
                     this.logger.LogTrace("(-)[REMOVED_FROM_BATCH]:'{0}'", lastRewindData.PreviousBlockHash);
-                    return lastRewindData.PreviousBlockHash;
+                    return this.blockHash;
                 }
 
                 // Rewind data was not found in cache, try underlying storage.
@@ -442,32 +445,37 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         private void RestoreOutputs(RewindData rewindData)
         {
+            this.logger.LogTrace("()");
+
             foreach (UnspentOutputs unspentToRestore in rewindData.OutputsToRestore)
             {
                 this.logger.LogTrace("Outputs of transaction ID '{0}' will be restored.", unspentToRestore.TransactionId);
-                if (this.unspents.TryGetValue(unspentToRestore.TransactionId, out CacheItem existing))
+                if (this.unspents.TryGetValue(unspentToRestore.TransactionId, out CacheItem cacheItem))
                 {
-                    existing.UnspentOutputs = unspentToRestore;
+                    cacheItem.UnspentOutputs = unspentToRestore;
                 }
                 else
                 {
-                    this.logger.LogTrace(
-                        "Outputs of transaction ID '{0}' not found in cache, inserting them.",
-                        unspentToRestore.TransactionId);
-                    existing = new CacheItem { UnspentOutputs = unspentToRestore };
-                    this.unspents.Add(unspentToRestore.TransactionId, existing);
+                    this.logger.LogTrace("Outputs of transaction ID '{0}' not found in cache, inserting them.", unspentToRestore.TransactionId);
+                    cacheItem = new CacheItem { UnspentOutputs = unspentToRestore };
+                    this.unspents.Add(unspentToRestore.TransactionId, cacheItem);
                 }
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         private void RemoveTransactions(RewindData rewindData)
         {
+            this.logger.LogTrace("()");
+
             foreach (uint256 transactionToRemove in rewindData.TransactionsToRemove)
             {
                 this.logger.LogTrace("Attempt to remove transaction with ID '{0}'.", transactionToRemove);
-                if (!this.unspents.ContainsKey(transactionToRemove)) continue;
                 this.unspents.Remove(transactionToRemove);
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
