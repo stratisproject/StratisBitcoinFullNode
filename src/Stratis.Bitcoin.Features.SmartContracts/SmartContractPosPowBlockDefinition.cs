@@ -192,6 +192,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
+            var receipt = new Receipt(
+                new uint256(this.stateSnapshot.Root),
+                result.GasConsumed,
+                new BloomData(), // TODO: Add event logging and calculate bloom filter.
+                new Log[0]
+            );
+            this.receipts.Add(receipt);
+
             this.logger.LogTrace("(-)");
 
             return result;

@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 result.GasConsumed,
                 new BloomData(), // TODO: Add event logging and calculate bloom filter.
                 new Log[0]
-                );
+            );
             this.receipts.Add(receipt);
 
             this.logger.LogTrace("(-)");
