@@ -1,5 +1,6 @@
 ﻿using System;
 using NBitcoin;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Signals
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Signals
         /// Notify subscribers about a block being disconnected.
         /// </summary>
         /// <param name="block">Block that was disconnected.</param>
-        void SignalBlockDisconnected(Block block);
+        void SignalBlockDisconnected(ChainedHeaderBlock block);
 
         /// <summary>
         /// Notify subscribers about a new transaction being available.
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Signals
         /// </summary>
         /// <param name="observer">Observer to be subscribed to receive signaler's messages.</param>
         /// <returns>Disposable object to allow observer to unsubscribe from the signaler.</returns>
-        IDisposable SubscribeForBlocksDisconnected(IObserver<Block> observer);
+        IDisposable SubscribeForBlocksDisconnected(IObserver<ChainedHeaderBlock> observer);
 
         /// <summary>
         /// Subscribes to receive notifications when a new transaction is available.
@@ -55,7 +56,7 @@ namespace Stratis.Bitcoin.Signals
         /// <summary>
         /// Initializes the object with newly created instances of signalers.
         /// </summary>
-        public Signals() : this(new Signaler<Block>(), new Signaler<Block>(), new Signaler<Transaction>())
+        public Signals() : this(new Signaler<Block>(), new Signaler<ChainedHeaderBlock>(), new Signaler<Transaction>())
         {
         }
 
@@ -65,7 +66,7 @@ namespace Stratis.Bitcoin.Signals
         /// <param name="blockConnectedSignaler">Signaler providing notifications about newly available blocks to its subscribers.</param>
         /// <param name="blockDisonnectedSignaler">Signaler providing notifications about a block being disconnected to its subscribers.</param>
         /// <param name="transactionSignaler">Signaler providing notifications about newly available transactions to its subscribers.</param>
-        public Signals(ISignaler<Block> blockConnectedSignaler, ISignaler<Block> blockDisonnectedSignaler, ISignaler<Transaction> transactionSignaler)
+        public Signals(ISignaler<Block> blockConnectedSignaler, ISignaler<ChainedHeaderBlock> blockDisonnectedSignaler, ISignaler<Transaction> transactionSignaler)
         {
             Guard.NotNull(blockConnectedSignaler, nameof(blockConnectedSignaler));
             Guard.NotNull(blockDisonnectedSignaler, nameof(blockDisonnectedSignaler));
@@ -80,7 +81,7 @@ namespace Stratis.Bitcoin.Signals
         private ISignaler<Block> blocksConnected { get; }
 
         /// <summary>Signaler providing notifications about blocks being disconnected to its subscribers.</summary>
-        private ISignaler<Block> blocksDisconnected { get; }
+        private ISignaler<ChainedHeaderBlock> blocksDisconnected { get; }
 
         /// <summary>Signaler providing notifications about newly available transactions to its subscribers.</summary>
         private ISignaler<Transaction> transactions { get; }
@@ -94,7 +95,7 @@ namespace Stratis.Bitcoin.Signals
         }
 
         /// <inheritdoc />
-        public void SignalBlockDisconnected(Block block)
+        public void SignalBlockDisconnected(ChainedHeaderBlock block)
         {
             Guard.NotNull(block, nameof(block));
 
@@ -118,7 +119,7 @@ namespace Stratis.Bitcoin.Signals
         }
 
         /// <inheritdoc />
-        public IDisposable SubscribeForBlocksDisconnected(IObserver<Block> observer)
+        public IDisposable SubscribeForBlocksDisconnected(IObserver<ChainedHeaderBlock> observer)
         {
             Guard.NotNull(observer, nameof(observer));
 

@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
@@ -8,7 +9,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <summary>
     /// Mempool observer on disconnected block notifications.
     /// </summary>
-    public class BlocksDisconnectedSignaled : SignalObserver<Block>
+    public class BlocksDisconnectedSignaled : SignalObserver<ChainedHeaderBlock>
     {
         private readonly IMempoolValidator mempoolValidator;
         private readonly MempoolSchedulerLock mempoolLock;
@@ -22,11 +23,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        protected override void OnNextCore(Block block)
+        protected override void OnNextCore(ChainedHeaderBlock block)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.Block.GetHash());
 
-            this.AddBackToMempoolAsync(block).ConfigureAwait(false).GetAwaiter().GetResult();
+            this.AddBackToMempoolAsync(block.Block).ConfigureAwait(false).GetAwaiter().GetResult();
 
             this.logger.LogTrace("(-)");
         }
