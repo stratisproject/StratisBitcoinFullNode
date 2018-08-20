@@ -45,6 +45,9 @@
     <Compile Update="SmartContracts\AsyncTask.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="SmartContracts\ByteArrayConversion.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
     <Compile Update="SmartContracts\CallInfiniteLoopContract.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
