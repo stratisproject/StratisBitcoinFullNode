@@ -160,6 +160,8 @@ namespace NBitcoin
     /// </remarks>
     public class PosTransaction : Transaction
     {
+        public bool IsColdCoinStake { get; set; }
+
         public PosTransaction() : base()
         {
         }

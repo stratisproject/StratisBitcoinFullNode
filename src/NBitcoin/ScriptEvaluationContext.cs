@@ -27,6 +27,7 @@ namespace NBitcoin
         CheckMultiSigVerify,
         CheckSigVerify,
         NumEqualVerify,
+        CheckColdStakeVerify,
 
         /* Logical/Format/Canonical errors */
         BadOpCode,
@@ -837,12 +838,40 @@ namespace NBitcoin
                                 case OpcodeType.OP_NOP7:
                                 case OpcodeType.OP_NOP8:
                                 case OpcodeType.OP_NOP9:
-                                case OpcodeType.OP_NOP10:
                                     if((this.ScriptVerify & ScriptVerify.DiscourageUpgradableNops) != 0)
                                     {
                                         return SetError(ScriptError.DiscourageUpgradableNops);
                                     }
                                     break;
+
+                                // OP_NOP10 has been redefined as OP_CHECKCOLDSTAKEVERIFY.
+                                case OpcodeType.OP_CHECKCOLDSTAKEVERIFY:
+                                    {
+                                        // Revert to OP_NOP10 behavior if cold staking is not activated yet.
+                                        if ((this.ScriptVerify & ScriptVerify.CheckColdStakeVerify) == 0)
+                                        {
+                                            // not enabled; treat as a NOP10.
+                                            if ((this.ScriptVerify & ScriptVerify.DiscourageUpgradableNops) != 0)
+                                            {
+                                                return SetError(ScriptError.DiscourageUpgradableNops);
+                                            }
+
+                                            break;
+                                        }
+
+                                        // This opcode should not be used outside coinstake transactions.
+                                        if (!(checker.Transaction is PosTransaction posTran) || !posTran.IsCoinStake)
+                                        {
+                                            return SetError(ScriptError.CheckColdStakeVerify);
+                                        }
+
+                                        // Set a flag to perform further checks if the spend is using a hot wallet key.
+                                        // The fact that this opcode is executing implies that this is such a spend.
+                                        posTran.IsColdCoinStake = true;
+
+                                        // If the above-mentioned checks pass, the instruction does nothing.                                        
+                                        break;
+                                    }
 
                                 case OpcodeType.OP_IF:
                                 case OpcodeType.OP_NOTIF:

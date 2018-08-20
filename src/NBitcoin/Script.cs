@@ -119,6 +119,11 @@ namespace NBitcoin
         WitnessPubkeyType = (1U << 15),
 
         /// <summary>
+        /// This flag is set for POS when we reach the block height where cold staking is enabled.
+        /// </summary>
+        CheckColdStakeVerify = (1U << 31),
+
+        /// <summary>
         /// Mandatory script verification flags that all new blocks must comply with for
         /// them to be valid. (but old blocks may not comply with) Currently just P2SH,
         /// but in the future other flags may be added, such as a soft-fork to enforce
@@ -313,7 +318,7 @@ namespace NBitcoin
         OP_NOP7 = 0xb6,
         OP_NOP8 = 0xb7,
         OP_NOP9 = 0xb8,
-        OP_NOP10 = 0xb9,        
+        OP_CHECKCOLDSTAKEVERIFY = 0xb9,
     };
 
     public enum HashVersion

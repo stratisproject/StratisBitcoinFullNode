@@ -252,8 +252,8 @@ namespace NBitcoin
                     return "OP_NOP8";
                 case OpcodeType.OP_NOP9:
                     return "OP_NOP9";
-                case OpcodeType.OP_NOP10:
-                    return "OP_NOP10";
+                case OpcodeType.OP_CHECKCOLDSTAKEVERIFY:
+                    return "OP_CHECKCOLDSTAKEVERIFY";
 
                 default:
                     return Enum.GetName(typeof(OpcodeType), opcode);
