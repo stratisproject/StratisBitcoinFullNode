@@ -38,6 +38,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ConnectHeaders_NoNewHeadersToConnect_ShouldReturnNothingToDownload()
         {
             TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.InitialChainTip;
 
@@ -53,6 +55,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ConnectHeaders_HeadersFromTwoPeers_ShouldCreateTwoPeerTips()
         {
             TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.InitialChainTip;
 
@@ -95,6 +99,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ConnectHeaders_NewAndExistingHeaders_ShouldCreateNewHeaders()
         {
             TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.InitialChainTip;
 
@@ -127,6 +133,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ConnectHeaders_SupplyHeadersThenSupplyMore_Both_Tip_PeerId_Maps_ShouldBeUpdated()
         {
             TestContext testContext = new TestContextBuilder().WithInitialChain(10).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.InitialChainTip;
 
@@ -169,6 +177,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Initialize tree with h1->h20.
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.InitialChainTip;
 
@@ -194,6 +204,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ConnectHeaders_HeadersFromTwoPeersWithFork_ShouldCreateBlocksForNewHeaders()
         {
             TestContext testContext = new TestContextBuilder().Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.ExtendAChain(7);
             chainedHeaderTree.Initialize(chainTip, true);
@@ -270,6 +282,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             // Setup
             TestContext ctx = new TestContextBuilder().WithInitialChain(5).UseCheckpoints(false).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -334,6 +348,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ConnectHeaders_MultiplePeersWithForks_CorrectTip()
         {
             TestContext testContext = new TestContextBuilder().Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.ExtendAChain(5);
             chainedHeaderTree.Initialize(chainTip, true);
@@ -366,7 +382,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             int depthOfInvalidHeader = 3;
             BlockHeader invalidBlockHeader = listOfPeerOnesHeaders[depthOfInvalidHeader];
-            testContext.HeaderValidator.Setup(x =>
+            testContext.HeaderValidator.Setup(x => 
                 x.ValidateHeader(It.Is<ChainedHeader>(y => y.HashBlock == invalidBlockHeader.GetHash()))).Throws(new InvalidHeaderTestException());
 
             Assert.Throws<InvalidHeaderTestException>(() => chainedHeaderTree.ConnectNewHeaders(1, listOfPeerOnesHeaders));
@@ -400,6 +416,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain A is presented by default peer:
             // h1=h2=h3=h4=h5=h6=h7
             TestContext testContext = new TestContextBuilder().Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.ExtendAChain(7);
             chainedHeaderTree.Initialize(chainTip, true);
@@ -477,6 +495,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int currentChainExtension = 20;
 
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -554,6 +574,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int currentChainExtension = 25;
 
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -574,7 +596,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             int numberOfHeadersBeforeCheckpoint1 = checkpointHeight1 - initialChainSize;
             List<BlockHeader> listOfHeadersBeforeCheckpoint1 =
                 listOfCurrentChainHeaders.GetRange(initialChainSize, numberOfHeadersBeforeCheckpoint1 - 5);
-            ConnectNewHeadersResult connectNewHeadersResult =
+            ConnectNewHeadersResult connectNewHeadersResult = 
                 chainedHeaderTree.ConnectNewHeaders(1, listOfHeadersBeforeCheckpoint1);
 
             // None are marked for download.
@@ -630,8 +652,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Checkpoints are disabled.
             // Initial chain has headers (h1-h10).
             const int initialChainOfTenBlocks = 10;
-            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainOfTenBlocks)
-                .UseCheckpoints(false).Build();
+            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainOfTenBlocks).UseCheckpoints(false).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -719,6 +742,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             // Chain header tree setup.
             TestContext ctx = new TestContextBuilder().WithInitialChain(5).UseCheckpoints(false).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
@@ -783,6 +808,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int initialChainSize = 2;
             const int currentChainExtension = 6;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
@@ -839,6 +866,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2.
             const int initialChainSize = 2;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
@@ -882,6 +911,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int initialChainSize = 2;
             const int extensionChainSize = 2;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
@@ -940,6 +971,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int initialChainSize = 2;
             const int extensionChainSize = 2;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
@@ -986,6 +1019,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: fv1=fv2=fv3=fv4 (fv - fully validated).
             const int initialChainSize = 4;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -1038,6 +1073,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int initialChainSize = 4;
             const int extensionChainSize = 2;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
@@ -1061,9 +1098,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup. Initial chain has 4 headers with no blocks.
             // Example: h1=h2=h3=h4.
             const int initialChainSize = 4;
-            TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize, assignBlocks: false)
-                .Build();
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize, assignBlocks: false).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
@@ -1082,6 +1119,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void BlockDataDownloadedIsCalled_ForValidBlocksAfterFv_ResultShouldBeTrueForTHeFirstAndFalseForTheRest()
         {
             TestContext ctx = new TestContextBuilder().WithInitialChain(1).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -1121,9 +1160,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup. Initial chain has 5 headers.
             // Example: h1=h2=h3=h4=h5.
             const int initialChainSize = 5;
-            TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize)
-                .Build();
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -1161,9 +1200,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup. Initial chain has 5 headers.
             // Example: h1=h2=h3=h4=h5.
             const int initialChainSize = 5;
-            TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize)
-                .Build();
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -1208,6 +1247,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=h4=h5.
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
@@ -1280,9 +1321,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup. Initial chain has 5 headers.
             // Example: h1=h2=h3=h4=h5.
             const int initialChainSize = 5;
-            TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize)
-                .Build();
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -1321,9 +1362,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup. Initial chain has 2 headers.
             // Example: h1=h2.
             const int initialChainSize = 2;
-            TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize)
-                .Build();
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -1363,6 +1404,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup.
             const int initialChainSize = 1;
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -1391,6 +1434,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Setup with initial chain of 17 headers (h1->h17).
             const int initialChainSize = 17;
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.InitialChainTip;
 
@@ -1429,6 +1474,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int assumeValidHeaderHeight = 30;
 
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
             ChainedHeader chainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
@@ -1489,6 +1536,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int headersEndHeight = 25;
 
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(true).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
             ChainedHeader chainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
@@ -1549,6 +1598,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int headersStartHeight = 15;
 
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(true).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
             ChainedHeader chainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
@@ -1594,6 +1645,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2.
             const int initialChainSize = 2;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -1632,6 +1685,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1.
             const int initialChainSize = 1;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -1684,6 +1739,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1.
             const int initialChainSize = 1;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -1763,6 +1820,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=...=h20.
             const int initialChainSize = 20;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -1828,6 +1887,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
             ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
@@ -1869,6 +1930,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
             ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
@@ -1901,6 +1964,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
             ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
@@ -2047,6 +2112,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
             ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
@@ -2107,6 +2174,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=h4=(h5).
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -2167,6 +2236,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Chain header tree setup.
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -2203,6 +2274,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Chain header tree setup.
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
 
@@ -2262,6 +2335,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Chain header tree setup.
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -2353,6 +2428,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Chain header tree setup.
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -2426,6 +2503,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int extensionSize = 20;
 
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.InitialChainTip;
 
@@ -2482,6 +2561,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Chain header tree setup.
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSizeOfFive).UseCheckpoints(true).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -2528,6 +2609,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int peerTwoId = 2;
 
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSizeOfFiveHeaders).UseCheckpoints().Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -2582,6 +2665,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=h4=h5.
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -2619,10 +2704,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup. Initial chain has 1 header.
             // Example: h1.
             const int initialChainSize = 1;
-            TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize)
-                .WithBlockStoreDisabled()
-                .Build();
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).WithBlockStoreDisabled().Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -2676,9 +2760,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup. Initial chain has 1 header.
             // Example: h1.
             const int initialChainSize = 1;
-            TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize)
-                .Build();
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -2731,9 +2815,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup. Initial chain has 5 headers with no blocks.
             // Example: h1=h2=h3=h4=h5.
             const int initialChainSize = 5;
-            TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize)
-                .Build();
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -2764,9 +2848,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup. Initial chain has 5 headers with no blocks.
             // Example: h1=h2=h3=h4=h5.
             const int initialChainSize = 5;
-            TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize)
-                .Build();
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -2804,9 +2888,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Chain header tree setup. Initial chain has 5 headers with no blocks.
             // Example: h1=h2=h3=h4=h5.
             const int initialChainSize = 5;
-            TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize)
-                .Build();
+            TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader chainTip = ctx.InitialChainTip;
 
@@ -2854,6 +2938,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Chain header tree setup.
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -2907,6 +2993,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Chain header tree setup.
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSizeOfTwenty).UseCheckpoints(false).Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -2956,6 +3044,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int totalHeadersCount = 5000;
 
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -2991,6 +3081,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             const int totalHeadersCount = 5000;
 
             TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints().Build();
+            testContext.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader initialChainTip = testContext.InitialChainTip;
 
@@ -3020,6 +3112,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
             ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
@@ -3041,6 +3135,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             const int initialChainSize = 5;
             TestContext ctx = new TestContextBuilder().WithInitialChain(initialChainSize).UseCheckpoints(false).Build();
+            ctx.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+
             ChainedHeaderTree cht = ctx.ChainedHeaderTree;
             ChainedHeader initialChainTip = ctx.InitialChainTip;
             ChainedHeaderBlock consensusTip = cht.GetChainedHeaderBlock(cht.GetPeerTipsByPeerId()[ChainedHeaderTree.LocalPeerId]);
