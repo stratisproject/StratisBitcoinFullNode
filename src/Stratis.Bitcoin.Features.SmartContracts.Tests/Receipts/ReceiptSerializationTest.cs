@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Receipts
         [Fact]
         public void Receipt_Serializes_And_Deserializes()
         {
-            var noLogReceipt = new Receipt(new uint256(1234), 12345, new BloomData(), new Log[] { });
+            var noLogReceipt = new Receipt(new uint256(1234), 12345, new Bloom(), new Log[] { });
 
             TestSerializeReceipt(noLogReceipt);
         }

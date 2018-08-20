@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         private void UpdateLogsBloom(SmartContractBlockHeader scHeader)
         {
-            BloomData logsBloom = new BloomData();
+            Bloom logsBloom = new Bloom();
             foreach (Receipt receipt in this.receipts)
             {
                 logsBloom.Or(receipt.Bloom);
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var receipt = new Receipt(
                 new uint256(this.stateSnapshot.Root),
                 result.GasConsumed,
-                new BloomData(), // TODO: Add event logging and calculate bloom filter.
+                new Bloom(), // TODO: Add event logging and calculate bloom filter.
                 new Log[0]
             );
             this.receipts.Add(receipt);

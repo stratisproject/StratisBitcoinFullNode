@@ -24,14 +24,14 @@ namespace Stratis.SmartContracts.Core.Receipts
         /// <summary>
         /// Bloom data representing all of the indexed logs contained inside this receipt.
         /// </summary>
-        public BloomData Bloom { get; }
+        public Bloom Bloom { get; }
 
         /// <summary>
         /// Logs created during contract execution. 
         /// </summary>
         public Log[] Logs { get; }
 
-        public Receipt(uint256 postState, ulong gasUsed, BloomData bloom, Log[] logs)
+        public Receipt(uint256 postState, ulong gasUsed, Bloom bloom, Log[] logs)
         {
             this.PostState = postState;
             this.GasUsed = gasUsed;
@@ -67,7 +67,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             return new Receipt(
                 new uint256(innerList[0].RLPData),
                 BitConverter.ToUInt64(innerList[1].RLPData),
-                new BloomData(innerList[2].RLPData),
+                new Bloom(innerList[2].RLPData),
                 logs
             );
         }
