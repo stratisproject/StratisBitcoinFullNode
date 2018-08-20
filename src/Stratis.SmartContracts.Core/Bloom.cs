@@ -117,10 +117,33 @@ namespace Stratis.SmartContracts.Core
             return this.data.ToHexString();
         }
 
+        public static bool operator ==(Bloom obj1, Bloom obj2)
+        {
+            if (object.ReferenceEquals(obj1, null))
+                return object.ReferenceEquals(obj2, null);
+
+            return Enumerable.SequenceEqual(obj1.data, obj2.data);
+        }
+
+        public static bool operator !=(Bloom obj1, Bloom obj2)
+        {
+            return !(obj1 == obj2);
+        }
+
         public override bool Equals(object obj)
         {
-            var other = obj as Bloom;
-            return other != null && Enumerable.SequenceEqual(this.data, other.data);
+            return this.Equals(obj as Bloom);
+        }
+
+        public bool Equals(Bloom obj)
+        {
+            if (object.ReferenceEquals(obj, null))
+                return false;
+
+            if (object.ReferenceEquals(this, obj))
+                return true;
+
+            return (obj == this);
         }
 
         public override int GetHashCode()
