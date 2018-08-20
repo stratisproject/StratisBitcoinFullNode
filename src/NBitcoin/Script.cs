@@ -121,7 +121,7 @@ namespace NBitcoin
         /// <summary>
         /// This flag is set for POS when we reach the block height where cold staking is enabled.
         /// </summary>
-        CheckColdStakeVerify = (1U << 16),
+        CheckColdStakeVerify = (1U << 31),
 
         /// <summary>
         /// Mandatory script verification flags that all new blocks must comply with for
