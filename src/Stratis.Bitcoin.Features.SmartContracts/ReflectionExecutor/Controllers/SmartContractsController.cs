@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
@@ -15,11 +14,9 @@ using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
@@ -38,7 +35,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IBroadcasterManager broadcasterManager;
         private readonly CoinType coinType;
         private readonly ILogger logger;
-        private readonly ISmartContractReceiptStorage receiptStorage;
         private readonly Network network;
         private readonly ContractStateRepositoryRoot stateRoot;
         private readonly IWalletManager walletManager;
@@ -46,17 +42,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IAddressGenerator addressGenerator;
 
         public SmartContractsController(IBroadcasterManager broadcasterManager,
-            IConsensusManager consensusManager,
+            IConsensusManager consensus,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
-            ISmartContractReceiptStorage receiptStorage,
             ContractStateRepositoryRoot stateRoot,
             IWalletManager walletManager,
             IWalletTransactionHandler walletTransactionHandler,
             IAddressGenerator addressGenerator)
         {
-            this.receiptStorage = receiptStorage;
             this.stateRoot = stateRoot;
             this.walletTransactionHandler = walletTransactionHandler;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -133,31 +127,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.logger.LogTrace("(-){0}:{1}", nameof(storageValue), storageValue);
 
             return Json(GetStorageValue(request.DataType, storageValue).ToString());
-        }
-
-        [Route("receipt")]
-        [HttpGet]
-        public IActionResult GetReceipt([FromQuery] string txHash)
-        {
-            this.logger.LogTrace("(){0}:{1}", nameof(txHash), txHash);
-            if (!this.ModelState.IsValid)
-            {
-                this.logger.LogTrace("(-)[MODELSTATE_INVALID]");
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-            }
-
-            uint256 txHashNum = new uint256(txHash);
-            SmartContractReceipt receipt = this.receiptStorage.GetReceipt(txHashNum);
-
-            if (receipt == null)
-            {
-                this.logger.LogTrace("(-)[RECEIPT_NOT_FOUND]");
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest,
-                    "Receipt not found.",
-                    "Could not find a stored transaction for this hash.");
-            }
-
-            return Json(ReceiptModel.FromSmartContractReceipt(receipt, this.network));
         }
 
         [Route("build-create")]

@@ -208,8 +208,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public async Task GenerateBlocksAsync_does_not_use_small_coins()
         {
-            var walletSecret = new WalletSecret() { WalletName = "wallet", WalletPassword = "password" };
-            var wallet = new Wallet.Wallet();
+            var walletSecret = new WalletSecret(){WalletName = "wallet", WalletPassword = "password"};
+            var wallet = new Wallet.Wallet()
+            {
+                Network = this.network
+            };
             var milliseconds550MinutesAgo = (uint)Math.Max(this.chain.Tip.Header.Time - TimeSpan.FromMinutes(550).Milliseconds, 0);
             this.AddAccountWithSpendableOutputs(wallet);
             var spendableTransactions = wallet.GetAllSpendableTransactions(CoinType.Stratis, this.chain.Tip.Height, 0).ToList();

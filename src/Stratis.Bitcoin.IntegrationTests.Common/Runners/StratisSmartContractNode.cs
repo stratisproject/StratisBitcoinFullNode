@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 .UseMempool()
                 .AddRPC()
                     .AddSmartContracts()
-                    .UseSmartContractPowConsensus()
+                    .UseSmartContractConsensus()
                     .UseSmartContractWallet()
                     .UseSmartContractPowMining()
                     .UseReflectionExecutor()
