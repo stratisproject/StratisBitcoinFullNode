@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Threading;
-using System.Collections.Generic;
-using NBitcoin;
-using Xunit;
-using Stratis.Bitcoin.SignalR;
-using Moq;
 using Microsoft.Extensions.Logging;
+using Moq;
+using Stratis.Bitcoin.SignalR;
+using Xunit;
 
 namespace Stratis.Bitcoin.Features.SignalR.Tests
 {
@@ -31,6 +29,21 @@ namespace Stratis.Bitcoin.Features.SignalR.Tests
         {
             var result = this.signalRService.SendAsync(It.IsAny<string>(), It.IsAny<string>());
             Assert.False(result.Result);
+        }
+
+        [Fact]
+        public void Test_SendAsync_returns_true_where_service_has_been_started()
+        {
+            var result = false;
+            var signal = new ManualResetEvent(false);
+            this.signalRService.StartAsync().ContinueWith(_ =>
+            {
+                result = this.signalRService.SendAsync(It.IsAny<string>(), It.IsAny<string>()).Result;
+                signal.Set();
+            });
+            if (!signal.WaitOne(TimeSpan.FromSeconds(5)))
+                result = false;
+            Assert.True(result);
         }
 
         [Fact]
