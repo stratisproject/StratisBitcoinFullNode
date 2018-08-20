@@ -26,6 +26,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ISmartContractValidator validator;
         private readonly IAddressGenerator addressGenerator;
         private readonly ILoader assemblyLoader;
+        private readonly IContractModuleDefinitionReader moduleDefinitionReader;
         public static int VmVersion = 1;
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
@@ -33,7 +34,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ILoggerFactory loggerFactory,
             Network network,
             IAddressGenerator addressGenerator,
-            ILoader assemblyLoader)
+            ILoader assemblyLoader,
+            IContractModuleDefinitionReader moduleDefinitionReader)
         {
             this.validator = validator;
             this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
@@ -41,6 +43,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.network = network;
             this.addressGenerator = addressGenerator;
             this.assemblyLoader = assemblyLoader;
+            this.moduleDefinitionReader = moduleDefinitionReader;
         }
 
         /// <summary>
@@ -57,7 +60,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // TODO: Spend Validation + Creation Fee here.
 
             // Decompile the contract execution code and validate it.
-            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(createData.ContractExecutionCode);
+            IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(createData.ContractExecutionCode);
 
             SmartContractValidationResult validation = moduleDefinition.Validate(this.validator);
 
@@ -148,7 +151,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractDoesNotExistException(callData.MethodName));
             }
 
-            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(contractExecutionCode);
+            IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractExecutionCode);
 
             moduleDefinition.InjectMethodGas(typeName, callData.MethodName);
 
