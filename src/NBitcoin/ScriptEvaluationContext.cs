@@ -850,7 +850,7 @@ namespace NBitcoin
                                         // Revert to OP_NOP10 behavior if cold staking is not activated yet.
                                         if ((this.ScriptVerify & ScriptVerify.CheckColdStakeVerify) == 0)
                                         {
-                                            // not enabled; treat as a NOP10
+                                            // not enabled; treat as a NOP10.
                                             if ((this.ScriptVerify & ScriptVerify.DiscourageUpgradableNops) != 0)
                                             {
                                                 return SetError(ScriptError.DiscourageUpgradableNops);
@@ -865,7 +865,7 @@ namespace NBitcoin
                                             return SetError(ScriptError.CheckColdStakeVerify);
                                         }
 
-                                        // Set a flag to perform further checks if the spend is using the a hot wallet key.
+                                        // Set a flag to perform further checks if the spend is using a hot wallet key.
                                         // The fact that this opcode is executing implies that this is such a spend.
                                         posTran.IsColdCoinStake = true;
 

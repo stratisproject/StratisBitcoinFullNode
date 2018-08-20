@@ -33,11 +33,6 @@ namespace NBitcoin
         /// <summary>
         /// Strict DER signature.
         /// </summary>
-        BIP66,
-
-        /// <summary>
-        /// Activation block height.
-        /// </summary>
-        ColdStaking
+        BIP66
     }
 }
