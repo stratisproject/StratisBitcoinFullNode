@@ -247,8 +247,8 @@ namespace Stratis.Bitcoin.Base
                 await this.chainRepository.SaveAsync(this.chain);
             },
             this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpan.FromMinutes(5.0),
-            startAfter: TimeSpan.FromMinutes(5.0));
+            repeatEvery: TimeSpan.FromMinutes(1.0),
+            startAfter: TimeSpan.FromMinutes(1.0));
         }
 
         /// <summary>
