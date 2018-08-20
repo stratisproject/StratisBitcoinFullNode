@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         protected Transaction generatedTransaction;
         protected IList<Receipt> receipts;
         protected uint refundCounter;
-        protected ISmartContractCoinviewRule ContractCoinviewRule { get; set; }
+        protected ISmartContractCoinviewRule ContractCoinviewRule { get; private set; }
 
         /// <inheritdoc />
         public override void Initialize()
@@ -263,7 +263,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             ISmartContractExecutionResult result = executor.Execute(txContext);
 
-            // TODO: Create receipt here and add to this.receipts list.
+            var receipt = new Receipt(
+                transaction.GetHash(),
+                context.ValidationContext.Block.GetHash(),
+                txContext.Sender,
+                null, // TODO: Get contract address here.
+                result.NewContractAddress,
+                result.GasConsumed,
+                !result.Revert,
+                null // TODO: Get return type in bytes.
+                );
+
+            this.receipts.Add(receipt);
 
             ValidateRefunds(result.Refunds, context.ValidationContext.Block.Transactions[0]);
 
@@ -305,7 +316,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             if (receiptRoot != expectedReceiptRoot)
                 SmartContractConsensusErrors.UnequalReceiptRoots.Throw();
 
-            // TODO: Store all receipts
+            this.ContractCoinviewRule.ReceiptRepository.Store(this.receipts);
+            this.receipts.Clear();
         }
 
         /// <summary>
