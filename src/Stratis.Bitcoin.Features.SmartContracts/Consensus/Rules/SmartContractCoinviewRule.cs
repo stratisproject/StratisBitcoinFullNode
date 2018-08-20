@@ -264,16 +264,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ISmartContractExecutionResult result = executor.Execute(txContext);
 
             var receipt = new Receipt(
-                transaction.GetHash(),
-                context.ValidationContext.Block.GetHash(),
-                txContext.Sender,
-                null, // TODO: Get contract address here.
-                result.NewContractAddress,
+                new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root),
                 result.GasConsumed,
-                !result.Revert,
-                null // TODO: Get return type in bytes.
+                new BloomData(), // TODO: Add event logging and calculate bloom filter.
+                new Log[0] 
                 );
-
             this.receipts.Add(receipt);
 
             ValidateRefunds(result.Refunds, context.ValidationContext.Block.Transactions[0]);
@@ -315,6 +310,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             if (receiptRoot != expectedReceiptRoot)
                 SmartContractConsensusErrors.UnequalReceiptRoots.Throw();
+
+            // TODO: Could also check for equality of logsBloom?
 
             this.ContractCoinviewRule.ReceiptRepository.Store(this.receipts);
             this.receipts.Clear();

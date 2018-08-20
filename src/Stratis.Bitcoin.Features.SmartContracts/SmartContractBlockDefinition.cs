@@ -5,6 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
@@ -12,6 +13,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
@@ -23,7 +25,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ICoinView coinView;
         private readonly ISmartContractExecutorFactory executorFactory;
         private readonly ILogger logger;
-        private readonly List<TxOut> refundOutputs = new List<TxOut>();
+        private readonly List<TxOut> refundOutputs;
+        private readonly List<Receipt> receipts;
         private readonly ContractStateRepositoryRoot stateRoot;
         private ContractStateRepositoryRoot stateSnapshot;
 
@@ -44,6 +47,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.executorFactory = executorFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.stateRoot = stateRoot;
+            this.refundOutputs = new List<TxOut>();
+            this.receipts = new List<Receipt>();
         }
 
         /// <summary>
@@ -110,6 +115,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.stateSnapshot = this.stateRoot.GetSnapshotTo(((SmartContractBlockHeader)this.ConsensusLoop.Tip.Header).HashStateRoot.ToBytes());
 
             this.refundOutputs.Clear();
+            this.receipts.Clear();
 
             base.OnBuild(chainTip, scriptPubKeyIn);
 
@@ -133,9 +139,39 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.UpdateBaseHeaders();
 
             this.block.Header.Bits = this.block.Header.GetWorkRequired(this.Network, this.ChainTip);
-            ((SmartContractBlockHeader)this.block.Header).HashStateRoot = new uint256(this.stateSnapshot.Root);
+
+            var scHeader = (SmartContractBlockHeader)this.block.Header;
+
+            scHeader.HashStateRoot = new uint256(this.stateSnapshot.Root);
+
+            UpdateReceiptRoot(scHeader);
+
+            UpdateLogsBloom(scHeader);
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Sets the receipt root based on all the receipts generated in smart contract execution inside this block.
+        /// </summary>
+        private void UpdateReceiptRoot(SmartContractBlockHeader scHeader)
+        {
+            List<uint256> leaves = this.receipts.Select(x => x.GetHash()).ToList();
+            bool mutated = false; // TODO: Do we need this?
+            scHeader.ReceiptRoot = BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
+        }
+
+        /// <summary>
+        /// Sets the bloom filter for all logs that occurred in this block's execution.
+        /// </summary>
+        private void UpdateLogsBloom(SmartContractBlockHeader scHeader)
+        {
+            BloomData logsBloom = new BloomData();
+            foreach(Receipt receipt in this.receipts)
+            {
+                logsBloom.Or(receipt.Bloom);
+            }
+            scHeader.LogsBloom = logsBloom;
         }
 
         /// <summary>
@@ -153,6 +189,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext((ulong)this.height, this.coinbaseAddress, mempoolEntry.Fee, getSenderResult.Sender, mempoolEntry.Transaction);
             ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
+
+            var receipt = new Receipt(
+                new uint256(this.stateSnapshot.Root),
+                result.GasConsumed,
+                new BloomData(), // TODO: Add event logging and calculate bloom filter.
+                new Log[0]
+                );
+            this.receipts.Add(receipt);
 
             this.logger.LogTrace("(-)");
 
