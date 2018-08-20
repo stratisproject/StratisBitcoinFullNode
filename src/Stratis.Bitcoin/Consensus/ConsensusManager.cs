@@ -493,7 +493,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Attempt to switch to new chain, which may require rewinding blocks from the current chain.</summary>
         /// <remarks>
         /// It is possible that during connection we find out that blocks that we tried to connect are invalid and we switch back to original chain.
-        /// Switching that requires rewinding may fail in case rewind goes beyond fork point and the block data is not available to advance to the fork point.
         /// </remarks>
         /// <param name="newTip">Tip of the chain that will become the tip of our consensus chain if full validation will succeed.</param>
         /// <returns>Validation related information.</returns>
@@ -515,25 +514,13 @@ namespace Stratis.Bitcoin.Consensus
 
             ChainedHeader currentTip = fork;
 
-            // If the new block is not on the current chain as our current consensus tip
-            // then rewind consensus tip to the common fork (or earlier because rewind might jump a few blocks back).
+            // If the new block is not on the current chain as our current consensus tip then rewind consensus tip to the common fork.
             bool isExtension = fork == oldTip;
 
             if (!isExtension)
-                currentTip = await this.RewindToForkPointOrBelowAsync(fork, oldTip).ConfigureAwait(false);
+                await this.RewindToForkPointAsync(fork, oldTip).ConfigureAwait(false);
 
             List<ChainedHeaderBlock> blocksToConnect = await this.TryGetBlocksToConnectAsync(newTip, currentTip.Height + 1).ConfigureAwait(false);
-
-            if (blocksToConnect == null)
-            {
-                // In a situation where the rewind operation ended up behind fork point we may end up with a gap with missing blocks (if the reorg is big enough)
-                // In that case we try to load the blocks from store, if store is not present we disconnect all peers.
-                this.HandleMissingBlocksGap(currentTip);
-
-                var result = new ConnectBlocksResult(false);
-                this.logger.LogTrace("(-)[GAP_BEFORE_CONNECTING]:'{0}'", result);
-                return result;
-            }
 
             ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(newTip, blocksToConnect).ConfigureAwait(false);
 
@@ -557,42 +544,28 @@ namespace Stratis.Bitcoin.Consensus
 
             List<ChainedHeaderBlock> blocksToReconnect = await this.TryGetBlocksToConnectAsync(oldTip, currentTip.Height + 1).ConfigureAwait(false);
 
-            if (blocksToReconnect == null)
-            {
-                // We tried to reapply old chain but we don't have all the blocks to do that.
-                this.HandleMissingBlocksGap(currentTip);
-
-                var result = new ConnectBlocksResult(false);
-                this.logger.LogTrace("(-)[GAP_AFTER_CONNECTING]:'{0}'", result);
-                return result;
-            }
-
             ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(currentTip, blocksToReconnect).ConfigureAwait(false);
 
             this.logger.LogTrace("(-):'{0}'", reconnectionResult);
             return reconnectionResult;
         }
 
-        /// <summary>Rewinds to fork point or below it.</summary>
+        /// <summary>Rewinds to fork point.</summary>
         /// <returns>New consensus tip.</returns>
-        private async Task<ChainedHeader> RewindToForkPointOrBelowAsync(ChainedHeader fork, ChainedHeader oldTip)
+        private async Task RewindToForkPointAsync(ChainedHeader fork, ChainedHeader oldTip)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}'", nameof(fork), fork, nameof(oldTip), oldTip);
 
-            ChainedHeader currentTip = oldTip;
+            Guard.Assert(fork.Height < oldTip.Height);
 
-            while (fork.Height < currentTip.Height)
+            int blocksToRewind = oldTip.Height - fork.Height;
+
+            for (int i = 0; i < blocksToRewind; i++)
             {
-                RewindState transitionState = await this.consensusRules.RewindAsync().ConfigureAwait(false);
-
-                lock (this.peerLock)
-                {
-                    currentTip = this.chainedHeaderTree.GetChainedHeader(transitionState.BlockHash);
-                }
+                await this.consensusRules.RewindAsync().ConfigureAwait(false);
             }
 
-            this.logger.LogTrace("(-):'{0}'", currentTip);
-            return currentTip;
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Rewinds the connected part of invalid chain.</summary>
@@ -693,40 +666,6 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogError("A critical error has prevented reconnecting blocks");
             this.logger.LogTrace("(-)[FAILED_TO_RECONNECT]");
             throw new ConsensusException("A critical error has prevented reconnecting blocks.");
-        }
-
-        /// <summary>Disconnects all the peers and sets the consensus tip to specified value.</summary>
-        /// <remarks>
-        /// In case we failed to retrieve blocks from any of the storages that we have during the process of consensus tip switching we want to disconnect
-        /// from all peers and reset consensus tip before the fork point between two chains (one that is ours and another which we tried switch to).
-        /// Disconnection is needed to avoid having CHT in an inconsistent state and to increase the probability of connecting to a new set of peers
-        /// which claims the same chain because they had enough time to handle the chain split.
-        /// </remarks>
-        /// <param name="newTip">The new tip.</param>
-        private void HandleMissingBlocksGap(ChainedHeader newTip)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
-
-            List<INetworkPeer> peers;
-
-            lock (this.peerLock)
-            {
-                peers = this.peersByPeerId.Values.ToList();
-
-                this.logger.LogTrace("Simulating disconnection for {0} peers.", peers.Count);
-
-                // First make sure headers are removed from CHT by emulating peers disconnection.
-                foreach (INetworkPeer networkPeer in peers)
-                    this.PeerDisconnectedLocked(networkPeer.Connection.Id);
-
-                this.SetConsensusTipLocked(newTip);
-            }
-
-            // Actually disconnect the peers.
-            foreach (INetworkPeer networkPeer in peers)
-                networkPeer.Disconnect("Consensus out of sync.");
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
