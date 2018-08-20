@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// Recovers a wallet using extended public key and account index.
         /// </summary>
         /// <param name="name">The name of the wallet.</param>
-        /// <param name="extPubKey"></param>
+        /// <param name="extPubKey">The extended public key.</param>
         /// <param name="accountIndex">The account number.</param>
         /// <param name="creationTime">The date and time this wallet was created.</param>
         /// <returns></returns>
