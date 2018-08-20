@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         // Consensus
         private const string GetBestBlockHashUri = "api/consensus/getbestblockhash";
         private const string GetBlockHashUri = "api/consensus/getblockhash";
-        DateTime.Now.AddHours(-2)
+
         // Mempool
         private const string GetRawMempoolUri = "api/mempool/getrawmempool";
 
