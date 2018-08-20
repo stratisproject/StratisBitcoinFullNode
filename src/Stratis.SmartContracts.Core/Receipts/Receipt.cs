@@ -6,11 +6,29 @@ using Stratis.SmartContracts.Core.Hashing;
 
 namespace Stratis.SmartContracts.Core.Receipts
 {
+    /// <summary>
+    /// Holds information about the result of smart contract transaction executions. 
+    /// </summary>
     public class Receipt
     {
+        /// <summary>
+        /// State root after smart contract execution. Note that if contract failed this will be the same as previous state.
+        /// </summary>
         public uint256 PostState { get; }
+
+        /// <summary>
+        /// Gas consumed in this smart contract execution.
+        /// </summary>
         public ulong GasUsed { get; }
+
+        /// <summary>
+        /// Bloom data representing all of the indexed logs contained inside this receipt.
+        /// </summary>
         public BloomData Bloom { get; }
+
+        /// <summary>
+        /// Logs created during contract execution. 
+        /// </summary>
         public Log[] Logs { get; }
 
         public Receipt(uint256 postState, ulong gasUsed, BloomData bloom, Log[] logs)
@@ -21,6 +39,9 @@ namespace Stratis.SmartContracts.Core.Receipts
             this.Logs = logs;
         }
 
+        /// <summary>
+        /// Parse a receipt into the consensus data. 
+        /// </summary>
         public byte[] ToBytesRlp()
         {
             return RLP.EncodeList(
@@ -31,6 +52,9 @@ namespace Stratis.SmartContracts.Core.Receipts
             );
         }
 
+        /// <summary>
+        /// Parse a Receipt from the stored consensus data. 
+        /// </summary>
         public static Receipt FromBytesRlp(byte[] bytes)
         {
             RLPCollection list = RLP.Decode(bytes);
@@ -48,6 +72,9 @@ namespace Stratis.SmartContracts.Core.Receipts
             );
         }
 
+        /// <summary>
+        /// Get a hash of the entire receipt.
+        /// </summary>
         public uint256 GetHash()
         {
             return new uint256(HashHelper.Keccak256(ToBytesRlp()));
