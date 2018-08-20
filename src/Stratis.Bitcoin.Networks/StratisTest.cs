@@ -58,8 +58,7 @@ namespace Stratis.Bitcoin.Networks
             {
                 [BuriedDeployments.BIP34] = 0,
                 [BuriedDeployments.BIP65] = 0,
-                [BuriedDeployments.BIP66] = 0,
-                [BuriedDeployments.ColdStaking] = 0
+                [BuriedDeployments.BIP66] = 0
             };
 
             var bip9Deployments = new BIP9DeploymentsArray();
@@ -103,7 +102,7 @@ namespace Stratis.Bitcoin.Networks
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
-            {
+            { 
                 { 0, new CheckpointInfo(new uint256("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
                 { 2, new CheckpointInfo(new uint256("0x56959b1c8498631fb0ca5fe7bd83319dccdc6ac003dccb3171f39f553ecfa2f2"), new uint256("0x13f4c27ca813aefe2d9018077f8efeb3766796b9144fcc4cd51803bf4376ab02")) },
                 { 50000, new CheckpointInfo(new uint256("0xb42c18eacf8fb5ed94eac31943bd364451d88da0fd44cc49616ffea34d530ad4"), new uint256("0x824934ddc5f935e854ac59ae7f5ed25f2d29a7c3914cac851f3eddb4baf96d78")) },
