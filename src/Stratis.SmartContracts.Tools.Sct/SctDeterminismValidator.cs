@@ -7,7 +7,7 @@ namespace Stratis.SmartContracts.Tools.Sct
     {
         private static readonly ISmartContractValidator Validator = new SmartContractDeterminismValidator(); 
         
-        public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
+        public SmartContractValidationResult Validate(ISmartContractDecompilation decompilation)
         {
             return Validator.Validate(decompilation.ModuleDefinition);
         }

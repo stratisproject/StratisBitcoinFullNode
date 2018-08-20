@@ -57,7 +57,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // TODO: Spend Validation + Creation Fee here.
 
             // Decompile the contract execution code and validate it.
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(createData.ContractExecutionCode);
+            ISmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(createData.ContractExecutionCode);
 
             SmartContractValidationResult validation = decompilation.Validate(this.validator);
 
@@ -148,7 +148,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractDoesNotExistException(callData.MethodName));
             }
 
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(contractExecutionCode);
+            ISmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(contractExecutionCode);
 
             decompilation.InjectMethodGas(typeName, callData.MethodName);
 

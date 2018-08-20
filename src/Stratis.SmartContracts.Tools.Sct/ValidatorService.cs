@@ -22,7 +22,7 @@ namespace Stratis.SmartContracts.Tools.Sct
             return validationServiceResult;
         }
 
-        private static void BuildModuleDefinition(IConsole console, ValidationServiceResult validationServiceResult, out byte[] compilation, out SmartContractDecompilation decompilation)
+        private static void BuildModuleDefinition(IConsole console, ValidationServiceResult validationServiceResult, out byte[] compilation, out ISmartContractDecompilation decompilation)
         {
             console.WriteLine("Building ModuleDefinition...");
 
@@ -48,7 +48,7 @@ namespace Stratis.SmartContracts.Tools.Sct
         private static void ValidateContract(string fileName, IConsole console, string[] parameters, ValidationServiceResult validationServiceResult)
         {
             byte[] compilation;
-            SmartContractDecompilation decompilation;
+            ISmartContractDecompilation decompilation;
 
             BuildModuleDefinition(console, validationServiceResult, out compilation, out decompilation);
 
