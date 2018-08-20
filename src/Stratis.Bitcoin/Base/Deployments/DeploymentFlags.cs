@@ -84,6 +84,11 @@ namespace Stratis.Bitcoin.Base.Deployments
             {
                 this.EnforceBIP34 = true;
             }
+
+            if (chainparams.IsProofOfStake && nextBlock.Height >= chainparams.ColdStakingActivationHeight)
+            {
+                this.ScriptFlags |= ScriptVerify.CheckColdStakeVerify;
+            }
         }
     }
 }

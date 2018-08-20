@@ -34,6 +34,8 @@ namespace NBitcoin
 
         public BIP9DeploymentsArray BIP9Deployments { get; }
 
+        public int ColdStakingActivationHeight { get; }
+
         public int SubsidyHalvingInterval { get; }
 
         public int MajorityEnforceBlockUpgrade { get; }
@@ -116,7 +118,8 @@ namespace NBitcoin
             int lastPowBlock,
             BigInteger proofOfStakeLimit,
             BigInteger proofOfStakeLimitV2,
-            Money proofOfStakeReward
+            Money proofOfStakeReward,
+            int coldStakingActivationHeight
             )
         {
             this.Rules = new List<IConsensusRule>();
@@ -151,6 +154,7 @@ namespace NBitcoin
             this.IsProofOfStake = isProofOfStake;
             this.DefaultAssumeValid = defaultAssumeValid;
             this.ConsensusFactory = consensusFactory;
+            this.ColdStakingActivationHeight = coldStakingActivationHeight;
         }
     }
 }
