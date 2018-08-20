@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Mono.Cecil;
 using Stratis.ModuleValidation.Net;
 
@@ -15,10 +14,10 @@ namespace Stratis.SmartContracts.Core.Validation
             new FieldDefinitionValidator()
         };
 
-        public SmartContractValidationResult Validate(SmartContractDecompilation decompilation)
+        public SmartContractValidationResult Validate(ModuleDefinition moduleDefinition)
         {
             var warnings = new List<ValidationResult>();
-            IEnumerable<TypeDefinition> contractTypes = decompilation.ModuleDefinition.GetDevelopedTypes();
+            IEnumerable<TypeDefinition> contractTypes = moduleDefinition.GetDevelopedTypes();
 
             foreach(TypeDefinition contractType in contractTypes)
             {

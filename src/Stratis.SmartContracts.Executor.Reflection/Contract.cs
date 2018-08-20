@@ -47,6 +47,19 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return new Contract(contract, type, state, address);
         }
 
+        /// <summary>
+        /// Checks whether a the constructor with the given signature exists on the supplied contract Type.
+        /// </summary>
+        public static bool ConstructorExists(Type type, IReadOnlyList<object> parameters)
+        {
+            Type[] types = {typeof(ISmartContractState)};    
+            
+            if (parameters != null)
+                types = types.Concat(parameters.Select(p => p.GetType())).ToArray();
+
+            return type.GetConstructor(types) != null;
+        }
+
         /// <inheritdoc />
         public IContractInvocationResult InvokeConstructor(IReadOnlyList<object> parameters)
         {
