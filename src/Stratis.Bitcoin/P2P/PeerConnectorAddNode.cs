@@ -37,8 +37,14 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public override void OnInitialize()
         {
+            // For the -addnode connector, effectively disable burst mode by preventing high frequency connection attempts.
+            // The initial -addnode list will all have their connection attempts made in parallel regardless, so this
+            // does not slow down the startup.
+            this.burstConnectionInterval = TimeSpans.Second;
+
             this.MaxOutboundConnections = this.ConnectionSettings.AddNode.Count;
 
+            // Add the endpoints from the -addnode arg to the address manager.
             foreach (IPEndPoint ipEndpoint in this.ConnectionSettings.AddNode)
             {
                 this.peerAddressManager.AddPeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
@@ -70,11 +76,7 @@ namespace Stratis.Bitcoin.P2P
                         PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
                         if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
                         {
-                            // Introduce a delay between attempts in case ConnectAsync fails instantly without the usual timeout.
-                            if ((peerAddress.LastAttempt == null) || ((peerAddress.LastAttempt - DateTimeOffset.Now) >= this.defaultConnectionInterval))
-                                await this.ConnectAsync(peerAddress).ConfigureAwait(false);
-                            else
-                                await Task.Delay(this.defaultConnectionInterval, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
+                            await this.ConnectAsync(peerAddress).ConfigureAwait(false);
                         }
                     }
                 }).ConfigureAwait(false);
