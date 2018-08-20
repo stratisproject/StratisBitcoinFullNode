@@ -24,30 +24,38 @@ using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Loader;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public sealed class SmartContractFeature : FullNodeFeature
     {
-        private readonly ILogger logger;
         private readonly IConsensusLoop consensusLoop;
+        private readonly ILogger logger;
+        private readonly Network network;
         private readonly ContractStateRepositoryRoot stateRoot;
 
-        public SmartContractFeature(IConsensusLoop consensusLoop, ILoggerFactory loggerFactory, ContractStateRepositoryRoot stateRoot)
+        public SmartContractFeature(IConsensusLoop consensusLoop, ILoggerFactory loggerFactory, Network network, ContractStateRepositoryRoot stateRoot)
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.stateRoot = stateRoot;
             this.consensusLoop = consensusLoop;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.network = network;
+            this.stateRoot = stateRoot;
         }
 
         public override void Initialize()
         {
+            if (this.network.Consensus.IsProofOfStake)
+                Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPosConsensusFactory);
+            else
+                Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPowConsensusFactory);
+
             this.stateRoot.SyncToRoot(((SmartContractBlockHeader)this.consensusLoop.Chain.Tip.Header).HashStateRoot.ToBytes());
             this.logger.LogInformation("Smart Contract Feature Injected.");
         }
@@ -70,7 +78,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     {
                         // STATE ----------------------------------------------------------------------------
                         services.AddSingleton<DBreezeContractStateStore>();
-                        services.AddSingleton<ISmartContractReceiptStorage, DBreezeContractReceiptStorage>();
                         services.AddSingleton<NoDeleteContractStateSource>();
                         services.AddSingleton<ContractStateRepositoryRoot>();
 
@@ -81,6 +88,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         // CONTRACT EXECUTION ---------------------------------------------------------------
                         services.AddSingleton<InternalTransactionExecutorFactory>();
                         services.AddSingleton<ISmartContractVirtualMachine, ReflectionVirtualMachine>();
+                        services.AddSingleton<IAddressGenerator, AddressGenerator>();
+                        services.AddSingleton<ILoader, ContractAssemblyLoader>();
 
                         services.AddSingleton<SmartContractTransactionPolicy>();
 

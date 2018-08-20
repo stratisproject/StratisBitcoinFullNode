@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
 

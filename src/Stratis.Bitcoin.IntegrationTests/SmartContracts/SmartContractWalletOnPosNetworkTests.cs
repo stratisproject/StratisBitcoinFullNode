@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // The mining should add coins to the wallet.
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
+                Assert.Equal(Money.COIN * 6 * 50, total);
 
                 // Create a token contract
                 ulong gasPrice = 1;
@@ -61,11 +61,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var contractCarrier = SmartContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
 
                 var contractCreateScript = new Script(contractCarrier.Serialize());
-                var txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
+                var txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
+                    AccountReference = new WalletAccountReference(WalletName, AccountName),
                     ChangeAddress = senderAddress,
                     MinConfirmations = maturity,
-                    FeeType = FeeType.High
+                    FeeType = FeeType.High,
+                    WalletPassword = Password,
+                    Recipients = new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList()
                 };
 
                 // Build the transfer contract transaction
@@ -88,7 +91,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Ensure that boths nodes has the contract
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
                 ContractStateRepositoryRoot receiverState = scReceiver.FullNode.NodeService<ContractStateRepositoryRoot>();
-                uint160 tokenContractAddress = transferContractTransaction.GetNewContractAddress();
+                IAddressGenerator addressGenerator = scSender.FullNode.NodeService<IAddressGenerator>();
+
+                uint160 tokenContractAddress = addressGenerator.GenerateAddress(transferContractTransaction.GetHash(), 0);
                 Assert.NotNull(senderState.GetCode(tokenContractAddress));
                 Assert.NotNull(receiverState.GetCode(tokenContractAddress));
                 scSender.FullNode.MempoolManager().Clear();
@@ -98,11 +103,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.True(compilationResult.Success);
                 contractCarrier = SmartContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
                 contractCreateScript = new Script(contractCarrier.Serialize());
-                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList(), Password)
+                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
+                    AccountReference = new WalletAccountReference(WalletName, AccountName),
                     ChangeAddress = senderAddress,
                     MinConfirmations = maturity,
-                    FeeType = FeeType.High
+                    FeeType = FeeType.High,
+                    WalletPassword = Password,
+                    Recipients = new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList()
                 };
 
                 // Build the transfer contract transaction
@@ -124,7 +132,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Ensure that boths nodes has the contract
                 senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
                 receiverState = scReceiver.FullNode.NodeService<ContractStateRepositoryRoot>();
-                tokenContractAddress = transferContractTransaction.GetNewContractAddress();
+
+                tokenContractAddress = addressGenerator.GenerateAddress(transferContractTransaction.GetHash(), 0); // nonce is 0 for user contract creation.
                 Assert.NotNull(senderState.GetCode(tokenContractAddress));
                 Assert.NotNull(receiverState.GetCode(tokenContractAddress));
                 scSender.FullNode.MempoolManager().Clear();
@@ -132,11 +141,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Create a call contract transaction which will transfer funds
                 contractCarrier = SmartContractCarrier.CallContract(1, tokenContractAddress, "Test", gasPrice, gasLimit);
                 Script contractCallScript = new Script(contractCarrier.Serialize());
-                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network, new WalletAccountReference(WalletName, AccountName), new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList(), Password)
+                txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
+                    AccountReference = new WalletAccountReference(WalletName, AccountName),
                     ChangeAddress = senderAddress,
                     MinConfirmations = maturity,
-                    FeeType = FeeType.High
+                    FeeType = FeeType.High,
+                    WalletPassword = Password,
+                    Recipients = new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList()
                 };
 
                 // Build the transfer contract transaction

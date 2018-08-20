@@ -47,7 +47,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) return false;
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.GetBlockStoreTip().HashBlock) return false;
-            if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.WalletManager().WalletTipHash) return false;
+
+            if (!node.FullNode.WalletManager().Wallets.IsEmpty)
+                if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.WalletManager().WalletTipHash) return false;
+
             return true;
         }
 

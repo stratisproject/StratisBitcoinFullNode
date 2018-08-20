@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         protected override void BeforeTest()
         {
-            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
+            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.RegTest);
             this.sharedSteps = new SharedSteps();
         }
 
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.sendingStratisBitcoinNode.FullNode.NodeService<WalletController>()
                 .SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
-            this.sharedSteps.MineBlocks(1, this.sendingStratisBitcoinNode, AccountZero, SendingWalletName, WalletPassword, 7480);
+            this.sharedSteps.MineBlocks(1, this.sendingStratisBitcoinNode, AccountZero, SendingWalletName, WalletPassword);
         }
 
         private ExtPubKey GetExtendedPublicKey(string nodeName)
