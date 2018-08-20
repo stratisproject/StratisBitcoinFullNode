@@ -20,12 +20,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var subject = new BlocksDisconnectedSignaled(mempoolValidatorMock.Object, new MempoolSchedulerLock(), loggerFactoryMock.Object);
 
             var block = new Block();
-            var chb = new ChainedHeaderBlock(block, ChainedHeadersHelper.CreateGenesisChainedHeader());
+            var genesisChainedHeaderBlock = new ChainedHeaderBlock(block, ChainedHeadersHelper.CreateGenesisChainedHeader());
             var transaction1 = new Transaction();
             var transaction2 = new Transaction();
             block.Transactions = new List<Transaction> { transaction1, transaction2 };
 
-            subject.OnNext(chb);
+            subject.OnNext(genesisChainedHeaderBlock);
 
             mempoolValidatorMock.Verify(x => x.AcceptToMemoryPool(It.IsAny<MempoolValidationState>(), transaction1));
             mempoolValidatorMock.Verify(x => x.AcceptToMemoryPool(It.IsAny<MempoolValidationState>(), transaction2));
