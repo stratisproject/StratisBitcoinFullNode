@@ -150,11 +150,13 @@ namespace Stratis.Bitcoin.Consensus
             uint256 consensusTipHash = await this.consensusRules.GetBlockHashAsync().ConfigureAwait(false);
             bool blockStoreDisabled = this.blockStore == null;
 
+            ChainedHeader pendingTip;
+
             while (true)
             {
-                this.Tip = chainTip.FindAncestorOrSelf(consensusTipHash);
+                pendingTip = chainTip.FindAncestorOrSelf(consensusTipHash);
 
-                if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
+                if ((pendingTip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= pendingTip.Height)))
                     break;
 
                 // In case block store initialized behind, rewind until or before the block store tip.
@@ -163,7 +165,7 @@ namespace Stratis.Bitcoin.Consensus
                 consensusTipHash = transitionState.BlockHash;
             }
 
-            this.chainState.ConsensusTip = this.Tip;
+            this.SetConsensusTip(pendingTip);
 
             this.chainedHeaderTree.Initialize(this.Tip, this.blockStore != null);
 
