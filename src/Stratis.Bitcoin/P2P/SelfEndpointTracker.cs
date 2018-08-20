@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Protects access to <see cref="MyExternalAddress"/>, <see cref="MyExternalAddressPeerScore"/> and <see cref="IsMyExternalAddressFinal"/>.</summary>
         private readonly object lockObject;
 
-        /// <summary>External IP address of the node.</summary>
+        /// <inheritdoc/>
         public IPEndPoint MyExternalAddress { get; private set; }
 
         /// <summary>
@@ -55,10 +55,10 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void UpdateAndAssignMyExternalAddress(IPEndPoint ipEndPoint, bool suppliedEndPointIsFinal, int ipEndPointScore = 0)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(ipEndPoint), ipEndPoint, nameof(suppliedEndPointIsFinal), suppliedEndPointIsFinal, nameof(ipEndPointScore), ipEndPointScore);
+
             lock (this.lockObject)
             {
-                this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(ipEndPoint), ipEndPoint, nameof(suppliedEndPointIsFinal), suppliedEndPointIsFinal, nameof(ipEndPointScore), ipEndPointScore);
-
                 if (suppliedEndPointIsFinal)
                 {
                     this.MyExternalAddress = ipEndPoint;
@@ -78,13 +78,12 @@ namespace Stratis.Bitcoin.P2P
                 {
                     this.MyExternalAddressPeerScore += 1;
                     this.logger.LogTrace("(-)[SUPPLIED_EXISTING]");
+                    return;
                 }
-                else
-                {
-                    // If it was different we decrement the score by 1.
-                    this.MyExternalAddressPeerScore -= 1;
-                    this.logger.LogTrace("Different endpoint '{0}' supplied. Score decremented to {1}.", ipEndPoint, this.MyExternalAddressPeerScore);
-                }
+
+                // If it was different we decrement the score by 1.
+                this.MyExternalAddressPeerScore -= 1;
+                this.logger.LogTrace("Different endpoint '{0}' supplied. Score decremented to {1}.", ipEndPoint, this.MyExternalAddressPeerScore);
 
                 // If the new score is 0 we replace the old one with the new one with score 1.
                 if (this.MyExternalAddressPeerScore <= 0)
@@ -93,9 +92,9 @@ namespace Stratis.Bitcoin.P2P
                     this.MyExternalAddress = ipEndPoint;
                     this.MyExternalAddressPeerScore = 1;
                 }
-
-                this.logger.LogTrace("(-)");
             }
+
+            this.logger.LogTrace("(-)");
         }
     }
 }
