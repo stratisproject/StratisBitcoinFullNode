@@ -815,5 +815,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.True(result.IsValid);
         }
+
+        [Fact]
+        public void Validate_ByteArray_Conversion()
+        {
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/ByteArrayConversion.cs");
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
+            Assert.True(result.IsValid);
+        }
     }
 }

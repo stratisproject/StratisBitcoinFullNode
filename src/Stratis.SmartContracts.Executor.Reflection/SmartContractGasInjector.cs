@@ -61,9 +61,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private static ModuleDefinition AddGasCalculationToContractMethodInternal(ModuleDefinition moduleDefinition, string typeName, string methodName)
         {
             TypeDefinition contractType = moduleDefinition.Types.FirstOrDefault(x => x.Name == typeName);
-            MethodDefinition method = contractType.Methods.FirstOrDefault(m => m.Name == methodName);
+            List<MethodDefinition> methods = contractType.Methods.Where(m => m.Name == methodName).ToList();
 
-            if (method == null)
+            // It's possible that a method references an overload of itself, which means that the overload could potentially be injected twice.
+            // Because of this we need to keep track of which methods have been injected.
+            HashSet<string> injectedMethods = new HashSet<string>();
+
+            if (!methods.Any())
                 return moduleDefinition;
 
             TypeDefinition baseType = GetContractBaseType(contractType);
@@ -72,16 +76,26 @@ namespace Stratis.SmartContracts.Executor.Reflection
             MethodDefinition gasMethod = baseType.Methods.First(m => m.FullName == GasMethod);
             MethodReference gasMethodReference = contractType.Module.ImportReference(gasMethod);
 
-            IEnumerable<MethodDefinition> referencedMethods = method.Body.Instructions
-                .Select(i => i.Operand)
-                .OfType<MethodDefinition>()
-                .ToList();
-
-            InjectSpendGasMethod(method, gasMethodReference);
-
-            foreach (MethodDefinition referencedMethod in referencedMethods)
+            foreach (var method in methods)
             {
-                InjectSpendGasMethod(referencedMethod, gasMethodReference);
+                IEnumerable<MethodDefinition> referencedMethods = method.Body.Instructions
+                    .Select(i => i.Operand)
+                    .OfType<MethodDefinition>()
+                    .ToList();
+
+                InjectSpendGasMethod(method, gasMethodReference);
+
+                injectedMethods.Add(method.FullName);
+
+                foreach (MethodDefinition referencedMethod in referencedMethods)
+                {
+                    if (injectedMethods.Contains(referencedMethod.FullName))
+                        continue;
+
+                    InjectSpendGasMethod(referencedMethod, gasMethodReference);
+
+                    injectedMethods.Add(referencedMethod.FullName);
+                }
             }
 
             return moduleDefinition;
