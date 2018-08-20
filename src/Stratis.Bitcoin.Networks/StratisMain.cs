@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Networks
                 buriedDeployments: buriedDeployments,
                 bip9Deployments: bip9Deployments,
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
-                coldStakingActivationHeight: int.MaxValue, // TODO!
+                coldStakingActivationHeight: null, // TODO!
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 500,
