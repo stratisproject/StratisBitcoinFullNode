@@ -165,9 +165,9 @@ namespace Stratis.Bitcoin.Consensus
                 consensusTipHash = transitionState.BlockHash;
             }
 
-            this.SetConsensusTip(pendingTip);
+            this.chainedHeaderTree.Initialize(pendingTip, this.blockStore != null);
 
-            this.chainedHeaderTree.Initialize(this.Tip, this.blockStore != null);
+            this.SetConsensusTip(pendingTip);
 
             this.blockPuller.Initialize(this.BlockDownloaded);
 
