@@ -1,11 +1,82 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Threading;
+using System.Collections.Generic;
 using NBitcoin;
 using Xunit;
+using Stratis.Bitcoin.SignalR;
+using Moq;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.SignalR.Tests
 {
-    public class TheTestClass
+    public class SignalRServiceTests : IDisposable
     {
-        
+        private readonly ISignalRService signalRService;
+
+        public SignalRServiceTests()
+        {
+            var loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory.Setup(x => x.CreateLogger(typeof(SignalRService).FullName)).Returns(new Mock<ILogger>().Object);
+            this.signalRService = new SignalRService(loggerFactory.Object);
+        }
+
+        [Fact]
+        public void Test_Address_is_set_to_a_localhost_address()
+        {
+            Assert.StartsWith("http://localhost:", this.signalRService.Address.AbsoluteUri);
+        }
+
+        [Fact]
+        public void Test_SendAsync_returns_false_where_service_has_not_been_started()
+        {
+            var result = this.signalRService.SendAsync(It.IsAny<string>(), It.IsAny<string>());
+            Assert.False(result.Result);
+        }
+
+        [Fact]
+        public void Test_MessageStream_pumps_when_SendAsync_is_called()
+        {
+            var signal = new ManualResetEvent(false);
+            this.signalRService.MessageStream.Subscribe(x => signal.Set());
+            this.signalRService.StartAsync().ContinueWith(_ => this.signalRService.SendAsync(It.IsAny<string>(), It.IsAny<string>()));
+            Assert.True(signal.WaitOne(TimeSpan.FromSeconds(5)));
+        }
+
+        [Fact]
+        public void Test_MessageStream_pumps_topic_when_SendAsync_is_called()
+        {
+            var signal = new ManualResetEvent(false);
+            const string topic = "thetopic";
+            (string topic, string data) message = ("", "");
+            this.signalRService.MessageStream.Subscribe(x =>
+            {
+                message = x;
+                signal.Set();
+            });
+            this.signalRService.StartAsync().ContinueWith(_ => this.signalRService.SendAsync(topic, It.IsAny<string>()));
+            signal.WaitOne(TimeSpan.FromSeconds(5));
+            Assert.Equal(message.topic, topic);
+        }
+
+        [Fact]
+        public void Test_MessageStream_pumps_data_when_SendAsync_is_called()
+        {
+            var signal = new ManualResetEvent(false);
+            const string data = "thedata";
+            (string topic, string data) message = ("", "");
+            this.signalRService.MessageStream.Subscribe(x =>
+            {
+                message = x;
+                signal.Set();
+            });
+            this.signalRService.StartAsync().ContinueWith(_ => this.signalRService.SendAsync(It.IsAny<string>(), data));
+            signal.WaitOne(TimeSpan.FromSeconds(5));
+            Assert.Equal(message.data, data);
+        }
+
+        public void Dispose()
+        {
+            ((IDisposable)this.signalRService).Dispose();
+        }
     }
 }
