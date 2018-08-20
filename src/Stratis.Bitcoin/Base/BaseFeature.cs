@@ -237,7 +237,8 @@ namespace Stratis.Bitcoin.Base
             await this.finalizedBlockInfo.LoadFinalizedBlockInfoAsync(this.network).ConfigureAwait(false);
 
             this.logger.LogInformation("Loading chain");
-            await this.chainRepository.LoadAsync(this.chain).ConfigureAwait(false);
+            ChainedHeader chainTip = await this.chainRepository.LoadAsync(this.chain.Genesis).ConfigureAwait(false);
+            this.chain.SetTip(chainTip);
 
             this.logger.LogInformation("Chain loaded at height " + this.chain.Height);
 
