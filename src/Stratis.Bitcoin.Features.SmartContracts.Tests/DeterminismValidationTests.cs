@@ -824,7 +824,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] assemblyBytes = compilationResult.Compilation;
             SmartContractDecompilation decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
-            SmartContractValidationResult result = this.validator.Validate(decomp);
+            SmartContractValidationResult result = this.validator.Validate(decomp.ModuleDefinition);
             Assert.True(result.IsValid);
         }
     }
