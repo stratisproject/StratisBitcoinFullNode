@@ -45,7 +45,6 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IChainedHeaderTree chainedHeaderTree;
         private readonly IChainState chainState;
         private readonly IPartialValidator partialValidator;
-        private readonly ConsensusSettings consensusSettings;
         private readonly IConsensusRuleEngine consensusRules;
         private readonly Signals.Signals signals;
         private readonly IPeerBanning peerBanning;
@@ -97,8 +96,6 @@ namespace Stratis.Bitcoin.Consensus
             IFinalizedBlockInfo finalizedBlockInfo,
             Signals.Signals signals,
             IPeerBanning peerBanning,
-            NodeSettings nodeSettings,
-            IDateTimeProvider dateTimeProvider,
             IInitialBlockDownloadState ibdState,
             ConcurrentChain chain,
             IBlockPuller blockPuller,
@@ -107,7 +104,6 @@ namespace Stratis.Bitcoin.Consensus
             this.network = network;
             this.chainState = chainState;
             this.partialValidator = partialValidator;
-            this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
             this.signals = signals;
             this.peerBanning = peerBanning;
@@ -116,7 +112,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, signals);
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings);
 
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
@@ -165,7 +161,7 @@ namespace Stratis.Bitcoin.Consensus
 
             this.chainState.ConsensusTip = this.Tip;
 
-            this.chainedHeaderTree.Initialize(this.Tip, this.blockStore != null);
+            this.chainedHeaderTree.Initialize(this.Tip);
 
             this.blockPuller.Initialize(this.BlockDownloaded);
 
