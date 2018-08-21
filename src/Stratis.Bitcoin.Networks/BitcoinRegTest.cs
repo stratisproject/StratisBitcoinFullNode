@@ -75,8 +75,7 @@ namespace Stratis.Bitcoin.Networks
                 lastPowBlock: default(int),
                 proofOfStakeLimit: null,
                 proofOfStakeLimitV2: null,
-                proofOfStakeReward: Money.Zero,
-                coldStakingActivationHeight: null
+                proofOfStakeReward: Money.Zero
             );
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };

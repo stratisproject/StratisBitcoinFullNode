@@ -34,9 +34,6 @@ namespace NBitcoin
 
         public BIP9DeploymentsArray BIP9Deployments { get; }
 
-        /// <summary>The cold staking activation height. This is null for non-POS blockchains.</summary>
-        public int? ColdStakingActivationHeight { get; }
-
         public int SubsidyHalvingInterval { get; }
 
         public int MajorityEnforceBlockUpgrade { get; }
@@ -119,8 +116,7 @@ namespace NBitcoin
             int lastPowBlock,
             BigInteger proofOfStakeLimit,
             BigInteger proofOfStakeLimitV2,
-            Money proofOfStakeReward,
-            int? coldStakingActivationHeight
+            Money proofOfStakeReward
             )
         {
             this.Rules = new List<IConsensusRule>();
@@ -155,7 +151,6 @@ namespace NBitcoin
             this.IsProofOfStake = isProofOfStake;
             this.DefaultAssumeValid = defaultAssumeValid;
             this.ConsensusFactory = consensusFactory;
-            this.ColdStakingActivationHeight = coldStakingActivationHeight;
         }
     }
 }

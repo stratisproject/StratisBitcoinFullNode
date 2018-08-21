@@ -112,6 +112,9 @@
         /// <summary>Coinstake minimal confirmations softfork activation height for the testnet.</summary>
         public const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
 
+        /// <summary>The cold staking activation height.</summary>
+        public int ColdStakingActivationHeight { get; }
+
         /// <summary>
         /// Initializes the default values.
         /// </summary>
@@ -140,7 +143,8 @@
             uint maxBlockBaseSize,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            uint coldStakingActivationHeight) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
         {
         }
 
