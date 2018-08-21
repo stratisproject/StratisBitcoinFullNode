@@ -11,6 +11,7 @@ using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -27,6 +28,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly IAddressGenerator addressGenerator;
         private readonly ILoader assemblyLoader;
         private readonly IContractModuleDefinitionReader moduleDefinitionReader;
+        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
         public static int VmVersion = 1;
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
@@ -35,7 +37,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             Network network,
             IAddressGenerator addressGenerator,
             ILoader assemblyLoader,
-            IContractModuleDefinitionReader moduleDefinitionReader)
+            IContractModuleDefinitionReader moduleDefinitionReader,
+            IContractPrimitiveSerializer contractPrimitiveSerializer)
         {
             this.validator = validator;
             this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
@@ -44,6 +47,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.addressGenerator = addressGenerator;
             this.assemblyLoader = assemblyLoader;
             this.moduleDefinitionReader = moduleDefinitionReader;
+            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
         }
 
         /// <summary>
@@ -209,7 +213,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IPersistenceStrategy persistenceStrategy =
                 new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
 
-            var persistentState = new PersistentState(persistenceStrategy, contractAddress, this.network);
+            var persistentState = new PersistentState(persistenceStrategy, this.contractPrimitiveSerializer, contractAddress);
 
             IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this, repository, internalTransferList, transactionContext);
 
