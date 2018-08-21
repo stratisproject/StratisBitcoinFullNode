@@ -143,18 +143,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private void StartBitcoinCoreRunner()
         {
-            while (true)
+            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+            TestHelper.WaitLoop(() =>
             {
                 try
                 {
                     CreateRPCClient().GetBlockHashAsync(0).GetAwaiter().GetResult();
                     this.State = CoreNodeState.Running;
-                    break;
+                    return true;
                 }
-                catch { }
-                
-                Thread.Sleep(200);
-            }
+                catch
+                {
+                    return false;
+                }
+            }, cancellationToken: cancellationToken);
         }
 
         private void StartStratisRunner()
