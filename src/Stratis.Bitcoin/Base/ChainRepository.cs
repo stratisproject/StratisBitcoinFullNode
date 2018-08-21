@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public Task<ChainedHeader> LoadAsync(ChainedHeader genesisHeader)
         {
-            Task<ChainedHeader> task = Task.Run((() =>
+            Task<ChainedHeader> task = Task.Run(() =>
             {
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.Base
                     this.locator = tip.GetLocator();
                     return tip;
                 }
-            }));
+            });
 
             return task;
         }
