@@ -416,7 +416,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
-                // Check if rewind data is available in local cache. If it is 
+                // Check if rewind data is available in local cache. If it is
                 // we can rewind and there is no need to check underlying storage.
                 if (this.cachedRewindDataList.Count > 0)
                 {
@@ -450,14 +450,22 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             foreach (UnspentOutputs unspentToRestore in rewindData.OutputsToRestore)
             {
                 this.logger.LogTrace("Outputs of transaction ID '{0}' will be restored.", unspentToRestore.TransactionId);
+
                 if (this.unspents.TryGetValue(unspentToRestore.TransactionId, out CacheItem cacheItem))
                 {
                     cacheItem.UnspentOutputs = unspentToRestore;
+                    cacheItem.IsDirty = true;
                 }
                 else
                 {
                     this.logger.LogTrace("Outputs of transaction ID '{0}' not found in cache, inserting them.", unspentToRestore.TransactionId);
-                    cacheItem = new CacheItem { UnspentOutputs = unspentToRestore };
+
+                    cacheItem = new CacheItem
+                    {
+                        UnspentOutputs = unspentToRestore,
+                        IsDirty = true
+                    };
+
                     this.unspents.Add(unspentToRestore.TransactionId, cacheItem);
                 }
             }
