@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -59,15 +60,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             if (rule is IHeaderValidationConsensusRule validationConsensusRule)
                 ruleEngine.Network.Consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>() { validationConsensusRule };
-
-            if (rule is IIntegrityValidationConsensusRule consensusRule)
+            else if (rule is IIntegrityValidationConsensusRule consensusRule)
                 ruleEngine.Network.Consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>() { consensusRule };
-
-            if (rule is IPartialValidationConsensusRule partialValidationConsensusRule)
+            else if (rule is IPartialValidationConsensusRule partialValidationConsensusRule)
                 ruleEngine.Network.Consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>() { partialValidationConsensusRule };
-
-            if (rule is IFullValidationConsensusRule fullValidationConsensusRule)
+            else if (rule is IFullValidationConsensusRule fullValidationConsensusRule)
                 ruleEngine.Network.Consensus.FullValidationRules = new List<IFullValidationConsensusRule>() { fullValidationConsensusRule };
+            else
+                throw new Exception("Rule type wasn't recognized.");
 
             ruleEngine.Register();
             return rule;
