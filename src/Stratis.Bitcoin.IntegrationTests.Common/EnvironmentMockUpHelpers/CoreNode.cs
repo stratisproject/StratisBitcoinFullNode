@@ -152,26 +152,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     break;
                 }
                 catch { }
-
-                Task.Delay(200);
+                
+                Thread.Sleep(200);
             }
         }
 
         private void StartStratisRunner()
         {
-            while (true)
-            {
-                if (this.runner.FullNode == null)
-                {
-                    Thread.Sleep(100);
-                    continue;
-                }
+            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+            TestHelper.WaitLoop(() => this.runner.FullNode != null, cancellationToken: cancellationToken);
 
-                if (this.runner.FullNode.State == FullNodeState.Started)
-                    break;
-                else
-                    Thread.Sleep(200);
-            }
+            cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+            TestHelper.WaitLoop(() => this.runner.FullNode.State == FullNodeState.Started, cancellationToken: cancellationToken);
         }
 
         public void Broadcast(Transaction transaction)
