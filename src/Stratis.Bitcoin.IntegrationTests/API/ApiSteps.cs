@@ -254,7 +254,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             {
                 ExtPubKey = extPubKey,
                 AccountIndex = accountIndex,
-                Name = walletName
+                Name = walletName,
+                CreationDate = DateTime.UtcNow
             };
 
             this.send_api_post_request(RecoverViaExtPubKeyUri, request);

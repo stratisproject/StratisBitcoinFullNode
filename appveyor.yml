@@ -31,8 +31,6 @@ cache:
   - '%USERPROFILE%\.nuget\packages'
   
 init:
-# install .NET Core SDK
-- ps: choco install dotnetcore-sdk --no-progress --confirm --version 2.1.301
 - ps: dotnet --info
 
 #---------------------------------#
@@ -74,10 +72,10 @@ test_script:
       
       $anyFailures = $FALSE;
       
-      foreach ($testFolder in ls *Tests) {
+      foreach ($testFolder in ls *IntegrationTests) {
 
-            # exclude integration tests
-          #  if ($testFolder -like '*Integration.Tests*' -Or $testFolder -like '*IntegrationTests*') { continue }
+          # exclude integration tests
+          # if ($testFolder -like '*Integration.Tests*' -Or $testFolder -like '*IntegrationTests*') { continue }
             
             Push-Location $testFolder
 
