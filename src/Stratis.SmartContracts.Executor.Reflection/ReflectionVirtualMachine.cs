@@ -26,6 +26,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ISmartContractValidator validator;
         private readonly IAddressGenerator addressGenerator;
         private readonly ILoader assemblyLoader;
+        private readonly IContractModuleDefinitionReader moduleDefinitionReader;
         public static int VmVersion = 1;
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
@@ -33,7 +34,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ILoggerFactory loggerFactory,
             Network network,
             IAddressGenerator addressGenerator,
-            ILoader assemblyLoader)
+            ILoader assemblyLoader,
+            IContractModuleDefinitionReader moduleDefinitionReader)
         {
             this.validator = validator;
             this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
@@ -41,6 +43,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.network = network;
             this.addressGenerator = addressGenerator;
             this.assemblyLoader = assemblyLoader;
+            this.moduleDefinitionReader = moduleDefinitionReader;
         }
 
         /// <summary>
@@ -57,9 +60,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // TODO: Spend Validation + Creation Fee here.
 
             // Decompile the contract execution code and validate it.
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(createData.ContractExecutionCode);
+            IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(createData.ContractExecutionCode);
 
-            SmartContractValidationResult validation = this.validator.Validate(decompilation);
+            SmartContractValidationResult validation = moduleDefinition.Validate(this.validator);
 
             // If validation failed, refund the sender any remaining gas.
             if (!validation.IsValid)
@@ -68,9 +71,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractValidationException(validation.Errors));
             }
 
-            string typeToInstantiate = typeName ?? decompilation.ContractType.Name;
+            string typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
 
-            ContractByteCode gasInjectedCode = (ContractByteCode) SmartContractGasInjector.AddGasCalculationToConstructor(createData.ContractExecutionCode, typeToInstantiate);
+            moduleDefinition.InjectConstructorGas();
 
             var internalTransferList = new List<TransferInfo>();
 
@@ -79,7 +82,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ISmartContractState contractState = this.SetupState(internalTransferList, gasMeter, repository, transactionContext, address);
 
             Result<IContract> contractLoadResult = this.Load(
-                gasInjectedCode,
+                moduleDefinition.ToByteCode(),
                 typeToInstantiate,
                 address,
                 contractState);
@@ -148,14 +151,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractDoesNotExistException(callData.MethodName));
             }
 
-            ContractByteCode gasInjectedCode = (ContractByteCode) SmartContractGasInjector.AddGasCalculationToContractMethod(contractExecutionCode, typeName, callData.MethodName);
+            IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractExecutionCode);
+
+            moduleDefinition.InjectMethodGas(typeName, callData.MethodName);
 
             var internalTransferList = new List<TransferInfo>();
 
             ISmartContractState contractState = this.SetupState(internalTransferList, gasMeter, repository, transactionContext, callData.ContractAddress);
 
             Result<IContract> contractLoadResult = this.Load(
-                gasInjectedCode, 
+                moduleDefinition.ToByteCode(),
                 typeName,
                 callData.ContractAddress,
                 contractState);

@@ -5,6 +5,7 @@ using System.Linq;
 using McMaster.Extensions.CommandLineUtils;
 using Stratis.ModuleValidation.Net;
 using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Tools.Sct.Report;
 using Stratis.SmartContracts.Tools.Sct.Report.Sections;
@@ -106,7 +107,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
 
                 Console.WriteLine("Building ModuleDefinition");
 
-                SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
+                IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
 
                 Console.WriteLine("ModuleDefinition built successfully");
                 Console.WriteLine();
@@ -114,7 +115,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 Console.WriteLine($"Validating file {file}...");
                 Console.WriteLine();
 
-                SmartContractValidationResult formatValidationResult = formatValidator.Validate(decompilation);
+                SmartContractValidationResult formatValidationResult = formatValidator.Validate(moduleDefinition.ModuleDefinition);
 
                 validationData.FormatValid = formatValidationResult.IsValid;
 
@@ -124,7 +125,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                         .Errors
                         .Select(e => new ValidationError { Message = e.Message }));
 
-                SmartContractValidationResult determinismValidationResult = determinismValidator.Validate(decompilation);
+                SmartContractValidationResult determinismValidationResult = determinismValidator.Validate(moduleDefinition);
 
                 validationData.DeterminismValid = determinismValidationResult.IsValid;
 
@@ -132,7 +133,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                     .DeterminismValidationErrors
                     .AddRange(determinismValidationResult.Errors);
 
-                SmartContractValidationResult warningResult = warningValidator.Validate(decompilation);
+                SmartContractValidationResult warningResult = warningValidator.Validate(moduleDefinition.ModuleDefinition);
 
                 validationData
                     .Warnings
