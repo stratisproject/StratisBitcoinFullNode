@@ -72,13 +72,13 @@ namespace Stratis.Bitcoin.P2P
             await this.ConnectionSettings.Connect.ForEachAsync(this.ConnectionSettings.MaxOutboundConnections, this.nodeLifetime.ApplicationStopping,
                 async (ipEndpoint, cancellation) =>
                 {
-                    if (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                    if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                        return;
+
+                    PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
+                    if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
                     {
-                        PeerAddress peerAddress = this.peerAddressManager.FindPeer(ipEndpoint);
-                        if (peerAddress != null && !this.IsPeerConnected(peerAddress.Endpoint))
-                        {
-                            await this.ConnectAsync(peerAddress).ConfigureAwait(false);
-                        }
+                        await this.ConnectAsync(peerAddress).ConfigureAwait(false);
                     }
                 }).ConfigureAwait(false);
         }
