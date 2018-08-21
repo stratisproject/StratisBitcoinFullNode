@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         protected override void OnNextCore(ChainedHeaderBlock block)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.Block.GetHash());
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block);
 
             this.AddBackToMempoolAsync(block.Block).ConfigureAwait(false).GetAwaiter().GetResult();
 
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns></returns>
         public async Task AddBackToMempoolAsync(Block block)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block);
 
             var state = new MempoolValidationState(true);
 
