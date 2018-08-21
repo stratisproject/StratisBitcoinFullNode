@@ -73,11 +73,11 @@ namespace Stratis.Bitcoin.Configuration.Settings
                 throw new ConfigurationException("Invalid 'addnode' parameter.");
             }
 
-            int port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort, this.logger);
+            this.Port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort, this.logger);
             try
             {
                 this.Listen.AddRange(config.GetAll("bind")
-                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(port), false)));
+                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)));
             }
             catch (FormatException)
             {
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             try
             {
                 this.Listen.AddRange(config.GetAll("whitebind", this.logger)
-                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(port), true)));
+                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), true)));
             }
             catch (FormatException)
             {
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             if (this.Listen.Count == 0)
             {
-                this.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port), false));
+                this.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.Port), false));
             }
 
             string externalIp = config.GetOrDefault<string>("externalip", null, this.logger);
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             {
                 try
                 {
-                    this.ExternalEndpoint = externalIp.ToIPEndPoint(port);
+                    this.ExternalEndpoint = externalIp.ToIPEndPoint(this.Port);
                 }
                 catch (FormatException)
                 {
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             if (this.ExternalEndpoint == null)
             {
-                this.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, port);
+                this.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, this.Port);
             }
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds, this.logger);
@@ -204,6 +204,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>External (or public) IP address of the node.</summary>
         public IPEndPoint ExternalEndpoint { get; internal set; }
+
+        /// <summary>Port of the node.</summary>
+        public int Port { get; internal set; }
 
         /// <summary>Number of seconds to keep misbehaving peers from reconnecting.</summary>
         public int BanTimeSeconds { get; internal set; }
