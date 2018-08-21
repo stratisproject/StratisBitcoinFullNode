@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var mnemonic = new Mnemonic(Wordlist.French, WordCount.Eighteen);
 
-            Mnemonic returnedMnemonic = walletManager.CreateWallet(password, "mywallet", null, mnemonic);
+            Mnemonic returnedMnemonic = walletManager.CreateWallet(password, "mywallet", password, mnemonic);
 
             Assert.Equal(mnemonic.DeriveSeed(), returnedMnemonic.DeriveSeed());
         }
@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var walletManager = this.CreateWalletManager(dataFolder, this.Network, "-walletaddressbuffer=100");
 
-            walletManager.CreateWallet("test", "mywallet", null, new Mnemonic(Wordlist.English, WordCount.Eighteen));
+            walletManager.CreateWallet("test", "mywallet", "test", new Mnemonic(Wordlist.English, WordCount.Eighteen));
 
             HdAccount hdAccount = walletManager.Wallets.Single().AccountsRoot.Single().Accounts.Single();
 
