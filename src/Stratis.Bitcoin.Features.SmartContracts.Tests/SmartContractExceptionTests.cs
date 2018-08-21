@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly AddressGenerator addressGenerator;
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
         private readonly ContractAssemblyLoader assemblyLoader;
+        private readonly IContractModuleDefinitionReader moduleDefinitionReader;
 
         public SmartContractExceptionTests()
         {
@@ -40,6 +41,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.validator = new SmartContractValidator();
             this.addressGenerator = new AddressGenerator();
             this.assemblyLoader = new ContractAssemblyLoader();
+            this.moduleDefinitionReader = new ContractModuleDefinitionReader();
         }
 
         [Fact]
@@ -54,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var gasMeter = new GasMeter(gasLimit);
 
             var internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator, this.assemblyLoader);
+            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator, this.assemblyLoader, this.moduleDefinitionReader);
 
             uint160 address = TestAddress.ToUint160(this.network);
 

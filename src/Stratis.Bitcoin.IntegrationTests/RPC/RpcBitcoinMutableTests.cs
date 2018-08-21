@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         /// <seealso cref="https://github.com/MetacoSA/NBitcoin/blob/master/NBitcoin.Tests/RPCClientTests.cs">NBitcoin test CanAddNodes</seealso>
         /// </summary>
         [Fact]
-        public void AddNodeWithValidNodeThenExecutesSuccessfully()
+        public void CanAddRemoveNode()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
