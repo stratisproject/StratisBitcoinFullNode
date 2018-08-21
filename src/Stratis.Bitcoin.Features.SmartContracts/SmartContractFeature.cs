@@ -26,6 +26,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -94,6 +95,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IContractModuleDefinitionReader, ContractModuleDefinitionReader>();
 
                         services.AddSingleton<SmartContractTransactionPolicy>();
+
+                        // RECEIPTS -------------------------------------------------------------------------
+                        services.AddSingleton<IReceiptRepository, ReceiptRepository>();
 
                         ICallDataSerializer callDataSerializer = CallDataSerializer.Default;
                         services.AddSingleton(callDataSerializer);

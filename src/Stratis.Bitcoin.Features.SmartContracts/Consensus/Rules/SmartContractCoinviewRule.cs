@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
@@ -24,8 +25,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         protected List<Transaction> blockTxsProcessed;
         protected Transaction generatedTransaction;
+        protected IList<Receipt> receipts;
         protected uint refundCounter;
-        protected ISmartContractCoinviewRule ContractCoinviewRule { get; set; }
+        protected ISmartContractCoinviewRule ContractCoinviewRule { get; private set; }
 
         /// <inheritdoc />
         public override void Initialize()
@@ -57,6 +59,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             // Start state from previous block's root
             this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
             IContractStateRepository trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
+
+            this.receipts = new List<Receipt>();
 
             this.refundCounter = 1;
             long sigOpsCost = 0;
@@ -153,6 +157,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             if (new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root) != ((SmartContractBlockHeader)block.Header).HashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
+
+            ValidateAndStoreReceipts(((SmartContractBlockHeader)block.Header).ReceiptRoot);
 
             this.ContractCoinviewRule.OriginalStateRoot.Commit();
 
@@ -257,6 +263,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             ISmartContractExecutionResult result = executor.Execute(txContext);
 
+            var receipt = new Receipt(
+                new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root),
+                result.GasConsumed,
+                new BloomData(), // TODO: Add event logging and calculate bloom filter.
+                new Log[0] 
+                );
+            this.receipts.Add(receipt);
+
             ValidateRefunds(result.Refunds, context.ValidationContext.Block.Transactions[0]);
 
             if (result.InternalTransaction != null)
@@ -283,6 +297,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Money mempoolFee = transaction.GetFee(((UtxoRuleContext)context).UnspentOutputSet);
 
             return new SmartContractTransactionContext(blockHeight, getCoinbaseResult.Sender, mempoolFee, getSenderResult.Sender, transaction);
+        }
+
+        /// <summary>
+        /// Throws a consensus exception if the receipt roots don't match.
+        /// </summary>
+        private void ValidateAndStoreReceipts(uint256 receiptRoot)
+        {
+            List<uint256> leaves = this.receipts.Select(x => x.GetHash()).ToList();
+            bool mutated = false; // TODO: Do we need this?
+            uint256 expectedReceiptRoot = BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
+
+            if (receiptRoot != expectedReceiptRoot)
+                SmartContractConsensusErrors.UnequalReceiptRoots.Throw();
+
+            // TODO: Could also check for equality of logsBloom?
+
+            this.ContractCoinviewRule.ReceiptRepository.Store(this.receipts);
+            this.receipts.Clear();
         }
 
         /// <summary>
