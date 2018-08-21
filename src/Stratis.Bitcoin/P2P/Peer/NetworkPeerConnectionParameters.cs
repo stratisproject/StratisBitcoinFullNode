@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             return new NetworkPeerConnectionParameters().SetFrom(this);
         }
 
-        public VersionPayload CreateVersion(IPEndPoint peerAddress, Network network, DateTimeOffset timeStamp)
+        public VersionPayload CreateVersion(IPEndPoint externalAddressEndPoint, IPEndPoint peerAddress, Network network, DateTimeOffset timeStamp)
         {
             var version = new VersionPayload()
             {
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 Version = this.Version,
                 Timestamp = timeStamp,
                 AddressReceiver = peerAddress,
-                AddressFrom = this.AddressFrom ?? new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), network.DefaultPort),
+                AddressFrom = externalAddressEndPoint,
                 Relay = this.IsRelay,
                 Services = this.Services
             };
