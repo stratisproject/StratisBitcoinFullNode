@@ -26,6 +26,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 {
     public class TestContext
     {
+        public Mock<IHeaderValidator> HeaderValidator { get; }
+
         public Network Network = KnownNetworks.RegTest;
 
         public Mock<IChainState> ChainState = new Mock<IChainState>();
@@ -35,7 +37,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public IConsensusManager ConsensusManager;
         public readonly Mock<IConsensusRuleEngine> ConsensusRulesEngine = new Mock<IConsensusRuleEngine>();
         public Mock<IFinalizedBlockInfo> FinalizedBlockMock = new Mock<IFinalizedBlockInfo>();
-        public Mock<IHeaderValidator> HeaderValidator = new Mock<IHeaderValidator>();
+        
         public readonly Mock<IInitialBlockDownloadState> ibdState = new Mock<IInitialBlockDownloadState>();
         internal ChainedHeader InitialChainTip;
         public Mock<IIntegrityValidator> IntegrityValidator = new Mock<IIntegrityValidator>();
@@ -52,6 +54,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var powConsensusRulesEngine = new PowConsensusRuleEngine(this.Network, extendedLoggerFactory, DateTimeProvider.Default, chain, new NodeDeployments(this.Network, chain), this.ConsensusSettings, this.Checkpoints.Object, new Mock<ICoinView>().Object, this.ChainState.Object);
 
             this.PartialValidation = new PartialValidator(powConsensusRulesEngine, extendedLoggerFactory);
+            this.HeaderValidator = new Mock<IHeaderValidator>();
+            this.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
 
             this.ChainedHeaderTree = new ChainedHeaderTree(
                 this.Network,
@@ -61,8 +65,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.Checkpoints.Object,
                 this.ChainState.Object,
                 this.FinalizedBlockMock.Object,
-                this.ConsensusSettings,
-                this.Signals.Object);
+                this.ConsensusSettings);
 
             this.ConsensusManager = CreateConsensusManager();
         }
@@ -96,8 +99,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.FinalizedBlockMock.Object,
                 new Bitcoin.Signals.Signals(),
                 this.PeerBanning.Object,
-                new NodeSettings(this.Network),
-                DateTimeProvider.Default,
                 this.ibdState.Object,
                 new ConcurrentChain(this.Network),
                 new Mock<IBlockPuller>().Object,

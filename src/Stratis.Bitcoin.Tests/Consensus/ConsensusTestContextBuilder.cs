@@ -5,7 +5,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
     public sealed class TestContextBuilder
     {
         private readonly TestContext testContext;
-        private bool blockstoreAvailable = true;
 
         public TestContextBuilder()
         {
@@ -27,16 +26,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             return this;
         }
 
-        internal TestContextBuilder WithBlockStoreDisabled()
-        {
-            this.blockstoreAvailable = false;
-            return this;
-        }
-
         internal TestContext Build()
         {
             if (this.testContext.InitialChainTip != null)
-                this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip, this.blockstoreAvailable);
+                this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip);
 
             return this.testContext;
         }
