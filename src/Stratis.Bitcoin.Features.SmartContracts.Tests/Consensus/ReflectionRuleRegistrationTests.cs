@@ -28,14 +28,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
             var contractState = new ContractStateRepositoryRoot();
             var executorFactory = new Mock<ISmartContractExecutorFactory>();
             var loggerFactory = new ExtendedLoggerFactory();
-            var receiptStorage = new Mock<ISmartContractReceiptStorage>();
 
             var consensusRules = new SmartContractPowConsensusRuleEngine(
                 chain, new Mock<ICheckpoints>().Object, new Configuration.Settings.ConsensusSettings(),
                 DateTimeProvider.Default, executorFactory.Object, loggerFactory, network,
                 new Base.Deployments.NodeDeployments(network, chain), contractState,
                 new Mock<ILookaheadBlockPuller>().Object,
-                new Mock<ICoinView>().Object, receiptStorage.Object);
+                new Mock<IReceiptRepository>().Object,
+                new Mock<ICoinView>().Object);
 
             var feature = new ReflectionVirtualMachineFeature(loggerFactory, network);
             feature.Initialize();

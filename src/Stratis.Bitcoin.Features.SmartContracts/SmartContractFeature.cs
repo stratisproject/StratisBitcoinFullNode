@@ -30,6 +30,8 @@ using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Loader;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -78,7 +80,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     {
                         // STATE ----------------------------------------------------------------------------
                         services.AddSingleton<DBreezeContractStateStore>();
-                        services.AddSingleton<ISmartContractReceiptStorage, DBreezeContractReceiptStorage>();
                         services.AddSingleton<NoDeleteContractStateSource>();
                         services.AddSingleton<ContractStateRepositoryRoot>();
 
@@ -90,8 +91,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<InternalTransactionExecutorFactory>();
                         services.AddSingleton<ISmartContractVirtualMachine, ReflectionVirtualMachine>();
                         services.AddSingleton<IAddressGenerator, AddressGenerator>();
+                        services.AddSingleton<ILoader, ContractAssemblyLoader>();
+                        services.AddSingleton<IContractModuleDefinitionReader, ContractModuleDefinitionReader>();
 
                         services.AddSingleton<SmartContractTransactionPolicy>();
+
+                        // RECEIPTS -------------------------------------------------------------------------
+                        services.AddSingleton<IReceiptRepository, ReceiptRepository>();
 
                         ICallDataSerializer callDataSerializer = CallDataSerializer.Default;
                         services.AddSingleton(callDataSerializer);

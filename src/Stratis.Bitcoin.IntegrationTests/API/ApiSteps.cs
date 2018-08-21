@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private HttpResponseMessage response;
         private string responseText;
 
-        private int maturity;
+        private int maturity = 1;
         private HdAddress receiverAddress;
         private readonly Money transferAmount = Money.COIN * 1;
         private NodeGroupBuilder powNodeGroupBuilder;
@@ -158,10 +158,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .WithWallet(PrimaryWalletName, WalletPassword)
                 .Build();
 
-            this.maturity = 1;
-
-            this.nodes[FirstPowNode].FullNode
-                .Network.Consensus.CoinbaseMaturity = 1;
+            this.nodes[FirstPowNode].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
 
             this.nodes[FirstPowNode].SetDummyMinerSecret(new BitcoinSecret(new Key(), this.nodes[FirstPowNode].FullNode.Network));
 
@@ -257,7 +254,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             {
                 ExtPubKey = extPubKey,
                 AccountIndex = accountIndex,
-                Name = walletName
+                Name = walletName,
+                CreationDate = DateTime.UtcNow
             };
 
             this.send_api_post_request(RecoverViaExtPubKeyUri, request);

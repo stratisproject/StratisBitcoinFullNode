@@ -96,7 +96,7 @@ public class Auction : SmartContract
         ulong amount = this.ReturnBalances[this.Message.Sender];
         Assert(amount > 0);
         this.ReturnBalances[this.Message.Sender] = 0;
-        ITransferResult transferResult = TransferFunds(this.Message.Sender, amount);
+        ITransferResult transferResult = Transfer(this.Message.Sender, amount);
         if (!transferResult.Success)
             this.ReturnBalances[this.Message.Sender] = amount;
         return transferResult.Success;
@@ -107,6 +107,6 @@ public class Auction : SmartContract
         Assert(this.Block.Number >= this.EndBlock);
         Assert(!this.HasEnded);
         this.HasEnded = true;
-        TransferFunds(this.Owner, this.HighestBid);
+        Transfer(this.Owner, this.HighestBid);
     }
 }

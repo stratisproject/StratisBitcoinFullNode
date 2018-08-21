@@ -277,8 +277,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             IEnumerable<HdAccount> accounts = this.GetAccountsByCoinType(coinType);
 
-            return accounts
-                .SelectMany(x => x.GetSpendableTransactions(currentChainHeight, confirmations));
+            return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network, confirmations));
         }
     }
 
@@ -708,11 +707,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Lists all spendable transactions in the current account.
         /// </summary>
         /// <param name="currentChainHeight">The current height of the chain. Used for calculating the number of confirmations a transaction has.</param>
+        /// <param name="network">The network this account holds transactions for.</param>
         /// <param name="confirmations">The minimum number of confirmations required for transactions to be considered.</param>
         /// <returns>A collection of spendable outputs that belong to the given account.</returns>
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, int confirmations = 0)
+        /// <remarks>Note that coinbase and coinstake transaction outputs also have to mature with a sufficient number of confirmations before
+        /// they are considered spendable. This is independent of the confirmations parameter.</remarks>
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactions(int currentChainHeight, Network network, int confirmations = 0)
         {
-            // This will take all the spendable coins that belong to the account and keep the reference to the HDAddress and HDAccount.
+            // This will take all the spendable coins that belong to the account and keep the reference to the HdAddress and HdAccount.
             // This is useful so later the private key can be calculated just from a given UTXO.
             foreach (HdAddress address in this.GetCombinedAddresses())
             {
@@ -726,7 +728,16 @@ namespace Stratis.Bitcoin.Features.Wallet
                     if (transactionData.BlockHeight != null)
                         confirmationCount = countFrom >= transactionData.BlockHeight ? countFrom - transactionData.BlockHeight : 0;
 
-                    if (confirmationCount >= confirmations)
+                    if (confirmationCount < confirmations)
+                        continue;
+
+                    bool isCoinBase = transactionData.IsCoinBase ?? false;
+                    bool isCoinStake = transactionData.IsCoinStake ?? false;
+
+                    // This output can unconditionally be included in the results.
+                    // Or this output is a CoinBase or CoinStake and has reached maturity.
+                    if ((!isCoinBase && !isCoinStake) || 
+                        ((isCoinBase || isCoinStake) && (confirmationCount >= network.Consensus.CoinbaseMaturity)))
                     {
                         yield return new UnspentOutputReference
                         {
@@ -847,7 +858,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         public Money Amount { get; set; }
 
         /// <summary>
-        /// A value indicating whether this is a coin stake transaction or not.
+        /// A value indicating whether this is a coinbase transaction or not.
+        /// </summary>
+        [JsonProperty(PropertyName = "isCoinBase", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsCoinBase { get; set; }
+
+        /// <summary>
+        /// A value indicating whether this is a coinstake transaction or not.
         /// </summary>
         [JsonProperty(PropertyName = "isCoinStake", NullValueHandling = NullValueHandling.Ignore)]
         public bool? IsCoinStake { get; set; }

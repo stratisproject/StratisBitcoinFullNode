@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.stratisSender));
 
             var total = this.stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet("mywallet").Sum(s => s.Transaction.Amount);
-            total.Should().Equals(Money.COIN * 105 * 50);
+            total.Should().Equals(Money.COIN * 6 * 50);
 
             // sync both nodes
             this.stratisSender.CreateRPCClient().AddNode(this.stratisReceiver.Endpoint, true);
@@ -100,8 +100,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void trx_is_mined_into_a_block_and_removed_from_mempools()
         {
-            new SharedSteps().MineBlocks(1, this.stratisSender, "account 0", "mywallet", "123456", 16360L);
-
+            new SharedSteps().MineBlocks(1, this.stratisSender, "account 0", "mywallet", "123456");
             new SharedSteps().WaitForNodeToSync(this.stratisSender, this.stratisReceiver);
 
             this.stratisSender.FullNode.MempoolManager().GetMempoolAsync().Result.Should().NotContain(this.transaction.GetHash());

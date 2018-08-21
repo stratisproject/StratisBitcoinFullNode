@@ -11,6 +11,7 @@ using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Loader;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -26,6 +27,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly ContractStateRepositoryRoot state;
         private readonly SmartContractValidator validator;
         private readonly AddressGenerator addressGenerator;
+        private readonly ContractAssemblyLoader assemblyLoader;
+        private readonly IContractModuleDefinitionReader moduleDefinitionReader;
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
 
         public ReflectionVirtualMachineTests()
@@ -42,6 +45,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.persistentState = new PersistentState(persistenceStrategy, TestAddress.ToUint160(this.network), this.network);
             this.addressGenerator = new AddressGenerator();
             this.validator = new SmartContractValidator();
+            this.assemblyLoader = new ContractAssemblyLoader();
+            this.moduleDefinitionReader = new ContractModuleDefinitionReader();
         }
 
         [Fact]
@@ -67,7 +72,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator);
+            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator, this.assemblyLoader, this.moduleDefinitionReader);
 
             uint160 address = TestAddress.ToUint160(this.network);
 
@@ -110,7 +115,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator);
+            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator, this.assemblyLoader, this.moduleDefinitionReader);
 
             uint160 address = TestAddress.ToUint160(this.network);
 
@@ -156,7 +161,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var internalTxExecutorFactory =
                 new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
 
-            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator);
+            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator, this.assemblyLoader, this.moduleDefinitionReader);
 
             var transactionContext = new TransactionContext(
                 txHash: uint256.One,

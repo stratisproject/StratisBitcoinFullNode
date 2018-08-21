@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
             this.senderNode.FullNode.WalletManager().GetSpendableTransactionsInWallet("sender")
                 .Sum(utxo => utxo.Transaction.Amount)
-                .Should().Be(Money.COIN * (maturity + 5) * 50);
+                .Should().Be(Money.COIN * 6 * 50);
         }
 
         private void no_fund_in_the_receiving_wallet()

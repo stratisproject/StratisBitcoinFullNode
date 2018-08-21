@@ -778,7 +778,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         $"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
                 }
 
-                res = account.GetSpendableTransactions(this.chain.Tip.Height, confirmations).ToArray();
+                res = account.GetSpendableTransactions(this.chain.Tip.Height, this.network, confirmations).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", res.Count());
@@ -979,6 +979,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var newTransaction = new TransactionData
                 {
                     Amount = amount,
+                    IsCoinBase = transaction.IsCoinBase == false ? (bool?)null : true,
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true,
                     BlockHeight = blockHeight,
                     BlockHash = block?.GetHash(),

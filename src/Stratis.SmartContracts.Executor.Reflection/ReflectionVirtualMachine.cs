@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Text;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
@@ -12,6 +10,7 @@ using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
+using Stratis.SmartContracts.Executor.Reflection.Loader;
 using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -26,19 +25,25 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly Network network;
         private readonly ISmartContractValidator validator;
         private readonly IAddressGenerator addressGenerator;
+        private readonly ILoader assemblyLoader;
+        private readonly IContractModuleDefinitionReader moduleDefinitionReader;
         public static int VmVersion = 1;
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             InternalTransactionExecutorFactory internalTransactionExecutorFactory,
             ILoggerFactory loggerFactory,
             Network network,
-            IAddressGenerator addressGenerator)
+            IAddressGenerator addressGenerator,
+            ILoader assemblyLoader,
+            IContractModuleDefinitionReader moduleDefinitionReader)
         {
             this.validator = validator;
             this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.network = network;
             this.addressGenerator = addressGenerator;
+            this.assemblyLoader = assemblyLoader;
+            this.moduleDefinitionReader = moduleDefinitionReader;
         }
 
         /// <summary>
@@ -47,16 +52,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public VmExecutionResult Create(IGasMeter gasMeter,
             IContractStateRepository repository,
             ICreateData createData,
-            ITransactionContext transactionContext)
+            ITransactionContext transactionContext,
+            string typeName = null)
         {
             this.logger.LogTrace("()");
 
             // TODO: Spend Validation + Creation Fee here.
 
             // Decompile the contract execution code and validate it.
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(createData.ContractExecutionCode);
+            IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(createData.ContractExecutionCode);
 
-            SmartContractValidationResult validation = this.validator.Validate(decompilation);
+            SmartContractValidationResult validation = moduleDefinition.Validate(this.validator);
 
             // If validation failed, refund the sender any remaining gas.
             if (!validation.IsValid)
@@ -65,20 +71,21 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractValidationException(validation.Errors));
             }
 
-            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToConstructor(createData.ContractExecutionCode, decompilation.ContractType.Name);
+            string typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
+
+            moduleDefinition.InjectConstructorGas();
 
             var internalTransferList = new List<TransferInfo>();
 
             uint160 address = this.addressGenerator.GenerateAddress(transactionContext.TransactionHash, transactionContext.GetNonceAndIncrement());
 
+            ISmartContractState contractState = this.SetupState(internalTransferList, gasMeter, repository, transactionContext, address);
+
             Result<IContract> contractLoadResult = this.Load(
-                gasInjectedCode,
-                decompilation.ContractType.Name,
+                moduleDefinition.ToByteCode(),
+                typeToInstantiate,
                 address,
-                transactionContext,
-                gasMeter,
-                repository,
-                internalTransferList);
+                contractState);
 
             if (!contractLoadResult.IsSuccess)
             {
@@ -144,18 +151,19 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractDoesNotExistException(callData.MethodName));
             }
 
-            byte[] gasInjectedCode = SmartContractGasInjector.AddGasCalculationToContractMethod(contractExecutionCode, typeName, callData.MethodName);
+            IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractExecutionCode);
+
+            moduleDefinition.InjectMethodGas(typeName, callData.MethodName);
 
             var internalTransferList = new List<TransferInfo>();
 
+            ISmartContractState contractState = this.SetupState(internalTransferList, gasMeter, repository, transactionContext, callData.ContractAddress);
+
             Result<IContract> contractLoadResult = this.Load(
-                gasInjectedCode, 
+                moduleDefinition.ToByteCode(),
                 typeName,
                 callData.ContractAddress,
-                transactionContext, 
-                gasMeter, 
-                repository, 
-                internalTransferList);
+                contractState);
 
             if (!contractLoadResult.IsSuccess)
             {
@@ -226,30 +234,29 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// Loads the bytecode into an anonymous AssemblyLoadContext.
-        /// <para>
-        /// TODO This functionality will be refactored into its own class
-        /// </para>
+        /// Loads the contract bytecode and returns an <see cref="IContract"/> representing an uninitialized contract instance.
         /// </summary>
         private Result<IContract> Load(
-            byte[] byteCode, 
+            ContractByteCode byteCode,
             string typeName, 
             uint160 address,
-            ITransactionContext transactionContext, 
-            IGasMeter gasMeter, 
-            IContractStateRepository repository,
-            List<TransferInfo> internalTransferList)
+            ISmartContractState contractState)
         {
-            Assembly contractAssembly = Assembly.Load(byteCode);
+            Result<IContractAssembly> assemblyLoadResult = this.assemblyLoader.Load(byteCode);
 
-            Type type = contractAssembly.ExportedTypes.FirstOrDefault(x => x.Name == typeName);
+            if (!assemblyLoadResult.IsSuccess)
+            {
+                return Result.Fail<IContract>(assemblyLoadResult.Error);
+            }
+
+            IContractAssembly contractAssembly = assemblyLoadResult.Value;
+
+            Type type = contractAssembly.GetType(typeName);
 
             if (type == null)
             {
                 return Result.Fail<IContract>("Type not found!");
             }
-
-            ISmartContractState contractState = this.SetupState(internalTransferList, gasMeter, repository, transactionContext, address);
 
             IContract contract = Contract.CreateUninitialized(type, contractState, address);
 

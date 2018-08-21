@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.P2P.Peer;
@@ -11,11 +12,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 {
     public class TestHelper
     {
-        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int millisecondsTimeout = 50, CancellationToken cancellationToken = default(CancellationToken))
+        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int millisecondsTimeout = 150, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken = cancellationToken == default(CancellationToken)
-                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 30 * 1000).Token
+                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 40 * 1000).Token
                 : cancellationToken;
+
             while (!act())
             {
                 try
@@ -45,7 +47,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) return false;
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.GetBlockStoreTip().HashBlock) return false;
-            if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.WalletManager().WalletTipHash) return false;
+
+            if (!node.FullNode.WalletManager().Wallets.IsEmpty)
+                if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.WalletManager().WalletTipHash) return false;
+
             return true;
         }
 

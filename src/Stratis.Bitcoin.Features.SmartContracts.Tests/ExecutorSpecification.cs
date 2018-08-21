@@ -1,8 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using CSharpFunctionalExtensions;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Tests.Common;
+using Stratis.ModuleValidation.Net;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
@@ -63,7 +67,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             vm.Setup(v => v.Create(It.Is<IGasMeter>(x => x.GasConsumed == GasPriceList.BaseCost),
                 It.IsAny<IContractStateRepository>(),
                 It.IsAny<ICreateData>(),
-                It.IsAny<ITransactionContext>()))
+                It.IsAny<ITransactionContext>(),
+                It.IsAny<string>()))
                 .Returns(vmExecutionResult);
 
             var sut = new Executor(
@@ -84,7 +89,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     It.IsAny<IGasMeter>(), 
                     state.Object, 
                     contractTxData, 
-                    It.IsAny<TransactionContext>()), 
+                    It.IsAny<TransactionContext>(),
+                    It.IsAny<string>()), 
                 Times.Once);
 
             transferProcessor.Verify(t => t
