@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns></returns>
         public async Task AddBackToMempoolAsync(Block block)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), block);
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
             var state = new MempoolValidationState(true);
 
