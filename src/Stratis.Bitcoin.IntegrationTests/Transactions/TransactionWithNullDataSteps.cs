@@ -58,11 +58,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
         private void a_sending_and_a_receiving_wallet()
         {
-            this.receiverNode.FullNode.WalletManager().CreateWallet(this.password, "receiver");
+            this.receiverNode.FullNode.WalletManager().CreateWallet(this.password, "receiver", this.password);
             this.receiverAddress = this.receiverNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("receiver", "account 0"));
             this.sendingWallet = this.receiverNode.FullNode.WalletManager().GetWalletByName("receiver");
 
-            this.senderNode.FullNode.WalletManager().CreateWallet(this.password, "sender");
+            this.senderNode.FullNode.WalletManager().CreateWallet(this.password, "sender", this.password);
             this.sendingWalletAccountReference = new WalletAccountReference("sender", "account 0");
             this.senderAddress = this.senderNode.FullNode.WalletManager().GetUnusedAddress(this.sendingWalletAccountReference);
             this.sendingWallet = this.senderNode.FullNode.WalletManager().GetWalletByName("sender");

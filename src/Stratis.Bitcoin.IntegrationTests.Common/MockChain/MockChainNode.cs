@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
             this.chain = chain;
             // Set up address and mining
             this.CoreNode.NotInIBD();
-            this.CoreNode.FullNode.WalletManager().CreateWallet(Password, WalletName);
+            this.CoreNode.FullNode.WalletManager().CreateWallet(Password, WalletName, Password);
             this.MinerAddress = this.CoreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
             Features.Wallet.Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(WalletName);
             Key key = wallet.GetExtendedPrivateKeyForAddress(Password, this.MinerAddress).PrivateKey;

@@ -73,14 +73,14 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.transactionNode.CreateRPCClient().AddNode(this.node.Endpoint, true);
             this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
 
-            this.transactionNode.FullNode.WalletManager().CreateWallet(this.password, "receiver");
+            this.transactionNode.FullNode.WalletManager().CreateWallet(this.password, "receiver", this.password);
             this.receiverAddress = this.transactionNode.FullNode.WalletManager()
                 .GetUnusedAddress(new WalletAccountReference("receiver", "account 0"));
         }
 
         private void a_miner_validating_blocks()
         {
-            this.node.FullNode.WalletManager().CreateWallet(this.password, "miner");
+            this.node.FullNode.WalletManager().CreateWallet(this.password, "miner", this.password);
             this.miningWalletAccountReference = new WalletAccountReference("miner", "account 0");
             this.minerAddress = this.node.FullNode.WalletManager().GetUnusedAddress(this.miningWalletAccountReference);
             this.miningWallet = this.node.FullNode.WalletManager().GetWalletByName("miner");

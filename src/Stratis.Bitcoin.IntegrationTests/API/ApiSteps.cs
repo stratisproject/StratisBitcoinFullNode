@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var stakingRequest = new StartStakingRequest() { Name = PrimaryWalletName, Password = WalletPassword };
 
-            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName);
+            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName, WalletPassword);
 
             var httpRequestContent = new StringContent(stakingRequest.ToString(), Encoding.UTF8, JsonContentType);
             this.response = this.httpClient.PostAsync($"{this.apiUri}{StartStakingUri}", httpRequestContent).GetAwaiter().GetResult();
@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void calling_general_info()
         {
-            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName);
+            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName, WalletPassword);
             this.send_api_get_request($"{GeneralInfoUri}?name={PrimaryWalletName}");
         }
 

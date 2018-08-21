@@ -43,8 +43,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
-                Mnemonic mnemonic1 = scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
-                Mnemonic mnemonic2 = scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                Mnemonic mnemonic1 = scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Password);
+                Mnemonic mnemonic2 = scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Password);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
                 Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
@@ -113,8 +113,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
-                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
-                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Password);
+                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Password);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
                 Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 scSender.NotInIBD();
 
-                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Password);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
                 Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
@@ -307,8 +307,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
-                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
-                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Password);
+                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Password);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
                 Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
@@ -480,8 +480,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
-                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
-                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Password);
+                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Password);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
                 Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;

@@ -39,11 +39,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string Password { get; set; }
 
         /// <summary>
-        /// When supplied, this passphrase is added as additional seed to the mnemonic. If this property is null, then <see cref="Password"/> is used as additional mnemonic seed.
+        /// When supplied, this passphrase is added as additional seed to the mnemonic.
         /// </summary>
         /// <remarks>
         /// Empty string is a valid passphrase.
         /// </remarks>
+        [Required(ErrorMessage = "A passphrase is required.", AllowEmptyStrings = true)]
         public string Passphrase { get; set; }
 
         public string Network { get; set; }
@@ -74,8 +75,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// Supply the password that was used to create the wallet.
         /// </summary>
         /// <remarks>
-        /// If the account was created previously before <see cref="Passphrase"/> was available, then the password was used as passphrase. You only need to supply the password for existing wallets,
-        /// the passphrase is only needed for newer account that was created with a passphrase different than the password.
+        /// If the account was created previously before <see cref="Passphrase"/> was available, then the password was used as passphrase, and must be supplied as the passphrase.
         /// </remarks>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
@@ -83,6 +83,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// <summary>
         /// Supply the passphrase that was used when account was created.
         /// </summary>
+        [Required(ErrorMessage = "A passphrase is required.", AllowEmptyStrings = true)]
         public string Passphrase { get; set; }
 
         public string FolderPath { get; set; }

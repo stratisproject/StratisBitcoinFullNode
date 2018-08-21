@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             string password = "test";
 
             // create the wallet
-            Mnemonic mnemonic = walletManager.CreateWallet(password, "mywallet");
+            Mnemonic mnemonic = walletManager.CreateWallet(password, "mywallet", password);
 
             // assert it has saved it to disk and has been created correctly.
             var expectedWallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(dataFolder.WalletPath + "/mywallet.wallet.json"));

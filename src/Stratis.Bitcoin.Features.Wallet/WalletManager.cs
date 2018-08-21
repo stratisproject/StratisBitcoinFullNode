@@ -212,16 +212,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public Mnemonic CreateWallet(string password, string name, string passphrase = null, Mnemonic mnemonic = null)
+        public Mnemonic CreateWallet(string password, string name, string passphrase, Mnemonic mnemonic = null)
         {
             Guard.NotEmpty(password, nameof(password));
             Guard.NotEmpty(name, nameof(name));
+            Guard.NotNull(passphrase, nameof(passphrase));
 
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
-
-            // For now the passphrase is set to be the password by default, if not supplied. This should only happen if passphrase is null, not when it is empty string (allowed value).
-            if (passphrase == null)
-                passphrase = password;
 
             // Generate the root seed used to generate keys from a mnemonic picked at random
             // and a passphrase optionally provided by the user.
@@ -292,16 +289,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null)
+        public Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase)
         {
             Guard.NotEmpty(password, nameof(password));
             Guard.NotEmpty(name, nameof(name));
             Guard.NotEmpty(mnemonic, nameof(mnemonic));
+            Guard.NotNull(passphrase, nameof(passphrase));
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
-
-            // For now the passphrase is set to be the password by default, if not supplied. This should only happen if passphrase is null, not when it is empty string (allowed value).
-            if (passphrase == null)
-                passphrase = password;
 
             // Generate the root seed used to generate keys.
             ExtKey extendedKey;
