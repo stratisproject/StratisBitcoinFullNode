@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private ICallDataSerializer serializer;
         private readonly AddressGenerator addressGenerator;
         private readonly ContractAssemblyLoader assemblyLoader;
+        private readonly IContractModuleDefinitionReader moduleDefinitionReader;
 
         public SmartContractExecutorTests()
         {
@@ -50,7 +51,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             this.addressGenerator = new AddressGenerator();
             this.assemblyLoader = new ContractAssemblyLoader();
-            this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator, this.assemblyLoader);
+            this.moduleDefinitionReader = new ContractModuleDefinitionReader();
+            this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator, this.assemblyLoader, this.moduleDefinitionReader);
             this.serializer = CallDataSerializer.Default;
         }
 
