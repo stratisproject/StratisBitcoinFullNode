@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Utilities;
 
@@ -12,24 +13,29 @@ namespace Stratis.Bitcoin.Features.Api
     public class Program
     {
         public static IWebHost Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode,
-            ApiSettings apiSettings, ICertificateStore store, IWebHostBuilder webHostBuilder = null)
+            ApiSettings apiSettings, ICertificateStore store)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
 
             Uri apiUri = apiSettings.ApiUri;
 
-            X509Certificate2 certificate = apiSettings.UseHttps ? GetHttpsCertificate(apiSettings, store) : null;
+            X509Certificate2 certificate = apiSettings.UseHttps 
+                ? GetHttpsCertificate(apiSettings.HttpsCertificateFilePath, store) 
+                : null;
 
-            webHostBuilder = webHostBuilder ?? new WebHostBuilder();
+            IWebHostBuilder webHostBuilder = new WebHostBuilder();
 
             webHostBuilder
                 .UseKestrel(options =>
                     {
-                        if (!apiSettings.UseHttps) return;
-                        options.Listen(
-                            IPAddress.Any,
-                            apiSettings.ApiPort,
-                            listenOptions => { listenOptions.UseHttps(certificate); });
+                        if (!apiSettings.UseHttps)
+                            return;
+                        Action<ListenOptions> configureListener = listenOptions => { listenOptions.UseHttps(certificate); };
+                        var ipAddresses = Dns.GetHostAddresses(apiSettings.ApiUri.DnsSafeHost);
+                        foreach (var ipAddress in ipAddresses)
+                        {
+                            options.Listen(ipAddress, apiSettings.ApiPort, configureListener);
+                        }
                     })
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
@@ -46,8 +52,7 @@ namespace Stratis.Bitcoin.Features.Api
                     foreach (ServiceDescriptor service in services)
                     {
                         object obj = fullNode.Services.ServiceProvider.GetService(service.ServiceType);
-                        if (obj != null && service.Lifetime == ServiceLifetime.Singleton &&
-                            service.ImplementationInstance == null)
+                        if (obj != null && service.Lifetime == ServiceLifetime.Singleton && service.ImplementationInstance == null)
                         {
                             collection.AddSingleton(service.ServiceType, obj);
                         }
@@ -61,20 +66,17 @@ namespace Stratis.Bitcoin.Features.Api
 
             var host = webHostBuilder.Build();
                 
-
             host.Start();
            
             return host;
         }
 
-        private static X509Certificate2 GetHttpsCertificate(ApiSettings apiSettings, ICertificateStore store)
+        private static X509Certificate2 GetHttpsCertificate(string certificateFilePath, ICertificateStore store)
         {
-            var certificateFileName = apiSettings.HttpsCertificateFilePath;
-
-            if (store.TryGet(certificateFileName, out var certificate))
+            if (store.TryGet(certificateFilePath, out var certificate))
                 return certificate;
 
-            throw new FileLoadException($"Failed to load certificate from path {certificateFileName}");
+            throw new FileLoadException($"Failed to load certificate from path {certificateFilePath}");
         }
     }
 }

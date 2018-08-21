@@ -35,12 +35,17 @@ namespace Stratis.Bitcoin.Features.Api
         public Uri ApiUri { get; set; }
 
         /// <summary>Port of node's API interface.</summary>
-        public int ApiPort { get; set; }
-
+        public int ApiPort { get; set; } 
         /// <summary>URI to node's API interface.</summary>
         public Timer KeepaliveTimer { get; private set; }
 
-        /// <summary>The HTTPS certificate file name.</summary>
+        /// <summary>
+        /// The HTTPS certificate file path.
+        /// </summary>
+        /// <remarks>
+        /// Password protected certificates are not supported.
+        /// Please refer to .Net Core documentation for usage: <seealso cref="https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.x509certificates.x509certificate2.-ctor?view=netcore-2.1#System_Security_Cryptography_X509Certificates_X509Certificate2__ctor_System_Byte___" />.
+        /// </remarks>
         public string HttpsCertificateFilePath { get; set; }
         
         /// <summary>Use HTTPS or not.</summary>
@@ -68,12 +73,12 @@ namespace Stratis.Bitcoin.Features.Api
 
             this.UseHttps = config.GetOrDefault("usehttps", false);
             this.HttpsCertificateFilePath = config.GetOrDefault("certificatefilepath", (string)null);
-            if(this.UseHttps && string.IsNullOrWhiteSpace(this.HttpsCertificateFilePath))
+            if (this.UseHttps && string.IsNullOrWhiteSpace(this.HttpsCertificateFilePath))
                 throw new ConfigurationException("The path to a certificate needs to be provided when using https. Please use the argument 'certificatefilepath' to provide it.");
 
             var defaultApiHost = this.UseHttps 
-                                     ? DefaultApiHost.Replace(@"http://", @"https://") 
-                                     : DefaultApiHost;
+                ? DefaultApiHost.Replace(@"http://", @"https://") 
+                : DefaultApiHost;
 
             string apiHost = config.GetOrDefault("apiuri", defaultApiHost, this.logger);
             var apiUri = new Uri(apiHost);
@@ -130,8 +135,8 @@ namespace Stratis.Bitcoin.Features.Api
             builder.AppendLine($"-apiuri=<string>                  URI to node's API interface. Defaults to '{ DefaultApiHost }'.");
             builder.AppendLine($"-apiport=<0-65535>                Port of node's API interface. Defaults to { GetDefaultPort(network) }.");
             builder.AppendLine($"-keepalive=<seconds>              Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
-            builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to { false }.");
-            builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to <null>.");
+            builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to false.");
+            builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to <null>. Password protected files are not supported.");
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
@@ -150,9 +155,10 @@ namespace Stratis.Bitcoin.Features.Api
             builder.AppendLine($"#apiport={ GetDefaultPort(network) }");
             builder.AppendLine($"#Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
             builder.AppendLine($"#keepalive=0");
-            builder.AppendLine($"#Use HTTPS protocol on the API. Default is { false }.");
-            builder.AppendLine($"#usehttps={ false }");
-            builder.AppendLine($"#Subject name of the certificate to use for https traffic encryption.");
+            builder.AppendLine($"#Use HTTPS protocol on the API. Default is false.");
+            builder.AppendLine($"#usehttps=false");
+            builder.AppendLine($"#Path to the file containing the certificate to use for https traffic encryption. Password protected files are not supported.");
+            builder.AppendLine(@"#Please refer to .Net Core documentation for usage: 'https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.x509certificates.x509certificate2.-ctor?view=netcore-2.1#System_Security_Cryptography_X509Certificates_X509Certificate2__ctor_System_Byte___'.");
             builder.AppendLine($"#certificatefilepath=");
         }
     }

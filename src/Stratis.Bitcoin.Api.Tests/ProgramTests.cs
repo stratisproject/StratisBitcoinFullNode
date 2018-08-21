@@ -1,7 +1,5 @@
-﻿using System.Security;
-using System.Security.Cryptography.X509Certificates;
+﻿using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
 using NSubstitute;
 using Stratis.Bitcoin.Features.Api;
 using Xunit;
@@ -12,11 +10,8 @@ namespace Stratis.Bitcoin.Api.Tests
     {
         private readonly X509Certificate2 certificateToUse;
         private readonly ICertificateStore certificateStore;
-        private readonly IWebHostBuilder webHostBuilder;
         private readonly ApiSettings apiSettings;
-
-        private readonly SecureString certificatePassword;
-
+        
         private X509Certificate2 certificateRetrieved;
 
         public ProgramTest()
@@ -24,9 +19,7 @@ namespace Stratis.Bitcoin.Api.Tests
             this.apiSettings = new ApiSettings { UseHttps = true };
             this.certificateToUse = new X509Certificate2();
             this.certificateStore = Substitute.For<ICertificateStore>();
-            this.webHostBuilder = Substitute.For<IWebHostBuilder>();
         }
-
 
         [Fact]
         public void Initialize_WhenCertificateRetrieved_UsesCertificateOnHttpsWithKestrel()
@@ -36,7 +29,7 @@ namespace Stratis.Bitcoin.Api.Tests
 
             this.certificateRetrieved.Should().BeNull();
 
-            Program.Initialize(null, new FullNode(), this.apiSettings, this.certificateStore, this.webHostBuilder);
+            Program.Initialize(null, new FullNode(), this.apiSettings, this.certificateStore);
 
             this.certificateRetrieved.Should().NotBeNull();
             this.certificateRetrieved.Should().Be(this.certificateToUse);
@@ -49,7 +42,7 @@ namespace Stratis.Bitcoin.Api.Tests
             this.apiSettings.UseHttps = false;
             this.SetCertificateInStore(true);
 
-            Program.Initialize(null, new FullNode(), this.apiSettings, this.certificateStore, this.webHostBuilder);
+            Program.Initialize(null, new FullNode(), this.apiSettings, this.certificateStore);
 
             this.certificateStore.DidNotReceiveWithAnyArgs().TryGet(null, out _);
         }

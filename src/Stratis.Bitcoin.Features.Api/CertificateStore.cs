@@ -13,6 +13,7 @@ namespace Stratis.Bitcoin.Features.Api
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
+
         public bool TryGet(string filePath, out X509Certificate2 certificate)
         {
             try
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Api
             }
             catch (Exception e)
             {
-                this.logger.LogWarning(e, "Failed to read certificate at {0}", filePath);
+                this.logger.LogWarning("Failed to read certificate at {0} : {1}", filePath, e.Message);
                 certificate = null;
                 return false;
             }

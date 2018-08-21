@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography.X509Certificates;
-using NBitcoin;
+﻿using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
