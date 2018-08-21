@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using Stratis.Bitcoin.Configuration.Settings;
-using Stratis.Bitcoin.Connection;
+﻿using System.Net;
 
 namespace Stratis.Bitcoin.P2P
 {

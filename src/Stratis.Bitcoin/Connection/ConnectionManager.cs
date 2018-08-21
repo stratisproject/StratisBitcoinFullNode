@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Connection
             }
             else
             {
-                // If external IP address not supplied take first routeable bind address and set score to 10.
+                // If external IP address not supplied take first routable bind address and set score to 10.
                 IPEndPoint nodeServerEndpoint = this.ConnectionSettings.Listen?.FirstOrDefault(x => x.Endpoint.Address.IsRoutable(false))?.Endpoint;
                 if (nodeServerEndpoint != null)
                 {
