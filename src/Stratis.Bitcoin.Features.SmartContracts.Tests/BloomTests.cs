@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
+using NBitcoin;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -91,8 +94,46 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Assert.False(bloom.Test(notContainedInBloom[i]));
                 Assert.True(bloom.Test(containedInBloom[i]));
             }
+        }
 
+        [Fact]
+        public void Bloom_Receipt_With_Logs()
+        {
+            var log1 = new Log(
+                new uint160(12345),
+                new List<byte[]>
+                {
+                    Encoding.UTF8.GetBytes("Topic1"),
+                    Encoding.UTF8.GetBytes("Topic2")
+                },
+                null
+            );
 
+            var log2 = new Log(
+                new uint160(123456),
+                new List<byte[]>
+                {
+                    Encoding.UTF8.GetBytes("Topic3"),
+                    Encoding.UTF8.GetBytes("Topic4")
+                },
+                null
+            );
+
+            var receipt = new Receipt(new uint256(0), 0, new Log[] { log1, log2 });
+
+            Assert.True(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic1")));
+            Assert.True(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic2")));
+            Assert.True(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic3")));
+            Assert.True(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic4")));
+            Assert.True(receipt.Bloom.Test(new uint160(12345).ToBytes()));
+            Assert.True(receipt.Bloom.Test(new uint160(123456).ToBytes()));
+
+            Assert.False(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic5")));
+            Assert.False(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic6")));
+            Assert.False(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic7")));
+            Assert.False(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic8")));
+            Assert.False(receipt.Bloom.Test(new uint160(11111).ToBytes()));
+            Assert.False(receipt.Bloom.Test(new uint160(1234567).ToBytes()));
         }
     }
 }

@@ -1,23 +1,37 @@
 ﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
 
 namespace Stratis.SmartContracts.Core.Receipts
 {
     /// <summary>
-    /// Will be used to store user-defined logs. 
-    /// Currently only a stub for consensus parameters. Subject to change.
+    /// Used to store user-defined logs. 
     /// </summary>
     public class Log
     {
         public uint160 Address { get; }
-        public string Topic { get; }
+        public IEnumerable<byte[]> Topics { get; }
         public byte[] Data { get; }
 
-        public Log(uint160 address, string topic, byte[] data)
+        public Log(uint160 address, IEnumerable<byte[]> topics, byte[] data)
         {
             this.Address = address;
-            this.Topic = topic;
+            this.Topics = topics;
             this.Data = data;
+        }
+
+        /// <summary>
+        /// Return a bloom filter for the address of the contract logging and the topics to be logged.
+        /// </summary>
+        public Bloom GetBloom()
+        {
+            var bloom = new Bloom();
+            bloom.Add(this.Address.ToBytes());
+            foreach(byte[] topic in this.Topics)
+            {
+                bloom.Add(topic);
+            }
+            return bloom;
         }
 
         public byte[] ToBytesRlp()

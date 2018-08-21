@@ -266,7 +266,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var receipt = new Receipt(
                 new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root),
                 result.GasConsumed,
-                new Bloom(), // TODO: Add event logging and calculate bloom filter.
                 new Log[0] 
                 );
             this.receipts.Add(receipt);
