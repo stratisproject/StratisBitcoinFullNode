@@ -16,13 +16,40 @@ namespace Stratis.Bitcoin.Consensus.ValidationResults
 
         public ChainedHeader LastValidatedBlockHeader { get; set; }
 
-        public ConnectBlocksResult(bool succeeded, bool consensusTipChanged = true, List<int> peersToBan = null, string banReason = null, int banDurationSeconds = 0)
+        private ConnectBlocksResult() { }
+
+        public static ConnectBlocksResult Fail(bool consensusTipChanged = true)
         {
-            this.ConsensusTipChanged = consensusTipChanged;
-            this.Succeeded = succeeded;
-            this.PeersToBan = peersToBan;
-            this.BanReason = banReason;
-            this.BanDurationSeconds = banDurationSeconds;
+            var result = new ConnectBlocksResult
+            {
+                ConsensusTipChanged = consensusTipChanged,
+                Succeeded = false
+            };
+            return result;
+        }
+
+        public static ConnectBlocksResult FailAndBanPeers(ConsensusError error, List<int> peersToBan, int banDurationSeconds)
+        {
+            var result = new ConnectBlocksResult
+            {
+                BanDurationSeconds = banDurationSeconds,
+                BanReason = error.Message,
+                ConsensusTipChanged = false,
+                Error = error,
+                PeersToBan = peersToBan,
+                Succeeded = false
+            };
+            return result;
+        }
+
+        public static ConnectBlocksResult Success(bool consensusTipChanged = true)
+        {
+            var result = new ConnectBlocksResult
+            {
+                ConsensusTipChanged = consensusTipChanged,
+                Succeeded = true
+            };
+            return result;
         }
 
         public override string ToString()

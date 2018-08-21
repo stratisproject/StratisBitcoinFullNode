@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -184,31 +184,34 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 }
 
                 // Test 1: block with both of those transactions should be rejected.
-                Block block = stratisNodeSync.GenerateBlockManually(spends);
+                var tipBeforeBlockCreation = stratisNodeSync.FullNode.Chain.Tip;
+                Assert.Throws<ConsensusException>(() => { Block block = stratisNodeSync.GenerateBlockManually(spends); });
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
+                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == tipBeforeBlockCreation.HashBlock);
 
                 // Test 2: ... and should be rejected if spend1 is in the memory pool
+                tipBeforeBlockCreation = stratisNodeSync.FullNode.Chain.Tip;
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[0]));
-                block = stratisNodeSync.GenerateBlockManually(spends);
+                Assert.Throws<ConsensusException>(() => { Block block = stratisNodeSync.GenerateBlockManually(spends); });
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
+                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == tipBeforeBlockCreation.HashBlock);
                 stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
 
                 // Test 3: ... and should be rejected if spend2 is in the memory pool
+                tipBeforeBlockCreation = stratisNodeSync.FullNode.Chain.Tip;
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
-                block = stratisNodeSync.GenerateBlockManually(spends);
+                Assert.Throws<ConsensusException>(() => { Block block = stratisNodeSync.GenerateBlockManually(spends); });
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock != block.GetHash());
+                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == tipBeforeBlockCreation.HashBlock);
                 stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
 
                 // Final sanity test: first spend in mempool, second in block, that's OK:
                 var oneSpend = new List<Transaction>();
                 oneSpend.Add(spends[0]);
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
-                block = stratisNodeSync.GenerateBlockManually(oneSpend);
+                var validBlock = stratisNodeSync.GenerateBlockManually(oneSpend);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == block.GetHash());
+                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == validBlock.GetHash());
 
                 // spends[1] should have been removed from the mempool when the
                 // block with spends[0] is accepted:

@@ -5,13 +5,13 @@
     /// </summary>
     public class ValidationResult
     {
-        public int BanDurationSeconds { get; set; }
+        public int BanDurationSeconds { get; internal set; }
 
-        public string BanReason { get; set; }
+        public string BanReason { get; internal set; }
 
-        public ConsensusError Error { get; set; }
+        public ConsensusError Error { get; internal set; }
 
-        public bool Succeeded { get; set; }
+        public bool Succeeded { get; internal set; }
 
         /// <inheritdoc/>
         public override string ToString()
