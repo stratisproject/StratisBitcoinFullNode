@@ -155,7 +155,7 @@ namespace Stratis.SmartContracts
         /// <param name="toLog">Object with fields to save in logs.</param>
         protected void Log<T>(T toLog) where T : struct
         {
-
+            this.contractLogger.Log(this.smartContractState, toLog);
         }
     }
 }
