@@ -260,8 +260,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;
-
-            SaveReceipt(txContext, result);
         }
 
         /// <summary>
@@ -314,25 +312,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         protected override bool IsProtocolTransaction(Transaction transaction)
         {
             return transaction.IsCoinBase || transaction.IsCoinStake;
-        }
-
-        /// <summary>
-        /// Saves receipt in a database following execution.
-        /// TODO: When we have a receipt root, ensure that this is deterministic, and validated. i.e. block receipt roots match!
-        /// TODO: Also put it inside the block assembly then.
-        /// </summary>
-        private void SaveReceipt(ISmartContractTransactionContext txContext, ISmartContractExecutionResult result)
-        {
-            // For now we don't want it to interrupt execution so put it in a silly large try catch.
-            try
-            {
-                this.Logger.LogTrace("Save Receipt : {0}:{1}", nameof(txContext.TransactionHash), txContext.TransactionHash);
-                this.ContractCoinviewRule.ReceiptStorage.SaveReceipt(txContext, result);
-            }
-            catch (Exception e)
-            {
-                this.Logger.LogError("Exception occurred saving contract receipt: {0}", e.Message);
-            }
         }
     }
 }

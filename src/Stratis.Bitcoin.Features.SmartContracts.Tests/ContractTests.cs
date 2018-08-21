@@ -35,6 +35,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.Param = param;
             }
 
+            public TestContract(int a, string b)
+            : base(null)
+            {
+
+            }
+
             public void Test1()
             {
                 this.Test1Called = true;
@@ -223,6 +229,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(this.state.PersistentState, persistentState);
             Assert.NotNull(smartContractState);
             Assert.Equal(this.state, smartContractState);
+        }
+
+        [Fact]
+        public void Constructor_Exists_Tests()
+        {
+            var parameters = new List<object> { 1 };
+
+            var constructorExists = Contract.ConstructorExists(typeof(TestContract), parameters);
+
+            Assert.True(constructorExists);
+        }
+
+        [Fact]
+        public void Constructor_Does_Not_Exist_Tests()
+        {
+            // No constructor with this signature should exist due to missing ISmartContractState
+            var parameters = new List<object> { 1, "1" };
+
+            var constructorExists = Contract.ConstructorExists(typeof(TestContract), parameters);
+
+            Assert.False(constructorExists);
         }
 
         private object GetInstancePrivateFieldValue(string fieldName)

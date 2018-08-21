@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
             {
                 new BlockMerkleRootRule(),
-                new IntegrityValidationSmartContractPosBlockSignatureRule(),
+                new SmartContractPosBlockSignatureRule(),
             };
 
             consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
@@ -53,7 +53,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 new SetActivationDeploymentsFullValidationRule(),
 
-                // rules that require the store to be loaded (coinview)
                 new SmartContractLoadCoinviewRule(),
                 new TransactionDuplicationActivationRule(), // implements BIP30
                 new SmartContractPosCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
