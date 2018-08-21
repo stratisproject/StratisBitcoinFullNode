@@ -150,7 +150,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private void StartBitcoinCoreRunner()
         {
-            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+            TimeSpan duration = TimeSpan.FromMinutes(5);
+            var cancellationToken = new CancellationTokenSource(duration).Token;
             TestHelper.WaitLoop(() =>
             {
                 try
@@ -163,7 +164,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 {
                     return false;
                 }
-            }, cancellationToken: cancellationToken);
+            }, cancellationToken: cancellationToken,
+                failureReason: $"Failed to invoke GetBlockHash on BitcoinCore instance after {duration}");
         }
 
         private void StartStratisRunner()
