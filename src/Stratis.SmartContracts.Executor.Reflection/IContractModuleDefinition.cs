@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Mono.Cecil;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
-    public interface IContractModuleDefinition
+    public interface IContractModuleDefinition : IDisposable
     {
         /// <summary>
         /// The <see cref="TypeDefinition"/>s contained in the module, excluding those that are compiler or framework generated.
