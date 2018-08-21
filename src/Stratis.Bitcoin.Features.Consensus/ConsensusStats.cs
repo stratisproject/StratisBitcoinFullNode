@@ -110,16 +110,11 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
         {
-            if (this.LastSnapshotWasWithinLast5Seconds()) 
-                return;
-            
-            if (this.initialBlockDownloadState.IsInitialBlockDownload())
-                this.BenchStats();
-        }
-
-        private bool LastSnapshotWasWithinLast5Seconds()
-        {
-            return this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken <= TimeSpan.FromSeconds(5.0);
+            if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
+            {
+                if (this.initialBlockDownloadState.IsInitialBlockDownload())
+                    this.BenchStats();
+            }
         }
     }
 }
