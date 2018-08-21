@@ -64,7 +64,8 @@ namespace Stratis.Bitcoin.Networks
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
-                maxBlockSigopsCost: 20_000
+                maxBlockSigopsCost: 20_000,
+                coldStakingActivationHeight: int.MaxValue // TODO!
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
