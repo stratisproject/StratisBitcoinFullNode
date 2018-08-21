@@ -85,8 +85,8 @@ namespace Stratis.Bitcoin.Base.Deployments
                 this.EnforceBIP34 = true;
             }
 
-            // Cold staking is only activated for POS and from a specific block height. 
-            if (chainparams.Options is PosConsensusOptions posOptions && nextBlock.Height >= posOptions.ColdStakingActivationHeight)
+            // Cold staking is only activated for POS and from a specific block height.
+            if ((chainparams.Options is PosConsensusOptions posOptions) && (nextBlock.Height >= posOptions.ColdStakingActivationHeight))
             {
                 this.ScriptFlags |= ScriptVerify.CheckColdStakeVerify;
             }

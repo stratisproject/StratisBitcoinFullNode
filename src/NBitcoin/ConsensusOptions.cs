@@ -144,8 +144,9 @@
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            uint coldStakingActivationHeight) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int coldStakingActivationHeight) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
         {
+            this.ColdStakingActivationHeight = coldStakingActivationHeight;
         }
 
         /// <summary>
