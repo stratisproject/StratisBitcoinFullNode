@@ -36,6 +36,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -222,18 +223,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
 
-                var smartContractRuleRegistration = new SmartContractPowRuleRegistration();
                 var chainState = new ChainState(new InvalidBlockHashStore(DateTimeProvider.Default));
-                var consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, this.cachedCoinView, chainState).Register();
-
-                var headerValidator = new HeaderValidator(consensusRules, loggerFactory);
-                var integrityValidator = new IntegrityValidator(consensusRules, loggerFactory);
-                var partialValidator = new PartialValidator(consensusRules, loggerFactory);
-                var finalizedBlockInfo = new Mock<IFinalizedBlockInfo>().Object;
-                var blockPuller = new BlockPuller(chainState, this.nodeSettings, DateTimeProvider.Default, loggerFactory);
-
-                var checkPoints = new Checkpoints(this.network, consensusSettings);
-
+                var consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, new ReceiptRepository(), this.cachedCoinView, chainState).Register();
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
 
                 this.consensusManager = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),

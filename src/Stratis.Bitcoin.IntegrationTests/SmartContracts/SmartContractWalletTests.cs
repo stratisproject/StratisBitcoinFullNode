@@ -349,6 +349,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, response.Hex);
 
                 // Check wallet history is updating correctly.
+
                 result = (JsonResult)senderWalletController.GetHistory(new WalletHistoryRequest
                 {
                     AccountName = AccountName,
