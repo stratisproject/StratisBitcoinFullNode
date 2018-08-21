@@ -10,12 +10,13 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusStats : SignalObserver<Block>
+    public class ConsensusStats : SignalObserver<ChainedHeaderBlock>
     {
         private readonly CachedCoinView cache;
 
@@ -107,13 +108,18 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.logger.LogInformation(benchLogs.ToString());
         }
 
-        protected override void OnNextCore(Block value)
+        protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
         {
-            if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
-            {
-                if (this.initialBlockDownloadState.IsInitialBlockDownload())
-                    this.BenchStats();
-            }
+            if (this.LastSnapshotWasWithinLast5Seconds()) 
+                return;
+            
+            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+                this.BenchStats();
+        }
+
+        private bool LastSnapshotWasWithinLast5Seconds()
+        {
+            return this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken <= TimeSpan.FromSeconds(5.0);
         }
     }
 }

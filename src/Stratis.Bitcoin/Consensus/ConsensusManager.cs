@@ -663,8 +663,7 @@ namespace Stratis.Bitcoin.Consensus
                     }
                 }
 
-                // TODO: change signal to take ChainedHeaderBlock
-                this.signals.SignalBlockConnected(blockToConnect.Block);
+                this.signals.SignalBlockConnected(blockToConnect);
             }
 
             this.logger.LogTrace("(-):'{0}'", connectBlockResult);
