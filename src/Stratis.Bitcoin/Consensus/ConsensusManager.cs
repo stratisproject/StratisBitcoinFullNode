@@ -532,7 +532,7 @@ namespace Stratis.Bitcoin.Consensus
                 // In that case we try to load the blocks from store, if store is not present we disconnect all peers.
                 this.HandleMissingBlocksGap(currentTip);
 
-                var result = ConnectBlocksResult.Fail();
+                var result = ConnectBlocksResult.Failed();
                 this.logger.LogTrace("(-)[GAP_BEFORE_CONNECTING]:'{0}'", result);
                 return result;
             }
@@ -564,7 +564,7 @@ namespace Stratis.Bitcoin.Consensus
                 // We tried to reapply old chain but we don't have all the blocks to do that.
                 this.HandleMissingBlocksGap(currentTip);
 
-                var result = ConnectBlocksResult.Fail();
+                var result = ConnectBlocksResult.Failed();
                 this.logger.LogTrace("(-)[GAP_AFTER_CONNECTING]:'{0}'", result);
                 return result;
             }
@@ -795,7 +795,7 @@ namespace Stratis.Bitcoin.Consensus
                     badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
                 }
 
-                var failureResult = ConnectBlocksResult.FailAndBanPeers(validationContext.Error, badPeers, validationContext.BanDurationSeconds);
+                var failureResult = ConnectBlocksResult.FailedAndBanPeers(validationContext.Error, badPeers, validationContext.BanDurationSeconds);
 
                 this.logger.LogTrace("(-)[FAILED]:'{0}'", failureResult);
                 return failureResult;

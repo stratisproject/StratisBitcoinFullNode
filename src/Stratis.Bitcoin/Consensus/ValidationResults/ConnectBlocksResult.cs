@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Consensus.ValidationResults
 
         private ConnectBlocksResult() { }
 
-        public static ConnectBlocksResult Fail(bool consensusTipChanged = true)
+        public static ConnectBlocksResult Failed(bool consensusTipChanged = true)
         {
             var result = new ConnectBlocksResult
             {
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Consensus.ValidationResults
             return result;
         }
 
-        public static ConnectBlocksResult FailAndBanPeers(ConsensusError error, List<int> peersToBan, int banDurationSeconds)
+        public static ConnectBlocksResult FailedAndBanPeers(ConsensusError error, List<int> peersToBan, int banDurationSeconds)
         {
             var result = new ConnectBlocksResult
             {

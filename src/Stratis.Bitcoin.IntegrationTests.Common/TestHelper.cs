@@ -45,11 +45,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (node1.FullNode.MempoolManager().InfoAll().Count != node2.FullNode.MempoolManager().InfoAll().Count)
                 return false;
 
-            if ((node1.FullNode.WalletManager().Wallets.Count != 0) && (node2.FullNode.WalletManager().Wallets.Count != 0))
-            {
+            if ((node1.FullNode.WalletManager().ContainsWallets) && (node2.FullNode.WalletManager().ContainsWallets))
                 if (node1.FullNode.WalletManager().WalletTipHash != node2.FullNode.WalletManager().WalletTipHash)
                     return false;
-            }
 
             if (node1.CreateRPCClient().GetBestBlockHash() != node2.CreateRPCClient().GetBestBlockHash())
                 return false;
@@ -65,7 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.GetBlockStoreTip().HashBlock)
                 return false;
 
-            if ((node.FullNode.WalletManager().Wallets.Count != 0) &&
+            if ((node.FullNode.WalletManager().ContainsWallets) &&
                 (node.FullNode.Chain.Tip.HashBlock != node.FullNode.WalletManager().WalletTipHash))
                 return false;
 
