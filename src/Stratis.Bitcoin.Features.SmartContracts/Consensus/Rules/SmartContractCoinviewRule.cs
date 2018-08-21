@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
@@ -24,8 +25,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         protected List<Transaction> blockTxsProcessed;
         protected Transaction generatedTransaction;
+        protected IList<Receipt> receipts;
         protected uint refundCounter;
-        protected ISmartContractCoinviewRule ContractCoinviewRule { get; set; }
+        protected ISmartContractCoinviewRule ContractCoinviewRule { get; private set; }
 
         /// <inheritdoc />
         public override void Initialize()
@@ -57,6 +59,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             // Start state from previous block's root
             this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
             IContractStateRepository trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
+
+            this.receipts = new List<Receipt>();
 
             this.refundCounter = 1;
             long sigOpsCost = 0;
@@ -153,6 +157,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             if (new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root) != ((SmartContractBlockHeader)block.Header).HashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
+
+            ValidateAndStoreReceipts(((SmartContractBlockHeader)block.Header).ReceiptRoot);
 
             this.ContractCoinviewRule.OriginalStateRoot.Commit();
 
@@ -257,12 +263,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             ISmartContractExecutionResult result = executor.Execute(txContext);
 
+            var receipt = new Receipt(
+                new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root),
+                result.GasConsumed,
+                new Log[0] 
+                );
+            this.receipts.Add(receipt);
+
             ValidateRefunds(result.Refunds, context.ValidationContext.Block.Transactions[0]);
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;
-
-            SaveReceipt(txContext, result);
         }
 
         /// <summary>
@@ -285,6 +296,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             Money mempoolFee = transaction.GetFee(((UtxoRuleContext)context).UnspentOutputSet);
 
             return new SmartContractTransactionContext(blockHeight, getCoinbaseResult.Sender, mempoolFee, getSenderResult.Sender, transaction);
+        }
+
+        /// <summary>
+        /// Throws a consensus exception if the receipt roots don't match.
+        /// </summary>
+        private void ValidateAndStoreReceipts(uint256 receiptRoot)
+        {
+            List<uint256> leaves = this.receipts.Select(x => x.GetHash()).ToList();
+            bool mutated = false; // TODO: Do we need this?
+            uint256 expectedReceiptRoot = BlockMerkleRootRule.ComputeMerkleRoot(leaves, out mutated);
+
+            if (receiptRoot != expectedReceiptRoot)
+                SmartContractConsensusErrors.UnequalReceiptRoots.Throw();
+
+            // TODO: Could also check for equality of logsBloom?
+
+            this.ContractCoinviewRule.ReceiptRepository.Store(this.receipts);
+            this.receipts.Clear();
         }
 
         /// <summary>
@@ -315,25 +344,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         protected override bool IsProtocolTransaction(Transaction transaction)
         {
             return transaction.IsCoinBase || transaction.IsCoinStake;
-        }
-
-        /// <summary>
-        /// Saves receipt in a database following execution.
-        /// TODO: When we have a receipt root, ensure that this is deterministic, and validated. i.e. block receipt roots match!
-        /// TODO: Also put it inside the block assembly then.
-        /// </summary>
-        private void SaveReceipt(ISmartContractTransactionContext txContext, ISmartContractExecutionResult result)
-        {
-            // For now we don't want it to interrupt execution so put it in a silly large try catch.
-            try
-            {
-                this.Logger.LogTrace("Save Receipt : {0}:{1}", nameof(txContext.TransactionHash), txContext.TransactionHash);
-                this.ContractCoinviewRule.ReceiptStorage.SaveReceipt(txContext, result);
-            }
-            catch (Exception e)
-            {
-                this.Logger.LogError("Exception occurred saving contract receipt: {0}", e.Message);
-            }
         }
     }
 }

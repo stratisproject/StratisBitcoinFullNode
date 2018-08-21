@@ -17,7 +17,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 // == Header ==
                 new HeaderTimeChecksRule(),
                 new CheckDifficultyPowRule(),
-                
+                new BitcoinHeaderVersionRule(),
+
                 // == Integrity ==
                 new BlockMerkleRootRule(),
                 

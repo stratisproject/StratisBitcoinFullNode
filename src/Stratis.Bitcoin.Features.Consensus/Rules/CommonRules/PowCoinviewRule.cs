@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     public sealed class PowCoinviewRule : CoinViewRule
     {
         /// <summary>Consensus parameters.</summary>
-        private NBitcoin.Consensus consensus;
+        private IConsensus consensus;
 
         /// <inheritdoc />
         public override void Initialize()

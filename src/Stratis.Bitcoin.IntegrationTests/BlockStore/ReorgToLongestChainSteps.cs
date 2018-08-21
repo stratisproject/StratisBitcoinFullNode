@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
@@ -36,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         protected override void BeforeTest()
         {
             this.sharedSteps = new SharedSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
+            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.RegTest);
         }
 
         protected override void AfterTest()
@@ -113,7 +114,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void charlie_mines_this_block()
         {
-            this.sharedSteps.MineBlocks(1, this.nodes[Charlie], AccountZero, WalletZero, WalletPassword, this.shortChainTransactionFee.Satoshi);
+            this.sharedSteps.MineBlocks(1, this.nodes[Charlie], AccountZero, WalletZero, WalletPassword);
             this.sharedSteps.WaitForNodeToSync(this.nodes[Bob], this.nodes[Charlie], this.nodes[Dave]);
         }
 

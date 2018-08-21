@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Connection
             this.selfEndpointTracker = selfEndpointTracker;
             this.versionProvider = versionProvider;
 
-            this.Parameters.UserAgent = $"{this.NodeSettings.Agent}:{versionProvider.GetVersion()}";
+            this.Parameters.UserAgent = $"{this.ConnectionSettings.Agent}:{versionProvider.GetVersion()}";
 
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
 
@@ -140,6 +140,25 @@ namespace Stratis.Bitcoin.Connection
             }
 
             this.StartNodeServer();
+
+            // If external IP address supplied this overrides all.
+            if (this.ConnectionSettings.ExternalEndpoint != null)
+            {
+                this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(this.ConnectionSettings.ExternalEndpoint, true);
+            }
+            else
+            {
+                // If external IP address not supplied take first routable bind address and set score to 10.
+                IPEndPoint nodeServerEndpoint = this.ConnectionSettings.Listen?.FirstOrDefault(x => x.Endpoint.Address.IsRoutable(false))?.Endpoint;
+                if (nodeServerEndpoint != null)
+                {
+                    this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(nodeServerEndpoint, false, 10);
+                }
+                else
+                {
+                    this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.ConnectionSettings.Port), false);
+                }
+            }
 
             this.logger.LogTrace("(-)");
         }

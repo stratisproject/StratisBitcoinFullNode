@@ -9,17 +9,13 @@
         public Address Sender { get; }
 
         /// <inheritdoc/>
-        public Gas GasLimit { get; }
-
-        /// <inheritdoc/>
         public ulong Value { get; }
 
-        public Message(Address contractAddress, Address sender, ulong value, Gas gasLimit)
+        public Message(Address contractAddress, Address sender, ulong value)
         {
             this.ContractAddress = contractAddress;
             this.Sender = sender;
             this.Value = value;
-            this.GasLimit = gasLimit;
         }
     }
 }

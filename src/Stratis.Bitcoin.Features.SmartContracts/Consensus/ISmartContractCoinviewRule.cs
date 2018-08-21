@@ -8,6 +8,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
     {
         ISmartContractExecutorFactory ExecutorFactory { get; }
         ContractStateRepositoryRoot OriginalStateRoot { get; }
-        ISmartContractReceiptStorage ReceiptStorage { get; }
+        IReceiptRepository ReceiptRepository { get; }
     }
 }

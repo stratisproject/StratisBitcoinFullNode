@@ -2,7 +2,6 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
@@ -11,13 +10,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public class SmartContractResultTransferProcessor : ISmartContractResultTransferProcessor
     {
-        private readonly IDateTimeProvider dateTimeProvider;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
 
-        public SmartContractResultTransferProcessor(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, Network network)
+        public SmartContractResultTransferProcessor(ILoggerFactory loggerFactory, Network network)
         {
-            this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.network = network;
         }
@@ -58,7 +55,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             // All other cases we need a condensing transaction
-            var transactionCondenser = new TransactionCondenser(contractAddress, this.dateTimeProvider, this.loggerFactory, internalTransfers, stateSnapshot, this.network, transactionContext);
+            var transactionCondenser = new TransactionCondenser(contractAddress, this.loggerFactory, internalTransfers, stateSnapshot, this.network, transactionContext);
             return transactionCondenser.CreateCondensingTransaction();
         }
 
