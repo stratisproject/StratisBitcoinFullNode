@@ -23,11 +23,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        protected override void OnNextCore(ChainedHeaderBlock block)
+        protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), block);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
 
-            this.AddBackToMempoolAsync(block.Block).ConfigureAwait(false).GetAwaiter().GetResult();
+            this.AddBackToMempoolAsync(chainedHeaderBlock.Block).ConfigureAwait(false).GetAwaiter().GetResult();
 
             this.logger.LogTrace("(-)");
         }
