@@ -97,8 +97,6 @@ namespace Stratis.Bitcoin.Consensus
             IFinalizedBlockInfo finalizedBlockInfo,
             Signals.Signals signals,
             IPeerBanning peerBanning,
-            NodeSettings nodeSettings,
-            IDateTimeProvider dateTimeProvider,
             IInitialBlockDownloadState ibdState,
             ConcurrentChain chain,
             IBlockPuller blockPuller,
@@ -116,7 +114,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, signals);
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings);
 
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
@@ -164,7 +162,7 @@ namespace Stratis.Bitcoin.Consensus
                 consensusTipHash = transitionState.BlockHash;
             }
 
-            this.chainedHeaderTree.Initialize(pendingTip, this.blockStore != null);
+            this.chainedHeaderTree.Initialize(pendingTip);
 
             this.SetConsensusTip(pendingTip);
 
@@ -188,6 +186,8 @@ namespace Stratis.Bitcoin.Consensus
                 int peerId = peer.Connection.Id;
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
+
+                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsConsensusConsideredToBeSynced();
 
                 this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
 
@@ -804,7 +804,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.chainedHeaderTree.FullValidationSucceeded(blockToConnect.ChainedHeader);
 
-                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsAtBestChainTip();
+                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsConsensusConsideredToBeSynced();
             }
 
             var result = new ConnectBlocksResult(true);
