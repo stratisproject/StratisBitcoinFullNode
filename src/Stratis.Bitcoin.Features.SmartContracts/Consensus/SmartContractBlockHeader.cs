@@ -20,14 +20,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
         /// <summary>
         /// Bitwise-OR of all the blooms generated from all of the smart contract transactions in the block.
         /// </summary>
-        private BloomData logsBloom;
-        public BloomData LogsBloom { get { return this.logsBloom; } set { this.logsBloom = value; } }
+        private Bloom logsBloom;
+        public Bloom LogsBloom { get { return this.logsBloom; } set { this.logsBloom = value; } }
 
         public SmartContractBlockHeader() : base()
         {
             this.hashStateRoot = 0;
             this.receiptRoot = 0;
-            this.logsBloom = new BloomData();
+            this.logsBloom = new Bloom();
         }
 
         /// <summary>
