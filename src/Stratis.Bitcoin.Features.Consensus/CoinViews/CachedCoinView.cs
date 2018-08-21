@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.blockHash = lastRewindData.PreviousBlockHash;
 
                     this.cachedRewindDataList.RemoveAt(this.cachedRewindDataList.Count - 1);
-                    this.logger.LogTrace("(-)[REMOVED_FROM_BATCH]:'{0}'", lastRewindData.PreviousBlockHash);
+                    this.logger.LogTrace("(-)[REMOVED_FROM_BATCH]:'{0}'", this.blockHash);
                     return this.blockHash;
                 }
 
