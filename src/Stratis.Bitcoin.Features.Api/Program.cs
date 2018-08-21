@@ -13,9 +13,10 @@ namespace Stratis.Bitcoin.Features.Api
     public class Program
     {
         public static IWebHost Initialize(IEnumerable<ServiceDescriptor> services, FullNode fullNode,
-            ApiSettings apiSettings, ICertificateStore store)
+            ApiSettings apiSettings, ICertificateStore store, IWebHostBuilder webHostBuilder)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
+            Guard.NotNull(webHostBuilder, nameof(webHostBuilder));
 
             Uri apiUri = apiSettings.ApiUri;
 
@@ -23,13 +24,12 @@ namespace Stratis.Bitcoin.Features.Api
                 ? GetHttpsCertificate(apiSettings.HttpsCertificateFilePath, store) 
                 : null;
 
-            IWebHostBuilder webHostBuilder = new WebHostBuilder();
-
             webHostBuilder
                 .UseKestrel(options =>
                     {
                         if (!apiSettings.UseHttps)
                             return;
+
                         Action<ListenOptions> configureListener = listenOptions => { listenOptions.UseHttps(certificate); };
                         var ipAddresses = Dns.GetHostAddresses(apiSettings.ApiUri.DnsSafeHost);
                         foreach (var ipAddress in ipAddresses)
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Api
                 })
                 .UseStartup<Startup>();
 
-            var host = webHostBuilder.Build();
+            IWebHost host = webHostBuilder.Build();
                 
             host.Start();
            
