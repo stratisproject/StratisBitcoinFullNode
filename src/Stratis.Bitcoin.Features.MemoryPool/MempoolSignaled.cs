@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
         {
-            ChainedHeader blockHeader = this.chain.GetBlock(chainedHeaderBlock.Block.GetHash());
+            ChainedHeader blockHeader = chainedHeaderBlock.ChainedHeader;
 
             Task task = this.RemoveForBlock(chainedHeaderBlock.Block, blockHeader?.Height ?? -1);
 
