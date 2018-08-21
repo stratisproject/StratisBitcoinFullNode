@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -51,6 +52,28 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         }
     }
 
+    public class RuleRegistrationHelper
+    {
+        public T RegisterRule<T>(ConsensusRuleEngine ruleEngine) where T : ConsensusRuleBase, new()
+        {
+            var rule = new T();
+
+            if (rule is IHeaderValidationConsensusRule validationConsensusRule)
+                ruleEngine.Network.Consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>() { validationConsensusRule };
+            else if (rule is IIntegrityValidationConsensusRule consensusRule)
+                ruleEngine.Network.Consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>() { consensusRule };
+            else if (rule is IPartialValidationConsensusRule partialValidationConsensusRule)
+                ruleEngine.Network.Consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>() { partialValidationConsensusRule };
+            else if (rule is IFullValidationConsensusRule fullValidationConsensusRule)
+                ruleEngine.Network.Consensus.FullValidationRules = new List<IFullValidationConsensusRule>() { fullValidationConsensusRule };
+            else
+                throw new Exception("Rule type wasn't recognized.");
+
+            ruleEngine.Register();
+            return rule;
+        }
+    }
+
     /// <summary>
     /// Test consensus rules for unit tests.
     /// </summary>
@@ -58,18 +81,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     {
         public RuleContext RuleContext { get; set; }
 
+        private RuleRegistrationHelper ruleRegistrationHelper;
+
         public TestConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, IChainState chainState)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, chainState)
         {
+            this.ruleRegistrationHelper = new RuleRegistrationHelper();
         }
 
         public T RegisterRule<T>() where T : ConsensusRuleBase, new()
         {
-            var rule = new T();
-            //TODO ACTIVATION
-            //this.Network.Consensus.Rules = new List<IBaseConsensusRule>() { rule };
-            this.Register();
-            return rule;
+            return this.ruleRegistrationHelper.RegisterRule<T>(this);
         }
 
         public override RuleContext CreateRuleContext(ValidationContext validationContext)
@@ -93,18 +115,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     /// </summary>
     public class TestPosConsensusRules : PosConsensusRuleEngine
     {
+        private RuleRegistrationHelper ruleRegistrationHelper;
+
         public TestPosConsensusRules(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView uxtoSet, IStakeChain stakeChain, IStakeValidator stakeValidator, IChainState chainState)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, uxtoSet, stakeChain, stakeValidator, chainState)
         {
+            this.ruleRegistrationHelper = new RuleRegistrationHelper();
         }
 
         public T RegisterRule<T>() where T : ConsensusRuleBase, new()
         {
-            var rule = new T();
-            //TODO ACTIVATION
-            //this.Network.Consensus.Rules = new List<IBaseConsensusRule>() { rule };
-            this.Register();
-            return rule;
+            return this.ruleRegistrationHelper.RegisterRule<T>(this);
         }
     }
 
