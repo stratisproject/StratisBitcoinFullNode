@@ -30,6 +30,7 @@ using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
@@ -91,6 +92,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<ISmartContractVirtualMachine, ReflectionVirtualMachine>();
                         services.AddSingleton<IAddressGenerator, AddressGenerator>();
                         services.AddSingleton<ILoader, ContractAssemblyLoader>();
+                        services.AddSingleton<IContractModuleDefinitionReader, ContractModuleDefinitionReader>();
 
                         services.AddSingleton<SmartContractTransactionPolicy>();
 
@@ -270,6 +272,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
                         services.AddSingleton<ISmartContractExecutorFactory, ReflectionSmartContractExecutorFactory>();
                         services.AddSingleton<IMethodParameterSerializer, MethodParameterSerializer>();
+                        services.AddSingleton<IContractPrimitiveSerializer, ContractPrimitiveSerializer>();
 
                         // Controllers
                         services.AddSingleton<SmartContractsController>();
