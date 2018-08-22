@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Moq;
 using NBitcoin;
 using Stratis.SmartContracts;
@@ -95,7 +94,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.type = typeof(TestContract);
             this.address = uint160.One;
             this.contract = Contract.CreateUninitialized(this.type, this.state, this.address);
-            this.instance = (TestContract) this.GetPrivateFieldValue(this.contract, "instance");
+            this.instance = (TestContract) this.contract.GetPrivateFieldValue("instance");
         }
 
         [Fact]
@@ -204,14 +203,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             this.contract.Invoke("Test1", null);
 
-            var gasMeter = this.GetInstancePrivateFieldValue("gasMeter");
-            var block = this.GetInstancePrivateFieldValue("Block");
-            var getBalance = this.GetInstancePrivateFieldValue("getBalance");
-            var internalTransactionExecutor = this.GetInstancePrivateFieldValue("internalTransactionExecutor");
-            var internalHashHelper = this.GetInstancePrivateFieldValue("internalHashHelper");
-            var message = this.GetInstancePrivateFieldValue("Message");
-            var persistentState = this.GetInstancePrivateFieldValue("PersistentState");
-            var smartContractState = this.GetInstancePrivateFieldValue("smartContractState");
+            var gasMeter = this.instance.GetInstancePrivateFieldValue("gasMeter");
+            var block = this.instance.GetInstancePrivateFieldValue("Block");
+            var getBalance = this.instance.GetInstancePrivateFieldValue("getBalance");
+            var internalTransactionExecutor = this.instance.GetInstancePrivateFieldValue("internalTransactionExecutor");
+            var internalHashHelper = this.instance.GetInstancePrivateFieldValue("internalHashHelper");
+            var message = this.instance.GetInstancePrivateFieldValue("Message");
+            var persistentState = this.instance.GetInstancePrivateFieldValue("PersistentState");
+            var smartContractState = this.instance.GetInstancePrivateFieldValue("smartContractState");
 
             Assert.NotNull(gasMeter);
             Assert.Equal(this.state.GasMeter, gasMeter);
@@ -250,18 +249,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var constructorExists = Contract.ConstructorExists(typeof(TestContract), parameters);
 
             Assert.False(constructorExists);
-        }
-
-        private object GetInstancePrivateFieldValue(string fieldName)
-        {
-            var field = this.instance.GetType().BaseType.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
-            return field.GetValue(this.instance);
-        }
-
-        private object GetPrivateFieldValue(object obj, string fieldName)
-        {
-            var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
-            return field.GetValue(obj);
         }
     }
 }
