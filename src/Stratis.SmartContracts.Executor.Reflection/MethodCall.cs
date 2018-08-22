@@ -37,7 +37,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// Determines whether a method invocation is a fallback method invocation.
+        /// Returns true if the method call is a fallback method call.
         /// </summary>
         public bool IsFallbackCall
         {
