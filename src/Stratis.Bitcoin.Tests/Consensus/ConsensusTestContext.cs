@@ -65,8 +65,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.Checkpoints.Object,
                 this.ChainState.Object,
                 this.FinalizedBlockMock.Object,
-                this.ConsensusSettings,
-                this.Signals.Object);
+                this.ConsensusSettings);
 
             this.ConsensusManager = CreateConsensusManager();
         }
@@ -100,8 +99,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.FinalizedBlockMock.Object,
                 new Bitcoin.Signals.Signals(),
                 this.PeerBanning.Object,
-                new NodeSettings(this.Network),
-                DateTimeProvider.Default,
                 this.ibdState.Object,
                 new ConcurrentChain(this.Network),
                 new Mock<IBlockPuller>().Object,

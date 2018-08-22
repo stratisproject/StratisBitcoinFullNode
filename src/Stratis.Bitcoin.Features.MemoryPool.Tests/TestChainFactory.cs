@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             var consensus = new ConsensusManager(network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),
                 new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory),new Checkpoints(), consensusSettings, consensusRules,
-                new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, nodeSettings, dateTimeProvider, new Mock<IInitialBlockDownloadState>().Object, chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
+                new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
 
             var blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
             var mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
