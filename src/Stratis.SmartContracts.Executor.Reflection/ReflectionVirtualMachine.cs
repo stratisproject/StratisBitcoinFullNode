@@ -164,6 +164,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractDoesNotExistException(callData.MethodName));
             }
 
+            // TODO consolidate this with CallData.
             MethodCall methodCall = new MethodCall(callData.MethodName, callData.MethodParameters);
 
             ContractByteCode code;
