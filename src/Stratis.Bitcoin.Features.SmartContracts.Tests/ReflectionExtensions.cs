@@ -4,16 +4,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public static class ReflectionExtensions
     {
-        public static object GetInstancePrivateFieldValue(this object instance, string fieldName)
+        /// <summary>
+        /// Using reflection, retrieves the value of private field with this name on the supplied object's base type. If no field is found, returns null.
+        /// </summary>
+        public static object GetBaseTypePrivateFieldValue(this object obj, string fieldName)
         {
-            FieldInfo field = instance.GetType().BaseType.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
-            return field.GetValue(instance);
+            FieldInfo field = obj.GetType().BaseType?.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            return field?.GetValue(obj);
         }
 
+        /// <summary>
+        /// Using reflection, retrieves the value of private field with this name on the supplied object. If no field is found, returns null.
+        /// </summary>
         public static object GetPrivateFieldValue(this object obj, string fieldName)
         {
             FieldInfo field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
-            return field.GetValue(obj);
+            return field?.GetValue(obj);
         }
     }
 }

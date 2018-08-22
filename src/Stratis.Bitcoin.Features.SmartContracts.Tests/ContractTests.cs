@@ -237,14 +237,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.contract.Invoke(methodCall);
 
-            var gasMeter = this.instance.GetInstancePrivateFieldValue("gasMeter");
-            var block = this.instance.GetInstancePrivateFieldValue("Block");
-            var getBalance = this.instance.GetInstancePrivateFieldValue("getBalance");
-            var internalTransactionExecutor = this.instance.GetInstancePrivateFieldValue("internalTransactionExecutor");
-            var internalHashHelper = this.instance.GetInstancePrivateFieldValue("internalHashHelper");
-            var message = this.instance.GetInstancePrivateFieldValue("Message");
-            var persistentState = this.instance.GetInstancePrivateFieldValue("PersistentState");
-            var smartContractState = this.instance.GetInstancePrivateFieldValue("smartContractState");
+            var gasMeter = this.instance.GetBaseTypePrivateFieldValue("gasMeter");
+            var block = this.instance.GetBaseTypePrivateFieldValue("Block");
+            var getBalance = this.instance.GetBaseTypePrivateFieldValue("getBalance");
+            var internalTransactionExecutor = this.instance.GetBaseTypePrivateFieldValue("internalTransactionExecutor");
+            var internalHashHelper = this.instance.GetBaseTypePrivateFieldValue("internalHashHelper");
+            var message = this.instance.GetBaseTypePrivateFieldValue("Message");
+            var persistentState = this.instance.GetBaseTypePrivateFieldValue("PersistentState");
+            var smartContractState = this.instance.GetBaseTypePrivateFieldValue("smartContractState");
 
             Assert.NotNull(gasMeter);
             Assert.Equal(this.state.GasMeter, gasMeter);
@@ -369,14 +369,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             fallbackContract.Invoke(methodCall);
 
-            var gasMeter = fallbackInstance.GetInstancePrivateFieldValue("gasMeter");
-            var block = fallbackInstance.GetInstancePrivateFieldValue("Block");
-            var getBalance = fallbackInstance.GetInstancePrivateFieldValue("getBalance");
-            var internalTransactionExecutor = fallbackInstance.GetInstancePrivateFieldValue("internalTransactionExecutor");
-            var internalHashHelper = fallbackInstance.GetInstancePrivateFieldValue("internalHashHelper");
-            var message = fallbackInstance.GetInstancePrivateFieldValue("Message");
-            var persistentState = fallbackInstance.GetInstancePrivateFieldValue("PersistentState");
-            var smartContractState = fallbackInstance.GetInstancePrivateFieldValue("smartContractState");
+            var gasMeter = fallbackInstance.GetBaseTypePrivateFieldValue("gasMeter");
+            var block = fallbackInstance.GetBaseTypePrivateFieldValue("Block");
+            var getBalance = fallbackInstance.GetBaseTypePrivateFieldValue("getBalance");
+            var internalTransactionExecutor = fallbackInstance.GetBaseTypePrivateFieldValue("internalTransactionExecutor");
+            var internalHashHelper = fallbackInstance.GetBaseTypePrivateFieldValue("internalHashHelper");
+            var message = fallbackInstance.GetBaseTypePrivateFieldValue("Message");
+            var persistentState = fallbackInstance.GetBaseTypePrivateFieldValue("PersistentState");
+            var smartContractState = fallbackInstance.GetBaseTypePrivateFieldValue("smartContractState");
 
             Assert.NotNull(gasMeter);
             Assert.Equal(this.state.GasMeter, gasMeter);
