@@ -175,9 +175,9 @@ namespace Stratis.Bitcoin.P2P.Peer
                         continue;
                     }
 
-                    if (this.CanCloseClientNotWhiteListedDuringIBD(tcpClient))
+                    if (this.CloseClientNotWhiteListedDuringIBD(tcpClient))
                     {
-                        this.logger.LogTrace("Node [{0}] currently in the process of an initial block down and the node isn't white listed, closing client.", tcpClient.Client.RemoteEndPoint);
+                        this.logger.LogTrace("Node [{0}] isn't white listed during initial block download, closing client.", tcpClient.Client.RemoteEndPoint.ToString());
                         tcpClient.Close();
                         continue;
                     }
@@ -234,26 +234,26 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Determine if an inbound TCP client (Node) should be closed - during the initial block download, if not white listed.
+        /// Determine if an inbound TCP client (Node) can be closed.
         /// </summary>
         /// <remarks>Nodes catching up to the longest chain are vulnerable to malicious peers serving up a fake longer chain.</remarks>
-        /// <returns>True allows the client to be closed, otherwise false.</returns>
-        private bool CanCloseClientNotWhiteListedDuringIBD(TcpClient tcpClient)
+        /// <returns>When True the client must be closed.</returns>
+        private bool CloseClientNotWhiteListedDuringIBD(TcpClient tcpClient)
         {
-            bool canClose = false;
+            bool close = false;
 
             if (!this.initialBlockDownloadState.IsInitialBlockDownload())
-                return canClose;
+                return close;
 
             var clientRemoteEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
 
-            NodeServerEndpoint endpoint =
-                this.connectionManagerSettings.Listen.FirstOrDefault(e => e.Endpoint.Match(clientRemoteEndPoint));
+            NodeServerEndpoint endpoint = this.connectionManagerSettings.Listen.FirstOrDefault(
+                e => e.Endpoint.Match(clientRemoteEndPoint));
 
             if (endpoint != null)
-                canClose = !endpoint.Whitelisted;
+                close = !endpoint.Whitelisted;
 
-            return canClose;
+            return close;
         }
     }
 }
