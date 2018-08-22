@@ -157,7 +157,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger.LogTrace("(-)[TRANSFER_TO_CONTRACT]");
 
             // Calling a fallback:
-            string methodName = "";
+            string methodName = MethodCall.ExternalFallbackMethodName;
             object[] parameters = new object[] { };
             ulong gasBudget = DefaultGasLimit; // for Transfer always send limited gas to prevent re-entrance.
 
