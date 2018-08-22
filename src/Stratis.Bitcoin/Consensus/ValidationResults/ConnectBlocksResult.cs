@@ -8,21 +8,17 @@ namespace Stratis.Bitcoin.Consensus.ValidationResults
     /// </summary>
     internal class ConnectBlocksResult : ValidationResult
     {
-        public bool ConsensusTipChanged { get; private set; }
+        public bool ConsensusTipChanged { get; set; }
 
         /// <summary>List of peer IDs to be banned and disconnected.</summary>
         /// <remarks><c>null</c> in case <see cref="ValidationResult.Succeeded"/> is <c>false</c>.</remarks>
-        public List<int> PeersToBan { get; private set; }
+        public List<int> PeersToBan { get; set; }
 
         public ChainedHeader LastValidatedBlockHeader { get; set; }
 
-        public ConnectBlocksResult(bool succeeded, bool consensusTipChanged = true, List<int> peersToBan = null, string banReason = null, int banDurationSeconds = 0)
+        public ConnectBlocksResult(bool succeeded)
         {
-            this.ConsensusTipChanged = consensusTipChanged;
             this.Succeeded = succeeded;
-            this.PeersToBan = peersToBan;
-            this.BanReason = banReason;
-            this.BanDurationSeconds = banDurationSeconds;
         }
 
         public override string ToString()

@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.ValidationResults;
@@ -690,7 +688,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (connectBlockResult.Succeeded)
             {
-                var result = new ConnectBlocksResult(false, false);
+                var result = new ConnectBlocksResult(false) { ConsensusTipChanged = false };
                 this.logger.LogTrace("(-):'{0}'", result);
                 return result;
             }
@@ -766,7 +764,14 @@ namespace Stratis.Bitcoin.Consensus
                     badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
                 }
 
-                var failureResult = new ConnectBlocksResult(false, false, badPeers, validationContext.Error.Message, validationContext.BanDurationSeconds);
+                var failureResult = new ConnectBlocksResult(false)
+                {
+                    BanDurationSeconds = validationContext.BanDurationSeconds,
+                    BanReason = validationContext.Error.Message,
+                    ConsensusTipChanged = false,
+                    Error = validationContext.Error,
+                    PeersToBan = badPeers
+                };
 
                 this.logger.LogTrace("(-)[FAILED]:'{0}'", failureResult);
                 return failureResult;
@@ -779,7 +784,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsConsensusConsideredToBeSynced();
             }
 
-            var result = new ConnectBlocksResult(true);
+            var result = new ConnectBlocksResult(true) { ConsensusTipChanged = true };
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
