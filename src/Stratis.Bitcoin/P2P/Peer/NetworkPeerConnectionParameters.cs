@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 Version = this.Version,
                 Timestamp = timeStamp,
                 AddressReceiver = peerAddress,
-                AddressFrom = externalAddressEndPoint ?? new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), network.DefaultPort),
+                AddressFrom = externalAddressEndPoint,
                 Relay = this.IsRelay,
                 Services = this.Services
             };
