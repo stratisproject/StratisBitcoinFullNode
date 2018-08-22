@@ -45,8 +45,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             {
                 // The fallback method must always be the override with no parameters,
                 // so it's not enough just to check if the method name is correct.
-                return (this.Parameters == null || this.Parameters.Length == 0)
-                       && ExternalFallbackMethodName.Equals(this.methodName, StringComparison.OrdinalIgnoreCase);
+                return (this.Parameters == null || this.Parameters.Length == 0) 
+                       && this.methodName != null
+                       && (this.methodName.Equals(FallbackMethodName) 
+                           || ExternalFallbackMethodName.Equals(this.methodName, StringComparison.OrdinalIgnoreCase));
             }
         }
     }

@@ -22,6 +22,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void MethodCall_To_Fallback_Should_Be_Fallback()
+        {
+            var methodCall = new MethodCall("Fallback");
+
+            Assert.True(methodCall.IsFallbackCall);
+        }
+
+        [Fact]
+        public void MethodCall_To_Fallback_With_Params_Should_Be_Fallback()
+        {
+            var methodCall = new MethodCall("Fallback", new object[] { 1 });
+
+            Assert.False(methodCall.IsFallbackCall);
+        }
+
+        [Fact]
         public void MethodCall_With_Params_Should_Not_Be_Fallback()
         {
             var methodCall = new MethodCall("", new object[] { 1 });
