@@ -97,8 +97,6 @@ namespace Stratis.Bitcoin.Consensus
             IFinalizedBlockInfo finalizedBlockInfo,
             Signals.Signals signals,
             IPeerBanning peerBanning,
-            NodeSettings nodeSettings,
-            IDateTimeProvider dateTimeProvider,
             IInitialBlockDownloadState ibdState,
             ConcurrentChain chain,
             IBlockPuller blockPuller,
@@ -116,7 +114,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, signals);
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings);
 
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
@@ -148,13 +146,14 @@ namespace Stratis.Bitcoin.Consensus
             // coinview and it will abstract the methods `RewindAsync()` `GetBlockHashAsync()`
 
             uint256 consensusTipHash = await this.consensusRules.GetBlockHashAsync().ConfigureAwait(false);
-            bool blockStoreDisabled = this.blockStore == null;
+
+            ChainedHeader pendingTip;
 
             while (true)
             {
-                this.Tip = chainTip.FindAncestorOrSelf(consensusTipHash);
+                pendingTip = chainTip.FindAncestorOrSelf(consensusTipHash);
 
-                if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
+                if ((pendingTip != null) && (this.chainState.BlockStoreTip.Height >= pendingTip.Height))
                     break;
 
                 // In case block store initialized behind, rewind until or before the block store tip.
@@ -163,9 +162,9 @@ namespace Stratis.Bitcoin.Consensus
                 consensusTipHash = transitionState.BlockHash;
             }
 
-            this.chainState.ConsensusTip = this.Tip;
+            this.chainedHeaderTree.Initialize(pendingTip);
 
-            this.chainedHeaderTree.Initialize(this.Tip, this.blockStore != null);
+            this.SetConsensusTip(pendingTip);
 
             this.blockPuller.Initialize(this.BlockDownloaded);
 
@@ -187,6 +186,8 @@ namespace Stratis.Bitcoin.Consensus
                 int peerId = peer.Connection.Id;
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
+
+                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsConsensusConsideredToBeSynced();
 
                 this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
 
@@ -657,8 +658,7 @@ namespace Stratis.Bitcoin.Consensus
                     }
                 }
 
-                // TODO: change signal to take ChainedHeaderBlock
-                this.signals.SignalBlockConnected(blockToConnect.Block);
+                this.signals.SignalBlockConnected(blockToConnect);
             }
 
             this.logger.LogTrace("(-):'{0}'", connectBlockResult);
@@ -763,7 +763,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.chainedHeaderTree.FullValidationSucceeded(blockToConnect.ChainedHeader);
 
-                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsAtBestChainTip();
+                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsConsensusConsideredToBeSynced();
             }
 
             var result = new ConnectBlocksResult(true);

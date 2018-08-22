@@ -1,5 +1,6 @@
 ﻿using System;
 using NBitcoin;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -10,7 +11,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
     /// This date time provider substitutes the node's usual DTP when running certain
     /// integration tests so that we can generate coins faster.
     /// </summary>
-    public sealed class GenerateCoinsFastDateTimeProvider : SignalObserver<Block>, IDateTimeProvider
+    public sealed class GenerateCoinsFastDateTimeProvider : SignalObserver<ChainedHeaderBlock>, IDateTimeProvider
     {
         private TimeSpan adjustedTimeOffset;
         private DateTime startFrom;
@@ -80,7 +81,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// Every time a new block gets generated, this date time provider will be signaled,
         /// updating the last block time by 65 seconds.
         /// </summary>
-        protected override void OnNextCore(Block value)
+        protected override void OnNextCore(ChainedHeaderBlock value)
         {
             this.startFrom = this.startFrom.AddSeconds(65);
         }

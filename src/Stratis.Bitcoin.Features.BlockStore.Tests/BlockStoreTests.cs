@@ -345,7 +345,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.chainState.IsAtBestChainTip = false;
 
             // Make sure only longest chain is saved.
-            Assert.Equal(1, this.repositorySavesCount);
             Assert.Equal(this.chain.Tip.Height, this.repositoryTotalBlocksSaved);
 
             // Present a new longer chain that will reorg the repository.

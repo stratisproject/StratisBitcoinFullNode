@@ -117,7 +117,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected ConsensusSettings consensusSettings;
         protected Mock<ICheckpoints> checkpoints;
         protected Mock<IChainState> chainState;
-        protected Mock<IRuleRegistration> ruleRegistration;
         protected T consensusRules;
         protected RuleContext ruleContext;
 

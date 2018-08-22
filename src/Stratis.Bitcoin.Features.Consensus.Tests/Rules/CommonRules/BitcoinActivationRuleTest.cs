@@ -37,13 +37,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public void Run_BadVersionLowerThan2_HeightSameAsBip34_ThrowsBadVersionConsensusError()
         {
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
-            var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
+            BlockHeader header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
             this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
 
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34]);
 
             ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 2;
 
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
             ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 3;
 
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] - 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65]);
 
             ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 2;
 
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
             ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
