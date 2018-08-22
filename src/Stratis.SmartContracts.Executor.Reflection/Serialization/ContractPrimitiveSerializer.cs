@@ -13,9 +13,16 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// This class serializes and deserializes specific data types
     /// when persisting items inside a smart contract.
     /// </summary>
-    public class PersistentStateSerializer
+    public class ContractPrimitiveSerializer : IContractPrimitiveSerializer
     {
-        public byte[] Serialize(object o, Network network)
+        private readonly Network network;
+
+        public ContractPrimitiveSerializer(Network network)
+        {
+            this.network = network;
+        }
+
+        public byte[] Serialize(object o)
         {
             if (o is null)
                 return new byte[0];
@@ -30,7 +37,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return new byte[] { Convert.ToByte(c) };
 
             if (o is Address address)
-                return address.ToUint160(network).ToBytes();
+                return address.ToUint160(this.network).ToBytes();
 
             if (o is bool b)
                 return (BitConverter.GetBytes(b));
@@ -51,35 +58,35 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return Encoding.UTF8.GetBytes(s);
             
             if (o.GetType().IsValueType)
-                return SerializeType(o, network);
+                return SerializeType(o);
                 
             throw new PersistentStateSerializationException(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
-        private byte[] SerializeType(object o, Network network)
+        private byte[] SerializeType(object o)
         {
             List<byte[]> toEncode = new List<byte[]>(); 
 
             foreach (FieldInfo field in o.GetType().GetFields())
             {
                 object value = field.GetValue(o);
-                byte[] serialized = Serialize(value, network);
+                byte[] serialized = Serialize(value);
                 toEncode.Add(RLP.EncodeElement(serialized));
             }
 
             return RLP.EncodeList(toEncode.ToArray());
         }
 
-        public T Deserialize<T>(byte[] stream, Network network)
+        public T Deserialize<T>(byte[] stream)
         {
-            object deserialized = Deserialize(typeof(T), stream, network);
+            object deserialized = Deserialize(typeof(T), stream);
             if (deserialized == null)
                 return default(T);
 
             return (T) deserialized;
         }
 
-        private object Deserialize(Type type, byte[] stream, Network network)
+        private object Deserialize(Type type, byte[] stream)
         {
             if (stream == null || stream.Length == 0)
                 return null;
@@ -94,7 +101,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return Convert.ToChar(stream[0]);
 
             if (type == typeof(Address))
-                return new uint160(stream).ToAddress(network);
+                return new uint160(stream).ToAddress(this.network);
 
             if (type == typeof(bool))
                 return Convert.ToBoolean(stream[0]);
@@ -115,12 +122,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return BitConverter.ToUInt64(stream, 0);
 
             if (type.IsValueType)
-                return DeserializeType(type, stream, network);
+                return DeserializeType(type, stream);
                 
             throw new PersistentStateSerializationException(string.Format("{0} is not supported.", type.Name));
         }
 
-        private object DeserializeType(Type type, byte[] bytes, Network network)
+        private object DeserializeType(Type type, byte[] bytes)
         {
             RLPCollection collection = (RLPCollection) RLP.Decode(bytes)[0];
 
@@ -131,7 +138,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             for (int i = 0; i < fields.Length; i++)
             {
                 byte[] fieldBytes = collection[i].RLPData;
-                fields[i].SetValue(ret, Deserialize(fields[i].FieldType, fieldBytes, network));
+                fields[i].SetValue(ret, Deserialize(fields[i].FieldType, fieldBytes));
             }
 
             return ret;
