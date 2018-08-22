@@ -47,8 +47,6 @@ namespace Stratis.Bitcoin.Features.Miner
 
             base.OnBuild(chainTip, scriptPubKey);
 
-            this.TestBlockValidity();
-
             this.logger.LogTrace("(-)");
 
             return this.BlockTemplate;
@@ -62,24 +60,6 @@ namespace Stratis.Bitcoin.Features.Miner
             base.UpdateBaseHeaders();
 
             this.block.Header.Bits = this.block.Header.GetWorkRequired(this.Network, this.ChainTip);
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Before the block gets mined, we need to ensure that it is structurally valid, otherwise a lot of work might be
-        /// done for no reason.
-        /// </summary>
-        public void TestBlockValidity()
-        {
-            this.logger.LogTrace("()");
-
-            // TODO ACTIVATION pass header of a block that is being validated, not CT!
-            //RuleContext context = this.consensusRules.CreateRuleContext(new ValidationContext { Block = this.block, ChainTipToExtend = this.ConsensusManager.Tip });
-            //context.MinedBlock = true;
-            //
-            //// TODO: Is this correct or should we not call validation from rules but from CM
-            //this.ConsensusManager.ConsensusRules.PartialValidationAsync(new ValidationContext { Block = this.block, ChainTipToExtend = this.ConsensusManager.Tip });
 
             this.logger.LogTrace("(-)");
         }
