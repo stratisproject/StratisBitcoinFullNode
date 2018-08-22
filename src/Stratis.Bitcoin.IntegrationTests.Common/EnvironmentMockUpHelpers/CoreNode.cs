@@ -100,7 +100,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
 
-            var networkPeerFactory = new NetworkPeerFactory(this.runner.Network, DateTimeProvider.Default, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(loggerFactory));
+            var selfEndPointTracker = new SelfEndpointTracker(loggerFactory);
+
+            // Needs to be initialized beforehand.
+            selfEndPointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.ProtocolPort), false);
+
+            var networkPeerFactory = new NetworkPeerFactory(this.runner.Network, DateTimeProvider.Default, loggerFactory, new PayloadProvider().DiscoverPayloads(), selfEndPointTracker);
             return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
         }
 
