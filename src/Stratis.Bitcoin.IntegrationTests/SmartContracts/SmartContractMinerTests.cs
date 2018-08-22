@@ -813,6 +813,57 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
         }
 
+        /// <summary>
+        /// Should invoke the contract's fallback function
+        /// </summary>
+        [Fact]
+        public async Task SmartContracts_TransferFunds_Invokes_Fallback_Async()
+        {
+            TestContext context = new TestContext();
+            await context.InitializeAsync();
+
+            ulong gasPrice = 1;
+            Gas gasLimit = (Gas)1000000;
+            var gasBudget = gasPrice * gasLimit;
+
+            var fallBackContract = Path.Combine("SmartContracts", "FallbackContract.cs");
+
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, SmartContractCompiler.CompileFile(fallBackContract).Compilation, gasPrice, gasLimit);
+            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
+            uint160 fallback1 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
+            Assert.NotNull(context.stateRoot.GetCode(fallback1));
+
+            context.mempool.Clear();
+
+            SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, SmartContractCompiler.CompileFile(fallBackContract).Compilation, gasPrice, gasLimit);
+            tx = this.AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
+            pblocktemplate = await this.BuildBlockAsync(context);
+            uint160 fallback2 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
+            Assert.NotNull(context.stateRoot.GetCode(fallback2));
+
+            context.mempool.Clear();
+
+            ulong fundsToSend = 1000;
+            string[] testMethodParameters = new string[]
+            {
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, fallback2.ToAddress(context.network)),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ULong, fundsToSend),
+            };
+
+            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, fallback1, "SendFunds", gasPrice, gasLimit, testMethodParameters);
+            pblocktemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
+            byte[] fallbackInvoked = context.stateRoot.GetStorageValue(fallback2, Encoding.UTF8.GetBytes("FallbackInvoked"));
+            byte[] fundsReceived = context.stateRoot.GetStorageValue(fallback2, Encoding.UTF8.GetBytes("FallbackReceived"));
+
+            var serializer = new ContractPrimitiveSerializer(context.network);
+
+            Assert.NotNull(fallbackInvoked);
+            Assert.NotNull(fundsReceived);
+            Assert.True(serializer.Deserialize<bool>(fallbackInvoked));
+            Assert.Equal(fundsToSend, serializer.Deserialize<ulong>(fundsReceived));
+        }
+
         private async Task<BlockTemplate> AddTransactionToMemPoolAndBuildBlockAsync(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value, ulong gasBudget)
         {
             this.AddTransactionToMempool(context, smartContractCarrier, prevOutHash, value, gasBudget);
