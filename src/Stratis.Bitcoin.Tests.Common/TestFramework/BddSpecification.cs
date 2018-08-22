@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using NBitcoin;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.Tests.Common.TestFramework
