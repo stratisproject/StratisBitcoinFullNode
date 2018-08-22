@@ -265,18 +265,19 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory))
             {
                 var chain = new ConcurrentChain(this.regTest);
-                repo.LoadAsync(chain).GetAwaiter().GetResult();
+
+                chain.SetTip(repo.LoadAsync(chain.Genesis).GetAwaiter().GetResult());
                 Assert.True(chain.Tip == chain.Genesis);
                 chain = new ConcurrentChain(this.regTest);
                 ChainedHeader tip = this.AppendBlock(chain);
                 repo.SaveAsync(chain).GetAwaiter().GetResult();
                 var newChain = new ConcurrentChain(this.regTest);
-                repo.LoadAsync(newChain).GetAwaiter().GetResult();
+                newChain.SetTip(repo.LoadAsync(chain.Genesis).GetAwaiter().GetResult());
                 Assert.Equal(tip, newChain.Tip);
                 tip = this.AppendBlock(chain);
                 repo.SaveAsync(chain).GetAwaiter().GetResult();
                 newChain = new ConcurrentChain(this.regTest);
-                repo.LoadAsync(newChain).GetAwaiter().GetResult();
+                newChain.SetTip(repo.LoadAsync(chain.Genesis).GetAwaiter().GetResult());
                 Assert.Equal(tip, newChain.Tip);
             }
         }

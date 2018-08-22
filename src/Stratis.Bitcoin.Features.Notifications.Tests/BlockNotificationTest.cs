@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chain, this.consensusManager.Object, this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);
             notification.Notify(this.lifetime.ApplicationStopping);
 
-            this.signals.Verify(s => s.SignalBlockConnected(It.IsAny<Block>()), Times.Exactly(0));
+            this.signals.Verify(s => s.SignalBlockConnected(It.IsAny<ChainedHeaderBlock>()), Times.Exactly(0));
         }
 
         /// <summary>
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             notification.SyncFrom(startBlockId);
             notification.Notify(this.lifetime.ApplicationStopping);
 
-            this.signals.Verify(s => s.SignalBlockConnected(It.IsAny<Block>()), Times.Exactly(0));
+            this.signals.Verify(s => s.SignalBlockConnected(It.IsAny<ChainedHeaderBlock>()), Times.Exactly(0));
         }
 
         /// <summary>
@@ -79,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             notification.Object.Notify(this.lifetime.ApplicationStopping);
 
-            this.signals.Verify(s => s.SignalBlockConnected(It.IsAny<Block>()), Times.Exactly(2));
+            this.signals.Verify(s => s.SignalBlockConnected(It.IsAny<ChainedHeaderBlock>()), Times.Exactly(2));
         }
 
         [Fact]
@@ -92,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             var source = new CancellationTokenSource();
             CancellationToken token = source.Token;
-            this.signals.Setup(s => s.SignalBlockConnected(It.Is<Block>(b => b.GetHash() == blocks[0].GetHash())))
+            this.signals.Setup(s => s.SignalBlockConnected(It.Is<ChainedHeaderBlock>(b => b.Block.GetHash() == blocks[0].GetHash())))
                 .Callback(() =>
                 {
                     source.Cancel();

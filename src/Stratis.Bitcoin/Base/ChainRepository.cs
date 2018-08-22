@@ -13,8 +13,11 @@ namespace Stratis.Bitcoin.Base
 {
     public interface IChainRepository : IDisposable
     {
-        Task LoadAsync(ConcurrentChain chain);
+        /// <summary>Loads the chain of headers from the database.</summary>
+        /// <returns>Tip of the loaded chain.</returns>
+        Task<ChainedHeader> LoadAsync(ChainedHeader genesisHeader);
 
+        /// <summary>Persists chain of headers to the database.</summary>
         Task SaveAsync(ConcurrentChain chain);
     }
 
@@ -112,7 +115,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:{1})", nameof(height), height);
 
-            if (height <= this.finalizedBlockInfo.Height)
+            if (this.finalizedBlockInfo != null && height <= this.finalizedBlockInfo.Height)
             {
                 this.logger.LogTrace("(-)[CANT_GO_BACK]:false");
                 return Task.FromResult(false);
@@ -138,11 +141,10 @@ namespace Stratis.Bitcoin.Base
             return task;
         }
 
-        public Task LoadAsync(ConcurrentChain chain)
+        /// <inheritdoc />
+        public Task<ChainedHeader> LoadAsync(ChainedHeader genesisHeader)
         {
-            Guard.Assert(chain.Tip == chain.Genesis);
-
-            Task task = Task.Run(() =>
+            Task<ChainedHeader> task = Task.Run(() =>
             {
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
@@ -151,10 +153,10 @@ namespace Stratis.Bitcoin.Base
                     Row<int, BlockHeader> firstRow = transaction.Select<int, BlockHeader>("Chain", 0);
 
                     if (!firstRow.Exists)
-                        return;
+                        return genesisHeader;
 
                     BlockHeader previousHeader = firstRow.Value;
-                    Guard.Assert(previousHeader.GetHash() == chain.Genesis.HashBlock); // can't swap networks
+                    Guard.Assert(previousHeader.GetHash() == genesisHeader.HashBlock); // can't swap networks
 
                     foreach (Row<int, BlockHeader> row in transaction.SelectForwardSkip<int, BlockHeader>("Chain", 1))
                     {
@@ -169,16 +171,17 @@ namespace Stratis.Bitcoin.Base
                         tip = new ChainedHeader(previousHeader, previousHeader.GetHash(), tip);
 
                     if (tip == null)
-                        return;
+                        tip = genesisHeader;
 
                     this.locator = tip.GetLocator();
-                    chain.SetTip(tip);
+                    return tip;
                 }
             });
 
             return task;
         }
 
+        /// <inheritdoc />
         public Task SaveAsync(ConcurrentChain chain)
         {
             Guard.NotNull(chain, nameof(chain));

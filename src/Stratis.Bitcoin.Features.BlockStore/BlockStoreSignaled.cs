@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public class BlockStoreSignaled : SignalObserver<Block>
+    public class BlockStoreSignaled : SignalObserver<ChainedHeaderBlock>
     {
         private readonly IBlockStoreQueue blockStoreQueue;
 
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.dequeueLoopTask = this.DequeueContinuouslyAsync();
         }
 
-        protected override void OnNextCore(Block block)
+        protected override void OnNextCore(ChainedHeaderBlock blockPair)
         {
             this.logger.LogTrace("()");
             if (this.storeSettings.Prune)
@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            ChainedHeader chainedHeader = this.chain.GetBlock(block.GetHash());
+            ChainedHeader chainedHeader = blockPair.ChainedHeader;
             if (chainedHeader == null)
             {
                 this.logger.LogTrace("(-)[REORG]");
@@ -84,8 +84,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             this.logger.LogTrace("Block hash is '{0}'.", chainedHeader.HashBlock);
-
-            var blockPair = new ChainedHeaderBlock(block, chainedHeader);
 
             // Ensure the block is written to disk before relaying.
             this.blockStoreQueue.AddToPending(blockPair);
