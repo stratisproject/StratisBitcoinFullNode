@@ -1,4 +1,5 @@
 ﻿using System;
+using NBitcoin;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
