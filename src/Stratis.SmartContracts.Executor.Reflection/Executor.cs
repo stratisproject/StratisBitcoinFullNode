@@ -82,7 +82,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 Return = result.Result,
                 InternalTransaction = internalTransaction,
                 Fee = fee,
-                Refunds = refundTxOuts
+                Refunds = refundTxOuts,
+                Logs = result.Logs
             };
 
             if (revert)

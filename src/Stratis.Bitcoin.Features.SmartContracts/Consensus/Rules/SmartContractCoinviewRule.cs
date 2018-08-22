@@ -266,7 +266,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var receipt = new Receipt(
                 new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root),
                 result.GasConsumed,
-                new Log[0] 
+                result.Logs.ToArray()
                 );
             this.receipts.Add(receipt);
 

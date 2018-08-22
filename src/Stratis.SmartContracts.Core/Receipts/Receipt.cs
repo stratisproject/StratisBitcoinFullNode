@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using Nethereum.RLP;
@@ -65,11 +66,13 @@ namespace Stratis.SmartContracts.Core.Receipts
         /// </summary>
         public byte[] ToBytesRlp()
         {
+            IList<byte[]> encodedLogs = this.Logs.Select(x => RLP.EncodeElement(x.ToBytesRlp())).ToList();
+
             return RLP.EncodeList(
                 RLP.EncodeElement(this.PostState.ToBytes()),
                 RLP.EncodeElement(BitConverter.GetBytes(this.GasUsed)),
                 RLP.EncodeElement(this.Bloom.ToBytes()),
-                RLP.EncodeElement(RLP.EncodeList(this.Logs.Select(x => x.ToBytesRlp()).ToArray()))
+                RLP.EncodeElement(RLP.EncodeList(encodedLogs.ToArray()))
             );
         }
 
