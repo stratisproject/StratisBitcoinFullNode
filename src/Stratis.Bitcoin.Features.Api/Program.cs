@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Api
             IWebHost host = webHostBuilder.Build();
                 
             host.Start();
-           
+
             return host;
         }
 
