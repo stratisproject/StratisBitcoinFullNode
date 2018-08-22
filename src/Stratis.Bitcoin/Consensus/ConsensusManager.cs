@@ -567,12 +567,19 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Rewinds to fork point.</summary>
-        /// <returns>New consensus tip.</returns>
+        /// <param name="fork">The fork point. It can't be ahead of <paramref name="oldTip"/></param>
+        /// <param name="oldTip">The old tip.</param>
+        /// <exception cref="ConsensusException">Thrown in case <paramref name="fork"/> is ahead of the <paramref name="oldTip"/>.</exception>
         private async Task RewindToForkPointAsync(ChainedHeader fork, ChainedHeader oldTip)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}'", nameof(fork), fork, nameof(oldTip), oldTip);
 
-            Guard.Assert(fork.Height < oldTip.Height);
+            // This is sanity check and should never happen.
+            if (fork.Height > oldTip.Height)
+            {
+                this.logger.LogTrace("(-)[INVALID_FORK_POINT]");
+                throw new ConsensusException("Fork can't be ahead of tip!");
+            }
 
             int blocksToRewind = oldTip.Height - fork.Height;
 
@@ -780,7 +787,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ChainedHeaderBlock chainedHeaderBlock = await this.LoadBlockDataAsync(currentHeader.HashBlock).ConfigureAwait(false);
 
-                if ((chainedHeaderBlock == null) || (chainedHeaderBlock.Block == null))
+                if (chainedHeaderBlock?.Block == null)
                 {
                     this.logger.LogTrace("(-):null");
                     return null;
