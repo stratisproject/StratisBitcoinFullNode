@@ -1,6 +1,9 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Features.RPC;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
@@ -8,6 +11,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
     {
         private readonly string bitcoinDPath;
         private Process process;
+        private int processID;
 
         public BitcoinCoreRunner(string dataDir, string bitcoinDPath)
             : base(dataDir)
@@ -23,16 +27,30 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 
         public new void Kill()
         {
-            if (!this.IsDisposed)
+            TimeSpan duration = TimeSpan.FromSeconds(30);
+            TestHelper.WaitLoop(() =>
             {
-                this.process.Kill();
-                this.process.WaitForExit();
-            }
+                try
+                {
+                    if (this.IsDisposed) return true;
+                    this.process.Kill();
+                    this.process.WaitForExit();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    return false;
+                }
+            }, cancellationToken: new CancellationTokenSource(duration).Token,
+                failureReason: $"Failed to kill {this.GetType()} process number:{this.processID} within {duration} seconds");
         }
 
         public override void OnStart()
         {
-            this.process = Process.Start(new FileInfo(this.bitcoinDPath).FullName, $"-conf=bitcoin.conf -datadir={this.DataFolder} -debug=net");
+            string logMode = Debugger.IsAttached ? "-debug=net" : string.Empty;
+            this.process = Process.Start(new FileInfo(this.bitcoinDPath).FullName, 
+                $"-conf=bitcoin.conf -datadir={this.DataFolder} {logMode}");
+            this.processID = this.process?.Id ?? 0;
         }
 
         public override void BuildNode()
