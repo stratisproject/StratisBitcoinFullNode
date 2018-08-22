@@ -154,6 +154,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             if (!this.initialized)
                 SetStateFields(this.instance, this.State);
+
+            this.initialized = true;
         }
 
         /// <summary>
