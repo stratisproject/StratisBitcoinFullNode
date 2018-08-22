@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Tests.Base
             peer.SetupGet(networkPeer => networkPeer.Connection).Returns(connection);
 
             var connectionParameters = new NetworkPeerConnectionParameters();
-            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), KnownNetworks.StratisMain, new DateTimeProvider().GetTimeOffset());
+            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), new IPEndPoint(1, 1), KnownNetworks.StratisMain, new DateTimeProvider().GetTimeOffset());
             version.Services = NetworkPeerServices.Network;
 
             peer.SetupGet(x => x.PeerVersion).Returns(version);
