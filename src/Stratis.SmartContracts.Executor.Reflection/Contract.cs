@@ -34,13 +34,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <inheritdoc />
         public ISmartContractState State { get; }
 
+        private MethodInfo fallback;
+
         /// <summary>
         /// Returns the fallback method defined on the inherited contract type. If no fallback was defined, returns null.
         /// </summary>
         public MethodInfo Fallback {
             get
             {
-                return this.Type.GetMethod(MethodCall.FallbackMethodName, DefaultFallbackLookup);
+                if (this.fallback == null)
+                {
+                    this.fallback = this.Type.GetMethod(MethodCall.FallbackMethodName, DefaultFallbackLookup);
+                }
+
+                return this.fallback;
             }
         }
 
