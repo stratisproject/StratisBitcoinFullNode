@@ -47,7 +47,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 // so it's not enough just to check if the method name is correct.
                 return (this.Parameters == null || this.Parameters.Length == 0) 
                        && this.methodName != null
-                       && (this.methodName.Equals(FallbackMethodName) 
+                       && (FallbackMethodName.Equals(this.methodName, StringComparison.OrdinalIgnoreCase) 
                            || ExternalFallbackMethodName.Equals(this.methodName, StringComparison.OrdinalIgnoreCase));
             }
         }
