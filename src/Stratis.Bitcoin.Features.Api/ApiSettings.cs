@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Api
         /// The HTTPS certificate file path.
         /// </summary>
         /// <remarks>
-        /// Password protected certificates are not supported.
+        /// Password protected certificates are not supported. On MacOs, only p12 certificates can be used without password.
         /// Please refer to .Net Core documentation for usage: <seealso cref="https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.x509certificates.x509certificate2.-ctor?view=netcore-2.1#System_Security_Cryptography_X509Certificates_X509Certificate2__ctor_System_Byte___" />.
         /// </remarks>
         public string HttpsCertificateFilePath { get; set; }
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Api
             builder.AppendLine($"-apiport=<0-65535>                Port of node's API interface. Defaults to { GetDefaultPort(network) }.");
             builder.AppendLine($"-keepalive=<seconds>              Keep Alive interval (set in seconds). Default: 0 (no keep alive).");
             builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to false.");
-            builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to <null>. Password protected files are not supported.");
+            builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to <null>. Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
 
             NodeSettings.Default().Logger.LogInformation(builder.ToString());
         }
@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Api
             builder.AppendLine($"#keepalive=0");
             builder.AppendLine($"#Use HTTPS protocol on the API. Default is false.");
             builder.AppendLine($"#usehttps=false");
-            builder.AppendLine($"#Path to the file containing the certificate to use for https traffic encryption. Password protected files are not supported.");
+            builder.AppendLine($"#Path to the file containing the certificate to use for https traffic encryption. Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
             builder.AppendLine(@"#Please refer to .Net Core documentation for usage: 'https://docs.microsoft.com/en-us/dotnet/api/system.security.cryptography.x509certificates.x509certificate2.-ctor?view=netcore-2.1#System_Security_Cryptography_X509Certificates_X509Certificate2__ctor_System_Byte___'.");
             builder.AppendLine($"#certificatefilepath=");
         }
