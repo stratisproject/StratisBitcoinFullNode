@@ -269,7 +269,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Tests
         /// <returns>The wallet that was created.</returns>
         private WatchOnlyWallet CreateAndPersistAWatchOnlyWallet(DataFolder dataFolder)
         {
-            DateTime now = DateTime.Now;
+            DateTime now = DateTimeProvider.Default.GetUtcNow();
             Script script = new Key().ScriptPubKey;
             uint256 transactionHash = uint256.One;
             string transactionHex = "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff23034ba31100febc218159fe607004000963676d696e6572343208010000000000000000ffffffff02beaa8009000000001976a9144bfe90c8e6c6352c034b3f57d50a9a6e77a62a0788ac0000000000000000266a24aa21a9ed49141c29016cc30cf37fe64650ea78b93a894904380a97041570566fbe2d0d0c00000000";

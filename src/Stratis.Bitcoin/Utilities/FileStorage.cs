@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NBitcoin;
 using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Utilities
@@ -41,7 +42,7 @@ namespace Stratis.Bitcoin.Utilities
             Guard.NotNull(toSave, nameof(toSave));
 
             string filePath = Path.Combine(this.FolderPath, fileName);
-            long uniqueId = DateTime.UtcNow.Ticks;
+            long uniqueId = DateTimeProvider.Default.GetUtcNow().Ticks;
             string newFilePath = $"{filePath}.{uniqueId}.new";
             string tempFilePath = $"{filePath}.{uniqueId}.temp";
 

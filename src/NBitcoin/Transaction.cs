@@ -1145,7 +1145,7 @@ namespace NBitcoin
             }
         }
 
-        private uint nTime = Utils.DateTimeToUnixTime(DateTime.UtcNow);
+        private uint nTime = Utils.DateTimeToUnixTime(DateTimeProvider.Default.GetUtcNow());
 
         public uint Time
         {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Stratis.Bitcoin.Utilities.Extensions
+namespace NBitcoin
 {
     /// <summary>
     /// Provides a set of extension methods for the <see cref="DateTime"/> class.

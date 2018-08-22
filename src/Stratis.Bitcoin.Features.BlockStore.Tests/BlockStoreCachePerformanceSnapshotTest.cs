@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var snapshot = new BlockStoreCachePerformanceSnapshot(1301, 2352, 1244, 6452)
             {
                 Start = new DateTime(2017, 1, 1),
-                Taken = DateTime.UtcNow
+                Taken = DateTimeProvider.Default.GetUtcNow()
             };
 
             Assert.Equal(1301, snapshot.TotalCacheHitCount);

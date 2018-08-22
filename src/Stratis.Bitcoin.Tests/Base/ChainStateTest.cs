@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Tests.Base
             };
 
             foreach (uint256 hash in hashesBannedTemporarily1)
-                chainState.MarkBlockInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(2000, 5000)));
+                chainState.MarkBlockInvalid(hash, DateTimeProvider.Default.GetUtcNow().AddMilliseconds(rng.Next(2000, 5000)));
 
             // Create some hashes that will be banned now and also after 5 seconds.
             var hashesBannedTemporarily2 = new uint256[]
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.Base
             };
 
             foreach (uint256 hash in hashesBannedTemporarily2)
-                chainState.MarkBlockInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(20000, 50000)));
+                chainState.MarkBlockInvalid(hash, DateTimeProvider.Default.GetUtcNow().AddMilliseconds(rng.Next(20000, 50000)));
 
             // Check that all hashes we have generated are banned now.
             var allHashes = new List<uint256>(hashesBannedPermanently);

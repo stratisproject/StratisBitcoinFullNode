@@ -13,6 +13,7 @@ using NBitcoin.Policy;
 using NBitcoin.Stealth;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -2695,7 +2696,7 @@ namespace NBitcoin.Tests
 
         private void CreateCreditAndSpend(CKeyStore keystore, Script outscript, ref Transaction output, ref Transaction input, bool success = true)
         {
-            CreateCreditAndSpend(keystore, outscript, ref output, ref input, DateTime.Now, success);
+            CreateCreditAndSpend(keystore, outscript, ref output, ref input, DateTimeProvider.Default.GetUtcNow(), success);
         }
 
         private void CreateCreditAndSpend(CKeyStore keystore, Script outscript, ref Transaction output, ref Transaction input, DateTime posTimeStamp, bool success = true)
@@ -2867,7 +2868,7 @@ namespace NBitcoin.Tests
             Transaction input1, input2;
             input1 = this.stratisMain.CreateTransaction();
             input2 = this.stratisMain.CreateTransaction();
-            DateTime commonTimestamp = DateTime.Now;
+            DateTime commonTimestamp = DateTimeProvider.Default.GetUtcNow();
 
             // Normal pay-to-compressed-pubkey.
             CreateCreditAndSpend(keystore, scriptPubkey1, ref output1, ref input1);

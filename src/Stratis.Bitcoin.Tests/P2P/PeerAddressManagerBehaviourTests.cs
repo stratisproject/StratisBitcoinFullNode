@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Threading;
 using Moq;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.P2P;

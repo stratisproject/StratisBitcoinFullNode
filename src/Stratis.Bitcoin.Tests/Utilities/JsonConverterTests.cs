@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             CanSerializeInJsonCore(k.PubKey);
             CanSerializeInJsonCore(new WitScript(new Script(Op.GetPushOp(sig.ToDER()), Op.GetPushOp(sig.ToDER()))));
             CanSerializeInJsonCore(new LockTime(1));
-            CanSerializeInJsonCore(new LockTime(DateTime.UtcNow));
+            CanSerializeInJsonCore(new LockTime(DateTimeProvider.Default.GetUtcNow()));
         }
 
         [Fact]

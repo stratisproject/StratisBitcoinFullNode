@@ -1,4 +1,5 @@
 ﻿using System;
+using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             Assert.Equal(0, this.performanceCounter.HitCount);
             Assert.Equal(0, this.performanceCounter.MissCount);
 
-            Assert.Equal(DateTime.UtcNow.Date, this.performanceCounter.Start.Date);
+            Assert.Equal(DateTimeProvider.Default.GetUtcNow().Date, this.performanceCounter.Start.Date);
         }
 
         [Fact]

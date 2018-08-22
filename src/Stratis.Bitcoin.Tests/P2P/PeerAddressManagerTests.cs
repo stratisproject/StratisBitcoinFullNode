@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net;
 using FluentAssertions;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Tests.Common.Logging;
@@ -22,7 +23,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object));
             addressManager.AddPeer(endpoint, IPAddress.Loopback);
 
-            DateTime applicableDate = DateTime.UtcNow.Date;
+            DateTime applicableDate = DateTimeProvider.Default.GetUtcNow().Date;
 
             addressManager.PeerAttempted(endpoint, applicableDate);
             addressManager.PeerConnected(endpoint, applicableDate);
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object));
             addressManager.AddPeer(endpoint, IPAddress.Loopback);
 
-            DateTime applicableDate = DateTime.UtcNow.Date;
+            DateTime applicableDate = DateTimeProvider.Default.GetUtcNow().Date;
 
             addressManager.PeerAttempted(endpoint, applicableDate);
             addressManager.PeerConnected(endpoint, applicableDate);
@@ -81,7 +82,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object));
             addressManager.AddPeer(endpoint, IPAddress.Loopback);
 
-            DateTime applicableDate = DateTime.UtcNow.Date;
+            DateTime applicableDate = DateTimeProvider.Default.GetUtcNow().Date;
 
             addressManager.PeerAttempted(endpoint, applicableDate);
             addressManager.PeerConnected(endpoint, applicableDate);

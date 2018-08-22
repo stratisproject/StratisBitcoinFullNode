@@ -1,4 +1,5 @@
 ﻿using System;
+using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             Assert.Equal(0, this.performanceCounter.CacheRemoveCount);
             Assert.Equal(0, this.performanceCounter.CacheSetCount);
 
-            Assert.Equal(DateTime.UtcNow.Date, this.performanceCounter.Start.Date);
+            Assert.Equal(DateTimeProvider.Default.GetUtcNow().Date, this.performanceCounter.Start.Date);
         }
 
         [Fact]

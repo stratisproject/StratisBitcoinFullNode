@@ -3,7 +3,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.Utilities
+namespace NBitcoin
 {
     public class DateTimeProviderTest
     {
@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             DateTime result = DateTimeProvider.Default.GetUtcNow();
 
-            Assert.Equal(DateTime.UtcNow.ToString("yyyyMMddhhmmss"), result.ToString("yyyyMMddhhmmss"));
+            Assert.Equal(DateTimeProvider.Default.GetUtcNow().ToString("yyyyMMddhhmmss"), result.ToString("yyyyMMddhhmmss"));
         }
 
         [Fact]
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             long timeStamp = DateTimeProvider.Default.GetTime();
 
-            Assert.Equal(DateTime.UtcNow.ToUnixTimestamp(), timeStamp);
+            Assert.Equal(DateTimeProvider.Default.GetUtcNow().ToUnixTimestamp(), timeStamp);
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Tests.Common.TestFramework
         protected BddSpecification(ITestOutputHelper output)
         {
             this.Output = output;
-            this.startOfTestTime = DateTime.UtcNow;
+            this.startOfTestTime = DateTimeProvider.Default.GetUtcNow();
 
             this.BeforeTest();
         }
@@ -36,8 +36,8 @@ namespace Stratis.Bitcoin.Tests.Common.TestFramework
         {
             this.AfterTest();
 
-            DateTime endOfTestTime = DateTime.UtcNow;
-            this.Output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) [End of test - {(endOfTestTime - this.startOfTestTime).TotalSeconds} seconds.]");
+            DateTime endOfTestTime = DateTimeProvider.Default.GetUtcNow();
+            this.Output?.WriteLine($"({DateTimeProvider.Default.GetUtcNow().ToLongTimeString()}) [End of test - {(endOfTestTime - this.startOfTestTime).TotalSeconds} seconds.]");
         }
 
         protected abstract void BeforeTest();
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Tests.Common.TestFramework
 
         private void OuputStepDetails(string stepRawName, string stepType)
         {
-            this.Output?.WriteLine($"({DateTime.UtcNow.ToLongTimeString()}) {stepType} {stepRawName.Replace("_", " ")}");
+            this.Output?.WriteLine($"({DateTimeProvider.Default.GetUtcNow().ToLongTimeString()}) {stepType} {stepRawName.Replace("_", " ")}");
         }
     }
 }

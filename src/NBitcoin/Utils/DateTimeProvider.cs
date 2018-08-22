@@ -1,7 +1,6 @@
 ﻿using System;
-using Stratis.Bitcoin.Utilities.Extensions;
 
-namespace Stratis.Bitcoin.Utilities
+namespace NBitcoin
 {
     /// <summary>
     /// Providing date time functionality.
@@ -70,7 +69,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <inheritdoc />
         public virtual long GetTime()
         {
-            return DateTime.UtcNow.ToUnixTimestamp();
+            return DateTimeProvider.Default.GetUtcNow().ToUnixTimestamp();
         }
 
         /// <inheritdoc />

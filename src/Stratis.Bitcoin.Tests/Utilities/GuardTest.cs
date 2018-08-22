@@ -1,4 +1,5 @@
 ﻿using System;
+using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -18,7 +19,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void NullParameterNameThrowsArgumentNullException()
         {
-            Exception exception = Record.Exception(() => Guard.NotNull(DateTime.UtcNow, null));
+            Exception exception = Record.Exception(() => Guard.NotNull(DateTimeProvider.Default.GetUtcNow(), null));
             Assert.NotNull(exception);
             Assert.IsType<ArgumentNullException>(exception);
         }
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void EmptyParameterNameThrowsArgumentNullException()
         {
-            Exception exception = Record.Exception(() => Guard.NotNull(DateTime.UtcNow, string.Empty));
+            Exception exception = Record.Exception(() => Guard.NotNull(DateTimeProvider.Default.GetUtcNow(), string.Empty));
             Assert.NotNull(exception);
             Assert.IsType<ArgumentNullException>(exception);
         }
@@ -34,7 +35,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void WhiteSpacesParameterNameThrowsArgumentNullException()
         {
-            Exception exception = Record.Exception(() => Guard.NotNull(DateTime.UtcNow, "   "));
+            Exception exception = Record.Exception(() => Guard.NotNull(DateTimeProvider.Default.GetUtcNow(), "   "));
             Assert.NotNull(exception);
             Assert.IsType<ArgumentNullException>(exception);
         }
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void ValueDefinedObjectWithParameterNameDoesntThrow()
         {
-            Exception exception = Record.Exception(() => Guard.NotNull(DateTime.UtcNow, "someDate"));
+            Exception exception = Record.Exception(() => Guard.NotNull(DateTimeProvider.Default.GetUtcNow(), "someDate"));
             Assert.Null(exception);
         }
 
