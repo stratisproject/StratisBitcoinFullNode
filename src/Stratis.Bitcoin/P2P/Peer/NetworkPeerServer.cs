@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -6,7 +7,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
@@ -49,6 +54,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Task accepting new clients in a loop.</summary>
         private Task acceptTask;
 
+        /// <summary>Provider of IBD state.</summary>
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
+
+        /// <summary>Configuration related to incoming and outgoing connections.</summary>
+        private readonly ConnectionManagerSettings connectionManagerSettings;
+
         /// <summary>
         /// Initializes instance of a network peer server.
         /// </summary>
@@ -58,18 +69,24 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="version">Version of the network protocol that the server should run.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="networkPeerFactory">Factory for creating P2P network peers.</param>
+        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
+        /// <param name="connectionManagerSettings">Configuration related to incoming and outgoing connections.</param>
         public NetworkPeerServer(Network network,
             IPEndPoint localEndPoint,
             IPEndPoint externalEndPoint,
             ProtocolVersion version,
             ILoggerFactory loggerFactory,
-            INetworkPeerFactory networkPeerFactory)
+            INetworkPeerFactory networkPeerFactory,
+            IInitialBlockDownloadState initialBlockDownloadState,
+            ConnectionManagerSettings connectionManagerSettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndPoint}] ");
             this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(network), network, nameof(localEndPoint), localEndPoint, nameof(externalEndPoint), externalEndPoint, nameof(version), version);
 
             this.networkPeerFactory = networkPeerFactory;
             this.networkPeerDisposer = new NetworkPeerDisposer(loggerFactory);
+            this.initialBlockDownloadState = initialBlockDownloadState;
+            this.connectionManagerSettings = connectionManagerSettings;
 
             this.InboundNetworkPeerConnectionParameters = new NetworkPeerConnectionParameters();
 
@@ -158,6 +175,13 @@ namespace Stratis.Bitcoin.P2P.Peer
                         continue;
                     }
 
+                    if (this.CanCloseClientNotWhiteListedDuringIBD(tcpClient))
+                    {
+                        this.logger.LogTrace("Node [{0}] currently in the process of an initial block down and the node isn't white listed, closing client.", tcpClient.Client.RemoteEndPoint);
+                        tcpClient.Close();
+                        continue;
+                    }
+
                     this.logger.LogTrace("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
                     this.networkPeerFactory.CreateNetworkPeer(tcpClient, this.CreateNetworkPeerConnectionParameters(), this.networkPeerDisposer);
@@ -207,6 +231,29 @@ namespace Stratis.Bitcoin.P2P.Peer
             param2.Version = this.Version;
             param2.AddressFrom = myExternal;
             return param2;
+        }
+
+        /// <summary>
+        /// Determine if an inbound TCP client (Node) should be closed - during the initial block download, if not white listed.
+        /// </summary>
+        /// <remarks>Nodes catching up to the longest chain are vulnerable to malicious peers serving up a fake longer chain.</remarks>
+        /// <returns>True allows the client to be closed, otherwise false.</returns>
+        private bool CanCloseClientNotWhiteListedDuringIBD(TcpClient tcpClient)
+        {
+            bool canClose = false;
+
+            if (!this.initialBlockDownloadState.IsInitialBlockDownload())
+                return canClose;
+
+            var clientRemoteEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
+
+            NodeServerEndpoint endpoint =
+                this.connectionManagerSettings.Listen.FirstOrDefault(e => e.Endpoint.Match(clientRemoteEndPoint));
+
+            if (endpoint != null)
+                canClose = !endpoint.Whitelisted;
+
+            return canClose;
         }
     }
 }
