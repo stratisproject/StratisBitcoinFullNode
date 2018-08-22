@@ -18,8 +18,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         private const BindingFlags DefaultFallbackLookup = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public;
 
-        public const string FallbackMethodName = nameof(SmartContract.Fallback);
-
         private readonly SmartContract instance;
 
         /// <summary>
@@ -42,7 +40,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public MethodInfo Fallback {
             get
             {
-                return this.Type.GetMethod(FallbackMethodName, DefaultFallbackLookup);
+                return this.Type.GetMethod(MethodCall.FallbackMethodName, DefaultFallbackLookup);
             }
         }
 
