@@ -272,6 +272,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
                         services.AddSingleton<ISmartContractExecutorFactory, ReflectionSmartContractExecutorFactory>();
                         services.AddSingleton<IMethodParameterSerializer, MethodParameterSerializer>();
+                        services.AddSingleton<IContractPrimitiveSerializer, ContractPrimitiveSerializer>();
 
                         // Controllers
                         services.AddSingleton<SmartContractsController>();
