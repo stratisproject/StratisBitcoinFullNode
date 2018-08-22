@@ -162,8 +162,9 @@ namespace Stratis.SmartContracts
         }
 
         /// The fallback method, invoked when a transaction provides a method name of <see cref="string.Empty"/>.
+        /// The fallback method. Override this method to define behaviour when the contract receives funds and the method name in the calling transaction equals <see cref="string.Empty"/>.
         /// <para>
-        /// An override of this method will be called when receiving funds 
+        /// This occurs when a contract sends funds to another contract using <see cref="Transfer"/>.
         /// </para>
         /// </summary>
         public virtual void Fallback() {}
