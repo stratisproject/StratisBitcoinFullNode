@@ -799,7 +799,7 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     BanDurationSeconds = validationContext.BanDurationSeconds,
                     BanReason = validationContext.Error.Message,
-                    ConsensusTipChanged = true,
+                    ConsensusTipChanged = false,
                     Error = validationContext.Error,
                     PeersToBan = badPeers
                 };
