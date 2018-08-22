@@ -1,55 +1,66 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Reflection;
+using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
 {
     public class ContractLogHolder : IContractLogger
     {
+        private readonly IContractPrimitiveSerializer serializer;
         private readonly Network network;
-        private readonly List<LogHolder> logs;
+        private readonly List<RawLog> rawLogs;
 
-        public ContractLogHolder(Network network)
+        public ContractLogHolder(IContractPrimitiveSerializer serializer, Network network)
         {
-            this.logs = new List<LogHolder>();
+            this.serializer = serializer;
             this.network = network;
+            this.rawLogs = new List<RawLog>();
         }
 
         public void Log<T>(ISmartContractState smartContractState, T toLog)
         {
-            this.logs.Add(new LogHolder(smartContractState.Message.ContractAddress.ToUint160(this.network), toLog));
+            this.rawLogs.Add(new RawLog(smartContractState.Message.ContractAddress.ToUint160(this.network), toLog));
         }
 
         public IList<Log> GetLogs()
         {
-            List<Log> actualLogs = new List<Log>();
-            foreach(LogHolder log in this.logs)
+            List<Log> logs = new List<Log>();
+            foreach(RawLog rawLog in this.rawLogs)
             {
-                foreach (FieldInfo field in log.LogObject.GetType().GetFields())
+                List<byte[]> topics = new List<byte[]>();
+
+                // first topic is the log type name
+                topics.Add(Encoding.UTF8.GetBytes(rawLog.LogStruct.GetType().Name));
+
+                // rest of the topics are the indexed fields. TODO: This currently gets all fields.
+                foreach (FieldInfo field in rawLog.LogStruct.GetType().GetFields())
                 {
-                    object value = field.GetValue(log.LogObject);
-                    byte[] serialized = Serialize(value, network);
-                    toEncode.Add(RLP.EncodeElement(serialized));
+                    object value = field.GetValue(rawLog.LogStruct);
+                    byte[] serialized = this.serializer.Serialize(value);
+                    topics.Add(serialized);
                 }
+
+                logs.Add(new Log(rawLog.ContractAddress, topics, new byte[0] { })); // TODO: Serialize all to this byte array. Possible time to use Indexed?
             }
 
-            throw new NotImplementedException();
+            return logs;
         }
     }
 
-    public class LogHolder
+    public class RawLog
     {
         public uint160 ContractAddress { get; }
 
-        public object LogObject { get; }
+        public object LogStruct { get; }
 
-        public LogHolder(uint160 contractAddress, object log)
+        public RawLog(uint160 contractAddress, object log)
         {
             this.ContractAddress = contractAddress;
-            this.LogObject = log;
+            this.LogStruct = log;
         }
     }
 }

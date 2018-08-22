@@ -1,12 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using CSharpFunctionalExtensions;
-using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Tests.Common;
-using Stratis.ModuleValidation.Net;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
@@ -47,6 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     newContractAddress, 
                     new List<TransferInfo>(),
                     gasConsumed,
+                    null,
                     null);
 
             var state = new Mock<IContractStateRepository>();

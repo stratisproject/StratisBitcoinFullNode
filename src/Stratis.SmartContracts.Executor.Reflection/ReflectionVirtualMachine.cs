@@ -90,7 +90,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             uint160 address = this.addressGenerator.GenerateAddress(transactionContext.TransactionHash, transactionContext.GetNonceAndIncrement());
 
-            var contractLogger = new ContractLogHolder(this.network);
+            var contractLogger = new ContractLogHolder(this.contractPrimitiveSerializer, this.network);
 
             ISmartContractState contractState = this.SetupState(contractLogger, internalTransferList, gasMeter, repository, transactionContext, address);
 
@@ -175,7 +175,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var internalTransferList = new List<TransferInfo>();
 
-            var contractLogger = new ContractLogHolder(this.network);
+            var contractLogger = new ContractLogHolder(this.contractPrimitiveSerializer, this.network);
 
             ISmartContractState contractState = this.SetupState(contractLogger, internalTransferList, gasMeter, repository, transactionContext, callData.ContractAddress);
 

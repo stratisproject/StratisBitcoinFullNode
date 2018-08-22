@@ -10,10 +10,10 @@ namespace Stratis.SmartContracts.Core.Receipts
     public class Log
     {
         public uint160 Address { get; }
-        public IEnumerable<byte[]> Topics { get; }
+        public IList<byte[]> Topics { get; }
         public byte[] Data { get; }
 
-        public Log(uint160 address, IEnumerable<byte[]> topics, byte[] data)
+        public Log(uint160 address, IList<byte[]> topics, byte[] data)
         {
             this.Address = address;
             this.Topics = topics;
