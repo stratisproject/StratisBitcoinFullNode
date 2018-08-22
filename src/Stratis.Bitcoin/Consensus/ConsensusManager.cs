@@ -468,7 +468,7 @@ namespace Stratis.Bitcoin.Consensus
 
             foreach (ConsensusManagerBehavior consensusManagerBehavior in behaviors)
             {
-                ConnectNewHeadersResult connectNewHeadersResult = await consensusManagerBehavior.ConsensusTipChangedAsync(this.Tip).ConfigureAwait(false);
+                ConnectNewHeadersResult connectNewHeadersResult = await consensusManagerBehavior.ConsensusTipChangedAsync().ConfigureAwait(false);
 
                 int? peerId = consensusManagerBehavior.AttachedPeer?.Connection?.Id;
 
@@ -494,6 +494,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Attempt to switch to new chain, which may require rewinding blocks from the current chain.</summary>
         /// <remarks>
         /// It is possible that during connection we find out that blocks that we tried to connect are invalid and we switch back to original chain.
+        /// Should be locked by <see cref="reorgLock"/>.
         /// </remarks>
         /// <param name="newTip">Tip of the chain that will become the tip of our consensus chain if full validation will succeed.</param>
         /// <returns>Validation related information.</returns>
@@ -517,7 +518,14 @@ namespace Stratis.Bitcoin.Consensus
             bool isExtension = fork == oldTip;
 
             if (!isExtension)
+            {
                 await this.RewindToForkPointAsync(fork, oldTip).ConfigureAwait(false);
+
+                lock (this.peerLock)
+                {
+                    this.SetConsensusTipInternalLocked(fork);
+                }
+            }
 
             List<ChainedHeaderBlock> blocksToConnect = await this.TryGetBlocksToConnectAsync(newTip, fork.Height + 1).ConfigureAwait(false);
 
@@ -799,37 +807,43 @@ namespace Stratis.Bitcoin.Consensus
             return chainedHeaderBlocks;
         }
 
+        /// <summary>Sets the consensus tip.</summary>
+        /// <param name="newTip">New consensus tip.</param>
         private List<int> SetConsensusTip(ChainedHeader newTip)
         {
             lock (this.peerLock)
             {
-                return this.SetConsensusTipLocked(newTip);
+                this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
+
+                List<int> peerIdsToResync = this.chainedHeaderTree.ConsensusTipChanged(newTip);
+
+                this.SetConsensusTipInternalLocked(newTip);
+
+                bool ibd = this.ibdState.IsInitialBlockDownload();
+
+                if (ibd != this.isIbd)
+                    this.blockPuller.OnIbdStateChanged(ibd);
+
+                this.isIbd = ibd;
+
+                this.logger.LogTrace("(-):*.{0}={1}", nameof(peerIdsToResync.Count), peerIdsToResync.Count);
+                return peerIdsToResync;
             }
         }
 
-        /// <summary>Sets the consensus tip.</summary>
+        /// <summary>Updates all internal values with the new tip.</summary>
         /// <remarks>Have to be locked by <see cref="peerLock"/>.</remarks>
         /// <param name="newTip">New consensus tip.</param>
-        private List<int> SetConsensusTipLocked(ChainedHeader newTip)
+        private void SetConsensusTipInternalLocked(ChainedHeader newTip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
-
-            List<int> peerIdsToResync = this.chainedHeaderTree.ConsensusTipChanged(newTip);
 
             this.Tip = newTip;
 
             this.chainState.ConsensusTip = this.Tip;
             this.chain.SetTip(this.Tip);
 
-            bool ibd = this.ibdState.IsInitialBlockDownload();
-
-            if (ibd != this.isIbd)
-                this.blockPuller.OnIbdStateChanged(ibd);
-
-            this.isIbd = ibd;
-
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(peerIdsToResync.Count), peerIdsToResync.Count);
-            return peerIdsToResync;
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
