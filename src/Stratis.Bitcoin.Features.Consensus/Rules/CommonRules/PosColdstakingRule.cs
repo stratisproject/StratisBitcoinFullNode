@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// This rule performs further coldstaking transaction validation when cold staking balances are spent with a 
     /// hot wallet address (versus the cold wallet address) inside of a coldstaking transaction.
     /// </summary>
-    /// <remarks>
+    /// <remarks><para>
     /// This code will perform further validation for transactions that spend the new scriptPubKey containing the
     /// new <see cref="OpcodeType.OP_CHECKCOLDSTAKEVERIFY"/> opcode using a hotPubKeyHash inside of a coinstake 
     /// transaction. Those are the conditions under which the <see cref="PosTransaction.IsColdCoinStake"/> flag will 
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// specified block height). The opcode activation flag is <see cref="ScriptVerify.CheckColdStakeVerify"/> and 
     /// it is set in <see cref="DeploymentFlags.ScriptFlags"/> when the block height is greater than or equal to <see 
     /// cref="PosConsensusOptions.ColdStakingActivationHeight"/>.
-    /// 
+    /// </para><para>
     /// The following conditions are enforced for cold staking transactions. This rule implements all but the first one:
     /// <list type="number">
     /// <item>Check if the transaction spending an output, which contains this instruction, is a coinstake transaction.
@@ -34,8 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// the script fails.</item>
     /// <item>Check that the sum of values of all inputs is smaller or equal to the sum of values of all outputs. If 
     /// this does not hold, the script fails.</item>
-    /// </list>
-    /// </remarks>
+    /// </list></para></remarks>
     public class PosColdStakingRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />
