@@ -16,10 +16,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private List<TypeDefinition> developedTypes;
 
         private TypeDefinition contractType;
+        private readonly MemoryStream stream;
 
-        public ContractModuleDefinition(ModuleDefinition moduleDefinition)
+        public ContractModuleDefinition(ModuleDefinition moduleDefinition, MemoryStream stream)
         {
             this.ModuleDefinition = moduleDefinition;
+            this.stream = stream;
         }
 
         /// <inheritdoc />
@@ -84,6 +86,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public void InjectMethodGas(string typeName, string methodName)
         {
             this.ModuleDefinition = SmartContractGasInjector.AddGasCalculationToContractMethod(this.ModuleDefinition, typeName, methodName);
+        }
+
+        public void Dispose()
+        {
+            this.stream?.Dispose();
+            this.ModuleDefinition?.Dispose();
         }
     }
 }
