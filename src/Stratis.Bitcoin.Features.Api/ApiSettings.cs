@@ -35,7 +35,8 @@ namespace Stratis.Bitcoin.Features.Api
         public Uri ApiUri { get; set; }
 
         /// <summary>Port of node's API interface.</summary>
-        public int ApiPort { get; set; } 
+        public int ApiPort { get; set; }
+
         /// <summary>URI to node's API interface.</summary>
         public Timer KeepaliveTimer { get; private set; }
 
@@ -73,6 +74,7 @@ namespace Stratis.Bitcoin.Features.Api
 
             this.UseHttps = config.GetOrDefault("usehttps", false);
             this.HttpsCertificateFilePath = config.GetOrDefault("certificatefilepath", (string)null);
+
             if (this.UseHttps && string.IsNullOrWhiteSpace(this.HttpsCertificateFilePath))
                 throw new ConfigurationException("The path to a certificate needs to be provided when using https. Please use the argument 'certificatefilepath' to provide it.");
 
