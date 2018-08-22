@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Xunit;
 
@@ -33,6 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
                 DateTimeProvider.Default, executorFactory.Object, loggerFactory, network,
                 new Base.Deployments.NodeDeployments(network, chain), contractState,
                 new Mock<ILookaheadBlockPuller>().Object,
+                new Mock<IReceiptRepository>().Object,
                 new Mock<ICoinView>().Object);
 
             var feature = new ReflectionVirtualMachineFeature(loggerFactory, network);
