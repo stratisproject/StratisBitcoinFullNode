@@ -512,15 +512,13 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("New tip must be ahead of old tip.");
             }
 
-            ChainedHeader currentTip = fork;
-
             // If the new block is not on the current chain as our current consensus tip then rewind consensus tip to the common fork.
             bool isExtension = fork == oldTip;
 
             if (!isExtension)
                 await this.RewindToForkPointAsync(fork, oldTip).ConfigureAwait(false);
 
-            List<ChainedHeaderBlock> blocksToConnect = await this.TryGetBlocksToConnectAsync(newTip, currentTip.Height + 1).ConfigureAwait(false);
+            List<ChainedHeaderBlock> blocksToConnect = await this.TryGetBlocksToConnectAsync(newTip, fork.Height + 1).ConfigureAwait(false);
 
             // Sanity check. This should never happen.
             if (blocksToConnect == null)
@@ -541,7 +539,7 @@ namespace Stratis.Bitcoin.Consensus
             if (connectBlockResult.LastValidatedBlockHeader != null)
             {
                 // Block validation failed we need to rewind any blocks that were added to the chain.
-                await this.RewindPartiallyConnectedChainAsync(connectBlockResult.LastValidatedBlockHeader, currentTip).ConfigureAwait(false);
+                await this.RewindPartiallyConnectedChainAsync(connectBlockResult.LastValidatedBlockHeader, fork).ConfigureAwait(false);
             }
 
             if (isExtension)
@@ -550,7 +548,7 @@ namespace Stratis.Bitcoin.Consensus
                 return connectBlockResult;
             }
 
-            List<ChainedHeaderBlock> blocksToReconnect = await this.TryGetBlocksToConnectAsync(oldTip, currentTip.Height + 1).ConfigureAwait(false);
+            List<ChainedHeaderBlock> blocksToReconnect = await this.TryGetBlocksToConnectAsync(oldTip, fork.Height + 1).ConfigureAwait(false);
 
             // Sanity check. This should never happen.
             if (blocksToReconnect == null)
@@ -560,14 +558,14 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("Blocks to reconnect are missing!");
             }
 
-            ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(currentTip, blocksToReconnect).ConfigureAwait(false);
+            ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(fork, blocksToReconnect).ConfigureAwait(false);
 
             this.logger.LogTrace("(-):'{0}'", reconnectionResult);
             return reconnectionResult;
         }
 
         /// <summary>Rewinds to fork point.</summary>
-        /// <param name="fork">The fork point. It can't be ahead of <paramref name="oldTip"/></param>
+        /// <param name="fork">The fork point. It can't be ahead of <paramref name="oldTip"/>.</param>
         /// <param name="oldTip">The old tip.</param>
         /// <exception cref="ConsensusException">Thrown in case <paramref name="fork"/> is ahead of the <paramref name="oldTip"/>.</exception>
         private async Task RewindToForkPointAsync(ChainedHeader fork, ChainedHeader oldTip)
