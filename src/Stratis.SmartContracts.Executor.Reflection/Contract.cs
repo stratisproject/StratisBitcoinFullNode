@@ -123,9 +123,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (methodToInvoke.IsPrivate)
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.MethodIsPrivate);
 
-            // Restore the state of the instance
-            if(!this.initialized)
-                SetStateFields(this.instance, this.State);
+            EnsureInitialized();
 
             return this.InvokeInternal(methodToInvoke, invokeParams);
         }
@@ -137,7 +135,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (this.Fallback == null)
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.MethodDoesNotExist);
 
+            EnsureInitialized();
+
             return this.InvokeInternal(this.Fallback, null);
+        }
+
+        /// <summary>
+        /// Ensures the contract is initialized by setting its state fields.
+        /// </summary>
+        private void EnsureInitialized()
+        {
+            if (!this.initialized)
+                SetStateFields(this.instance, this.State);
         }
 
         /// <summary>

@@ -359,5 +359,41 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(fallbackInstance.FallbackInvoked);
             Assert.Equal(ContractInvocationErrorType.MethodDoesNotExist, result.InvocationErrorType);
         }
+
+        [Fact]
+        public void Invoke_Fallback_Method_Sets_State()
+        {
+            var methodCall = MethodCall.Fallback();
+            var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
+            var fallbackInstance = (HasFallback)fallbackContract.GetPrivateFieldValue("instance");
+
+            fallbackContract.Invoke(methodCall);
+
+            var gasMeter = fallbackInstance.GetInstancePrivateFieldValue("gasMeter");
+            var block = fallbackInstance.GetInstancePrivateFieldValue("Block");
+            var getBalance = fallbackInstance.GetInstancePrivateFieldValue("getBalance");
+            var internalTransactionExecutor = fallbackInstance.GetInstancePrivateFieldValue("internalTransactionExecutor");
+            var internalHashHelper = fallbackInstance.GetInstancePrivateFieldValue("internalHashHelper");
+            var message = fallbackInstance.GetInstancePrivateFieldValue("Message");
+            var persistentState = fallbackInstance.GetInstancePrivateFieldValue("PersistentState");
+            var smartContractState = fallbackInstance.GetInstancePrivateFieldValue("smartContractState");
+
+            Assert.NotNull(gasMeter);
+            Assert.Equal(this.state.GasMeter, gasMeter);
+            Assert.NotNull(block);
+            Assert.Equal(this.state.Block, block);
+            Assert.NotNull(getBalance);
+            Assert.Equal(this.state.GetBalance, getBalance);
+            Assert.NotNull(internalTransactionExecutor);
+            Assert.Equal(this.state.InternalTransactionExecutor, internalTransactionExecutor);
+            Assert.NotNull(internalHashHelper);
+            Assert.Equal(this.state.InternalHashHelper, internalHashHelper);
+            Assert.NotNull(message);
+            Assert.Equal(this.state.Message, message);
+            Assert.NotNull(persistentState);
+            Assert.Equal(this.state.PersistentState, persistentState);
+            Assert.NotNull(smartContractState);
+            Assert.Equal(this.state, smartContractState);
+        }
     }
 }
