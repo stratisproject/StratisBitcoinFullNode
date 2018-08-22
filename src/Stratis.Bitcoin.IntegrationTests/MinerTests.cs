@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var nodeSettings = new NodeSettings(args: new string[] { "-checkpoints" });
                 var consensusSettings = new ConsensusSettings(nodeSettings);
 
-                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings());
+                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(loggerFactory), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings());
 
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
                 var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);

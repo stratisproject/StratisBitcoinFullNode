@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var networkPeerFactory = new NetworkPeerFactory(network, 
                 dateTimeProvider, 
                 loggerFactory, new PayloadProvider().DiscoverPayloads(), 
-                new SelfEndpointTracker(), 
+                new SelfEndpointTracker(loggerFactory), 
                 new Mock<IInitialBlockDownloadState>().Object, 
                 new ConnectionManagerSettings());
 

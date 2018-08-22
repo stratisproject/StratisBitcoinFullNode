@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.P2P
                 DateTimeProvider.Default, 
                 this.extendedLoggerFactory, 
                 new PayloadProvider().DiscoverPayloads(), 
-                new SelfEndpointTracker(),
+                new SelfEndpointTracker(this.extendedLoggerFactory),
                 new Mock<IInitialBlockDownloadState>().Object,
                 new Configuration.Settings.ConnectionManagerSettings());
         }

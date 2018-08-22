@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 DateTimeProvider.Default, 
                 loggerFactory, 
                 new PayloadProvider().DiscoverPayloads(), 
-                new SelfEndpointTracker(),
+                new SelfEndpointTracker(loggerFactory),
                 ibdState.Object,
                 new Configuration.Settings.ConnectionManagerSettings());
 
