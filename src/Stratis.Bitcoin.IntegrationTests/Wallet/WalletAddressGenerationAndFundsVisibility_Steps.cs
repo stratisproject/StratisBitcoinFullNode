@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.sendingStratisBitcoinNode.FullNode.NodeService<WalletController>()
                 .SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
-            this.sharedSteps.MineBlocks(1, this.sendingStratisBitcoinNode, AccountZero, SendingWalletName, WalletPassword, 7480);
+            this.sharedSteps.MineBlocks(1, this.sendingStratisBitcoinNode, AccountZero, SendingWalletName, WalletPassword);
         }
 
         private ExtPubKey GetExtendedPublicKey(string nodeName)

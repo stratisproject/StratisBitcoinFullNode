@@ -97,8 +97,6 @@ namespace Stratis.Bitcoin.Consensus
             IFinalizedBlockInfo finalizedBlockInfo,
             Signals.Signals signals,
             IPeerBanning peerBanning,
-            NodeSettings nodeSettings,
-            IDateTimeProvider dateTimeProvider,
             IInitialBlockDownloadState ibdState,
             ConcurrentChain chain,
             IBlockPuller blockPuller,
@@ -116,7 +114,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, signals);
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings);
 
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
@@ -148,13 +146,14 @@ namespace Stratis.Bitcoin.Consensus
             // coinview and it will abstract the methods `RewindAsync()` `GetBlockHashAsync()`
 
             uint256 consensusTipHash = await this.consensusRules.GetBlockHashAsync().ConfigureAwait(false);
-            bool blockStoreDisabled = this.blockStore == null;
+
+            ChainedHeader pendingTip;
 
             while (true)
             {
-                this.Tip = chainTip.FindAncestorOrSelf(consensusTipHash);
+                pendingTip = chainTip.FindAncestorOrSelf(consensusTipHash);
 
-                if ((this.Tip != null) && (blockStoreDisabled || (this.chainState.BlockStoreTip.Height >= this.Tip.Height)))
+                if ((pendingTip != null) && (this.chainState.BlockStoreTip.Height >= pendingTip.Height))
                     break;
 
                 // In case block store initialized behind, rewind until or before the block store tip.
@@ -163,9 +162,9 @@ namespace Stratis.Bitcoin.Consensus
                 consensusTipHash = transitionState.BlockHash;
             }
 
-            this.chainState.ConsensusTip = this.Tip;
+            this.chainedHeaderTree.Initialize(pendingTip);
 
-            this.chainedHeaderTree.Initialize(this.Tip, this.blockStore != null);
+            this.SetConsensusTip(pendingTip);
 
             this.blockPuller.Initialize(this.BlockDownloaded);
 
@@ -187,6 +186,9 @@ namespace Stratis.Bitcoin.Consensus
                 int peerId = peer.Connection.Id;
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
+
+                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsConsensusConsideredToBeSynced();
+
                 this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
 
                 if (!this.peersByPeerId.ContainsKey(peerId))
@@ -217,11 +219,11 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public async Task<ChainedHeaderBlock> BlockMinedAsync(Block block)
+        public async Task<ChainedHeader> BlockMinedAsync(Block block)
         {
             this.logger.LogTrace("({0}:{1})", nameof(block), block.GetHash());
 
-            PartialValidationResult partialValidationResult;
+            ValidationContext validationContext;
 
             using (await this.reorgLock.LockAsync().ConfigureAwait(false))
             {
@@ -235,11 +237,13 @@ namespace Stratis.Bitcoin.Consensus
                         return null;
                     }
 
+                    // This might throw ConsensusErrorException but we don't wanna catch it because miner will catch it.
                     chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
                 }
 
-                partialValidationResult = await this.partialValidator.ValidateAsync(block, chainedHeader).ConfigureAwait(false);
-                if (partialValidationResult.Succeeded)
+                validationContext = await this.partialValidator.ValidateAsync(chainedHeader, block).ConfigureAwait(false);
+
+                if (validationContext.Error == null)
                 {
                     bool fullValidationRequired;
 
@@ -250,7 +254,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (fullValidationRequired)
                     {
-                        ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(partialValidationResult.ChainedHeaderBlock).ConfigureAwait(false);
+                        ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
                         if (!fullValidationResult.Succeeded)
                         {
                             lock (this.peerLock)
@@ -276,14 +280,14 @@ namespace Stratis.Bitcoin.Consensus
                         this.chainedHeaderTree.PartialOrFullValidationFailed(chainedHeader);
                     }
 
-                    this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}", partialValidationResult.Error.Message);
+                    this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}", validationContext.Error.Message);
                     this.logger.LogTrace("(-)[PARTIAL_VALIDATION_FAILED]");
-                    throw new ConsensusException(partialValidationResult.Error.Message);
+                    throw new ConsensusException(validationContext.Error.Message);
                 }
             }
 
-            this.logger.LogTrace("(-):{0}", partialValidationResult.ChainedHeaderBlock);
-            return partialValidationResult.ChainedHeaderBlock;
+            this.logger.LogTrace("(-):{0}", validationContext.ChainedHeaderToValidate);
+            return validationContext.ChainedHeaderToValidate;
         }
 
         /// <summary>
@@ -335,18 +339,18 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("Partial validation is{0} required.", partialValidationRequired ? string.Empty : " NOT");
 
             if (partialValidationRequired)
-                this.partialValidator.StartPartialValidation(chainedHeaderBlock, this.OnPartialValidationCompletedCallbackAsync);
+                this.partialValidator.StartPartialValidation(chainedHeaderBlock.ChainedHeader, chainedHeaderBlock.Block, this.OnPartialValidationCompletedCallbackAsync);
 
             this.logger.LogTrace("(-)");
         }
 
-        private async Task OnPartialValidationCompletedCallbackAsync(PartialValidationResult validationResult)
+        private async Task OnPartialValidationCompletedCallbackAsync(ValidationContext validationContext)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(validationResult), validationResult);
+            this.logger.LogTrace("({0}:'{1}')", nameof(validationContext), validationContext);
 
-            if (validationResult.Succeeded)
+            if (validationContext.Error == null)
             {
-                await this.OnPartialValidationSucceededAsync(validationResult.ChainedHeaderBlock).ConfigureAwait(false);
+                await this.OnPartialValidationSucceededAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
             }
             else
             {
@@ -354,9 +358,9 @@ namespace Stratis.Bitcoin.Consensus
 
                 lock (this.peerLock)
                 {
-                    List<int> peerIdsToBan = this.chainedHeaderTree.PartialOrFullValidationFailed(validationResult.ChainedHeaderBlock.ChainedHeader);
+                    List<int> peerIdsToBan = this.chainedHeaderTree.PartialOrFullValidationFailed(validationContext.ChainedHeaderToValidate);
 
-                    this.logger.LogDebug("Validation of block '{0}' failed, banning and disconnecting {1} peers.", validationResult.ChainedHeaderBlock, peerIdsToBan.Count);
+                    this.logger.LogDebug("Validation of block '{0}' failed, banning and disconnecting {1} peers.", validationContext.ChainedHeaderToValidate, peerIdsToBan.Count);
 
                     foreach (int peerId in peerIdsToBan)
                     {
@@ -366,7 +370,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
 
                 foreach (INetworkPeer peer in peersToBan)
-                    this.peerBanning.BanAndDisconnectPeer(peer.RemoteSocketEndpoint, validationResult.BanDurationSeconds, validationResult.BanReason);
+                    this.peerBanning.BanAndDisconnectPeer(peer.RemoteSocketEndpoint, validationContext.BanDurationSeconds, $"Invalid block received: {validationContext.Error.Message}");
             }
 
             this.logger.LogTrace("(-)");
@@ -376,10 +380,10 @@ namespace Stratis.Bitcoin.Consensus
         /// Handles a situation when partial validation of a block was successful. Informs CHT about
         /// finishing partial validation process and starting a new partial validation or full validation.
         /// </summary>
-        /// <param name="chainedHeaderBlock">Block which validation was successful.</param>
-        private async Task OnPartialValidationSucceededAsync(ChainedHeaderBlock chainedHeaderBlock)
+        /// <param name="chainedHeader">Header of a block which validation was successful.</param>
+        private async Task OnPartialValidationSucceededAsync(ChainedHeader chainedHeader)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             List<ChainedHeaderBlock> chainedHeaderBlocksToValidate;
             ConnectBlocksResult connectBlocksResult = null;
@@ -390,14 +394,14 @@ namespace Stratis.Bitcoin.Consensus
 
                 lock (this.peerLock)
                 {
-                    chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeaderBlock.ChainedHeader, out fullValidationRequired);
+                    chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out fullValidationRequired);
                 }
 
                 this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? "" : " NOT");
 
                 if (fullValidationRequired)
                 {
-                    connectBlocksResult = await this.FullyValidateLockedAsync(chainedHeaderBlock).ConfigureAwait(false);
+                    connectBlocksResult = await this.FullyValidateLockedAsync(chainedHeader).ConfigureAwait(false);
                 }
             }
 
@@ -438,7 +442,7 @@ namespace Stratis.Bitcoin.Consensus
                 // Start validating all next blocks that come after the current block,
                 // all headers in this list have the blocks present in the header.
                 foreach (ChainedHeaderBlock toValidate in chainedHeaderBlocksToValidate)
-                    this.partialValidator.StartPartialValidation(toValidate, this.OnPartialValidationCompletedCallbackAsync);
+                    this.partialValidator.StartPartialValidation(toValidate.ChainedHeader, toValidate.Block, this.OnPartialValidationCompletedCallbackAsync);
             }
 
             this.logger.LogTrace("(-)");
@@ -492,14 +496,13 @@ namespace Stratis.Bitcoin.Consensus
         /// It is possible that during connection we find out that blocks that we tried to connect are invalid and we switch back to original chain.
         /// Switching that requires rewinding may fail in case rewind goes beyond fork point and the block data is not available to advance to the fork point.
         /// </remarks>
-        /// <param name="proposedNewTip">Tip of the chain that will become the tip of our consensus chain if full validation will succeed.</param>
+        /// <param name="newTip">Tip of the chain that will become the tip of our consensus chain if full validation will succeed.</param>
         /// <returns>Validation related information.</returns>
-        private async Task<ConnectBlocksResult> FullyValidateLockedAsync(ChainedHeaderBlock proposedNewTip)
+        private async Task<ConnectBlocksResult> FullyValidateLockedAsync(ChainedHeader newTip)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(proposedNewTip), proposedNewTip);
+            this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
 
             ChainedHeader oldTip = this.Tip;
-            ChainedHeader newTip = proposedNewTip.ChainedHeader;
 
             ChainedHeader fork = oldTip.FindFork(newTip);
 
@@ -779,10 +782,8 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("Block must be partially or fully validated.");
             }
 
-            var validationContext = new ValidationContext() { Block = blockToConnect.Block, ChainTipToExtend = blockToConnect.ChainedHeader };
-
             // Call the validation engine.
-            await this.consensusRules.FullValidationAsync(validationContext).ConfigureAwait(false);
+            ValidationContext validationContext = await this.consensusRules.FullValidationAsync(blockToConnect).ConfigureAwait(false);
 
             if (validationContext.Error != null)
             {
@@ -803,7 +804,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.chainedHeaderTree.FullValidationSucceeded(blockToConnect.ChainedHeader);
 
-                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsAtBestChainTip();
+                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsConsensusConsideredToBeSynced();
             }
 
             var result = new ConnectBlocksResult(true);
@@ -979,14 +980,13 @@ namespace Stratis.Bitcoin.Consensus
                         this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
                         return;
                     }
+                    catch (IntegrityValidationFailedException integrityException)
+                    {
+                        this.peerBanning.BanAndDisconnectPeer(integrityException.PeerEndPoint, integrityException.BanDurationSeconds, $"Integrity validation failed: {integrityException.Error.Message}");
 
-                    // catch (BlockIntegrityVerificationException)
-                    // {
-                    //    // TODO: catch validation exceptions.
-                    //    // TODO ban the peer, disconnect, return
-                    //    // this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
-                    //    return;
-                    // }
+                        this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
+                        return;
+                    }
                 }
                 else
                 {

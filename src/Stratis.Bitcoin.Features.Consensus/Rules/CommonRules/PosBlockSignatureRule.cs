@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
@@ -12,14 +11,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that will validate the signature of a PoS block.
     /// </summary>
-    [IntegrityValidationRule]
-    public class PosBlockSignatureRule : StakeStoreConsensusRule
+    public class PosBlockSignatureRule : IntegrityValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadBlockSignature">The block signature is invalid.</exception>
         public override void Run(RuleContext context)
         {
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             if (!(block is PosBlock posBlock))
             {

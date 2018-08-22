@@ -5,8 +5,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public class TransactionContext : ITransactionContext
     {
-        private ulong nonce = 0;
-
         public TransactionContext(uint256 txHash, ulong blockHeight, uint160 coinbase, uint160 sender, ulong amount, ulong nonce = 0)
         {
             this.TransactionHash = txHash;
@@ -14,19 +12,34 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.Coinbase = coinbase;
             this.From = sender;
             this.Amount = amount;
-            this.nonce = nonce;
+            this.Nonce = nonce;
         }
 
+        /// <inheritdoc />
         public Money Amount { get; }
+
+        /// <inheritdoc />
         public uint256 TransactionHash { get; }
+
+        /// <inheritdoc />
         public uint160 Coinbase { get; }
+
+        /// <inheritdoc />
         public ulong BlockHeight { get; }
+
+        /// <inheritdoc />
         public uint160 From { get; }
+
+        /// <inheritdoc />
         public uint160 To { get; }
 
+        /// <inheritdoc />
+        public ulong Nonce { get; private set; }
+
+        /// <inheritdoc />
         public ulong GetNonceAndIncrement()
         {
-            return this.nonce++;
+            return this.Nonce++;
         }
     }
 
@@ -58,9 +71,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
         uint160 From { get; }
 
         /// <summary>
-        /// The destination address
+        /// The destination address.
         /// </summary>
         uint160 To { get; }
+
+        /// <summary>
+        /// The currently set nonce. 
+        /// </summary>
+        ulong Nonce { get; }
 
         /// <summary>
         /// Get the next number to use as the nonce in the contract address calculation and then 

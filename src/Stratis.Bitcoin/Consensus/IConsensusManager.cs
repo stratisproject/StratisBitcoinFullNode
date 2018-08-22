@@ -36,6 +36,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Information about consumed headers.</returns>
         /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
+        /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         ConnectNewHeadersResult HeadersPresented(INetworkPeer peer, List<BlockHeader> headers, bool triggerDownload = true);
 
         /// <summary>
@@ -60,8 +62,11 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// A new block was mined by the node and is attempted to connect to tip.
         /// </summary>
-        /// <param name="block">The mined block.</param>
-        Task<ChainedHeaderBlock> BlockMinedAsync(Block block);
+        /// <param name="block">Block that was mined.</param>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
+        /// <exception cref="ConsensusException">Thrown if partial or full validation failed or if full validation wasn't required.</exception>
+        /// <returns><see cref="ChainedHeader"/> of a block that was mined.</returns>
+        Task<ChainedHeader> BlockMinedAsync(Block block);
     }
 
     /// <summary>

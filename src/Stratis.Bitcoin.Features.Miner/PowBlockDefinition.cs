@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Mining;
@@ -76,11 +74,12 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             this.logger.LogTrace("()");
 
-            RuleContext context = this.consensusRules.CreateRuleContext(new ValidationContext { Block = this.block, ChainTipToExtend = this.ConsensusManager.Tip });
-            context.MinedBlock = true;
-
-            // TODO: Is this correct or should we not call validation from rules but from CM
-            this.ConsensusManager.ConsensusRules.PartialValidationAsync(new ValidationContext { Block = this.block, ChainTipToExtend = this.ConsensusManager.Tip });
+            // TODO ACTIVATION pass header of a block that is being validated, not CT!
+            //RuleContext context = this.consensusRules.CreateRuleContext(new ValidationContext { Block = this.block, ChainTipToExtend = this.ConsensusManager.Tip });
+            //context.MinedBlock = true;
+            //
+            //// TODO: Is this correct or should we not call validation from rules but from CM
+            //this.ConsensusManager.ConsensusRules.PartialValidationAsync(new ValidationContext { Block = this.block, ChainTipToExtend = this.ConsensusManager.Tip });
 
             this.logger.LogTrace("(-)");
         }

@@ -18,11 +18,11 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>A value indicating the peer ban time should be <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.</summary>
         public const int BanDurationDefaultBan = 0;
 
-        /// <summary>Chained header which is a tip of the chain that will be extended with a block being validated.</summary>
-        public ChainedHeader ChainTipToExtend { get; set; }
+        /// <summary>Chained header of the block being validated.</summary>
+        public ChainedHeader ChainedHeaderToValidate { get; set; }
 
         /// <summary>Downloaded or mined block to be validated.</summary>
-        public Block Block { get; set; }
+        public Block BlockToValidate { get; set; }
 
         /// <summary>
         /// The peer this block came from, <c>null</c> if the block was mined.
@@ -47,8 +47,5 @@ namespace Stratis.Bitcoin.Consensus
         /// Setting this value to be <see cref="BanDurationDefaultBan"/> will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
         /// </remarks>
         public int BanDurationSeconds { get; set; }
-
-        /// <summary>The context of the validation processes.</summary>
-        public RuleContext RuleContext { get; set; }
     }
 }

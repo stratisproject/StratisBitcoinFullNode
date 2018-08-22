@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new ConsensusOptions();
-            network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
+            new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chain = new ConcurrentChain(network);
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             var consensus = new ConsensusManager(network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),
                 new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory),new Checkpoints(), consensusSettings, consensusRules,
-                new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, nodeSettings, dateTimeProvider, new Mock<IInitialBlockDownloadState>().Object, chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
+                new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
 
             var blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
             var mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
@@ -12,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// This rule will validate that the calculated merkle tree matches the merkle root in the header.
     /// </summary>
     /// <remarks>
-    /// Transactions in a block are hashed together using SHA256 in to a merkel tree, 
+    /// Transactions in a block are hashed together using SHA256 in to a merkel tree,
     /// the root of that tree is included in the block header.
     /// </remarks>
     /// <remarks>
@@ -20,12 +19,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// of transactions in a block without affecting the merkle root of a block,
     /// while still invalidating it.
     /// Validation cannot be skipped for this rule, someone might have been able to create a mutated
-    /// block (block with a duplicate transaction) with a valid hash, but we don't want to accept these 
+    /// block (block with a duplicate transaction) with a valid hash, but we don't want to accept these
     /// kind of blocks.
     /// <seealso cref="https://bitcointalk.org/index.php?topic=102395.0"/>
     /// </remarks>
-    [IntegrityValidationRule]
-    public class BlockMerkleRootRule : ConsensusRule
+    public class BlockMerkleRootRule : IntegrityValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadMerkleRoot">The block merkle root is different from the computed merkle root.</exception>
@@ -35,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (context.MinedBlock)
                 return;
 
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             uint256 hashMerkleRoot2 = BlockMerkleRoot(block, out bool mutated);
             if (block.Header.HashMerkleRoot != hashMerkleRoot2)
