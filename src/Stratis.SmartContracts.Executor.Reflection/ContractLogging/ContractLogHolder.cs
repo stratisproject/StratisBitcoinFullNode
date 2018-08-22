@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
@@ -27,7 +28,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
             List<Log> actualLogs = new List<Log>();
             foreach(LogHolder log in this.logs)
             {
-
+                foreach (FieldInfo field in log.LogObject.GetType().GetFields())
+                {
+                    object value = field.GetValue(log.LogObject);
+                    byte[] serialized = Serialize(value, network);
+                    toEncode.Add(RLP.EncodeElement(serialized));
+                }
             }
 
             throw new NotImplementedException();
@@ -38,12 +44,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
     {
         public uint160 ContractAddress { get; }
 
-        public object Log { get; }
+        public object LogObject { get; }
 
         public LogHolder(uint160 contractAddress, object log)
         {
             this.ContractAddress = contractAddress;
-            this.Log = log;
+            this.LogObject = log;
         }
     }
 }
