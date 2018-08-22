@@ -814,7 +814,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         }
 
         /// <summary>
-        /// Should invoke the contract's fallback function
+        /// Should send funds to another contract, causing the contract's fallback function to be invoked.
         /// </summary>
         [Fact]
         public async Task SmartContracts_TransferFunds_Invokes_Fallback_Async()
@@ -827,34 +827,35 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var gasBudget = gasPrice * gasLimit;
 
             var fallBackContract = Path.Combine("SmartContracts", "FallbackContract.cs");
+            var fallbackCompilation = SmartContractCompiler.CompileFile(fallBackContract).Compilation;
 
-            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, SmartContractCompiler.CompileFile(fallBackContract).Compilation, gasPrice, gasLimit);
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, fallbackCompilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 fallback1 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
-            Assert.NotNull(context.stateRoot.GetCode(fallback1));
+            uint160 fallbackAddress1 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
+            Assert.NotNull(context.stateRoot.GetCode(fallbackAddress1));
 
             context.mempool.Clear();
 
-            SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, SmartContractCompiler.CompileFile(fallBackContract).Compilation, gasPrice, gasLimit);
+            SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, fallbackCompilation, gasPrice, gasLimit);
             tx = this.AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
             pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 fallback2 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
-            Assert.NotNull(context.stateRoot.GetCode(fallback2));
+            uint160 fallbackAddress2 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
+            Assert.NotNull(context.stateRoot.GetCode(fallbackAddress2));
 
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
             string[] testMethodParameters = new string[]
             {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, fallback2.ToAddress(context.network)),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, fallbackAddress2.ToAddress(context.network)),
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ULong, fundsToSend),
             };
 
-            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, fallback1, "SendFunds", gasPrice, gasLimit, testMethodParameters);
+            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, fallbackAddress1, "SendFunds", gasPrice, gasLimit, testMethodParameters);
             pblocktemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
-            byte[] fallbackInvoked = context.stateRoot.GetStorageValue(fallback2, Encoding.UTF8.GetBytes("FallbackInvoked"));
-            byte[] fundsReceived = context.stateRoot.GetStorageValue(fallback2, Encoding.UTF8.GetBytes("FallbackReceived"));
+            byte[] fallbackInvoked = context.stateRoot.GetStorageValue(fallbackAddress2, Encoding.UTF8.GetBytes("FallbackInvoked"));
+            byte[] fundsReceived = context.stateRoot.GetStorageValue(fallbackAddress2, Encoding.UTF8.GetBytes("FallbackReceived"));
 
             var serializer = new ContractPrimitiveSerializer(context.network);
 
