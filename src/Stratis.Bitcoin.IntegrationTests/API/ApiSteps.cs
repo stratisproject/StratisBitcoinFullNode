@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Security;
 using System.Text;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -99,6 +100,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private uint256 block;
         private Uri apiUri;
         private HttpClient httpClient;
+        private HttpClientHandler httpHandler;
 
         public ApiSpecification(ITestOutputHelper output) : base(output)
         {
@@ -107,7 +109,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         protected override void BeforeTest()
         {
             this.sharedSteps = new SharedSteps();
-            this.httpClient = new HttpClient();
+            this.httpHandler = new HttpClientHandler() { ServerCertificateCustomValidationCallback = (request, cert, chain, errors) => true };
+            this.httpClient = new HttpClient(this.httpHandler);
             this.httpClient.DefaultRequestHeaders.Accept.Clear();
             this.httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonContentType));
 
@@ -122,7 +125,13 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 this.httpClient.Dispose();
                 this.httpClient = null;
             }
-
+            
+            if (this.httpHandler != null)
+            {
+                this.httpHandler.Dispose();
+                this.httpHandler = null;
+            }
+            
             this.powNodeGroupBuilder.Dispose();
             this.posNodeGroupBuilder.Dispose();
         }
