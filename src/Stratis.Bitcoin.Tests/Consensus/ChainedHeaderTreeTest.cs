@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             TestContext testContext = new TestContextBuilder().Build();
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.ExtendAChain(7);
-            chainedHeaderTree.Initialize(chainTip, true);
+            chainedHeaderTree.Initialize(chainTip);
             testContext.ChainState.Setup(s => s.ConsensusTip).Returns(chainTip);
 
             // Peer 1: 1a - 2a - 3a - 4a - 5a - 6a - 7a - 8a
@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             TestContext testContext = new TestContextBuilder().Build();
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.ExtendAChain(5);
-            chainedHeaderTree.Initialize(chainTip, true);
+            chainedHeaderTree.Initialize(chainTip);
             List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, 5);
 
             chainedHeaderTree.ConnectNewHeaders(2, listOfExistingHeaders);
@@ -402,7 +402,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             TestContext testContext = new TestContextBuilder().Build();
             ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
             ChainedHeader chainTip = testContext.ExtendAChain(7);
-            chainedHeaderTree.Initialize(chainTip, true);
+            chainedHeaderTree.Initialize(chainTip);
 
             // Chain A is extended by Peer 1:
             // h1=h2=h3=h4=h5=h6=h7=h8=9a=10a=11a=12a=13a.
@@ -2607,63 +2607,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             connectNewHeadersResult.DownloadFrom.HashBlock.Should().Be(originalHeaders[9].HashBlock); // h10
             connectNewHeadersResult.DownloadTo.HashBlock.Should().Be(originalHeaders[14].HashBlock); // h15
             connectNewHeadersResult.HaveBlockDataAvailabilityStateOf(BlockDataAvailabilityState.BlockRequired).Should().BeTrue();
-        }
-
-        /// <summary>
-        /// Issue 49 @ CHT is initialized with BlockStore disabled. CT advances and old block data pointers are removed.
-        /// Make sure that data availability for those headers set to header only.
-        /// </summary>
-        [Fact]
-        public void ChainHeaderTreeInitialisedWIthBlockStoreDisabled_ConsensusTipAdvances_AvailabilityForHeadersSetToHeaderOnly()
-        {
-            // Chain header tree setup. Initial chain has 1 header.
-            // Example: h1.
-            const int initialChainSize = 1;
-            TestContext ctx = new TestContextBuilder()
-                .WithInitialChain(initialChainSize)
-                .WithBlockStoreDisabled()
-                .Build();
-            ChainedHeaderTree cht = ctx.ChainedHeaderTree;
-            ChainedHeader chainTip = ctx.InitialChainTip;
-
-            // Extend chain by 150 headers and connect it to CHT.
-            // Example: h1=h2=..=h151.
-            const int extensionSize = 150;
-            chainTip = ctx.ExtendAChain(extensionSize, chainTip);
-            List<BlockHeader> listOfExtendedHeaders = ctx.ChainedHeaderToList(chainTip, extensionSize);
-            ConnectNewHeadersResult connectionResult = cht.ConnectNewHeaders(1, listOfExtendedHeaders);
-            ChainedHeader consumed = connectionResult.Consumed;
-
-            // Sync all headers.
-            ChainedHeader[] originalHeaderArray = chainTip.ToArray(extensionSize);
-            ChainedHeader[] consumedHeaderArray = consumed.ToArray(extensionSize);
-            for (int i = 0; i < consumedHeaderArray.Length; i++)
-            {
-                ChainedHeader currentChainTip = consumedHeaderArray[i];
-
-                cht.BlockDataDownloaded(currentChainTip, originalHeaderArray[i].Block);
-                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
-                cht.ConsensusTipChanged(currentChainTip);
-            }
-
-            // Make sure that headers 2-51 have no block data and headers 52-151 have.
-            Dictionary<uint256, ChainedHeader> storedHeaders = cht.GetChainedHeadersByHash();
-            foreach (ChainedHeader consumedHeader in consumedHeaderArray)
-            {
-                storedHeaders.Should().ContainKey(consumedHeader.HashBlock);
-                const int heightOfFirstHeaderWithBlockData = initialChainSize + extensionSize - ChainedHeaderTree.KeepBlockDataForLastBlocks;
-
-                if (consumedHeader.Height < heightOfFirstHeaderWithBlockData)
-                {
-                    storedHeaders[consumedHeader.HashBlock].BlockDataAvailability.Should().Be(BlockDataAvailabilityState.HeaderOnly);
-                    storedHeaders[consumedHeader.HashBlock].Block.Should().BeNull();
-                }
-                else
-                {
-                    storedHeaders[consumedHeader.HashBlock].BlockDataAvailability.Should().Be(BlockDataAvailabilityState.BlockAvailable);
-                    storedHeaders[consumedHeader.HashBlock].Block.Should().NotBeNull();
-                }
-            }
         }
 
         /// <summary>

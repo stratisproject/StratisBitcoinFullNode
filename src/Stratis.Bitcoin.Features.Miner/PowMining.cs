@@ -266,13 +266,15 @@ namespace Stratis.Bitcoin.Features.Miner
         private bool ValidateAndConnectBlock(MineBlockContext context)
         {
             this.logger.LogTrace("()");
-            context.ChainedHeaderBlock = this.consensusManager.BlockMinedAsync(context.BlockTemplate.Block).GetAwaiter().GetResult();
+            ChainedHeader chainedHeader = this.consensusManager.BlockMinedAsync(context.BlockTemplate.Block).GetAwaiter().GetResult();
 
-            if (context.ChainedHeaderBlock == null)
+            if (chainedHeader == null)
             {
                 this.logger.LogTrace("(-)[BLOCK_VALIDATION_ERROR]:false");
                 return false;
             }
+
+            context.ChainedHeaderBlock = new ChainedHeaderBlock(context.BlockTemplate.Block, chainedHeader);
 
             this.logger.LogTrace("(-):true");
             return true;

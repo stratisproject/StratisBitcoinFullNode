@@ -395,6 +395,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     bool foundStartingHeader = false;
 
+                    // In case we don't have any information about peer's tip send him only last header and don't update best sent header.
+                    // We expect peer to answer with getheaders message.
+                    if (bestSentHeader == null)
+                    {
+                        await peer.SendMessageAsync(new HeadersPayload(blocksToAnnounce.Last().Header)).ConfigureAwait(false);
+
+                        this.logger.LogTrace("(-)[SENT_SINGLE_HEADER]");
+                        return;
+                    }
+
                     // Try to find first chained block that the peer doesn't have, and then add all chained blocks past that one.
                     foreach (ChainedHeader chainedHeader in blocksToAnnounce)
                     {

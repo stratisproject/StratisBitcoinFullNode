@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>();
 
-                    fullNodeBuilder.Network.Consensus.Rules = new PowConsensusRulesRegistration().GetRules();
+                    new PowConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                 });
             });
 
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<IConsensusRuleEngine, PosConsensusRuleEngine>();
 
-                        fullNodeBuilder.Network.Consensus.Rules = new PosConsensusRulesRegistration().GetRules();
+                        new PosConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                     });
             });
 
@@ -146,23 +146,25 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PowConsensusRulesRegistration : IRuleRegistration
         {
-            public ICollection<IConsensusRule> GetRules()
+            public void RegisterRules(IConsensus consensus)
             {
-                return new List<IConsensusRule>
+                consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
                 {
-                    // == Header ==
                     new HeaderTimeChecksRule(),
                     new CheckDifficultyPowRule(),
                     new BitcoinActivationRule(),
-                    new BitcoinHeaderVersionRule(),
+                    new BitcoinHeaderVersionRule()
+                };
 
-                    // == Integrity ==
-                    new BlockMerkleRootRule(),
+                consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+                {
+                    new BlockMerkleRootRule()
+                };
 
-                    // == Partial and Full ==
-                    new SetActivationDeploymentsRule(),
+                consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+                {
+                    new SetActivationDeploymentsPartialValidationRule(),
 
-                    // == Partial ==
                     new TransactionLocktimeActivationRule(), // implements BIP113
                     new CoinbaseHeightActivationRule(), // implements BIP34
                     new WitnessCommitmentsRule(), // BIP141, BIP144
@@ -172,8 +174,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new EnsureCoinbaseRule(),
                     new CheckPowTransactionRule(),
                     new CheckSigOpsRule(),
+                };
 
-                    // == Full ==
+                consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+                {
+                    new SetActivationDeploymentsFullValidationRule(),
 
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
@@ -186,25 +191,27 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public class PosConsensusRulesRegistration : IRuleRegistration
         {
-            public ICollection<IConsensusRule> GetRules()
+            public void RegisterRules(IConsensus consensus)
             {
-                return new List<IConsensusRule>
+                consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
                 {
-                    // == Header ==
                     new HeaderTimeChecksRule(),
                     new HeaderTimeChecksPosRule(),
                     new StratisBigFixPosFutureDriftRule(),
                     new CheckDifficultyPosRule(),
                     new StratisHeaderVersionRule(),
+                };
 
-                    // == Integrity ==
+                consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+                {
                     new BlockMerkleRootRule(),
                     new PosBlockSignatureRule(),
+                };
 
-                    // == Partial and Full ==
-                    new SetActivationDeploymentsRule(),
+                consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+                {
+                    new SetActivationDeploymentsPartialValidationRule(),
 
-                    // == Partial ==
                     new CheckDifficultykHybridRule(),
                     new PosTimeMaskRule(),
 
@@ -222,8 +229,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new CheckPosTransactionRule(),
                     new CheckSigOpsRule(),
                     new PosCoinstakeRule(),
+                };
 
-                    // == Full ==
+                consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+                {
+                    new SetActivationDeploymentsFullValidationRule(),
 
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),

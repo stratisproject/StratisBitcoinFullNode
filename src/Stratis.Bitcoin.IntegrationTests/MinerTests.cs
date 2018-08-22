@@ -15,7 +15,6 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -23,6 +22,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Mempool;
 using Stratis.Bitcoin.Interfaces;
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.entry = new TestMemPoolEntryHelper();
                 this.chain = new ConcurrentChain(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
-                this.network.Consensus.Rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().GetRules();
+                new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(this.network.Consensus);
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 this.consensus = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(this.ConsensusRules, loggerFactory),
                     new IntegrityValidator(this.ConsensusRules, loggerFactory), new PartialValidator(this.ConsensusRules, loggerFactory), new Checkpoints(), consensusSettings, this.ConsensusRules,
-                    new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, nodeSettings, dateTimeProvider, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
+                    new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
 
                 this.entry.Fee(11);
                 this.entry.Height(11);
@@ -664,6 +664,50 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 node.GenerateStratisWithMiner(200);
                 node.GetProofOfWorkRewardForMinedBlocks(400).Should().Be(Money.Coins((decimal)12462.50));
+            }
+        }
+
+        [Fact]
+        public void Miner_Create_Block_Whilst_Connected_Syncs()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+
+                builder.StartAll();
+
+                miner.NotInIBD();
+                syncer.NotInIBD();
+
+                miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
+
+                miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
+
+                miner.GenerateStratisWithMiner(1);
+
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
+            }
+        }
+
+        [Fact]
+        public void Miner_Create_Block_Whilst_Disconnected_Syncs()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+
+                builder.StartAll();
+                miner.NotInIBD();
+                syncer.NotInIBD();
+
+                miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
+
+                miner.GenerateStratisWithMiner(1);
+
+                miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
             }
         }
 

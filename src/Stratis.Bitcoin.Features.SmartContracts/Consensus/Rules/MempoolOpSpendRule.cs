@@ -10,7 +10,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     /// <summary>
     /// Checks that transactions sent to the mempool don't include the OP_SPEND opcode.
     /// </summary>
-    [PartialValidationRule]
     public class MempoolOpSpendRule : ISmartContractMempoolRule
     {
         public void CheckTransaction(MempoolValidationContext context)

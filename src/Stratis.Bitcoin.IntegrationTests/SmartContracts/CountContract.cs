@@ -35,10 +35,7 @@ public class CountContract : SmartContract
 
     public bool Callback()
     {
-        ITransferResult result = TransferFunds(new Address(Message.Sender), 0, new TransferFundsToContract
-        {
-            ContractMethodName = "Asserter"
-        });
+        ITransferResult result = Call(new Address(Message.Sender), 0, "Asserter");
         SaveWorked = (bool)result.ReturnValue;
         return (bool)result.ReturnValue;
     }

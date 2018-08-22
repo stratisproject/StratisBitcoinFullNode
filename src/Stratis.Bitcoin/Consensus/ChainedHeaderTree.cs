@@ -46,9 +46,8 @@ namespace Stratis.Bitcoin.Consensus
         /// Initialize the tree with consensus tip.
         /// </summary>
         /// <param name="consensusTip">The consensus tip.</param>
-        /// <param name="blockStoreAvailable">Specifies if block store is enabled.</param>
         /// <exception cref="ConsensusException">Thrown in case given <paramref name="consensusTip"/> is on a wrong network.</exception>
-        void Initialize(ChainedHeader consensusTip, bool blockStoreAvailable);
+        void Initialize(ChainedHeader consensusTip);
 
         /// <summary>
         /// Remove a peer and the entire branch of the tree that it claims unless the
@@ -101,6 +100,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="block">The block.</param>
         /// <returns>Chained header for a given block.</returns>
         /// <exception cref="BlockDownloadedForMissingChainedHeaderException">Thrown when block data is presented for a chained block that doesn't exist.</exception>
+        /// <exception cref="IntegrityValidationFailedException">Thrown in case integrity validation failed.</exception>
         ChainedHeader FindHeaderAndVerifyBlockIntegrity(Block block);
 
         /// <summary>
@@ -127,6 +127,8 @@ namespace Stratis.Bitcoin.Consensus
         /// </returns>
         /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
+        /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
         ConnectNewHeadersResult ConnectNewHeaders(int networkPeerId, List<BlockHeader> headers);
 
         /// <summary>
@@ -134,6 +136,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="block">The block.</param>
         /// <returns>Newly created and connected chained header for the specified block.</returns>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         ChainedHeader CreateChainedHeaderWithBlock(Block block);
 
         /// <summary>
@@ -150,8 +153,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Chained header for specified block hash if it exists, <c>null</c> otherwise.</returns>
         ChainedHeader GetChainedHeader(uint256 blockHash);
 
-        /// <summary>Returns <c>true</c> if consensus tip is equal to the tip of the most advanced peer node it is connected to.</summary>
-        bool IsAtBestChainTip();
+        /// <summary>Returns <c>true</c> if consensus' height is within <see cref="ChainedHeaderTree.ConsensusIsConsideredToBeSyncedMargin"/> blocks from the best tip's height.</summary>
+        bool IsConsensusConsideredToBeSynced();
     }
 
     /// <inheritdoc />
@@ -164,8 +167,12 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ICheckpoints checkpoints;
         private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
-        private readonly ISignals signals;
         private readonly IFinalizedBlockInfo finalizedBlockInfo;
+
+        /// <summary>
+        /// The amount of blocks from consensus the node is considered to be synced.
+        /// </summary>
+        private const int ConsensusIsConsideredToBeSyncedMargin = 5;
 
         /// <inheritdoc />
         public long UnconsumedBlocksDataBytes { get; private set; }
@@ -201,9 +208,6 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private readonly Dictionary<uint256, ChainedHeader> chainedHeadersByHash;
 
-        /// <summary><c>true</c> if block store feature is enabled.</summary>
-        private bool blockStoreAvailable;
-
         public ChainedHeaderTree(
             Network network,
             ILoggerFactory loggerFactory,
@@ -212,8 +216,7 @@ namespace Stratis.Bitcoin.Consensus
             ICheckpoints checkpoints,
             IChainState chainState,
             IFinalizedBlockInfo finalizedBlockInfo,
-            ConsensusSettings consensusSettings,
-            ISignals signals)
+            ConsensusSettings consensusSettings)
         {
             this.network = network;
             this.headerValidator = headerValidator;
@@ -222,7 +225,6 @@ namespace Stratis.Bitcoin.Consensus
             this.chainState = chainState;
             this.finalizedBlockInfo = finalizedBlockInfo;
             this.consensusSettings = consensusSettings;
-            this.signals = signals;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.peerTipsByPeerId = new Dictionary<int, uint256>();
@@ -232,19 +234,19 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public void Initialize(ChainedHeader consensusTip, bool blockStoreAvailable)
+        public void Initialize(ChainedHeader consensusTip)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(consensusTip), consensusTip, nameof(blockStoreAvailable), blockStoreAvailable);
+            this.logger.LogTrace("({0}:'{1}')", nameof(consensusTip), consensusTip);
 
             ChainedHeader current = consensusTip;
-            this.blockStoreAvailable = blockStoreAvailable;
 
             while (current.Previous != null)
             {
                 current.Previous.Next.Add(current);
                 this.chainedHeadersByHash.Add(current.HashBlock, current);
 
-                current.BlockDataAvailability = blockStoreAvailable ? BlockDataAvailabilityState.BlockAvailable : BlockDataAvailabilityState.HeaderOnly;
+                // TODO when pruned node is implemented it should be header only for pruned blocks
+                current.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
                 current.BlockValidationState = ValidationState.FullyValidated;
 
                 current = current.Previous;
@@ -567,9 +569,8 @@ namespace Stratis.Bitcoin.Consensus
             while ((currentBlockToDeleteData.Block != null) && (currentBlockToDeleteData.Previous != null))
             {
                 currentBlockToDeleteData.Block = null;
-                if (!this.blockStoreAvailable)
-                    currentBlockToDeleteData.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
 
+                // TODO when prune node mode is implemented mark currentBlockToDeleteData as BlockDataAvailabilityState.HeaderOnly
                 this.logger.LogTrace("Block data for '{0}' was removed from memory, block data availability is {1}.", currentBlockToDeleteData, currentBlockToDeleteData.BlockDataAvailability);
 
                 currentBlockToDeleteData = currentBlockToDeleteData.Previous;
@@ -655,7 +656,13 @@ namespace Stratis.Bitcoin.Consensus
                 throw new BlockDownloadedForMissingChainedHeaderException();
             }
 
-            this.integrityValidator.VerifyBlockIntegrity(block, chainedHeader);
+            ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, block);
+
+            if (result.Error != null)
+            {
+                this.logger.LogTrace("(-)[INTEGRITY_VALIDATION_FAILED]");
+                throw new IntegrityValidationFailedException(result.Peer, result.Error, result.BanDurationSeconds);
+            }
 
             this.logger.LogTrace("(-):'{0}'", chainedHeader);
             return chainedHeader;
@@ -756,7 +763,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 if ((connectNewHeadersResult == null) && isBelowLastCheckpoint)
                 {
-                    connectNewHeadersResult = new ConnectNewHeadersResult() {Consumed = latestNewHeader};
+                    connectNewHeadersResult = new ConnectNewHeadersResult() { Consumed = latestNewHeader };
                     this.logger.LogTrace("Chained header '{0}' below last checkpoint.", currentChainedHeader);
                 }
 
@@ -845,7 +852,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5})", nameof(assumedValidHeader), assumedValidHeader, nameof(latestNewHeader), latestNewHeader, nameof(isBelowLastCheckpoint), isBelowLastCheckpoint);
 
             ChainedHeader bestTip = this.GetConsensusTip();
-            var connectNewHeadersResult = new ConnectNewHeadersResult() {Consumed = latestNewHeader};
+            var connectNewHeadersResult = new ConnectNewHeadersResult() { Consumed = latestNewHeader };
 
             if (latestNewHeader.ChainWork > bestTip.ChainWork)
             {
@@ -1026,7 +1033,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
-            this.CreateNewHeaders(new List<BlockHeader>() {block.Header});
+            this.CreateNewHeaders(new List<BlockHeader>() { block.Header });
 
             ChainedHeader chainedHeader = this.FindHeaderAndVerifyBlockIntegrity(block);
             this.BlockDataDownloaded(chainedHeader, block);
@@ -1048,6 +1055,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>A list of newly created chained headers or <c>null</c> if no new headers were found.</returns>
         /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
         /// <exception cref="ConnectHeaderException">Thrown if it wasn't possible to connect the first new header.</exception>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(headers), nameof(headers.Count), headers.Count);
@@ -1104,16 +1112,27 @@ namespace Stratis.Bitcoin.Consensus
             return newChainedHeaders;
         }
 
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         private ChainedHeader CreateAndValidateNewChainedHeader(BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader)
         {
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(currentBlockHeader), currentBlockHeader, nameof(previousChainedHeader), previousChainedHeader);
+
             var newChainedHeader = new ChainedHeader(currentBlockHeader, currentBlockHeader.GetHash(), previousChainedHeader);
 
-            this.headerValidator.ValidateHeader(newChainedHeader);
+            ValidationContext result = this.headerValidator.ValidateHeader(newChainedHeader);
+
+            if (result.Error != null)
+            {
+                this.logger.LogTrace("(-)[INVALID_HEADER]");
+                result.Error.Throw();
+            }
+
             newChainedHeader.BlockValidationState = ValidationState.HeaderValidated;
 
             previousChainedHeader.Next.Add(newChainedHeader);
             this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);
 
+            this.logger.LogTrace("(-):'{0}'", newChainedHeader);
             return newChainedHeader;
         }
 
@@ -1182,7 +1201,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public bool IsAtBestChainTip()
+        public bool IsConsensusConsideredToBeSynced()
         {
             this.logger.LogTrace("()");
 
@@ -1196,12 +1215,12 @@ namespace Stratis.Bitcoin.Consensus
                     bestTip = tip;
             }
 
-            ChainedHeader consensusTip = this.GetConsensusTip();
+            var consensusTip = this.GetConsensusTip();
 
-            bool atBestChainTip = consensusTip == bestTip;
+            bool isConsideredSynced = consensusTip.Height + ConsensusIsConsideredToBeSyncedMargin > bestTip.Height;
 
-            this.logger.LogTrace("(-):{0}", atBestChainTip);
-            return atBestChainTip;
+            this.logger.LogTrace("(-):{0}", isConsideredSynced);
+            return isConsideredSynced;
         }
     }
 

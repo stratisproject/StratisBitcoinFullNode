@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         public TransactionLocktimeActivationRuleTest()
         {
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
         }
 
         [Fact]
@@ -22,8 +22,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var transaction = new Transaction();
             transaction.LockTime = new DateTimeOffset(new DateTime(2018, 1, 3, 0, 0, 0, DateTimeKind.Utc));
             transaction.Inputs.Add(new TxIn() { Sequence = 15 });
-            this.ruleContext.ValidationContext.Block.AddTransaction(transaction);
-            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            this.ruleContext.ValidationContext.BlockToValidate.AddTransaction(transaction);
+            this.ruleContext.ValidationContext.BlockToValidate.Header.BlockTime = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext));
 
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var transaction = new Transaction();
             transaction.LockTime = new DateTimeOffset(new DateTime(2018, 1, 3, 0, 0, 0, DateTimeKind.Utc));
             transaction.Inputs.Add(new TxIn() { Sequence = 15 });
-            this.ruleContext.ValidationContext.Block.AddTransaction(transaction);
+            this.ruleContext.ValidationContext.BlockToValidate.AddTransaction(transaction);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext));
 
@@ -51,8 +51,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.Flags = new Base.Deployments.DeploymentFlags();
 
             var transaction = new Transaction();
-            this.ruleContext.ValidationContext.Block.AddTransaction(transaction);
-            this.ruleContext.ValidationContext.Block.Header.BlockTime = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            this.ruleContext.ValidationContext.BlockToValidate.AddTransaction(transaction);
+            this.ruleContext.ValidationContext.BlockToValidate.Header.BlockTime = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
             await this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext);
         }
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
             var transaction = new Transaction();
-            this.ruleContext.ValidationContext.Block.AddTransaction(transaction);
+            this.ruleContext.ValidationContext.BlockToValidate.AddTransaction(transaction);
 
             await this.consensusRules.RegisterRule<TransactionLocktimeActivationRule>().RunAsync(this.ruleContext);
         }

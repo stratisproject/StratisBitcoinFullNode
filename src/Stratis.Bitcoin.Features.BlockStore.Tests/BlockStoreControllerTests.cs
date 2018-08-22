@@ -123,6 +123,24 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         }
 
         [Fact]
+        public void Get_Block_When_Block_Is_Found_And_Requesting_Verbose_JsonOuput()
+        {
+            (Mock<IBlockStore> store, BlockStoreController controller) = GetControllerAndStore();
+
+            store.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
+                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest)));
+
+            Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
+            { Hash = ValidHash, OutputJson = true, ShowTransactionDetails = true });
+
+            response.Result.Should().BeOfType<JsonResult>();
+            var result = (JsonResult)response.Result;
+
+            result.Value.Should().BeOfType<Models.BlockTransactionDetailsModel>();
+            ((BlockTransactionDetailsModel)result.Value).Transactions.Should().HaveCountGreaterThan(1);
+        }
+
+        [Fact]
         public void Get_Block_When_Block_Is_Found_And_Requesting_RawOuput()
         {
                 (Mock<IBlockStore> store, BlockStoreController controller) = GetControllerAndStore();
@@ -151,7 +169,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             chainState.Setup(c => c.ConsensusTip)
                 .Returns(chain.GetBlock(2));
 
-            var controller = new BlockStoreController(logger.Object, store.Object, chainState.Object);
+            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object);
 
             var json = (JsonResult)controller.GetBlockCount();
             int result = int.Parse(json.Value.ToString());
@@ -167,7 +185,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            var controller = new BlockStoreController(logger.Object, store.Object, chainState.Object);
+            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object);
 
             return (store, controller);
         }
