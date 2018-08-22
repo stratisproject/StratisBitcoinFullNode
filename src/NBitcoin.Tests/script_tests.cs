@@ -162,6 +162,59 @@ namespace NBitcoin.Tests
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
+        public void Coldstaking_tests()
+        {
+            // if POW transaction then handle the new opcode as a OP_NOP10.
+            Coldstaking_testsCore(expectedError: ScriptError.DiscourageUpgradableNops);
+
+            // if POS transaction and before activation then handle the new opcode as a OP_NOP10.
+            Coldstaking_testsCore(isPOS: true, isCoinStake: true, expectedError: ScriptError.DiscourageUpgradableNops);
+
+            // if POS transaction and after activation then the new opcode produces an "CheckColdStakeVerify" script error if it is not a coinstake transaction.
+            Coldstaking_testsCore(isPOS: true, isActivated: true, expectedError: ScriptError.CheckColdStakeVerify);
+
+            // if POS transaction and after activation then the new opcode sets "IsColdCoinStake" true if it is a coinstake transaction.
+            Coldstaking_testsCore(isPOS: true, isActivated: true, isCoinStake: true, expectedFlagSet: true);
+        }
+
+        private void Coldstaking_testsCore(bool isPOS = false, bool isActivated = false, bool isCoinStake = false, bool expectedFlagSet = false, ScriptError expectedError = ScriptError.OK)
+        {
+            Network network = isPOS?KnownNetworks.StratisMain:KnownNetworks.Main;
+
+            Transaction tx = network.CreateTransaction();
+            tx.Outputs.Add(new TxOut()
+            {
+                ScriptPubKey = new Script(OpcodeType.OP_CHECKCOLDSTAKEVERIFY, OpcodeType.OP_TRUE)
+            });
+
+            Transaction coldCoinStake = network.CreateTransaction();
+            coldCoinStake.Time = (uint)18276127;
+            coldCoinStake.Inputs.Add(new TxIn(tx.Outputs.AsCoins().First().Outpoint, new Script()));
+
+            if (isCoinStake)
+            {
+                coldCoinStake.AddOutput(new TxOut(0, new Script()));
+                coldCoinStake.AddOutput(new TxOut(0, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(new Key().PubKey.Compress().ToBytes()))));
+            }
+
+            coldCoinStake.AddOutput(new TxOut(network.GetReward(0), tx.Outputs[0].ScriptPubKey));
+
+            ScriptVerify scriptVerify = new ScriptVerify() | ScriptVerify.DiscourageUpgradableNops;
+
+            if (isActivated)
+            {
+                scriptVerify |= ScriptVerify.CheckColdStakeVerify;
+            }
+
+            ScriptError error;
+            coldCoinStake.Inputs.AsIndexedInputs().First().VerifyScript(network, tx.Outputs[0].ScriptPubKey, scriptVerify, out error);
+
+            Assert.Equal(expectedError, error);
+            Assert.Equal(expectedFlagSet, (coldCoinStake as PosTransaction)?.IsColdCoinStake ?? false);            
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
         public void CanUseCompactVarInt()
         {
             var tests = new[]{
