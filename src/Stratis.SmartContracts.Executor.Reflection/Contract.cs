@@ -13,6 +13,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </summary>
     public class Contract : IContract
     {
+        private const BindingFlags DefaultFallbackLookup = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public;
+
         private readonly SmartContract instance;
 
         /// <summary>
@@ -28,6 +30,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         /// <inheritdoc />
         public ISmartContractState State { get; }
+
+        public MethodInfo Fallback {
+            get
+            {
+                return this.Type.GetMethod("Fallback", DefaultFallbackLookup);
+            }
+        }
 
         private Contract(SmartContract instance, Type type, ISmartContractState state, uint160 address)
         {

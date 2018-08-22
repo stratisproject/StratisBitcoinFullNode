@@ -32,6 +32,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             public bool FallbackInvoked { get; private set; }
         }
 
+        public class HasNoFallback : SmartContract
+        {
+            public HasNoFallback(ISmartContractState smartContractState)
+                : base(smartContractState)
+            {
+            }
+        }
+
         public class TestContract : SmartContract
         {
             public TestContract(ISmartContractState smartContractState) 
@@ -266,6 +274,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(constructorExists);
         }
 
+        [Fact]
+        public void HasFallback_Returns_Correct_Fallback()
+        {
+            var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
+            var fallbackInstance = (HasFallback)fallbackContract.GetPrivateFieldValue("instance");
+
+            var fallbackMethod = ((Contract) fallbackContract).Fallback;
+
+            Assert.NotNull(fallbackMethod);
+        }
+
+        [Fact]
+        public void HasNoFallback_Returns_Correct_Fallback()
+        {
+            var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
+            var fallbackInstance = (HasNoFallback)fallbackContract.GetPrivateFieldValue("instance");
+
+            // Fallback should be null here because we set the binding flags to only resolve methods on the declared type
+            var fallbackMethod = ((Contract)fallbackContract).Fallback;
+
+            Assert.Null(fallbackMethod);
+        }
 
         [Fact]
         public void EmptyMethodName_Invokes_Fallback()
@@ -277,6 +307,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.True(result.IsSuccess);
             Assert.True(fallbackInstance.FallbackInvoked);
+        }
+
+        [Fact]
+        public void EmptyMethodName_DoesNot_Invoke_Fallback()
+        {
+            var fallbackContract = Contract.CreateUninitialized(typeof(HasNoFallback), this.state, this.address);
+
+            var result = fallbackContract.Invoke("", null);
+
+            Assert.False(result.IsSuccess);
         }
 
         [Fact]
