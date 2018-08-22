@@ -587,7 +587,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             mockLoggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(mockLogger.Object);
             ILoggerFactory loggerFactory = mockLoggerFactory.Object;
 
-            IPeerAddressManager peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, loggerFactory, new SelfEndpointTracker());
+            IPeerAddressManager peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
 
             foreach (Tuple<IPEndPoint, DateTimeOffset> testData in testDataSet)
             {

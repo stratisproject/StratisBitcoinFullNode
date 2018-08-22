@@ -40,6 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IAddressGenerator addressGenerator;
+        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
 
         public SmartContractsController(IBroadcasterManager broadcasterManager,
             IConsensusLoop consensus,
@@ -49,7 +50,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ContractStateRepositoryRoot stateRoot,
             IWalletManager walletManager,
             IWalletTransactionHandler walletTransactionHandler,
-            IAddressGenerator addressGenerator)
+            IAddressGenerator addressGenerator,
+            IContractPrimitiveSerializer contractPrimitiveSerializer)
         {
             this.stateRoot = stateRoot;
             this.walletTransactionHandler = walletTransactionHandler;
@@ -59,6 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
             this.addressGenerator = addressGenerator;
+            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
         }
 
         [Route("code")]
@@ -316,29 +319,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
         private object GetStorageValue(SmartContractDataType dataType, byte[] bytes)
         {
-            PersistentStateSerializer serializer = new PersistentStateSerializer();
             switch (dataType)
             {
                 case SmartContractDataType.Address:
-                    return serializer.Deserialize<Address>(bytes, this.network);
+                    return this.contractPrimitiveSerializer.Deserialize<Address>(bytes);
                 case SmartContractDataType.Bool:
-                    return serializer.Deserialize<bool>(bytes, this.network);
+                    return this.contractPrimitiveSerializer.Deserialize<bool>(bytes);
                 case SmartContractDataType.Bytes:
-                    return serializer.Deserialize<byte[]>(bytes, this.network);
+                    return this.contractPrimitiveSerializer.Deserialize<byte[]>(bytes);
                 case SmartContractDataType.Char:
-                    return serializer.Deserialize<char>(bytes, this.network);
+                    return this.contractPrimitiveSerializer.Deserialize<char>(bytes);
                 case SmartContractDataType.Int:
-                    return serializer.Deserialize<int>(bytes, this.network);
+                    return this.contractPrimitiveSerializer.Deserialize<int>(bytes);
                 case SmartContractDataType.Long:
-                    return serializer.Deserialize<long>(bytes, this.network);
+                    return this.contractPrimitiveSerializer.Deserialize<long>(bytes);
                 case SmartContractDataType.Sbyte:
-                    return serializer.Deserialize<sbyte>(bytes, this.network);
+                    return this.contractPrimitiveSerializer.Deserialize<sbyte>(bytes);
                 case SmartContractDataType.String:
-                    return serializer.Deserialize<string>(bytes, this.network);
+                    return this.contractPrimitiveSerializer.Deserialize<string>(bytes);
                 case SmartContractDataType.Uint:
-                    return serializer.Deserialize<uint>(bytes, this.network);
+                    return this.contractPrimitiveSerializer.Deserialize<uint>(bytes);
                 case SmartContractDataType.Ulong:
-                    return serializer.Deserialize<ulong>(bytes, this.network);
+                    return this.contractPrimitiveSerializer.Deserialize<ulong>(bytes);
             }
             return null;
         }
