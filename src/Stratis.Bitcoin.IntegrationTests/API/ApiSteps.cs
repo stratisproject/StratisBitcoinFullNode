@@ -125,11 +125,13 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 this.httpClient.Dispose();
                 this.httpClient = null;
             }
+            
             if (this.httpHandler != null)
             {
                 this.httpHandler.Dispose();
                 this.httpHandler = null;
             }
+            
             this.powNodeGroupBuilder.Dispose();
             this.posNodeGroupBuilder.Dispose();
         }
