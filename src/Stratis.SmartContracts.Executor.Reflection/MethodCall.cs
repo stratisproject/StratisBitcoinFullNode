@@ -13,9 +13,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public const string ExternalFallbackMethodName = "";
 
-        public MethodCall(string method, object[] methodParameters = null)
+        public MethodCall(string methodName, object[] methodParameters = null)
         {
-            this.methodName = method;
+            this.methodName = methodName;
             this.Parameters = methodParameters;
         }
 
