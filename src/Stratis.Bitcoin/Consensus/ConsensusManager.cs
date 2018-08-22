@@ -549,6 +549,11 @@ namespace Stratis.Bitcoin.Consensus
             {
                 // Block validation failed we need to rewind any blocks that were added to the chain.
                 await this.RewindPartiallyConnectedChainAsync(connectBlockResult.LastValidatedBlockHeader, fork).ConfigureAwait(false);
+
+                lock (this.peerLock)
+                {
+                    this.SetConsensusTipInternalLocked(fork);
+                }
             }
 
             if (isExtension)
