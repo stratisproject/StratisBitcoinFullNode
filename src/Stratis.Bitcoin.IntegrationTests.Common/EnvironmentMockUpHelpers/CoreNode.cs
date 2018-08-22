@@ -101,6 +101,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
 
+            var selfEndPointTracker = new SelfEndpointTracker(loggerFactory);
+
+            // Needs to be initialized beforehand.
+            selfEndPointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.ProtocolPort), false);
+
             var ibdState = new Mock<IInitialBlockDownloadState>();
             ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
 
@@ -108,7 +113,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 DateTimeProvider.Default, 
                 loggerFactory, 
                 new PayloadProvider().DiscoverPayloads(), 
-                new SelfEndpointTracker(loggerFactory),
+                selfEndPointTracker,
                 ibdState.Object,
                 new Configuration.Settings.ConnectionManagerSettings());
 
