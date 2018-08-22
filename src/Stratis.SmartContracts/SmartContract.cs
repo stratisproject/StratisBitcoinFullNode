@@ -160,5 +160,12 @@ namespace Stratis.SmartContracts
         {
             this.contractLogger.Log(this.smartContractState, toLog);
         }
+
+        /// The fallback method, invoked when a transaction provides a method name of <see cref="string.Empty"/>.
+        /// <para>
+        /// An override of this method will be called when receiving funds 
+        /// </para>
+        /// </summary>
+        public virtual void Fallback() {}
     }
 }

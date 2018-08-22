@@ -13,7 +13,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </summary>
     public class Contract : IContract
     {
+        /// <summary>
+        /// The default binding flags for matching the fallback method. Matches public instance methods declared on the contract type only.
+        /// </summary>
         private const BindingFlags DefaultFallbackLookup = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public;
+
+        public const string FallbackMethodName = nameof(SmartContract.Fallback);
 
         private readonly SmartContract instance;
 
@@ -31,10 +36,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <inheritdoc />
         public ISmartContractState State { get; }
 
+        /// <summary>
+        /// Returns the fallback method defined on the inherited contract type. If no fallback was defined, returns null.
+        /// </summary>
         public MethodInfo Fallback {
             get
             {
-                return this.Type.GetMethod("Fallback", DefaultFallbackLookup);
+                return this.Type.GetMethod(FallbackMethodName, DefaultFallbackLookup);
             }
         }
 
@@ -95,6 +103,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <inheritdoc />
         public IContractInvocationResult Invoke(string methodName, IReadOnlyList<object> parameters)
         {
+            if (IsFallbackCall(methodName, parameters))
+            {
+                return this.InvokeFallback();
+            }
+
             object[] invokeParams = parameters?.ToArray() ?? new object[0];
 
             Type[] types = invokeParams.Select(p => p.GetType()).ToArray();
@@ -117,6 +130,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 SetStateFields(this.instance, this.State);
 
             return this.InvokeInternal(methodToInvoke, invokeParams);
+        }
+
+        private IContractInvocationResult InvokeFallback()
+        {
+            // Handles the scenario where no fallback was defined, but it is attempted to be invoked anyway.
+            // This could occur if a method invocation is directly made to the fallback via a transaction.
+            if (this.Fallback == null)
+                return ContractInvocationResult.Failure(ContractInvocationErrorType.MethodDoesNotExist);
+
+            return this.InvokeInternal(this.Fallback, null);
         }
 
         /// <summary>
@@ -152,6 +175,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 // This should not happen
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterCountIncorrect, parameterException);
             }            
+        }
+
+        /// <summary>
+        /// Determines whether a method invocation is a fallback method invocation.
+        /// </summary>
+        public static bool IsFallbackCall(string methodName, IReadOnlyList<object> parameters)
+        {
+            // The fallback method must always be the override with no parameters,
+            // so it's not enough just to check if the method name is correct.
+            return (parameters == null || parameters.Count == 0)
+                && string.Empty.Equals(methodName, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

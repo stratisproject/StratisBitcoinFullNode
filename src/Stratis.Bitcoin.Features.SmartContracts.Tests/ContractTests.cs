@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             {
             }
 
-            public void Fallback()
+            public override void Fallback()
             {
                 this.FallbackInvoked = true;
             }
@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void HasNoFallback_Returns_Correct_Fallback()
         {
-            var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
+            var fallbackContract = Contract.CreateUninitialized(typeof(HasNoFallback), this.state, this.address);
             var fallbackInstance = (HasNoFallback)fallbackContract.GetPrivateFieldValue("instance");
 
             // Fallback should be null here because we set the binding flags to only resolve methods on the declared type
