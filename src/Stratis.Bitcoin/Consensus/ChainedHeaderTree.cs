@@ -100,8 +100,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="block">The block.</param>
         /// <returns>Chained header for a given block.</returns>
         /// <exception cref="BlockDownloadedForMissingChainedHeaderException">Thrown when block data is presented for a chained block that doesn't exist.</exception>
-        /// <exception cref="IntegrityValidationFailedException">Thrown in case integrity validation failed.</exception>
-        ChainedHeader FindHeaderAndVerifyBlockIntegrity(Block block);
+        ChainedHeader FindHeader(Block block);
 
         /// <summary>
         /// Handles situation when the blocks data is downloaded for a given chained header.
@@ -162,7 +161,6 @@ namespace Stratis.Bitcoin.Consensus
     {
         private readonly Network network;
         private readonly IHeaderValidator headerValidator;
-        private readonly IIntegrityValidator integrityValidator;
         private readonly ILogger logger;
         private readonly ICheckpoints checkpoints;
         private readonly IChainState chainState;
@@ -212,7 +210,6 @@ namespace Stratis.Bitcoin.Consensus
             Network network,
             ILoggerFactory loggerFactory,
             IHeaderValidator headerValidator,
-            IIntegrityValidator integrityValidator,
             ICheckpoints checkpoints,
             IChainState chainState,
             IFinalizedBlockInfo finalizedBlockInfo,
@@ -220,7 +217,6 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.network = network;
             this.headerValidator = headerValidator;
-            this.integrityValidator = integrityValidator;
             this.checkpoints = checkpoints;
             this.chainState = chainState;
             this.finalizedBlockInfo = finalizedBlockInfo;
@@ -643,7 +639,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public ChainedHeader FindHeaderAndVerifyBlockIntegrity(Block block)
+        public ChainedHeader FindHeader(Block block)
         {
             uint256 blockHash = block.GetHash();
             this.logger.LogTrace("({0}:'{1}')", nameof(block), blockHash);
@@ -654,14 +650,6 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
                 throw new BlockDownloadedForMissingChainedHeaderException();
-            }
-
-            ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, block);
-
-            if (result.Error != null)
-            {
-                this.logger.LogTrace("(-)[INTEGRITY_VALIDATION_FAILED]");
-                throw new IntegrityValidationFailedException(result.Peer, result.Error, result.BanDurationSeconds);
             }
 
             this.logger.LogTrace("(-):'{0}'", chainedHeader);
@@ -1035,7 +1023,7 @@ namespace Stratis.Bitcoin.Consensus
 
             this.CreateNewHeaders(new List<BlockHeader>() { block.Header });
 
-            ChainedHeader chainedHeader = this.FindHeaderAndVerifyBlockIntegrity(block);
+            ChainedHeader chainedHeader = this.FindHeader(block);
             this.BlockDataDownloaded(chainedHeader, block);
 
             this.logger.LogTrace("(-):'{0}'", chainedHeader);

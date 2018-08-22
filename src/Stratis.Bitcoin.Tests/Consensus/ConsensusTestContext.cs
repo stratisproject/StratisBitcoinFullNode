@@ -61,7 +61,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.Network,
                 extendedLoggerFactory,
                 this.HeaderValidator.Object,
-                this.IntegrityValidator.Object,
                 this.Checkpoints.Object,
                 this.ChainState.Object,
                 this.FinalizedBlockMock.Object,

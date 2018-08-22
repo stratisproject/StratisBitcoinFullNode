@@ -1047,7 +1047,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Call FindHeaderAndVerifyBlockIntegrity on the block from header 6.
             // BlockDownloadedForMissingChainedHeaderException should be thrown.
-            Action verificationAction = () => cht.FindHeaderAndVerifyBlockIntegrity(initialChainTip.Block);
+            Action verificationAction = () => cht.FindHeader(initialChainTip.Block);
             verificationAction.Should().Throw<BlockDownloadedForMissingChainedHeaderException>();
         }
 
