@@ -507,7 +507,7 @@ namespace Stratis.Bitcoin.Consensus
             if (fork == newTip)
             {
                 // The new header is behind the current tip this is a bug.
-                this.logger.LogError("New header '{0}' is behind the current tip '{1}'.", newTip, oldTip);
+                this.logger.LogCritical("New header '{0}' is behind the current tip '{1}'.", newTip, oldTip);
                 this.logger.LogTrace("(-)[INVALID_NEW_TIP]");
                 throw new ConsensusException("New tip must be ahead of old tip.");
             }
@@ -521,6 +521,14 @@ namespace Stratis.Bitcoin.Consensus
                 await this.RewindToForkPointAsync(fork, oldTip).ConfigureAwait(false);
 
             List<ChainedHeaderBlock> blocksToConnect = await this.TryGetBlocksToConnectAsync(newTip, currentTip.Height + 1).ConfigureAwait(false);
+
+            // Sanity check. This should never happen.
+            if (blocksToConnect == null)
+            {
+                this.logger.LogCritical("Blocks to connect are missing!");
+                this.logger.LogTrace("(-)[NO_BLOCK_TO_CONNECT]");
+                throw new ConsensusException("Blocks to connect are missing!");
+            }
 
             ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(newTip, blocksToConnect).ConfigureAwait(false);
 
@@ -543,6 +551,14 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             List<ChainedHeaderBlock> blocksToReconnect = await this.TryGetBlocksToConnectAsync(oldTip, currentTip.Height + 1).ConfigureAwait(false);
+
+            // Sanity check. This should never happen.
+            if (blocksToReconnect == null)
+            {
+                this.logger.LogCritical("Blocks to reconnect are missing!");
+                this.logger.LogTrace("(-)[NO_BLOCK_TO_RECONNECT]");
+                throw new ConsensusException("Blocks to reconnect are missing!");
+            }
 
             ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(currentTip, blocksToReconnect).ConfigureAwait(false);
 
@@ -764,7 +780,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ChainedHeaderBlock chainedHeaderBlock = await this.LoadBlockDataAsync(currentHeader.HashBlock).ConfigureAwait(false);
 
-                if (chainedHeaderBlock == null)
+                if ((chainedHeaderBlock == null) || (chainedHeaderBlock.Block == null))
                 {
                     this.logger.LogTrace("(-):null");
                     return null;
@@ -774,7 +790,7 @@ namespace Stratis.Bitcoin.Consensus
                 currentHeader = currentHeader.Previous;
             }
 
-            this.logger.LogTrace("(-):{0}:'{1}'", nameof(chainedHeaderBlocks), chainedHeaderBlocks.Count);
+            this.logger.LogTrace("(-):*.{0}={1}", nameof(chainedHeaderBlocks.Count), chainedHeaderBlocks.Count);
             return chainedHeaderBlocks;
         }
 
@@ -1019,16 +1035,13 @@ namespace Stratis.Bitcoin.Consensus
                 return chainedHeaderBlock;
             }
 
-            if (this.blockStore != null)
+            Block block = await this.blockStore.GetBlockAsync(blockHash).ConfigureAwait(false);
+            if (block != null)
             {
-                Block block = await this.blockStore.GetBlockAsync(blockHash).ConfigureAwait(false);
-                if (block != null)
-                {
-                    var newBlockPair = new ChainedHeaderBlock(block, chainedHeaderBlock.ChainedHeader);
-                    this.logger.LogTrace("Chained header block '{0}' was found in store.", newBlockPair);
-                    this.logger.LogTrace("(-)[FOUND_IN_BLOCK_STORE]:'{0}'", newBlockPair);
-                    return newBlockPair;
-                }
+                var newBlockPair = new ChainedHeaderBlock(block, chainedHeaderBlock.ChainedHeader);
+                this.logger.LogTrace("Chained header block '{0}' was found in store.", newBlockPair);
+                this.logger.LogTrace("(-)[FOUND_IN_BLOCK_STORE]:'{0}'", newBlockPair);
+                return newBlockPair;
             }
 
             this.logger.LogTrace("(-)[NOT_FOUND]:'{0}'", chainedHeaderBlock);
