@@ -236,6 +236,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new SetActivationDeploymentsFullValidationRule(),
 
                     // rules that require the store to be loaded (coinview)
+                    new PosColdStakingRule(),
                     new LoadCoinviewRule(),
                     new TransactionDuplicationActivationRule(), // implements BIP30
                     new PosCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
