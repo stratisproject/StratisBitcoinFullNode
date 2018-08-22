@@ -44,7 +44,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
                     topics.Add(serialized);
                 }
 
-                logs.Add(new Log(rawLog.ContractAddress, topics, new byte[0] { })); // TODO: Serialize all to this byte array. Possible time to use Indexed?
+                logs.Add(new Log(rawLog.ContractAddress, topics, this.serializer.Serialize(rawLog.LogStruct)));
             }
 
             return logs;
