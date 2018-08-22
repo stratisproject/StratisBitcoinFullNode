@@ -17,6 +17,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private uint160 address;
         private IContract contract;
 
+        public class HasFallback : SmartContract
+        {
+            public HasFallback(ISmartContractState smartContractState)
+                : base(smartContractState)
+            {
+            }
+
+            public void Fallback()
+            {
+                this.FallbackInvoked = true;
+            }
+
+            public bool FallbackInvoked { get; private set; }
+        }
+
         public class TestContract : SmartContract
         {
             public TestContract(ISmartContractState smartContractState) 
@@ -249,6 +264,47 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var constructorExists = Contract.ConstructorExists(typeof(TestContract), parameters);
 
             Assert.False(constructorExists);
+        }
+
+
+        [Fact]
+        public void EmptyMethodName_Invokes_Fallback()
+        {
+            var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
+            var fallbackInstance = (HasFallback) fallbackContract.GetPrivateFieldValue("instance");
+
+            var result = fallbackContract.Invoke("", null);
+
+            Assert.True(result.IsSuccess);
+            Assert.True(fallbackInstance.FallbackInvoked);
+        }
+
+        [Fact]
+        public void EmptyMethodName_WithParams_DoesNot_Invoke_Fallback()
+        {
+            var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
+            var fallbackInstance = (HasFallback)fallbackContract.GetPrivateFieldValue("instance");
+
+            var parameters = new List<object> { 1, "1" };
+
+            var result = fallbackContract.Invoke("", parameters);
+
+            Assert.False(result.IsSuccess);
+            Assert.False(fallbackInstance.FallbackInvoked);
+            Assert.Equal(ContractInvocationErrorType.MethodDoesNotExist, result.InvocationErrorType);
+        }
+
+        [Fact]
+        public void Non_Existent_Method_DoesNot_Invoke_Fallback()
+        {
+            var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
+            var fallbackInstance = (HasFallback)fallbackContract.GetPrivateFieldValue("instance");
+
+            var result = fallbackContract.Invoke("DoesntExist", null);
+
+            Assert.False(result.IsSuccess);
+            Assert.False(fallbackInstance.FallbackInvoked);
+            Assert.Equal(ContractInvocationErrorType.MethodDoesNotExist, result.InvocationErrorType);
         }
     }
 }
