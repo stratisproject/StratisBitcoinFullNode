@@ -177,7 +177,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Invoke_Method_With_Null_Params()
         {
-            IContractInvocationResult result = this.contract.Invoke("Test1", null);
+            var methodCall = new MethodCall("Test1");
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
 
             Assert.True(result.IsSuccess);
             Assert.True(this.instance.Test1Called);
@@ -188,7 +189,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Invoke_Method_With_One_Params()
         {
             var param = 9999;
-            IContractInvocationResult result = this.contract.Invoke("Test2", new List<object>() { param });
+            var methodCall = new MethodCall("Test2", new object[] { param });
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
 
             Assert.True(result.IsSuccess);
             Assert.Equal(param, result.Return);
@@ -197,7 +200,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Invoke_Private_Method_Fails()
         {
-            IContractInvocationResult result = this.contract.Invoke("TestPrivate", new List<object>());
+            var methodCall = new MethodCall("TestPrivate");
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
             Assert.Equal(ContractInvocationErrorType.MethodDoesNotExist, result.InvocationErrorType);
@@ -206,7 +211,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Invoke_Method_Throws_Exception()
         {
-            IContractInvocationResult result = this.contract.Invoke("TestException", new List<object>());
+            var methodCall = new MethodCall("TestException");
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
             Assert.Equal(ContractInvocationErrorType.MethodThrewException, result.InvocationErrorType);
@@ -215,7 +222,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Invoke_Method_Throws_OutOfGasException()
         {
-            IContractInvocationResult result = this.contract.Invoke("TestOutOfGas", new List<object>());
+            var methodCall = new MethodCall("TestOutOfGas");
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
             Assert.Equal(ContractInvocationErrorType.OutOfGas, result.InvocationErrorType);
@@ -224,7 +233,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Invoke_Method_Sets_State()
         {
-            this.contract.Invoke("Test1", null);
+            var methodCall = new MethodCall("TestOutOfGas");
+
+            this.contract.Invoke(methodCall);
 
             var gasMeter = this.instance.GetInstancePrivateFieldValue("gasMeter");
             var block = this.instance.GetInstancePrivateFieldValue("Block");
@@ -278,7 +289,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void HasFallback_Returns_Correct_Fallback()
         {
             var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
-            var fallbackInstance = (HasFallback)fallbackContract.GetPrivateFieldValue("instance");
 
             var fallbackMethod = ((Contract) fallbackContract).Fallback;
 
@@ -302,8 +312,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
             var fallbackInstance = (HasFallback) fallbackContract.GetPrivateFieldValue("instance");
+            var methodCall = MethodCall.Fallback();
 
-            var result = fallbackContract.Invoke("", null);
+            var result = fallbackContract.Invoke(methodCall);
 
             Assert.True(result.IsSuccess);
             Assert.True(fallbackInstance.FallbackInvoked);
@@ -313,8 +324,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void EmptyMethodName_DoesNot_Invoke_Fallback()
         {
             var fallbackContract = Contract.CreateUninitialized(typeof(HasNoFallback), this.state, this.address);
+            var methodCall = MethodCall.Fallback();
 
-            var result = fallbackContract.Invoke("", null);
+            var result = fallbackContract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
         }
@@ -325,9 +337,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
             var fallbackInstance = (HasFallback)fallbackContract.GetPrivateFieldValue("instance");
 
-            var parameters = new List<object> { 1, "1" };
-
-            var result = fallbackContract.Invoke("", parameters);
+            var parameters = new object[] { 1, "1" };
+            var methodCall = new MethodCall(MethodCall.ExternalFallbackMethodName, parameters);
+            var result = fallbackContract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
             Assert.False(fallbackInstance.FallbackInvoked);
@@ -339,8 +351,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
             var fallbackInstance = (HasFallback)fallbackContract.GetPrivateFieldValue("instance");
+            var methodCall = new MethodCall("DoesntExist");
 
-            var result = fallbackContract.Invoke("DoesntExist", null);
+            var result = fallbackContract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
             Assert.False(fallbackInstance.FallbackInvoked);

@@ -101,18 +101,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <inheritdoc />
-        public IContractInvocationResult Invoke(string methodName, IReadOnlyList<object> parameters)
+        public IContractInvocationResult Invoke(MethodCall call)
         {
-            if (IsFallbackCall(methodName, parameters))
+            if (call.IsFallbackCall)
             {
                 return this.InvokeFallback();
             }
 
-            object[] invokeParams = parameters?.ToArray() ?? new object[0];
+            object[] invokeParams = call.Parameters?.ToArray() ?? new object[0];
 
             Type[] types = invokeParams.Select(p => p.GetType()).ToArray();
 
-            MethodInfo methodToInvoke = this.Type.GetMethod(methodName, types);
+            MethodInfo methodToInvoke = this.Type.GetMethod(call.Name, types);
 
             if (methodToInvoke == null)
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.MethodDoesNotExist);
@@ -175,17 +175,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 // This should not happen
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterCountIncorrect, parameterException);
             }            
-        }
-
-        /// <summary>
-        /// Determines whether a method invocation is a fallback method invocation.
-        /// </summary>
-        public static bool IsFallbackCall(string methodName, IReadOnlyList<object> parameters)
-        {
-            // The fallback method must always be the override with no parameters,
-            // so it's not enough just to check if the method name is correct.
-            return (parameters == null || parameters.Count == 0)
-                && string.Empty.Equals(methodName, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
