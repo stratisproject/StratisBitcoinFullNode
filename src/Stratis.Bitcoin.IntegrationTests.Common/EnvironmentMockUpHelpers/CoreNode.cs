@@ -240,6 +240,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
+                if (this.runner is BitcoinCoreRunner)
+                {
+                    try
+                    {
+                        CreateRPCClient().SendCommand("stop");
+                        Thread.Sleep(200);
+                    }
+                    catch
+                    {
+                    }
+                }
                 this.runner.Kill();
                 this.State = CoreNodeState.Killed;
             }
