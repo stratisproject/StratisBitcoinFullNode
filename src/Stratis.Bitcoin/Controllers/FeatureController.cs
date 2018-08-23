@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Controllers
 
         protected IChainState ChainState { get; set; }
 
-        protected Connection.IConnectionManager ConnectionManager { get; set; }
+        protected IConnectionManager ConnectionManager { get; set; }
 
         protected IConsensusManager ConsensusManager { get; private set; }
 
