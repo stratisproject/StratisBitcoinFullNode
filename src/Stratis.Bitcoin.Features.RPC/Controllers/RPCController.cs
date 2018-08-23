@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// </summary>
         /// <returns>A JSON result that varies depending on the RPC method.</returns>
         [Route("callbyname")]
-        [HttpGet]
+        [HttpPost]
         public IActionResult CallByName([FromQuery]string methodName)
         {
             try
