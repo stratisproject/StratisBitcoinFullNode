@@ -233,9 +233,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Close inbound TCP client (Node), if not white listed, during initial block download.
         /// </summary>
         /// <remarks>Nodes catching up to the longest chain are vulnerable to malicious peers serving up a fake longer chain.</remarks>
-        /// <returns>When True the client must be closed.</returns>
+        /// <returns><c>true</c> when the client is closed.</returns>
         private bool CloseClientNotWhiteListedDuringIBD(TcpClient tcpClient)
         {
+            this.logger.LogTrace("()");
+
             bool close = false;
 
             if (!this.initialBlockDownloadState.IsInitialBlockDownload())
@@ -254,6 +256,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogTrace("Node [{0}] isn't white listed during initial block download, closing client.", clientRemoteEndPoint.ToString());
                 tcpClient.Close();
             }
+
+            this.logger.LogTrace("(-)");
 
             return close;
         }
