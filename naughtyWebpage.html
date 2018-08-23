@@ -1,0 +1,103 @@
+<html>
+    <head>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    </head>
+
+    <body>  
+
+        <!--<button id="ajax_get">ajax call get</button>
+        <button id="json_get">json get</button>
+        <br/>-->
+        <button id="ajax">ajax call</button>
+        <!--<button id="json_post">json post</button>
+        <br/>
+        <button id="ajax_post_content">ajax call post content</button>-->
+        
+
+    <script type="text/javascript">
+
+        $('#ajax').click(function () {
+            $.ajax({
+                type: "DELETE",
+                crossDomain: true,
+                headers: {
+                   // "Origin": "http://localhost:38221"
+                   // "delayInSeconds": true
+                },
+                //content: {"delayInSeconds": true },
+                dataType: "json",
+                url: "http://localhost:38221/api/ATesting/deleteFromQuery",
+                //url: "http://localhost:38221/api/AADeleteTesting/deleteFromQuery?delayInSeconds=1",
+                success: function (data) {
+                    alert(data);
+                },
+                error: function (error) {
+                    alert(error);
+                }
+            });
+        });
+
+        //$('#ajax_post_content').click(function(){ 
+        //    $.ajax({ 
+        //        type: "POST",
+        //        crossDomain: true,
+        //        headers: {
+        //            "Origin": "http://localhost:38221"
+        //        },
+        //        contents: {
+        //            "password": "password",
+        //            "name": "stakingWallet"
+        //        },
+        //        dataType: "json",
+        //        url: "http://localhost:38221/api/Staking/startstaking",
+        //        success: function(data){        
+        //            alert(data);
+        //        },
+        //        error: function(error){
+        //            alert(error)
+        //        }
+        //    });
+        //});
+
+
+        //$('#json_get').click(function(){ 
+        //    $.getJSON("http://localhost:38221/api/Blockstore/getblockcount",
+        //    function(data) {
+        //        alert(data);         
+        //    },
+        //    function(error){
+        //        alert(error)
+        //    });   
+        //});
+
+        //$('#ajax_get').click(function(){ 
+        //    $.ajax({ 
+        //        type: "DELETE",
+        //        crossDomain: true,
+        //        headers: {},
+        //        dataType: "json",
+        //        url: "http://localhost:38221/deleteNoParams",
+        //        success: function(data){        
+        //            alert(data);
+        //        },
+        //        error: function(error) {
+        //            alert(error);
+        //        }
+        //    });
+        //});
+
+        //$('#json_post').click(function(){ 
+        //    $.post("http://localhost:38221/api/Node/stop",
+        //    function(data) {
+        //        alert(data);         
+        //    },
+        //    function(error){
+        //        alert(error)
+        //    });   
+        //});
+
+
+    </script>
+    </body>
+
+</html>

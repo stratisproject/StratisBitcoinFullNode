@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using FluentAssertions;
@@ -16,15 +17,36 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         public void AllPostMethodsShouldHaveBody()
         {
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var controllers = assemblies.SelectMany(a => a.GetTypes().Where(t => t.Implements(typeof(Controller))));
+            var controllers = assemblies.SelectMany(GetControllersInAssembly());
 
             foreach (var controller in controllers)
             {
                 var postMethods = controller.GetMethods()
-                    .Where(m => m.CustomAttributes.Any(a => a.AttributeType == typeof(HttpPostAttribute)))
+                    .Where(IsHttpPostMethod())
                     .ToList();
-                postMethods.ForEach(mi => mi.GetParameters().Count().Should().BeGreaterOrEqualTo(1, $"HttpPost method {mi.Name} should have at least one parameter to prevent CORS calls from executing it."));
+
+                postMethods.ForEach(method => method.GetParameters()
+                    .Count(HasAnyFromBodyAttribute())
+                    .Should().BeGreaterOrEqualTo(1, 
+                    $"HttpPost method {controller.FullName}.{method.Name} should have at least one "
+                    + $"[FromBody] parameter to prevent CORS calls from executing it. "
+                    + $"Cf. https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"));
             }
+        }
+
+        private static Func<Assembly, IEnumerable<Type>> GetControllersInAssembly()
+        {
+            return a => a.GetTypes().Where(t => t.Implements(typeof(Controller)));
+        }
+
+        private static Func<MethodInfo, bool> IsHttpPostMethod()
+        {
+            return m => m.CustomAttributes.Any(a => a.AttributeType == typeof(HttpPostAttribute));
+        }
+
+        private static Func<ParameterInfo, bool> HasAnyFromBodyAttribute()
+        {
+            return p => p.CustomAttributes.Any(a => a.AttributeType == typeof(FromBodyAttribute));
         }
     }
 }

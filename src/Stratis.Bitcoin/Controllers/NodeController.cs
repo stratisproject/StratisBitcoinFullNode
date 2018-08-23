@@ -358,8 +358,10 @@ namespace Stratis.Bitcoin.Controllers
         [HttpPost]
         [Route("shutdown")]
         [Route("stop")]
-        public IActionResult Shutdown()
+        public async Task<IActionResult> ShutdownAsync([FromBody] int delayInSeconds = 0)
         {
+            await Task.Delay(TimeSpan.FromSeconds(delayInSeconds)).ConfigureAwait(false);
+
             // Start the node shutdown process.
             this.fullNode?.Dispose();
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -126,8 +127,9 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
         [Route("stopstaking")]
         [HttpPost]
-        public IActionResult StopStaking()
+        public async Task<IActionResult> StopStakingAsync([FromBody] int delayInSeconds = 0)
         {
+            await Task.Delay(TimeSpan.FromSeconds(delayInSeconds)).ConfigureAwait(false);
             try
             {
                 if (!this.fullNode.Network.Consensus.IsProofOfStake)
@@ -142,6 +144,5 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-
     }
 }
