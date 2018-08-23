@@ -48,50 +48,55 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // Take the coinstake transaction from the block and check if the flag ("IsColdCoinStake") is set.
             // The flag will only be set in the OP_CHECKCOLDSTAKEVERIFY is ScriptFlags in DeploymentFlags has "CheckColdStakeVerify" set.
             Block block = context.ValidationContext.BlockToValidate;
-            if ((block.Transactions.Count >= 2) && (block.Transactions[1] is PosTransaction posTran) && posTran.IsColdCoinStake)
+            if ((block.Transactions.Count >= 2) && (block.Transactions[1] is PosTransaction coinstakeTransaction) && coinstakeTransaction.IsColdCoinStake)
             {
                 var utxoRuleContext = context as UtxoRuleContext;
                 UnspentOutputSet view = utxoRuleContext.UnspentOutputSet;
 
                 // Check that ScriptPubKeys of all inputs of this transaction are the same. If they are not, the script fails.
-                Script scriptPubKey = null;
-                if (posTran.Inputs.Count >= 1)
+                // Due to this being a coinstake transaction we know if will have at least one input.
+                Script scriptPubKey = view.GetOutputFor(coinstakeTransaction.Inputs[0])?.ScriptPubKey;
+                for (int i = 1; i < coinstakeTransaction.Inputs.Count; i++)
                 {
-                    scriptPubKey = view.GetOutputFor(posTran.Inputs[0]).ScriptPubKey;
-                    if (posTran.Inputs.Skip(1).Where(i => view.GetOutputFor(i).ScriptPubKey != scriptPubKey).Any())
+                    if (scriptPubKey != view.GetOutputFor(coinstakeTransaction.Inputs[i])?.ScriptPubKey)
                     {
                         this.Logger.LogTrace("(-)[BAD_COLDSTAKE_INPUTS]");
                         ConsensusErrors.BadColdstakeInputs.Throw();
                     }
                 }
 
-                // Check that ScriptPubKeys of all outputs of this transaction, except for the marker output(a special first
+                // Check that ScriptPubKeys of all outputs of this transaction, except for the marker output (a special first
                 // output of each coinstake transaction) and the pubkey output (an optional special second output that contains 
                 // public key in coinstake transaction), are the same as ScriptPubKeys of the inputs. If they are not, the script fails.
                 // Assume that the presence of the second output will be confirmed by the block signature rule.
-                if (posTran.Outputs.Skip(2).Where(o => o.ScriptPubKey != scriptPubKey).Any())
+                for (int i = 2; i < coinstakeTransaction.Outputs.Count; i++)
                 {
-                    this.Logger.LogTrace("(-)[BAD_COLDSTAKE_OUTPUTS]");
-                    ConsensusErrors.BadColdstakeOutputs.Throw();
+                    if (scriptPubKey != coinstakeTransaction.Outputs[i].ScriptPubKey)
+                    {
+                        this.Logger.LogTrace("(-)[BAD_COLDSTAKE_OUTPUTS]");
+                        ConsensusErrors.BadColdstakeOutputs.Throw();
+                    }
                 }
 
                 // Check that the sum of values of all inputs is smaller or equal to the sum of values of all outputs. If this does
                 // not hold, the script fails.
                 var posRuleContext = context as PosRuleContext;
-                Money stakeReward = posTran.TotalOut - posRuleContext.TotalCoinStakeValueIn;
+                Money stakeReward = coinstakeTransaction.TotalOut - view.GetValueIn(coinstakeTransaction);
                 if (stakeReward < 0)
                 {
                     this.Logger.LogTrace("(-)[BAD_COLDSTAKE_AMOUNT]");
                     ConsensusErrors.BadColdstakeAmount.Throw();
                 }
+
+                this.Logger.LogTrace("(-)[VALID_COLDSTAKE_BLOCK]");
             }
             else
             {
-                this.Logger.LogTrace("POS cold staking validation skipped for checkpointed block at height {0}.",
+                this.Logger.LogTrace("Cold staking validation skipped for non-coldstake block at height {0}.",
                     context.ValidationContext.ChainedHeaderToValidate.Height);
-            }
 
-            this.Logger.LogTrace("(-)");
+                this.Logger.LogTrace("(-)[NON_COLDSTAKE_BLOCK]");
+            }
 
             return Task.CompletedTask;
         }
