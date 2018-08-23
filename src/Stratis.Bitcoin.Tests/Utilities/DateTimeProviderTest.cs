@@ -10,11 +10,9 @@ namespace NBitcoin
         [Fact]
         public void GetUtcNowReturnsCurrentUtcDateTime()
         {
-            int timeOffset = -96;
-            DateTimeProvider.Default.SetSystemTimeOffset(timeOffset);
             DateTime result = DateTimeProvider.Default.GetUtcNow();
 
-            Assert.Equal(DateTime.UtcNow.AddSeconds(timeOffset).ToString("yyyyMMddhhmmss"), result.ToString("yyyyMMddhhmmss"));
+            Assert.Equal(DateTime.UtcNow.ToString("yyyyMMddhhmmss"), result.ToString("yyyyMMddhhmmss"));
         }
 
         [Fact]
