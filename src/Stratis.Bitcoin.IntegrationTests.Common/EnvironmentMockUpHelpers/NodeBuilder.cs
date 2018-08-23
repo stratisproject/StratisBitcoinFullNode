@@ -177,23 +177,30 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             foreach (CoreNode node in this.Nodes)
                 node.Kill();
-
-            KillAnyBitcoinInstances();
         }
 
         internal static void KillAnyBitcoinInstances()
         {
-            while (true)
-            {
-                Process[] bitcoinDProcesses = Process.GetProcessesByName("bitcoind");
-                IEnumerable<Process> applicableBitcoinDProcesses = bitcoinDProcesses.Where(b => b.MainModule.FileName.Contains("External Libs"));
-                if (!applicableBitcoinDProcesses.Any())
-                    break;
+            var cancellationToken = new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token;
 
-                foreach (Process process in applicableBitcoinDProcesses)
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
                 {
-                    process.Kill();
-                    Thread.Sleep(1000);
+                    Process[] bitcoinDProcesses = Process.GetProcessesByName("bitcoind");
+                    IEnumerable<Process> applicableBitcoinDProcesses =
+                        bitcoinDProcesses.Where(b => b.MainModule.FileName.Contains("External Libs"));
+
+                    if (!applicableBitcoinDProcesses.Any()) break;
+
+                    foreach (Process process in applicableBitcoinDProcesses)
+                    {
+                        process.Kill();
+                        Thread.Sleep(100);
+                    }
+                }
+                catch
+                {
                 }
             }
         }
