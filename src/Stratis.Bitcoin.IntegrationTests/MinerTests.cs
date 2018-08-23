@@ -378,8 +378,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 tx = context.network.CreateTransaction(tx.ToBytes());
                 tx.Inputs[0].PrevOut.Hash = context.hash;
             }
-            var error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey));
-            Assert.True(error.ConsensusError == ConsensusErrors.BadBlockSigOps);
+
+            var badBlock = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
+            badBlock.Block.UpdateMerkleRoot();
+
+            var error = Assert.Throws<ConsensusException>(() => context.consensus.BlockMinedAsync(badBlock.Block).GetAwaiter().GetResult());
+            Assert.True(error.Message == ConsensusErrors.BadBlockSigOps.Message);
             context.mempool.Clear();
 
             tx.Inputs[0].PrevOut.Hash = context.txFirst[0].GetHash();
@@ -469,22 +473,25 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             var context = new TestContext();
             await context.InitializeAsync();
+
             var tx = context.network.CreateTransaction();
             tx.AddInput(new TxIn());
             tx.AddOutput(new TxOut());
 
-            // coinbase in mempool, template creation fails
+            // Create an invalid coinbase transaction to be added to the mempool.
             tx.Inputs[0].PrevOut = new OutPoint();
             tx.Inputs[0].ScriptSig = new Script(OpcodeType.OP_0, OpcodeType.OP_1);
             tx.Outputs[0].Value = 0;
             context.hash = tx.GetHash();
 
-            // give it a fee so it'll get mined
+            // Give it a fee so it'll get mined.
             var mempoolEntry = context.entry.Fee(context.LOWFEE).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(false).FromTx(tx);
             context.mempool.AddUnchecked(context.hash, mempoolEntry);
 
-            var error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey));
-            Assert.True(error.ConsensusError == ConsensusErrors.BadMultipleCoinbase);
+            var badBlock = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
+            badBlock.Block.UpdateMerkleRoot();
+            var error = Assert.Throws<ConsensusException>(() => context.consensus.BlockMinedAsync(badBlock.Block).GetAwaiter().GetResult());
+            Assert.True(error.Message == ConsensusErrors.BadMultipleCoinbase.Message);
 
             context.mempool.Clear();
         }
