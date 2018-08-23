@@ -72,10 +72,10 @@ test_script:
       
       $anyFailures = $FALSE;
       
-      foreach ($testFolder in ls *IntegrationTests) {
+      foreach ($testFolder in ls *.Tests) {
 
           # exclude integration tests
-          # if ($testFolder -like '*Integration.Tests*' -Or $testFolder -like '*IntegrationTests*') { continue }
+          if ($testFolder -like '*Integration.Tests*' -Or $testFolder -like '*IntegrationTests*') { continue }
             
             Push-Location $testFolder
 
