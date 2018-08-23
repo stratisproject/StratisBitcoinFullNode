@@ -539,7 +539,7 @@ namespace Stratis.Bitcoin.Consensus
             if (connectBlockResult.LastValidatedBlockHeader != null)
             {
                 // Block validation failed we need to rewind any blocks that were added to the chain.
-                await this.RewindPartiallyConnectedChainAsync(connectBlockResult.LastValidatedBlockHeader, fork).ConfigureAwait(false);
+                await this.RewindToForkPointAsync(fork, connectBlockResult.LastValidatedBlockHeader).ConfigureAwait(false);
             }
 
             if (isExtension)
@@ -590,43 +590,9 @@ namespace Stratis.Bitcoin.Consensus
                     this.SetConsensusTipInternalLocked(current.Previous);
                 }
 
-                // Signal disconnected block.
                 this.signals.SignalBlockDisconnected(new ChainedHeaderBlock(current.Block, current));
 
                 current = current.Previous;
-            }
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>Rewinds the connected part of invalid chain.</summary>
-        private async Task RewindPartiallyConnectedChainAsync(ChainedHeader lastValidatedBlockHeader, ChainedHeader currentTip)
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}'", nameof(lastValidatedBlockHeader), lastValidatedBlockHeader, nameof(currentTip), currentTip);
-
-            ChainedHeader current = lastValidatedBlockHeader;
-
-            while (currentTip.Height < current.Height)
-            {
-                await this.consensusRules.RewindAsync().ConfigureAwait(false);
-
-                lock (this.peerLock)
-                {
-                    this.SetConsensusTipInternalLocked(current.Previous);
-                }
-
-                // Signal disconnected block.
-                this.signals.SignalBlockDisconnected(new ChainedHeaderBlock(current.Block, current));
-
-                current = current.Previous;
-            }
-
-            if (currentTip.Height != current.Height)
-            {
-                // The rewind operation must return to the same fork point.
-                this.logger.LogError("The rewind operation ended up at '{0}' instead of fork point '{1}'.", currentTip, current);
-                this.logger.LogTrace("(-)[INVALID_REWIND]");
-                throw new ConsensusException("The rewind operation must return to the same fork point.");
             }
 
             this.logger.LogTrace("(-)");
