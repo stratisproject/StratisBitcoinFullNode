@@ -65,6 +65,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     }
                 }
 
+                // Check that the second output won't match the PayToPubKey template. This will ensure that the block signature
+                // will verify that this nonspendable output has the correct format.
+                if (coinstakeTransaction.Outputs[1].ScriptPubKey.ToOps().FirstOrDefault()?.Code != OpcodeType.OP_RETURN ||
+                    coinstakeTransaction.Outputs[1].Value != 0)
+                {
+                    this.Logger.LogTrace("(-)[BAD_COLDSTAKE_OUTPUTS]");
+                    ConsensusErrors.BadColdstakeOutputs.Throw();
+                }
+
                 // Check that ScriptPubKeys of all outputs of this transaction, except for the marker output (a special first
                 // output of each coinstake transaction) and the pubkey output (an optional special second output that contains 
                 // public key in coinstake transaction), are the same as ScriptPubKeys of the inputs. If they are not, the script fails.
