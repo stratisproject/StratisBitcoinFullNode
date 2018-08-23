@@ -1,80 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
-using System.Runtime.Loader;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
 using Moq;
 using NBitcoin;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public class ContractUpgradeabilityTests
-    {
-        public class TestAlc : AssemblyLoadContext
-        {
-            protected override Assembly Load(AssemblyName assemblyName)
-            {
-                return null;
-            }
-        }
-
-        [Fact]
-        public void UpgradeContract()
-        {
-            var source = @"
-using Stratis.SmartContracts;
-
-public TestContract : SmartContract
-{
-    public TestContract(ISmartContractState state) : base(state) {}
-    
-    public void TestMethod() {}
-}
-";
-            var version1DllPath = Path.Combine("Packages", "1.0.0.0-TEST", "Stratis.SmartContracts.dll");
-            var version2DllPath = Path.Combine("Packages", "2.0.0.0-TEST", "Stratis.SmartContracts.dll");
-
-            SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
-
-            CSharpCompilation compilation = CSharpCompilation.Create(
-                "smartContract",
-                new[] { syntaxTree },
-                new List<MetadataReference>
-                {
-                    MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                    MetadataReference.CreateFromFile(version1DllPath),
-                },
-                new CSharpCompilationOptions(
-                    OutputKind.DynamicallyLinkedLibrary,
-                    checkOverflow: true));
-
-
-            using (var dllStream = new MemoryStream())
-            {
-                EmitResult emitResult = compilation.Emit(dllStream);
-
-                dllStream.ToArray();
-            }
-
-            var alc = new TestAlc();
-
-
-            // Compile earlier version of Stratis.SmartContracts?
-            // Compile contract against earlier version
-            // Create new isolated ALC
-            // Load new Stratis.SmartContracts into ALC
-            // Load earlier contract into new ALC
-        }
-    }
-
     public class ContractTests
     {
         private ISmartContractState state;
