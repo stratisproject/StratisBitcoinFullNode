@@ -250,33 +250,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         }
 
         [Fact]
-        public void TestBlockValidity_UsesRuleContextToValidateBlock()
-        {
-            var newOptions = new ConsensusOptions();
-
-            this.ExecuteWithConsensusOptions(newOptions, () =>
-            {
-                ConcurrentChain chain = GenerateChainWithHeight(5, this.testNet, new Key());
-                this.consensusManager.Setup(c => c.Tip).Returns(chain.GetBlock(5));
-
-                ValidationContext validationContext = null;
-                var powRuleContext = new PowRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
-                this.consensusRules
-                    .Setup(s => s.CreateRuleContext(It.IsAny<ValidationContext>())).Callback<ValidationContext>((r) => validationContext = r)
-                    .Returns(powRuleContext);
-
-                var powBlockAssembler = new PowTestBlockDefinition(this.consensusManager.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.minerSettings.Object, this.testNet, this.consensusRules.Object);
-                Block block = powBlockAssembler.TestBlockValidity();
-
-                Assert.NotNull(this.callbackRuleContext);
-
-                Assert.True(this.callbackRuleContext.MinedBlock);
-                Assert.Equal(block.GetHash(), validationContext.BlockToValidate.GetHash());
-                this.consensusManager.Verify();
-            });
-        }
-
-        [Fact]
         public void AddTransactions_WithoutTransactionsInMempool_DoesNotAddEntriesToBlock()
         {
             var newOptions = new ConsensusOptions();
@@ -528,12 +501,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.ChainTip = chainTip;
                 base.UpdateHeaders();
                 return this.BlockTemplate.Block;
-            }
-
-            public new Block TestBlockValidity()
-            {
-                base.TestBlockValidity();
-                return this.block;
             }
 
             public (Block Block, int Selected, int Updated) AddTransactions()

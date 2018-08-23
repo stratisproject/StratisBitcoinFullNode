@@ -1,5 +1,6 @@
 ﻿using System;
 using NBitcoin;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Signals
@@ -10,16 +11,16 @@ namespace Stratis.Bitcoin.Signals
     public interface ISignals
     {
         /// <summary>
-        /// Notify subscribers about a new block being available.
+        /// Notify subscribers about a new chained header block being available.
         /// </summary>
-        /// <param name="block">Newly added block.</param>
-        void SignalBlockConnected(Block block);
+        /// <param name="chainedHeaderBlock">Newly added chained header block.</param>
+        void SignalBlockConnected(ChainedHeaderBlock chainedHeaderBlock);
 
         /// <summary>
-        /// Notify subscribers about a block being disconnected.
+        /// Notify subscribers about a chained header block being disconnected.
         /// </summary>
-        /// <param name="block">Block that was disconnected.</param>
-        void SignalBlockDisconnected(Block block);
+        /// <param name="chainedHeaderBlock">Chained Header Block that was disconnected.</param>
+        void SignalBlockDisconnected(ChainedHeaderBlock chainedHeaderBlock);
 
         /// <summary>
         /// Notify subscribers about a new transaction being available.
@@ -32,14 +33,14 @@ namespace Stratis.Bitcoin.Signals
         /// </summary>
         /// <param name="observer">Observer to be subscribed to receive signaler's messages.</param>
         /// <returns>Disposable object to allow observer to unsubscribe from the signaler.</returns>
-        IDisposable SubscribeForBlocksConnected(IObserver<Block> observer);
+        IDisposable SubscribeForBlocksConnected(IObserver<ChainedHeaderBlock> observer);
 
         /// <summary>
         /// Subscribes to receive notifications when a block was disconnected.
         /// </summary>
         /// <param name="observer">Observer to be subscribed to receive signaler's messages.</param>
         /// <returns>Disposable object to allow observer to unsubscribe from the signaler.</returns>
-        IDisposable SubscribeForBlocksDisconnected(IObserver<Block> observer);
+        IDisposable SubscribeForBlocksDisconnected(IObserver<ChainedHeaderBlock> observer);
 
         /// <summary>
         /// Subscribes to receive notifications when a new transaction is available.
@@ -55,7 +56,7 @@ namespace Stratis.Bitcoin.Signals
         /// <summary>
         /// Initializes the object with newly created instances of signalers.
         /// </summary>
-        public Signals() : this(new Signaler<Block>(), new Signaler<Block>(), new Signaler<Transaction>())
+        public Signals() : this(new Signaler<ChainedHeaderBlock>(), new Signaler<ChainedHeaderBlock>(), new Signaler<Transaction>())
         {
         }
 
@@ -65,7 +66,7 @@ namespace Stratis.Bitcoin.Signals
         /// <param name="blockConnectedSignaler">Signaler providing notifications about newly available blocks to its subscribers.</param>
         /// <param name="blockDisonnectedSignaler">Signaler providing notifications about a block being disconnected to its subscribers.</param>
         /// <param name="transactionSignaler">Signaler providing notifications about newly available transactions to its subscribers.</param>
-        public Signals(ISignaler<Block> blockConnectedSignaler, ISignaler<Block> blockDisonnectedSignaler, ISignaler<Transaction> transactionSignaler)
+        public Signals(ISignaler<ChainedHeaderBlock> blockConnectedSignaler, ISignaler<ChainedHeaderBlock> blockDisonnectedSignaler, ISignaler<Transaction> transactionSignaler)
         {
             Guard.NotNull(blockConnectedSignaler, nameof(blockConnectedSignaler));
             Guard.NotNull(blockDisonnectedSignaler, nameof(blockDisonnectedSignaler));
@@ -77,28 +78,28 @@ namespace Stratis.Bitcoin.Signals
         }
 
         /// <summary>Signaler providing notifications about newly available blocks to its subscribers.</summary>
-        private ISignaler<Block> blocksConnected { get; }
+        private ISignaler<ChainedHeaderBlock> blocksConnected { get; }
 
         /// <summary>Signaler providing notifications about blocks being disconnected to its subscribers.</summary>
-        private ISignaler<Block> blocksDisconnected { get; }
+        private ISignaler<ChainedHeaderBlock> blocksDisconnected { get; }
 
         /// <summary>Signaler providing notifications about newly available transactions to its subscribers.</summary>
         private ISignaler<Transaction> transactions { get; }
 
         /// <inheritdoc />
-        public void SignalBlockConnected(Block block)
+        public void SignalBlockConnected(ChainedHeaderBlock chainedHeaderBlock)
         {
-            Guard.NotNull(block, nameof(block));
+            Guard.NotNull(chainedHeaderBlock, nameof(chainedHeaderBlock));
 
-            this.blocksConnected.Broadcast(block);
+            this.blocksConnected.Broadcast(chainedHeaderBlock);
         }
 
         /// <inheritdoc />
-        public void SignalBlockDisconnected(Block block)
+        public void SignalBlockDisconnected(ChainedHeaderBlock chainedHeaderBlock)
         {
-            Guard.NotNull(block, nameof(block));
+            Guard.NotNull(chainedHeaderBlock, nameof(chainedHeaderBlock));
 
-            this.blocksDisconnected.Broadcast(block);
+            this.blocksDisconnected.Broadcast(chainedHeaderBlock);
         }
 
         /// <inheritdoc />
@@ -110,7 +111,7 @@ namespace Stratis.Bitcoin.Signals
         }
 
         /// <inheritdoc />
-        public IDisposable SubscribeForBlocksConnected(IObserver<Block> observer)
+        public IDisposable SubscribeForBlocksConnected(IObserver<ChainedHeaderBlock> observer)
         {
             Guard.NotNull(observer, nameof(observer));
 
@@ -118,7 +119,7 @@ namespace Stratis.Bitcoin.Signals
         }
 
         /// <inheritdoc />
-        public IDisposable SubscribeForBlocksDisconnected(IObserver<Block> observer)
+        public IDisposable SubscribeForBlocksDisconnected(IObserver<ChainedHeaderBlock> observer)
         {
             Guard.NotNull(observer, nameof(observer));
 

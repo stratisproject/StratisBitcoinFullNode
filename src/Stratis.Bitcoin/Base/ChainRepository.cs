@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.logger.LogTrace("({0}:{1})", nameof(height), height);
 
-            if (height <= this.finalizedBlockInfo.Height)
+            if (this.finalizedBlockInfo != null && height <= this.finalizedBlockInfo.Height)
             {
                 this.logger.LogTrace("(-)[CANT_GO_BACK]:false");
                 return Task.FromResult(false);

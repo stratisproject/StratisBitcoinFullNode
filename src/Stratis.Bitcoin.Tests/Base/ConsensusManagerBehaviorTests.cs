@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], null, this.headers[10]);
 
-            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
             Assert.Null(result);
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Tests.Base
                     return new ConnectNewHeadersResult() {Consumed = this.headers[12]};
                 });
 
-            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
             Assert.Equal(this.headers[12], behavior.ExpectedPeerTip);
             Assert.Equal(this.headers[12], behavior.BestSentHeader);
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Tests.Base
                     return new ConnectNewHeadersResult() {Consumed = this.headers[40]};
                 });
 
-            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
             Assert.Equal(this.headers[40], behavior.ExpectedPeerTip);
             Assert.Equal(this.headers[40], behavior.BestSentHeader);
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Tests.Base
                     throw new ConnectHeaderException();
                 });
 
-            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
             Assert.Equal(this.headers[10], behavior.ExpectedPeerTip);
             Assert.Equal(this.headers[10], behavior.BestSentHeader);
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Tests.Base
             // That will set peer to null.
             behavior.Dispose();
 
-            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
             Assert.Equal(0, this.helper.HeadersPresentedCalledTimes);
