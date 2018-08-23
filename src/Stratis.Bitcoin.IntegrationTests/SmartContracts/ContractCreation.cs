@@ -27,7 +27,6 @@ public class CatOwner : SmartContract
         }
     }
 
-
     public CatOwner(ISmartContractState smartContractState) : base(smartContractState)
     {
     }
@@ -59,7 +58,11 @@ public class Cat : SmartContract
     public Cat(ISmartContractState smartContractState, int catNumber) : base(smartContractState)
     {
         CatNumber = catNumber;
+        Log(new CatCreated { CatNumber = catNumber });
     }
 
-
+    public struct CatCreated
+    {
+        public int CatNumber;
+    }
 }

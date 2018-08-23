@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             this.network = new SmartContractsRegTest();
             this.serializer = new ContractPrimitiveSerializer(this.network);
-            this.logHolder = new ContractLogHolder(this.serializer, this.network);
+            this.logHolder = new ContractLogHolder(this.network);
         }
 
         [Fact]
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.logHolder.Log(state1, log2);
             this.logHolder.Log(state2, log3);
 
-            IList<Log> logs = this.logHolder.GetLogs();
+            IList<Log> logs = this.logHolder.GetRawLogs().ToLogs(this.serializer);
             Assert.Equal(3, logs.Count);
 
             // First log has 3 topics, for name and 2 fields.

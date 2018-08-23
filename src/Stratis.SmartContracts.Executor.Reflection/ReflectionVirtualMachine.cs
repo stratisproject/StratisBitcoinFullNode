@@ -90,7 +90,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             uint160 address = this.addressGenerator.GenerateAddress(transactionContext.TransactionHash, transactionContext.GetNonceAndIncrement());
 
-            var contractLogger = new ContractLogHolder(this.contractPrimitiveSerializer, this.network);
+            var contractLogger = new ContractLogHolder(this.network);
 
             ISmartContractState contractState = this.SetupState(contractLogger, internalTransferList, gasMeter, repository, transactionContext, address);
 
@@ -135,7 +135,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             repository.SetCode(contract.Address, createData.ContractExecutionCode);
             repository.SetContractType(contract.Address, contract.Type.Name);
 
-            return VmExecutionResult.CreationSuccess(contract.Address, internalTransferList, gasMeter.GasConsumed, invocationResult.Return, contractLogger.GetLogs());
+            return VmExecutionResult.CreationSuccess(contract.Address, internalTransferList, gasMeter.GasConsumed, invocationResult.Return, contractLogger.GetRawLogs());
         }
 
         /// <summary>
@@ -175,7 +175,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var internalTransferList = new List<TransferInfo>();
 
-            var contractLogger = new ContractLogHolder(this.contractPrimitiveSerializer, this.network);
+            var contractLogger = new ContractLogHolder(this.network);
 
             ISmartContractState contractState = this.SetupState(contractLogger, internalTransferList, gasMeter, repository, transactionContext, callData.ContractAddress);
 
@@ -213,14 +213,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.logger.LogTrace("(-):{0}={1}", nameof(gasMeter.GasConsumed), gasMeter.GasConsumed);
 
-            return VmExecutionResult.Success(internalTransferList, gasMeter.GasConsumed, invocationResult.Return, contractLogger.GetLogs());
+            return VmExecutionResult.Success(internalTransferList, gasMeter.GasConsumed, invocationResult.Return, contractLogger.GetRawLogs());
         }
 
         /// <summary>
         /// Sets up the state object for the contract execution
         /// </summary>
         private ISmartContractState SetupState(
-            IContractLogger contractLogger,
+            IContractLogHolder contractLogger,
             List<TransferInfo> internalTransferList,
             IGasMeter gasMeter,
             IContractStateRepository repository,
@@ -232,7 +232,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var persistentState = new PersistentState(persistenceStrategy, this.contractPrimitiveSerializer, contractAddress);
 
-            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this, repository, internalTransferList, transactionContext);
+            IInternalTransactionExecutor internalTransactionExecutor = this.internalTransactionExecutorFactory.Create(this, contractLogger, repository, internalTransferList, transactionContext);
 
             var balanceState = new BalanceState(repository, transactionContext.Amount, internalTransferList);
 

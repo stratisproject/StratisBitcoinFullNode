@@ -8,6 +8,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -37,6 +38,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             serializer
                 .Setup(s => s.Deserialize(It.IsAny<byte[]>()))
                 .Returns(Result.Ok(contractTxData));
+
+            var contractPrimitiveSerializer = new Mock<IContractPrimitiveSerializer>();
 
             var vmExecutionResult =
                 VmExecutionResult.CreationSuccess(
@@ -70,6 +73,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var sut = new Executor(
                 loggerFactory,
+                contractPrimitiveSerializer.Object,
                 serializer.Object,
                 state.Object,
                 refundProcessor.Object,
