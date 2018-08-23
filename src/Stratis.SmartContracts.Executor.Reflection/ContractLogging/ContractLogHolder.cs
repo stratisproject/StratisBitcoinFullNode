@@ -15,16 +15,19 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
             this.rawLogs = new List<RawLog>();
         }
 
+        /// <inheritdoc />
         public void Log<T>(ISmartContractState smartContractState, T toLog)
         {
             this.rawLogs.Add(new RawLog(smartContractState.Message.ContractAddress.ToUint160(this.network), toLog));
         }
 
+        /// <inheritdoc />
         public IList<RawLog> GetRawLogs()
         {
             return this.rawLogs;
         }
 
+        /// <inheritdoc />
         public void AddRawLogs(IEnumerable<RawLog> toAdd)
         {
             this.rawLogs.AddRange(toAdd);

@@ -46,10 +46,13 @@ namespace Stratis.SmartContracts
         /// </summary>
         private readonly Func<ulong> getBalance;
 
+        /// <summary>
+        /// Saves any logs during contract execution.
+        /// </summary>
         private readonly IContractLogger contractLogger;
 
         /// <summary>
-        /// Executes the smart contract.
+        /// Executes any internal calls or creates to other smart contracts.
         /// </summary>
         private readonly IInternalTransactionExecutor internalTransactionExecutor;
 
