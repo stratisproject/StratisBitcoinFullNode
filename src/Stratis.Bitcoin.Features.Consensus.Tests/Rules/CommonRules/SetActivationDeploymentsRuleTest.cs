@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ValidBlock_SetsConsensusFlagsAsync()
+        public async Task ValidBlock_SetsConsensusFlagsAsync()
         {
             this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
             this.consensusRules = this.InitializeConsensusRules();
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// Checks that Pos does not set the "CheckColdStakeVerify" flag before the "ColdStakingActivationHeight" is reached.
         /// </summary>
         [Fact]
-        public async Task RunAsync_ValidBlock_PosDoesNotSetCheckColdStakeVerifyFlagBeforeActivationHeightAsync()
+        public async Task PosDoesNotSetCheckColdStakeVerifyFlagBeforeActivationHeightAsync()
         {
             const int ColdStakingActivationHeight = 3;
 
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.consensusRules = this.InitializeConsensusRules();
             this.nodeDeployments = new NodeDeployments(network, this.concurrentChain);
 
-            // Created a block before the activation height.
+            // Create a block before the activation height.
             Block block = this.network.CreateBlock();
             block.AddTransaction(this.network.CreateTransaction());
             block.UpdateMerkleRoot();
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// Checks that Pos does sets the "CheckColdStakeVerify" flag when the "ColdStakingActivationHeight" is reached.
         /// </summary>
         [Fact]
-        public async Task RunAsync_ValidBlock_PosSetsCheckColdStakeVerifyFlagAtActivationHeightAsync()
+        public async Task PosSetsCheckColdStakeVerifyFlagAtActivationHeightAsync()
         {
             const int ColdStakingActivationHeight = 3;
 
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.consensusRules = this.InitializeConsensusRules();
             this.nodeDeployments = new NodeDeployments(network, this.concurrentChain);
 
-            // Created a block before the activation height.
+            // Create a block before the activation height.
             Block block = this.network.CreateBlock();
             block.AddTransaction(this.network.CreateTransaction());
             block.UpdateMerkleRoot();
