@@ -51,8 +51,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Receipts
 
         private void TestSerializeReceipt(Receipt receipt)
         {
-            byte[] serialized = receipt.ToBytesRlp();
-            Receipt deserialized = Receipt.FromBytesRlp(serialized);
+            byte[] serialized = receipt.ToConsensusBytesRlp();
+            Receipt deserialized = Receipt.FromConsensusBytesRlp(serialized);
             Assert.Equal(receipt.PostState, deserialized.PostState);
             Assert.Equal(receipt.GasUsed, deserialized.GasUsed);
             Assert.Equal(receipt.Bloom, deserialized.Bloom);

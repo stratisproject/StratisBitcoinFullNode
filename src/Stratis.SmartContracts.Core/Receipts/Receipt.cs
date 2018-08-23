@@ -12,6 +12,8 @@ namespace Stratis.SmartContracts.Core.Receipts
     /// </summary>
     public class Receipt
     {
+        #region Consensus Properties
+
         /// <summary>
         /// State root after smart contract execution. Note that if contract failed this will be the same as previous state.
         /// </summary>
@@ -31,6 +33,36 @@ namespace Stratis.SmartContracts.Core.Receipts
         /// Logs created during contract execution. 
         /// </summary>
         public Log[] Logs { get; }
+        #endregion
+
+        #region Storage Properties
+
+        /// <summary>
+        /// Hash of the transaction.
+        /// </summary>
+        public uint256 TransactionHash { get; private set; }
+
+        /// <summary>
+        /// Block hash of the block this transaction was contained in.
+        /// </summary>
+        public uint256 BlockHash { get; private set; }
+
+        /// <summary>
+        /// Address of the sender of the transaction.
+        /// </summary>
+        public uint160 From { get; private set; }
+
+        /// <summary>
+        /// Contract address sent to in the CALL. Null if CREATE.
+        /// </summary>
+        public uint160 To { get; private set; }
+
+        /// <summary>
+        /// Contract address created in this CREATE. Null if CALL.
+        /// </summary>
+        public uint160 NewContractAddress { get; private set; }
+
+        #endregion
 
         /// <summary>
         /// Creates receipt and generates bloom.
@@ -47,6 +79,17 @@ namespace Stratis.SmartContracts.Core.Receipts
             this.Bloom = bloom;
         }
 
+        /// <summary>
+        /// Set the extra properties to be stored as part of the receipt, some of which may only be available after block execution is complete.
+        /// </summary>
+        public void SetStorageProperties(uint256 transactionHash, uint256 blockHash, uint160 from, uint160 to, uint160 newContractAddress)
+        {
+            this.TransactionHash = transactionHash;
+            this.BlockHash = blockHash;
+            this.From = from;
+            this.To = to;
+            this.NewContractAddress = newContractAddress;
+        }
 
         /// <summary>
         /// Get the bits for all of the logs in this receipt.
@@ -61,10 +104,12 @@ namespace Stratis.SmartContracts.Core.Receipts
             return bloom;
         }
 
+        #region Consensus Serialization
+
         /// <summary>
         /// Parse a receipt into the consensus data. 
         /// </summary>
-        public byte[] ToBytesRlp()
+        public byte[] ToConsensusBytesRlp()
         {
             IList<byte[]> encodedLogs = this.Logs.Select(x => RLP.EncodeElement(x.ToBytesRlp())).ToList();
 
@@ -79,7 +124,7 @@ namespace Stratis.SmartContracts.Core.Receipts
         /// <summary>
         /// Parse a Receipt from the stored consensus data. 
         /// </summary>
-        public static Receipt FromBytesRlp(byte[] bytes)
+        public static Receipt FromConsensusBytesRlp(byte[] bytes)
         {
             RLPCollection list = RLP.Decode(bytes);
             RLPCollection innerList = (RLPCollection) list[0];
@@ -97,11 +142,27 @@ namespace Stratis.SmartContracts.Core.Receipts
         }
 
         /// <summary>
-        /// Get a hash of the entire receipt.
+        /// Get a hash of the entire consensus receipt.
         /// </summary>
         public uint256 GetHash()
         {
-            return new uint256(HashHelper.Keccak256(ToBytesRlp()));
+            return new uint256(HashHelper.Keccak256(ToConsensusBytesRlp()));
         }
+
+        #endregion
+
+        #region Storage Serialization
+
+        public Receipt FromStorageBytesRlp(byte[] bytes)
+        {
+            throw new NotImplementedException();
+        }
+
+        public byte[] ToStorageBytesRlp()
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
     }
 }
