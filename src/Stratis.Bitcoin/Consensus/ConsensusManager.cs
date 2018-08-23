@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.ValidationResults;
@@ -468,7 +466,7 @@ namespace Stratis.Bitcoin.Consensus
 
             foreach (ConsensusManagerBehavior consensusManagerBehavior in behaviors)
             {
-                ConnectNewHeadersResult connectNewHeadersResult = await consensusManagerBehavior.ConsensusTipChangedAsync(this.Tip).ConfigureAwait(false);
+                ConnectNewHeadersResult connectNewHeadersResult = await consensusManagerBehavior.ConsensusTipChangedAsync().ConfigureAwait(false);
 
                 int? peerId = consensusManagerBehavior.AttachedPeer?.Connection?.Id;
 
@@ -494,7 +492,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Attempt to switch to new chain, which may require rewinding blocks from the current chain.</summary>
         /// <remarks>
         /// It is possible that during connection we find out that blocks that we tried to connect are invalid and we switch back to original chain.
-        /// Switching that requires rewinding may fail in case rewind goes beyond fork point and the block data is not available to advance to the fork point.
+        /// Should be locked by <see cref="reorgLock"/>.
         /// </remarks>
         /// <param name="newTip">Tip of the chain that will become the tip of our consensus chain if full validation will succeed.</param>
         /// <returns>Validation related information.</returns>
@@ -509,31 +507,32 @@ namespace Stratis.Bitcoin.Consensus
             if (fork == newTip)
             {
                 // The new header is behind the current tip this is a bug.
-                this.logger.LogError("New header '{0}' is behind the current tip '{1}'.", newTip, oldTip);
+                this.logger.LogCritical("New header '{0}' is behind the current tip '{1}'.", newTip, oldTip);
                 this.logger.LogTrace("(-)[INVALID_NEW_TIP]");
                 throw new ConsensusException("New tip must be ahead of old tip.");
             }
 
-            ChainedHeader currentTip = fork;
-
-            // If the new block is not on the current chain as our current consensus tip
-            // then rewind consensus tip to the common fork (or earlier because rewind might jump a few blocks back).
+            // If the new block is not on the current chain as our current consensus tip then rewind consensus tip to the common fork.
             bool isExtension = fork == oldTip;
 
             if (!isExtension)
-                currentTip = await this.RewindToForkPointOrBelowAsync(fork, oldTip).ConfigureAwait(false);
+            {
+                await this.RewindToForkPointAsync(fork, oldTip).ConfigureAwait(false);
 
-            List<ChainedHeaderBlock> blocksToConnect = await this.TryGetBlocksToConnectAsync(newTip, currentTip.Height + 1).ConfigureAwait(false);
+                lock (this.peerLock)
+                {
+                    this.SetConsensusTipInternalLocked(fork);
+                }
+            }
 
+            List<ChainedHeaderBlock> blocksToConnect = await this.TryGetBlocksToConnectAsync(newTip, fork.Height + 1).ConfigureAwait(false);
+
+            // Sanity check. This should never happen.
             if (blocksToConnect == null)
             {
-                // In a situation where the rewind operation ended up behind fork point we may end up with a gap with missing blocks (if the reorg is big enough)
-                // In that case we try to load the blocks from store, if store is not present we disconnect all peers.
-                this.HandleMissingBlocksGap(currentTip);
-
-                var result = new ConnectBlocksResult(false);
-                this.logger.LogTrace("(-)[GAP_BEFORE_CONNECTING]:'{0}'", result);
-                return result;
+                this.logger.LogCritical("Blocks to connect are missing!");
+                this.logger.LogTrace("(-)[NO_BLOCK_TO_CONNECT]");
+                throw new ConsensusException("Blocks to connect are missing!");
             }
 
             ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(newTip, blocksToConnect).ConfigureAwait(false);
@@ -547,7 +546,12 @@ namespace Stratis.Bitcoin.Consensus
             if (connectBlockResult.LastValidatedBlockHeader != null)
             {
                 // Block validation failed we need to rewind any blocks that were added to the chain.
-                await this.RewindPartiallyConnectedChainAsync(connectBlockResult.LastValidatedBlockHeader, currentTip).ConfigureAwait(false);
+                await this.RewindPartiallyConnectedChainAsync(connectBlockResult.LastValidatedBlockHeader, fork).ConfigureAwait(false);
+
+                lock (this.peerLock)
+                {
+                    this.SetConsensusTipInternalLocked(fork);
+                }
             }
 
             if (isExtension)
@@ -556,44 +560,45 @@ namespace Stratis.Bitcoin.Consensus
                 return connectBlockResult;
             }
 
-            List<ChainedHeaderBlock> blocksToReconnect = await this.TryGetBlocksToConnectAsync(oldTip, currentTip.Height + 1).ConfigureAwait(false);
+            List<ChainedHeaderBlock> blocksToReconnect = await this.TryGetBlocksToConnectAsync(oldTip, fork.Height + 1).ConfigureAwait(false);
 
+            // Sanity check. This should never happen.
             if (blocksToReconnect == null)
             {
-                // We tried to reapply old chain but we don't have all the blocks to do that.
-                this.HandleMissingBlocksGap(currentTip);
-
-                var result = new ConnectBlocksResult(false);
-                this.logger.LogTrace("(-)[GAP_AFTER_CONNECTING]:'{0}'", result);
-                return result;
+                this.logger.LogCritical("Blocks to reconnect are missing!");
+                this.logger.LogTrace("(-)[NO_BLOCK_TO_RECONNECT]");
+                throw new ConsensusException("Blocks to reconnect are missing!");
             }
 
-            ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(currentTip, blocksToReconnect).ConfigureAwait(false);
+            ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(fork, blocksToReconnect).ConfigureAwait(false);
 
             this.logger.LogTrace("(-):'{0}'", reconnectionResult);
             return reconnectionResult;
         }
 
-        /// <summary>Rewinds to fork point or below it.</summary>
-        /// <returns>New consensus tip.</returns>
-        private async Task<ChainedHeader> RewindToForkPointOrBelowAsync(ChainedHeader fork, ChainedHeader oldTip)
+        /// <summary>Rewinds to fork point.</summary>
+        /// <param name="fork">The fork point. It can't be ahead of <paramref name="oldTip"/>.</param>
+        /// <param name="oldTip">The old tip.</param>
+        /// <exception cref="ConsensusException">Thrown in case <paramref name="fork"/> is ahead of the <paramref name="oldTip"/>.</exception>
+        private async Task RewindToForkPointAsync(ChainedHeader fork, ChainedHeader oldTip)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}'", nameof(fork), fork, nameof(oldTip), oldTip);
 
-            ChainedHeader currentTip = oldTip;
-
-            while (fork.Height < currentTip.Height)
+            // This is sanity check and should never happen.
+            if (fork.Height > oldTip.Height)
             {
-                RewindState transitionState = await this.consensusRules.RewindAsync().ConfigureAwait(false);
-
-                lock (this.peerLock)
-                {
-                    currentTip = this.chainedHeaderTree.GetChainedHeader(transitionState.BlockHash);
-                }
+                this.logger.LogTrace("(-)[INVALID_FORK_POINT]");
+                throw new ConsensusException("Fork can't be ahead of tip!");
             }
 
-            this.logger.LogTrace("(-):'{0}'", currentTip);
-            return currentTip;
+            int blocksToRewind = oldTip.Height - fork.Height;
+
+            for (int i = 0; i < blocksToRewind; i++)
+            {
+                await this.consensusRules.RewindAsync().ConfigureAwait(false);
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Rewinds the connected part of invalid chain.</summary>
@@ -683,7 +688,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (connectBlockResult.Succeeded)
             {
-                var result = new ConnectBlocksResult(false, false);
+                var result = new ConnectBlocksResult(false) { ConsensusTipChanged = false };
                 this.logger.LogTrace("(-):'{0}'", result);
                 return result;
             }
@@ -693,40 +698,6 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogError("A critical error has prevented reconnecting blocks");
             this.logger.LogTrace("(-)[FAILED_TO_RECONNECT]");
             throw new ConsensusException("A critical error has prevented reconnecting blocks.");
-        }
-
-        /// <summary>Disconnects all the peers and sets the consensus tip to specified value.</summary>
-        /// <remarks>
-        /// In case we failed to retrieve blocks from any of the storages that we have during the process of consensus tip switching we want to disconnect
-        /// from all peers and reset consensus tip before the fork point between two chains (one that is ours and another which we tried switch to).
-        /// Disconnection is needed to avoid having CHT in an inconsistent state and to increase the probability of connecting to a new set of peers
-        /// which claims the same chain because they had enough time to handle the chain split.
-        /// </remarks>
-        /// <param name="newTip">The new tip.</param>
-        private void HandleMissingBlocksGap(ChainedHeader newTip)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
-
-            List<INetworkPeer> peers;
-
-            lock (this.peerLock)
-            {
-                peers = this.peersByPeerId.Values.ToList();
-
-                this.logger.LogTrace("Simulating disconnection for {0} peers.", peers.Count);
-
-                // First make sure headers are removed from CHT by emulating peers disconnection.
-                foreach (INetworkPeer networkPeer in peers)
-                    this.PeerDisconnectedLocked(networkPeer.Connection.Id);
-
-                this.SetConsensusTipLocked(newTip);
-            }
-
-            // Actually disconnect the peers.
-            foreach (INetworkPeer networkPeer in peers)
-                networkPeer.Disconnect("Consensus out of sync.");
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -793,7 +764,14 @@ namespace Stratis.Bitcoin.Consensus
                     badPeers = this.chainedHeaderTree.PartialOrFullValidationFailed(blockToConnect.ChainedHeader);
                 }
 
-                var failureResult = new ConnectBlocksResult(false, false, badPeers, validationContext.Error.Message, validationContext.BanDurationSeconds);
+                var failureResult = new ConnectBlocksResult(false)
+                {
+                    BanDurationSeconds = validationContext.BanDurationSeconds,
+                    BanReason = validationContext.Error.Message,
+                    ConsensusTipChanged = false,
+                    Error = validationContext.Error,
+                    PeersToBan = badPeers
+                };
 
                 this.logger.LogTrace("(-)[FAILED]:'{0}'", failureResult);
                 return failureResult;
@@ -806,7 +784,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsConsensusConsideredToBeSynced();
             }
 
-            var result = new ConnectBlocksResult(true);
+            var result = new ConnectBlocksResult(true) { ConsensusTipChanged = true };
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
@@ -825,7 +803,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ChainedHeaderBlock chainedHeaderBlock = await this.LoadBlockDataAsync(currentHeader.HashBlock).ConfigureAwait(false);
 
-                if (chainedHeaderBlock == null)
+                if (chainedHeaderBlock?.Block == null)
                 {
                     this.logger.LogTrace("(-):null");
                     return null;
@@ -835,41 +813,47 @@ namespace Stratis.Bitcoin.Consensus
                 currentHeader = currentHeader.Previous;
             }
 
-            this.logger.LogTrace("(-):{0}:'{1}'", nameof(chainedHeaderBlocks), chainedHeaderBlocks.Count);
+            this.logger.LogTrace("(-):*.{0}={1}", nameof(chainedHeaderBlocks.Count), chainedHeaderBlocks.Count);
             return chainedHeaderBlocks;
         }
 
+        /// <summary>Sets the consensus tip.</summary>
+        /// <param name="newTip">New consensus tip.</param>
         private List<int> SetConsensusTip(ChainedHeader newTip)
         {
             lock (this.peerLock)
             {
-                return this.SetConsensusTipLocked(newTip);
+                this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
+
+                List<int> peerIdsToResync = this.chainedHeaderTree.ConsensusTipChanged(newTip);
+
+                this.SetConsensusTipInternalLocked(newTip);
+
+                bool ibd = this.ibdState.IsInitialBlockDownload();
+
+                if (ibd != this.isIbd)
+                    this.blockPuller.OnIbdStateChanged(ibd);
+
+                this.isIbd = ibd;
+
+                this.logger.LogTrace("(-):*.{0}={1}", nameof(peerIdsToResync.Count), peerIdsToResync.Count);
+                return peerIdsToResync;
             }
         }
 
-        /// <summary>Sets the consensus tip.</summary>
+        /// <summary>Updates all internal values with the new tip.</summary>
         /// <remarks>Have to be locked by <see cref="peerLock"/>.</remarks>
         /// <param name="newTip">New consensus tip.</param>
-        private List<int> SetConsensusTipLocked(ChainedHeader newTip)
+        private void SetConsensusTipInternalLocked(ChainedHeader newTip)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
-
-            List<int> peerIdsToResync = this.chainedHeaderTree.ConsensusTipChanged(newTip);
 
             this.Tip = newTip;
 
             this.chainState.ConsensusTip = this.Tip;
             this.chain.SetTip(this.Tip);
 
-            bool ibd = this.ibdState.IsInitialBlockDownload();
-
-            if (ibd != this.isIbd)
-                this.blockPuller.OnIbdStateChanged(ibd);
-
-            this.isIbd = ibd;
-
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(peerIdsToResync.Count), peerIdsToResync.Count);
-            return peerIdsToResync;
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -1080,16 +1064,13 @@ namespace Stratis.Bitcoin.Consensus
                 return chainedHeaderBlock;
             }
 
-            if (this.blockStore != null)
+            Block block = await this.blockStore.GetBlockAsync(blockHash).ConfigureAwait(false);
+            if (block != null)
             {
-                Block block = await this.blockStore.GetBlockAsync(blockHash).ConfigureAwait(false);
-                if (block != null)
-                {
-                    var newBlockPair = new ChainedHeaderBlock(block, chainedHeaderBlock.ChainedHeader);
-                    this.logger.LogTrace("Chained header block '{0}' was found in store.", newBlockPair);
-                    this.logger.LogTrace("(-)[FOUND_IN_BLOCK_STORE]:'{0}'", newBlockPair);
-                    return newBlockPair;
-                }
+                var newBlockPair = new ChainedHeaderBlock(block, chainedHeaderBlock.ChainedHeader);
+                this.logger.LogTrace("Chained header block '{0}' was found in store.", newBlockPair);
+                this.logger.LogTrace("(-)[FOUND_IN_BLOCK_STORE]:'{0}'", newBlockPair);
+                return newBlockPair;
             }
 
             this.logger.LogTrace("(-)[NOT_FOUND]:'{0}'", chainedHeaderBlock);

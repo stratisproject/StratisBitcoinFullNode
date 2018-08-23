@@ -12,13 +12,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class PersistentStateSerializerTests
     {
-        private readonly PersistentStateSerializer serializer;
+        private readonly ContractPrimitiveSerializer serializer;
         private readonly Network network;
 
         public PersistentStateSerializerTests()
         {
-            this.serializer = new PersistentStateSerializer();
             this.network = new SmartContractsRegTest();
+            this.serializer = new ContractPrimitiveSerializer(this.network);
         }
 
         [Fact]
@@ -41,9 +41,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             TestValueType valueType = this.NewTestValueType();
 
-            var serialized = this.serializer.Serialize(valueType, this.network);
+            var serialized = this.serializer.Serialize(valueType);
 
-            TestValueType deserialized = this.serializer.Deserialize<TestValueType>(serialized, this.network);
+            TestValueType deserialized = this.serializer.Deserialize<TestValueType>(serialized);
             TestValueTypeEqual(valueType, deserialized);
         }
 
@@ -56,9 +56,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             nestedValueType.Id = 123;
             nestedValueType.ValueType = valueType;
 
-            var serialized = this.serializer.Serialize(nestedValueType, this.network);
+            var serialized = this.serializer.Serialize(nestedValueType);
 
-            NestedValueType deserialized = this.serializer.Deserialize<NestedValueType>(serialized, this.network);
+            NestedValueType deserialized = this.serializer.Deserialize<NestedValueType>(serialized);
 
             TestValueType nested = deserialized.ValueType;
 
@@ -72,9 +72,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var nestedValueType = new HasReferenceTypeValueType();
             nestedValueType.ReferenceType = null;
 
-            var serialized = this.serializer.Serialize(nestedValueType, this.network);
+            var serialized = this.serializer.Serialize(nestedValueType);
 
-            HasReferenceTypeValueType deserialized = this.serializer.Deserialize<HasReferenceTypeValueType>(serialized, this.network);
+            HasReferenceTypeValueType deserialized = this.serializer.Deserialize<HasReferenceTypeValueType>(serialized);
 
             Assert.Equal(nestedValueType.ReferenceType, deserialized.ReferenceType);
         }
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             classToSave.TestValueType = NewTestValueType();
 
             Assert.Throws<PersistentStateSerializationException>(() =>
-                this.serializer.Serialize(classToSave, this.network));
+                this.serializer.Serialize(classToSave));
         }
 
         [Fact]
@@ -99,8 +99,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             complexType.NestedValueType.ValueType = NewTestValueType();
             complexType.TestValueType = NewTestValueType();
 
-            byte[] serialized = this.serializer.Serialize(complexType, this.network);
-            ComplexValueType deserialized = this.serializer.Deserialize<ComplexValueType>(serialized, this.network);
+            byte[] serialized = this.serializer.Serialize(complexType);
+            ComplexValueType deserialized = this.serializer.Deserialize<ComplexValueType>(serialized);
             Assert.Equal(complexType.Id, deserialized.Id);
             Assert.Equal(complexType.String, deserialized.String);
             Assert.Equal(complexType.NestedValueType.Id, deserialized.NestedValueType.Id);
@@ -131,8 +131,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private void TestType<T>(T input)
         {
-            byte[] testBytes = this.serializer.Serialize(input, this.network);
-            T output = this.serializer.Deserialize<T>(testBytes, this.network);
+            byte[] testBytes = this.serializer.Serialize(input);
+            T output = this.serializer.Deserialize<T>(testBytes);
             Assert.Equal(input, output);
         }
 
