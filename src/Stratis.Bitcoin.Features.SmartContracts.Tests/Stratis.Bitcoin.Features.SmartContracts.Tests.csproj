@@ -123,4 +123,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Packages\" />
+  </ItemGroup>
+
 </Project>
