@@ -516,11 +516,6 @@ namespace Stratis.Bitcoin.Consensus
             if (!isExtension)
             {
                 await this.RewindToForkPointAsync(fork, oldTip).ConfigureAwait(false);
-
-                lock (this.peerLock)
-                {
-                    this.SetConsensusTipInternalLocked(fork);
-                }
             }
 
             List<ChainedHeaderBlock> blocksToConnect = await this.TryGetBlocksToConnectAsync(newTip, fork.Height + 1).ConfigureAwait(false);
@@ -545,11 +540,6 @@ namespace Stratis.Bitcoin.Consensus
             {
                 // Block validation failed we need to rewind any blocks that were added to the chain.
                 await this.RewindPartiallyConnectedChainAsync(connectBlockResult.LastValidatedBlockHeader, fork).ConfigureAwait(false);
-
-                lock (this.peerLock)
-                {
-                    this.SetConsensusTipInternalLocked(fork);
-                }
             }
 
             if (isExtension)
@@ -595,6 +585,11 @@ namespace Stratis.Bitcoin.Consensus
             {
                 await this.consensusRules.RewindAsync().ConfigureAwait(false);
 
+                lock (this.peerLock)
+                {
+                    this.SetConsensusTipInternalLocked(current.Previous);
+                }
+
                 // Signal disconnected block.
                 this.signals.SignalBlockDisconnected(new ChainedHeaderBlock(current.Block, current));
 
@@ -614,6 +609,11 @@ namespace Stratis.Bitcoin.Consensus
             while (currentTip.Height < current.Height)
             {
                 await this.consensusRules.RewindAsync().ConfigureAwait(false);
+
+                lock (this.peerLock)
+                {
+                    this.SetConsensusTipInternalLocked(current.Previous);
+                }
 
                 // Signal disconnected block.
                 this.signals.SignalBlockDisconnected(new ChainedHeaderBlock(current.Block, current));
