@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// It is expected that all 4 methods will produce roughly the same results.
         /// </para>
         /// <para>
-        /// The first method we use is using two <see cref="System.DateTimeProvider.Default.GetUtcNow()"/> calls, one done before and one done after.
+        /// The first method we use is using two <see cref="NBitcoin.DateTimeProvider.Default.GetUtcNow()"/> calls, one done before and one done after.
         /// The second method is using <see cref="System.Diagnostics.Stopwatch"/>, which we start before the work and stop after
         /// the work is done. The third method is using the actual disposable watch that we want to test. The fourth method
         /// is just calculating the expected delay without actually measuring it.
@@ -45,7 +45,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
             int expectedElapsedMs = 0;
             long elapsedTicksByDispStopwatch = 0;
 
-            DateTime startTime = DateTimeProvider.Default.GetUtcNow();
+            IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
+            DateTime startTime = dateTimeProvider.GetUtcNow();
             var diagStopwatch = new System.Diagnostics.Stopwatch();
 
             int delayTimeMs = 0;
@@ -71,7 +72,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
                 Thread.Sleep(delay);
             }
 
-            DateTime endTime = DateTimeProvider.Default.GetUtcNow().AddMilliseconds(-delayTimeMs);
+            DateTime endTime = dateTimeProvider.GetUtcNow().AddMilliseconds(-delayTimeMs);
             TimeSpan elapsedTimeByDateTime = endTime - startTime;
             var elapsedTimeByDiagStopwatch = new TimeSpan(diagStopwatch.Elapsed.Ticks);
             var elapsedTimeByDispStopwatch = new TimeSpan(elapsedTicksByDispStopwatch);
