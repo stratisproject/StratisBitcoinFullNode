@@ -34,14 +34,12 @@ public class TestContract : SmartContract
     public void AMethod(){}
 }
 ";
-            var nugetCache = Environment.GetEnvironmentVariable("UserProfile") + @"\.nuget\packages\";
+            var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
             var references = new List<MetadataReference>
             {
-                MetadataReference.CreateFromFile(nugetCache +
-                                                 @"microsoft.netcore.app\2.1.1\ref\netcoreapp2.1\System.Runtime.dll")
+                MetadataReference.CreateFromFile(Path.Combine(basePath, "Packages", "netcoreapp2.1", "System.Runtime.dll"))
             };
-
-            var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
             var version1DllPath = Path.Combine(basePath, "Packages", "1.0.0-TEST", "Stratis.SmartContracts.dll");
 
