@@ -43,7 +43,6 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IChainedHeaderTree chainedHeaderTree;
         private readonly IChainState chainState;
         private readonly IPartialValidator partialValidator;
-        private readonly ConsensusSettings consensusSettings;
         private readonly IConsensusRuleEngine consensusRules;
         private readonly Signals.Signals signals;
         private readonly IPeerBanning peerBanning;
@@ -103,7 +102,6 @@ namespace Stratis.Bitcoin.Consensus
             this.network = network;
             this.chainState = chainState;
             this.partialValidator = partialValidator;
-            this.consensusSettings = consensusSettings;
             this.consensusRules = consensusRules;
             this.signals = signals;
             this.peerBanning = peerBanning;
@@ -591,11 +589,16 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("Fork can't be ahead of tip!");
             }
 
-            int blocksToRewind = oldTip.Height - fork.Height;
+            ChainedHeader current = oldTip;
 
-            for (int i = 0; i < blocksToRewind; i++)
+            while (current != fork)
             {
                 await this.consensusRules.RewindAsync().ConfigureAwait(false);
+
+                // Signal disconnected block.
+                this.signals.SignalBlockDisconnected(new ChainedHeaderBlock(current.Block, current));
+
+                current = current.Previous;
             }
 
             this.logger.LogTrace("(-)");
@@ -610,11 +613,12 @@ namespace Stratis.Bitcoin.Consensus
 
             while (currentTip.Height < current.Height)
             {
-                RewindState transitionState = await this.consensusRules.RewindAsync().ConfigureAwait(false);
-                lock (this.peerLock)
-                {
-                    current = this.chainedHeaderTree.GetChainedHeader(transitionState.BlockHash);
-                }
+                await this.consensusRules.RewindAsync().ConfigureAwait(false);
+
+                // Signal disconnected block.
+                this.signals.SignalBlockDisconnected(new ChainedHeaderBlock(current.Block, current));
+
+                current = current.Previous;
             }
 
             if (currentTip.Height != current.Height)
