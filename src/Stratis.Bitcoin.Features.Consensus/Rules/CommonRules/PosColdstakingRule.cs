@@ -53,9 +53,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 var utxoRuleContext = context as UtxoRuleContext;
                 UnspentOutputSet view = utxoRuleContext.UnspentOutputSet;
 
+                // Verify that GetOutputFor returns non-null for all inputs.
+                if (!view.HaveInputs(coinstakeTransaction))
+                {
+                    this.Logger.LogTrace("(-)[COLDSTAKE_INPUTS_WITHOUT_OUTPUTS]");
+                    ConsensusErrors.BadColdstakeInputs.Throw();
+                }
+
                 // Check that ScriptPubKeys of all inputs of this transaction are the same. If they are not, the script fails.
                 // Due to this being a coinstake transaction we know if will have at least one input.
-                Script scriptPubKey = view.GetOutputFor(coinstakeTransaction.Inputs[0])?.ScriptPubKey;
+                Script scriptPubKey = view.GetOutputFor(coinstakeTransaction.Inputs[0]).ScriptPubKey;
                 for (int i = 1; i < coinstakeTransaction.Inputs.Count; i++)
                 {
                     if (scriptPubKey != view.GetOutputFor(coinstakeTransaction.Inputs[i])?.ScriptPubKey)
@@ -70,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 if (coinstakeTransaction.Outputs[1].ScriptPubKey.ToOps().FirstOrDefault()?.Code != OpcodeType.OP_RETURN ||
                     coinstakeTransaction.Outputs[1].Value != 0)
                 {
-                    this.Logger.LogTrace("(-)[BAD_COLDSTAKE_OUTPUTS]");
+                    this.Logger.LogTrace("(-)[MISSING_COLDSTAKE_PUBKEY_OUTPUT]");
                     ConsensusErrors.BadColdstakeOutputs.Throw();
                 }
 
@@ -89,23 +96,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
                 // Check that the sum of values of all inputs is smaller or equal to the sum of values of all outputs. If this does
                 // not hold, the script fails.
-                var posRuleContext = context as PosRuleContext;
-                Money stakeReward = coinstakeTransaction.TotalOut - view.GetValueIn(coinstakeTransaction);
-                if (stakeReward < 0)
+                if (view.GetValueIn(coinstakeTransaction) > coinstakeTransaction.TotalOut)
                 {
-                    this.Logger.LogTrace("(-)[BAD_COLDSTAKE_AMOUNT]");
+                    this.Logger.LogTrace("(-)[COLDSTAKE_INPUTS_EXCEED_OUTPUTS]");
                     ConsensusErrors.BadColdstakeAmount.Throw();
                 }
-
-                this.Logger.LogTrace("(-)[VALID_COLDSTAKE_BLOCK]");
             }
-            else
-            {
-                this.Logger.LogTrace("Cold staking validation skipped for non-coldstake block at height {0}.",
-                    context.ValidationContext.ChainedHeaderToValidate.Height);
 
-                this.Logger.LogTrace("(-)[NON_COLDSTAKE_BLOCK]");
-            }
+            this.Logger.LogTrace("(-)");
 
             return Task.CompletedTask;
         }
