@@ -306,5 +306,105 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext);
         }
+
+        /// <summary>
+        ///  Positive test – present such a coinstake transaction with the second output being formed of op return with the compressed public 
+        ///  key after that together with the block signature correctly created with corresponding private key.
+        /// </summary>
+        [Fact]
+        public async Task RunAsync_ProofOfStakeBlock_ValidColdStakeBlockDoesNotThrowExceptionAsync()
+        {
+            Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
+            block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
+
+            Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
+            transaction.Inputs.Add(new TxIn()
+            {
+                PrevOut = new OutPoint(new uint256(15), 1),
+                ScriptSig = new Script()
+            });
+
+            // Use compressed public key with nonspendasble second output.
+            transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
+            var scriptPubKeyOut = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(this.key.PubKey.Compress().ToBytes(true)));
+            transaction.Outputs.Add(new TxOut(Money.Zero, scriptPubKeyOut));
+            block.Transactions.Add(transaction);
+
+            ECDSASignature signature = this.key.Sign(block.GetHash());
+            (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
+
+            this.ruleContext.ValidationContext.BlockToValidate = block;
+            Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.BlockToValidate));
+
+            this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext);
+        }
+
+        /// <summary>
+        /// Same as the positive test except that we will use uncompressed public key which should validate the size limit and 
+        /// therefore it should failed despite the fact that the signature is correct.
+        /// </summary>
+        [Fact]
+        public async Task RunAsync_ProofOfStakeBlock_ValidColdStakeBlockExceptUncompressedKeyThrowsExceptionAsync()
+        {
+            Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
+            block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
+
+            Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
+            transaction.Inputs.Add(new TxIn()
+            {
+                PrevOut = new OutPoint(new uint256(15), 1),
+                ScriptSig = new Script()
+            });
+
+            // Use uncompressed public key with nonspendasble second output.
+            transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
+            var scriptPubKeyOut = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(this.key.PubKey.Decompress().ToBytes(true)));
+            transaction.Outputs.Add(new TxOut(Money.Zero, scriptPubKeyOut));
+            block.Transactions.Add(transaction);
+
+            ECDSASignature signature = this.key.Sign(block.GetHash());
+            (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
+
+            this.ruleContext.ValidationContext.BlockToValidate = block;
+            Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.BlockToValidate));
+
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext));
+
+            Assert.Equal(ConsensusErrors.BadBlockSignature, exception.ConsensusError);
+        }
+
+        /// <summary>
+        /// Exactly same as the positive case, except that after the first push over the compressed public key, we will have 
+        /// second push of some small integer value like 123. This should fail because only one push is allowed.
+        /// </summary>
+        [Fact]
+        public async Task RunAsync_ProofOfStakeBlock_ValidColdStakeBlockExceptExtraPushThrowsExceptionAsync()
+        {
+            Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
+            block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
+
+            Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
+            transaction.Inputs.Add(new TxIn()
+            {
+                PrevOut = new OutPoint(new uint256(15), 1),
+                ScriptSig = new Script()
+            });
+
+            // Use compressed public key with nonspendasble second output. Also add an additional push op.
+            transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
+            var scriptPubKeyOut = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(this.key.PubKey.Compress().ToBytes(true)), Op.GetPushOp(new byte[] { 123 }));
+            transaction.Outputs.Add(new TxOut(Money.Zero, scriptPubKeyOut));
+            block.Transactions.Add(transaction);
+
+            ECDSASignature signature = this.key.Sign(block.GetHash());
+            (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
+
+            this.ruleContext.ValidationContext.BlockToValidate = block;
+            Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.BlockToValidate));
+
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<PosBlockSignatureRule>().Run(this.ruleContext));
+
+            Assert.Equal(ConsensusErrors.BadBlockSignature, exception.ConsensusError);
+        }
     }
 }
