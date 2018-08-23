@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Consensus
         List<int> ConsensusTipChanged(ChainedHeader newConsensusTip);
 
         /// <summary>
-        /// Finds the header and verifies block integrity.
+        /// Finds the header for a given block.
         /// </summary>
         /// <param name="block">The block.</param>
         /// <returns>Chained header for a given block.</returns>
