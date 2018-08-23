@@ -91,10 +91,9 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Presents cached headers to <see cref="ConsensusManager"/> from the cache if any and removes consumed from the cache.</summary>
-        /// <param name="newTip">New consensus tip.</param>
-        public async Task<ConnectNewHeadersResult> ConsensusTipChangedAsync(ChainedHeader newTip)
+        public async Task<ConnectNewHeadersResult> ConsensusTipChangedAsync()
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
+            this.logger.LogTrace("()");
 
             ConnectNewHeadersResult result = null;
             bool syncRequired = false;

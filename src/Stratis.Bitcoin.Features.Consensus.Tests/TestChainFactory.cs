@@ -109,9 +109,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, testChainContext.LoggerFactory);
 
             var dataFolder = new DataFolder(TestBase.AssureEmptyDir(dataDir));
-            testChainContext.PeerAddressManager =
-                mockPeerAddressManager == null ?
-                    new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory, new SelfEndpointTracker())
+            testChainContext.PeerAddressManager = 
+                mockPeerAddressManager == null ? 
+                    new PeerAddressManager(DateTimeProvider.Default, dataFolder, testChainContext.LoggerFactory, new SelfEndpointTracker(testChainContext.LoggerFactory)) 
                     : mockPeerAddressManager.Object;
 
             testChainContext.MockConnectionManager = new Mock<IConnectionManager>();
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             testChainContext.Consensus = new ConsensusManager(network, testChainContext.LoggerFactory, testChainContext.ChainState, testChainContext.HeaderValidator, testChainContext.IntegrityValidator,
                 testChainContext.PartialValidator, testChainContext.Checkpoints, consensusSettings, testChainContext.ConsensusRules, testChainContext.FinalizedBlockInfo, new Signals.Signals(),
-                testChainContext.PeerBanning, testChainContext.NodeSettings, testChainContext.DateTimeProvider, testChainContext.InitialBlockDownloadState, testChainContext.Chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
+                testChainContext.PeerBanning, testChainContext.InitialBlockDownloadState, testChainContext.Chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
 
             await testChainContext.Consensus.InitializeAsync(testChainContext.Chain.Tip);
 
