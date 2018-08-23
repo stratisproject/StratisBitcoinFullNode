@@ -125,14 +125,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                     this.blockinfo.Add(new Blockinfo { extranonce = (int)lst[i], nonce = (uint)lst[i + 1] });
 
                 // Note that by default, these tests run with size accounting enabled.
-                this.network = KnownNetworks.Main;
+                this.network = KnownNetworks.RegTest;
                 byte[] hex = Encoders.Hex.DecodeData("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f");
                 this.scriptPubKey = new Script(new[] { Op.GetPushOp(hex), OpcodeType.OP_CHECKSIG });
-                this.newBlock = new BlockTemplate(this.network);
 
                 this.entry = new TestMemPoolEntryHelper();
                 this.chain = new ConcurrentChain(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
+
                 new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(this.network.Consensus);
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
@@ -152,48 +152,66 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var connectionSettings = new ConnectionManagerSettings(nodeSettings);
                 var selfEndpointTracker = new SelfEndpointTracker();
                 var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider());
-                var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider));
 
                 var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 var deployments = new NodeDeployments(this.network, this.chain);
+
+                var genesis = this.network.GetGenesis();
+
+                var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider))
+                {
+                    BlockStoreTip = new ChainedHeader(genesis.Header, genesis.GetHash(), 0)
+                };
+
                 this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings, new Checkpoints(), this.cachedCoinView, chainState).Register();
 
                 this.consensus = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(this.ConsensusRules, loggerFactory),
-                    new IntegrityValidator(this.ConsensusRules, loggerFactory), new PartialValidator(this.ConsensusRules, loggerFactory), new Checkpoints(), consensusSettings, this.ConsensusRules,
-                    new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
+                new IntegrityValidator(this.ConsensusRules, loggerFactory), new PartialValidator(this.ConsensusRules, loggerFactory), new Checkpoints(), consensusSettings, this.ConsensusRules,
+                new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, null);
+
+                await this.consensus.InitializeAsync(chainState.BlockStoreTip);
 
                 this.entry.Fee(11);
                 this.entry.Height(11);
-                var date1 = new MemoryPoolTests.DateTimeProviderSet();
-                date1.time = dateTimeProvider.GetTime();
-                date1.timeutc = dateTimeProvider.GetUtcNow();
-                this.DateTimeProvider = date1;
-                this.mempool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings);
+
+                var dateTimeProviderSet = new MemoryPoolTests.DateTimeProviderSet
+                {
+                    time = dateTimeProvider.GetTime(),
+                    timeutc = dateTimeProvider.GetUtcNow()
+                };
+
+                this.DateTimeProvider = dateTimeProviderSet;
+                this.mempool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings), loggerFactory, nodeSettings);
                 this.mempoolLock = new MempoolSchedulerLock();
 
                 // Simple block creation, nothing special yet:
-                this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
-                await this.consensus.BlockMinedAsync(this.newBlock.Block);
+                //this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
+                //await this.consensus.BlockMinedAsync(this.newBlock.Block);
 
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
                 this.baseheight = 0;
                 var blocks = new List<Block>();
                 this.txFirst = new List<Transaction>();
+
+                uint nonce = 0;
+
                 for (int i = 0; i < this.blockinfo.Count; ++i)
                 {
-                    Block block = Block.Load(this.newBlock.Block.ToBytes(this.network.Consensus.ConsensusFactory), this.network);
+                    Block block = this.network.CreateBlock();
+                    //Block block = Block.Load(this.newBlock.Block.ToBytes(this.network.Consensus.ConsensusFactory), this.network);
                     block.Header.HashPrevBlock = this.chain.Tip.HashBlock;
                     block.Header.Version = 1;
                     block.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
 
-                    Transaction txCoinbase = this.network.CreateTransaction(block.Transactions[0].ToBytes());
-                    txCoinbase.Inputs.Clear();
+                    Transaction txCoinbase = this.network.CreateTransaction();
+                    //txCoinbase.Inputs.Clear();
                     txCoinbase.Version = 1;
                     txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(this.blockinfo[i].extranonce), Op.GetPushOp(this.chain.Height) })));
                     // Ignore the (optional) segwit commitment added by CreateNewBlock (as the hardcoded nonces don't account for this)
                     txCoinbase.AddOutput(new TxOut(Money.Zero, new Script()));
-                    block.Transactions[0] = txCoinbase;
+                    //block.Transactions[0] = txCoinbase;
+                    block.AddTransaction(txCoinbase);
 
                     if (this.txFirst.Count == 0)
                         this.baseheight = this.chain.Height;
@@ -201,9 +219,16 @@ namespace Stratis.Bitcoin.IntegrationTests
                     if (this.txFirst.Count < 4)
                         this.txFirst.Add(block.Transactions[0]);
 
+                    block.Header.Bits = block.Header.GetWorkRequired(this.network, this.chain.Tip);
+
                     block.UpdateMerkleRoot();
 
-                    block.Header.Nonce = this.blockinfo[i].nonce;
+                    while (!block.CheckProofOfWork())
+                        block.Header.Nonce = ++nonce;
+
+                    //block.Header.Nonce = this.blockinfo[i].nonce;
+
+                    block = Block.Load(block.ToBytes(), this.network);
 
                     await this.consensus.BlockMinedAsync(block);
 
@@ -453,10 +478,14 @@ namespace Stratis.Bitcoin.IntegrationTests
             tx.Inputs[0].ScriptSig = new Script(OpcodeType.OP_0, OpcodeType.OP_1);
             tx.Outputs[0].Value = 0;
             context.hash = tx.GetHash();
+
             // give it a fee so it'll get mined
-            context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.LOWFEE).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(false).FromTx(tx));
+            var mempoolEntry = context.entry.Fee(context.LOWFEE).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(false).FromTx(tx);
+            context.mempool.AddUnchecked(context.hash, mempoolEntry);
+
             var error = Assert.Throws<ConsensusErrorException>(() => AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey));
             Assert.True(error.ConsensusError == ConsensusErrors.BadMultipleCoinbase);
+
             context.mempool.Clear();
         }
 
