@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -41,7 +42,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.Equal(LockTimeFlags.None, this.ruleContext.Flags.LockTimeFlags);
             Assert.Equal(ScriptVerify.Mandatory, this.ruleContext.Flags.ScriptFlags);
         }
+    }
 
+    public class PosCheckColdStakeVerifyFlagTest : TestPosConsensusRulesUnitTestBase
+    {
         /// <summary>
         /// Checks that Pos does not set the "CheckColdStakeVerify" flag before the "ColdStakingActivationHeight" is reached.
         /// </summary>
@@ -51,19 +55,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             const int ColdStakingActivationHeight = 3;
 
             // Update the consensus options with our required activation height.
-            var network = KnownNetworks.StratisMain;
-            network.Consensus.Options = new PosConsensusOptions(
-                network.Consensus.Options.MaxBlockBaseSize,
-                network.Consensus.Options.MaxStandardVersion,
-                network.Consensus.Options.MaxStandardTxWeight,
-                network.Consensus.Options.MaxBlockSigopsCost,
+            this.network.Consensus.Options = new PosConsensusOptions(
+                this.network.Consensus.Options.MaxBlockBaseSize,
+                this.network.Consensus.Options.MaxStandardVersion,
+                this.network.Consensus.Options.MaxStandardTxWeight,
+                this.network.Consensus.Options.MaxBlockSigopsCost,
                 ColdStakingActivationHeight
                 );
 
             // Generate a chain one less in length to the activation height.
-            this.concurrentChain = GenerateChainWithHeight(ColdStakingActivationHeight - 1, network);
+            this.concurrentChain = GenerateChainWithHeight(ColdStakingActivationHeight - 1, this.network);
             this.consensusRules = this.InitializeConsensusRules();
-            this.nodeDeployments = new NodeDeployments(network, this.concurrentChain);
+            this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
 
             // Create a block before the activation height.
             Block block = this.network.CreateBlock();
@@ -92,19 +95,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             const int ColdStakingActivationHeight = 3;
 
             // Update the consensus options with our required activation height.
-            var network = KnownNetworks.StratisMain;
-            network.Consensus.Options = new PosConsensusOptions(
-                network.Consensus.Options.MaxBlockBaseSize,
-                network.Consensus.Options.MaxStandardVersion,
-                network.Consensus.Options.MaxStandardTxWeight,
-                network.Consensus.Options.MaxBlockSigopsCost,
+            this.network.Consensus.Options = new PosConsensusOptions(
+                this.network.Consensus.Options.MaxBlockBaseSize,
+                this.network.Consensus.Options.MaxStandardVersion,
+                this.network.Consensus.Options.MaxStandardTxWeight,
+                this.network.Consensus.Options.MaxBlockSigopsCost,
                 ColdStakingActivationHeight
                 );
 
             // Generate a chain equal in length to the activation height.
-            this.concurrentChain = GenerateChainWithHeight(ColdStakingActivationHeight, network);
+            this.concurrentChain = GenerateChainWithHeight(ColdStakingActivationHeight, this.network);
             this.consensusRules = this.InitializeConsensusRules();
-            this.nodeDeployments = new NodeDeployments(network, this.concurrentChain);
+            this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
 
             // Create a block before the activation height.
             Block block = this.network.CreateBlock();
