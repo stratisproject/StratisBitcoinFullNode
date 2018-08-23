@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class ContractUpgradeabilityTests
     {
-        public class TestAlc : AssemblyLoadContext
+        public class TestAssemblyLoadContext : AssemblyLoadContext
         {
             protected override Assembly Load(AssemblyName assemblyName)
             {
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void Load_Contract_Compiled_Against_V1_With_V2_SmartContracts()
+        public void Load_Contract_Compiled_Against_V1_With_V2_SmartContracts_Succeeds()
         {
             var source = @"
 using Stratis.SmartContracts;
@@ -72,23 +72,21 @@ public class TestContract : SmartContract
                 version1CompiledContract = dllStream.ToArray();
             }
 
-            var alc = new TestAlc();
+            var alc = new TestAssemblyLoadContext();
 
-            // Load the v2.0.0-TEST Stratis.SmartContracts assembly into the ALC
-            var v2Assembly = alc.LoadFromAssemblyPath(version2DllPath);
+            var version2Assembly = alc.LoadFromAssemblyPath(version2DllPath);
 
-            Assert.Equal(Version.Parse("2.0.0.0"), v2Assembly.GetName().Version);
+            Assert.Equal(Version.Parse("2.0.0.0"), version2Assembly.GetName().Version);
 
-            // Load the contract compiled against v1.0.0-TEST Stratis.SmartContracts
-            var ms = new MemoryStream(version1CompiledContract);          
-            var assembly = alc.LoadFromStream(ms);
-            ms.Dispose();
+            var version1ContractMemoryStream = new MemoryStream(version1CompiledContract);     
+            var version1ContractAssembly = alc.LoadFromStream(version1ContractMemoryStream);
+            version1ContractMemoryStream.Dispose();
 
-            var type = assembly.ExportedTypes.First(t => t.Name == "TestContract");
+            var type = version1ContractAssembly.ExportedTypes.First(t => t.Name == "TestContract");
 
             var method = type.BaseType.GetMethod("TestMethod");
             
-            // If this condition is true, we have a V1 contract referencing a V2 assembly
+            // If this condition is not null, we have a v1 contract referencing a v2 assembly
             Assert.NotNull(method);
         }
     }
