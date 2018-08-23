@@ -97,10 +97,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Finds the header for a given block.
         /// </summary>
-        /// <param name="block">The block.</param>
+        /// <param name="blockHash">The hash of the block.</param>
         /// <returns>Chained header for a given block.</returns>
-        /// <exception cref="BlockDownloadedForMissingChainedHeaderException">Thrown when block data is presented for a chained block that doesn't exist.</exception>
-        ChainedHeader FindHeader(Block block);
+        ChainedHeader FindHeader(uint256 blockHash);
 
         /// <summary>
         /// Handles situation when the blocks data is downloaded for a given chained header.
@@ -639,17 +638,14 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public ChainedHeader FindHeader(Block block)
+        public ChainedHeader FindHeader(uint256 blockHash)
         {
-            uint256 blockHash = block.GetHash();
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), blockHash);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
-            ChainedHeader chainedHeader;
-
-            if (!this.chainedHeadersByHash.TryGetValue(blockHash, out chainedHeader))
+            if (!this.chainedHeadersByHash.TryGetValue(blockHash, out ChainedHeader chainedHeader))
             {
                 this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
-                throw new BlockDownloadedForMissingChainedHeaderException();
+                return null;
             }
 
             this.logger.LogTrace("(-):'{0}'", chainedHeader);
@@ -1023,7 +1019,7 @@ namespace Stratis.Bitcoin.Consensus
 
             this.CreateNewHeaders(new List<BlockHeader>() { block.Header });
 
-            ChainedHeader chainedHeader = this.FindHeader(block);
+            ChainedHeader chainedHeader = this.FindHeader(block.GetHash());
             this.BlockDataDownloaded(chainedHeader, block);
 
             this.logger.LogTrace("(-):'{0}'", chainedHeader);
