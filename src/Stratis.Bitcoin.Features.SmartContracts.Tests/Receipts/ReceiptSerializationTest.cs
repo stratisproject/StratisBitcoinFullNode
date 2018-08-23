@@ -44,12 +44,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Receipts
             };
             var log2 = new Log(new uint160(12345), topics2, data2);
 
-            var noLogReceipt = new Receipt(new uint256(1234), 12345, new Log[] { log1, log2 });
+            var receipt = new Receipt(new uint256(1234), 12345, new Log[] { log1, log2 });
+            TestConsensusSerialize(receipt);
 
-            TestSerializeReceipt(noLogReceipt);
+            receipt.SetStorageProperties(new uint256(1234), new uint256(12345), new uint160(25), new uint160(24), new uint160(23));
+            TestStorageSerialize(receipt);
         }
 
-        private void TestSerializeReceipt(Receipt receipt)
+        private void TestConsensusSerialize(Receipt receipt)
         {
             byte[] serialized = receipt.ToConsensusBytesRlp();
             Receipt deserialized = Receipt.FromConsensusBytesRlp(serialized);
@@ -57,10 +59,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Receipts
             Assert.Equal(receipt.GasUsed, deserialized.GasUsed);
             Assert.Equal(receipt.Bloom, deserialized.Bloom);
             Assert.Equal(receipt.Logs.Length, deserialized.Logs.Length);
+
             for(int i=0; i < receipt.Logs.Length; i++)
             {
                 TestLogsEqual(receipt.Logs[i], deserialized.Logs[i]);
             }
+        }
+
+        private void TestStorageSerialize(Receipt receipt)
+        {
+            byte[] serialized = receipt.ToStorageBytesRlp();
+            Receipt deserialized = Receipt.FromStorageBytesRlp(serialized);
+            Assert.Equal(receipt.PostState, deserialized.PostState);
+            Assert.Equal(receipt.GasUsed, deserialized.GasUsed);
+            Assert.Equal(receipt.Bloom, deserialized.Bloom);
+            Assert.Equal(receipt.Logs.Length, deserialized.Logs.Length);
+
+            for (int i = 0; i < receipt.Logs.Length; i++)
+            {
+                TestLogsEqual(receipt.Logs[i], deserialized.Logs[i]);
+            }
+
+            Assert.Equal(receipt.TransactionHash, deserialized.TransactionHash);
+            Assert.Equal(receipt.BlockHash, deserialized.BlockHash);
+            Assert.Equal(receipt.From, deserialized.From);
+            Assert.Equal(receipt.To, deserialized.To);
+            Assert.Equal(receipt.NewContractAddress, deserialized.NewContractAddress);
         }
 
         private void TestLogsEqual(Log log1, Log log2)

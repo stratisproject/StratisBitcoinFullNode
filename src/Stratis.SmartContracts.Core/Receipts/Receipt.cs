@@ -142,7 +142,7 @@ namespace Stratis.SmartContracts.Core.Receipts
         }
 
         /// <summary>
-        /// Get a hash of the entire consensus receipt.
+        /// Get a hash of the consensus receipt.
         /// </summary>
         public uint256 GetHash()
         {
@@ -153,14 +153,46 @@ namespace Stratis.SmartContracts.Core.Receipts
 
         #region Storage Serialization
 
-        public Receipt FromStorageBytesRlp(byte[] bytes)
+        public static Receipt FromStorageBytesRlp(byte[] bytes)
         {
-            throw new NotImplementedException();
+            RLPCollection list = RLP.Decode(bytes);
+            RLPCollection innerList = (RLPCollection)list[0];
+
+            RLPCollection logList = RLP.Decode(innerList[3].RLPData);
+            RLPCollection innerLogList = (RLPCollection)logList[0];
+            Log[] logs = innerLogList.Select(x => Log.FromBytesRlp(x.RLPData)).ToArray();
+
+            var receipt = new Receipt(
+                new uint256(innerList[0].RLPData),
+                BitConverter.ToUInt64(innerList[1].RLPData),
+                logs,
+                new Bloom(innerList[2].RLPData)
+            );
+            receipt.SetStorageProperties(
+                new uint256(innerList[4].RLPData),
+                new uint256(innerList[5].RLPData),
+                new uint160(innerList[6].RLPData),
+                innerList[7].RLPData != null ? new uint160(innerList[7].RLPData) : null,
+                innerList[8].RLPData != null ? new uint160(innerList[8].RLPData) : null
+            );
+            return receipt;
         }
 
         public byte[] ToStorageBytesRlp()
         {
-            throw new NotImplementedException();
+            IList<byte[]> encodedLogs = this.Logs.Select(x => RLP.EncodeElement(x.ToBytesRlp())).ToList();
+
+            return RLP.EncodeList(
+                RLP.EncodeElement(this.PostState.ToBytes()),
+                RLP.EncodeElement(BitConverter.GetBytes(this.GasUsed)),
+                RLP.EncodeElement(this.Bloom.ToBytes()),
+                RLP.EncodeElement(RLP.EncodeList(encodedLogs.ToArray())),
+                RLP.EncodeElement(this.TransactionHash.ToBytes()),
+                RLP.EncodeElement(this.BlockHash.ToBytes()),
+                RLP.EncodeElement(this.From.ToBytes()),
+                RLP.EncodeElement(this.To?.ToBytes()),
+                RLP.EncodeElement(this.NewContractAddress?.ToBytes())
+            );
         }
 
         #endregion
