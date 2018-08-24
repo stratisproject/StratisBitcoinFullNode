@@ -227,7 +227,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
 
                 var chainState = new ChainState();
-                var consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, new ReceiptRepository(), this.cachedCoinView, chainState).Register();
+                var consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings,
+                    dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, new ReceiptRepository(),
+                    this.cachedCoinView, chainState, new InvalidBlockHashStore(new DateTimeProvider())).Register();
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
 
                 this.consensusManager = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),

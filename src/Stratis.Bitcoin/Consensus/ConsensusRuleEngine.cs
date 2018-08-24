@@ -46,6 +46,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>State of the current chain that hold consensus tip.</summary>
         public IChainState ChainState { get; }
 
+        /// <inheritdoc cref="IInvalidBlockHashStore"/>
+        private readonly IInvalidBlockHashStore invalidBlockHashStore;
+
         /// <inheritdoc />
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
@@ -69,7 +72,8 @@ namespace Stratis.Bitcoin.Consensus
             NodeDeployments nodeDeployments,
             ConsensusSettings consensusSettings,
             ICheckpoints checkpoints,
-            IChainState chainState)
+            IChainState chainState,
+            IInvalidBlockHashStore invalidBlockHashStore)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -79,6 +83,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(consensusSettings, nameof(consensusSettings));
             Guard.NotNull(checkpoints, nameof(checkpoints));
             Guard.NotNull(chainState, nameof(chainState));
+            Guard.NotNull(invalidBlockHashStore, nameof(invalidBlockHashStore));
 
             this.Network = network;
 
@@ -91,6 +96,7 @@ namespace Stratis.Bitcoin.Consensus
             this.ConsensusParams = this.Network.Consensus;
             this.ConsensusSettings = consensusSettings;
             this.DateTimeProvider = dateTimeProvider;
+            this.invalidBlockHashStore = invalidBlockHashStore;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.NodeDeployments = nodeDeployments;
@@ -220,6 +226,13 @@ namespace Stratis.Bitcoin.Consensus
             catch (ConsensusErrorException ex)
             {
                 ruleContext.ValidationContext.Error = ex.ConsensusError;
+
+                uint256 hashToBan = ruleContext.ValidationContext.ChainedHeaderToValidate.HashBlock;
+
+                if (ruleContext.ValidationContext.RejectUntil != null)
+                    this.invalidBlockHashStore.MarkInvalid(hashToBan, ruleContext.ValidationContext.RejectUntil);
+                else
+                    this.invalidBlockHashStore.MarkInvalid(hashToBan);
             }
         }
 
