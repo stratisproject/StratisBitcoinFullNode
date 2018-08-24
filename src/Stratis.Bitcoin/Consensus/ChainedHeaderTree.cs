@@ -20,11 +20,11 @@ namespace Stratis.Bitcoin.Consensus
     /// This component is an extension of <see cref="ConsensusManager"/> and is strongly linked to its functionality, it should never be called outside of CM.
     /// <para>
     /// View of the chains that are presented by connected peers might be incomplete because we always
-    /// receive only chunk of headers claimed by the peer in one message.
+    /// receive only a chunk of headers claimed by the peer in each message.
     /// </para>
     /// <para>
-    /// It is a role of the consensus manager to decide which of the presented chains is going to be treated as our best chain.
-    /// <see cref="ChainedHeaderTree"/> only advices which chains it might be interesting to download.
+    /// It is a role of the <see cref="ConsensusManager"/> to decide which of the presented chains is going to be treated as our best chain.
+    /// <see cref="ChainedHeaderTree"/> only advises which chains it might be interesting to download.
     /// </para>
     /// <para>
     /// This class is not thread safe and it the role of the component that uses this class to prevent race conditions.
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Consensus
         /// Initialize the tree with consensus tip.
         /// </summary>
         /// <param name="consensusTip">The consensus tip.</param>
-        /// <exception cref="ConsensusException">Thrown in case given <paramref name="consensusTip"/> is on a wrong network.</exception>
+        /// <exception cref="ConsensusException">Thrown in case where given <paramref name="consensusTip"/> is on a wrong network.</exception>
         void Initialize(ChainedHeader consensusTip);
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="chainedHeader">Chained header that represents <paramref name="block"/>.</param>
         /// <param name="block">Block data.</param>
-        /// <returns><c>true</c> in case partial validation is required for the downloaded block, <c>false</c> otherwise.</returns>
+        /// <returns><c>true</c> in the case where partial validation is required for the downloaded block, <c>false</c> otherwise.</returns>
         bool BlockDataDownloaded(ChainedHeader chainedHeader, Block block);
 
         /// <summary>

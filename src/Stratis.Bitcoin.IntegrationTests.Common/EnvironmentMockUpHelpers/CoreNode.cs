@@ -100,7 +100,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
 
-            var networkPeerFactory = new NetworkPeerFactory(this.runner.Network, DateTimeProvider.Default, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker());
+            var selfEndPointTracker = new SelfEndpointTracker(loggerFactory);
+
+            // Needs to be initialized beforehand.
+            selfEndPointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.ProtocolPort), false);
+
+            var networkPeerFactory = new NetworkPeerFactory(this.runner.Network, DateTimeProvider.Default, loggerFactory, new PayloadProvider().DiscoverPayloads(), selfEndPointTracker);
             return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
         }
 
@@ -150,35 +155,31 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private void StartBitcoinCoreRunner()
         {
-            while (true)
+            TimeSpan duration = TimeSpan.FromMinutes(5);
+            var cancellationToken = new CancellationTokenSource(duration).Token;
+            TestHelper.WaitLoop(() =>
             {
                 try
                 {
                     CreateRPCClient().GetBlockHashAsync(0).GetAwaiter().GetResult();
                     this.State = CoreNodeState.Running;
-                    break;
+                    return true;
                 }
-                catch { }
-
-                Task.Delay(200);
-            }
+                catch
+                {
+                    return false;
+                }
+            }, cancellationToken: cancellationToken,
+                failureReason: $"Failed to invoke GetBlockHash on BitcoinCore instance after {duration}");
         }
 
         private void StartStratisRunner()
         {
-            while (true)
-            {
-                if (this.runner.FullNode == null)
-                {
-                    Thread.Sleep(100);
-                    continue;
-                }
+            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+            TestHelper.WaitLoop(() => this.runner.FullNode != null, cancellationToken: cancellationToken);
 
-                if (this.runner.FullNode.State == FullNodeState.Started)
-                    break;
-                else
-                    Thread.Sleep(200);
-            }
+            cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+            TestHelper.WaitLoop(() => this.runner.FullNode.State == FullNodeState.Started, cancellationToken: cancellationToken);
         }
 
         public void Broadcast(Transaction transaction)
