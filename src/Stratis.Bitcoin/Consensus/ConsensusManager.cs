@@ -513,8 +513,23 @@ namespace Stratis.Bitcoin.Consensus
             // If the new block is not on the current chain as our current consensus tip then rewind consensus tip to the common fork.
             bool isExtension = fork == oldTip;
 
+            List<ChainedHeaderBlock> disconnectedBlocks = null;
+
             if (!isExtension)
             {
+                // Save blocks that will be disconnected in case we will need to reconnect them (this might happen connection of a new chain fails).
+                disconnectedBlocks = new List<ChainedHeaderBlock>(oldTip.Height - fork.Height);
+
+                ChainedHeader current = oldTip;
+
+                while (current != fork)
+                {
+                    disconnectedBlocks.Add(new ChainedHeaderBlock(current.Block, current));
+                    current = current.Previous;
+                }
+
+                disconnectedBlocks.Reverse();
+
                 await this.RewindToForkPointAsync(fork, oldTip).ConfigureAwait(false);
             }
 
@@ -548,17 +563,8 @@ namespace Stratis.Bitcoin.Consensus
                 return connectBlockResult;
             }
 
-            List<ChainedHeaderBlock> blocksToReconnect = await this.TryGetBlocksToConnectAsync(oldTip, fork.Height + 1).ConfigureAwait(false);
-
-            // Sanity check. This should never happen.
-            if (blocksToReconnect == null)
-            {
-                this.logger.LogCritical("Blocks to reconnect are missing!");
-                this.logger.LogTrace("(-)[NO_BLOCK_TO_RECONNECT]");
-                throw new ConsensusException("Blocks to reconnect are missing!");
-            }
-
-            ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(fork, blocksToReconnect).ConfigureAwait(false);
+            // Reconnect disconnected blocks.
+            ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(fork, disconnectedBlocks).ConfigureAwait(false);
 
             this.logger.LogTrace("(-):'{0}'", reconnectionResult);
             return reconnectionResult;
