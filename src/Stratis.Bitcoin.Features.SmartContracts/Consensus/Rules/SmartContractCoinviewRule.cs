@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 result.NewContractAddress
             )
             {
-                BlockHash = context.ValidationContext.Block.GetHash()
+                BlockHash = context.ValidationContext.BlockToValidate.GetHash()
             };
 
             this.receipts.Add(receipt);
