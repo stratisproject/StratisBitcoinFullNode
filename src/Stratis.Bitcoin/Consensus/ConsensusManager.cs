@@ -98,7 +98,8 @@ namespace Stratis.Bitcoin.Consensus
             IInitialBlockDownloadState ibdState,
             ConcurrentChain chain,
             IBlockPuller blockPuller,
-            IBlockStore blockStore)
+            IBlockStore blockStore,
+            IInvalidBlockHashStore invalidHashesStore)
         {
             this.network = network;
             this.chainState = chainState;
@@ -112,7 +113,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings);
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, invalidHashesStore);
 
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
@@ -353,6 +354,15 @@ namespace Stratis.Bitcoin.Consensus
             else
             {
                 var peersToBan = new List<INetworkPeer>();
+
+                // TODO ACTIVATION implement following (used to be in consensus loop)
+                //if (validationContext.Error == ConsensusErrors.BadWitnessNonceSize)
+                //{
+                //    this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
+                //    this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
+                //    this.Puller.RequestOptions(TransactionOptions.Witness);
+                //    return;
+                //}
 
                 lock (this.peerLock)
                 {

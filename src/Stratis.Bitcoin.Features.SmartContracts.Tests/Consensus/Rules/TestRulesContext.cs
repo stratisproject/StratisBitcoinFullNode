@@ -78,10 +78,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             ConsensusSettings consensusSettings = new ConsensusSettings(testRulesContext.NodeSettings);
             testRulesContext.Checkpoints = new Checkpoints();
             testRulesContext.Chain = new ConcurrentChain(network);
-            testRulesContext.ChainState = new ChainState(new InvalidBlockHashStore(testRulesContext.DateTimeProvider));
+            testRulesContext.ChainState = new ChainState();
 
             NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
-            testRulesContext.Consensus = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider, testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, null, testRulesContext.ChainState).Register();
+            testRulesContext.Consensus = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider,
+                testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, null, testRulesContext.ChainState, new InvalidBlockHashStore(new DateTimeProvider())).Register();
 
             return testRulesContext;
         }

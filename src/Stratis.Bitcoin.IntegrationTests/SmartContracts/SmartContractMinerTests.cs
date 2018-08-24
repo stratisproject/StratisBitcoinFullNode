@@ -226,13 +226,16 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
 
-                var chainState = new ChainState(new InvalidBlockHashStore(DateTimeProvider.Default));
-                var consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, new ReceiptRepository(), this.cachedCoinView, chainState).Register();
+                var chainState = new ChainState();
+                var consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings,
+                    dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, new ReceiptRepository(),
+                    this.cachedCoinView, chainState, new InvalidBlockHashStore(new DateTimeProvider())).Register();
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
 
                 this.consensusManager = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),
                     new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory), new Checkpoints(), consensusSettings, consensusRules,
-                    new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object);
+                    new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object,
+                    new Mock<IBlockStore>().Object, new InvalidBlockHashStore(new DateTimeProvider()));
 
                 await this.consensusManager.InitializeAsync(new ChainedHeader(this.newBlock.Block.Header, this.newBlock.Block.GetHash(), 0));
 

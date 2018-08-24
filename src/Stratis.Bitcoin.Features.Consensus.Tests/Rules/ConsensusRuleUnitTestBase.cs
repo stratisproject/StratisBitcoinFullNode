@@ -102,7 +102,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             return new T()
             {
                 Logger = this.logger.Object,
-                Parent = new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object, this.stakeValidator.Object, this.chainState.Object)
+                Parent = new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments,
+                    this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object, this.stakeValidator.Object, this.chainState.Object,
+                    new InvalidBlockHashStore(new DateTimeProvider()))
             };
         }
     }
@@ -194,7 +196,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public override TestConsensusRules InitializeConsensusRules()
         {
-            return new TestConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.chainState.Object);
+            return new TestConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments,
+                this.consensusSettings, this.checkpoints.Object, this.chainState.Object, new InvalidBlockHashStore(new DateTimeProvider()));
         }
     }
 
@@ -216,7 +219,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
         public override TestPosConsensusRules InitializeConsensusRules()
         {
-            return new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object, this.stakeValidator.Object, this.chainState.Object);
+            return new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain,
+                this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
+                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(new DateTimeProvider()));
         }
     }
 }
