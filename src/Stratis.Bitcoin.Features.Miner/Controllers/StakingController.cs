@@ -124,25 +124,31 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <summary>
         /// Stop staking.
         /// </summary>
+        /// <param name="delayInSeconds">Delay, in seconds, after which the staking will stop.</param>
         /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
         [Route("stopstaking")]
         [HttpPost]
-        public async Task<IActionResult> StopStakingAsync([FromBody] int delayInSeconds = 0)
+        public IActionResult StopStakingAsync([FromBody] int delayInSeconds = 0)
         {
-            await Task.Delay(TimeSpan.FromSeconds(delayInSeconds)).ConfigureAwait(false);
-            try
-            {
-                if (!this.fullNode.Network.Consensus.IsProofOfStake)
+            if (!this.fullNode.Network.Consensus.IsProofOfStake)
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Stake");
 
-                this.fullNode.NodeFeature<MiningFeature>(true).StopStaking();
-                return this.Ok();
-            }
-            catch (Exception e)
+            var timer = new System.Timers.Timer(delayInSeconds * 1000);
+
+            timer.Elapsed += (a, s) =>
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
+                try
+                {
+                    this.fullNode.NodeFeature<MiningFeature>(true).StopStaking();
+                }
+                catch (Exception e)
+                {
+                    this.logger.LogError("Exception occurred: {0}", e.ToString());
+                }
+            };
+
+            timer.Start();
+            return this.Ok();
         }
     }
 }

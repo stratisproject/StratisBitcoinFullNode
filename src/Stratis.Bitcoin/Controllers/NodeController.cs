@@ -354,17 +354,17 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>
         /// Triggers a shutdown of the currently running node.
         /// </summary>
+        /// <param name="delayInSeconds">Delay, in seconds, after which the node will stop.</param>
         /// <returns><see cref="OkResult"/></returns>
         [HttpPost]
         [Route("shutdown")]
         [Route("stop")]
-        public async Task<IActionResult> ShutdownAsync([FromBody] int delayInSeconds = 0)
+        public IActionResult Shutdown([FromBody] int delayInSeconds = 0)
         {
-            await Task.Delay(TimeSpan.FromSeconds(delayInSeconds)).ConfigureAwait(false);
-
-            // Start the node shutdown process.
-            this.fullNode?.Dispose();
-
+            var timer = new System.Timers.Timer(delayInSeconds * 1000);
+            // Start the node shutdown process on timer elapsed.
+            timer.Elapsed += (a, s) => this.fullNode?.Dispose();
+            timer.Start();
             return this.Ok();
         }
 
