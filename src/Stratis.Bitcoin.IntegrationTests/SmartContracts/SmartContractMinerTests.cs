@@ -36,11 +36,13 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 using Key = NBitcoin.Key;
 
@@ -155,6 +157,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             private ReflectionVirtualMachine vm;
             private ICallDataSerializer serializer;
             private ContractAssemblyLoader assemblyLoader;
+            private IContractModuleDefinitionReader moduleDefinitionReader;
+            private IContractPrimitiveSerializer contractPrimitiveSerializer;
             public AddressGenerator AddressGenerator { get; set; }
 
             public TestContext()
@@ -208,30 +212,22 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
                 this.AddressGenerator = new AddressGenerator();
                 this.assemblyLoader = new ContractAssemblyLoader();
-                this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, loggerFactory, this.network, this.AddressGenerator, this.assemblyLoader);
+                this.moduleDefinitionReader = new ContractModuleDefinitionReader();
+                this.contractPrimitiveSerializer = new ContractPrimitiveSerializer(this.network);
+                this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, loggerFactory, this.network, this.AddressGenerator, this.assemblyLoader, this.moduleDefinitionReader, this.contractPrimitiveSerializer);
                 this.executorFactory = new ReflectionSmartContractExecutorFactory(loggerFactory, this.serializer, this.refundProcessor, this.transferProcessor, this.vm);
 
-                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
-                var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
+                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker(loggerFactory));
+                var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
                 var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), this.nodeSettings, peerAddressManager);
                 var connectionSettings = new ConnectionManagerSettings(this.nodeSettings);
-                var selfEndpointTracker = new SelfEndpointTracker();
+                var selfEndpointTracker = new SelfEndpointTracker(loggerFactory);
                 var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, this.nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new SmartContractVersionProvider());
                 var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
 
-                var smartContractRuleRegistration = new SmartContractPowRuleRegistration();
                 var chainState = new ChainState(new InvalidBlockHashStore(DateTimeProvider.Default));
-                var consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, this.cachedCoinView, chainState).Register();
-
-                var headerValidator = new HeaderValidator(consensusRules, loggerFactory);
-                var integrityValidator = new IntegrityValidator(consensusRules, loggerFactory);
-                var partialValidator = new PartialValidator(consensusRules, loggerFactory);
-                var finalizedBlockInfo = new Mock<IFinalizedBlockInfo>().Object;
-                var blockPuller = new BlockPuller(chainState, this.nodeSettings, DateTimeProvider.Default, loggerFactory);
-
-                var checkPoints = new Checkpoints(this.network, consensusSettings);
-
+                var consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, new ReceiptRepository(), this.cachedCoinView, chainState).Register();
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
 
                 this.consensusManager = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),

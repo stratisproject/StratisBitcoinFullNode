@@ -1,4 +1,5 @@
 ﻿using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
@@ -7,5 +8,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
     {
         ISmartContractExecutorFactory ExecutorFactory { get; }
         ContractStateRepositoryRoot OriginalStateRoot { get; }
+        IReceiptRepository ReceiptRepository { get; }
     }
 }

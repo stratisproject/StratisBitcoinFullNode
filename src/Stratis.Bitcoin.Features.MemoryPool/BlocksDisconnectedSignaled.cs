@@ -35,10 +35,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>
         /// Adds Transactions in disconnected blocks back to the mempool.
         /// </summary>
-        /// <remarks>This could potentially be optimised with an async queue.</remarks>
+        /// <remarks>This could potentially be optimized. with an async queue.</remarks>
         /// <param name="block">The disconnected block containing the transactions.</param>
-        /// <returns></returns>
-        public async Task AddBackToMempoolAsync(Block block)
+        private async Task AddBackToMempoolAsync(Block block)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
@@ -64,4 +63,4 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.logger.LogTrace("(-)");
         }
     }
-}   
+}
