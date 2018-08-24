@@ -47,7 +47,12 @@ namespace Stratis.SmartContracts
         private readonly Func<ulong> getBalance;
 
         /// <summary>
-        /// Executes the smart contract.
+        /// Saves any logs during contract execution.
+        /// </summary>
+        private readonly IContractLogger contractLogger;
+
+        /// <summary>
+        /// Executes any internal calls or creates to other smart contracts.
         /// </summary>
         private readonly IInternalTransactionExecutor internalTransactionExecutor;
 
@@ -69,6 +74,7 @@ namespace Stratis.SmartContracts
             this.gasMeter = smartContractState.GasMeter;
             this.Block = smartContractState.Block;
             this.getBalance = smartContractState.GetBalance;
+            this.contractLogger = smartContractState.ContractLogger;
             this.internalTransactionExecutor = smartContractState.InternalTransactionExecutor;
             this.internalHashHelper = smartContractState.InternalHashHelper;
             this.Message = smartContractState.Message;
@@ -143,6 +149,16 @@ namespace Stratis.SmartContracts
         {
             if (!condition)
                 throw new SmartContractAssertException(message);
+        }
+
+        /// <summary>
+        /// Log an event. Useful for front-end interactions with your contract.
+        /// </summary>
+        /// <typeparam name="T">Any struct.</typeparam>
+        /// <param name="toLog">Object with fields to save in logs.</param>
+        protected void Log<T>(T toLog) where T : struct
+        {
+            this.contractLogger.Log(this.smartContractState, toLog);
         }
     }
 }

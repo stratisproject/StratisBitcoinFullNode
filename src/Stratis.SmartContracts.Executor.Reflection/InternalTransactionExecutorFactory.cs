@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -24,10 +25,21 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         public IInternalTransactionExecutor Create(ISmartContractVirtualMachine vm,
-            IContractStateRepository stateRepository, List<TransferInfo> internalTransferList,
+            IContractLogHolder contractLogHolder,
+            IContractStateRepository stateRepository, 
+            List<TransferInfo> internalTransferList,
             ITransactionContext transactionContext)
         {
-            return new InternalTransactionExecutor(transactionContext, vm, stateRepository, internalTransferList, this.keyEncodingStrategy, this.loggerFactory, this.network);
+            return new InternalTransactionExecutor(
+                transactionContext,
+                vm,
+                contractLogHolder,
+                stateRepository,
+                internalTransferList,
+                this.keyEncodingStrategy,
+                this.loggerFactory,
+                this.network
+            );
         }
     }
 }
