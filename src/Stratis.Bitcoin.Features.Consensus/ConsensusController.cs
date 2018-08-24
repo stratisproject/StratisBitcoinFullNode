@@ -6,7 +6,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
@@ -20,9 +19,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        public ConsensusController(ILoggerFactory loggerFactory, IChainState chainState,
-            IConsensusManager consensusManager, ConcurrentChain chain)
-            : base(chainState: chainState, chain: chain)
+        public ConsensusController(
+            ILoggerFactory loggerFactory,
+            IChainState chainState,
+            IConsensusManager consensusManager,
+            ConcurrentChain chain)
+            : base(chainState: chainState, consensusManager: consensusManager, chain: chain)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(chain, nameof(chain));

@@ -1,9 +1,9 @@
 ﻿using System;
+using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -60,6 +60,9 @@ namespace Stratis.Bitcoin.Api.Tests
             // Assert.
             Assert.Equal(ApiSettings.DefaultStratisApiPort, settings.ApiPort);
             Assert.Equal(new Uri($"{ApiSettings.DefaultApiHost}:{ApiSettings.DefaultStratisApiPort}"), settings.ApiUri);
+
+            settings.HttpsCertificateFilePath.Should().BeNull();
+            settings.UseHttps.Should().BeFalse();
         }
 
         /// <summary>
@@ -256,6 +259,61 @@ namespace Stratis.Bitcoin.Api.Tests
 
             // Assert.
             Assert.Equal(ApiSettings.TestStratisApiPort, settings.ApiPort);
+        }
+
+        [Theory]
+        [InlineData(true, @"https://")]
+        [InlineData(false, @"http://")]
+        public void GivenUseHttps_ThenUsesTheCorrectProtocol(bool useHttps, string expectedProtocolPrefix)
+        {
+            // Arrange.
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new[] { $"-usehttps={useHttps}", "-certificatefilepath=nonNullValue" });
+
+            // Act.
+            var settings = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseApi()
+                .Build()
+                .NodeService<ApiSettings>();
+
+            // Assert.
+            settings.UseHttps.Should().Be(useHttps);
+            settings.ApiUri.ToString().Should().StartWith(expectedProtocolPrefix);
+        }
+
+        [Fact]
+        public void GivenCertificateFilePath_ThenUsesTheCorrectFileName()
+        {
+            // Arrange.
+            var certificateFileName = @"abcd/someCertificate.pfx";
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new[] { $"-certificatefilepath={certificateFileName}" });
+
+            // Act.
+            var settings = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseApi()
+                .Build()
+                .NodeService<ApiSettings>();
+
+            // Assert.
+            settings.HttpsCertificateFilePath.Should().Be(certificateFileName);
+        }
+
+        [Fact]
+        public void GivenUseHttpsAndNoCertificateFilePath_ThenShouldThrowConfigurationException()
+        {
+            // Arrange.
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new[] { $"-usehttps={true}" });
+
+            // Act.
+            var settingsAction = new Action(() =>
+                {
+                    new FullNodeBuilder().UseNodeSettings(nodeSettings).UseApi().Build()
+                            .NodeService<ApiSettings>();
+                });
+
+            // Assert.
+            settingsAction.Should().Throw<ConfigurationException>();
         }
     }
 }
