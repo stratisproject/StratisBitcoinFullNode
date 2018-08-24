@@ -97,7 +97,7 @@ namespace Stratis.SmartContracts
         /// <summary>
         /// Sends funds to an address.
         /// 
-        /// If address belongs to a contract, will invoke the fallback function on this contract. 
+        /// If address belongs to a contract, will invoke the receive function on this contract. 
         /// </summary>
         /// <param name="addressTo">The address to transfer the funds to.</param>
         /// <param name="amountToTransfer">The amount of funds to transfer in satoshi.</param>
@@ -160,5 +160,14 @@ namespace Stratis.SmartContracts
         {
             this.contractLogger.Log(this.smartContractState, toLog);
         }
+
+        /// The fallback method, invoked when a transaction provides a method name of <see cref="string.Empty"/>.
+        /// The fallback method. Override this method to define behaviour when the contract receives funds and the method name in the calling transaction equals <see cref="string.Empty"/>.
+        /// Override this method to define behaviour when the contract receives funds and the method name in the calling transaction equals <see cref="string.Empty"/>.
+        /// <para>
+        /// This occurs when a contract sends funds to another contract using <see cref="Transfer"/>.
+        /// </para>
+        /// </summary>
+        public virtual void Receive() {}
     }
 }
