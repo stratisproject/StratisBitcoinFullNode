@@ -168,13 +168,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (error != null)
                         throw error;
 
-                    if (this.networkPeerDisposer.ConnectedPeersCount >= MaxConnectionThreshold)
-                    {
-                        this.logger.LogTrace("Maximum connection threshold [{0}] reached, closing the client.", MaxConnectionThreshold);
-                        tcpClient.Close();
-                        continue;
-                    }
-
                     if (!this.AllowClientConnection(tcpClient))
                     {
                         this.logger.LogTrace("Connection from client '{0}' was rejected and will be closed.", tcpClient.Client.RemoteEndPoint);
@@ -234,36 +227,40 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <summary>
-        /// Close inbound TCP client (Node), if not white listed, during initial block download.
+        /// Check if the client is allowed to connect based on certain criteria.
         /// </summary>
-        /// <remarks>Nodes catching up to the longest chain are vulnerable to malicious peers serving up a fake longer chain.</remarks>
-        /// <returns><c>true</c> when the client is closed.</returns>
+        /// <returns>When criteria is met returns <c>true</c>, to allow connection.</returns>
         private bool AllowClientConnection(TcpClient tcpClient)
         {
             this.logger.LogTrace("()");
 
-            bool close = false;
+            if (this.networkPeerDisposer.ConnectedPeersCount >= MaxConnectionThreshold)
+            {
+                this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:'{0}'", MaxConnectionThreshold);
+                return false;
+            }
 
             if (!this.initialBlockDownloadState.IsInitialBlockDownload())
-                return close;
+            {
+                this.logger.LogTrace("(-)[IBD_COMPLETE_ALLOW_CONNECTION]");
+                return true;
+            }
 
             var clientRemoteEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
 
-            NodeServerEndpoint endpoint = this.connectionManagerSettings.Listen.FirstOrDefault(
-                e => e.Endpoint.Match(clientRemoteEndPoint));
+            NodeServerEndpoint endpoint = this.connectionManagerSettings.Listen.FirstOrDefault(e => e.Endpoint.Match(clientRemoteEndPoint));
 
-            if (endpoint != null)
-                close = !endpoint.Whitelisted;
-
-            if (close)
+            if (endpoint != null && endpoint.Whitelisted)
             {
-                this.logger.LogTrace("Node [{0}] isn't white listed during initial block download, closing client.", clientRemoteEndPoint.ToString());
-                tcpClient.Close();
+                this.logger.LogTrace("(-)[ENDPOINT_WHITELISTED_ALLOW_CONNECTION]");
+                return true;
             }
+
+            this.logger.LogTrace("Node [{0}] is not white listed during initial block download.", clientRemoteEndPoint.ToString());
 
             this.logger.LogTrace("(-)");
 
-            return close;
+            return false;
         }
     }
 }
