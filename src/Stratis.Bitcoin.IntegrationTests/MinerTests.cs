@@ -21,12 +21,14 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Mempool;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -38,6 +40,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class MinerTests
     {
+        private readonly Network network;
+
         private static FeeRate blockMinFeeRate = new FeeRate(PowMining.DefaultBlockMinTxFee);
 
         public static PowBlockDefinition AssemblerForTest(TestContext testContext)
@@ -96,6 +100,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public class TestContext
         {
             public List<Blockinfo> blockinfo;
+            private uint nonce;
             public Network network;
             public Script scriptPubKey;
             public BlockTemplate newBlock;
@@ -184,33 +189,26 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.mempool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings), loggerFactory, nodeSettings);
                 this.mempoolLock = new MempoolSchedulerLock();
 
-                // Simple block creation, nothing special yet:
-                //this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
-                //await this.consensus.BlockMinedAsync(this.newBlock.Block);
-
                 // We can't make transactions until we have inputs
                 // Therefore, load 100 blocks :)
                 this.baseheight = 0;
                 var blocks = new List<Block>();
                 this.txFirst = new List<Transaction>();
 
-                uint nonce = 0;
+                this.nonce = 0;
 
                 for (int i = 0; i < this.blockinfo.Count; ++i)
                 {
                     Block block = this.network.CreateBlock();
-                    //Block block = Block.Load(this.newBlock.Block.ToBytes(this.network.Consensus.ConsensusFactory), this.network);
                     block.Header.HashPrevBlock = this.chain.Tip.HashBlock;
                     block.Header.Version = 1;
                     block.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
 
                     Transaction txCoinbase = this.network.CreateTransaction();
-                    //txCoinbase.Inputs.Clear();
                     txCoinbase.Version = 1;
                     txCoinbase.AddInput(new TxIn(new Script(new[] { Op.GetPushOp(this.blockinfo[i].extranonce), Op.GetPushOp(this.chain.Height) })));
                     // Ignore the (optional) segwit commitment added by CreateNewBlock (as the hardcoded nonces don't account for this)
                     txCoinbase.AddOutput(new TxOut(Money.Zero, new Script()));
-                    //block.Transactions[0] = txCoinbase;
                     block.AddTransaction(txCoinbase);
 
                     if (this.txFirst.Count == 0)
@@ -224,10 +222,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                     block.UpdateMerkleRoot();
 
                     while (!block.CheckProofOfWork())
-                        block.Header.Nonce = ++nonce;
+                        block.Header.Nonce = ++this.nonce;
 
-                    //block.Header.Nonce = this.blockinfo[i].nonce;
-
+                    // Serialization sets the BlockSize property.
                     block = Block.Load(block.ToBytes(), this.network);
 
                     await this.consensus.BlockMinedAsync(block);
@@ -239,6 +236,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
                 Assert.NotNull(this.newBlock);
             }
+        }
+
+        public MinerTests()
+        {
+            this.network = new BitcoinRegTest();
         }
 
         // Test suite for ancestor feerate transaction selection.
@@ -358,49 +360,46 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public async Task MinerCreateBlockSigopsLimit1000Async()
+        public void MinerCreateBlockSigopsLimit1000Async()
         {
-            var context = new TestContext();
-            await context.InitializeAsync();
-
-            // block sigops > limit: 1000 CHECKMULTISIG + 1
-            var tx = context.network.CreateTransaction();
-            tx.AddInput(new TxIn(new OutPoint(context.txFirst[0].GetHash(), 0), new Script(new byte[] { (byte)OpcodeType.OP_0, (byte)OpcodeType.OP_0, (byte)OpcodeType.OP_0, (byte)OpcodeType.OP_NOP, (byte)OpcodeType.OP_CHECKMULTISIG, (byte)OpcodeType.OP_1 })));
-            // NOTE: OP_NOP is used to force 20 SigOps for the CHECKMULTISIG
-            tx.AddOutput(context.BLOCKSUBSIDY, new Script());
-            for (int i = 0; i < 1001; ++i)
+            using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                tx.Outputs[0].Value -= context.LOWFEE;
-                context.hash = tx.GetHash();
-                bool spendsCoinbase = (i == 0); // only first tx spends coinbase
-                                                // If we don't set the # of sig ops in the CTxMemPoolEntry, template creation fails
-                context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.LOWFEE).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx));
-                tx = context.network.CreateTransaction(tx.ToBytes());
-                tx.Inputs[0].PrevOut.Hash = context.hash;
+                CoreNode miner = builder.CreateStratisPowNode(this.network);
+
+                builder.StartAll();
+                miner.NotInIBD();
+                miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
+                miner.GenerateStratisWithMiner(1);
+
+                var txMempoolHelper = new TestMemPoolEntryHelper();
+
+                // Block sigops > limit: 1000 CHECKMULTISIG + 1
+                var genesis = this.network.GetGenesis();
+                var genesisCoinbase = genesis.Transactions[0];
+                var tx = this.network.CreateTransaction();
+                tx.AddInput(new TxIn(new OutPoint(genesisCoinbase.GetHash(), 0), new Script(new byte[] { (byte)OpcodeType.OP_0, (byte)OpcodeType.OP_0, (byte)OpcodeType.OP_0, (byte)OpcodeType.OP_NOP, (byte)OpcodeType.OP_CHECKMULTISIG, (byte)OpcodeType.OP_1 })));
+
+                // NOTE: OP_NOP is used to force 20 SigOps for the CHECKMULTISIG
+                tx.AddOutput(Money.Coins(50), new Script());
+                for (int i = 0; i < 1001; ++i)
+                {
+                    tx.Outputs[0].Value -= Money.CENT;
+                    bool spendsCoinbase = (i == 0); // only first tx spends coinbase
+                                                    // If we don't set the # of sig ops in the CTxMemPoolEntry, template creation fails
+                    var txMempoolEntry = txMempoolHelper.Fee(Money.CENT).Time(DateTimeProvider.Default.GetTime()).SpendsCoinbase(spendsCoinbase).FromTx(tx);
+                    miner.FullNode.NodeService<ITxMempool>().AddUnchecked(tx.GetHash(), txMempoolEntry);
+
+                    tx = this.network.CreateTransaction(tx.ToBytes());
+                    tx.Inputs[0].PrevOut.Hash = tx.GetHash();
+                }
+
+                var error = Assert.Throws<ConsensusException>(() => miner.GenerateStratisWithMiner(1));
+                Assert.True(error.Message == ConsensusErrors.BadBlockSigOps.Message);
+
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(miner));
+
+                Assert.True(miner.FullNode.ConsensusManager().Tip.Height == 1);
             }
-
-            var badBlock = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
-            badBlock.Block.UpdateMerkleRoot();
-
-            var error = Assert.Throws<ConsensusException>(() => context.consensus.BlockMinedAsync(badBlock.Block).GetAwaiter().GetResult());
-            Assert.True(error.Message == ConsensusErrors.BadBlockSigOps.Message);
-            context.mempool.Clear();
-
-            tx.Inputs[0].PrevOut.Hash = context.txFirst[0].GetHash();
-            tx.Outputs[0].Value = context.BLOCKSUBSIDY;
-            for (int i = 0; i < 1001; ++i)
-            {
-                tx.Outputs[0].Value -= context.LOWFEE;
-                context.hash = tx.GetHash();
-                bool spendsCoinbase = (i == 0); // only first tx spends coinbase
-                                                // If we do set the # of sig ops in the CTxMemPoolEntry, template creation passes
-                context.mempool.AddUnchecked(context.hash, context.entry.Fee(context.LOWFEE).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(spendsCoinbase).SigOpsCost(80).FromTx(tx));
-                tx = context.network.CreateTransaction(tx.ToBytes());
-                tx.Inputs[0].PrevOut.Hash = context.hash;
-            }
-            BlockTemplate pblocktemplate = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
-            Assert.NotNull(pblocktemplate);
-            context.mempool.Clear();
         }
 
         [Fact]
@@ -469,31 +468,36 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public async Task MinerCreateBlockCoinbaseMempoolTemplateCreationFailsAsync()
+        public void MinerCreateBlockCoinbaseMempoolTemplateCreationFailsAsync()
         {
-            var context = new TestContext();
-            await context.InitializeAsync();
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode miner = builder.CreateStratisPowNode(this.network);
 
-            var tx = context.network.CreateTransaction();
-            tx.AddInput(new TxIn());
-            tx.AddOutput(new TxOut());
+                builder.StartAll();
+                miner.NotInIBD();
+                miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
+                miner.GenerateStratisWithMiner(1);
 
-            // Create an invalid coinbase transaction to be added to the mempool.
-            tx.Inputs[0].PrevOut = new OutPoint();
-            tx.Inputs[0].ScriptSig = new Script(OpcodeType.OP_0, OpcodeType.OP_1);
-            tx.Outputs[0].Value = 0;
-            context.hash = tx.GetHash();
+                // Create an invalid coinbase transaction to be added to the mempool.
+                var duplicateCoinbase = this.network.CreateTransaction();
+                duplicateCoinbase.AddInput(new TxIn());
+                duplicateCoinbase.AddOutput(new TxOut());
+                duplicateCoinbase.Inputs[0].PrevOut = new OutPoint();
+                duplicateCoinbase.Inputs[0].ScriptSig = new Script(OpcodeType.OP_0, OpcodeType.OP_1);
+                duplicateCoinbase.Outputs[0].Value = 0;
 
-            // Give it a fee so it'll get mined.
-            var mempoolEntry = context.entry.Fee(context.LOWFEE).Time(context.DateTimeProvider.GetTime()).SpendsCoinbase(false).FromTx(tx);
-            context.mempool.AddUnchecked(context.hash, mempoolEntry);
+                var txMempoolHelper = new TestMemPoolEntryHelper();
+                var txMempoolEntry = txMempoolHelper.Fee(Money.CENT).Time(DateTimeProvider.Default.GetTime()).SpendsCoinbase(false).FromTx(duplicateCoinbase);
+                miner.FullNode.NodeService<ITxMempool>().AddUnchecked(duplicateCoinbase.GetHash(), txMempoolEntry);
 
-            var badBlock = AssemblerForTest(context).Build(context.chain.Tip, context.scriptPubKey);
-            badBlock.Block.UpdateMerkleRoot();
-            var error = Assert.Throws<ConsensusException>(() => context.consensus.BlockMinedAsync(badBlock.Block).GetAwaiter().GetResult());
-            Assert.True(error.Message == ConsensusErrors.BadMultipleCoinbase.Message);
+                var error = Assert.Throws<ConsensusException>(() => miner.GenerateStratisWithMiner(1));
+                Assert.True(error.Message == ConsensusErrors.BadMultipleCoinbase.Message);
 
-            context.mempool.Clear();
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(miner));
+
+                Assert.True(miner.FullNode.ConsensusManager().Tip.Height == 1);
+            }
         }
 
         [Fact]
