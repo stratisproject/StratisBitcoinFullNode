@@ -7,32 +7,33 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// This rule performs further coldstaking transaction validation when cold staking balances are spent with a 
-    /// hot wallet address (versus the cold wallet address) inside of a coldstaking transaction.
+    /// This rule performs further coldstaking transaction validation when cold staking balances are spent with a
+    /// cold staking "hotPubKey" inside of a cold staking transaction. The cold staking "hotPubKey" is the pubKey
+    /// that allows spending only to the same address.
     /// </summary>
     /// <remarks><para>
     /// This code will perform further validation for transactions that spend the new scriptPubKey containing the
-    /// new <see cref="OpcodeType.OP_CHECKCOLDSTAKEVERIFY"/> opcode using a hotPubKeyHash inside of a coinstake 
-    /// transaction. Those are the conditions under which the <see cref="PosTransaction.IsColdCoinStake"/> flag will 
-    /// be set and it is therefore the flag we use to determine if these rules should be applied. Due to a check 
-    /// being done inside of the implementation of the <see cref="OpcodeType.OP_CHECKCOLDSTAKEVERIFY"/> opcode this 
-    /// flag can only be set for coinstake transactions after the opcode implementation has been activated (at a 
-    /// specified block height). The opcode activation flag is <see cref="ScriptVerify.CheckColdStakeVerify"/> and 
-    /// it is set in <see cref="DeploymentFlags.ScriptFlags"/> when the block height is greater than or equal to <see 
+    /// new <see cref="OpcodeType.OP_CHECKCOLDSTAKEVERIFY"/> opcode using a hotPubKeyHash inside of a coinstake
+    /// transaction. Those are the conditions under which the <see cref="PosTransaction.IsColdCoinStake"/> flag will
+    /// be set and it is therefore the flag we use to determine if these rules should be applied. Due to a check
+    /// being done inside of the implementation of the <see cref="OpcodeType.OP_CHECKCOLDSTAKEVERIFY"/> opcode this
+    /// flag can only be set for coinstake transactions after the opcode implementation has been activated (at a
+    /// specified block height). The opcode activation flag is <see cref="ScriptVerify.CheckColdStakeVerify"/> and
+    /// it is set in <see cref="DeploymentFlags.ScriptFlags"/> when the block height is greater than or equal to <see
     /// cref="PosConsensusOptions.ColdStakingActivationHeight"/>.
     /// </para><para>
     /// The following conditions are enforced for cold staking transactions. This rule implements all but the first one:
     /// <list type="number">
     /// <item>Check if the transaction spending an output, which contains this instruction, is a coinstake transaction.
-    /// If it is not, the script fails. This has already been checked within the opcode implementation before setting 
+    /// If it is not, the script fails. This has already been checked within the opcode implementation before setting
     /// <see cref="PosTransaction.IsColdCoinStake"/> so it will not be checked here.</item>
-    /// <item>Check that ScriptPubKeys of all inputs of this transaction are the same. If they are not, the script 
+    /// <item>Check that ScriptPubKeys of all inputs of this transaction are the same. If they are not, the script
     /// fails.</item>
-    /// <item>Check that ScriptPubKeys of all outputs of this transaction, except for the marker output (a special 
+    /// <item>Check that ScriptPubKeys of all outputs of this transaction, except for the marker output (a special
     /// first output of each coinstake transaction) and the pubkey output (an optional special second output that
     /// contains public key in coinstake transaction), are the same as ScriptPubKeys of the inputs. If they are not,
     /// the script fails.</item>
-    /// <item>Check that the sum of values of all inputs is smaller or equal to the sum of values of all outputs. If 
+    /// <item>Check that the sum of values of all inputs is smaller or equal to the sum of values of all outputs. If
     /// this does not hold, the script fails.</item>
     /// </list></para></remarks>
     public class PosColdStakingRule : UtxoStoreConsensusRule
@@ -46,12 +47,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.Logger.LogTrace("()");
 
             // Take the coinstake transaction from the block and check if the flag ("IsColdCoinStake") is set.
-            // The flag will only be set in the OP_CHECKCOLDSTAKEVERIFY is ScriptFlags in DeploymentFlags has "CheckColdStakeVerify" set.
+            // The flag will only be set in the OP_CHECKCOLDSTAKEVERIFY if ScriptFlags in DeploymentFlags has "CheckColdStakeVerify" set.
             Block block = context.ValidationContext.BlockToValidate;
             if ((block.Transactions.Count < 2) || !((block.Transactions[1] is PosTransaction coinstakeTransaction) && coinstakeTransaction.IsColdCoinStake))
             {
                 // If it is not a cold coin stake transaction then this rule is not required.
-                this.Logger.LogTrace("(-)");
+                this.Logger.LogTrace("(-)[SKIP_COLDSTAKE_RULE]");
                 return Task.CompletedTask;
             }
 
@@ -77,10 +78,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
 
-            // Check that the second output is a special output for presenting the public key with an OP_RETURN and that 
-            // the output value is zero. Checking for the OP_RETURN ensures that the PosBlockSignatureRule won't match the 
-            // PayToPubKey template. This will ensure that an attacker won't use a PayToPubKey output here to spend our 
-            // cold staking balance (using the hot wallet key) to an address other then our special scriptpubkey. 
+            // Check that the second output is a special output for presenting the public key with an OP_RETURN and that
+            // the output value is zero. Checking for the OP_RETURN ensures that the PosBlockSignatureRule won't match the
+            // PayToPubKey template. This will ensure that an attacker won't use a PayToPubKey output here to spend our
+            // cold staking balance (using the hot wallet key) to an address other then our special scriptpubkey.
             if ((coinstakeTransaction.Outputs[1].ScriptPubKey.ToOps().FirstOrDefault()?.Code != OpcodeType.OP_RETURN) ||
                 (coinstakeTransaction.Outputs[1].Value != Money.Zero))
             {
@@ -89,9 +90,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             // Check that ScriptPubKeys of all outputs of this transaction, except for the marker output (a special first
-            // output of each coinstake transaction) and the pubkey output (an optional special second output that contains 
+            // output of each coinstake transaction) and the pubkey output (an optional special second output that contains
             // public key in coinstake transaction), are the same as ScriptPubKeys of the inputs. If they are not, the script fails.
-            // Assume that the presence of the second output will be confirmed by the block signature rule.
             for (int i = 2; i < coinstakeTransaction.Outputs.Count; i++)
             {
                 if (scriptPubKey != coinstakeTransaction.Outputs[i].ScriptPubKey)
