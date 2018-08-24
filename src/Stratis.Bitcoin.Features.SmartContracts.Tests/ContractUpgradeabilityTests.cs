@@ -29,23 +29,50 @@ using Stratis.SmartContracts;
 
 public class TestContract : SmartContract
 {
-    public TestContract(ISmartContractState state) : base(state) {}
+    public bool AMethod(){ return true; }
+}
+";
 
-    public void AMethod(){}
+            var loader = @"
+using Stratis.SmartContracts;
+using System.Reflection;
+using System;
+
+public class TestLoader
+{
+    public static bool Load(Assembly assembly)
+    {
+        var contractType = assembly.GetType(""TestContract"");
+
+        if (contractType == null)
+            return false;
+
+        var method = contractType.GetMethod(""TestMethod"");
+
+        if (method == null)
+            return false;
+
+        var instance = (SmartContract) Activator.CreateInstance(contractType);
+
+        var result = (string)method.Invoke(instance, null);
+
+        return !string.IsNullOrWhiteSpace(result);
+    }
 }
 ";
             var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
             var references = new List<MetadataReference>
             {
-                MetadataReference.CreateFromFile(Path.Combine(basePath, "Packages", "netcoreapp2.1", "System.Runtime.dll"))
+                MetadataReference.CreateFromFile(Path.Combine(basePath, "Packages", "netcoreapp2.1", "System.Runtime.dll")),
             };
 
+            // Stratis.SmartContracts.SmartContract with the constructor removed
             var version1DllPath = Path.Combine(basePath, "Packages", "1.0.0-TEST", "Stratis.SmartContracts.dll");
 
             // Version 2.0.0-TEST adds string TestMethod() to Stratis.SmartContracts.SmartContract
             // and GetString() to Stratis.SmartContracts.ISmartContractState
-            var version2DllPath = Path.Combine(basePath, "Packages", "2.0.0-TEST", "Stratis.SmartContracts.dll");
+            var version2DllPath = Path.Combine(basePath, "Packages", "4.0.0-TEST", "Stratis.SmartContracts.dll");
             
             references.Add(MetadataReference.CreateFromFile(version1DllPath));
 
@@ -70,22 +97,47 @@ public class TestContract : SmartContract
                 version1CompiledContract = dllStream.ToArray();
             }
 
+            SyntaxTree syntaxTreeLoader = CSharpSyntaxTree.ParseText(loader);
+
+            CSharpCompilation loaderCompilation = CSharpCompilation.Create(
+                "loader",
+                new[] { syntaxTreeLoader },
+                references,
+                new CSharpCompilationOptions(
+                    OutputKind.DynamicallyLinkedLibrary,
+                    checkOverflow: true));
+
             var alc = new TestAssemblyLoadContext();
 
             var version2Assembly = alc.LoadFromAssemblyPath(version2DllPath);
 
-            Assert.Equal(Version.Parse("2.0.0.0"), version2Assembly.GetName().Version);
+            Assert.Equal(Version.Parse("4.0.0.0"), version2Assembly.GetName().Version);
+            
+            Assembly loaderAssembly;
+            
+            using (var dllStream = new MemoryStream())
+            {
+                EmitResult emitResult = loaderCompilation.Emit(dllStream);
+
+                Assert.True(emitResult.Success);
+
+                dllStream.Seek(0, SeekOrigin.Begin);
+                loaderAssembly = alc.LoadFromStream(dllStream);
+            }
 
             var version1ContractMemoryStream = new MemoryStream(version1CompiledContract);     
             var version1ContractAssembly = alc.LoadFromStream(version1ContractMemoryStream);
             version1ContractMemoryStream.Dispose();
 
-            var type = version1ContractAssembly.ExportedTypes.First(t => t.Name == "TestContract");
+            var loaderType = loaderAssembly.ExportedTypes.First(t => t.Name == "TestLoader");
 
-            var method = type.BaseType.GetMethod("TestMethod");
-            
-            // If this condition is not null, we have a v1 contract referencing a v2 assembly
-            Assert.NotNull(method);
+            var loaderMethod = loaderType.GetMethod("Load");
+
+            var version2MethodInvocationResult = (bool) loaderMethod.Invoke(null, new [] { version1ContractAssembly });
+
+            // If this condition is not null, we have a v1 contract referencing a v2 assembly and a successful
+            // invocation of a method that only exists on v2
+            Assert.True(version2MethodInvocationResult);
         }
     }
 }

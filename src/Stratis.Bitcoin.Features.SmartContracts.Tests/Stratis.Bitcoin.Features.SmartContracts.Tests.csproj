@@ -121,7 +121,7 @@
     <None Update="Packages\1.0.0-TEST\Stratis.SmartContracts.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Packages\2.0.0-TEST\Stratis.SmartContracts.dll">
+    <None Update="Packages\4.0.0-TEST\Stratis.SmartContracts.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Packages\netcoreapp2.1\System.Runtime.dll">
