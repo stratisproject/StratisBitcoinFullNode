@@ -164,11 +164,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return VmExecutionResult.Error(gasMeter.GasConsumed, new SmartContractDoesNotExistException(callData.MethodName));
             }
 
+            // TODO consolidate this with CallData.
+            MethodCall methodCall = new MethodCall(callData.MethodName, callData.MethodParameters);
+
             ContractByteCode code;
 
             using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractExecutionCode))
             {
-                moduleDefinition.InjectMethodGas(typeName, callData.MethodName);
+                moduleDefinition.InjectMethodGas(typeName, methodCall);
 
                 code = moduleDefinition.ToByteCode();
             }
@@ -201,7 +204,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             LogExecutionContext(this.logger, contract.State.Block, contract.State.Message, contract.Address, callData);
 
-            IContractInvocationResult invocationResult = contract.Invoke(callData.MethodName, callData.MethodParameters);
+            IContractInvocationResult invocationResult = contract.Invoke(methodCall);
 
             if (!invocationResult.IsSuccess)
             {
