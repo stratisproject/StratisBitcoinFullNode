@@ -333,7 +333,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 ScriptSig = new Script()
             });
 
-            // First output of coinbase transaction is a special marker.
+            // First output of coinstake transaction is a special marker.
             coinStakeTransaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
 
             // Second (unspendable) output.
