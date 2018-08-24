@@ -17,24 +17,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private uint160 address;
         private IContract contract;
 
-        public class HasFallback : SmartContract
+        public class HasReceive : SmartContract
         {
-            public HasFallback(ISmartContractState smartContractState)
+            public HasReceive(ISmartContractState smartContractState)
                 : base(smartContractState)
             {
             }
 
-            public override void Fallback()
+            public override void Receive()
             {
-                this.FallbackInvoked = true;
+                this.ReceiveInvoked = true;
             }
 
-            public bool FallbackInvoked { get; private set; }
+            public bool ReceiveInvoked { get; private set; }
         }
 
-        public class HasNoFallback : SmartContract
+        public class HasNoReceive : SmartContract
         {
-            public HasNoFallback(ISmartContractState smartContractState)
+            public HasNoReceive(ISmartContractState smartContractState)
                 : base(smartContractState)
             {
             }
@@ -286,97 +286,97 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void HasFallback_Returns_Correct_Fallback()
+        public void HasReceive_Returns_Correct_Receive()
         {
-            var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
+            var receiveContract = Contract.CreateUninitialized(typeof(HasReceive), this.state, this.address);
 
-            var fallbackMethod = ((Contract) fallbackContract).Fallback;
+            var receiveMethod = ((Contract) receiveContract).ReceiveHandler;
 
-            Assert.NotNull(fallbackMethod);
+            Assert.NotNull(receiveMethod);
         }
 
         [Fact]
-        public void HasNoFallback_Returns_Correct_Fallback()
+        public void HasNoReceive_Returns_Correct_Receive()
         {
-            var fallbackContract = Contract.CreateUninitialized(typeof(HasNoFallback), this.state, this.address);
-            var fallbackInstance = (HasNoFallback)fallbackContract.GetPrivateFieldValue("instance");
+            var receiveContract = Contract.CreateUninitialized(typeof(HasNoReceive), this.state, this.address);
+            var receiveInstance = (HasNoReceive)receiveContract.GetPrivateFieldValue("instance");
 
-            // Fallback should be null here because we set the binding flags to only resolve methods on the declared type
-            var fallbackMethod = ((Contract)fallbackContract).Fallback;
+            // ReceiveHandler should be null here because we set the binding flags to only resolve methods on the declared type
+            var receiveMethod = ((Contract)receiveContract).ReceiveHandler;
 
-            Assert.Null(fallbackMethod);
+            Assert.Null(receiveMethod);
         }
 
         [Fact]
-        public void EmptyMethodName_Invokes_Fallback()
+        public void EmptyMethodName_Invokes_Receive()
         {
-            var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
-            var fallbackInstance = (HasFallback) fallbackContract.GetPrivateFieldValue("instance");
-            var methodCall = MethodCall.Fallback();
+            var receiveContract = Contract.CreateUninitialized(typeof(HasReceive), this.state, this.address);
+            var receiveInstance = (HasReceive) receiveContract.GetPrivateFieldValue("instance");
+            var methodCall = MethodCall.Receive();
 
-            var result = fallbackContract.Invoke(methodCall);
+            var result = receiveContract.Invoke(methodCall);
 
             Assert.True(result.IsSuccess);
-            Assert.True(fallbackInstance.FallbackInvoked);
+            Assert.True(receiveInstance.ReceiveInvoked);
         }
 
         [Fact]
-        public void EmptyMethodName_DoesNot_Invoke_Fallback()
+        public void EmptyMethodName_DoesNot_Invoke_Receive()
         {
-            var fallbackContract = Contract.CreateUninitialized(typeof(HasNoFallback), this.state, this.address);
-            var methodCall = MethodCall.Fallback();
+            var receiveContract = Contract.CreateUninitialized(typeof(HasNoReceive), this.state, this.address);
+            var methodCall = MethodCall.Receive();
 
-            var result = fallbackContract.Invoke(methodCall);
+            var result = receiveContract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
         }
 
         [Fact]
-        public void EmptyMethodName_WithParams_DoesNot_Invoke_Fallback()
+        public void EmptyMethodName_WithParams_DoesNot_Invoke_Receive()
         {
-            var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
-            var fallbackInstance = (HasFallback)fallbackContract.GetPrivateFieldValue("instance");
+            var receiveContract = Contract.CreateUninitialized(typeof(HasReceive), this.state, this.address);
+            var receiveInstance = (HasReceive)receiveContract.GetPrivateFieldValue("instance");
 
             var parameters = new object[] { 1, "1" };
-            var methodCall = new MethodCall(MethodCall.ExternalFallbackMethodName, parameters);
-            var result = fallbackContract.Invoke(methodCall);
+            var methodCall = new MethodCall(MethodCall.ExternalReceiveHandlerName, parameters);
+            var result = receiveContract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
-            Assert.False(fallbackInstance.FallbackInvoked);
+            Assert.False(receiveInstance.ReceiveInvoked);
             Assert.Equal(ContractInvocationErrorType.MethodDoesNotExist, result.InvocationErrorType);
         }
 
         [Fact]
-        public void Non_Existent_Method_DoesNot_Invoke_Fallback()
+        public void Non_Existent_Method_DoesNot_Invoke_Receive()
         {
-            var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
-            var fallbackInstance = (HasFallback)fallbackContract.GetPrivateFieldValue("instance");
+            var receiveContract = Contract.CreateUninitialized(typeof(HasReceive), this.state, this.address);
+            var receiveInstance = (HasReceive)receiveContract.GetPrivateFieldValue("instance");
             var methodCall = new MethodCall("DoesntExist");
 
-            var result = fallbackContract.Invoke(methodCall);
+            var result = receiveContract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
-            Assert.False(fallbackInstance.FallbackInvoked);
+            Assert.False(receiveInstance.ReceiveInvoked);
             Assert.Equal(ContractInvocationErrorType.MethodDoesNotExist, result.InvocationErrorType);
         }
 
         [Fact]
-        public void Invoke_Fallback_Method_Sets_State()
+        public void Invoke_Receive_Method_Sets_State()
         {
-            var methodCall = MethodCall.Fallback();
-            var fallbackContract = Contract.CreateUninitialized(typeof(HasFallback), this.state, this.address);
-            var fallbackInstance = (HasFallback)fallbackContract.GetPrivateFieldValue("instance");
+            var methodCall = MethodCall.Receive();
+            var receiveContract = Contract.CreateUninitialized(typeof(HasReceive), this.state, this.address);
+            var receiveInstance = (HasReceive)receiveContract.GetPrivateFieldValue("instance");
 
-            fallbackContract.Invoke(methodCall);
+            receiveContract.Invoke(methodCall);
 
-            var gasMeter = fallbackInstance.GetBaseTypePrivateFieldValue("gasMeter");
-            var block = fallbackInstance.GetBaseTypePrivateFieldValue("Block");
-            var getBalance = fallbackInstance.GetBaseTypePrivateFieldValue("getBalance");
-            var internalTransactionExecutor = fallbackInstance.GetBaseTypePrivateFieldValue("internalTransactionExecutor");
-            var internalHashHelper = fallbackInstance.GetBaseTypePrivateFieldValue("internalHashHelper");
-            var message = fallbackInstance.GetBaseTypePrivateFieldValue("Message");
-            var persistentState = fallbackInstance.GetBaseTypePrivateFieldValue("PersistentState");
-            var smartContractState = fallbackInstance.GetBaseTypePrivateFieldValue("smartContractState");
+            var gasMeter = receiveInstance.GetBaseTypePrivateFieldValue("gasMeter");
+            var block = receiveInstance.GetBaseTypePrivateFieldValue("Block");
+            var getBalance = receiveInstance.GetBaseTypePrivateFieldValue("getBalance");
+            var internalTransactionExecutor = receiveInstance.GetBaseTypePrivateFieldValue("internalTransactionExecutor");
+            var internalHashHelper = receiveInstance.GetBaseTypePrivateFieldValue("internalHashHelper");
+            var message = receiveInstance.GetBaseTypePrivateFieldValue("Message");
+            var persistentState = receiveInstance.GetBaseTypePrivateFieldValue("PersistentState");
+            var smartContractState = receiveInstance.GetBaseTypePrivateFieldValue("smartContractState");
 
             Assert.NotNull(gasMeter);
             Assert.Equal(this.state.GasMeter, gasMeter);

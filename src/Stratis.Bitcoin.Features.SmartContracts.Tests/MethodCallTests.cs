@@ -6,61 +6,61 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     public class MethodCallTests
     {
         [Fact]
-        public void MethodCall_Created_With_Factory_Should_Be_Fallback()
+        public void MethodCall_Created_With_Factory_Should_Be_Receive()
         {
-            var methodCall = MethodCall.Fallback();
+            var methodCall = MethodCall.Receive();
 
-            Assert.True(methodCall.IsFallbackCall);
+            Assert.True(methodCall.IsReceiveHandlerCall);
         }
 
         [Fact]
-        public void MethodCall_Without_Params_Should_Be_Fallback()
+        public void MethodCall_Without_Params_Should_Be_Receive()
         {
             var methodCall = new MethodCall("");
 
-            Assert.True(methodCall.IsFallbackCall);
+            Assert.True(methodCall.IsReceiveHandlerCall);
         }
 
         [Fact]
-        public void MethodCall_To_Fallback_Should_Be_Fallback()
+        public void MethodCall_To_Receive_Should_Be_Receive()
         {
-            var methodCall = new MethodCall("Fallback");
+            var methodCall = new MethodCall("Receive");
 
-            Assert.True(methodCall.IsFallbackCall);
+            Assert.True(methodCall.IsReceiveHandlerCall);
         }
 
         [Fact]
-        public void MethodCall_To_Fallback_With_Params_Should_Not_Be_Fallback()
+        public void MethodCall_To_Receive_With_Params_Should_Not_Be_Receive()
         {
-            var methodCall = new MethodCall("Fallback", new object[] { 1 });
+            var methodCall = new MethodCall("Receive", new object[] { 1 });
 
-            Assert.False(methodCall.IsFallbackCall);
+            Assert.False(methodCall.IsReceiveHandlerCall);
         }
 
         [Fact]
-        public void MethodCall_With_Params_Should_Not_Be_Fallback()
+        public void MethodCall_With_Params_Should_Not_Be_Receive()
         {
             var methodCall = new MethodCall("", new object[] { 1 });
 
-            Assert.False(methodCall.IsFallbackCall);
+            Assert.False(methodCall.IsReceiveHandlerCall);
         }
 
         [Fact]
-        public void MethodCall_Should_Return_Internal_Fallback_Name()
+        public void MethodCall_Should_Return_Internal_Receive_Name()
         {
             var methodCall = new MethodCall("");
 
-            Assert.True(methodCall.IsFallbackCall);
-            Assert.Equal(MethodCall.FallbackMethodName, methodCall.Name);
+            Assert.True(methodCall.IsReceiveHandlerCall);
+            Assert.Equal(MethodCall.ReceiveHandlerName, methodCall.Name);
         }
 
         [Fact]
-        public void MethodCall_Should_Not_Return_Internal_Fallback_Name()
+        public void MethodCall_Should_Not_Return_Internal_Receive_Name()
         {
             var methodCall = new MethodCall(null);
 
-            Assert.False(methodCall.IsFallbackCall);
-            Assert.NotEqual(MethodCall.FallbackMethodName, methodCall.Name);
+            Assert.False(methodCall.IsReceiveHandlerCall);
+            Assert.NotEqual(MethodCall.ReceiveHandlerName, methodCall.Name);
         }
     }
 }

@@ -814,10 +814,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         }
 
         /// <summary>
-        /// Should send funds to another contract, causing the contract's fallback function to be invoked.
+        /// Should send funds to another contract, causing the contract's ReceiveHandler function to be invoked.
         /// </summary>
         [Fact]
-        public async Task SmartContracts_TransferFunds_Invokes_Fallback_Async()
+        public async Task SmartContracts_TransferFunds_Invokes_Receive_Async()
         {
             TestContext context = new TestContext();
             await context.InitializeAsync();
@@ -826,42 +826,42 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             Gas gasLimit = (Gas)1000000;
             var gasBudget = gasPrice * gasLimit;
 
-            var fallBackContract = Path.Combine("SmartContracts", "FallbackContract.cs");
-            var fallbackCompilation = SmartContractCompiler.CompileFile(fallBackContract).Compilation;
+            var receiveContract = Path.Combine("SmartContracts", "ReceiveHandlerContract.cs");
+            var receiveCompilation = SmartContractCompiler.CompileFile(receiveContract).Compilation;
 
-            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, fallbackCompilation, gasPrice, gasLimit);
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, receiveCompilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 fallbackAddress1 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
-            Assert.NotNull(context.stateRoot.GetCode(fallbackAddress1));
+            uint160 receiveContractAddress1 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
+            Assert.NotNull(context.stateRoot.GetCode(receiveContractAddress1));
 
             context.mempool.Clear();
 
-            SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, fallbackCompilation, gasPrice, gasLimit);
+            SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, receiveCompilation, gasPrice, gasLimit);
             tx = this.AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
             pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 fallbackAddress2 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
-            Assert.NotNull(context.stateRoot.GetCode(fallbackAddress2));
+            uint160 receiveContractAddress2 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
+            Assert.NotNull(context.stateRoot.GetCode(receiveContractAddress2));
 
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
             string[] testMethodParameters = new string[]
             {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, fallbackAddress2.ToAddress(context.network)),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, receiveContractAddress2.ToAddress(context.network)),
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ULong, fundsToSend),
             };
 
-            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, fallbackAddress1, "SendFunds", gasPrice, gasLimit, testMethodParameters);
+            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, receiveContractAddress1, "SendFunds", gasPrice, gasLimit, testMethodParameters);
             pblocktemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
-            byte[] fallbackInvoked = context.stateRoot.GetStorageValue(fallbackAddress2, Encoding.UTF8.GetBytes("FallbackInvoked"));
-            byte[] fundsReceived = context.stateRoot.GetStorageValue(fallbackAddress2, Encoding.UTF8.GetBytes("FallbackReceived"));
+            byte[] receiveInvoked = context.stateRoot.GetStorageValue(receiveContractAddress2, Encoding.UTF8.GetBytes("ReceiveInvoked"));
+            byte[] fundsReceived = context.stateRoot.GetStorageValue(receiveContractAddress2, Encoding.UTF8.GetBytes("ReceivedFunds"));
 
             var serializer = new ContractPrimitiveSerializer(context.network);
 
-            Assert.NotNull(fallbackInvoked);
+            Assert.NotNull(receiveInvoked);
             Assert.NotNull(fundsReceived);
-            Assert.True(serializer.Deserialize<bool>(fallbackInvoked));
+            Assert.True(serializer.Deserialize<bool>(receiveInvoked));
             Assert.Equal(fundsToSend, serializer.Deserialize<ulong>(fundsReceived));
         }
 

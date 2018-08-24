@@ -9,9 +9,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         private readonly string methodName;
 
-        public const string FallbackMethodName = nameof(SmartContract.Fallback);
+        public const string ReceiveHandlerName = nameof(SmartContract.Receive);
 
-        public const string ExternalFallbackMethodName = "";
+        public const string ExternalReceiveHandlerName = "";
 
         public MethodCall(string methodName, object[] methodParameters = null)
         {
@@ -19,9 +19,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.Parameters = methodParameters;
         }
 
-        public static MethodCall Fallback()
+        public static MethodCall Receive()
         {
-            return new MethodCall(ExternalFallbackMethodName);
+            return new MethodCall(ExternalReceiveHandlerName);
         }
 
         public object[] Parameters { get; }
@@ -30,25 +30,25 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             get
             {
-                return this.IsFallbackCall
-                    ? FallbackMethodName
+                return this.IsReceiveHandlerCall
+                    ? ReceiveHandlerName
                     : this.methodName;
             }
         }
 
         /// <summary>
-        /// Returns true if the method call is a fallback method call.
+        /// Returns true if the method call is a receive handler call.
         /// </summary>
-        public bool IsFallbackCall
+        public bool IsReceiveHandlerCall
         {
             get
             {
-                // The fallback method must always be the override with no parameters,
+                // The receive handler must always be the override with no parameters,
                 // so it's not enough just to check if the method name is correct.
                 return (this.Parameters == null || this.Parameters.Length == 0) 
                        && this.methodName != null
-                       && (FallbackMethodName.Equals(this.methodName, StringComparison.OrdinalIgnoreCase) 
-                           || ExternalFallbackMethodName.Equals(this.methodName, StringComparison.OrdinalIgnoreCase));
+                       && (ReceiveHandlerName.Equals(this.methodName, StringComparison.OrdinalIgnoreCase) 
+                           || ExternalReceiveHandlerName.Equals(this.methodName, StringComparison.OrdinalIgnoreCase));
             }
         }
     }

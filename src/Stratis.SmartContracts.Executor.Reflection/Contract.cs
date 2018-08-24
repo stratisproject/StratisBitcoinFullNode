@@ -14,9 +14,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class Contract : IContract
     {
         /// <summary>
-        /// The default binding flags for matching the fallback method. Matches public instance methods declared on the contract type only.
+        /// The default binding flags for matching the receive method. Matches public instance methods declared on the contract type only.
         /// </summary>
-        private const BindingFlags DefaultFallbackLookup = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public;
+        private const BindingFlags DefaultReceiveLookup = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public;
 
         private readonly SmartContract instance;
 
@@ -34,20 +34,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <inheritdoc />
         public ISmartContractState State { get; }
 
-        private MethodInfo fallback;
+        private MethodInfo receive;
 
         /// <summary>
-        /// Returns the fallback method defined on the inherited contract type. If no fallback was defined, returns null.
+        /// Returns the receive handler method defined on the inherited contract type. If no receive handler was defined, returns null.
         /// </summary>
-        public MethodInfo Fallback {
+        public MethodInfo ReceiveHandler {
             get
             {
-                if (this.fallback == null)
+                if (this.receive == null)
                 {
-                    this.fallback = this.Type.GetMethod(MethodCall.FallbackMethodName, DefaultFallbackLookup);
+                    this.receive = this.Type.GetMethod(MethodCall.ReceiveHandlerName, DefaultReceiveLookup);
                 }
 
-                return this.fallback;
+                return this.receive;
             }
         }
 
@@ -108,9 +108,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <inheritdoc />
         public IContractInvocationResult Invoke(MethodCall call)
         {
-            if (call.IsFallbackCall)
+            if (call.IsReceiveHandlerCall)
             {
-                return this.InvokeFallback();
+                return this.InvokeReceiveHandler();
             }
 
             object[] invokeParams = call.Parameters?.ToArray() ?? new object[0];
@@ -135,16 +135,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.InvokeInternal(methodToInvoke, invokeParams);
         }
 
-        private IContractInvocationResult InvokeFallback()
+        private IContractInvocationResult InvokeReceiveHandler()
         {
-            // Handles the scenario where no fallback was defined, but it is attempted to be invoked anyway.
-            // This could occur if a method invocation is directly made to the fallback via a transaction.
-            if (this.Fallback == null)
+            // Handles the scenario where no receive was defined, but it is attempted to be invoked anyway.
+            // This could occur if a method invocation is directly made to the receive via a transaction.
+            if (this.ReceiveHandler == null)
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.MethodDoesNotExist);
 
             EnsureInitialized();
 
-            return this.InvokeInternal(this.Fallback, null);
+            return this.InvokeInternal(this.ReceiveHandler, null);
         }
 
         /// <summary>
