@@ -74,5 +74,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         public static readonly ConsensusError ProofOfWorkTooHigh = new ConsensusError("proof-of-work-too-heigh", "proof of work too high");
 
         public static readonly ConsensusError CheckpointViolation = new ConsensusError("checkpoint-violation", "block header hash does not match the checkpointed value");
+
+        public static readonly ConsensusError BadColdstakeAmount = new ConsensusError("bad-coldstake-amount", "coldstake is negative");
+        public static readonly ConsensusError BadColdstakeInputs = new ConsensusError("bad-coldstake-inputs", "coldstake inputs contain mismatching scriptpubkeys");
+        public static readonly ConsensusError BadColdstakeOutputs = new ConsensusError("bad-coldstake-outputs", "coldstake outputs contain unexpected scriptpubkeys");
     }
 }
