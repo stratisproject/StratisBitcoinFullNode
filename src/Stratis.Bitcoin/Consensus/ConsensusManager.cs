@@ -517,7 +517,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (!isExtension)
             {
-                // Save blocks that will be disconnected in case we will need to reconnect them (this might happen connection of a new chain fails).
+                // Save blocks that will be disconnected in case we will need to reconnect them (this might happen if connection of a new chain fails).
                 disconnectedBlocks = new List<ChainedHeaderBlock>(oldTip.Height - fork.Height);
 
                 ChainedHeader current = oldTip;
