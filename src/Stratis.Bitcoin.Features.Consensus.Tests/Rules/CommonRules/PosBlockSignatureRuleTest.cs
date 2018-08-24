@@ -317,41 +317,44 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// (versus uncompressed) public key.</param>
         /// <param name="includeSecondPush">Determines whether the second transaction output will inlcude a small integer
         /// after the public key.</param>
-        /// <param name="expectFailure">Deterines whether we expect failure (versus success)</param>
+        /// <param name="expectFailure">Deterines whether we expect failure (versus success).</param>
         private void ProofOfStakeBlock_ColdStakeTestHelper(bool useCompressedKey, bool includeSecondPush, bool expectFailure)
         {
             Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
+
+            // Add a dummy coinbase transaction.
             block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
 
-            Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
-            transaction.Inputs.Add(new TxIn()
+            // Build a coinstake transaction.
+            Transaction coinStakeTransaction = KnownNetworks.StratisMain.CreateTransaction();
+            coinStakeTransaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(new uint256(15), 1),
                 ScriptSig = new Script()
             });
 
-            // First output.
-            transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
+            // First output of coinbase transaction is a special marker.
+            coinStakeTransaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
 
             // Second (unspendable) output.
-            var opCodes = new List<Op>
-            {
-                OpcodeType.OP_RETURN,
-                // Depending on the test case use either a compressed public key or an uncompressed public key.
-                Op.GetPushOp((useCompressedKey ? this.key.PubKey.Compress() : this.key.PubKey.Decompress()).ToBytes(true))
-            };
+            // Depending on the test case use either a compressed public key or an uncompressed public key.
+            var pubKey = useCompressedKey ? this.key.PubKey.Compress() : this.key.PubKey.Decompress();
+            var opCodes = new List<Op> { OpcodeType.OP_RETURN, Op.GetPushOp(pubKey.ToBytes(true)) };
 
             // Depending on the test case add a second push of some small integer.
             if (includeSecondPush)
                 opCodes.Add(Op.GetPushOp(new byte[] { 123 }));
 
-            transaction.Outputs.Add(new TxOut(Money.Zero, new Script(opCodes)));
+            coinStakeTransaction.Outputs.Add(new TxOut(Money.Zero, new Script(opCodes)));
 
-            block.Transactions.Add(transaction);
+            // Add the coinstake transaction.
+            block.Transactions.Add(coinStakeTransaction);
 
+            // Add a signature to the block.
             ECDSASignature signature = this.key.Sign(block.GetHash());
             (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
+            // Execute the PosBlockSignatureRule.
             this.ruleContext.ValidationContext.BlockToValidate = block;
             Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.BlockToValidate));
 
@@ -366,8 +369,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         /// <summary>
-        ///  Given a coinstake transaction with a second output consisting of OP_RETURN followed by a compressed public key
-        ///  with the block signature correctly created with the corresponding private key expect success.
+        /// Given a coinstake transaction with a second output consisting of OP_RETURN followed by a compressed public key
+        /// with the block signature correctly created with the corresponding private key expect success.
         /// </summary>
         [Fact]
         public async Task ProofOfStakeBlock_ValidColdStakeBlockDoesNotThrowExceptionAsync()
