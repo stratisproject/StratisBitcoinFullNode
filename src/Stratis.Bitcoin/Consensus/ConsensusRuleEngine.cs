@@ -194,6 +194,9 @@ namespace Stratis.Bitcoin.Consensus
 
             await this.ExecuteRulesAsync(this.fullValidationRules, ruleContext).ConfigureAwait(false);
 
+            if (validationContext.Error != null)
+                this.HandleConsensusError(validationContext);
+
             return validationContext;
         }
 
@@ -207,6 +210,9 @@ namespace Stratis.Bitcoin.Consensus
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
+
+            if (validationContext.Error != null)
+                this.HandleConsensusError(validationContext);
 
             return validationContext;
         }
@@ -226,17 +232,26 @@ namespace Stratis.Bitcoin.Consensus
             catch (ConsensusErrorException ex)
             {
                 ruleContext.ValidationContext.Error = ex.ConsensusError;
-
-                if (ruleContext.ValidationContext.Error != ConsensusErrors.BadTransactionDuplicate)
-                {
-                    uint256 hashToBan = ruleContext.ValidationContext.ChainedHeaderToValidate.HashBlock;
-
-                    if (ruleContext.ValidationContext.RejectUntil != null)
-                        this.invalidBlockHashStore.MarkInvalid(hashToBan, ruleContext.ValidationContext.RejectUntil);
-                    else
-                        this.invalidBlockHashStore.MarkInvalid(hashToBan);
-                }
             }
+        }
+
+        /// <summary>Adds block hash to a list of failed header unless specific consensus error was used that doesn't require block banning.</summary>
+        private void HandleConsensusError(ValidationContext validationContext)
+        {
+            this.logger.LogTrace("()");
+
+            if (validationContext.Error == ConsensusErrors.BadWitnessNonceSize)
+            {
+                this.logger.LogTrace("(-)[BAD_WITNESS_NONCE]");
+                return;
+            }
+
+            uint256 hashToBan = validationContext.ChainedHeaderToValidate.HashBlock;
+
+            this.logger.LogTrace("Marking '{0}' invalid.", hashToBan);
+            this.invalidBlockHashStore.MarkInvalid(hashToBan, validationContext.RejectUntil);
+
+            this.logger.LogTrace("(-)");
         }
 
         private void ExecuteRules(IEnumerable<SyncConsensusRule> rules, RuleContext ruleContext)

@@ -353,6 +353,15 @@ namespace Stratis.Bitcoin.Consensus
             {
                 var peersToBan = new List<INetworkPeer>();
 
+                // TODO ACTIVATION implement following (used to be in consensus loop)
+                //if (validationContext.Error == ConsensusErrors.BadWitnessNonceSize)
+                //{
+                //    this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
+                //    this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
+                //    this.Puller.RequestOptions(TransactionOptions.Witness);
+                //    return;
+                //}
+
                 lock (this.peerLock)
                 {
                     List<int> peerIdsToBan = this.chainedHeaderTree.PartialOrFullValidationFailed(validationContext.ChainedHeaderToValidate);
