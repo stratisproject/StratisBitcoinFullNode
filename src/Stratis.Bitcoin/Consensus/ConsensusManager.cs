@@ -97,7 +97,8 @@ namespace Stratis.Bitcoin.Consensus
             IInitialBlockDownloadState ibdState,
             ConcurrentChain chain,
             IBlockPuller blockPuller,
-            IBlockStore blockStore)
+            IBlockStore blockStore,
+            IInvalidBlockHashStore invalidHashesStore)
         {
             this.network = network;
             this.chainState = chainState;
@@ -110,7 +111,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings);
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, invalidHashesStore);
 
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
