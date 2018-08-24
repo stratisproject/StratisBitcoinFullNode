@@ -227,12 +227,15 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ruleContext.ValidationContext.Error = ex.ConsensusError;
 
-                uint256 hashToBan = ruleContext.ValidationContext.ChainedHeaderToValidate.HashBlock;
+                if (ruleContext.ValidationContext.Error != ConsensusErrors.BadTransactionDuplicate)
+                {
+                    uint256 hashToBan = ruleContext.ValidationContext.ChainedHeaderToValidate.HashBlock;
 
-                if (ruleContext.ValidationContext.RejectUntil != null)
-                    this.invalidBlockHashStore.MarkInvalid(hashToBan, ruleContext.ValidationContext.RejectUntil);
-                else
-                    this.invalidBlockHashStore.MarkInvalid(hashToBan);
+                    if (ruleContext.ValidationContext.RejectUntil != null)
+                        this.invalidBlockHashStore.MarkInvalid(hashToBan, ruleContext.ValidationContext.RejectUntil);
+                    else
+                        this.invalidBlockHashStore.MarkInvalid(hashToBan);
+                }
             }
         }
 
