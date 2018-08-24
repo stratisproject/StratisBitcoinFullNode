@@ -201,13 +201,14 @@ namespace NBitcoin.Tests
         }
 
         /// <summary>
-        /// Tests how ScriptVerify responds to "OP_CHECKCOLDSTAKEVERIFY OP_TRUE" under various circumstances as controlled via the inputs.
+        /// Tests how <see cref="IndexedTxIn.VerifyScript(Network, Script, ScriptVerify, out ScriptError)"/> responds to a script composed of 
+        /// <see cref="OpcodeType.OP_CHECKCOLDSTAKEVERIFY"/> and <see cref="OpcodeType.OP_TRUE"/> under various circumstances as controlled via the inputs.
         /// </summary>
-        /// <param name="isPos">If set uses the StratisMain network (versus the Main network).</param>
-        /// <param name="isActivated">If set includes the "CheckColdStakeVerify" flag into the ScriptVerify flags.</param>
+        /// <param name="isPos">If set uses the <see cref="KnownNetworks.StratisMain"/> network (versus the <see cref="KnownNetworks.Main"/> network).</param>
+        /// <param name="isActivated">If set includes the <see cref="ScriptVerify.CheckColdStakeVerify"/> flag into the <see cref="ScriptVerify"/> flags.</param>
         /// <param name="isCoinStake">If set executes the opcode in the context of a cold coin stake transaction (versus a normal transaction).</param>
-        /// <param name="expectedFlagSet">This determines whether we expect the "IsColdCoinStake" variable to be set on the transaction.</param>
-        /// <param name="expectedError">This determines the error we expect the verify operation to produce.</param>
+        /// <param name="expectedFlagSet">Determines whether we expect the <see cref="PosTransaction.IsColdCoinStake"/> variable to be set on the transaction.</param>
+        /// <param name="expectedError">Determines the error we expect the verify operation to produce.</param>
         private void Coldstaking_testsCore(bool isPos, bool isActivated, bool isCoinStake, bool expectedFlagSet, ScriptError expectedError)
         {
             Network network = isPos ? KnownNetworks.StratisMain : KnownNetworks.Main;
@@ -231,8 +232,7 @@ namespace NBitcoin.Tests
 
             coldCoinStake.AddOutput(new TxOut(network.GetReward(0), tx.Outputs[0].ScriptPubKey));
 
-            // Include the this flag in order to test the path where this gets executed.
-            ScriptVerify scriptVerify = new ScriptVerify() | ScriptVerify.DiscourageUpgradableNops;
+            ScriptVerify scriptVerify = ScriptVerify.Standard;
 
             if (isActivated)
             {
