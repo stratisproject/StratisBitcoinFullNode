@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// </summary>
         /// <param name="useCompressedKey">Determines whether the second transaction output will include a compressed
         /// (versus uncompressed) public key.</param>
-        /// <param name="includeSecondPush">Determines whether the second transaction output will inlcude a small integer
+        /// <param name="includeSecondPush">Determines whether the second transaction output will include a small integer
         /// after the public key.</param>
         /// <param name="expectFailure">Determines whether we expect failure (versus success).</param>
         private void ProofOfStakeBlock_ColdStakeTestHelper(bool useCompressedKey, bool includeSecondPush, bool expectFailure)
