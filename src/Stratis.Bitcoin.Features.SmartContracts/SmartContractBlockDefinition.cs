@@ -193,8 +193,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var receipt = new Receipt(
                 new uint256(this.stateSnapshot.Root),
                 result.GasConsumed,
-                result.Logs.ToArray()
+                result.Logs.ToArray(),
+                transactionContext.TransactionHash,
+                transactionContext.Sender,
+                null, // TODO: Get 'To' in Result.
+                result.NewContractAddress
             );
+
             this.receipts.Add(receipt);
 
             this.logger.LogTrace("(-)");
