@@ -956,7 +956,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (block != null)
                 {
-                    chainedHeader = this.chainedHeaderTree.FindHeader(blockHash);
+                    chainedHeader = this.chainedHeaderTree.GetChainedHeader(blockHash);
 
                     if (chainedHeader == null)
                     {

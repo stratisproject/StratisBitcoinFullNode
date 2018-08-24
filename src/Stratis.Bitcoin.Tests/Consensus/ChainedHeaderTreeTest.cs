@@ -1031,7 +1031,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// Issue 21 @ FindHeader called for some bogus block. Should return null because not connected.
         /// </summary>
         [Fact]
-        public void FindHeaderCalledForBogusBlock_ResultShouldBeNull()
+        public void GetChainedHeaderCalledForBogusBlock_ResultShouldBeNull()
         {
             // Chain header tree setup. Initial chain has 4 headers.
             // Example: h1=h2=h3=h4.
@@ -1045,9 +1045,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=h4=h5=h6.
             initialChainTip = ctx.ExtendAChain(extensionChainSize, initialChainTip);
 
-            // Call FindHeader on the block from header 6.
+            // Call GetChainedHeader on the block from header 6.
             // A null value should be returned.
-            ChainedHeader result = cht.FindHeader(initialChainTip.Block.GetHash());
+            ChainedHeader result = cht.GetChainedHeader(initialChainTip.Block.GetHash());
             result.Should().BeNull();
         }
 

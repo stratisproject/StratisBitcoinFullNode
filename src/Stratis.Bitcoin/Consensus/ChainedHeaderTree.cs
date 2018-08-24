@@ -95,13 +95,6 @@ namespace Stratis.Bitcoin.Consensus
         List<int> ConsensusTipChanged(ChainedHeader newConsensusTip);
 
         /// <summary>
-        /// Finds the header for a given block.
-        /// </summary>
-        /// <param name="blockHash">The hash of the block.</param>
-        /// <returns>Chained header for a given block.</returns>
-        ChainedHeader FindHeader(uint256 blockHash);
-
-        /// <summary>
         /// Handles situation when the blocks data is downloaded for a given chained header.
         /// </summary>
         /// <param name="chainedHeader">Chained header that represents <paramref name="block"/>.</param>
@@ -638,21 +631,6 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public ChainedHeader FindHeader(uint256 blockHash)
-        {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
-
-            if (!this.chainedHeadersByHash.TryGetValue(blockHash, out ChainedHeader chainedHeader))
-            {
-                this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
-                return null;
-            }
-
-            this.logger.LogTrace("(-):'{0}'", chainedHeader);
-            return chainedHeader;
-        }
-
-        /// <inheritdoc />
         public bool BlockDataDownloaded(ChainedHeader chainedHeader, Block block)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
@@ -1019,7 +997,7 @@ namespace Stratis.Bitcoin.Consensus
 
             this.CreateNewHeaders(new List<BlockHeader>() { block.Header });
 
-            ChainedHeader chainedHeader = this.FindHeader(block.GetHash());
+            ChainedHeader chainedHeader = this.GetChainedHeader(block.GetHash());
             this.BlockDataDownloaded(chainedHeader, block);
 
             this.logger.LogTrace("(-):'{0}'", chainedHeader);
