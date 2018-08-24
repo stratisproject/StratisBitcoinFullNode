@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
             var selfEndpointTracker = new SelfEndpointTracker(loggerFactory);
             var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider());
-            var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider));
+            var chainState = new ChainState();
             var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
             var deployments = new NodeDeployments(network, chain);
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(), inMemoryCoinView, chainState).Register();

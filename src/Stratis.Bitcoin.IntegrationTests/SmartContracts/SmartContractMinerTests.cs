@@ -226,7 +226,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
 
-                var chainState = new ChainState(new InvalidBlockHashStore(DateTimeProvider.Default));
+                var chainState = new ChainState();
                 var consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, new ReceiptRepository(), this.cachedCoinView, chainState).Register();
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
 
