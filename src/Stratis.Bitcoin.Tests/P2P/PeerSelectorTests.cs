@@ -524,7 +524,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
             peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
             peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
 
@@ -564,7 +564,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
             peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
             peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
 
@@ -603,7 +603,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
             peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
             peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
 
@@ -642,7 +642,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
             peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
             peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
 
@@ -677,7 +677,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
             peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
             peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
 
@@ -733,7 +733,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddresses.AddOrUpdate(selfIpEndPoint, selfPeerAddress, (x, y) => selfPeerAddress);
             peerAddresses.AddOrUpdate(otherIpEndPoint, otherPeerAddress, (x, y) => otherPeerAddress);
 
-            var selfEndpointTracker = new SelfEndpointTracker();
+            var selfEndpointTracker = new SelfEndpointTracker(this.extendedLoggerFactory);
             selfEndpointTracker.Add(selfIpEndPoint);
 
             var peerSelector = new PeerSelector(new DateTimeProvider(), this.LoggerFactory.Object, peerAddresses, selfEndpointTracker);
@@ -874,7 +874,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var peerAddresses = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
             peerAddresses.AddOrUpdate(peerAddress.Endpoint, peerAddress, (x, y) => peerAddress);
 
-            var peerSelector = new PeerSelector(new DateTimeProvider(), this.LoggerFactory.Object, peerAddresses, new SelfEndpointTracker());
+            var peerSelector = new PeerSelector(new DateTimeProvider(), this.LoggerFactory.Object, peerAddresses, new SelfEndpointTracker(this.extendedLoggerFactory));
 
             Assert.False(peerSelector.HasAllPeersReachedConnectionThreshold());
 
@@ -896,7 +896,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddresses.AddOrUpdate(peerAddress.Endpoint, peerAddress, (x, y) => peerAddress);
             peerAddresses.AddOrUpdate(bannedPeerAddress.Endpoint, bannedPeerAddress, (x, y) => bannedPeerAddress);
 
-            var peerSelector = new PeerSelector(new DateTimeProvider(), this.LoggerFactory.Object, peerAddresses, new SelfEndpointTracker());
+            var peerSelector = new PeerSelector(new DateTimeProvider(), this.LoggerFactory.Object, peerAddresses, new SelfEndpointTracker(this.extendedLoggerFactory));
 
             for (int i = 0; i < 5; i++)
                 peerAddress.SetAttempted(DateTime.UtcNow);
@@ -912,7 +912,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         private PeerAddressManager CreatePeerAddressManager(DataFolder peerFolder)
         {
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory,
-                new SelfEndpointTracker());
+                new SelfEndpointTracker(this.extendedLoggerFactory));
             return peerAddressManager;
         }
     }

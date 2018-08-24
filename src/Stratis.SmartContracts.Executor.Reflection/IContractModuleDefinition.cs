@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Mono.Cecil;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
-    public interface ISmartContractDecompilation
+    public interface IContractModuleDefinition : IDisposable
     {
         /// <summary>
         /// The <see cref="TypeDefinition"/>s contained in the module, excluding those that are compiler or framework generated.
@@ -26,12 +27,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
         void InjectConstructorGas();
 
         /// <summary>
-        /// Serializes the <see cref="SmartContractDecompilation.ModuleDefinition"/> to contract bytecode.
+        /// Serializes the <see cref="ContractModuleDefinition.ModuleDefinition"/> to contract bytecode.
         /// </summary>
         ContractByteCode ToByteCode();
 
         /// <summary>
-        /// Validates the <see cref="SmartContractDecompilation"/> using the supplied validator.
+        /// Validates the <see cref="ContractModuleDefinition"/> using the supplied validator.
         /// </summary>
         SmartContractValidationResult Validate(ISmartContractValidator validator);
 
