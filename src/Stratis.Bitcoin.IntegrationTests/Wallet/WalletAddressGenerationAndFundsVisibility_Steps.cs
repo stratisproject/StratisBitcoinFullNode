@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private ExtPubKey GetExtendedPublicKey(string nodeName)
         {
-            ExtKey xPrivKey = this.nodeGroupBuilder.NodeMnemonics[nodeName].DeriveExtKey(WalletPassword);
+            ExtKey xPrivKey = this.nodeGroupBuilder.NodeMnemonics[nodeName].DeriveExtKey(WalletPassphrase);
             Key privateKey = xPrivKey.PrivateKey;
             ExtPubKey xPublicKey = HdOperations.GetExtendedPublicKey(privateKey, xPrivKey.ChainCode, (int)CoinType.Bitcoin, 0);
             return xPublicKey;
