@@ -360,7 +360,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void MinerCreateBlockSigopsLimit1000Async()
+        public void MinerCreateBlockSigopsLimit1000()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -468,7 +468,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void MinerCreateBlockCoinbaseMempoolTemplateCreationFailsAsync()
+        public void MinerCreateBlockCoinbaseMempoolTemplateCreationFails()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
