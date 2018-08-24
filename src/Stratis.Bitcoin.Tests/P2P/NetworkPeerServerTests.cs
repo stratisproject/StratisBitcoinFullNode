@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         [InlineData(true, true, false)]
         public void Validate_AllowClientConnection_State(bool inIBD, bool isWhiteListed, bool closeClient)
         {        
-            // arrange
+            // Arrange
             var networkPeerFactory = new Mock<INetworkPeerFactory>();
             networkPeerFactory.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.IsAny<IPEndPoint>(), 
                 It.IsAny<NetworkPeerConnectionParameters>(), 
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Tests.P2P
                 endpointAddNode, endpointAddNode, ProtocolVersion.PROTOCOL_VERSION, this.extendedLoggerFactory, 
                 networkPeerFactory.Object, initialBlockDownloadState.Object, connectionManagerSettings);
 
-            // mimic external client
+            // Mimic external client
             const int portNumber = 80;
             var client = new TcpClient("www.stratisplatform.com", portNumber);
 
@@ -63,13 +63,13 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var endpointDiscovered = new IPEndPoint(IPAddress.Parse(ip), portNumber);
 
-            // include external client a nodeserver endpoint.
+            // Include the external client as a NodeServerEndpoint.
             connectionManagerSettings.Listen.Add(new NodeServerEndpoint(endpointDiscovered, isWhiteListed));
 
-            // act 
+            // Act 
             var result = networkPeerServer.InvokeMethod("AllowClientConnection", client);
 
-            // assert
+            // Assert
             Assert.True((inIBD && !isWhiteListed) == closeClient);
 
             this.testOutput.WriteLine(

@@ -233,16 +233,17 @@ namespace Stratis.Bitcoin.P2P.Peer
         private bool AllowClientConnection(TcpClient tcpClient)
         {
             this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:{1})", nameof(tcpClient), tcpClient.Client.RemoteEndPoint);
 
             if (this.networkPeerDisposer.ConnectedPeersCount >= MaxConnectionThreshold)
             {
-                this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:'{0}'", MaxConnectionThreshold);
+                this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:false,'{0}'", MaxConnectionThreshold);
                 return false;
             }
 
             if (!this.initialBlockDownloadState.IsInitialBlockDownload())
             {
-                this.logger.LogTrace("(-)[IBD_COMPLETE_ALLOW_CONNECTION]");
+                this.logger.LogTrace("(-)[IBD_COMPLETE_ALLOW_CONNECTION]:true");
                 return true;
             }
 
@@ -250,16 +251,15 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             NodeServerEndpoint endpoint = this.connectionManagerSettings.Listen.FirstOrDefault(e => e.Endpoint.Match(clientRemoteEndPoint));
 
-            if (endpoint != null && endpoint.Whitelisted)
+            if ((endpoint != null) && endpoint.Whitelisted)
             {
-                this.logger.LogTrace("(-)[ENDPOINT_WHITELISTED_ALLOW_CONNECTION]");
+                this.logger.LogTrace("(-)[ENDPOINT_WHITELISTED_ALLOW_CONNECTION]:true");
                 return true;
             }
 
-            this.logger.LogTrace("Node [{0}] is not white listed during initial block download.", clientRemoteEndPoint.ToString());
+            this.logger.LogTrace("Node '{0}' is not white listed during initial block download.", clientRemoteEndPoint.ToString());
 
-            this.logger.LogTrace("(-)");
-
+            this.logger.LogTrace("(-):false");
             return false;
         }
     }
