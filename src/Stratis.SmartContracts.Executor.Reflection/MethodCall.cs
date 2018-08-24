@@ -9,8 +9,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         private readonly string methodName;
 
+        /// <summary>
+        /// The name of the receive handler method on the contract object.
+        /// </summary>
         public const string ReceiveHandlerName = nameof(SmartContract.Receive);
 
+        /// <summary>
+        /// Alias for the receive handler method name. Will cause the receive handler to be invoked
+        /// if specified as the method name in a transaction.
+        /// </summary>
         public const string ExternalReceiveHandlerName = "";
 
         public MethodCall(string methodName, object[] methodParameters = null)
