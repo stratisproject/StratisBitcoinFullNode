@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
             TestHelper.WaitLoop(() => this.runner.FullNode != null, 
                 cancellationToken: new CancellationTokenSource(timeToNodeInit).Token,
-                failureReason: $"Failed to assingn instance of FullNode within {timeToNodeInit}");
+                failureReason: $"Failed to assign instance of FullNode within {timeToNodeInit}");
 
             TestHelper.WaitLoop(() => this.runner.FullNode.State == FullNodeState.Started,
                 cancellationToken: new CancellationTokenSource(timeToNodeStart).Token,
