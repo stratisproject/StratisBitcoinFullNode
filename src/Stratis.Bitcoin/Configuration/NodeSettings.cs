@@ -76,6 +76,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Minimum relay transaction fee for network.</summary>
         public FeeRate MinRelayTxFeeRate { get; private set; }
 
+        /// <summary>Node's time offset in relation to system time expresed as either positive or negative number of seconds.</summary>
+        public int TimeOffset { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -270,7 +273,12 @@ namespace Stratis.Bitcoin.Configuration
             this.MinTxFeeRate = new FeeRate(config.GetOrDefault("mintxfee", this.Network.MinTxFee, this.Logger));
             this.FallbackTxFeeRate = new FeeRate(config.GetOrDefault("fallbackfee", this.Network.FallbackFee, this.Logger));
             this.MinRelayTxFeeRate = new FeeRate(config.GetOrDefault("minrelaytxfee", this.Network.MinRelayTxFee, this.Logger));
+
+            // Node time adjustment
+            this.TimeOffset = this.ConfigReader.GetOrDefault<int>("timeoffset", 0, this.Logger);
+            DateTimeProvider.Default.SetSystemTimeOffset(TimeOffset);
         }
+
 
         /// <summary>
         /// Creates default data directories respecting different operating system specifics.
