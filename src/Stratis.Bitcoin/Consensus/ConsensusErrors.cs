@@ -1,6 +1,4 @@
-﻿using Stratis.Bitcoin.Consensus;
-
-namespace Stratis.Bitcoin.Features.Consensus
+﻿namespace Stratis.Bitcoin.Consensus
 {
     /// <summary>
     /// A class that holds consensus errors.
@@ -74,5 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public static readonly ConsensusError ProofOfWorkTooHigh = new ConsensusError("proof-of-work-too-heigh", "proof of work too high");
 
         public static readonly ConsensusError CheckpointViolation = new ConsensusError("checkpoint-violation", "block header hash does not match the checkpointed value");
+
+        public static readonly ConsensusError BannedHash = new ConsensusError("banned-hash", "block header hash was previously marked invalid");
     }
 }

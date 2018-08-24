@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public IConsensusManager ConsensusManager;
         public readonly Mock<IConsensusRuleEngine> ConsensusRulesEngine = new Mock<IConsensusRuleEngine>();
         public Mock<IFinalizedBlockInfo> FinalizedBlockMock = new Mock<IFinalizedBlockInfo>();
-        
+
         public readonly Mock<IInitialBlockDownloadState> ibdState = new Mock<IInitialBlockDownloadState>();
         internal ChainedHeader InitialChainTip;
         public Mock<IIntegrityValidator> IntegrityValidator = new Mock<IIntegrityValidator>();
@@ -51,7 +51,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             var chain = new ConcurrentChain(this.Network);
             var extendedLoggerFactory = new ExtendedLoggerFactory();
-            var powConsensusRulesEngine = new PowConsensusRuleEngine(this.Network, extendedLoggerFactory, DateTimeProvider.Default, chain, new NodeDeployments(this.Network, chain), this.ConsensusSettings, this.Checkpoints.Object, new Mock<ICoinView>().Object, this.ChainState.Object);
+            var powConsensusRulesEngine = new PowConsensusRuleEngine(this.Network, extendedLoggerFactory, DateTimeProvider.Default, chain,
+                new NodeDeployments(this.Network, chain), this.ConsensusSettings, this.Checkpoints.Object, new Mock<ICoinView>().Object, this.ChainState.Object, new InvalidBlockHashStore(new DateTimeProvider()));
 
             this.PartialValidation = new PartialValidator(powConsensusRulesEngine, extendedLoggerFactory);
             this.HeaderValidator = new Mock<IHeaderValidator>();
@@ -65,7 +66,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.Checkpoints.Object,
                 this.ChainState.Object,
                 this.FinalizedBlockMock.Object,
-                this.ConsensusSettings);
+                this.ConsensusSettings,
+                new InvalidBlockHashStore(new DateTimeProvider()));
 
             this.ConsensusManager = CreateConsensusManager();
         }
@@ -102,7 +104,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.ibdState.Object,
                 new ConcurrentChain(this.Network),
                 new Mock<IBlockPuller>().Object,
-                null);
+                null,
+                new InvalidBlockHashStore(new DateTimeProvider()));
 
             return this.ConsensusManager;
         }

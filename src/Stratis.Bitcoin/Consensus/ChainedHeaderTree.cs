@@ -168,6 +168,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
         private readonly IFinalizedBlockInfo finalizedBlockInfo;
+        private readonly IInvalidBlockHashStore invalidHashesStore;
 
         /// <summary>
         /// The amount of blocks from consensus the node is considered to be synced.
@@ -216,7 +217,8 @@ namespace Stratis.Bitcoin.Consensus
             ICheckpoints checkpoints,
             IChainState chainState,
             IFinalizedBlockInfo finalizedBlockInfo,
-            ConsensusSettings consensusSettings)
+            ConsensusSettings consensusSettings,
+            IInvalidBlockHashStore invalidHashesStore)
         {
             this.network = network;
             this.headerValidator = headerValidator;
@@ -225,6 +227,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chainState = chainState;
             this.finalizedBlockInfo = finalizedBlockInfo;
             this.consensusSettings = consensusSettings;
+            this.invalidHashesStore = invalidHashesStore;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.peerTipsByPeerId = new Dictionary<int, uint256>();
@@ -1117,7 +1120,15 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(currentBlockHeader), currentBlockHeader, nameof(previousChainedHeader), previousChainedHeader);
 
-            var newChainedHeader = new ChainedHeader(currentBlockHeader, currentBlockHeader.GetHash(), previousChainedHeader);
+            uint256 newHeaderHash = currentBlockHeader.GetHash();
+
+            if (this.invalidHashesStore.IsInvalid(newHeaderHash))
+            {
+                this.logger.LogTrace("(-)[HEADER_HASH_MARKED_INVALID]");
+                ConsensusErrors.BannedHash.Throw();
+            }
+
+            var newChainedHeader = new ChainedHeader(currentBlockHeader, newHeaderHash, previousChainedHeader);
 
             ValidationContext result = this.headerValidator.ValidateHeader(newChainedHeader);
 

@@ -163,16 +163,18 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 var genesis = this.network.GetGenesis();
 
-                var chainState = new ChainState(new InvalidBlockHashStore(dateTimeProvider))
+                var chainState = new ChainState()
                 {
                     BlockStoreTip = new ChainedHeader(genesis.Header, genesis.GetHash(), 0)
                 };
 
-                this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings, new Checkpoints(), this.cachedCoinView, chainState).Register();
+                this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings,
+                    new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider)).Register();
 
                 this.consensus = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(this.ConsensusRules, loggerFactory),
-                new IntegrityValidator(this.ConsensusRules, loggerFactory), new PartialValidator(this.ConsensusRules, loggerFactory), new Checkpoints(), consensusSettings, this.ConsensusRules,
-                new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, null);
+                    new IntegrityValidator(this.ConsensusRules, loggerFactory), new PartialValidator(this.ConsensusRules, loggerFactory), new Checkpoints(),
+                    consensusSettings, this.ConsensusRules, new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning,
+                    new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, null, new InvalidBlockHashStore(dateTimeProvider));
 
                 await this.consensus.InitializeAsync(chainState.BlockStoreTip);
 

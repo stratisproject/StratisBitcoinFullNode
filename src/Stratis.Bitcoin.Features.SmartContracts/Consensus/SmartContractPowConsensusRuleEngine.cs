@@ -36,8 +36,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             ContractStateRepositoryRoot originalStateRoot,
             IReceiptRepository receiptRepository,
             ICoinView utxoSet,
-            IChainState chainState)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState)
+            IChainState chainState,
+            IInvalidBlockHashStore invalidBlockHashStore)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore)
         {
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;
