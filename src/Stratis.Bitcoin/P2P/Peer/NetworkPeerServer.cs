@@ -175,8 +175,12 @@ namespace Stratis.Bitcoin.P2P.Peer
                         continue;
                     }
 
-                    if (this.CloseClientNotWhiteListedDuringIBD(tcpClient))
+                    if (!this.AllowClientConnection(tcpClient))
+                    {
+                        this.logger.LogTrace("Connection from client '{0}' was rejected and will be closed.", tcpClient.Client.RemoteEndPoint);
+                        tcpClient.Close();
                         continue;
+                    }
 
                     this.logger.LogTrace("Connection accepted from client '{0}'.", tcpClient.Client.RemoteEndPoint);
 
@@ -234,7 +238,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         /// <remarks>Nodes catching up to the longest chain are vulnerable to malicious peers serving up a fake longer chain.</remarks>
         /// <returns><c>true</c> when the client is closed.</returns>
-        private bool CloseClientNotWhiteListedDuringIBD(TcpClient tcpClient)
+        private bool AllowClientConnection(TcpClient tcpClient)
         {
             this.logger.LogTrace("()");
 

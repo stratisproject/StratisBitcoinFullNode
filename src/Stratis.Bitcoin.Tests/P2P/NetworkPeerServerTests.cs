@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         [InlineData(false, true, false)]
         [InlineData(true, false, true)]
         [InlineData(true, true, false)]
-        public void Check_CloseClientNotWhiteListedDuringIBD_State(bool inIBD, bool isWhiteListed, bool closeClient)
+        public void Validate_AllowClientConnection_State(bool inIBD, bool isWhiteListed, bool closeClient)
         {        
             // arrange
             var networkPeerFactory = new Mock<INetworkPeerFactory>();
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             connectionManagerSettings.Listen.Add(new NodeServerEndpoint(endpointDiscovered, isWhiteListed));
 
             // act 
-            var result = networkPeerServer.InvokeMethod("CloseClientNotWhiteListedDuringIBD", client);
+            var result = networkPeerServer.InvokeMethod("AllowClientConnection", client);
 
             // assert
             Assert.True((inIBD && !isWhiteListed) == closeClient);
