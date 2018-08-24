@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task ValidBlock_SetsConsensusFlagsAsync()
+        public async Task RunAsync_ValidBlock_SetsConsensusFlagsAsync()
         {
             this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
             this.consensusRules = this.InitializeConsensusRules();
@@ -41,89 +41,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.False(this.ruleContext.Flags.EnforceBIP34);
             Assert.Equal(LockTimeFlags.None, this.ruleContext.Flags.LockTimeFlags);
             Assert.Equal(ScriptVerify.Mandatory, this.ruleContext.Flags.ScriptFlags);
-        }
-    }
-
-    public class PosCheckColdStakeVerifyFlagTest : TestPosConsensusRulesUnitTestBase
-    {
-        /// <summary>
-        /// Checks that Pos does not set the "CheckColdStakeVerify" flag before the "ColdStakingActivationHeight" is reached.
-        /// </summary>
-        [Fact]
-        public async Task PosDoesNotSetCheckColdStakeVerifyFlagBeforeActivationHeightAsync()
-        {
-            const int ColdStakingActivationHeight = 3;
-
-            // Update the consensus options with our required activation height.
-            this.network.Consensus.Options = new PosConsensusOptions(
-                this.network.Consensus.Options.MaxBlockBaseSize,
-                this.network.Consensus.Options.MaxStandardVersion,
-                this.network.Consensus.Options.MaxStandardTxWeight,
-                this.network.Consensus.Options.MaxBlockSigopsCost,
-                ColdStakingActivationHeight
-                );
-
-            // Generate a chain one less in length to the activation height.
-            this.concurrentChain = GenerateChainWithHeight(ColdStakingActivationHeight - 1, this.network);
-            this.consensusRules = this.InitializeConsensusRules();
-            this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
-
-            // Create a block before the activation height.
-            Block block = this.network.CreateBlock();
-            block.AddTransaction(this.network.CreateTransaction());
-            block.UpdateMerkleRoot();
-            block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(5));
-            block.Header.HashPrevBlock = this.concurrentChain.Tip.HashBlock;
-            block.Header.Nonce = RandomUtils.GetUInt32();
-
-            // Verify that the block created before the activation height does not have the "CheckColdStakeVerify" flag set.
-            this.ruleContext.ValidationContext.BlockToValidate = block;
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate = this.concurrentChain.Tip;
-
-            await this.consensusRules.RegisterRule<SetActivationDeploymentsPartialValidationRule>().RunAsync(this.ruleContext);
-
-            Assert.NotNull(this.ruleContext.Flags);
-            Assert.True((this.ruleContext.Flags.ScriptFlags & ScriptVerify.CheckColdStakeVerify) == 0);            
-        }
-
-        /// <summary>
-        /// Checks that Pos does sets the "CheckColdStakeVerify" flag when the "ColdStakingActivationHeight" is reached.
-        /// </summary>
-        [Fact]
-        public async Task PosSetsCheckColdStakeVerifyFlagAtActivationHeightAsync()
-        {
-            const int ColdStakingActivationHeight = 3;
-
-            // Update the consensus options with our required activation height.
-            this.network.Consensus.Options = new PosConsensusOptions(
-                this.network.Consensus.Options.MaxBlockBaseSize,
-                this.network.Consensus.Options.MaxStandardVersion,
-                this.network.Consensus.Options.MaxStandardTxWeight,
-                this.network.Consensus.Options.MaxBlockSigopsCost,
-                ColdStakingActivationHeight
-                );
-
-            // Generate a chain equal in length to the activation height.
-            this.concurrentChain = GenerateChainWithHeight(ColdStakingActivationHeight, this.network);
-            this.consensusRules = this.InitializeConsensusRules();
-            this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
-
-            // Create a block before the activation height.
-            Block block = this.network.CreateBlock();
-            block.AddTransaction(this.network.CreateTransaction());
-            block.UpdateMerkleRoot();
-            block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(5));
-            block.Header.HashPrevBlock = this.concurrentChain.Tip.HashBlock;
-            block.Header.Nonce = RandomUtils.GetUInt32();
-
-            // Verify that the block created at the activation height does have the "CheckColdStakeVerify" flag set.
-            this.ruleContext.ValidationContext.BlockToValidate = block;
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate = this.concurrentChain.Tip;
-
-            await this.consensusRules.RegisterRule<SetActivationDeploymentsPartialValidationRule>().RunAsync(this.ruleContext);
-
-            Assert.NotNull(this.ruleContext.Flags);
-            Assert.True((this.ruleContext.Flags.ScriptFlags & ScriptVerify.CheckColdStakeVerify) != 0);
         }
     }
 }
