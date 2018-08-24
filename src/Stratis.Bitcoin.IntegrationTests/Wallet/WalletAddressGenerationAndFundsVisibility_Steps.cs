@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private const string SendingWalletName = "senderwallet";
         private const string ReceivingWalletName = "receivingwallet";
         private const string WalletPassword = "password";
+        private const string WalletPassphrase = "passphrase";
         public const string AccountZero = "account 0";
         private const string ReceivingNodeName = "receiving";
         private const string SendingNodeName = "sending";
@@ -71,9 +72,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             this.nodeGroup = this.nodeGroupBuilder
                 .StratisPowNode(SendingNodeName).Start().NotInIBD()
-                .WithWallet(SendingWalletName, WalletPassword)
+                .WithWallet(SendingWalletName, WalletPassword, WalletPassphrase)
                 .StratisPowNode(ReceivingNodeName).Start().NotInIBD()
-                .WithWallet(ReceivingWalletName, WalletPassword)
+                .WithWallet(ReceivingWalletName, WalletPassword, WalletPassphrase)
                 .WithConnections()
                 .Connect(SendingNodeName, ReceivingNodeName)
                 .AndNoMoreConnections()
@@ -89,9 +90,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 new NodeConfigParameters { { "walletaddressbuffer", customUnusedAddressBuffer.ToString() } };
             this.nodeGroup = this.nodeGroupBuilder
                 .StratisPowNode(SendingNodeName).Start().NotInIBD()
-                .WithWallet(SendingWalletName, WalletPassword)
+                .WithWallet(SendingWalletName, WalletPassword, WalletPassphrase)
                 .StratisCustomPowNode(ReceivingNodeName, configParameters).Start()
-                .WithWallet(ReceivingWalletName, WalletPassword)
+                .WithWallet(ReceivingWalletName, WalletPassword, WalletPassphrase)
                 .WithConnections()
                 .Connect(SendingNodeName, ReceivingNodeName)
                 .AndNoMoreConnections()
