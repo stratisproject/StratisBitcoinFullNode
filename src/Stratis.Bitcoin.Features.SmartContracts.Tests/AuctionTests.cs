@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 null,
                 null,
                 getBalance,
+                null,
                 null
             );
         }
@@ -78,7 +79,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IGasMeter gasMeter,
             IInternalTransactionExecutor transactionExecutor,
             Func<ulong> getBalance,
-            IInternalHashHelper hashHelper)
+            IInternalHashHelper hashHelper,
+            IContractLogger contractLogger)
         {
             this.Block = block;
             this.Message = message;
@@ -87,6 +89,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.InternalTransactionExecutor = transactionExecutor;
             this.GetBalance = getBalance;
             this.InternalHashHelper = hashHelper;
+            this.ContractLogger = contractLogger;
         }
 
         public IBlock Block { get; }
@@ -96,6 +99,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public IInternalTransactionExecutor InternalTransactionExecutor { get; }
         public Func<ulong> GetBalance { get; }
         public IInternalHashHelper InternalHashHelper { get; }
+        public IContractLogger ContractLogger { get; }
     }
 
     public class TestBlock : IBlock

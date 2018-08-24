@@ -8,6 +8,7 @@ namespace Stratis.SmartContracts
         IMessage Message { get; }
         IPersistentState PersistentState { get; }
         IGasMeter GasMeter { get; }
+        IContractLogger ContractLogger { get; }
         IInternalTransactionExecutor InternalTransactionExecutor { get; }
         IInternalHashHelper InternalHashHelper { get; }
         Func<ulong> GetBalance { get; }
