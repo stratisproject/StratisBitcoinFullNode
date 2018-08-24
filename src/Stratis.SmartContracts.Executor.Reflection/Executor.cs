@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -13,6 +15,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class Executor : ISmartContractExecutor
     {
         private readonly ILogger logger;
+        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
         private readonly IContractStateRepository stateSnapshot;
         private readonly ISmartContractResultRefundProcessor refundProcessor;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
@@ -20,6 +23,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ICallDataSerializer serializer;
 
         public Executor(ILoggerFactory loggerFactory,
+            IContractPrimitiveSerializer contractPrimitiveSerializer,
             ICallDataSerializer serializer,
             IContractStateRepository stateSnapshot,
             ISmartContractResultRefundProcessor refundProcessor,
@@ -27,6 +31,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ISmartContractVirtualMachine vm)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
+            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
             this.stateSnapshot = stateSnapshot;
             this.refundProcessor = refundProcessor;
             this.transferProcessor = transferProcessor;
@@ -82,7 +87,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 Return = result.Result,
                 InternalTransaction = internalTransaction,
                 Fee = fee,
-                Refunds = refundTxOuts
+                Refunds = refundTxOuts,
+                Logs = result.RawLogs.ToLogs(this.contractPrimitiveSerializer)
             };
 
             if (revert)
