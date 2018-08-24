@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Consensus
         List<int> ConsensusTipChanged(ChainedHeader newConsensusTip);
 
         /// <summary>
-        /// Handles situation when the blocks data is downloaded for a given chained header.
+        /// Handles situation when the block's data is downloaded for a given chained header.
         /// </summary>
         /// <param name="chainedHeader">Chained header that represents <paramref name="block"/>.</param>
         /// <param name="block">Block data.</param>
