@@ -181,6 +181,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
         public void Initialize(BlockPuller.OnBlockDownloadedCallback callback) { this.puller.Initialize(callback); }
 
+        public void SetCallback(BlockPuller.OnBlockDownloadedCallback callback) => this.puller.SetPrivateVariableValue("onDownloadedCallback", callback);
+
         public double GetAverageBlockSizeBytes() { return this.puller.GetAverageBlockSizeBytes(); }
 
         public void OnIbdStateChanged(bool isIbd) { this.puller.OnIbdStateChanged(isIbd); }
