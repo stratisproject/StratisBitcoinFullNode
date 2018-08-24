@@ -232,12 +232,11 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>When criteria is met returns <c>true</c>, to allow connection.</returns>
         private bool AllowClientConnection(TcpClient tcpClient)
         {
-            this.logger.LogTrace("()");
             this.logger.LogTrace("({0}:{1})", nameof(tcpClient), tcpClient.Client.RemoteEndPoint);
 
             if (this.networkPeerDisposer.ConnectedPeersCount >= MaxConnectionThreshold)
             {
-                this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:false,'{0}'", MaxConnectionThreshold);
+                this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:false");
                 return false;
             }
 
@@ -257,7 +256,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 return true;
             }
 
-            this.logger.LogTrace("Node '{0}' is not white listed during initial block download.", clientRemoteEndPoint.ToString());
+            this.logger.LogTrace("Node '{0}' is not white listed during initial block download.", clientRemoteEndPoint);
 
             this.logger.LogTrace("(-):false");
             return false;
