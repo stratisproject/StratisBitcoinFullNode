@@ -1028,7 +1028,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 21 @ FindHeader called for some bogus block. Should return null because not connected.
+        /// Issue 21 @ GetChainedHeader called for some bogus block. Should return null because not connected.
         /// </summary>
         [Fact]
         public void GetChainedHeaderCalledForBogusBlock_ResultShouldBeNull()
