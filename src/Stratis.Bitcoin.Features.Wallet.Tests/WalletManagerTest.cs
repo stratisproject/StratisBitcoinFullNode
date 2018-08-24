@@ -377,7 +377,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 
             // Try to recover it.
-            Wallet recoveredWallet = walletManager.RecoverWallet(password, walletName, deletedWallet.mnemonic.ToString(), DateTimeProvider.Default.GetUtcNow().AddDays(1), passphrase);
+            Wallet recoveredWallet = walletManager.RecoverWallet(password, walletName, deletedWallet.mnemonic.ToString(), DateTime.Now.AddDays(1), passphrase);
 
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/{walletName}.wallet.json")));
 
@@ -468,7 +468,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 
             // try to recover it.
-            Wallet recoveredWallet = walletManager.RecoverWallet(password, walletName, deletedWallet.mnemonic.ToString(), DateTimeProvider.Default.GetUtcNow().AddDays(1), password);
+            Wallet recoveredWallet = walletManager.RecoverWallet(password, walletName, deletedWallet.mnemonic.ToString(), DateTime.Now.AddDays(1), password);
 
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/{walletName}.wallet.json")));
 
@@ -3185,7 +3185,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             const string stratisAccount0ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
             var walletManager = this.CreateWalletManager(dataFolder, this.Network);
-            walletManager.RecoverWallet("testWallet", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTimeProvider.Default.GetUtcNow().AddHours(-2));
+            walletManager.RecoverWallet("testWallet", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTime.Now.AddHours(-2));
             
             var wallet = walletManager.LoadWallet("password", "testWallet");
 
@@ -3205,11 +3205,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             const string stratisAccount0ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
             const string stratisAccount1ExtPubKey = "xpub6DGguHV1FQFPvZ5Xu7VfeENyiySv4R2bdd6VtvwxWGVTVNnHUmphMNgTRkLe8j2JdAv332ogZcyhqSuz1yUPnN4trJ49cFQXmEhwNQHUqk1";
             var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain);
-            var wallet = walletManager.RecoverWallet("wallet1", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTimeProvider.Default.GetUtcNow().AddHours(-2));
+            var wallet = walletManager.RecoverWallet("wallet1", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTime.Now.AddHours(-2));
 
             try
             {
-                wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount1ExtPubKey), 0, DateTimeProvider.Default.GetUtcNow().AddHours(-2));
+                wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount1ExtPubKey), 0, DateTime.Now.AddHours(-2));
 
                 Assert.True(false, "should have thrown exception but didn't.");
             }
@@ -3226,9 +3226,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             const string stratisAccount0ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
             var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain);
-            var wallet = walletManager.RecoverWallet("wallet1", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTimeProvider.Default.GetUtcNow().AddHours(-2));
+            var wallet = walletManager.RecoverWallet("wallet1", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTime.Now.AddHours(-2));
 
-            var addNewAccount = new Action(() => wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount0ExtPubKey), 1, DateTimeProvider.Default.GetUtcNow().AddHours(-2)));
+            var addNewAccount = new Action(() => wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount0ExtPubKey), 1, DateTime.Now.AddHours(-2)));
 
             addNewAccount.Should().Throw<WalletException>()
                 .WithMessage("There is already an account in this wallet with this xpubkey: " + stratisAccount0ExtPubKey);

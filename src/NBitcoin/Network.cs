@@ -699,7 +699,7 @@ namespace NBitcoin
                 // Seed nodes are given a random 'last seen time' of between one and two weeks ago.
                 yield return new NetworkAddress
                 {
-                    Time = DateTimeProvider.Default.GetUtcNow() - (TimeSpan.FromSeconds(rand.NextDouble() * oneWeek.TotalSeconds)) - oneWeek,
+                    Time = DateTime.UtcNow - (TimeSpan.FromSeconds(rand.NextDouble() * oneWeek.TotalSeconds)) - oneWeek,
                     Endpoint = Utils.ParseIpEndpoint(seed, defaultPort)
                 };
             }

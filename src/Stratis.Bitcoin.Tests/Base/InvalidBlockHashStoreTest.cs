@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Tests.Base
             };
 
             foreach (uint256 hash in hashesBannedTemporarily1)
-                invalidBlockHashStore.MarkInvalid(hash, DateTimeProvider.Default.GetUtcNow().AddMilliseconds(rng.Next(2000, 5000)));
+                invalidBlockHashStore.MarkInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(2000, 5000)));
 
             // Create some hashes that will be banned now and also after 5 seconds.
             var hashesBannedTemporarily2 = new uint256[]
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Tests.Base
             };
 
             foreach (uint256 hash in hashesBannedTemporarily2)
-                invalidBlockHashStore.MarkInvalid(hash, DateTimeProvider.Default.GetUtcNow().AddMilliseconds(rng.Next(20000, 50000)));
+                invalidBlockHashStore.MarkInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(20000, 50000)));
 
             // Check that all hashes we have generated are banned now.
             var allHashes = new List<uint256>(hashesBannedPermanently);
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Tests.Base
             };
 
             foreach (uint256 hash in hashesBannedTemporarily1)
-                invalidBlockHashStore.MarkInvalid(hash, DateTimeProvider.Default.GetUtcNow().AddMilliseconds(rng.Next(2000, 5000)));
+                invalidBlockHashStore.MarkInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(2000, 5000)));
 
             // Check that all hashes we have generated are banned now.
             var allHashes = new List<uint256>(hashesBannedPermanently);
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Tests.Base
             };
 
             foreach (uint256 hash in hashesBannedTemporarily2)
-                invalidBlockHashStore.MarkInvalid(hash, DateTimeProvider.Default.GetUtcNow().AddMilliseconds(rng.Next(20000, 50000)));
+                invalidBlockHashStore.MarkInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(20000, 50000)));
 
             // As the capacity is just 10, the first two hashes should no longer be banned at this point.
             Assert.False(invalidBlockHashStore.IsInvalid(hashesBannedPermanently[0]));
@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Tests.Base
             };
 
             foreach (uint256 hash in hashesBannedTemporarily)
-                invalidBlockHashStore.MarkInvalid(hash, DateTimeProvider.Default.GetUtcNow().AddMilliseconds(rng.Next(2000, 5000)));
+                invalidBlockHashStore.MarkInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(2000, 5000)));
 
             // Add more forever bans.
             var hashesBannedPermanently2 = new uint256[]
@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.Tests.Base
             };
 
             foreach (uint256 hash in hashesBannedTemporarily)
-                invalidBlockHashStore.MarkInvalid(hash, DateTimeProvider.Default.GetUtcNow().AddMilliseconds(rng.Next(2000, 5000)));
+                invalidBlockHashStore.MarkInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(2000, 5000)));
 
             // Check all hashes are banned now.
             foreach (uint256 hash in hashesBannedTemporarily)

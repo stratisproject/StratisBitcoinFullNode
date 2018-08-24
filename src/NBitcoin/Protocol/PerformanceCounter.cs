@@ -84,7 +84,7 @@ namespace NBitcoin
         {
             get
             {
-                return DateTimeProvider.Default.GetUtcNow() - this.Start;
+                return DateTime.UtcNow - this.Start;
             }
         }
 
@@ -96,7 +96,7 @@ namespace NBitcoin
 
         public PerformanceCounter()
         {
-            this.start = DateTimeProvider.Default.GetUtcNow();
+            this.start = DateTime.UtcNow;
         }
 
         public void AddWritten(long count)
@@ -114,7 +114,7 @@ namespace NBitcoin
             var snap = new PerformanceSnapshot(this.ReadBytes, this.WrittenBytes)
             {
                 Start = this.Start,
-                Taken = DateTimeProvider.Default.GetUtcNow()
+                Taken = DateTime.UtcNow
             };
             return snap;
         }

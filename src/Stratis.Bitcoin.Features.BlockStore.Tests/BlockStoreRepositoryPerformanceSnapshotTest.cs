@@ -1,5 +1,4 @@
 ﻿using System;
-using NBitcoin;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
@@ -16,7 +15,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var snapshot = new BlockStoreRepositoryPerformanceSnapshot(1301, 2352, 1244, 6452)
             {
                 Start = new DateTime(2017, 1, 1),
-                Taken = DateTimeProvider.Default.GetUtcNow()
+                Taken = DateTime.UtcNow
             };
 
             Assert.Equal(1301, snapshot.TotalRepositoryHitCount);

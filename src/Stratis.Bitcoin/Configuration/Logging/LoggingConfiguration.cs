@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
-using NBitcoin;
 using NLog;
 using NLog.Config;
 using NLog.Extensions.Logging;
@@ -13,7 +12,6 @@ using NLog.Targets;
 using NLog.Targets.Wrappers;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
-using Target = NLog.Targets.Target;
 
 namespace Stratis.Bitcoin.Configuration.Logging
 {
@@ -130,7 +128,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
             foreach (Target debugTarget in debugTargets)
             {
                 FileTarget debugFileTarget = debugTarget is AsyncTargetWrapper ? (FileTarget)((debugTarget as AsyncTargetWrapper).WrappedTarget) : (FileTarget)debugTarget;
-                string currentFile = debugFileTarget.FileName.Render(new LogEventInfo { TimeStamp = DateTimeProvider.Default.GetUtcNow() });
+                string currentFile = debugFileTarget.FileName.Render(new LogEventInfo { TimeStamp = DateTime.UtcNow });
                 debugFileTarget.FileName = Path.Combine(folder.LogPath, Path.GetFileName(currentFile));
             }
 
