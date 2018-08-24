@@ -40,50 +40,81 @@ namespace Stratis.SmartContracts.Core.Receipts
         /// <summary>
         /// Hash of the transaction.
         /// </summary>
-        public uint256 TransactionHash { get; private set; }
+        public uint256 TransactionHash { get; }
 
         /// <summary>
         /// Block hash of the block this transaction was contained in.
+        /// Needs public set as hash can only be stored after transaction is stored in block.
         /// </summary>
-        public uint256 BlockHash { get; private set; }
+        public uint256 BlockHash { get; set; }
 
         /// <summary>
         /// Address of the sender of the transaction.
         /// </summary>
-        public uint160 From { get; private set; }
+        public uint160 From { get; }
 
         /// <summary>
         /// Contract address sent to in the CALL. Null if CREATE.
         /// </summary>
-        public uint160 To { get; private set; }
+        public uint160 To { get; }
 
         /// <summary>
         /// Contract address created in this CREATE. Null if CALL.
         /// </summary>
-        public uint160 NewContractAddress { get; private set; }
+        public uint160 NewContractAddress { get; }
 
         #endregion
 
         /// <summary>
-        /// Creates receipt and generates bloom.
+        /// Creates receipt with both consensus and storage fields and generates bloom.
         /// </summary>
-        public Receipt(uint256 postState, ulong gasUsed, Log[] logs) 
-            : this(postState, gasUsed, logs, BuildBloom(logs))
-        {}
+        public Receipt(
+            uint256 postState,
+            ulong gasUsed,
+            Log[] logs,
+            uint256 transactionHash,
+            uint160 from, 
+            uint160 to, 
+            uint160 newContractAddress) 
+            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, from, to, newContractAddress)
+        { }
 
-        public Receipt(uint256 postState, ulong gasUsed, Log[] logs, Bloom bloom)
+        /// <summary>
+        /// Creates receipt with consensus fields and generates bloom.
+        /// </summary>
+        public Receipt(
+            uint256 postState,
+            ulong gasUsed,
+            Log[] logs)
+            : this(postState, gasUsed, logs, BuildBloom(logs), null, null, null, null, null)
+        { }
+
+        /// <summary>
+        /// Used for serialization.
+        /// </summary>
+        private Receipt(
+            uint256 postState,
+            ulong gasUsed,
+            Log[] logs,
+            Bloom bloom) 
+            : this(postState, gasUsed, logs, bloom, null, null, null, null, null)
+        { }
+
+        private Receipt(
+            uint256 postState,
+            ulong gasUsed,
+            Log[] logs,
+            Bloom bloom,
+            uint256 transactionHash,
+            uint256 blockHash,
+            uint160 from,
+            uint160 to,
+            uint160 newContractAddress)
         {
             this.PostState = postState;
             this.GasUsed = gasUsed;
             this.Logs = logs;
             this.Bloom = bloom;
-        }
-
-        /// <summary>
-        /// Set the extra properties to be stored as part of the receipt, some of which may only be available after block execution is complete.
-        /// </summary>
-        public void SetStorageProperties(uint256 transactionHash, uint256 blockHash, uint160 from, uint160 to, uint160 newContractAddress)
-        {
             this.TransactionHash = transactionHash;
             this.BlockHash = blockHash;
             this.From = from;
@@ -153,6 +184,9 @@ namespace Stratis.SmartContracts.Core.Receipts
 
         #region Storage Serialization
 
+        /// <summary>
+        /// Parse a whole receipt from stored bytes.
+        /// </summary>
         public static Receipt FromStorageBytesRlp(byte[] bytes)
         {
             RLPCollection list = RLP.Decode(bytes);
@@ -166,18 +200,20 @@ namespace Stratis.SmartContracts.Core.Receipts
                 new uint256(innerList[0].RLPData),
                 BitConverter.ToUInt64(innerList[1].RLPData),
                 logs,
-                new Bloom(innerList[2].RLPData)
-            );
-            receipt.SetStorageProperties(
+                new Bloom(innerList[2].RLPData),
                 new uint256(innerList[4].RLPData),
                 new uint256(innerList[5].RLPData),
                 new uint160(innerList[6].RLPData),
                 innerList[7].RLPData != null ? new uint160(innerList[7].RLPData) : null,
                 innerList[8].RLPData != null ? new uint160(innerList[8].RLPData) : null
             );
+
             return receipt;
         }
 
+        /// <summary>
+        /// Serialize a receipt into bytes to be stored.
+        /// </summary>
         public byte[] ToStorageBytesRlp()
         {
             IList<byte[]> encodedLogs = this.Logs.Select(x => RLP.EncodeElement(x.ToBytesRlp())).ToList();
