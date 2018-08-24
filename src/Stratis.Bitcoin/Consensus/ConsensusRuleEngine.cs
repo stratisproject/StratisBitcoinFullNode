@@ -240,6 +240,8 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("()");
 
+            // This error will be handled in ConsensusManager.
+            // The block shouldn't be banned because it might be valid, it's just we need to redownload it including witness data.
             if (validationContext.Error == ConsensusErrors.BadWitnessNonceSize)
             {
                 this.logger.LogTrace("(-)[BAD_WITNESS_NONCE]");
