@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
@@ -360,6 +361,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 });
                 var walletHistoryModel = (WalletHistoryModel)result.Value;
                 Assert.Single(walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send));
+
+                // Check receipt was stored and can be retrieved.
+                var receiptResult1 = senderSmartContractsController.GetReceipt(response.TransactionId.ToString());
+                var receiptResult = JsonConvert.SerializeObject(((JsonResult) senderSmartContractsController.GetReceipt(response.TransactionId.ToString())).Value);
 
                 string storageRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
                 {
