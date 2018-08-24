@@ -14,6 +14,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             string testDirectory = CreateTestDir(this);
 
             IFullNode fullNode = this.BuildServicedNode(testDirectory);
+            fullNode.Start();
+
             var controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
 
             Assert.ThrowsAny<System.Net.Sockets.SocketException>(() => { controller.AddNodeRPC("0.0.0.0", "onetry"); });
