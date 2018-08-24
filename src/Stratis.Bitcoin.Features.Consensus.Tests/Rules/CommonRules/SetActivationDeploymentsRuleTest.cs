@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Xunit;
 using static NBitcoin.Transaction;
