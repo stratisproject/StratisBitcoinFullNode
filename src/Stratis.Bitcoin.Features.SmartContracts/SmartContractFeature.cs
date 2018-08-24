@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<SmartContractTransactionPolicy>();
 
                         // RECEIPTS -------------------------------------------------------------------------
-                        services.AddSingleton<IReceiptRepository, ReceiptRepository>();
+                        services.AddSingleton<IReceiptRepository, PersistentReceiptRepository>();
 
                         ICallDataSerializer callDataSerializer = CallDataSerializer.Default;
                         services.AddSingleton(callDataSerializer);
