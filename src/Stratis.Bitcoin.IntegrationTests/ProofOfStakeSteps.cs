@@ -24,6 +24,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public readonly string PremineWallet = "preminewallet";
         public readonly string PremineWalletAccount = "account 0";
         public readonly string PremineWalletPassword = "preminewalletpassword";
+        public readonly string PremineWalletPassphrase = "";
 
         private HashSet<uint256> transactionsBeforeStaking = new HashSet<uint256>();
 
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     .CreateStratisPosNode(this.PremineNode)
                     .Start()
                     .NotInIBD()
-                    .WithWallet(this.PremineWallet, this.PremineWalletPassword)
+                    .WithWallet(this.PremineWallet, this.PremineWalletPassword, this.PremineWalletPassphrase)
                     .Build();
         }
 

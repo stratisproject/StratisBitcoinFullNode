@@ -300,15 +300,16 @@ namespace Stratis.Bitcoin.IntegrationTests
             const string node2 = "networkNode2";
             const string walletName = "dummyWallet";
             const string walletPassword = "dummyPassword";
+            const string walletPassphrase = "dummyPassphrase";
 
             var sharedSteps = new SharedSteps();
             string testFolderPath = Path.Combine(this.GetType().Name, nameof(MiningNodeWithOneConnectionAlwaysSynced));
             using (var builder = new NodeGroupBuilder(testFolderPath, this.powNetwork))
             {
-                var nodes = builder.StratisPowNode(miner).Start().NotInIBD().WithWallet(walletName, walletPassword)
-                    .StratisPowNode(connector).Start().NotInIBD().WithWallet(walletName, walletPassword)
-                    .StratisPowNode(node1).Start().NotInIBD().WithWallet(walletName, walletPassword)
-                    .StratisPowNode(node2).Start().NotInIBD().WithWallet(walletName, walletPassword)
+                var nodes = builder.StratisPowNode(miner).Start().NotInIBD().WithWallet(walletName, walletPassword, walletPassphrase)
+                    .StratisPowNode(connector).Start().NotInIBD().WithWallet(walletName, walletPassword, walletPassphrase)
+                    .StratisPowNode(node1).Start().NotInIBD().WithWallet(walletName, walletPassword, walletPassphrase)
+                    .StratisPowNode(node2).Start().NotInIBD().WithWallet(walletName, walletPassword, walletPassphrase)
                     .WithConnections()
                     .Connect(miner, connector)
                     .Connect(connector, node1).Connect(connector, node2)
