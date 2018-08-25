@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private CoreNode receiverNode;
         private const string WalletName = "mywallet";
         private const string WalletPassword = "123456";
+        private const string WalletPassphrase = "passphrase";
         private const string WalletAccountName = "account 0";
 
         public SendingStakedCoinsBeforeMaturity(ITestOutputHelper outputHelper)
@@ -47,7 +48,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                                     .CreateStratisPosNode(NodeReceiver)
                                     .Start()
                                     .NotInIBD()
-                                    .WithWallet(WalletName, WalletPassword)
+                                    .WithWallet(WalletName, WalletPassword, WalletPassphrase)
                                     .Build()[NodeReceiver];
         }
 
