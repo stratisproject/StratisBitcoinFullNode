@@ -964,7 +964,7 @@ namespace Stratis.Bitcoin.Consensus
                     lock (this.peerLock)
                     {
                         // Ask block puller to deliver this block again. Do it with high priority and avoid normal queue.
-                        this.blockPuller.RequestBlocksDownload(new List<ChainedHeader>() { chainedHeader });
+                        this.blockPuller.RequestBlocksDownload(new List<ChainedHeader>() { chainedHeader }, true);
                     }
 
                     this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
