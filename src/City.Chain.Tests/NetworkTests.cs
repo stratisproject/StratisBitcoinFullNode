@@ -1,15 +1,12 @@
 using System;
-using Xunit;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
-using NBitcoin.DataEncoders;
 using NBitcoin.NetworkDefinitions;
 using Xunit;
-using NBitcoin;
 
 namespace City.Chain.Tests
 {
@@ -76,7 +73,7 @@ namespace City.Chain.Tests
             Assert.Equal(12, network.Base58Prefixes.Length);
             Assert.Equal(new byte[] { (28) }, network.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS]);
             Assert.Equal(new byte[] { (88) }, network.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS]);
-            Assert.Equal(new byte[] { (28 + 128) }, network.Base58Prefixes[(int)Base58Type.SECRET_KEY]);
+            Assert.Equal(new byte[] { (237) }, network.Base58Prefixes[(int)Base58Type.SECRET_KEY]);
             Assert.Equal(new byte[] { 0x01, 0x42 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC]);
             Assert.Equal(new byte[] { 0x01, 0x43 }, network.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC]);
             Assert.Equal(new byte[] { (0x04), (0x88), (0xB2), (0x1E) }, network.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY]);
@@ -127,13 +124,105 @@ namespace City.Chain.Tests
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
+        public void GenerateWitnessAddressAndVerify()
+        {
+            List<Network> networks = new List<Network>();
+            networks.Add(Networks.CityMain);
+            networks.Add(Networks.Main);
+            networks.Add(Networks.StratisMain);
+
+            foreach (Network network in networks)
+            {
+                var privateKey = new Key();
+                BitcoinPubKeyAddress address = privateKey.PubKey.GetAddress(network);
+                var witnessAddress = privateKey.PubKey.WitHash.ToString();
+                var scriptPubKey = address.ScriptPubKey.ToString();
+                //Assert.StartsWith("C", address.ToString());
+
+                BitcoinSecret secret = privateKey.GetWif(network);
+                var wif = secret.ToWif();
+            }
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void GenerateSomeCityMainNetAddressAndVerifyPrefix()
+        {
+            Network network = Networks.CityMain;
+
+            for (int i = 0; i < 10; i++)
+            {
+                var privateKey = new Key();
+                BitcoinPubKeyAddress address = privateKey.PubKey.GetAddress(network);
+                Assert.StartsWith("C", address.ToString());
+
+                var witnessAddress = privateKey.PubKey.WitHash.ToString();
+                var test = address.ScriptPubKey.ToString();
+
+                BitcoinSecret secret = privateKey.GetWif(network);
+                var wif = secret.ToWif();
+                Assert.StartsWith("c", wif.ToString());
+            }
+
+            for (int i = 0; i < 10; i++)
+            {
+                var privateKey = new Key(false);
+                BitcoinPubKeyAddress address = privateKey.PubKey.GetAddress(network);
+                Assert.StartsWith("C", address.ToString());
+
+                var witnessAddress = privateKey.PubKey.WitHash.ToString();
+                var test = address.ScriptPubKey.ToString();
+
+                BitcoinSecret secret = privateKey.GetWif(network);
+                var wif = secret.ToWif();
+                Assert.StartsWith("8", wif.ToString());
+            }
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void GenerateSomeCityTestNetAddressAndVerifyPrefix()
+        {
+            Network network = Networks.CityTest;
+
+            for (int i = 0; i < 10; i++)
+            {
+                var privateKey = new Key();
+                BitcoinPubKeyAddress address = privateKey.PubKey.GetAddress(network);
+                Assert.StartsWith("T", address.ToString());
+
+                var witnessAddress = privateKey.PubKey.WitHash.ToString();
+                var test = address.ScriptPubKey.ToString();
+
+                BitcoinSecret secret = privateKey.GetWif(network);
+                var wif = secret.ToWif();
+                Assert.StartsWith("V", wif.ToString());
+            }
+
+            for (int i = 0; i < 10; i++)
+            {
+                var privateKey = new Key(false);
+                BitcoinPubKeyAddress address = privateKey.PubKey.GetAddress(network);
+                Assert.StartsWith("T", address.ToString());
+
+                var witnessAddress = privateKey.PubKey.WitHash.ToString();
+                var test = address.ScriptPubKey.ToString();
+
+                BitcoinSecret secret = privateKey.GetWif(network);
+                var wif = secret.ToWif();
+                Assert.StartsWith("7", wif.ToString());
+            }
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
         public void CityTestnetIsInitializedCorrectly()
         {
             Network network = Networks.CityTest;
 
             Assert.Equal(0, network.Checkpoints.Count);
-            Assert.Equal(4, network.DNSSeeds.Count);
-            Assert.Equal(4, network.SeedNodes.Count);
+            Assert.Equal(1, network.DNSSeeds.Count);
+            Assert.Equal(3, network.SeedNodes.Count);
 
             Assert.Equal("CityTest", network.Name);
             Assert.Equal(CityMain.CityRootFolderName, network.RootFolderName);
@@ -185,7 +274,7 @@ namespace City.Chain.Tests
             Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy]);
             Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.CSV]);
             Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.Segwit]);
-            Assert.Equal(12500, network.Consensus.LastPOWBlock);
+            Assert.Equal(125000, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(4535, network.Consensus.CoinType);
             Assert.Equal(new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimit);
