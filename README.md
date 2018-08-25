@@ -14,10 +14,15 @@ https://city-chain.org
 Blockchain for the Smart City Platform
 ----------------------------
 
-[![Build status][1]][2]
+[![VSTS build status][1]][2]
 
-[1]: https://ci.appveyor.com/api/projects/status/xs9789ye8ulu29j3/branch/master?svg=true
-[2]: https://ci.appveyor.com/project/citychain/city-chain
+[1]: https://citychain.visualstudio.com/city-chain/_apis/build/status/3?branch=master
+[2]: https://citychain.visualstudio.com/city-chain/_build/latest?definitionId=3&branch=master
+
+[![Documentation build status][3]][4]
+
+[3]: https://ci.appveyor.com/api/projects/status/xs9789ye8ulu29j3/branch/master?svg=true
+[4]: https://ci.appveyor.com/project/citychain/city-chain
 
 City Chain is a blockchain implementation that supports the Bitcoin protocol in C# and runs on [.NET Core](https://dotnet.github.io/), and is based on the [Stratis](https://github.com/stratisproject) and [NBitcoin](https://github.com/MetacoSA/NBitcoin) source code.
 
