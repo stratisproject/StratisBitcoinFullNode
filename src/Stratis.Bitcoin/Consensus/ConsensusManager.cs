@@ -49,6 +49,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IBlockStore blockStore;
         private readonly IFinalizedBlockInfo finalizedBlockInfo;
         private readonly IBlockPuller blockPuller;
+        private readonly IIntegrityValidator integrityValidator;
 
         /// <inheritdoc />
         public ChainedHeader Tip { get; private set; }
@@ -102,6 +103,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.network = network;
             this.chainState = chainState;
+            this.integrityValidator = integrityValidator;
             this.partialValidator = partialValidator;
             this.consensusRules = consensusRules;
             this.signals = signals;
@@ -934,26 +936,30 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (block != null)
                 {
-                    try
-                    {
-                        chainedHeader = this.chainedHeaderTree.FindHeaderAndVerifyBlockIntegrity(block);
-                    }
-                    catch (BlockDownloadedForMissingChainedHeaderException)
+                    chainedHeader = this.chainedHeaderTree.GetChainedHeader(blockHash);
+
+                    if (chainedHeader == null)
                     {
                         this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
-                        return;
-                    }
-                    catch (IntegrityValidationFailedException integrityException)
-                    {
-                        this.peerBanning.BanAndDisconnectPeer(integrityException.PeerEndPoint, integrityException.BanDurationSeconds, $"Integrity validation failed: {integrityException.Error.Message}");
-
-                        this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
                         return;
                     }
                 }
                 else
                 {
                     this.logger.LogDebug("Block '{0}' failed to be delivered.", blockHash);
+                }
+            }
+
+            if (block != null)
+            {
+                ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, block);
+
+                if (result.Error != null)
+                {
+                    this.peerBanning.BanAndDisconnectPeer(result.Peer, result.BanDurationSeconds,
+                        $"Integrity validation failed: {result.Error.Message}");
+                    this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
+                    return;
                 }
             }
 
