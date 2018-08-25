@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, invalidHashesStore);
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, invalidHashesStore);
 
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
@@ -670,7 +670,10 @@ namespace Stratis.Bitcoin.Consensus
 
             if (connectBlockResult.Succeeded)
             {
+                // Even though reconnection was successful we return result with success == false because
+                // full validation of the chain we originally wanted to connect was failed.
                 var result = new ConnectBlocksResult(false) { ConsensusTipChanged = false };
+
                 this.logger.LogTrace("(-):'{0}'", result);
                 return result;
             }
@@ -956,8 +959,14 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (result.Error != null)
                 {
-                    this.peerBanning.BanAndDisconnectPeer(result.Peer, result.BanDurationSeconds,
-                        $"Integrity validation failed: {result.Error.Message}");
+                    this.peerBanning.BanAndDisconnectPeer(result.Peer, result.BanDurationSeconds, $"Integrity validation failed: {result.Error.Message}");
+
+                    lock (this.peerLock)
+                    {
+                        // Ask block puller to deliver this block again. Do it with high priority and avoid normal queue.
+                        this.blockPuller.RequestBlocksDownload(new List<ChainedHeader>() { chainedHeader }, true);
+                    }
+
                     this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
                     return;
                 }
@@ -1070,6 +1079,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>
         /// Requests that have too many blocks will be split in batches.
         /// The amount of blocks in 1 batch to downloaded depends on the average value in <see cref="IBlockPuller.GetAverageBlockSizeBytes"/>.
+        /// Should be protected by the <see cref="peerLock"/>.
         /// </remarks>
         private void ProcessDownloadQueueLocked()
         {

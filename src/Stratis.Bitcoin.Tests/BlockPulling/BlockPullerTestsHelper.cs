@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
         public void PeerDisconnected(int peerId) { this.puller.PeerDisconnected(peerId); }
 
-        public void RequestBlocksDownload(List<ChainedHeader> headers) { this.puller.RequestBlocksDownload(headers); }
+        public void RequestBlocksDownload(List<ChainedHeader> headers, bool highPriority = false) { this.puller.RequestBlocksDownload(headers, highPriority); }
 
         public void PushBlock(uint256 blockHash, Block block, int peerId) { this.puller.PushBlock(blockHash, block, peerId); }
 
