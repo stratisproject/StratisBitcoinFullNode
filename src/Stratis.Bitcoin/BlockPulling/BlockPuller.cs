@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Requests the blocks for download.</summary>
         /// <remarks>Doesn't support asking for the same hash twice before getting a response.</remarks>
         /// <param name="headers">Collection of consecutive headers (but gaps are ok: a1=a2=a3=a4=a8=a9).</param>
-        /// <param name="highPriority">If <c>true</c> headers will be assigned to peers before the headers that were asked normally..</param>
+        /// <param name="highPriority">If <c>true</c> headers will be assigned to peers before the headers that were asked normally.</param>
         void RequestBlocksDownload(List<ChainedHeader> headers, bool highPriority = false);
 
         /// <summary>Removes assignments for the block which has been delivered by the peer assigned to it and calls the callback.</summary>
@@ -326,7 +326,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc/>
         public void RequestBlocksDownload(List<ChainedHeader> headers, bool highPriority = false)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(headers.Count), headers.Count);
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(headers.Count), headers.Count, nameof(highPriority), highPriority);
             Guard.Assert(headers.Count != 0);
 
             lock (this.queueLock)
