@@ -35,6 +35,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork);
                 CoreNode node2 = builder.CreateStratisPowNode(this.powNetwork);
                 builder.StartAll();
+                node1.NotInIBD();
+                node2.NotInIBD();
                 Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
                 RPCClient rpc1 = node1.CreateRPCClient();

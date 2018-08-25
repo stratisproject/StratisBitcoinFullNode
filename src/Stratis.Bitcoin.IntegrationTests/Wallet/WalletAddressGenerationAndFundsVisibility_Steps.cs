@@ -91,6 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .StratisPowNode(SendingNodeName).Start().NotInIBD()
                 .WithWallet(SendingWalletName, WalletPassword)
                 .StratisCustomPowNode(ReceivingNodeName, configParameters).Start()
+                .NotInIBD()
                 .WithWallet(ReceivingWalletName, WalletPassword)
                 .WithConnections()
                 .Connect(SendingNodeName, ReceivingNodeName)
