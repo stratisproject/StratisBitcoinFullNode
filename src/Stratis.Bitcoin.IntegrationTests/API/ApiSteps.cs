@@ -44,6 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private const string SecondaryWalletName = "secondary_wallet_name";
         private const string WalletAccountName = "account 0";
         private const string WalletPassword = "wallet_password";
+        private const string WalletPassphrase = "wallet_passphrase";
         private const string StratisRegTest = "StratisRegTest";
 
         // BlockStore
@@ -164,7 +165,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .CreateStratisPowApiNode(FirstPowNode)
                 .Start()
                 .NotInIBD()
-                .WithWallet(PrimaryWalletName, WalletPassword)
+                .WithWallet(PrimaryWalletName, WalletPassword, WalletPassphrase)
                 .Build();
 
             this.nodes[FirstPowNode].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
@@ -180,7 +181,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .CreateStratisPowApiNode(SecondPowNode)
                 .Start()
                 .NotInIBD()
-                .WithWallet(SecondaryWalletName, WalletPassword)
+                .WithWallet(SecondaryWalletName, WalletPassword, WalletPassphrase)
                 .Build();
         }
 
@@ -209,7 +210,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var stakingRequest = new StartStakingRequest() { Name = PrimaryWalletName, Password = WalletPassword };
 
-            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName);
+            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName, WalletPassphrase);
 
             var httpRequestContent = new StringContent(stakingRequest.ToString(), Encoding.UTF8, JsonContentType);
             this.response = this.httpClient.PostAsync($"{this.apiUri}{StartStakingUri}", httpRequestContent).GetAwaiter().GetResult();
@@ -296,7 +297,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void calling_general_info()
         {
-            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName);
+            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName, WalletPassphrase);
             this.send_api_get_request($"{GeneralInfoUri}?name={PrimaryWalletName}");
         }
 

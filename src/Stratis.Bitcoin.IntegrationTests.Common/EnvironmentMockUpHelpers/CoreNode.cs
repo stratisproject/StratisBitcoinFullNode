@@ -85,9 +85,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return this;
         }
 
-        public Mnemonic WithWallet(string walletPassword = "password", string walletName = "name")
+        public Mnemonic WithWallet(string walletPassword = "password", string walletName = "name", string walletPassphrase = "passphrase")
         {
-            return this.FullNode.WalletManager().CreateWallet(walletPassword, walletName);
+            return this.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
         }
 
         public RPCClient CreateRPCClient()
