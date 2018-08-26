@@ -36,6 +36,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         SmartContractValidationResult Validate(ISmartContractValidator validator);
 
-        void InjectMethodGas(string typeName, string methodName);
+        void InjectMethodGas(string typeName, MethodCall methodCall);
     }
 }
