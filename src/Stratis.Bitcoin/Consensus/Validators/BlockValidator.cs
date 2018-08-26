@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus.Validators
@@ -12,6 +13,12 @@ namespace Stratis.Bitcoin.Consensus.Validators
     /// </summary>
     /// <param name="validationContext">Result of the validation including information about banning if necessary.</param>
     public delegate Task OnPartialValidationCompletedAsyncCallback(ValidationContext validationContext);
+
+    /// <summary>
+    /// A callback that is invoked when <see cref="IFullValidator.StartFullValidation"/> completes validation of a block.
+    /// </summary>
+    /// <param name="validationContext">Result of the validation including information about banning if necessary.</param>
+    public delegate Task OnFullValidationCompletedAsyncCallback(ValidationContext validationContext);
 
     public interface IHeaderValidator
     {
@@ -40,6 +47,31 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// Executes the partial validation rule set on a block.
         /// <para>
         /// Partial validation doesn't involve change to the underlying store like rewinding or updating the database.
+        /// </para>
+        /// </summary>
+        /// <param name="header">The chained header that is going to be validated.</param>
+        /// <param name="block">The block that is going to be validated.</param>
+        /// <returns>Context that contains validation result related information.</returns>
+        Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block);
+    }
+
+    public interface IFullValidator : IDisposable
+    {
+        /// <summary>
+        /// Schedules a block for background full validation.
+        /// <para>
+        /// Full validation may involve changes to the underlying store like rewinding or updating the database.
+        /// </para>
+        /// </summary>
+        /// <param name="header">The chained header that is going to be validated.</param>
+        /// <param name="block">The block that is going to be validated.</param>
+        /// <param name="onFullValidationCompletedAsyncCallback">A callback that is called when validation is complete.</param>
+        void StartFullValidation(ChainedHeader header, Block block, OnFullValidationCompletedAsyncCallback onFullValidationCompletedAsyncCallback);
+
+        /// <summary>
+        /// Executes the full validation rule set on a block.
+        /// <para>
+        /// Full validation may involve changes to the underlying store like rewinding or updating the database.
         /// </para>
         /// </summary>
         /// <param name="header">The chained header that is going to be validated.</param>
@@ -178,7 +210,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         /// <summary>
-        /// Hold information related to partial validation.
+        /// Holds information related to partial validation.
         /// </summary>
         private class PartialValidationItem
         {
@@ -190,6 +222,94 @@ namespace Stratis.Bitcoin.Consensus.Validators
 
             /// <summary>After validation a call back will be invoked asynchronously.</summary>
             public OnPartialValidationCompletedAsyncCallback PartialValidationCompletedAsyncCallback { get; set; }
+
+            /// <inheritdoc />
+            public override string ToString()
+            {
+                return $"{nameof(this.ChainedHeader)}={this.ChainedHeader},{nameof(this.Block)}={this.Block}";
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    public class FullValidator : IFullValidator
+    {
+        private readonly IConsensusRuleEngine consensusRules;
+        private readonly AsyncQueue<FullValidationItem> asyncQueue;
+        private readonly ILogger logger;
+
+        public FullValidator(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
+        {
+            this.consensusRules = consensusRules;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            this.asyncQueue = new AsyncQueue<FullValidationItem>(this.OnEnqueueAsync);
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.asyncQueue.Dispose();
+        }
+
+        private async Task OnEnqueueAsync(FullValidationItem item, CancellationToken cancellationtoken)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(item), item);
+
+            ValidationContext result = await this.consensusRules.FullValidationAsync(new ChainedHeaderBlock(item.Block, item.ChainedHeader)).ConfigureAwait(false);
+
+            try
+            {
+                await item.FullValidationCompletedAsyncCallback(result).ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                this.logger.LogCritical("Full validation callback threw an exception: {0}.", exception.ToString());
+                throw;
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public void StartFullValidation(ChainedHeader header, Block block, OnFullValidationCompletedAsyncCallback onFullValidationCompletedAsyncCallback)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(header), header, nameof(block), block);
+
+            this.asyncQueue.Enqueue(new FullValidationItem()
+            {
+                ChainedHeader = header,
+                Block = block,
+                FullValidationCompletedAsyncCallback = onFullValidationCompletedAsyncCallback
+            });
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public async Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(header), header, nameof(block), block);
+
+            ValidationContext result = await this.consensusRules.FullValidationAsync(new ChainedHeaderBlock(block, header)).ConfigureAwait(false);
+
+            this.logger.LogTrace("(-):'{0}'", result);
+            return result;
+        }
+
+        /// <summary>
+        /// Holds information related to full validation.
+        /// </summary>
+        private class FullValidationItem
+        {
+            /// <summary>The header to be fully validated.</summary>
+            public ChainedHeader ChainedHeader { get; set; }
+
+            /// <summary>The block to be fully validated.</summary>
+            public Block Block { get; set; }
+
+            /// <summary>After validation a call back will be invoked asynchronously.</summary>
+            public OnFullValidationCompletedAsyncCallback FullValidationCompletedAsyncCallback { get; set; }
 
             /// <inheritdoc />
             public override string ToString()
