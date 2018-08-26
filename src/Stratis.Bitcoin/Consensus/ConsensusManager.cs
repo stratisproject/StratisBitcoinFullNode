@@ -43,6 +43,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IChainedHeaderTree chainedHeaderTree;
         private readonly IChainState chainState;
         private readonly IPartialValidator partialValidator;
+        private readonly IFullValidator fullValidator;
         private readonly IConsensusRuleEngine consensusRules;
         private readonly Signals.Signals signals;
         private readonly IPeerBanning peerBanning;
@@ -89,6 +90,7 @@ namespace Stratis.Bitcoin.Consensus
             IHeaderValidator headerValidator,
             IIntegrityValidator integrityValidator,
             IPartialValidator partialValidator,
+            IFullValidator fullValidator,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
             IConsensusRuleEngine consensusRules,
@@ -105,6 +107,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chainState = chainState;
             this.integrityValidator = integrityValidator;
             this.partialValidator = partialValidator;
+            this.fullValidator = fullValidator;
             this.consensusRules = consensusRules;
             this.signals = signals;
             this.peerBanning = peerBanning;
@@ -738,7 +741,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             // Call the validation engine.
-            ValidationContext validationContext = await this.consensusRules.FullValidationAsync(blockToConnect).ConfigureAwait(false);
+            ValidationContext validationContext = await this.fullValidator.ValidateAsync(blockToConnect.ChainedHeader, blockToConnect.Block).ConfigureAwait(false);
 
             if (validationContext.Error != null)
             {
