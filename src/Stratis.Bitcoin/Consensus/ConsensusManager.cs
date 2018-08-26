@@ -918,9 +918,9 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        private void BlockDownloaded(uint256 blockHash, Block block)
+        private void BlockDownloaded(uint256 blockHash, Block block, int peerId)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash); // TODO: Log peerID?
 
             ChainedHeader chainedHeader = null;
 
@@ -962,7 +962,11 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (result.Error != null)
                 {
-                    this.peerBanning.BanAndDisconnectPeer(result.Peer, result.BanDurationSeconds, $"Integrity validation failed: {result.Error.Message}");
+                    // It is possible for multiple peers to be claiming a particular ChainedHeader. We only ban the
+                    // particular peer that delivered the block to us, because the actual block hash can still be
+                    // valid even though the block delivered by the peer was erroneous.
+                    if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
+                        this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, result.BanDurationSeconds, $"Integrity validation failed: {result.Error.Message}");
 
                     lock (this.peerLock)
                     {
