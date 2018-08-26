@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -37,6 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
         private readonly IBroadcasterManager broadcasterManager;
         private readonly CoinType coinType;
+        private readonly ConcurrentChain chain;
         private readonly ILogger logger;
         private readonly Network network;
         private readonly ContractStateRepositoryRoot stateRoot;
@@ -47,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IReceiptRepository receiptRepository;
 
         public SmartContractsController(IBroadcasterManager broadcasterManager,
-            IConsensusLoop consensus,
+            ConcurrentChain chain,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
@@ -63,6 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
+            this.chain = chain;
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
             this.addressGenerator = addressGenerator;
@@ -157,6 +159,33 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             return Json(receiptResponse);
         }
+
+        // Note: We may not know exactly how to best structure "receipt search" queries until we start building 
+        // a web3-like library. For now the following method serves as a very basic example of how we can query the block
+        // bloom filters to retrieve events.
+
+        [Route("receipt-search")]
+        [HttpGet]
+        public IActionResult ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName)
+        {
+            // Build the bytes we can use to check for this event.
+            byte[] addressBytes = new Address(contractAddress).ToUint160(this.network).ToBytes();
+            byte[] eventBytes = Encoding.UTF8.GetBytes(eventName);
+
+            // Loop through all headers and check bloom.
+            IEnumerable<ChainedHeader> blockHeaders = this.chain.EnumerateToTip(this.chain.Genesis);
+            List<ChainedHeader> matches = new List<ChainedHeader>();
+            foreach(ChainedHeader chainedHeader in blockHeaders)
+            {
+                var scHeader = (SmartContractBlockHeader) chainedHeader.Header;
+                if (scHeader.LogsBloom.Test(addressBytes) && scHeader.LogsBloom.Test(eventBytes))
+                    matches.Add(chainedHeader);
+            }
+
+            // For all matching headers, check all receipts for smart contract transactions
+
+            throw new NotImplementedException();
+        } 
 
         [Route("build-create")]
         [HttpPost]
