@@ -467,6 +467,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // And sanity test that a random value is not available in bloom.
                 Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
 
+                // Test that the event can be searched for...
+                var receiptsFromSearch = sender.GetReceipts(response.NewContractAddress, "Created");
+                Assert.Single(receiptsFromSearch);
+
                 // Call contract and ensure owner is now highest bidder
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("Bid", response.NewContractAddress, 2);
                 receiver.WaitMempoolCount(1);
