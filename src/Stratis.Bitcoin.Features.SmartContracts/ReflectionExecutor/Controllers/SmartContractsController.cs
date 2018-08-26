@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     "Could not find a stored transaction for this hash.");
             }
 
-            var receiptResponse = new ReceiptResponse(receipt);
+            var receiptResponse = new ReceiptResponse(receipt, this.network);
 
             return Json(receiptResponse);
         }
