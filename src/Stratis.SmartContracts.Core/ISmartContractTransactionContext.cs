@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using NBitcoin;
+﻿using NBitcoin;
 
 namespace Stratis.SmartContracts.Core
 {
@@ -26,14 +25,9 @@ namespace Stratis.SmartContracts.Core
         uint Nvout { get; }
 
         /// <summary>
-        /// All of the bytes included in the script after the create or call opcode.
+        /// The raw data provided as part of the transaction.
         /// </summary>
-        IEnumerable<byte> ContractData { get; }
-
-        /// <summary>
-        /// The script pub key
-        /// </summary>
-        Script ScriptPubKey { get; }
+        byte[] Data { get; }
 
         /// <summary>
         /// Total fee for transaction.

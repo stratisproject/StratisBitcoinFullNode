@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
@@ -56,12 +55,10 @@ namespace Stratis.SmartContracts.Core
         }
 
         /// <inheritdoc />
-        public IEnumerable<byte> ContractData
+        public byte[] Data
         {
-            get { return this.contractTxOut.ScriptPubKey.ToBytes().Skip(1); }
+            get { return this.contractTxOut.ScriptPubKey.ToBytes(); }
         }
-
-        public Script ScriptPubKey => this.contractTxOut.ScriptPubKey;
 
         /// <inheritdoc />
         public Money MempoolFee
