@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             if (ops.Count != 2)
             {
-                this.Logger.LogTrace("(-)[NO_SECOND_OP]:false");
+                this.Logger.LogTrace("(-)[INVALID_OP_COUNT]:false");
                 return false;
             }
 
