@@ -124,6 +124,8 @@ namespace Stratis.SmartContracts.Tools.Sct
         public Func<ulong> GetBalance => null;
 
         public IContractLogger ContractLogger => null;
+
+        public ISerializer Serializer => null;
     }
 
     public sealed class ValidatorPersistentState : IPersistentState

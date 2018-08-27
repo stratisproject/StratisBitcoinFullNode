@@ -250,6 +250,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     transactionContext.Amount
                 ),
                 persistentState,
+                this.contractPrimitiveSerializer,
                 gasMeter,
                 contractLogger,
                 internalTransactionExecutor,
