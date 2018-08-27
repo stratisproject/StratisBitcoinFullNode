@@ -1028,10 +1028,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 21 @ FindHeaderAndVerifyBlockIntegrity called for some bogus block. Should throw because not connected.
+        /// Issue 21 @ GetChainedHeader called for some bogus block. Should return null because not connected.
         /// </summary>
         [Fact]
-        public void FindHeaderAndVerifyBlockIntegrityCalledForBogusBlock_ExceptionShouldBeThrown()
+        public void GetChainedHeaderCalledForBogusBlock_ResultShouldBeNull()
         {
             // Chain header tree setup. Initial chain has 4 headers.
             // Example: h1=h2=h3=h4.
@@ -1045,10 +1045,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // Example: h1=h2=h3=h4=h5=h6.
             initialChainTip = ctx.ExtendAChain(extensionChainSize, initialChainTip);
 
-            // Call FindHeaderAndVerifyBlockIntegrity on the block from header 6.
-            // BlockDownloadedForMissingChainedHeaderException should be thrown.
-            Action verificationAction = () => cht.FindHeaderAndVerifyBlockIntegrity(initialChainTip.Block);
-            verificationAction.Should().Throw<BlockDownloadedForMissingChainedHeaderException>();
+            // Call GetChainedHeader on the block from header 6.
+            // A null value should be returned.
+            ChainedHeader result = cht.GetChainedHeader(initialChainTip.Block.GetHash());
+            result.Should().BeNull();
         }
 
         /// <summary>

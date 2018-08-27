@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             this.network = KnownNetworks.Main;
             this.consensusSettings = new ConsensusSettings(new NodeSettings(this.network));
             this.checkpoints = new Checkpoints(this.network, this.consensusSettings);
-            this.chainState = new ChainState(new InvalidBlockHashStore(DateTimeProvider.Default));
+            this.chainState = new ChainState();
         }
 
         [Fact]

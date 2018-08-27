@@ -265,8 +265,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var receipt = new Receipt(
                 new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root),
                 result.GasConsumed,
-                new Log[0] 
-                );
+                result.Logs.ToArray(),
+                txContext.TransactionHash,
+                txContext.Sender,
+                null, // TODO: Get 'To' in Result.
+                result.NewContractAddress
+            )
+            {
+                BlockHash = context.ValidationContext.BlockToValidate.GetHash()
+            };
+
             this.receipts.Add(receipt);
 
             ValidateRefunds(result.Refunds, context.ValidationContext.BlockToValidate.Transactions[0]);
