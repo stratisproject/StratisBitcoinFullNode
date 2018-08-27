@@ -61,9 +61,9 @@ namespace Stratis.Bitcoin.Tests.Controllers
         }
 
         [Fact]
-        public async Task Stop_WithFullNode_DisposesFullNodeAsync()
+        public void Stop_WithFullNode_DisposesFullNodeAsync()
         {
-            IActionResult result = await this.controller.ShutdownAsync(0);
+            IActionResult result = this.controller.Shutdown(0);
 
             this.fullNode.Verify(f => f.Dispose());
         }

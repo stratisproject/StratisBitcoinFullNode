@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
+using System.Timers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -61,6 +62,9 @@ namespace Stratis.Bitcoin.Controllers
 
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
+
+        /// <summary>A timer that can be used to delay shutting down the node.</summary>
+        private Timer timer;
 
         public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory,
             IDateTimeProvider dateTimeProvider, IChainState chainState,
@@ -355,16 +359,22 @@ namespace Stratis.Bitcoin.Controllers
         /// Triggers a shutdown of the currently running node.
         /// </summary>
         /// <param name="delayInSeconds">Delay, in seconds, after which the node will stop.</param>
+        /// <remarks>
+        /// The [FromBody] parameter <code>delayInSeconds</code> has been added here to prevent a CORS call from triggering method execution.
+        /// <seealso cref="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"/>
+        /// </remarks>
         /// <returns><see cref="OkResult"/></returns>
         [HttpPost]
         [Route("shutdown")]
         [Route("stop")]
         public IActionResult Shutdown([FromBody] int delayInSeconds = 0)
         {
-            var timer = new System.Timers.Timer(delayInSeconds * 1000);
+            this.timer?.Dispose();
+
+            this.timer = new Timer(delayInSeconds * 1000);
             // Start the node shutdown process on timer elapsed.
-            timer.Elapsed += (a, s) => this.fullNode?.Dispose();
-            timer.Start();
+            this.timer.Elapsed += (a, s) => this.fullNode?.Dispose();
+            this.timer.Start();
             return this.Ok();
         }
 
@@ -401,6 +411,13 @@ namespace Stratis.Bitcoin.Controllers
         internal static Target GetNetworkDifficulty(INetworkDifficulty networkDifficulty = null)
         {
             return networkDifficulty?.GetNetworkDifficulty();
+        }
+
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            this.timer?.Dispose();
         }
     }
 }

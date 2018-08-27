@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security;
+using System.Timers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -31,6 +32,9 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
 
         /// <summary>The wallet manager.</summary>
         private readonly IWalletManager walletManager;
+
+        /// <summary>A timer that can be used to introduce a delay before the node stops staking.</summary>
+        private Timer timer;
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -124,17 +128,23 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// Stop staking.
         /// </summary>
         /// <param name="delayInSeconds">Delay, in seconds, after which the staking will stop.</param>
+        /// <remarks>
+        /// The [FromBody] parameter <code>delayInSeconds</code> has been added here to prevent a CORS call from triggering method execution.
+        /// <seealso cref="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"/>
+        /// </remarks>
         /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
         [Route("stopstaking")]
         [HttpPost]
-        public IActionResult StopStakingAsync([FromBody] int delayInSeconds = 0)
+        public IActionResult StopStaking([FromBody] int delayInSeconds = 0)
         {
             if (!this.fullNode.Network.Consensus.IsProofOfStake)
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Stake");
 
-            var timer = new System.Timers.Timer(delayInSeconds * 1000);
+            this.timer?.Dispose();
 
-            timer.Elapsed += (a, s) =>
+            this.timer = new Timer(delayInSeconds * 1000);
+
+            this.timer.Elapsed += (a, s) =>
             {
                 try
                 {
@@ -146,8 +156,15 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                 }
             };
 
-            timer.Start();
+            this.timer.Start();
             return this.Ok();
+        }
+
+        /// <inheritdoc />
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            this.timer?.Dispose();
         }
     }
 }
