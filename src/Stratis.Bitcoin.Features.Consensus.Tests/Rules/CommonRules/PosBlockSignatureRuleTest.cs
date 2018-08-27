@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         /// <summary>
-        /// This helper creates a cold coin staking block containing a cold coin staking transaction built according to
+        /// This helper creates a coin staking block containing a coin staking transaction built according to
         /// the parameters and with valid first input and output. The block signature is created correctly with the
         /// private key corresponding to the public key.
         /// </summary>
@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// <param name="includeSecondPush">Determines whether the second transaction output will include a small integer
         /// after the public key.</param>
         /// <param name="expectFailure">Determines whether we expect failure (versus success).</param>
-        private void ProofOfStakeBlock_ColdStakeTestHelper(bool useCompressedKey, bool includeSecondPush, bool expectFailure)
+        private void ProofOfStakeBlock_CoinStakeTestHelper(bool useCompressedKey, bool includeSecondPush, bool expectFailure)
         {
             Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
 
@@ -345,9 +345,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// with the block signature correctly created with the corresponding private key expect success.
         /// </summary>
         [Fact]
-        public async Task ProofOfStakeBlock_ValidColdStakeBlockDoesNotThrowExceptionAsync()
+        public async Task ProofOfStakeBlock_ValidCoinStakeBlockDoesNotThrowExceptionAsync()
         {
-            ProofOfStakeBlock_ColdStakeTestHelper(useCompressedKey: true, includeSecondPush: false, expectFailure: false);
+            ProofOfStakeBlock_CoinStakeTestHelper(useCompressedKey: true, includeSecondPush: false, expectFailure: false);
         }
 
         /// <summary>
@@ -355,9 +355,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// with the block signature correctly created with the corresponding private key expect failure.
         /// </summary>
         [Fact]
-        public async Task ProofOfStakeBlock_ValidColdStakeBlockExceptUncompressedKeyThrowsExceptionAsync()
+        public async Task ProofOfStakeBlock_ValidCoinStakeBlockExceptUncompressedKeyThrowsExceptionAsync()
         {
-            ProofOfStakeBlock_ColdStakeTestHelper(useCompressedKey: false, includeSecondPush: false, expectFailure: true);
+            ProofOfStakeBlock_CoinStakeTestHelper(useCompressedKey: false, includeSecondPush: false, expectFailure: true);
         }
 
         /// <summary>
@@ -366,9 +366,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// expect failure.
         /// </summary>
         [Fact]
-        public async Task ProofOfStakeBlock_ValidColdStakeBlockExceptExtraPushThrowsExceptionAsync()
+        public async Task ProofOfStakeBlock_ValidCoinStakeBlockExceptExtraPushThrowsExceptionAsync()
         {
-            ProofOfStakeBlock_ColdStakeTestHelper(useCompressedKey: true, includeSecondPush: true, expectFailure: true);
+            ProofOfStakeBlock_CoinStakeTestHelper(useCompressedKey: true, includeSecondPush: true, expectFailure: true);
         }
     }
 }
