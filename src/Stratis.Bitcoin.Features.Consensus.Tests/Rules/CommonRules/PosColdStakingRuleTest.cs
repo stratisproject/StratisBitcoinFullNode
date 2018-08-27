@@ -39,12 +39,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var scriptPubKey2 = new Script(OpcodeType.OP_2);
 
             // Add dummy first transaction.
-            var transaction = this.network.CreateTransaction();
+            Transaction transaction = this.network.CreateTransaction();
             transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
             block.Transactions.Add(transaction);
 
             // Create a previous transaction with scriptPubKey outputs.
-            var prevTransaction = this.network.CreateTransaction();
+            Transaction prevTransaction = this.network.CreateTransaction();
             prevTransaction.Outputs.Add(new TxOut(15, scriptPubKey1));
             prevTransaction.Outputs.Add(new TxOut(25, inputScriptPubKeysDiffer ? scriptPubKey2 : scriptPubKey1));
 
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             (this.ruleContext as UtxoRuleContext).UnspentOutputSet.Update(prevTransaction, 0);
 
             // Create cold coin stake transaction.
-            var coinstakeTransaction = this.network.CreateTransaction();
+            Transaction coinstakeTransaction = this.network.CreateTransaction();
             coinstakeTransaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(prevTransaction, 0),
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 return;
             }
 
-            // No error is expected. Attempt to run the error normally.
+            // No error is expected. Attempt to run the rule normally.
             await rule.RunAsync(this.ruleContext);
         }
 
