@@ -19,18 +19,6 @@ namespace Stratis.SmartContracts.Core
         private readonly Money mempoolFee;
 
         /// <inheritdoc />
-        public bool IsCreate
-        {
-            get { return this.contractTxOut.ScriptPubKey.IsSmartContractCreate(); }
-        }
-
-        /// <inheritdoc />
-        public bool IsCall
-        {
-            get { return this.contractTxOut.ScriptPubKey.IsSmartContractCall(); }
-        }
-
-        /// <inheritdoc />
         public uint256 TransactionHash
         {
             get { return this.transaction.GetHash(); }

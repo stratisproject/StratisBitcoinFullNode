@@ -45,16 +45,6 @@ namespace Stratis.SmartContracts.Core
         ulong BlockHeight { get; }
 
         /// <summary>
-        /// Whether this transaction is creating a new contract.
-        /// </summary>
-        bool IsCreate { get; }
-
-        /// <summary>
-        /// Whether this transaction is calling a method on a contract.
-        /// </summary>
-        bool IsCall { get; }
-
-        /// <summary>
         /// Time as set on transaction.
         /// </summary>
         uint Time { get; }
