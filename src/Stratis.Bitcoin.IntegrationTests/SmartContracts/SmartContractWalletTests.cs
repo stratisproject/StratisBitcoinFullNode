@@ -427,6 +427,35 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 });
                 walletHistoryModel = (WalletHistoryModel)result.Value;
                 Assert.Equal(2, walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send).Count());
+
+                // Test serialization
+                // TODO: When refactoring integration tests, move this to the one place and test all types, from method param to storage to serialization.
+
+                var serializationRequest = new BuildCallContractTransactionRequest
+                {
+                    AccountName = AccountName,
+                    GasLimit = "10000",
+                    GasPrice = "1",
+                    Amount = "0",
+                    MethodName = "TestSerializer",
+                    ContractAddress = response.NewContractAddress,
+                    FeeAmount = "0.001",
+                    Password = Password,
+                    WalletName = WalletName,
+                    Sender = addr.Address
+                };
+                result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(serializationRequest);
+                var serializationResponse = (BuildCallContractTransactionResponse)result.Value;
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, serializationResponse.Hex);
+
+                // Would have only saved if execution completed successfully
+                counterRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
+                {
+                    ContractAddress = response.NewContractAddress.ToString(),
+                    StorageKey = "Int32",
+                    DataType = SmartContractDataType.Int
+                })).Value;
+                Assert.Equal("12345", counterRequestResult);
             }
         }
 
