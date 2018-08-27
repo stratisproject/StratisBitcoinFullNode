@@ -230,34 +230,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_ScriptKeyPassesBlockSignatureValidation_DoesNotThrowExceptionAsync()
-        {
-            Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
-            block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
-
-            Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
-            transaction.Inputs.Add(new TxIn()
-            {
-                PrevOut = new OutPoint(new uint256(15), 1),
-                ScriptSig = new Script()
-            });
-
-            transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
-            // push op_return to note external dependancy in front of pay to pubkey script so it does not match pay to pubkey template.
-            var scriptPubKeyOut = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(this.key.PubKey.ToBytes(true)), OpcodeType.OP_CHECKSIG);
-            transaction.Outputs.Add(new TxOut(Money.Zero, scriptPubKeyOut));
-            block.Transactions.Add(transaction);
-
-            ECDSASignature signature = this.key.Sign(block.GetHash());
-            (block as PosBlock).BlockSignature = new BlockSignature { Signature = signature.ToDER() };
-
-            this.ruleContext.ValidationContext.Block = block;
-            Assert.True(BlockStake.IsProofOfStake(this.ruleContext.ValidationContext.Block));
-
-            await this.consensusRules.RegisterRule<PosBlockSignatureRule>().RunAsync(this.ruleContext);
-        }
-
-        [Fact]
         public async Task RunAsync_ProofOfStakeBlock_PayToPubKeyScriptPassesBlockSignatureValidation_DoesNotThrowExceptionAsync()
         {
             Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
