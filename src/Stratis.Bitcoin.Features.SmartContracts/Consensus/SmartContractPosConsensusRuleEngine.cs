@@ -39,8 +39,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             IStakeChain stakeChain,
             IStakeValidator stakeValidator,
             ICoinView utxoSet,
-            IChainState chainState)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, stakeChain, stakeValidator, chainState)
+            IChainState chainState,
+            IInvalidBlockHashStore invalidBlockHashStore)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore)
         {
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;

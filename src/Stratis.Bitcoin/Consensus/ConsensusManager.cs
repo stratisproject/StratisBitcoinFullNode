@@ -49,6 +49,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IBlockStore blockStore;
         private readonly IFinalizedBlockInfo finalizedBlockInfo;
         private readonly IBlockPuller blockPuller;
+        private readonly IIntegrityValidator integrityValidator;
 
         /// <inheritdoc />
         public ChainedHeader Tip { get; private set; }
@@ -97,10 +98,12 @@ namespace Stratis.Bitcoin.Consensus
             IInitialBlockDownloadState ibdState,
             ConcurrentChain chain,
             IBlockPuller blockPuller,
-            IBlockStore blockStore)
+            IBlockStore blockStore,
+            IInvalidBlockHashStore invalidHashesStore)
         {
             this.network = network;
             this.chainState = chainState;
+            this.integrityValidator = integrityValidator;
             this.partialValidator = partialValidator;
             this.consensusRules = consensusRules;
             this.signals = signals;
@@ -110,7 +113,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, integrityValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings);
+            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, invalidHashesStore);
 
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
@@ -351,6 +354,15 @@ namespace Stratis.Bitcoin.Consensus
             else
             {
                 var peersToBan = new List<INetworkPeer>();
+
+                // TODO ACTIVATION implement following (used to be in consensus loop)
+                //if (validationContext.Error == ConsensusErrors.BadWitnessNonceSize)
+                //{
+                //    this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
+                //    this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
+                //    this.Puller.RequestOptions(TransactionOptions.Witness);
+                //    return;
+                //}
 
                 lock (this.peerLock)
                 {
@@ -658,7 +670,10 @@ namespace Stratis.Bitcoin.Consensus
 
             if (connectBlockResult.Succeeded)
             {
+                // Even though reconnection was successful we return result with success == false because
+                // full validation of the chain we originally wanted to connect was failed.
                 var result = new ConnectBlocksResult(false) { ConsensusTipChanged = false };
+
                 this.logger.LogTrace("(-):'{0}'", result);
                 return result;
             }
@@ -924,26 +939,36 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (block != null)
                 {
-                    try
-                    {
-                        chainedHeader = this.chainedHeaderTree.FindHeaderAndVerifyBlockIntegrity(block);
-                    }
-                    catch (BlockDownloadedForMissingChainedHeaderException)
+                    chainedHeader = this.chainedHeaderTree.GetChainedHeader(blockHash);
+
+                    if (chainedHeader == null)
                     {
                         this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
-                        return;
-                    }
-                    catch (IntegrityValidationFailedException integrityException)
-                    {
-                        this.peerBanning.BanAndDisconnectPeer(integrityException.PeerEndPoint, integrityException.BanDurationSeconds, $"Integrity validation failed: {integrityException.Error.Message}");
-
-                        this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
                         return;
                     }
                 }
                 else
                 {
                     this.logger.LogDebug("Block '{0}' failed to be delivered.", blockHash);
+                }
+            }
+
+            if (block != null)
+            {
+                ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, block);
+
+                if (result.Error != null)
+                {
+                    this.peerBanning.BanAndDisconnectPeer(result.Peer, result.BanDurationSeconds, $"Integrity validation failed: {result.Error.Message}");
+
+                    lock (this.peerLock)
+                    {
+                        // Ask block puller to deliver this block again. Do it with high priority and avoid normal queue.
+                        this.blockPuller.RequestBlocksDownload(new List<ChainedHeader>() { chainedHeader }, true);
+                    }
+
+                    this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
+                    return;
                 }
             }
 
@@ -1054,6 +1079,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>
         /// Requests that have too many blocks will be split in batches.
         /// The amount of blocks in 1 batch to downloaded depends on the average value in <see cref="IBlockPuller.GetAverageBlockSizeBytes"/>.
+        /// Should be protected by the <see cref="peerLock"/>.
         /// </remarks>
         private void ProcessDownloadQueueLocked()
         {

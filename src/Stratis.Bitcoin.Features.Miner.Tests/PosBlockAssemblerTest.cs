@@ -439,7 +439,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new Mock<ICoinView>().Object,
                 new Mock<IStakeChain>().Object,
                 new Mock<IStakeValidator>().Object,
-                new Mock<IChainState>().Object);
+                new Mock<IChainState>().Object,
+                new InvalidBlockHashStore(new DateTimeProvider()));
 
             posConsensusRules.Register();
 

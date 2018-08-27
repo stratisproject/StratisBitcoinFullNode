@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 return this.repositoryTipHashAndHeight;
             });
 
-            this.chainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider()));
+            this.chainState = new ChainState();
 
             this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(),
                 this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory());

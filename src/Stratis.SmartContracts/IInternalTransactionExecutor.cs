@@ -9,7 +9,7 @@
     public interface IInternalTransactionExecutor
     {
         /// <summary>
-        /// Transfer funds to another address. If address is a contract, will call the fallback function.
+        /// Transfer funds to another address. If address is a contract, will call the receive function.
         /// </summary>
         /// <param name="smartContractState">State representing existing contract's context.</param>
         /// <param name="addressTo">Where the funds will be transferred to.</param>
