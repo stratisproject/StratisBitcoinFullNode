@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
-using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.Core.Receipts;
 
 namespace Stratis.SmartContracts.Core
 {
@@ -53,5 +53,7 @@ namespace Stratis.SmartContracts.Core
         /// </para>
         /// </summary>
         List<TxOut> Refunds { get; set; }
+
+        IList<Log> Logs { get; set; }
     }
 }

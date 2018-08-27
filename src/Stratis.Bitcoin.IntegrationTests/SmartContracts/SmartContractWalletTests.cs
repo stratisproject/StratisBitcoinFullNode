@@ -1,6 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
@@ -24,6 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
     {
         private const string WalletName = "mywallet";
         private const string Password = "123456";
+        private const string Passphrase = "passphrase";
         private const string AccountName = "account 0";
 
         /// <summary>
@@ -42,8 +46,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
-                Mnemonic mnemonic1 = scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
-                Mnemonic mnemonic2 = scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                Mnemonic mnemonic1 = scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
+                Mnemonic mnemonic2 = scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
                 Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
@@ -112,8 +116,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
-                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
-                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
+                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
                 Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
@@ -257,7 +261,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
 
-                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
                 Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
@@ -310,8 +314,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scReceiver.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
                 int maturity = (int)scReceiver.FullNode.Network.Consensus.CoinbaseMaturity;
 
-                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
-                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
+                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
                 Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
@@ -357,6 +361,13 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 });
                 var walletHistoryModel = (WalletHistoryModel)result.Value;
                 Assert.Single(walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send));
+
+                // Check receipt was stored and can be retrieved.
+                var receiptResponse = (ReceiptResponse) ((JsonResult)senderSmartContractsController.GetReceipt(response.TransactionId.ToString())).Value;
+                Assert.True(receiptResponse.Success);
+                Assert.Equal(response.NewContractAddress, receiptResponse.NewContractAddress);
+                Assert.Null(receiptResponse.To);
+                Assert.Equal(addr.Address, receiptResponse.From);
 
                 string storageRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
                 {
@@ -430,6 +441,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         [Fact]
         public void MockChain_AuctionTest()
         {
+            var network = new SmartContractsRegTest(); // ew hack. TODO: Expose from MockChain or MockChainNode.
+
             using (MockChain chain = new MockChain(2))
             {
                 MockChainNode sender = chain.Nodes[0];
@@ -443,14 +456,26 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Create contract and ensure code exists
                 BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, new string[] { "10#20" });
                 receiver.WaitMempoolCount(1);
-                receiver.MineBlocks(2);
+                receiver.MineBlocks(1);
                 Assert.NotNull(receiver.GetCode(response.NewContractAddress));
                 Assert.NotNull(sender.GetCode(response.NewContractAddress));
+
+                // Test that the contract address, event name, and logging values are available in the bloom.
+                var scBlockHeader = receiver.GetLastBlock().Header as SmartContractBlockHeader;
+                Assert.True(scBlockHeader.LogsBloom.Test(new Address(response.NewContractAddress).ToUint160(network).ToBytes()));
+                Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("Created")));
+                Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes((ulong) 20)));
+                // And sanity test that a random value is not available in bloom.
+                Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
+
+                // Test that the event can be searched for...
+                var receiptsFromSearch = sender.GetReceipts(response.NewContractAddress, "Created");
+                Assert.Single(receiptsFromSearch);
 
                 // Call contract and ensure owner is now highest bidder
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("Bid", response.NewContractAddress, 2);
                 receiver.WaitMempoolCount(1);
-                receiver.MineBlocks(2);
+                receiver.MineBlocks(1);
                 Assert.Equal(sender.GetStorageValue(response.NewContractAddress, "Owner"), sender.GetStorageValue(response.NewContractAddress, "HighestBidder"));
 
                 // Wait 20 blocks and end auction and check for transaction to victor
@@ -480,8 +505,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scReceiver.FullNode.Network.Consensus.CoinbaseMaturity = 1L;
                 int maturity = (int)scReceiver.FullNode.Network.Consensus.CoinbaseMaturity;
 
-                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
-                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
+                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
                 HdAddress addr = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
                 Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
                 Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;

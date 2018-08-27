@@ -83,9 +83,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <remarks>
         /// TODO - Make this a generic 'rewrite' method and pass in a rewriter.
         /// </remarks>
-        public void InjectMethodGas(string typeName, string methodName)
+        public void InjectMethodGas(string typeName, MethodCall methodCall)
         {
-            this.ModuleDefinition = SmartContractGasInjector.AddGasCalculationToContractMethod(this.ModuleDefinition, typeName, methodName);
+            this.ModuleDefinition = SmartContractGasInjector.AddGasCalculationToContractMethod(this.ModuleDefinition, typeName, methodCall.Name);
         }
 
         public void Dispose()
