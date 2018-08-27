@@ -362,6 +362,13 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var walletHistoryModel = (WalletHistoryModel)result.Value;
                 Assert.Single(walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send));
 
+                // Check receipt was stored and can be retrieved.
+                var receiptResponse = (ReceiptResponse) ((JsonResult)senderSmartContractsController.GetReceipt(response.TransactionId.ToString())).Value;
+                Assert.True(receiptResponse.Success);
+                Assert.Equal(response.NewContractAddress, receiptResponse.NewContractAddress);
+                Assert.Null(receiptResponse.To);
+                Assert.Equal(addr.Address, receiptResponse.From);
+
                 string storageRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
                 {
                     ContractAddress = response.NewContractAddress.ToString(),
@@ -460,6 +467,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes((ulong) 20)));
                 // And sanity test that a random value is not available in bloom.
                 Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
+
+                // Test that the event can be searched for...
+                var receiptsFromSearch = sender.GetReceipts(response.NewContractAddress, "Created");
+                Assert.Single(receiptsFromSearch);
 
                 // Call contract and ensure owner is now highest bidder
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("Bid", response.NewContractAddress, 2);

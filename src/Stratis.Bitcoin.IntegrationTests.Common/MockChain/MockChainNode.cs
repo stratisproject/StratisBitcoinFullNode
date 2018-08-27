@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -104,6 +105,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
             };
             JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCreateSmartContractTransaction(request);
             return (BuildCreateContractTransactionResponse)response.Value;
+        }
+
+        /// <summary>
+        /// Retrieves receipts for all cases where a specific event was logged in a specific contract.
+        /// </summary>
+        /// <param name="contractAddress"></param>
+        /// <param name="eventName"></param>
+        /// <returns></returns>
+        public IList<ReceiptResponse> GetReceipts(string contractAddress, string eventName)
+        {
+            JsonResult response = (JsonResult)this.smartContractsController.ReceiptSearch(contractAddress, eventName).Result;
+            return (IList<ReceiptResponse>) response.Value;
         }
 
         /// <summary>
