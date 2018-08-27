@@ -371,7 +371,7 @@ namespace Stratis.Bitcoin.Controllers
         {
             this.timer?.Dispose();
 
-            this.timer = new Timer(delayInSeconds * 1000);
+            this.timer = new Timer(Math.Max(delayInSeconds * 1000, 1));
             // Start the node shutdown process on timer elapsed.
             this.timer.Elapsed += (a, s) => this.fullNode?.Dispose();
             this.timer.Start();
