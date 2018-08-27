@@ -25,6 +25,7 @@ Stratis Bitcoin is based on the [NBitcoin](https://github.com/MetacoSA/NBitcoin)
 For Proof of Stake support on the Stratis token the node is using [NStratis](https://github.com/stratisproject/NStratis) which is a POS implementation of NBitcoin.  
 
 [.NET Core](https://dotnet.github.io/) is an open source cross platform framework and enables the development of applications and services on Windows, macOS and Linux.  
+
 Join our community on [discord](https://discord.gg/9tDyfZs).  
 
 The design
@@ -94,7 +95,7 @@ Check this guides for more info:
 * [Wiki Page](https://stratisplatform.atlassian.net/wiki/spaces/WIKI/overview)
 
 There is a lot to do and we welcome contributers developers and testers who want to get some Blockchain experience.
-You can find tasks at the issues/projects or visit the [Stratis Development Foundation](http://stratisdevelopmentfoundation.com/).
+You can find tasks at the issues/projects or visit the dev_general channel on [discord](https://discord.gg/9tDyfZs).
 
 Testing
 -------
