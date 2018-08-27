@@ -21,19 +21,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         /// <summary>
-        /// This helper tests various scenarios related to the PosColdStakingRule. The parameters determine the test cases.
+        /// This helper tests various scenarios related to the <see cref="PosColdStakingRule"/>. The parameters determine the test cases.
         /// </summary>
         /// <param name="isColdCoinStake">Tests the scenario where a hotPubKey was used to spend a cold stake transaction input.</param>
         /// <param name="inputScriptPubKeysDiffer">Tests the scenario where some of the input scriptPubKeys differ.</param>
         /// <param name="outputScriptPubKeysDiffer">Tests the scenario where some of the output scriptPubKeys differ.</param>
         /// <param name="badSecondOutput">Tests the scenario where the second output is not an OP_RETURN followed by some data.</param>
-        /// <param name="inputsExceedOutputs">Tests the scenario where the output amount exceeds the input amount.</param>
-        /// <param name="expectedError">The error expected by running this test. Set to null if no error is expected.</param>
+        /// <param name="inputsExceedOutputs">Tests the scenario where the input amount exceeds the output amount.</param>
+        /// <param name="expectedError">The error expected by running this test. Set to <c>null</c> if no error is expected.</param>
         private async Task PosColdStakingRuleTestHelperAsync(bool isColdCoinStake, bool inputScriptPubKeysDiffer, bool outputScriptPubKeysDiffer,
             bool badSecondOutput, bool inputsExceedOutputs, ConsensusError expectedError)
         {
-            var rule = this.CreateRule<PosColdStakingRule>();
-
             Block block = this.ruleContext.ValidationContext.BlockToValidate;
 
             // Create two scripts that are different.
@@ -48,35 +46,37 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             // Create a previous transaction with scriptPubKey outputs.
             var prevTransaction = this.network.CreateTransaction();
             prevTransaction.Outputs.Add(new TxOut(15, scriptPubKey1));
-            prevTransaction.Outputs.Add(new TxOut(25, inputScriptPubKeysDiffer ? scriptPubKey2: scriptPubKey1));
+            prevTransaction.Outputs.Add(new TxOut(25, inputScriptPubKeysDiffer ? scriptPubKey2 : scriptPubKey1));
 
             // Record the spendable outputs.
             (this.ruleContext as UtxoRuleContext).UnspentOutputSet.Update(prevTransaction, 0);
 
             // Create cold coin stake transaction.
-            transaction = this.network.CreateTransaction();
-            transaction.Inputs.Add(new TxIn()
+            var coinstakeTransaction = this.network.CreateTransaction();
+            coinstakeTransaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(prevTransaction, 0),
                 ScriptSig = new Script()
             });
 
-            transaction.Inputs.Add(new TxIn()
+            coinstakeTransaction.Inputs.Add(new TxIn()
             {
                 PrevOut = new OutPoint(prevTransaction, 1),
                 ScriptSig = new Script()
             });
 
-            transaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
-            transaction.Outputs.Add(new TxOut(Money.Zero, badSecondOutput ?
+            coinstakeTransaction.Outputs.Add(new TxOut(Money.Zero, (IDestination)null));
+            coinstakeTransaction.Outputs.Add(new TxOut(Money.Zero, badSecondOutput ?
                 new Script() : new Script(OpcodeType.OP_RETURN, Op.GetPushOp(new Key().PubKey.Compress().ToBytes()))));
-            transaction.Outputs.Add(new TxOut(inputsExceedOutputs ? 10 : 15, scriptPubKey1));
-            transaction.Outputs.Add(new TxOut(25, outputScriptPubKeysDiffer ? scriptPubKey2 : scriptPubKey1));
+            coinstakeTransaction.Outputs.Add(new TxOut(inputsExceedOutputs ? 10 : 15, scriptPubKey1));
+            coinstakeTransaction.Outputs.Add(new TxOut(25, outputScriptPubKeysDiffer ? scriptPubKey2 : scriptPubKey1));
 
-            (transaction as PosTransaction).IsColdCoinStake = isColdCoinStake;
+            // Set this flag which is expected to be set by the preceding PosCoinview rule if this were run in an integrated scenario.
+            (coinstakeTransaction as PosTransaction).IsColdCoinStake = isColdCoinStake;
 
-            block.Transactions.Add(transaction);
+            block.Transactions.Add(coinstakeTransaction);
 
+            // Finalize the block and add it to the chain.
             block.Header.HashPrevBlock = this.concurrentChain.Tip.HashBlock;
             block.Header.Time = (uint)1483747200;
             block.Transactions[0].Time = (uint)1483747200;
@@ -88,6 +88,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.concurrentChain.SetTip(block.Header);
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = this.concurrentChain.Tip;
 
+            // Execute the rule and check the outcome against what is expected.
+            var rule = this.CreateRule<PosColdStakingRule>();
+
+            // If an error is expeected then capture the error and compare it against the expected error.
             if (expectedError != null)
             {
                 ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => rule.RunAsync(this.ruleContext).GetAwaiter().GetResult());
@@ -97,11 +101,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 return;
             }
 
+            // No error is expected. Attempt to run the error normally.
             await rule.RunAsync(this.ruleContext);
         }
 
         /// <summary>
-        /// Create a transaction where all inputs of this transaction are not using the same ScriptPubKey. The validation should fail.
+        /// Create a transaction where all inputs and outputs of this transaction are using the same ScriptPubKeys. Also, the second output is as
+        /// expected (an OP_RETURN followed by a compressed public key) and the input does not exceed the output. No exception should be thrown.
         /// </summary>
         [Fact]
         public async Task PosColdStakeValidBlockDoesNotThrowExceptionAsync()
@@ -111,8 +117,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         /// <summary>
-        /// Create a transaction where some of the outputs (except for the marker output and the pubkey output) are using a different ScriptPubKey
-        /// from the input transactions. The validation should fail.
+        /// Create a transaction where all inputs of this transaction are not using the same ScriptPubKeys. The validation should fail.
         /// </summary>
         [Fact]
         public async Task PosColdStakeWithMismatchingScriptPubKeyInputsThrowExceptionAsync()
@@ -122,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         /// <summary>
-        /// Create a transaction where some of the outputs (except for the marker output and the pubkey output) are using a different ScriptPubKey
+        /// Create a transaction where some of the outputs (except for the marker output and the pubkey output) are using a different ScriptPubKeys
         /// from the input transactions. The validation should fail.
         /// </summary>
         [Fact]
@@ -154,13 +159,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         /// <summary>
-        /// Create a transaction that is not a cold coin stake transaction. The validation should succeed.
+        /// Create a transaction that is not a cold coin stake transaction but would otherwise fail all the tests. The validation should succeed.
         /// </summary>
         [Fact]
         public async Task PosCoinStakeWhichIsNotColdCoinStakeDoesNotThrowExceptionAsync()
         {
-            await PosColdStakingRuleTestHelperAsync(isColdCoinStake: false, inputScriptPubKeysDiffer: false, outputScriptPubKeysDiffer: false,
-                badSecondOutput: false, inputsExceedOutputs: false, expectedError: null);
+            await PosColdStakingRuleTestHelperAsync(isColdCoinStake: false, inputScriptPubKeysDiffer: true, outputScriptPubKeysDiffer: true,
+                badSecondOutput: true, inputsExceedOutputs: true, expectedError: null);
         }
     }
 }
