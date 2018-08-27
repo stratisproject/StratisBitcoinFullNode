@@ -516,22 +516,7 @@ namespace Stratis.Bitcoin.Consensus
             List<ChainedHeaderBlock> disconnectedBlocks = null;
 
             if (!isExtension)
-            {
-                // Save blocks that will be disconnected in case we will need to reconnect them (this might happen if connection of a new chain fails).
-                disconnectedBlocks = new List<ChainedHeaderBlock>(oldTip.Height - fork.Height);
-
-                ChainedHeader current = oldTip;
-
-                while (current != fork)
-                {
-                    disconnectedBlocks.Add(new ChainedHeaderBlock(current.Block, current));
-                    current = current.Previous;
-                }
-
-                disconnectedBlocks.Reverse();
-
-                await this.RewindToForkPointAsync(fork, oldTip).ConfigureAwait(false);
-            }
+                disconnectedBlocks = await this.RewindToForkPointAsync(fork, oldTip).ConfigureAwait(false);
 
             List<ChainedHeaderBlock> blocksToConnect = await this.TryGetBlocksToConnectAsync(newTip, fork.Height + 1).ConfigureAwait(false);
 
@@ -574,7 +559,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="fork">The fork point. It can't be ahead of <paramref name="oldTip"/>.</param>
         /// <param name="oldTip">The old tip.</param>
         /// <exception cref="ConsensusException">Thrown in case <paramref name="fork"/> is ahead of the <paramref name="oldTip"/>.</exception>
-        private async Task RewindToForkPointAsync(ChainedHeader fork, ChainedHeader oldTip)
+        /// <returns>List of blocks that were disconnected.</returns>
+        private async Task<List<ChainedHeaderBlock>> RewindToForkPointAsync(ChainedHeader fork, ChainedHeader oldTip)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}'", nameof(fork), fork, nameof(oldTip), oldTip);
 
@@ -584,6 +570,10 @@ namespace Stratis.Bitcoin.Consensus
                 this.logger.LogTrace("(-)[INVALID_FORK_POINT]");
                 throw new ConsensusException("Fork can't be ahead of tip!");
             }
+
+            // Save blocks that will be disconnected in case we will need to
+            // reconnect them. This might happen if connection of a new chain fails.
+            var disconnectedBlocks = new List<ChainedHeaderBlock>(oldTip.Height - fork.Height);
 
             ChainedHeader current = oldTip;
 
@@ -596,12 +586,18 @@ namespace Stratis.Bitcoin.Consensus
                     this.SetConsensusTipInternalLocked(current.Previous);
                 }
 
-                this.signals.SignalBlockDisconnected(new ChainedHeaderBlock(current.Block, current));
+                var disconnectedBlock = new ChainedHeaderBlock(current.Block, current);
+                disconnectedBlocks.Add(disconnectedBlock);
+
+                this.signals.SignalBlockDisconnected(disconnectedBlock);
 
                 current = current.Previous;
             }
 
-            this.logger.LogTrace("(-)");
+            disconnectedBlocks.Reverse();
+
+            this.logger.LogTrace("(-):*.{0}={1}", nameof(disconnectedBlocks.Count), disconnectedBlocks.Count);
+            return disconnectedBlocks;
         }
 
         /// <summary>Connects new chain.</summary>
