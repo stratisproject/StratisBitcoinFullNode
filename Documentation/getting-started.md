@@ -13,7 +13,7 @@
 ## Prerequisites
 
 To install and run the node, you need
-* [.NET Core 2.0](https://www.microsoft.com/net/download/core)
+* [.NET Core 2.1](https://www.microsoft.com/net/download/core)
 * [Git](https://git-scm.com/)
 
 ## Build instructions
@@ -67,7 +67,7 @@ You just need to edit the file and specify whether you want to run a Stratis or 
 It's located [here](https://gist.github.com/bokobza/e68832f5d7d4102bcb33fcde8d9a72fb#file-build-and-run-a-stratis-node-ps1).
 
 ### Faucet
-If you need testnet funds (TSTRAT) for testing there is a faucet setup [here](https://faucet.stratisplatform.com/)
+If you need testnet funds (TSTRAT) for testing there is a faucet located [here](https://faucet.stratisplatform.com/).
 
 Docker Containers
 -------------------
