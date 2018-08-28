@@ -5,6 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -120,7 +121,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                 e.AddFeature<DummyFeature>();
             });
 
-            IFullNode result = this.fullNodeBuilder.Build();
+            IFullNode result = this.fullNodeBuilder.UsePosConsensus().Build();
 
             Assert.NotNull(result);
         }

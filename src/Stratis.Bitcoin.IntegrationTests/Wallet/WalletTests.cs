@@ -37,8 +37,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisReceiver.NotInIBD();
 
                 // Get a private key from the wallet
-                Mnemonic mnemonic1 = stratisSender.FullNode.WalletManager().CreateWallet("123456", "mywallet");
-                Mnemonic mnemonic2 = stratisReceiver.FullNode.WalletManager().CreateWallet("123456", "mywallet");
+                Mnemonic mnemonic1 = stratisSender.FullNode.WalletManager().CreateWallet("123456", "mywallet", "passphrase");
+                Mnemonic mnemonic2 = stratisReceiver.FullNode.WalletManager().CreateWallet("123456", "mywallet", "passphrase");
                 Assert.Equal(12, mnemonic1.Words.Length);
                 Assert.Equal(12, mnemonic2.Words.Length);
                 HdAddress addr = stratisSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
@@ -133,8 +133,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisReorg.NotInIBD().WithWallet();
 
                 // Get a private key from the wallet
-                Mnemonic mnemonic1 = stratisSender.FullNode.WalletManager().CreateWallet("123456", "mywallet");
-                Mnemonic mnemonic2 = stratisReceiver.FullNode.WalletManager().CreateWallet("123456", "mywallet");
+                Mnemonic mnemonic1 = stratisSender.FullNode.WalletManager().CreateWallet("123456", "mywallet", "passphrase");
+                Mnemonic mnemonic2 = stratisReceiver.FullNode.WalletManager().CreateWallet("123456", "mywallet", "passphrase");
                 Assert.Equal(12, mnemonic1.Words.Length);
                 Assert.Equal(12, mnemonic2.Words.Length);
                 HdAddress addr = stratisSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
@@ -402,7 +402,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisminer.NotInIBD();
 
                 // get a key from the wallet
-                Mnemonic mnemonic = stratisminer.FullNode.WalletManager().CreateWallet("123456", "mywallet");
+                Mnemonic mnemonic = stratisminer.FullNode.WalletManager().CreateWallet("123456", "mywallet", "passphrase");
                 Assert.Equal(12, mnemonic.Words.Length);
                 HdAddress addr = stratisminer.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
                 Features.Wallet.Wallet wallet = stratisminer.FullNode.WalletManager().GetWalletByName("mywallet");
@@ -432,7 +432,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisNodeSync.NotInIBD();
 
                 // Get a private key from the wallet
-                Mnemonic mnemonic = stratisNodeSync.FullNode.WalletManager().CreateWallet("123456", "mywallet");
+                Mnemonic mnemonic = stratisNodeSync.FullNode.WalletManager().CreateWallet("123456", "mywallet", "passphrase");
                 Assert.Equal(12, mnemonic.Words.Length);
                 HdAddress addr = stratisNodeSync.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("mywallet", "account 0"));
                 Features.Wallet.Wallet wallet = stratisNodeSync.FullNode.WalletManager().GetWalletByName("mywallet");

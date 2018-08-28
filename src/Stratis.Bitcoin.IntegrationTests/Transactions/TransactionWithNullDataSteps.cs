@@ -30,6 +30,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private uint256 blockWithOpReturnId;
 
         private readonly string password = "p@ssw0rd";
+        private readonly string passphrase = "p@ssphr@se";
         private readonly string opReturnContent = "extra informations!";
         private readonly int transferAmount = 31415;
 
@@ -58,11 +59,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
         private void a_sending_and_a_receiving_wallet()
         {
-            this.receiverNode.FullNode.WalletManager().CreateWallet(this.password, "receiver");
+            this.receiverNode.FullNode.WalletManager().CreateWallet(this.password, "receiver", this.passphrase);
             this.receiverAddress = this.receiverNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("receiver", "account 0"));
             this.sendingWallet = this.receiverNode.FullNode.WalletManager().GetWalletByName("receiver");
 
-            this.senderNode.FullNode.WalletManager().CreateWallet(this.password, "sender");
+            this.senderNode.FullNode.WalletManager().CreateWallet(this.password, "sender", this.passphrase);
             this.sendingWalletAccountReference = new WalletAccountReference("sender", "account 0");
             this.senderAddress = this.senderNode.FullNode.WalletManager().GetUnusedAddress(this.sendingWalletAccountReference);
             this.sendingWallet = this.senderNode.FullNode.WalletManager().GetWalletByName("sender");

@@ -29,40 +29,44 @@ namespace Stratis.Bitcoin.Features.Api
 
         private IWebHost webHost;
 
+        private readonly ICertificateStore certificateStore;
+
         public ApiFeature(
             IFullNodeBuilder fullNodeBuilder,
             FullNode fullNode,
             ApiFeatureOptions apiFeatureOptions,
             ApiSettings apiSettings,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            ICertificateStore certificateStore)
         {
             this.fullNodeBuilder = fullNodeBuilder;
             this.fullNode = fullNode;
             this.apiFeatureOptions = apiFeatureOptions;
             this.apiSettings = apiSettings;
+            this.certificateStore = certificateStore;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         public override void Initialize()
         {
             this.logger.LogInformation("API starting on URL '{0}'.", this.apiSettings.ApiUri);
-            this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.apiSettings);
+            this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.apiSettings, this.certificateStore, new WebHostBuilder());
+
+            if (this.apiSettings.KeepaliveTimer == null)
+                return;
 
             // Start the keepalive timer, if set.
             // If the timer expires, the node will shut down.
-            if (this.apiSettings.KeepaliveTimer != null)
+            this.apiSettings.KeepaliveTimer.Elapsed += (sender, args) =>
             {
-                this.apiSettings.KeepaliveTimer.Elapsed += (sender, args) =>
-                {
-                    this.logger.LogInformation($"The application will shut down because the keepalive timer has elapsed.");
+                this.logger.LogInformation($"The application will shut down because the keepalive timer has elapsed.");
 
-                    this.apiSettings.KeepaliveTimer.Stop();
-                    this.apiSettings.KeepaliveTimer.Enabled = false;
-                    this.fullNode.NodeLifetime.StopApplication();
-                };
+                this.apiSettings.KeepaliveTimer.Stop();
+                this.apiSettings.KeepaliveTimer.Enabled = false;
+                this.fullNode.NodeLifetime.StopApplication();
+            };
 
-                this.apiSettings.KeepaliveTimer.Start();
-            }
+            this.apiSettings.KeepaliveTimer.Start();
         }
 
         /// <summary>
@@ -129,6 +133,7 @@ namespace Stratis.Bitcoin.Features.Api
                         services.AddSingleton(fullNodeBuilder);
                         services.AddSingleton(options);
                         services.AddSingleton<ApiSettings>();
+                        services.AddSingleton<ICertificateStore, CertificateStore>();
                     });
             });
 

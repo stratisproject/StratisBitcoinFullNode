@@ -19,6 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
     {
         private const string WalletName = "mywallet";
         private const string Password = "123456";
+        private const string Passphrase = "test";
         private const string AccountName = "account 0";
 
         [Fact]
@@ -34,8 +35,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.NotInIBD();
                 scReceiver.NotInIBD();
 
-                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName);
-                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName);
+                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
+                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
                 HdAddress senderAddress = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
                 Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
                 Key senderKey = wallet.GetExtendedPrivateKeyForAddress(Password, senderAddress).PrivateKey;

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Moq;
 using NBitcoin;
 using Stratis.SmartContracts;
@@ -17,6 +16,29 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private Type type;
         private uint160 address;
         private IContract contract;
+
+        public class HasReceive : SmartContract
+        {
+            public HasReceive(ISmartContractState smartContractState)
+                : base(smartContractState)
+            {
+            }
+
+            public override void Receive()
+            {
+                this.ReceiveInvoked = true;
+            }
+
+            public bool ReceiveInvoked { get; private set; }
+        }
+
+        public class HasNoReceive : SmartContract
+        {
+            public HasNoReceive(ISmartContractState smartContractState)
+                : base(smartContractState)
+            {
+            }
+        }
 
         public class TestContract : SmartContract
         {
@@ -95,7 +117,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.type = typeof(TestContract);
             this.address = uint160.One;
             this.contract = Contract.CreateUninitialized(this.type, this.state, this.address);
-            this.instance = (TestContract) this.GetPrivateFieldValue(this.contract, "instance");
+            this.instance = (TestContract) this.contract.GetPrivateFieldValue("instance");
         }
 
         [Fact]
@@ -155,7 +177,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Invoke_Method_With_Null_Params()
         {
-            IContractInvocationResult result = this.contract.Invoke("Test1", null);
+            var methodCall = new MethodCall("Test1");
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
 
             Assert.True(result.IsSuccess);
             Assert.True(this.instance.Test1Called);
@@ -166,7 +189,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Invoke_Method_With_One_Params()
         {
             var param = 9999;
-            IContractInvocationResult result = this.contract.Invoke("Test2", new List<object>() { param });
+            var methodCall = new MethodCall("Test2", new object[] { param });
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
 
             Assert.True(result.IsSuccess);
             Assert.Equal(param, result.Return);
@@ -175,7 +200,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Invoke_Private_Method_Fails()
         {
-            IContractInvocationResult result = this.contract.Invoke("TestPrivate", new List<object>());
+            var methodCall = new MethodCall("TestPrivate");
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
             Assert.Equal(ContractInvocationErrorType.MethodDoesNotExist, result.InvocationErrorType);
@@ -184,7 +211,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Invoke_Method_Throws_Exception()
         {
-            IContractInvocationResult result = this.contract.Invoke("TestException", new List<object>());
+            var methodCall = new MethodCall("TestException");
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
             Assert.Equal(ContractInvocationErrorType.MethodThrewException, result.InvocationErrorType);
@@ -193,7 +222,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Invoke_Method_Throws_OutOfGasException()
         {
-            IContractInvocationResult result = this.contract.Invoke("TestOutOfGas", new List<object>());
+            var methodCall = new MethodCall("TestOutOfGas");
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
             Assert.Equal(ContractInvocationErrorType.OutOfGas, result.InvocationErrorType);
@@ -202,16 +233,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Invoke_Method_Sets_State()
         {
-            this.contract.Invoke("Test1", null);
+            var methodCall = new MethodCall("TestOutOfGas");
 
-            var gasMeter = this.GetInstancePrivateFieldValue("gasMeter");
-            var block = this.GetInstancePrivateFieldValue("Block");
-            var getBalance = this.GetInstancePrivateFieldValue("getBalance");
-            var internalTransactionExecutor = this.GetInstancePrivateFieldValue("internalTransactionExecutor");
-            var internalHashHelper = this.GetInstancePrivateFieldValue("internalHashHelper");
-            var message = this.GetInstancePrivateFieldValue("Message");
-            var persistentState = this.GetInstancePrivateFieldValue("PersistentState");
-            var smartContractState = this.GetInstancePrivateFieldValue("smartContractState");
+            this.contract.Invoke(methodCall);
+
+            var gasMeter = this.instance.GetBaseTypePrivateFieldValue("gasMeter");
+            var block = this.instance.GetBaseTypePrivateFieldValue("Block");
+            var getBalance = this.instance.GetBaseTypePrivateFieldValue("getBalance");
+            var internalTransactionExecutor = this.instance.GetBaseTypePrivateFieldValue("internalTransactionExecutor");
+            var internalHashHelper = this.instance.GetBaseTypePrivateFieldValue("internalHashHelper");
+            var message = this.instance.GetBaseTypePrivateFieldValue("Message");
+            var persistentState = this.instance.GetBaseTypePrivateFieldValue("PersistentState");
+            var smartContractState = this.instance.GetBaseTypePrivateFieldValue("smartContractState");
 
             Assert.NotNull(gasMeter);
             Assert.Equal(this.state.GasMeter, gasMeter);
@@ -252,16 +285,115 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(constructorExists);
         }
 
-        private object GetInstancePrivateFieldValue(string fieldName)
+        [Fact]
+        public void HasReceive_Returns_Correct_Receive()
         {
-            var field = this.instance.GetType().BaseType.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
-            return field.GetValue(this.instance);
+            var receiveContract = Contract.CreateUninitialized(typeof(HasReceive), this.state, this.address);
+
+            var receiveMethod = ((Contract) receiveContract).ReceiveHandler;
+
+            Assert.NotNull(receiveMethod);
         }
 
-        private object GetPrivateFieldValue(object obj, string fieldName)
+        [Fact]
+        public void HasNoReceive_Returns_Correct_Receive()
         {
-            var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
-            return field.GetValue(obj);
+            var receiveContract = Contract.CreateUninitialized(typeof(HasNoReceive), this.state, this.address);
+            var receiveInstance = (HasNoReceive)receiveContract.GetPrivateFieldValue("instance");
+
+            // ReceiveHandler should be null here because we set the binding flags to only resolve methods on the declared type
+            var receiveMethod = ((Contract)receiveContract).ReceiveHandler;
+
+            Assert.Null(receiveMethod);
+        }
+
+        [Fact]
+        public void EmptyMethodName_Invokes_Receive()
+        {
+            var receiveContract = Contract.CreateUninitialized(typeof(HasReceive), this.state, this.address);
+            var receiveInstance = (HasReceive) receiveContract.GetPrivateFieldValue("instance");
+            var methodCall = MethodCall.Receive();
+
+            var result = receiveContract.Invoke(methodCall);
+
+            Assert.True(result.IsSuccess);
+            Assert.True(receiveInstance.ReceiveInvoked);
+        }
+
+        [Fact]
+        public void EmptyMethodName_DoesNot_Invoke_Receive()
+        {
+            var receiveContract = Contract.CreateUninitialized(typeof(HasNoReceive), this.state, this.address);
+            var methodCall = MethodCall.Receive();
+
+            var result = receiveContract.Invoke(methodCall);
+
+            Assert.False(result.IsSuccess);
+        }
+
+        [Fact]
+        public void EmptyMethodName_WithParams_DoesNot_Invoke_Receive()
+        {
+            var receiveContract = Contract.CreateUninitialized(typeof(HasReceive), this.state, this.address);
+            var receiveInstance = (HasReceive)receiveContract.GetPrivateFieldValue("instance");
+
+            var parameters = new object[] { 1, "1" };
+            var methodCall = new MethodCall(MethodCall.ExternalReceiveHandlerName, parameters);
+            var result = receiveContract.Invoke(methodCall);
+
+            Assert.False(result.IsSuccess);
+            Assert.False(receiveInstance.ReceiveInvoked);
+            Assert.Equal(ContractInvocationErrorType.MethodDoesNotExist, result.InvocationErrorType);
+        }
+
+        [Fact]
+        public void Non_Existent_Method_DoesNot_Invoke_Receive()
+        {
+            var receiveContract = Contract.CreateUninitialized(typeof(HasReceive), this.state, this.address);
+            var receiveInstance = (HasReceive)receiveContract.GetPrivateFieldValue("instance");
+            var methodCall = new MethodCall("DoesntExist");
+
+            var result = receiveContract.Invoke(methodCall);
+
+            Assert.False(result.IsSuccess);
+            Assert.False(receiveInstance.ReceiveInvoked);
+            Assert.Equal(ContractInvocationErrorType.MethodDoesNotExist, result.InvocationErrorType);
+        }
+
+        [Fact]
+        public void Invoke_Receive_Method_Sets_State()
+        {
+            var methodCall = MethodCall.Receive();
+            var receiveContract = Contract.CreateUninitialized(typeof(HasReceive), this.state, this.address);
+            var receiveInstance = (HasReceive)receiveContract.GetPrivateFieldValue("instance");
+
+            receiveContract.Invoke(methodCall);
+
+            var gasMeter = receiveInstance.GetBaseTypePrivateFieldValue("gasMeter");
+            var block = receiveInstance.GetBaseTypePrivateFieldValue("Block");
+            var getBalance = receiveInstance.GetBaseTypePrivateFieldValue("getBalance");
+            var internalTransactionExecutor = receiveInstance.GetBaseTypePrivateFieldValue("internalTransactionExecutor");
+            var internalHashHelper = receiveInstance.GetBaseTypePrivateFieldValue("internalHashHelper");
+            var message = receiveInstance.GetBaseTypePrivateFieldValue("Message");
+            var persistentState = receiveInstance.GetBaseTypePrivateFieldValue("PersistentState");
+            var smartContractState = receiveInstance.GetBaseTypePrivateFieldValue("smartContractState");
+
+            Assert.NotNull(gasMeter);
+            Assert.Equal(this.state.GasMeter, gasMeter);
+            Assert.NotNull(block);
+            Assert.Equal(this.state.Block, block);
+            Assert.NotNull(getBalance);
+            Assert.Equal(this.state.GetBalance, getBalance);
+            Assert.NotNull(internalTransactionExecutor);
+            Assert.Equal(this.state.InternalTransactionExecutor, internalTransactionExecutor);
+            Assert.NotNull(internalHashHelper);
+            Assert.Equal(this.state.InternalHashHelper, internalHashHelper);
+            Assert.NotNull(message);
+            Assert.Equal(this.state.Message, message);
+            Assert.NotNull(persistentState);
+            Assert.Equal(this.state.PersistentState, persistentState);
+            Assert.NotNull(smartContractState);
+            Assert.Equal(this.state, smartContractState);
         }
     }
 }
