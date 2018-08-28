@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Mining;
-using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -191,8 +190,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.chain.SetTip(this.chain.GetBlock(0));
 
             this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>()))
-                .Callback<Block>((context) => { callbackBlock = context; })
-                .Returns(Task.FromResult(new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip)));
+                .Callback<Block>((block) => { callbackBlock = block; })
+                .ReturnsAsync(new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip));
             
             Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
             blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
@@ -229,7 +228,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.chain.SetTip(this.chain.GetBlock(0));
             var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
 
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(chainedHeader));
+            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).ReturnsAsync(chainedHeader);
             blockTemplate.Block.Header.Nonce = 0;
             blockTemplate.Block.Header.Bits = KnownNetworks.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
             
@@ -275,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
                     this.chain.SetTip(lastChainedHeader);
                 })
-                .Returns(Task.FromResult(chainedHeader));
+                .ReturnsAsync(chainedHeader);
 
             BlockTemplate blockTemplate2 = this.CreateBlockTemplate(this.fixture.Block2);
 
