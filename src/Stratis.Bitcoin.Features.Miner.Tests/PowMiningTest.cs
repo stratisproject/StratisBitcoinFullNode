@@ -187,16 +187,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
 
-            ValidationContext callbackValidationContext = null;
+            Block callbackBlock = null;
+            this.chain.SetTip(this.chain.GetBlock(0));
+
             this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>()))
-                .Callback<Block>((context) =>
-                {
-                })
+                .Callback<Block>((context) => { callbackBlock = context; })
                 .Returns(Task.FromResult(new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip)));
-
-
-            this.chain.SetTip(this.chain.GetBlock(0));
-
+            
             Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
             blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
 
@@ -205,18 +202,16 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Assert.NotEmpty(blockHashes);
             Assert.True(blockHashes.Count == 1);
-            Assert.Equal(callbackValidationContext.BlockToValidate.GetHash(), blockHashes[0]);
+            Assert.Equal(callbackBlock.GetHash(), blockHashes[0]);
         }
 
         [Fact]
-        public void GenerateBlocks_SingleBlock_ChainedBlockNotPresentInBlockValidationContext_ReturnsEmptyList()
+        public void GenerateBlocks_SingleBlock_InvalidPreviousTip_ContinuesExecution_ReturnsGeneratedBlock()
         {
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
-            var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
-
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(chainedHeader));
 
             this.chain.SetTip(this.chain.GetBlock(0));
+            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).ReturnsAsync((ChainedHeader)null);
 
             Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
             blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
@@ -225,59 +220,19 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             List<uint256> blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 1, uint.MaxValue);
 
             Assert.Empty(blockHashes);
-        }
-
-        [Fact]
-        public void GenerateBlocks_SingleBlock_ValidationContextError_ReturnsEmptyList()
-        {
-            BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
-            var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
-
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(chainedHeader));
-
-            this.chain.SetTip(this.chain.GetBlock(0));
-
-            Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
-            blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
-
-            PowMining miner = this.CreateProofOfWorkMiner(blockBuilder.Object);
-            List<uint256> blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 1, uint.MaxValue);
-
-            Assert.Empty(blockHashes);
-        }
-
-        [Fact]
-        public void GenerateBlocks_SingleBlock_BlockValidationContextErrorInvalidPrevTip_ContinuesExecution_ReturnsGeneratedBlock()
-        {
-            BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
-            var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
-
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(chainedHeader));
-            this.chain.SetTip(this.chain.GetBlock(0));
-
-            Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
-            blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
-
-            PowMining miner = this.CreateProofOfWorkMiner(blockBuilder.Object);
-            List<uint256> blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 1, uint.MaxValue);
-
-            Assert.NotEmpty(blockHashes);
-            Assert.True(blockHashes.Count == 1);
-            Assert.Equal(blockTemplate.Block.GetHash(), blockHashes[0]);
         }
 
         [Fact]
         public void GenerateBlocks_SingleBlock_MaxTriesReached_StopsGeneratingBlocks_ReturnsEmptyList()
         {
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
+            this.chain.SetTip(this.chain.GetBlock(0));
             var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
 
             this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(chainedHeader));
             blockTemplate.Block.Header.Nonce = 0;
             blockTemplate.Block.Header.Bits = KnownNetworks.TestNet.GetGenesis().Header.Bits; // make the difficulty harder.
-
-            this.chain.SetTip(this.chain.GetBlock(0));
-
+            
             Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
             blockBuilder.Setup(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript))).Returns(blockTemplate);
 
@@ -300,12 +255,27 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void GenerateBlocks_MultipleBlocks_ReturnsGeneratedBlocks()
         {
-            var callbackBlockValidationContexts = new List<ValidationContext>();
+            var blocksToValidate = new List<uint256>();
             ChainedHeader lastChainedHeader = null;
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
             var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
 
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(chainedHeader));
+            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>()))
+                .Callback<Block>((context) =>
+                {
+                    if (lastChainedHeader == null)
+                    {
+                        blocksToValidate.Add(this.fixture.ChainedHeader1.HashBlock);
+                        lastChainedHeader = this.fixture.ChainedHeader1;
+                    }
+                    else
+                    {
+                        blocksToValidate.Add(this.fixture.ChainedHeader2.HashBlock);
+                    }
+
+                    this.chain.SetTip(lastChainedHeader);
+                })
+                .Returns(Task.FromResult(chainedHeader));
 
             BlockTemplate blockTemplate2 = this.CreateBlockTemplate(this.fixture.Block2);
 
@@ -321,8 +291,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     {
                         if (attempts == 10)
                         {
-                                // sometimes the PoW nonce we generate in the fixture is not accepted resulting in an infinite loop. Retry.
-                                this.fixture.Block1 = this.fixture.PrepareValidBlock(this.chain.Tip, 1, this.fixture.Key.ScriptPubKey);
+                            // sometimes the PoW nonce we generate in the fixture is not accepted resulting in an infinite loop. Retry.
+                            this.fixture.Block1 = this.fixture.PrepareValidBlock(this.chain.Tip, 1, this.fixture.Key.ScriptPubKey);
                             this.fixture.ChainedHeader1 = new ChainedHeader(this.fixture.Block1.Header, this.fixture.Block1.GetHash(), this.chain.Tip);
                             this.fixture.Block2 = this.fixture.PrepareValidBlock(this.fixture.ChainedHeader1, 2, this.fixture.Key.ScriptPubKey);
                             this.fixture.ChainedHeader2 = new ChainedHeader(this.fixture.Block2.Header, this.fixture.Block2.GetHash(), this.fixture.ChainedHeader1);
@@ -344,48 +314,31 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Assert.NotEmpty(blockHashes);
             Assert.Equal(2, blockHashes.Count);
-            Assert.Equal(callbackBlockValidationContexts[0].BlockToValidate.GetHash(), blockHashes[0]);
-            Assert.Equal(callbackBlockValidationContexts[1].BlockToValidate.GetHash(), blockHashes[1]);
+            Assert.Equal(blocksToValidate[0], blockHashes[0]);
+            Assert.Equal(blocksToValidate[1], blockHashes[1]);
         }
-
+        
         [Fact]
-        public void GenerateBlocks_MultipleBlocks_ChainedBlockNotPresentInBlockValidationContext_ReturnsValidGeneratedBlocks()
+        public void GenerateBlocks_MultipleBlocks_InvalidPreviousTip_ReturnsValidGeneratedBlocks()
         {
-            var callbackBlockValidationContexts = new List<ValidationContext>();
             BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
-            var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
-
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(chainedHeader));
-            BlockTemplate blockTemplate2 = this.CreateBlockTemplate(this.fixture.Block2);
 
             this.chain.SetTip(this.chain.GetBlock(0));
 
-            Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
-            blockBuilder.SetupSequence(b => b.Build(It.IsAny<ChainedHeader>(), It.Is<Script>(r => r == this.fixture.ReserveScript.ReserveFullNodeScript)))
-                .Returns(blockTemplate)
-                .Returns(blockTemplate2);
-
-            PowMining miner = this.CreateProofOfWorkMiner(blockBuilder.Object);
-            List<uint256> blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 2, uint.MaxValue);
-
-            Assert.NotEmpty(blockHashes);
-            Assert.True(blockHashes.Count == 1);
-            Assert.Equal(callbackBlockValidationContexts[0].BlockToValidate.GetHash(), blockHashes[0]);
-        }
-
-        [Fact]
-        public void GenerateBlocks_MultipleBlocks_BlockValidationContextError_ReturnsValidGeneratedBlocks()
-        {
-            var callbackBlockValidationContexts = new List<ValidationContext>();
-
-            BlockTemplate blockTemplate = this.CreateBlockTemplate(this.fixture.Block1);
             var chainedHeader = new ChainedHeader(blockTemplate.Block.Header, blockTemplate.Block.GetHash(), this.chain.Tip);
 
-            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>())).Returns(Task.FromResult(chainedHeader));
+            bool firstBlock = true;
+            this.consensusManager.Setup(c => c.BlockMinedAsync(It.IsAny<Block>()))
+                .ReturnsAsync(() =>
+                    {
+                        if (!firstBlock) return null;
+                       
+                        this.chain.SetTip(chainedHeader);
+                        firstBlock = false;
+                        return chainedHeader;
+                    });
 
             BlockTemplate blockTemplate2 = this.CreateBlockTemplate(this.fixture.Block2);
-
-            this.chain.SetTip(this.chain.GetBlock(0));
 
             Mock<PowBlockDefinition> blockBuilder = this.CreateProofOfWorkBlockBuilder();
 
@@ -398,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             Assert.NotEmpty(blockHashes);
             Assert.True(blockHashes.Count == 1);
-            Assert.Equal(callbackBlockValidationContexts[0].BlockToValidate.GetHash(), blockHashes[0]);
+            Assert.Equal(chainedHeader.HashBlock, blockHashes[0]);
         }
 
         private Mock<PowBlockDefinition> CreateProofOfWorkBlockBuilder()
