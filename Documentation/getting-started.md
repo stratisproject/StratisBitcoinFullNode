@@ -22,7 +22,7 @@ To install and run the node, you need
 
 ```
 git clone https://github.com/stratisproject/StratisBitcoinFullNode.git  
-cd StratisBitcoinFullNode
+cd StratisBitcoinFullNode/src
 ```
 
 ### Build and run the code
