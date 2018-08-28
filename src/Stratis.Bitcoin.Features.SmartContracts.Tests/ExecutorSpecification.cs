@@ -1,17 +1,14 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using CSharpFunctionalExtensions;
-using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Tests.Common;
-using Stratis.ModuleValidation.Net;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -42,11 +39,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Setup(s => s.Deserialize(It.IsAny<byte[]>()))
                 .Returns(Result.Ok(contractTxData));
 
+            var contractPrimitiveSerializer = new Mock<IContractPrimitiveSerializer>();
+
             var vmExecutionResult =
                 VmExecutionResult.CreationSuccess(
                     newContractAddress, 
                     new List<TransferInfo>(),
                     gasConsumed,
+                    null,
                     null);
 
             var state = new Mock<IContractStateRepository>();
@@ -73,6 +73,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var sut = new Executor(
                 loggerFactory,
+                contractPrimitiveSerializer.Object,
                 serializer.Object,
                 state.Object,
                 refundProcessor.Object,
