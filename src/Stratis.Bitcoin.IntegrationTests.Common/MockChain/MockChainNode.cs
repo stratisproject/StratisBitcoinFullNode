@@ -49,6 +49,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         /// </summary>
         public HdAddress MinerAddress { get; }
 
+        /// <summary>
+        /// The transactions available to be spent from this node's wallet.
+        /// </summary>
         public IEnumerable<UnspentOutputReference> SpendableTransactions
         {
             get
@@ -57,6 +60,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
             }
         }
 
+        /// <summary>
+        /// The balance currently available to be spent by this node's wallet.
+        /// </summary>
         public Money WalletSpendableBalance
         {
             get
@@ -81,7 +87,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
             this.CoreNode.NotInIBD();
             this.CoreNode.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
             this.MinerAddress = this.CoreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
-            Features.Wallet.Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(WalletName);
+            Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(WalletName);
             Key key = wallet.GetExtendedPrivateKeyForAddress(Password, this.MinerAddress).PrivateKey;
             this.CoreNode.SetDummyMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
             // Set up services for later
@@ -94,18 +100,23 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         /// <summary>
         /// Mine the given number of blocks. The block reward will go to this node's MinerAddress.
         /// </summary>
-        /// <param name="num"></param>
         public void MineBlocks(int num)
         {
             this.CoreNode.GenerateStratisWithMiner(num);
             this.chain.WaitForAllNodesToSync();
         }
 
+        /// <summary>
+        /// Get an unused address that can be used to send funds to this node.
+        /// </summary>
         public HdAddress GetUnusedAddress()
         {
             return this.CoreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
         }
 
+        /// <summary>
+        /// Send a normal transaction.
+        /// </summary>
         public WalletSendTransactionModel SendTransaction(Script scriptPubKey, Money amount)
         {
             var txBuildContext = new TransactionBuildContext(this.chain.Network)
@@ -193,6 +204,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
             return (BuildCallContractTransactionResponse)response.Value;
         }
 
+        /// <summary>
+        /// Get the balance of a particular contract address.
+        /// </summary>
         public ulong GetContractBalance(string contractAddress)
         {
             return this.stateRoot.GetCurrentBalance(new Address(contractAddress).ToUint160(this.CoreNode.FullNode.Network));
