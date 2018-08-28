@@ -62,10 +62,16 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (this.ActionDescriptors == null)
             {
                 this.ActionDescriptors = new Dictionary<string, ControllerActionDescriptor>();
-                var actionDescriptorProvider = this.fullNode?.RPCHost.Services.GetService(typeof(IActionDescriptorCollectionProvider)) as IActionDescriptorCollectionProvider;
+
+                // RPCHost will be null if the -server config option was not supplied.
+                var actionDescriptorProvider = this.fullNode?.RPCHost?.Services.GetService(typeof(IActionDescriptorCollectionProvider)) as IActionDescriptorCollectionProvider;
                 // This approach is similar to the one used by RPCRouteHandler so should only give us the descriptors
                 // that RPC would normally act on subject to the method name matching the "ActionName".
-                foreach (ControllerActionDescriptor actionDescriptor in actionDescriptorProvider?.ActionDescriptors.Items.OfType<ControllerActionDescriptor>())
+
+                if (actionDescriptorProvider == null)
+                    return this.ActionDescriptors;
+
+                foreach (ControllerActionDescriptor actionDescriptor in actionDescriptorProvider.ActionDescriptors.Items.OfType<ControllerActionDescriptor>())
                     this.ActionDescriptors[actionDescriptor.ActionName] = actionDescriptor;
             }
 
@@ -138,7 +144,15 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             try
             {
                 var listMethods = new List<Models.RpcCommandModel>();
-                foreach (ControllerActionDescriptor descriptor in this.GetActionDescriptors().Values.Where(desc => desc.ActionName == desc.ActionName.ToLower()))
+                Dictionary<string, ControllerActionDescriptor> actionDescriptors = this.GetActionDescriptors();
+
+                // -server config option was not supplied, so the RPCHost is not set up.
+                if (actionDescriptors == null)
+                    return this.Json(listMethods);
+
+                IEnumerable<ControllerActionDescriptor> descriptors = actionDescriptors.Values.Where(desc => desc.ActionName == desc.ActionName.ToLower());
+
+                foreach (ControllerActionDescriptor descriptor in descriptors)
                 {
                     CustomAttributeData attr = descriptor.MethodInfo.CustomAttributes.Where(x => x.AttributeType == typeof(ActionDescription)).FirstOrDefault();
                     string description = attr?.ConstructorArguments.FirstOrDefault().Value as string ?? "";
