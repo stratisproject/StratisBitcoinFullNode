@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 {
     public class BlockNotificationTest : LogsTestBase
     {
-        private const string SkipReason = "Revisit these tests when BlockNotification is fixed.";
+        private const string RevisitWhenBlockNotificationFixed = "Revisit these tests when BlockNotification is fixed.";
 
         private readonly NodeLifetime lifetime;
         private readonly Mock<ISignals> signals;
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         /// Tests that <see cref="BlockNotification.Notify(System.Threading.CancellationToken)"/> exits due
         /// to <see cref="BlockNotification.StartHash"/> being null and no blocks were signaled.
         /// </summary>
-        [Fact(Skip = SkipReason)]
+        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
         public void Notify_Completes_StartHashNotSet()
         {
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chain, this.consensusManager.Object, this.signals.Object, new AsyncLoopFactory(new LoggerFactory()), this.lifetime);
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         /// Tests that <see cref="BlockNotification.Notify(System.Threading.CancellationToken)"/> exits due
         /// to <see cref="BlockNotification.StartHash"/> not being on the chain and no blocks were signaled.
         /// </summary>
-        [Fact(Skip = SkipReason)]
+        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
         public void Notify_Completes_StartHashNotOnChain()
         {
             var startBlockId = new uint256(156);
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         /// Ensures that <see cref="ISignals.SignalBlock(Block)" /> was called twice
         /// as 2 blocks were made available by the puller to be signaled.
         /// </summary>
-        [Fact(Skip = SkipReason)]
+        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
         public void Notify_WithSync_RunsAndBroadcastsBlocks()
         {
             List<Block> blocks = this.CreateBlocks(2);
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             this.signals.Verify(s => s.SignalBlockConnected(It.IsAny<ChainedHeaderBlock>()), Times.Exactly(2));
         }
 
-        [Fact(Skip = SkipReason)]
+        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
         public void Notify_Reorg_PushesPullerBackToForkPoint_SignalsNewLookaheadResult()
         {
             List<Block> blocks = this.CreateBlocks(3);
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         /// Ensures that <see cref="BlockNotification.StartHash" /> gets updated
         /// every time <see cref="BlockNotification.SyncFrom(uint256)"/> gets called.
         /// </summary>
-        [Fact(Skip = SkipReason)]
+        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
         public void CallingSyncFromUpdatesStartHashAccordingly()
         {
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chain, this.consensusManager.Object,
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             Assert.Equal(blockId2, notification.StartHash);
         }
 
-        [Fact(Skip = SkipReason)]
+        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
         public void SyncFrom_StartHashIsNull_SetsStartHashToBlockNotification()
         {
             var notification = new BlockNotification(this.LoggerFactory.Object, this.chain, this.consensusManager.Object,
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             Assert.Null(notification.StartHash);
         }
 
-        [Fact(Skip = SkipReason)]
+        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
         public void SyncFrom_StartHashIsNotNull_GetsBlockBasedOnStartHash_SetsPullerAndTipToPreviousBlock()
         {
             List<Block> blocks = this.CreateBlocks(3);
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             Assert.Equal(notification.StartHash, blocks[2].GetHash());
         }
 
-        [Fact(Skip = SkipReason)]
+        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
         public void Start_RunsAsyncLoop()
         {
             var asyncLoopFactory = new Mock<IAsyncLoopFactory>();
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             asyncLoopFactory.Verify(a => a.Run("Notify", It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>(), null, null));
         }
 
-        [Fact(Skip = SkipReason)]
+        [Fact(Skip = RevisitWhenBlockNotificationFixed)]
         public void Stop_DisposesAsyncLoop()
         {
             var asyncLoop = new Mock<IAsyncLoop>();
