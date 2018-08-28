@@ -1,6 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
@@ -430,6 +433,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         [Fact]
         public void MockChain_AuctionTest()
         {
+            var network = new SmartContractsRegTest(); // ew hack. TODO: Expose from MockChain or MockChainNode.
+
             using (MockChain chain = new MockChain(2))
             {
                 MockChainNode sender = chain.Nodes[0];
@@ -443,14 +448,22 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Create contract and ensure code exists
                 BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, new string[] { "10#20" });
                 receiver.WaitMempoolCount(1);
-                receiver.MineBlocks(2);
+                receiver.MineBlocks(1);
                 Assert.NotNull(receiver.GetCode(response.NewContractAddress));
                 Assert.NotNull(sender.GetCode(response.NewContractAddress));
+
+                // Test that the contract address, event name, and logging values are available in the bloom.
+                var scBlockHeader = receiver.GetLastBlock().Header as SmartContractBlockHeader;
+                Assert.True(scBlockHeader.LogsBloom.Test(new Address(response.NewContractAddress).ToUint160(network).ToBytes()));
+                Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("Created")));
+                Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes((ulong) 20)));
+                // And sanity test that a random value is not available in bloom.
+                Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
 
                 // Call contract and ensure owner is now highest bidder
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("Bid", response.NewContractAddress, 2);
                 receiver.WaitMempoolCount(1);
-                receiver.MineBlocks(2);
+                receiver.MineBlocks(1);
                 Assert.Equal(sender.GetStorageValue(response.NewContractAddress, "Owner"), sender.GetStorageValue(response.NewContractAddress, "HighestBidder"));
 
                 // Wait 20 blocks and end auction and check for transaction to victor

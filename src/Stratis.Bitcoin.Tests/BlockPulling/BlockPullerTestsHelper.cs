@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             this.loggerFactory.AddConsoleWithFilters();
 
             this.CallbacksCalled = new Dictionary<uint256, Block>();
-            this.ChainState = new ChainState(new InvalidBlockHashStore(new DateTimeProvider())) {ConsensusTip = ChainedHeadersHelper.CreateGenesisChainedHeader()};
+            this.ChainState = new ChainState() {ConsensusTip = ChainedHeadersHelper.CreateGenesisChainedHeader()};
 
             this.Puller = new ExtendedBlockPuller(this.ChainState, new NodeSettings(new StratisMain()), new DateTimeProvider(), this.loggerFactory);
         }
@@ -181,6 +181,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
         public void Initialize(BlockPuller.OnBlockDownloadedCallback callback) { this.puller.Initialize(callback); }
 
+        public void SetCallback(BlockPuller.OnBlockDownloadedCallback callback) => this.puller.SetPrivateVariableValue("onDownloadedCallback", callback);
+
         public double GetAverageBlockSizeBytes() { return this.puller.GetAverageBlockSizeBytes(); }
 
         public void OnIbdStateChanged(bool isIbd) { this.puller.OnIbdStateChanged(isIbd); }
@@ -189,7 +191,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
         public void PeerDisconnected(int peerId) { this.puller.PeerDisconnected(peerId); }
 
-        public void RequestBlocksDownload(List<ChainedHeader> headers) { this.puller.RequestBlocksDownload(headers); }
+        public void RequestBlocksDownload(List<ChainedHeader> headers, bool highPriority = false) { this.puller.RequestBlocksDownload(headers, highPriority); }
 
         public void PushBlock(uint256 blockHash, Block block, int peerId) { this.puller.PushBlock(blockHash, block, peerId); }
 

@@ -46,6 +46,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>State of the current chain that hold consensus tip.</summary>
         public IChainState ChainState { get; }
 
+        /// <inheritdoc cref="IInvalidBlockHashStore"/>
+        private readonly IInvalidBlockHashStore invalidBlockHashStore;
+
         /// <inheritdoc />
         public ConsensusPerformanceCounter PerformanceCounter { get; }
 
@@ -69,7 +72,8 @@ namespace Stratis.Bitcoin.Consensus
             NodeDeployments nodeDeployments,
             ConsensusSettings consensusSettings,
             ICheckpoints checkpoints,
-            IChainState chainState)
+            IChainState chainState,
+            IInvalidBlockHashStore invalidBlockHashStore)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -79,6 +83,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(consensusSettings, nameof(consensusSettings));
             Guard.NotNull(checkpoints, nameof(checkpoints));
             Guard.NotNull(chainState, nameof(chainState));
+            Guard.NotNull(invalidBlockHashStore, nameof(invalidBlockHashStore));
 
             this.Network = network;
 
@@ -91,6 +96,7 @@ namespace Stratis.Bitcoin.Consensus
             this.ConsensusParams = this.Network.Consensus;
             this.ConsensusSettings = consensusSettings;
             this.DateTimeProvider = dateTimeProvider;
+            this.invalidBlockHashStore = invalidBlockHashStore;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.NodeDeployments = nodeDeployments;
@@ -188,6 +194,9 @@ namespace Stratis.Bitcoin.Consensus
 
             await this.ExecuteRulesAsync(this.fullValidationRules, ruleContext).ConfigureAwait(false);
 
+            if (validationContext.Error != null)
+                this.HandleConsensusError(validationContext);
+
             return validationContext;
         }
 
@@ -201,6 +210,9 @@ namespace Stratis.Bitcoin.Consensus
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
+
+            if (validationContext.Error != null)
+                this.HandleConsensusError(validationContext);
 
             return validationContext;
         }
@@ -221,6 +233,27 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ruleContext.ValidationContext.Error = ex.ConsensusError;
             }
+        }
+
+        /// <summary>Adds block hash to a list of failed header unless specific consensus error was used that doesn't require block banning.</summary>
+        private void HandleConsensusError(ValidationContext validationContext)
+        {
+            this.logger.LogTrace("()");
+
+            // This error will be handled in ConsensusManager.
+            // The block shouldn't be banned because it might be valid, it's just we need to redownload it including witness data.
+            if (validationContext.Error == ConsensusErrors.BadWitnessNonceSize)
+            {
+                this.logger.LogTrace("(-)[BAD_WITNESS_NONCE]");
+                return;
+            }
+
+            uint256 hashToBan = validationContext.ChainedHeaderToValidate.HashBlock;
+
+            this.logger.LogTrace("Marking '{0}' invalid.", hashToBan);
+            this.invalidBlockHashStore.MarkInvalid(hashToBan, validationContext.RejectUntil);
+
+            this.logger.LogTrace("(-)");
         }
 
         private void ExecuteRules(IEnumerable<SyncConsensusRule> rules, RuleContext ruleContext)
