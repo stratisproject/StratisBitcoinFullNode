@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
         public void PushBlock(uint256 blockHash, Block block, int peerId) { this.puller.PushBlock(blockHash, block, peerId); }
 
-        public void RequestWitnessOptions() { this.puller.RequestWitnessOptions(); }
+        public void RequestPeerServices(NetworkPeerServices services) { this.puller.RequestPeerServices(services); }
 
         public void ShowStats(StringBuilder statsBuilder) { this.puller.ShowStats(statsBuilder); }
 

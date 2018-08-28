@@ -38,13 +38,13 @@ namespace Stratis.Bitcoin.BlockPulling
         void Initialize(BlockPuller.OnBlockDownloadedCallback callback);
 
         /// <summary>
-        /// Adds <see cref="NetworkPeerServices.NODE_WITNESS"/> to list of services that are required from all peers.
+        /// Adds required services to list of services that are required from all peers.
         /// </summary>
         /// <remarks>
         /// In case some of the peers that we are already requesting block from don't support new
-        /// requirements those nodes will be released from their assignments.
+        /// service requirements those peers will be released from their assignments.
         /// </remarks>
-        void RequestWitnessOptions();
+        void RequestPeerServices(NetworkPeerServices services);
 
         /// <summary>Gets the average size of a block based on sizes of blocks that were previously downloaded.</summary>
         double GetAverageBlockSizeBytes();
@@ -254,11 +254,11 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc />
-        public void RequestWitnessOptions()
+        public void RequestPeerServices(NetworkPeerServices services)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:{1})", nameof(services), services);
 
-            this.networkPeerRequirement.RequiredServices |= NetworkPeerServices.NODE_WITNESS;
+            this.networkPeerRequirement.RequiredServices |= services;
 
             var peerIdsToRemove = new List<int>();
 
