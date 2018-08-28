@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security;
-using System.Timers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -32,9 +31,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
 
         /// <summary>The wallet manager.</summary>
         private readonly IWalletManager walletManager;
-
-        /// <summary>A timer that can be used to introduce a delay before the node stops staking.</summary>
-        private Timer timer;
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -127,44 +123,28 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <summary>
         /// Stop staking.
         /// </summary>
-        /// <param name="delayInSeconds">Delay, in seconds, after which the staking will stop.</param>
+        /// <param name="corsProtection">This body parameter is here to prevent a CORS call from triggering method execution.</param>
         /// <remarks>
-        /// The [FromBody] parameter <code>delayInSeconds</code> has been added here to prevent a CORS call from triggering method execution.
         /// <seealso cref="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"/>
         /// </remarks>
         /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
         [Route("stopstaking")]
         [HttpPost]
-        public IActionResult StopStaking([FromBody] int delayInSeconds = 0)
+        public IActionResult StopStaking([FromBody] bool corsProtection = true)
         {
-            if (!this.fullNode.Network.Consensus.IsProofOfStake)
+            try
+            {
+                if (!this.fullNode.Network.Consensus.IsProofOfStake)
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not available for Proof of Stake");
 
-            this.timer?.Dispose();
-
-            this.timer = new Timer(Math.Max(delayInSeconds * 1000, 1));
-
-            this.timer.Elapsed += (a, s) =>
+                this.fullNode.NodeFeature<MiningFeature>(true).StopStaking();
+                return this.Ok();
+            }
+            catch (Exception e)
             {
-                try
-                {
-                    this.fullNode.NodeFeature<MiningFeature>(true).StopStaking();
-                }
-                catch (Exception e)
-                {
-                    this.logger.LogError("Exception occurred: {0}", e.ToString());
-                }
-            };
-
-            this.timer.Start();
-            return this.Ok();
-        }
-
-        /// <inheritdoc />
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-            this.timer?.Dispose();
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
         }
     }
 }

@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             var isDisposed = false;
             this.fullNode.Setup(f => f.Dispose()).Callback(() => isDisposed = true);
 
-            IActionResult result = this.controller.Shutdown(0);
+            IActionResult result = this.controller.Shutdown(true);
 
             result.Should().BeOfType<OkResult>();
             Thread.Sleep(100);
