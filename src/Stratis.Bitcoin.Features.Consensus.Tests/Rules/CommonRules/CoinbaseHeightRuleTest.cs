@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -15,7 +16,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BestBlockAvailable_BadCoinBaseHeight_ThrowsBadCoinbaseHeightConsensusErrorExceptionAsync()
         {
-            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
+            Block blockToValidate = this.network.CreateBlock();
+
+            this.ruleContext.ValidationContext.BlockToValidate = blockToValidate;
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(blockToValidate.Header, blockToValidate.Header.GetHash(), 0);
 
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new Script(Op.GetPushOp(3))));
@@ -29,7 +33,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_BestBlockUnAvailable_BadCoinBaseHeight_ThrowsBadCoinbaseHeightConsensusErrorExceptionAsync()
         {
-            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
+            Block blockToValidate = this.network.CreateBlock();
+            
+            this.ruleContext.ValidationContext.BlockToValidate = blockToValidate;
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(blockToValidate.Header, blockToValidate.Header.GetHash(), 0);
 
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new Script(Op.GetPushOp(3))));
@@ -43,7 +50,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public async Task RunAsync_CorrectCoinBaseHeight_DoesNotThrowExceptionAsync()
         {
-            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
+            Block blockToValidate = this.network.CreateBlock();
+
+            this.ruleContext.ValidationContext.BlockToValidate = blockToValidate;
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(blockToValidate.Header, blockToValidate.Header.GetHash(), 4);
 
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn(new Script(Op.GetPushOp(4))));
