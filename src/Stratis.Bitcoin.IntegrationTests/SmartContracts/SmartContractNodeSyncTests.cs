@@ -15,6 +15,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var node1 = builder.CreateSmartContractPowNode();
                 var node2 = builder.CreateSmartContractPowNode();
                 builder.StartAll();
+                node1.NotInIBD();
+                node2.NotInIBD();
                 Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
                 var rpc1 = node1.CreateRPCClient();
