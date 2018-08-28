@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.True(compilationResult.Success);
 
                 // Create contract and ensure code exists
-                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation);
+                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0);
                 receiver.WaitMempoolCount(1);
                 receiver.MineBlocks(2);
                 Assert.NotNull(receiver.GetCode(response.NewContractAddress));
