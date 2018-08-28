@@ -38,10 +38,10 @@ namespace Stratis.Bitcoin.BlockPulling
         void Initialize(BlockPuller.OnBlockDownloadedCallback callback);
 
         /// <summary>
-        /// Adds <see cref="NetworkPeerServices.NODE_WITNESS"/> to list of services that are required from all peer nodes.
+        /// Adds <see cref="NetworkPeerServices.NODE_WITNESS"/> to list of services that are required from all peers.
         /// </summary>
         /// <remarks>
-        /// In case some of the nodes that we are already requesting block from don't support new
+        /// In case some of the peers that we are already requesting block from don't support new
         /// requirements those nodes will be released from their assignments.
         /// </remarks>
         void RequestWitnessOptions();
