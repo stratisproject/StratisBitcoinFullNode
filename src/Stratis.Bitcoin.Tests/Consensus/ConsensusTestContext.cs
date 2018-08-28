@@ -104,7 +104,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 new ConcurrentChain(this.Network),
                 new Mock<IBlockPuller>().Object,
                 null,
-                new InvalidBlockHashStore(new DateTimeProvider()));
+                new InvalidBlockHashStore(new DateTimeProvider()),
+                new Mock<ConnectionManager>().Object);
 
             return this.ConsensusManager;
         }

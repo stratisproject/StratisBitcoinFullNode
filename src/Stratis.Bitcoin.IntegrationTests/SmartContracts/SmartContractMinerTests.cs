@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.consensusManager = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),
                     new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory), new Checkpoints(), consensusSettings, consensusRules,
                     new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object,
-                    new Mock<IBlockStore>().Object, new InvalidBlockHashStore(new DateTimeProvider()));
+                    new Mock<IBlockStore>().Object, new InvalidBlockHashStore(new DateTimeProvider()), new Mock<ConnectionManager>().Object);
 
                 await this.consensusManager.InitializeAsync(new ChainedHeader(this.newBlock.Block.Header, this.newBlock.Block.GetHash(), 0));
 
