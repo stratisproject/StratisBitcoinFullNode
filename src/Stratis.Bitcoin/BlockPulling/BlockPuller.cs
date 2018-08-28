@@ -37,6 +37,15 @@ namespace Stratis.Bitcoin.BlockPulling
     {
         void Initialize(BlockPuller.OnBlockDownloadedCallback callback);
 
+        /// <summary>
+        /// Adds <see cref="NetworkPeerServices.NODE_WITNESS"/> to list of services that are required from all peer nodes.
+        /// </summary>
+        /// <remarks>
+        /// In case some of the nodes that we are already requesting block from don't support new
+        /// requirements those nodes will be released from their assignments.
+        /// </remarks>
+        void RequestWitnessOptions();
+
         /// <summary>Gets the average size of a block based on sizes of blocks that were previously downloaded.</summary>
         double GetAverageBlockSizeBytes();
 
@@ -240,6 +249,35 @@ namespace Stratis.Bitcoin.BlockPulling
 
             this.assignerLoop = this.AssignerLoopAsync();
             this.stallingLoop = this.StallingLoopAsync();
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public void RequestWitnessOptions()
+        {
+            this.logger.LogTrace("()");
+
+            this.networkPeerRequirement.RequiredServices |= NetworkPeerServices.NODE_WITNESS;
+
+            var peerIdsToRemove = new List<int>();
+
+            lock (this.peerLock)
+            {
+                foreach (KeyValuePair<int, IBlockPullerBehavior> peerIdToBehavior in this.pullerBehaviorsByPeerId)
+                {
+                    INetworkPeer peer = peerIdToBehavior.Value.AttachedPeer;
+
+                    if ((peer == null) || !this.networkPeerRequirement.Check(peer.PeerVersion))
+                    {
+                        this.logger.LogDebug("Peer Id {0} does not meet requirements.", peerIdToBehavior.Key);
+                        peerIdsToRemove.Add(peerIdToBehavior.Key);
+                    }
+                }
+            }
+
+            foreach (int peerId in peerIdsToRemove)
+                this.PeerDisconnected(peerId);
 
             this.logger.LogTrace("(-)");
         }
