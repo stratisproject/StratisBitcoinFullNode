@@ -177,7 +177,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var blockValidationContext = new ValidationContext
             {
                 BlockToValidate = badBlock,
-                Peer = peerEndPoint,
                 BanDurationSeconds = ValidationContext.BanDurationNoBan
             };
 
@@ -210,7 +209,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var blockValidationContext = new ValidationContext
             {
                 BlockToValidate = badBlock,
-                Peer = peerEndPoint,
                 BanDurationSeconds = 1,
             };
 
