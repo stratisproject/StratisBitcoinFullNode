@@ -761,14 +761,6 @@ namespace Stratis.Bitcoin.Consensus
                     PeersToBan = badPeers
                 };
 
-                this.logger.LogTrace("{0} peers will be banned.", badPeers.Count);
-
-                foreach (int peerId in badPeers)
-                {
-                    if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
-                        this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, validationContext.BanDurationSeconds, validationContext.Error.Message);
-                }
-
                 this.logger.LogTrace("(-)[FAILED]:'{0}'", failureResult);
                 return failureResult;
             }
