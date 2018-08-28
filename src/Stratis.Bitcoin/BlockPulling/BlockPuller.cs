@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
         private int nextJobId;
 
-        /// <summary>Locks access to <see cref="pullerBehaviorsByPeerId"/>.</summary>
+        /// <summary>Locks access to <see cref="pullerBehaviorsByPeerId"/> and <see cref="networkPeerRequirement"/>.</summary>
         private readonly object peerLock;
 
         /// <summary>
@@ -189,6 +189,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private readonly IChainState chainState;
 
         /// <inheritdoc cref="NetworkPeerRequirement"/>
+        /// <remarks>This object has to be protected by <see cref="peerLock"/>.</remarks>
         private readonly NetworkPeerRequirement networkPeerRequirement;
 
         /// <inheritdoc cref="IDateTimeProvider"/>
@@ -258,12 +259,12 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("({0}:{1})", nameof(services), services);
 
-            this.networkPeerRequirement.RequiredServices |= services;
-
             var peerIdsToRemove = new List<int>();
 
             lock (this.peerLock)
             {
+                this.networkPeerRequirement.RequiredServices |= services;
+
                 foreach (KeyValuePair<int, IBlockPullerBehavior> peerIdToBehavior in this.pullerBehaviorsByPeerId)
                 {
                     INetworkPeer peer = peerIdToBehavior.Value.AttachedPeer;
