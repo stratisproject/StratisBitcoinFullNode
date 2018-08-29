@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -259,11 +260,6 @@ namespace Stratis.Bitcoin.Consensus
                         ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
                         if (!fullValidationResult.Succeeded)
                         {
-                            lock (this.peerLock)
-                            {
-                                this.chainedHeaderTree.PartialOrFullValidationFailed(chainedHeader);
-                            }
-
                             this.logger.LogTrace("Miner produced an invalid block, full validation failed: {0}", fullValidationResult.Error.Message);
                             this.logger.LogTrace("(-)[FULL_VALIDATION_FAILED]");
                             throw new ConsensusException(fullValidationResult.Error.Message);
@@ -574,6 +570,10 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(fork, blocksToReconnect).ConfigureAwait(false);
+
+            // Include peers that needed to be banned as a result of a failure to connect blocks.
+            // Otherwise they get lost as we are returning a different ConnnectBlocksResult.
+            reconnectionResult.PeersToBan.AddRange(connectBlockResult.PeersToBan);
 
             this.logger.LogTrace("(-):'{0}'", reconnectionResult);
             return reconnectionResult;
@@ -920,7 +920,7 @@ namespace Stratis.Bitcoin.Consensus
 
         private void BlockDownloaded(uint256 blockHash, Block block, int peerId)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(blockHash), blockHash, nameof(peerId), peerId);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(blockHash), blockHash, nameof(peerId), peerId);
 
             ChainedHeader chainedHeader = null;
 

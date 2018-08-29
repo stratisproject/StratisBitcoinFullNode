@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(header), header, nameof(block), block);
 
-            ValidationContext result = await this.consensusRules.FullValidationAsync(new ChainedHeaderBlock(block, header)).ConfigureAwait(false);
+            ValidationContext result = await this.consensusRules.FullValidationAsync(header, block).ConfigureAwait(false);
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
