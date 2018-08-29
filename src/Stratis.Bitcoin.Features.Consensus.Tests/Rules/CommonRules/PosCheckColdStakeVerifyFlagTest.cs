@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// <see cref="ScriptVerify.CheckColdStakeVerify"/> flag once the <see cref="PosConsensusOptions.ColdStakingActivationHeight"/> is reached.
         /// </summary>
         [Fact]
-        public async Task PosDoesNotSetCheckColdStakeVerifyFlagBeforeActivationHeightAsync()
+        public void PosDoesNotSetCheckColdStakeVerifyFlagBeforeActivationHeight()
         {
             const int ColdStakingActivationHeight = 3;
 
