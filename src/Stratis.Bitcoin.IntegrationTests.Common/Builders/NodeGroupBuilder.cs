@@ -67,9 +67,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
             return this;
         }
 
-        public NodeGroupBuilder WithWallet(string walletName, string walletPassword)
+        public NodeGroupBuilder WithWallet(string walletName, string walletPassword, string walletPassphrase)
         {
-            Mnemonic mnemonic = this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(walletPassword, walletName);
+            Mnemonic mnemonic = this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
             this.NodeMnemonics.Add(this.nodes.Last().Key, mnemonic);
             return this;
         }

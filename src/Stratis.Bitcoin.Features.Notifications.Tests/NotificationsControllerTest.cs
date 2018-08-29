@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             NodeSettings nodeSettings = NodeSettings.Default();
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object));
-            var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, this.LoggerFactory.Object, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(this.LoggerFactory.Object));
+            var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, this.LoggerFactory.Object, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(this.LoggerFactory.Object), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings());
             var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.LoggerFactory.Object), this.LoggerFactory.Object, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chainState = new ChainState();
