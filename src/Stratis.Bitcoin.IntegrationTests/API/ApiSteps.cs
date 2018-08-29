@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void calling_rpc_getblockhash_via_callbyname()
         {
-            this.send_api_get_request($"{RPCCallByNameUri}?methodName=getblockhash&height=0");
+            this.send_api_post_request(RPCCallByNameUri, new { methodName = "getblockhash", height = 0 });
         }
 
         private void calling_rpc_listmethods()
@@ -418,6 +418,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private void the_blockhash_is_returned()
         {
             this.responseText.Should().Be("\"" + KnownNetworks.RegTest.Consensus.HashGenesisBlock.ToString() + "\"");
+        }
+
+        private void the_blockhash_is_returned_from_post()
+        {
+            var responseContent = this.response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            responseContent.Should().Be("\"" + KnownNetworks.RegTest.Consensus.HashGenesisBlock.ToString() + "\"");
         }
 
         private void a_full_list_of_available_commands_is_returned()

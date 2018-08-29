@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NBitcoin;
@@ -61,11 +63,16 @@ namespace Stratis.Bitcoin.Tests.Controllers
         }
 
         [Fact]
-        public void Stop_WithFullNode_DisposesFullNodeAsync()
+        public void Stop_WithFullNode_DisposesFullNode()
         {
-            IActionResult result = this.controller.Shutdown();
+            var isDisposed = false;
+            this.fullNode.Setup(f => f.Dispose()).Callback(() => isDisposed = true);
 
-            this.fullNode.Verify(f => f.Dispose());
+            IActionResult result = this.controller.Shutdown(true);
+
+            result.Should().BeOfType<OkResult>();
+            Thread.Sleep(100);
+            isDisposed.Should().BeTrue();
         }
 
         [Fact]
