@@ -90,15 +90,19 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// <summary>
         /// Call an RPC method by name.
         /// </summary>
+        /// <param name="body">The request to process.</param>
         /// <returns>A JSON result that varies depending on the RPC method.</returns>
         [Route("callbyname")]
         [HttpPost]
         public IActionResult CallByName([FromBody]JObject body)
         {
+            Guard.NotNull(body, nameof(body));
+
             try
             {
-                var ignoreCase = StringComparison.InvariantCultureIgnoreCase;
+                StringComparison ignoreCase = StringComparison.InvariantCultureIgnoreCase;
                 string methodName = (string)body.GetValue("methodName", ignoreCase);
+
                 ControllerActionDescriptor actionDescriptor = null;
                 if (!this.GetActionDescriptors()?.TryGetValue(methodName, out actionDescriptor) ?? false)
                     throw new Exception($"RPC method '{ methodName }' not found.");
@@ -106,11 +110,20 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 // Prepare the named parameters that were passed via the query string in the order that they are expected by SendCommand.
                 List<ControllerParameterDescriptor> paramInfos = actionDescriptor.Parameters.OfType<ControllerParameterDescriptor>().ToList();
 
-                object[] paramsAsObjects = paramInfos.Select(paramInfo => 
-                    body.TryGetValue(paramInfo.Name, ignoreCase, out JToken jValue) && !jValue.HasValues
-                        ? jValue.ToString()
-                        : paramInfo.ParameterInfo.DefaultValue?.ToString())
-                    .Cast<object>().ToArray();
+                var paramsAsObjects = new object[paramInfos.Count];
+                for (int i = 0; i < paramInfos.Count; i++)
+                {
+                    ControllerParameterDescriptor pInfo = paramInfos[i];
+                    bool hasValue = body.TryGetValue(pInfo.Name, ignoreCase, out JToken jValue);
+                    if (hasValue && !jValue.HasValues)
+                    {
+                        paramsAsObjects[i] = jValue.ToString();
+                    }
+                    else
+                    {
+                        paramsAsObjects[i] = pInfo.ParameterInfo.DefaultValue?.ToString();
+                    }
+                }
 
                 // Build RPC request object.
                 RPCResponse response = this.SendRPCRequest(new RPCRequest(methodName, paramsAsObjects));
