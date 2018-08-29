@@ -422,6 +422,13 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 })).Value;
                 Assert.Equal("12346", counterRequestResult);
 
+                // Check receipt was stored and can be retrieved.
+                receiptResponse = (ReceiptResponse)((JsonResult)senderSmartContractsController.GetReceipt(callResponse.TransactionId.ToString())).Value;
+                Assert.True(receiptResponse.Success);
+                Assert.Null(receiptResponse.NewContractAddress);
+                Assert.Equal(response.NewContractAddress, receiptResponse.To);
+                Assert.Equal(addr.Address, receiptResponse.From);
+
                 // Check wallet history again
                 result = (JsonResult)senderWalletController.GetHistory(new WalletHistoryRequest
                 {
