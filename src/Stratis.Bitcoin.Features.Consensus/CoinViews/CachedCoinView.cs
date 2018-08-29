@@ -362,7 +362,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 }
 
                 this.blockHash = nextBlockHash;
-                var rewindData = new RewindData(nextBlockHash);
+                var rewindData = new RewindData(oldBlockHash);
 
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
@@ -372,13 +372,18 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         // and save it in rewind data.
                         UnspentOutputs clone = unspent.Clone();
 
+                        // cacheItem.UnspentOutputs is null this means the coin does not exists on disk but only in cache
+                        // This is can happen for coinbase transactions where prev output is does not exists
+                        // or if fetch was called and a trx was no present in disk. 
                         if (cacheItem.UnspentOutputs != null)
                         {
                             clone.Outputs = cacheItem.UnspentOutputs.Outputs.ToArray();
                             rewindData.OutputsToRestore.Add(clone);
                         }
                         else
+                        {
                             rewindData.TransactionsToRemove.Add(unspent.TransactionId);
+                        }
 
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
                         if (cacheItem.UnspentOutputs != null) cacheItem.UnspentOutputs.Spend(unspent);
@@ -443,6 +448,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 uint256 hash = await this.inner.Rewind().ConfigureAwait(false);
                 this.innerBlockHash = hash;
                 this.blockHash = hash;
+
+                // We flush the cache after a rewind, new items will have to be fetched from disk.
+                this.unspents.Clear();
 
                 this.logger.LogTrace("(-):'{0}'", hash);
                 return hash;
