@@ -44,7 +44,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("CreateCat", response.NewContractAddress, 0);
                 receiver.WaitMempoolCount(1);
                 receiver.MineBlocks(1);
-                var bytes = sender.GetStorageValue(response.NewContractAddress, "CatCounter");
                 Assert.Equal(1, BitConverter.ToInt32(sender.GetStorageValue(response.NewContractAddress, "CatCounter")));
                 uint160 lastCreatedCatAddress =  new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));
                 uint160 expectedCreatedCatAddress = this.addressGenerator.GenerateAddress(callResponse.TransactionId, 0);
@@ -71,6 +70,13 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Check block has 3 transactions. Coinbase, our tx, and then a condensing tx.
                 var block = receiver.GetLastBlock();
                 Assert.Equal(3, block.Transactions.Count);
+                // Condensing tx has 1 input and 1 output - FROM: real tx. TO: new contract address.
+                Assert.Single(block.Transactions[2].Inputs);
+                Assert.Single(block.Transactions[2].Outputs);
+                Assert.Equal(block.Transactions[1].GetHash(), block.Transactions[2].Inputs[0].PrevOut.Hash); //  References tx above.
+                Assert.Equal(amount * Money.COIN, (ulong)block.Transactions[2].Outputs[0].Value);
+                Assert.True(block.Transactions[2].Inputs[0].ScriptSig.IsSmartContractSpend());
+                Assert.True(block.Transactions[2].Outputs[0].ScriptPubKey.IsSmartContractInternalCall());
             }
         }
     }
