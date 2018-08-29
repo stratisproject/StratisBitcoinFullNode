@@ -362,7 +362,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 }
 
                 this.blockHash = nextBlockHash;
-                var rewindData = new RewindData(nextBlockHash);
+                var rewindData = new RewindData(oldBlockHash);
 
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
@@ -371,8 +371,16 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         // We'll need to restore the original outputs, so we clone it
                         // and save it in rewind data.
                         UnspentOutputs clone = unspent.Clone();
-                        clone.Outputs = cacheItem.UnspentOutputs?.Outputs.ToArray() ?? Array.Empty<TxOut>();
-                        rewindData.OutputsToRestore.Add(clone);
+
+                        if (cacheItem.UnspentOutputs != null)
+                        {
+                            clone.Outputs = cacheItem.UnspentOutputs.Outputs.ToArray();
+                            rewindData.OutputsToRestore.Add(clone);
+                        }
+                        else
+                        {
+                            rewindData.TransactionsToRemove.Add(unspent.TransactionId);
+                        }
 
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
                         if (cacheItem.UnspentOutputs != null) cacheItem.UnspentOutputs.Spend(unspent);
@@ -435,6 +443,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 // Rewind data was not found in cache, try underlying storage.
                 uint256 hash = await this.inner.Rewind().ConfigureAwait(false);
+
+                // All the cached utxos are now on disk so we can clear the cached entry list.
+                this.unspents.Clear();
+
                 this.innerBlockHash = hash;
                 this.blockHash = hash;
 
