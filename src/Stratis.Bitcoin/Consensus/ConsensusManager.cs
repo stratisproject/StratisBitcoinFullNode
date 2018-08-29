@@ -562,9 +562,9 @@ namespace Stratis.Bitcoin.Consensus
             // Reconnect disconnected blocks.
             ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(fork, disconnectedBlocks).ConfigureAwait(false);
 
-            // Include peers that needed to be banned as a result of a failure to connect blocks.
+            // Add peers that needed to be banned as a result of a failure to connect blocks.
             // Otherwise they get lost as we are returning a different ConnnectBlocksResult.
-            reconnectionResult.PeersToBan.AddRange(connectBlockResult.PeersToBan);
+            reconnectionResult.PeersToBan = connectBlockResult.PeersToBan;
 
             this.logger.LogTrace("(-):'{0}'", reconnectionResult);
             return reconnectionResult;
