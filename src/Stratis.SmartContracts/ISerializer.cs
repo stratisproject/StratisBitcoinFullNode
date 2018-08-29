@@ -50,22 +50,22 @@
         Address ToAddress(byte[] val);
 
         /// <summary>
-        /// Serializes bytes into an integer.
+        /// Serializes first 4 bytes of a byte array into an integer.
         /// </summary>
         int ToInt32(byte[] val);
 
         /// <summary>
-        /// Serializes bytes into an unsigned integer.
+        /// Serializes first 4 bytes of a byte array into an unsigned integer.
         /// </summary>
         uint ToUInt32(byte[] val);
 
         /// <summary>
-        /// Serializes bytes into a long. 
+        /// Serializes first 8 bytes of a  byte array into a long. 
         /// </summary>
         long ToInt64(byte[] val);
 
         /// <summary>
-        /// Serializes bytes into an unsigned long.
+        /// Serializes first 8 bytes of a byte array into an unsigned long.
         /// </summary>
         ulong ToUInt64(byte[] val);
 
