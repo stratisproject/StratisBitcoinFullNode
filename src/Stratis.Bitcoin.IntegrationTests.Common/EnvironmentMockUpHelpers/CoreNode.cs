@@ -186,11 +186,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private void StartStratisRunner()
         {
-            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
-            TestHelper.WaitLoop(() => this.runner.FullNode != null, cancellationToken: cancellationToken);
+            var timeToNodeInit = TimeSpan.FromMinutes(1);
+            var timeToNodeStart = TimeSpan.FromMinutes(1);
 
-            cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
-            TestHelper.WaitLoop(() => this.runner.FullNode.State == FullNodeState.Started, cancellationToken: cancellationToken);
+            TestHelper.WaitLoop(() => this.runner.FullNode != null, 
+                cancellationToken: new CancellationTokenSource(timeToNodeInit).Token,
+                failureReason: $"Failed to assign instance of FullNode within {timeToNodeInit}");
+
+            TestHelper.WaitLoop(() => this.runner.FullNode.State == FullNodeState.Started,
+                cancellationToken: new CancellationTokenSource(timeToNodeStart).Token,
+                failureReason: $"Failed to achieve state = started within {timeToNodeStart}");
         }
 
         public void Broadcast(Transaction transaction)
@@ -247,6 +252,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             lock (this.lockObject)
             {
                 this.runner.Kill();
+
+                if (!this.runner.IsDisposed)
+                {
+                    throw new Exception($"Problem disposing of a node of type {this.runner.GetType()}.");
+                }
+
                 this.State = CoreNodeState.Killed;
             }
         }
