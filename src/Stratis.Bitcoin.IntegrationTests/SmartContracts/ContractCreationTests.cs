@@ -58,6 +58,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes(0)));
                 // And sanity test that a random value is not available in bloom.
                 Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
+
+                BuildCallContractTransactionResponse callResponse2 = sender.SendCallContractTransaction("CreateCatWithFunds", response.NewContractAddress, 0);
+                receiver.WaitMempoolCount(1);
+                receiver.MineBlocks(1);
             }
         }
     }
