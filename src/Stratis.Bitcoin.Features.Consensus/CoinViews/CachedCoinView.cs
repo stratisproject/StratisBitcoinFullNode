@@ -372,9 +372,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         // and save it in rewind data.
                         UnspentOutputs clone = unspent.Clone();
 
-                        // cacheItem.UnspentOutputs is null this means the coin does not exists on disk but only in cache
-                        // This is can happen for coinbase transactions where prev output is does not exists
-                        // or if fetch was called and a trx was no present in disk. 
                         if (cacheItem.UnspentOutputs != null)
                         {
                             clone.Outputs = cacheItem.UnspentOutputs.Outputs.ToArray();
