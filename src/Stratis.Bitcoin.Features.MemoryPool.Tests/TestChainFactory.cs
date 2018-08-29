@@ -82,7 +82,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             InMemoryCoinView inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
 
             var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, loggerFactory);
-            var networkPeerFactory = new NetworkPeerFactory(network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(loggerFactory));
+            var networkPeerFactory = new NetworkPeerFactory(network, 
+                dateTimeProvider, 
+                loggerFactory, new PayloadProvider().DiscoverPayloads(), 
+                new SelfEndpointTracker(loggerFactory), 
+                new Mock<IInitialBlockDownloadState>().Object, 
+                new ConnectionManagerSettings());
 
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
             var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);

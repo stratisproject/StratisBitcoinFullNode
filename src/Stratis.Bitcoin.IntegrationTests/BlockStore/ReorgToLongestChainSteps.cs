@@ -25,6 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string AccountZero = "account 0";
         private const string WalletZero = "wallet 0";
         private const string WalletPassword = "123456";
+        private const string WalletPassphrase = "phrase";
         private const string JingTheFastMiner = "Jing";
         private const string Bob = "Bob";
         private const string Charlie = "Charlie";
@@ -48,10 +49,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void four_miners()
         {
             this.nodes = this.nodeGroupBuilder
-                .StratisPowNode(JingTheFastMiner).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
-                .StratisPowNode(Bob).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
-                .StratisPowNode(Charlie).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
-                .StratisPowNode(Dave).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
+                .StratisPowNode(JingTheFastMiner).Start().NotInIBD().WithWallet(WalletZero, WalletPassword, WalletPassphrase)
+                .StratisPowNode(Bob).Start().NotInIBD().WithWallet(WalletZero, WalletPassword, WalletPassphrase)
+                .StratisPowNode(Charlie).Start().NotInIBD().WithWallet(WalletZero, WalletPassword, WalletPassphrase)
+                .StratisPowNode(Dave).Start().NotInIBD().WithWallet(WalletZero, WalletPassword, WalletPassphrase)
                 .WithConnections()
                     .Connect(JingTheFastMiner, Bob)
                     .Connect(Bob, Charlie)
