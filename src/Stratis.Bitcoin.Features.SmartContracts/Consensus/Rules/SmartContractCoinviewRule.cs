@@ -268,7 +268,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 result.Logs.ToArray(),
                 txContext.TransactionHash,
                 txContext.Sender,
-                null, // TODO: Get 'To' in Result.
+                result.To,
                 result.NewContractAddress,
                 !result.Revert
             )
