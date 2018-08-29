@@ -60,6 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
 
                 // The mining should add coins to the wallet.
+                int spendableBlocks = GetSpendableBlocks(maturity + 5, maturity);
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * 6 * 50, total);
 
@@ -130,8 +131,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
 
                 // The mining should add coins to the wallet.
+                int spendableBlocks = GetSpendableBlocks(maturity + 5, maturity);
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * 6 * 50, total);
+                Assert.Equal(Money.COIN * spendableBlocks * 50, total);
 
                 // Create a token contract.
                 ulong gasPrice = 1;
@@ -269,8 +271,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scSender.GenerateStratisWithMiner(maturity + 5);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
 
+                int spendableBlocks = GetSpendableBlocks(maturity + 5, maturity);
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * (maturity + 5) * 50, total);
+                Assert.Equal(Money.COIN * spendableBlocks * 50, total);
 
                 SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
 
@@ -547,6 +550,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
                 Assert.Equal((ulong)30 * 100_000_000, senderState.GetCurrentBalance(new Address(response.NewContractAddress).ToUint160(new SmartContractsRegTest())));
             }
+        }
+
+        /// <summary>
+        /// Given an amount of blocks and a maturity, how many blocks have spendable coinbase / coinstakes.
+        /// </summary>
+        private static int GetSpendableBlocks(int mined, int maturity)
+        {
+            return mined - (maturity - 1);
         }
     }
 }
