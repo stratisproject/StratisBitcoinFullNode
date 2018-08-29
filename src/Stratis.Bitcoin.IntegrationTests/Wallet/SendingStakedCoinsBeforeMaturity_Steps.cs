@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private CoreNode receiverNode;
         private const string WalletName = "mywallet";
         private const string WalletPassword = "123456";
+        private const string WalletPassphrase = "passphrase";
         private const string WalletAccountName = "account 0";
 
         public SendingStakedCoinsBeforeMaturity(ITestOutputHelper outputHelper)
@@ -40,18 +41,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void two_pos_nodes_with_one_node_having_a_wallet_with_premined_coins()
         {
-            this.proofOfStakeSteps.GenerateCoins();
-
-            this.proofOfStakeSteps.PremineNodeWithCoins.FullNode.WalletManager()
-                .GetSpendableTransactionsInWallet(this.proofOfStakeSteps.PremineWallet)
-                .Sum(utxo => utxo.Transaction.Amount)
-                .Should().BeGreaterThan(Money.Coins(OneMillion));
+            this.proofOfStakeSteps.PremineNodeWithWallet();
+            this.proofOfStakeSteps.MineGenesisAndPremineBlocks();
 
             this.receiverNode = this.proofOfStakeSteps.NodeGroupBuilder
                                     .CreateStratisPosNode(NodeReceiver)
                                     .Start()
                                     .NotInIBD()
-                                    .WithWallet(WalletName, WalletPassword)
+                                    .WithWallet(WalletName, WalletPassword, WalletPassphrase)
                                     .Build()[NodeReceiver];
         }
 
@@ -59,19 +56,19 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             this.the_wallet_history_does_not_include_the_transaction();
 
-            IActionResult sendTransactionResult = this.SendTransaction(this.BuildTransaction());
+            IActionResult buildTransactionResult = this.BuildTransaction();
 
-            sendTransactionResult.Should().BeOfType<ErrorResult>();
+            buildTransactionResult.Should().BeOfType<ErrorResult>();
 
-            if (!(sendTransactionResult is ErrorResult))
-                return;
-
-            var error = sendTransactionResult as ErrorResult;
+            var error = buildTransactionResult as ErrorResult;
             error.StatusCode.Should().Be(400);
 
             var errorResponse = error.Value as ErrorResponse;
             errorResponse?.Errors.Count.Should().Be(1);
-            errorResponse?.Errors[0].Message.Should().Be(ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Message);
+            errorResponse?.Errors[0].Message.Should().Be("No spendable transactions found.");
+
+            IActionResult sendTransactionResult = this.SendTransaction(buildTransactionResult);
+            sendTransactionResult.Should().BeNull();
         }
 
         private IActionResult SendTransaction(IActionResult transactionResult)

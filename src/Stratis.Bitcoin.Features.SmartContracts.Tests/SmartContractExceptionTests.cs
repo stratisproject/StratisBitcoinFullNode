@@ -1,14 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
-using Stratis.Patricia;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
@@ -21,21 +15,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     /// </summary>
     public sealed class SmartContractExceptionTests
     {
-        private readonly ContractStateRepositoryRoot repository;
-        private readonly Network network;
-        private readonly IKeyEncodingStrategy keyEncodingStrategy;
-        private readonly ILoggerFactory loggerFactory;
-        private SmartContractValidator validator;
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
-        
+
+        private readonly Network network;
+        private readonly ContractStateRepositoryRoot repository;
+        private readonly ReflectionVirtualMachine vm;
+
         public SmartContractExceptionTests()
         {
-            this.repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
-            this.loggerFactory = new ExtendedLoggerFactory();
-            this.loggerFactory.AddConsoleWithFilters();
-            this.network = new SmartContractsRegTest();
-            this.validator = new SmartContractValidator(new List<ISmartContractValidator>());
+            var context = new ContractExecutorTestContext();
+            this.network = context.Network;
+            this.repository = context.State;
+            this.vm = context.Vm;
         }
 
         [Fact]
@@ -49,19 +40,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var gasLimit = (Gas)10000;
             var gasMeter = new GasMeter(gasLimit);
 
-            var internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
-            var vm = new ReflectionVirtualMachine(this.validator, internalTxExecutorFactory, this.loggerFactory, this.network);
-
-            var address = TestAddress.ToUint160(this.network);
+            uint160 address = TestAddress.ToUint160(this.network);
 
             var callData = new CallData(gasLimit, address, "ThrowException");
             this.repository.SetCode(address, contractCode);
             this.repository.SetContractType(address, "ThrowExceptionContract");
             var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
 
-            var result = vm.ExecuteMethod(gasMeter, 
-                this.repository, 
-                callData, 
+            VmExecutionResult result = this.vm.ExecuteMethod(gasMeter,
+                this.repository,
+                callData,
                 transactionContext);
 
             Assert.Equal(typeof(Exception), result.ExecutionException.GetType());

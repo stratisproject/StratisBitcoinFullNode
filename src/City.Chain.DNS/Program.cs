@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using NBitcoin;
+using City.Networks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
@@ -32,14 +32,16 @@ namespace City.Chain.DNS
             try
             {
                 var nodeSettings = new NodeSettings(
-                    network: Networks.CityTest,
-                    protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, 
+                    network: new CityTest(),
+                    protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION,
                     args: args);
 
                 var dnsSettings = new DnsSettings(nodeSettings);
 
                 if (string.IsNullOrWhiteSpace(dnsSettings.DnsHostName) || string.IsNullOrWhiteSpace(dnsSettings.DnsNameServer) || string.IsNullOrWhiteSpace(dnsSettings.DnsMailBox))
+                {
                     throw new ConfigurationException("When running as a DNS Seed service, the -dnshostname, -dnsnameserver and -dnsmailbox arguments must be specified on the command line.");
+                }
 
                 // Run as a full node with DNS or just a DNS service?
                 IFullNode node;
@@ -72,7 +74,9 @@ namespace City.Chain.DNS
 
                 // Run node.
                 if (node != null)
+                {
                     await node.RunAsync();
+                }
             }
             catch (Exception ex)
             {

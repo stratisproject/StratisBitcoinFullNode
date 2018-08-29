@@ -31,8 +31,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         public string Mnemonic { get; set; }
 
+        /// <summary>
+        /// This password is used to encrypt the wallet for secure storage. The password is required.
+        /// </summary>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
+
+        /// <summary>
+        /// This passphrase is used as an additional seed (word) joined together with the <see cref="Mnemonic"/>.
+        /// </summary>
+        /// <remarks>
+        /// Empty string is a valid passphrase.
+        /// </remarks>
+        [Required(ErrorMessage = "A passphrase is required.", AllowEmptyStrings = true)]
+        public string Passphrase { get; set; }
 
         public string Network { get; set; }
 
@@ -58,8 +70,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "A mnemonic is required.")]
         public string Mnemonic { get; set; }
 
+        /// <summary>
+        /// Supply the password that was used to create the wallet.
+        /// </summary>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
+
+        /// <summary>
+        /// Supply the passphrase that was used when account was created.
+        /// </summary>
+        /// <remarks>
+        /// If the wallet was created before <see cref="Passphrase"/> was available, set the passphrase to be the same as the password.
+        /// </remarks>
+        [Required(ErrorMessage = "A passphrase is required.", AllowEmptyStrings = true)]
+        public string Passphrase { get; set; }
 
         public string FolderPath { get; set; }
 
@@ -295,5 +319,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         [Required]
         public string Password { get; set; }
+    }
+
+    /// <summary>
+    /// Object used to synchronize a wallet
+    /// </summary>
+    public class WalletSyncFromDateRequest : RequestModel
+    {
+        [JsonConverter(typeof(IsoDateTimeConverter))]
+        public DateTime Date { get; set; }
     }
 }

@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using City.Networks;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
-using NBitcoin.NetworkDefinitions;
+using Stratis.Bitcoin.Networks;
+//using NBitcoin.NetworkDefinitions;
 using Xunit;
 
 namespace City.Chain.Tests
@@ -16,29 +18,30 @@ namespace City.Chain.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanGetNetworkFromName()
         {
-            Network cityMain = Networks.CityMain;
-            Network cityRegtest = Networks.CityRegTest;
-            Network cityTestnet = Networks.CityTest;
+            //Network cityMain = Networks.CityMain;
+            //Network cityRegtest = Networks.CityRegTest;
+            //Network cityTestnet = Networks.CityTest;
 
-            Assert.Equal(NetworksContainer.GetNetwork("citymain"), cityMain);
-            Assert.Equal(NetworksContainer.GetNetwork("CityMain"), cityMain);
-            Assert.Equal(NetworksContainer.GetNetwork("CityRegTest"), cityRegtest);
-            Assert.Equal(NetworksContainer.GetNetwork("cityregtest"), cityRegtest);
-            Assert.Equal(NetworksContainer.GetNetwork("CityTest"), cityTestnet);
-            Assert.Equal(NetworksContainer.GetNetwork("citytest"), cityTestnet);
-            Assert.Null(NetworksContainer.GetNetwork("invalid"));
+            //Assert.Equal(NetworksContainer.GetNetwork("citymain"), cityMain);
+            //Assert.Equal(NetworksContainer.GetNetwork("CityMain"), cityMain);
+            //Assert.Equal(NetworksContainer.GetNetwork("CityRegTest"), cityRegtest);
+            //Assert.Equal(NetworksContainer.GetNetwork("cityregtest"), cityRegtest);
+            //Assert.Equal(NetworksContainer.GetNetwork("CityTest"), cityTestnet);
+            //Assert.Equal(NetworksContainer.GetNetwork("citytest"), cityTestnet);
+            //Assert.Null(NetworksContainer.GetNetwork("invalid"));
         }
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void ReadMagicByteWithFirstByteDuplicated()
         {
-            List<byte> bytes = Networks.CityMain.MagicBytes.ToList();
+            var network = new CityMain();
+            List<byte> bytes = network.MagicBytes.ToList();
             bytes.Insert(0, bytes.First());
 
             using (var memstrema = new MemoryStream(bytes.ToArray()))
             {
-                bool found = Networks.CityMain.ReadMagic(memstrema, new CancellationToken());
+                bool found = network.ReadMagic(memstrema, new CancellationToken());
                 Assert.True(found);
             }
         }
@@ -47,11 +50,11 @@ namespace City.Chain.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CityMainIsInitializedCorrectly()
         {
-            Network network = Networks.CityMain;
+            Network network = new CityMain();
 
             Assert.Equal(0, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
-            Assert.Equal(4, network.SeedNodes.Count);
+            Assert.Equal(3, network.SeedNodes.Count);
 
             Assert.Equal("CityMain", network.Name);
             Assert.Equal(CityMain.CityRootFolderName, network.RootFolderName);
@@ -103,7 +106,7 @@ namespace City.Chain.Tests
             Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy]);
             Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.CSV]);
             Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.Segwit]);
-            Assert.Equal(12500, network.Consensus.LastPOWBlock);
+            Assert.Equal(125000, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(4535, network.Consensus.CoinType);
             Assert.Equal(new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimit);
@@ -127,9 +130,9 @@ namespace City.Chain.Tests
         public void GenerateWitnessAddressAndVerify()
         {
             List<Network> networks = new List<Network>();
-            networks.Add(Networks.CityMain);
-            networks.Add(Networks.Main);
-            networks.Add(Networks.StratisMain);
+            networks.Add(new CityMain());
+            networks.Add(new BitcoinMain());
+            networks.Add(new StratisMain());
 
             foreach (Network network in networks)
             {
@@ -148,7 +151,7 @@ namespace City.Chain.Tests
         [Trait("UnitTest", "UnitTest")]
         public void GenerateSomeCityMainNetAddressAndVerifyPrefix()
         {
-            Network network = Networks.CityMain;
+            Network network = new CityMain();
 
             for (int i = 0; i < 10; i++)
             {
@@ -183,7 +186,7 @@ namespace City.Chain.Tests
         [Trait("UnitTest", "UnitTest")]
         public void GenerateSomeCityTestNetAddressAndVerifyPrefix()
         {
-            Network network = Networks.CityTest;
+            Network network = new CityTest();
 
             for (int i = 0; i < 10; i++)
             {
@@ -218,7 +221,7 @@ namespace City.Chain.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CityTestnetIsInitializedCorrectly()
         {
-            Network network = Networks.CityTest;
+            Network network = new CityTest();
 
             Assert.Equal(0, network.Checkpoints.Count);
             Assert.Equal(1, network.DNSSeeds.Count);
@@ -297,7 +300,7 @@ namespace City.Chain.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CityRegTestIsInitializedCorrectly()
         {
-            Network network = Networks.CityRegTest;
+            Network network = new CityRegTest();
 
             Assert.Empty(network.Checkpoints);
             Assert.Empty(network.DNSSeeds);
@@ -353,7 +356,7 @@ namespace City.Chain.Tests
             Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy]);
             Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.CSV]);
             Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.Segwit]);
-            Assert.Equal(12500, network.Consensus.LastPOWBlock);
+            Assert.Equal(125000, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(4535, network.Consensus.CoinType);
             Assert.Equal(new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimit);

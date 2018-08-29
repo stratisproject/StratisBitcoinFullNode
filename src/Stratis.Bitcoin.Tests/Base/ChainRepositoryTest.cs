@@ -6,6 +6,7 @@ using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -13,7 +14,7 @@ namespace Stratis.Bitcoin.Tests.Base
 {
     public class ChainRepositoryTest : TestBase
     {
-        public ChainRepositoryTest() : base(Networks.StratisRegTest)
+        public ChainRepositoryTest() : base(KnownNetworks.StratisRegTest)
         {
         }
 
@@ -58,7 +59,7 @@ namespace Stratis.Bitcoin.Tests.Base
         public void SaveWritesChainToDisk()
         {
             string dir = CreateTestDir(this);
-            var chain = new ConcurrentChain(Networks.StratisRegTest);
+            var chain = new ConcurrentChain(KnownNetworks.StratisRegTest);
             this.AppendBlock(chain);
 
             using (var repo = new ChainRepository(dir, new LoggerFactory()))
@@ -83,7 +84,7 @@ namespace Stratis.Bitcoin.Tests.Base
         public void GetChainReturnsConcurrentChainFromDisk()
         {
             string dir = CreateTestDir(this);
-            var chain = new ConcurrentChain(Networks.StratisRegTest);
+            var chain = new ConcurrentChain(KnownNetworks.StratisRegTest);
             ChainedHeader tip = this.AppendBlock(chain);
 
             using (var engine = new DBreezeEngine(dir))
@@ -108,7 +109,7 @@ namespace Stratis.Bitcoin.Tests.Base
             }
             using (var repo = new ChainRepository(dir, new LoggerFactory()))
             {
-                var testChain = new ConcurrentChain(Networks.StratisRegTest);
+                var testChain = new ConcurrentChain(KnownNetworks.StratisRegTest);
                 repo.LoadAsync(testChain).GetAwaiter().GetResult();
                 Assert.Equal(tip, testChain.Tip);
             }

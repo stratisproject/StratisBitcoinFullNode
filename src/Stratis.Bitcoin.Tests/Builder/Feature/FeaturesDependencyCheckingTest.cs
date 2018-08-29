@@ -1,8 +1,9 @@
 ﻿using System;
-using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Builder.Feature
@@ -59,7 +60,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         [Fact]
         public void DependencyCheckWithValidDependencies()
         {
-            IFullNodeBuilder builder = new FullNodeBuilder().UseNodeSettings(NodeSettings.Default(Networks.StratisRegTest));
+            IFullNodeBuilder builder = new FullNodeBuilder().UseNodeSettings(NodeSettings.Default(KnownNetworks.StratisRegTest));
 
             builder.ConfigureFeature(features =>
             {
@@ -74,7 +75,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
                     .DependOn<FeatureB>();
             });
 
-            builder.Build();
+            builder.UsePosConsensus().Build();
         }
 
         /// <summary>
@@ -83,7 +84,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         [Fact]
         public void DependencyCheckWithInvalidDependenciesThrowsException()
         {
-            IFullNodeBuilder builder = new FullNodeBuilder().UseNodeSettings(NodeSettings.Default(Networks.StratisRegTest));
+            IFullNodeBuilder builder = new FullNodeBuilder().UseNodeSettings(NodeSettings.Default(KnownNetworks.StratisRegTest));
             builder.ConfigureFeature(features =>
             {
                 features

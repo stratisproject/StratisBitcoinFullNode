@@ -14,10 +14,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
     public sealed class StratisPosApiRunner : NodeRunner
     {
-        public StratisPosApiRunner(string dataDir)
+        public StratisPosApiRunner(string dataDir, Network network)
             : base(dataDir)
         {
-            this.Network = Networks.StratisRegTest;
+            this.Network = network;
         }
 
         public override void BuildNode()

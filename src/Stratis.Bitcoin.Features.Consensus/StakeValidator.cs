@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ConcurrentChain chain;
 
         /// <summary>Consensus' view of UTXO set.</summary>
-        private readonly CoinView coinView;
+        private readonly ICoinView coinView;
 
         /// <summary>Defines a set of options that are used by the consensus rules of Proof Of Stake (POS).</summary>
         private readonly PosConsensusOptions consensusOptions;
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <param name="chain">Chain of headers.</param>
         /// <param name="coinView">Used for getting UTXOs.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
-        public StakeValidator(Network network, IStakeChain stakeChain, ConcurrentChain chain, CoinView coinView, ILoggerFactory loggerFactory)
+        public StakeValidator(Network network, IStakeChain stakeChain, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.stakeChain = stakeChain;
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, NBitcoin.Consensus consensus, bool proofOfStake)
+        public Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, IConsensus consensus, bool proofOfStake)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(chainedHeader), chainedHeader, nameof(proofOfStake), proofOfStake);
 

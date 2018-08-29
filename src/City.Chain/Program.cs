@@ -1,8 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using City.Chain.Features.SimpleWallet;
+using City.Networks;
 using NBitcoin;
+using NBitcoin.Networks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
@@ -12,14 +13,10 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
-using System.Linq;
-using System.IO;
-using System.Diagnostics;
-using System.Threading;
 
 namespace City.Chain
 {
@@ -52,10 +49,9 @@ namespace City.Chain
                 // Temporary enforce testnet if anyone launces without -testnet parameter. TODO: Remove before mainnet launch.
                 args = args.Append("-testnet").ToArray();
 
-
                 // To avoid modifying Stratis source, we'll parse the arguments and set some hard-coded defaults for City Chain, like the ports.
                 var configReader = new TextFileConfiguration(args ?? new string[] { });
-                
+
                 var networkIdentifier = "main";
 
                 if (configReader.GetOrDefault<bool>("testnet", false))
@@ -79,6 +75,9 @@ namespace City.Chain
                 }
 
                 var network = GetNetwork(networkConfiguration.Identifier, networkConfiguration.Chain);
+
+                // Register the network found.
+                NetworkRegistration.Register(network);
 
                 if (args.Contains("-generate"))
                 {
@@ -113,7 +112,9 @@ namespace City.Chain
                     .Build();
 
                 if (node != null)
+                {
                     await node.RunAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -127,45 +128,45 @@ namespace City.Chain
             {
                 if (network == "main")
                 {
-                    return Networks.CityMain;
+                    return new CityMain();
                 }
                 else if (network == "testnet")
                 {
-                    return Networks.CityTest;
+                    return new CityTest();
                 }
                 else if (network == "regtest")
                 {
-                    return Networks.CityRegTest;
+                    return new CityRegTest();
                 }
             }
             else if (chain == "bitcoin")
             {
                 if (network == "main")
                 {
-                    return Networks.Main;
+                    return new BitcoinMain();
                 }
                 else if (network == "testnet")
                 {
-                    return Networks.TestNet;
+                    return new BitcoinTest();
                 }
                 else if (network == "regtest")
                 {
-                    return Networks.RegTest;
+                    return new BitcoinRegTest();
                 }
             }
             else if (chain == "stratis")
             {
                 if (network == "main")
                 {
-                    return Networks.StratisMain;
+                    return new StratisMain();
                 }
                 else if (network == "testnet")
                 {
-                    return Networks.StratisTest;
+                    return new StratisTest();
                 }
                 else if (network == "regtest")
                 {
-                    return Networks.StratisRegTest;
+                    return new StratisRegTest();
                 }
             }
 

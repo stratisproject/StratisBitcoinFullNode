@@ -15,6 +15,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IMessage message,
             IPersistentState persistentState,
             IGasMeter gasMeter,
+            IContractLogger contractLogger,
             IInternalTransactionExecutor internalTransactionExecutor,
             IInternalHashHelper internalHashHelper,
             Func<ulong> getBalance)
@@ -23,6 +24,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.Message = message;
             this.PersistentState = persistentState;
             this.GasMeter = gasMeter;
+            this.ContractLogger = contractLogger;
             this.InternalTransactionExecutor = internalTransactionExecutor;
             this.InternalHashHelper = internalHashHelper;
             this.GetBalance = getBalance;
@@ -35,6 +37,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public IPersistentState PersistentState { get; }
 
         public IGasMeter GasMeter { get; }
+
+        public IContractLogger ContractLogger { get; }
 
         public IInternalTransactionExecutor InternalTransactionExecutor { get; }
 

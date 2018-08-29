@@ -102,6 +102,7 @@ namespace Stratis.Bitcoin.Configuration
                 list = new List<string>();
                 this.args.Add(key, list);
             }
+
             list.Add(value);
         }
 
@@ -130,7 +131,7 @@ namespace Stratis.Bitcoin.Configuration
             if (!this.args.TryGetValue($"-{key}", out List<string> values))
                 values = new List<string>();
 
-            logger?.LogDebug("{0} entries were returned for the key '{1}': {2}", 
+            logger?.LogDebug("{0} entries were returned for the key '{1}': {2}",
                 values.Count, key, string.Join(",", values.Select(str => $"'{str}'")));
 
             return values.ToArray();
@@ -196,6 +197,11 @@ namespace Stratis.Bitcoin.Configuration
             if (typeof(T) == typeof(int))
             {
                 return (T)(object)int.Parse(str, CultureInfo.InvariantCulture);
+            }
+
+            if (typeof(T) == typeof(ulong))
+            {
+                return (T)(object)ulong.Parse(str, CultureInfo.InvariantCulture);
             }
 
             if (typeof(T) == typeof(Uri))

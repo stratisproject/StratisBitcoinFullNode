@@ -149,4 +149,3 @@ namespace Stratis.Bitcoin.Utilities
         }
     }
 }
-

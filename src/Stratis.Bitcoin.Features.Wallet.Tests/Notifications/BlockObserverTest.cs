@@ -1,7 +1,7 @@
 ﻿using Moq;
-using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests.Notifications
@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests.Notifications
         {
             var walletSyncManager = new Mock<IWalletSyncManager>();
             var observer = new BlockObserver(walletSyncManager.Object);
-            var block = Networks.StratisMain.CreateBlock();
+            var block = KnownNetworks.StratisMain.CreateBlock();
 
             observer.OnNext(block);
 

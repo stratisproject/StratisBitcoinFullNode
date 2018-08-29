@@ -56,7 +56,8 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("()");
 
             INetworkPeer peer = this.AttachedPeer;
-            if (peer.State == NetworkPeerState.Connected)
+            var peerBehavior = peer.Behavior<IConnectionManagerBehavior>();
+            if (peer.State == NetworkPeerState.Connected && !peerBehavior.Whitelisted)
             {
                 if (this.peerBanning.IsBanned(peer.RemoteSocketEndpoint))
                 {
@@ -80,7 +81,7 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         /// <param name="peer">The peers that is sending the message.</param>
         /// <param name="message">The message payload.</param>
-        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message) //TODO this should be removed after the big refactoring activation
+        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message) // TODO this should be removed after the big refactoring activation
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
 

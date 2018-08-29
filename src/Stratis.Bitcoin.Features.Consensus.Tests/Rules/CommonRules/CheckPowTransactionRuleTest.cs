@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     {
         private ConsensusOptions options;
 
-        private NBitcoin.Consensus consensus;
+        private IConsensus consensus;
 
         public CheckPowTransactionRuleTest()
         {
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var transaction = new Transaction();
             transaction.Inputs.Add(new TxIn());
-            transaction = this.GenerateTransactionWithWeight(transaction, this.options.MaxBlockBaseSize + 1, TransactionOptions.None);
+            transaction = this.GenerateTransactionWithWeight(transaction,(int)this.options.MaxBlockBaseSize + 1, TransactionOptions.None);
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckPowTransactionRule>().CheckTransaction(this.network, this.options, transaction));
 

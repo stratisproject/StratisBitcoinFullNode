@@ -212,16 +212,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public Mnemonic CreateWallet(string password, string name, string passphrase = null, Mnemonic mnemonic = null)
+        public Mnemonic CreateWallet(string password, string name, string passphrase, Mnemonic mnemonic = null)
         {
             Guard.NotEmpty(password, nameof(password));
             Guard.NotEmpty(name, nameof(name));
+            Guard.NotNull(passphrase, nameof(passphrase));
 
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
-
-            // For now the passphrase is set to be the password by default.
-            if (passphrase == null)
-                passphrase = password;
 
             // Generate the root seed used to generate keys from a mnemonic picked at random
             // and a passphrase optionally provided by the user.
@@ -251,7 +248,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             else
             {
-                this.UpdateWhenChainDownloaded(new[] { wallet }, DateTime.Now);
+                this.UpdateWhenChainDownloaded(new[] { wallet }, this.dateTimeProvider.GetUtcNow());
             }
 
             // Save the changes to the file and add addresses to be tracked.
@@ -292,16 +289,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        public Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase = null)
+        public Wallet RecoverWallet(string password, string name, string mnemonic, DateTime creationTime, string passphrase)
         {
             Guard.NotEmpty(password, nameof(password));
             Guard.NotEmpty(name, nameof(name));
             Guard.NotEmpty(mnemonic, nameof(mnemonic));
+            Guard.NotNull(passphrase, nameof(passphrase));
             this.logger.LogTrace("({0}:'{1}')", nameof(name), name);
-
-            // For now the passphrase is set to be the password by default.
-            if (passphrase == null)
-                passphrase = password;
 
             // Generate the root seed used to generate keys.
             ExtKey extendedKey;
@@ -805,7 +799,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         $"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
                 }
 
-                res = account.GetSpendableTransactions(this.chain.Tip.Height, confirmations).ToArray();
+                res = account.GetSpendableTransactions(this.chain.Tip.Height, this.network, confirmations).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", res.Count());
@@ -1006,6 +1000,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var newTransaction = new TransactionData
                 {
                     Amount = amount,
+                    IsCoinBase = transaction.IsCoinBase == false ? (bool?)null : true,
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true,
                     BlockHeight = blockHeight,
                     BlockHash = block?.GetHash(),
@@ -1244,12 +1239,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                // Update the wallets with the last processed block height.
-                foreach (AccountRoot accountRoot in wallet.AccountsRoot.Where(a => a.CoinType == this.coinType))
-                {
-                    accountRoot.LastBlockSyncedHeight = chainedHeader.Height;
-                    accountRoot.LastBlockSyncedHash = chainedHeader.HashBlock;
-                }
+                wallet.SetLastBlockDetailsByCoinType(this.coinType, chainedHeader);
             }
 
             this.logger.LogTrace("(-)");

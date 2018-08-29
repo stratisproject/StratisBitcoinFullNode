@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -28,6 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private Exception caughtException;
         private const string WalletName = "mywallet";
         private const string WalletPassword = "123456";
+        private const string WalletPassphrase = "passphrase";
         private const string WalletAccountName = "account 0";
         private const string NodeOne = "one";
         private const string NodeTwo = "two";
@@ -37,7 +39,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         protected override void BeforeTest()
         {
             this.sharedSteps = new SharedSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder(this.CurrentTest.DisplayName);
+            this.nodeGroupBuilder = new NodeGroupBuilder(this.CurrentTest.DisplayName, KnownNetworks.RegTest);
         }
 
         protected override void AfterTest()
@@ -48,8 +50,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private void two_connected_nodes()
         {
             this.nodes = this.nodeGroupBuilder
-                .StratisPowNode(NodeOne).Start().NotInIBD().WithWallet(WalletName, WalletPassword)
-                .StratisPowNode(NodeTwo).Start().NotInIBD().WithWallet(WalletName, WalletPassword)
+                .StratisPowNode(NodeOne).Start().NotInIBD().WithWallet(WalletName, WalletPassword, WalletPassphrase)
+                .StratisPowNode(NodeTwo).Start().NotInIBD().WithWallet(WalletName, WalletPassword, WalletPassphrase)
                 .WithConnections()
                     .Connect(NodeOne, NodeTwo)
                     .AndNoMoreConnections()

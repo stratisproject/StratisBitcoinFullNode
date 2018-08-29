@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -22,6 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private List<uint256> blockIds;
         private IList<Block> retrievedBlocks;
         private string password = "P@ssw0rd";
+        private string passphrase = "p@ssphr@se";
         private WalletAccountReference miningWalletAccountReference;
         private HdAddress minerAddress;
         private Features.Wallet.Wallet miningWallet;
@@ -39,6 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private Transaction wontRetrieveTransaction;
         private uint256 retrievedBlockId;
         private Transaction wontRetrieveBlockId;
+        private readonly Network network = KnownNetworks.RegTest;
 
         public RetrieveFromBlockStoreSpecification(ITestOutputHelper output) : base(output)
         {
@@ -57,28 +60,28 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void a_pow_node_running()
         {
-            this.node = this.builder.CreateStratisPowNode();
+            this.node = this.builder.CreateStratisPowNode(this.network);
             this.node.Start();
             this.node.NotInIBD();
         }
 
         private void a_pow_node_to_transact_with()
         {
-            this.transactionNode = this.builder.CreateStratisPowNode();
+            this.transactionNode = this.builder.CreateStratisPowNode(this.network);
             this.transactionNode.Start();
             this.transactionNode.NotInIBD();
 
             this.transactionNode.CreateRPCClient().AddNode(this.node.Endpoint, true);
             this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
 
-            this.transactionNode.FullNode.WalletManager().CreateWallet(this.password, "receiver");
+            this.transactionNode.FullNode.WalletManager().CreateWallet(this.password, "receiver", this.passphrase);
             this.receiverAddress = this.transactionNode.FullNode.WalletManager()
                 .GetUnusedAddress(new WalletAccountReference("receiver", "account 0"));
         }
 
         private void a_miner_validating_blocks()
         {
-            this.node.FullNode.WalletManager().CreateWallet(this.password, "miner");
+            this.node.FullNode.WalletManager().CreateWallet(this.password, "miner", this.passphrase);
             this.miningWalletAccountReference = new WalletAccountReference("miner", "account 0");
             this.minerAddress = this.node.FullNode.WalletManager().GetUnusedAddress(this.miningWalletAccountReference);
             this.miningWallet = this.node.FullNode.WalletManager().GetWalletByName("miner");
@@ -122,12 +125,14 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void a_real_transaction()
         {
-            var transactionBuildContext = new TransactionBuildContext(
-                    this.node.FullNode.Network,
-                    this.miningWalletAccountReference,
-                    new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } },
-                    this.password)
-            { MinConfirmations = this.maturity };
+            var transactionBuildContext = new TransactionBuildContext(this.node.FullNode.Network)
+            {
+                AccountReference = this.miningWalletAccountReference,
+                MinConfirmations = this.maturity,
+                WalletPassword = this.password,
+                Recipients = new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } }
+            };
+
             this.transaction = this.node.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 
             this.node.FullNode.NodeService<WalletController>()

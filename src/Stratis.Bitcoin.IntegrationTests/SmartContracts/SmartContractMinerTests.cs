@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DBreeze;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
@@ -23,8 +24,10 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.IntegrationTests.Mempool;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
@@ -39,9 +42,10 @@ using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Loader;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 using Key = NBitcoin.Key;
-using NewContractAddressExtension = Stratis.SmartContracts.Core.NewContractAddressExtension;
 
 
 namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
@@ -63,6 +67,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 new LoggerFactory(),
                 testContext.mempool,
                 testContext.mempoolLock,
+                new MinerSettings(testContext.nodeSettings),
                 testContext.network,
                 testContext.stateRoot);
         }
@@ -121,6 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         {
             public List<Blockinfo> blockinfo;
             public Network network;
+            public NodeSettings nodeSettings;
             public Script scriptPubKey;
             public BlockTemplate newBlock;
             public Transaction tx, tx2;
@@ -145,13 +151,16 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public SmartContractValidator validator;
             public IKeyEncodingStrategy keyEncodingStrategy;
             public ReflectionSmartContractExecutorFactory executorFactory;
-            public DBreezeContractReceiptStorage receiptStorage;
 
             private bool useCheckpoints = true;
             public Key privateKey;
             private InternalTransactionExecutorFactory internalTxExecutorFactory;
             private ReflectionVirtualMachine vm;
             private ICallDataSerializer serializer;
+            private ContractAssemblyLoader assemblyLoader;
+            private IContractModuleDefinitionReader moduleDefinitionReader;
+            private IContractPrimitiveSerializer contractPrimitiveSerializer;
+            public AddressGenerator AddressGenerator { get; set; }
 
             public TestContext()
             {
@@ -173,6 +182,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.entry = new TestMemPoolEntryHelper();
                 this.chain = new ConcurrentChain(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
+                this.network.Consensus.Rules = new SmartContractPowRuleRegistration().GetRules();
+
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
                 this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
@@ -180,8 +191,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
 
-                var nodeSettings = NodeSettings.Default();
-                var consensusSettings = new ConsensusSettings(nodeSettings);
+                this.nodeSettings = NodeSettings.Default();
+                var consensusSettings = new ConsensusSettings(this.nodeSettings);
                 consensusSettings.UseCheckpoints = this.useCheckpoints;
 
                 this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
@@ -194,38 +205,36 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
 
                 this.stateRoot = new ContractStateRepositoryRoot(stateDB);
-                this.validator = new SmartContractValidator(new List<ISmartContractValidator>
-                {
-                    new SmartContractFormatValidator(ReferencedAssemblyResolver.AllowedAssemblies),
-                    new SmartContractDeterminismValidator()
-                });
-
-                this.receiptStorage = new DBreezeContractReceiptStorage(new DataFolder(folder));
+                this.validator = new SmartContractValidator();
 
                 this.refundProcessor = new SmartContractResultRefundProcessor(loggerFactory);
                 this.transferProcessor = new SmartContractResultTransferProcessor(loggerFactory, this.network);
-                
+
                 this.serializer = CallDataSerializer.Default;
                 this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
+                this.AddressGenerator = new AddressGenerator();
+                this.assemblyLoader = new ContractAssemblyLoader();
+                this.moduleDefinitionReader = new ContractModuleDefinitionReader();
+                this.contractPrimitiveSerializer = new ContractPrimitiveSerializer(this.network);
+                this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, loggerFactory, this.network, this.AddressGenerator, this.assemblyLoader, this.moduleDefinitionReader, this.contractPrimitiveSerializer);
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(loggerFactory, this.contractPrimitiveSerializer, this.serializer, this.refundProcessor, this.transferProcessor, this.vm);
 
-                this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, loggerFactory, this.network);
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(loggerFactory, this.serializer, this.refundProcessor, this.transferProcessor, this.vm);
+                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker(loggerFactory), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings());
+                var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
 
-                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker());
-
-                var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker());
-                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, Networks.Main, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
+                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
                 var connectionSettings = new ConnectionManagerSettings(nodeSettings);
-                var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, connectionSettings, new SmartContractVersionProvider());
-
+                var selfEndpointTracker = new SelfEndpointTracker(loggerFactory);
+                var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new SmartContractVersionProvider());
                 var blockPuller = new LookaheadBlockPuller(this.chain, connectionManager, new LoggerFactory());
                 var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
 
-                var smartContractRuleRegistration = new SmartContractRuleRegistration();
-                ConsensusRules consensusRules = new SmartContractConsensusRules(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, blockPuller, this.cachedCoinView, this.receiptStorage).Register(smartContractRuleRegistration);
+                var smartContractRuleRegistration = new SmartContractPowRuleRegistration();
 
-                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, nodeSettings, peerBanning, consensusRules);
+                ConsensusRules consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings, dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, blockPuller, new PersistentReceiptRepository(new DataFolder(folder)), this.cachedCoinView).Register();
+
+                this.consensus = new ConsensusLoop(new AsyncLoopFactory(loggerFactory), new NodeLifetime(), this.chain, this.cachedCoinView, blockPuller, new NodeDeployments(this.network, this.chain), loggerFactory, new ChainState(new InvalidBlockHashStore(dateTimeProvider)), connectionManager, dateTimeProvider, new Signals.Signals(), consensusSettings, this.nodeSettings, peerBanning, consensusRules);
                 await this.consensus.StartAsync();
 
                 this.entry.Fee(11);
@@ -234,7 +243,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 date1.time = dateTimeProvider.GetTime();
                 date1.timeutc = dateTimeProvider.GetUtcNow();
                 this.date = date1;
-                this.mempool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), new LoggerFactory(), nodeSettings), new LoggerFactory(), nodeSettings); ;
+                this.mempool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(this.nodeSettings), new LoggerFactory(), this.nodeSettings), new LoggerFactory(), this.nodeSettings); ;
                 this.mempoolLock = new MempoolSchedulerLock();
 
                 // Simple block creation, nothing special yet:
@@ -302,7 +311,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var smartContractCarrier = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, smartContractCarrier, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress();
+            uint160 newContractAddress = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             byte[] ownerFromStorage = context.stateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("Owner"));
             byte[] ownerToBytes = context.privateKey.PubKey.GetAddress(context.network).Hash.ToBytes();
             Assert.Equal(ownerFromStorage, ownerToBytes);
@@ -329,7 +338,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress();
+            uint160 newContractAddress = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -391,7 +400,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress();
+            uint160 newContractAddress = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -443,7 +452,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var contractCarrier = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractCarrier, context.txFirst[0].GetHash(), 100_000_000, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress();
+            uint160 newContractAddress = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
             var unspent = context.stateRoot.GetUnspent(newContractAddress);
@@ -469,7 +478,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             var contractCarrier = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractCarrier, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress();
+            uint160 newContractAddress = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -523,7 +532,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress();
+            uint160 newContractAddress = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -553,7 +562,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress();
+            uint160 newContractAddress = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
             Assert.True(pblocktemplate.Block.Transactions[0].Outputs[1].Value > 0); // gas refund
 
@@ -598,7 +607,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress();
+            uint160 newContractAddress = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
             context.mempool.Clear();
@@ -634,7 +643,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress();
+            uint160 newContractAddress = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
             context.mempool.Clear();
@@ -645,7 +654,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, compilationResult.Compilation, gasPrice, gasLimit);
             tx = this.AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
             pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress2 = tx.GetNewContractAddress();
+            uint160 newContractAddress2 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress2));
 
             context.mempool.Clear();
@@ -692,7 +701,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, SmartContractCompiler.CompileFile("SmartContracts/CountContract.cs").Compilation, gasPrice, gasLimit);
             Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress = tx.GetNewContractAddress();
+            uint160 newContractAddress = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
             context.mempool.Clear();
@@ -700,7 +709,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, SmartContractCompiler.CompileFile("SmartContracts/CallContract.cs").Compilation, gasPrice, gasLimit);
             tx = this.AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
             pblocktemplate = await this.BuildBlockAsync(context);
-            uint160 newContractAddress2 = tx.GetNewContractAddress();
+            uint160 newContractAddress2 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress2));
 
             context.mempool.Clear();
@@ -737,7 +746,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
             Transaction tx = AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
             BlockTemplate pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress = NewContractAddressExtension.GetContractAddressFromTransactionHash(tx.GetHash());
+            uint160 newContractAddress = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
 
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
 
@@ -750,7 +759,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
             tx = AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
             pblocktemplate = await BuildBlockAsync(context);
-            uint160 newContractAddress2 = NewContractAddressExtension.GetContractAddressFromTransactionHash(tx.GetHash());
+            uint160 newContractAddress2 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
 
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress2));
 
@@ -803,8 +812,60 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
 
             // Check all went well. i.e. contract is deployed.
-            uint160 newContractAddress = NewContractAddressExtension.GetContractAddressFromTransactionHash(tx.GetHash());
+            uint160 newContractAddress = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
             Assert.NotNull(context.stateRoot.GetCode(newContractAddress));
+        }
+
+        /// <summary>
+        /// Should send funds to another contract, causing the contract's ReceiveHandler function to be invoked.
+        /// </summary>
+        [Fact]
+        public async Task SmartContracts_TransferFunds_Invokes_Receive_Async()
+        {
+            TestContext context = new TestContext();
+            await context.InitializeAsync();
+
+            ulong gasPrice = 1;
+            Gas gasLimit = (Gas)1000000;
+            var gasBudget = gasPrice * gasLimit;
+
+            var receiveContract = Path.Combine("SmartContracts", "ReceiveHandlerContract.cs");
+            var receiveCompilation = SmartContractCompiler.CompileFile(receiveContract).Compilation;
+
+            SmartContractCarrier contractTransaction = SmartContractCarrier.CreateContract(1, receiveCompilation, gasPrice, gasLimit);
+            Transaction tx = this.AddTransactionToMempool(context, contractTransaction, context.txFirst[0].GetHash(), 0, gasBudget);
+            BlockTemplate pblocktemplate = await this.BuildBlockAsync(context);
+            uint160 receiveContractAddress1 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
+            Assert.NotNull(context.stateRoot.GetCode(receiveContractAddress1));
+
+            context.mempool.Clear();
+
+            SmartContractCarrier contractTransaction2 = SmartContractCarrier.CreateContract(1, receiveCompilation, gasPrice, gasLimit);
+            tx = this.AddTransactionToMempool(context, contractTransaction2, context.txFirst[1].GetHash(), 0, gasBudget);
+            pblocktemplate = await this.BuildBlockAsync(context);
+            uint160 receiveContractAddress2 = context.AddressGenerator.GenerateAddress(tx.GetHash(), 0);
+            Assert.NotNull(context.stateRoot.GetCode(receiveContractAddress2));
+
+            context.mempool.Clear();
+
+            ulong fundsToSend = 1000;
+            string[] testMethodParameters = new string[]
+            {
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, receiveContractAddress2.ToAddress(context.network)),
+                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ULong, fundsToSend),
+            };
+
+            SmartContractCarrier transferTransaction = SmartContractCarrier.CallContract(1, receiveContractAddress1, "SendFunds", gasPrice, gasLimit, testMethodParameters);
+            pblocktemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferTransaction, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
+            byte[] receiveInvoked = context.stateRoot.GetStorageValue(receiveContractAddress2, Encoding.UTF8.GetBytes("ReceiveInvoked"));
+            byte[] fundsReceived = context.stateRoot.GetStorageValue(receiveContractAddress2, Encoding.UTF8.GetBytes("ReceivedFunds"));
+
+            var serializer = new ContractPrimitiveSerializer(context.network);
+
+            Assert.NotNull(receiveInvoked);
+            Assert.NotNull(fundsReceived);
+            Assert.True(serializer.Deserialize<bool>(receiveInvoked));
+            Assert.Equal(fundsToSend, serializer.Deserialize<ulong>(fundsReceived));
         }
 
         private async Task<BlockTemplate> AddTransactionToMemPoolAndBuildBlockAsync(TestContext context, SmartContractCarrier smartContractCarrier, uint256 prevOutHash, ulong value, ulong gasBudget)
@@ -843,19 +904,17 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         private readonly Dictionary<Type, object> registered;
 
         public MockServiceProvider(
-            CoinView coinView,
+            ICoinView coinView,
             ISmartContractExecutorFactory executorFactory,
             ContractStateRepositoryRoot stateRoot,
-            ILoggerFactory loggerFactory,
-            ISmartContractReceiptStorage receiptStorage)
+            ILoggerFactory loggerFactory)
         {
             this.registered = new Dictionary<Type, object>
             {
-                { typeof(CoinView), coinView },
+                { typeof(ICoinView), coinView },
                 { typeof(ISmartContractExecutorFactory), executorFactory },
                 { typeof(ContractStateRepositoryRoot), stateRoot },
-                { typeof(ILoggerFactory), loggerFactory },
-                { typeof(ISmartContractReceiptStorage), receiptStorage }
+                { typeof(ILoggerFactory), loggerFactory }
             };
         }
 

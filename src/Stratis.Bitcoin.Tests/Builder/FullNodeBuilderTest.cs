@@ -5,6 +5,8 @@ using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -60,7 +62,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             Assert.Single(this.featureCollectionDelegates);
             Assert.Empty(this.serviceProviderDelegates);
             Assert.Single(this.serviceCollectionDelegates);
-            Assert.Equal(Networks.Main, this.fullNodeBuilder.Network);
+            Assert.Equal(KnownNetworks.Main, this.fullNodeBuilder.Network);
             Assert.Equal(settings, this.fullNodeBuilder.NodeSettings);
         }
 
@@ -104,7 +106,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         public void BuildWithInitialServicesSetupConfiguresFullNodeUsingConfiguration()
         {
             string dataDir = "TestData/FullNodeBuilder/BuildWithInitialServicesSetup";
-            var nodeSettings = new NodeSettings(Networks.StratisRegTest, args: new string[] { $"-datadir={dataDir}" });
+            var nodeSettings = new NodeSettings(KnownNetworks.StratisRegTest, args: new string[] { $"-datadir={dataDir}" });
 
             this.fullNodeBuilder = new FullNodeBuilder(nodeSettings, this.serviceCollectionDelegates, this.serviceProviderDelegates, this.featureCollectionDelegates, this.featureCollection);
 
@@ -119,7 +121,7 @@ namespace Stratis.Bitcoin.Tests.Builder
                 e.AddFeature<DummyFeature>();
             });
 
-            IFullNode result = this.fullNodeBuilder.Build();
+            IFullNode result = this.fullNodeBuilder.UsePosConsensus().Build();
 
             Assert.NotNull(result);
         }
@@ -200,7 +202,7 @@ namespace Stratis.Bitcoin.Tests.Builder
         public void WhenNodeSettingsIsNullUseDefault()
         {
             var builder = new FullNodeBuilder(null);
-            Assert.Equal(Networks.Main, builder.Network);
+            Assert.Equal(KnownNetworks.Main, builder.Network);
         }
     }
 }

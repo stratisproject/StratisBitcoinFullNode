@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus.Rules
@@ -11,7 +9,7 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// <summary>
     /// An abstract rule for implementing consensus rules.
     /// </summary>
-    public abstract class ConsensusRule
+    public abstract class ConsensusRule : IConsensusRule
     {
         /// <summary>Instance logger.</summary>
         public ILogger Logger { get; set; }

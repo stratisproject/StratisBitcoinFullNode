@@ -9,7 +9,7 @@
     },
     "City.Chain (Test Network)": {
       "commandName": "Project",
-      "commandLineArgs": "-coin city -network test"
+      "commandLineArgs": "-testnet -datadir=citynode"
     },
     "City.Chain (Test Network with RPC)": {
       "commandName": "Project",

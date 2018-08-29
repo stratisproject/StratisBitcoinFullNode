@@ -2,26 +2,26 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
-    public class WalletSyncManager : IWalletSyncManager
+    public class WalletSyncManager : IWalletSyncManager, IDisposable
     {
-        protected readonly IWalletManager walletManager;
+        private readonly IWalletManager walletManager;
 
-        protected readonly ConcurrentChain chain;
-
-        protected readonly CoinType coinType;
+        private readonly ConcurrentChain chain;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        private readonly IBlockStoreCache blockStoreCache;
+        private readonly IBlockStore blockStore;
 
         private readonly StoreSettings storeSettings;
 
@@ -32,24 +32,38 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public ChainedHeader WalletTip => this.walletTip;
 
+        /// <summary>Queue which contains blocks that should be processed by <see cref="WalletManager"/>.</summary>
+        private readonly AsyncQueue<Block> blocksQueue;
+
+        /// <summary>Current <see cref="blocksQueue"/> size in bytes.</summary>
+        private long blocksQueueSize;
+
+        /// <summary>Flag to determine when the <see cref="MaxQueueSize"/> is reached.</summary>
+        private bool maxQueueSizeReached;
+
+        /// <summary>Limit <see cref="blocksQueue"/> size to 100MB.</summary>
+        private const int MaxQueueSize = 100 * 1024 * 1024;
+
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
-            Network network, IBlockStoreCache blockStoreCache, StoreSettings storeSettings, INodeLifetime nodeLifetime)
+            Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(network, nameof(network));
-            Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
+            Guard.NotNull(blockStore, nameof(blockStore));
             Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
 
             this.walletManager = walletManager;
             this.chain = chain;
-            this.blockStoreCache = blockStoreCache;
-            this.coinType = (CoinType)network.Consensus.CoinType;
+            this.blockStore = blockStore;
             this.storeSettings = storeSettings;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.blocksQueue = new AsyncQueue<Block>(this.OnProcessBlockAsync);
+
+            this.blocksQueueSize = 0;
         }
 
         /// <inheritdoc />
@@ -95,21 +109,29 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger.LogTrace("(-)");
         }
 
-        /// <inheritdoc />
-        public virtual void ProcessBlock(Block block)
+        /// <summary>Called when a <see cref="Block"/> is added to the <see cref="blocksQueue"/>.
+        /// Depending on the <see cref="WalletTip"/> and incoming block height, this method will decide whether the <see cref="Block"/> will be processed by the <see cref="WalletManager"/>.
+        /// </summary>
+        /// <param name="block">Block to be processed.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        private async Task OnProcessBlockAsync(Block block, CancellationToken cancellationToken)
         {
             Guard.NotNull(block, nameof(block));
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
+            long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, -block.BlockSize.Value);            
+            this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
+
             ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
+
             if (newTip == null)
             {
                 this.logger.LogTrace("(-)[NEW_TIP_REORG]");
                 return;
             }
 
-            // If the new block's previous hash is the same as the
-            // wallet hash then just pass the block to the manager.
+            // If the new block's previous hash is not the same as the one we have, there might have been a reorg.
+            // If the new block follows the previous one, just pass the block to the manager.
             if (block.Header.HashPrevBlock != this.walletTip.HashBlock)
             {
                 // If previous block does not match there might have
@@ -136,7 +158,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // The new tip can be ahead or behind the wallet.
                 // If the new tip is ahead we try to bring the wallet up to the new tip.
                 // If the new tip is behind we just check the wallet and the tip are in the same chain.
-
                 if (newTip.Height > this.walletTip.Height)
                 {
                     ChainedHeader findTip = newTip.FindAncestorOrSelf(this.walletTip);
@@ -153,7 +174,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     while (next != newTip)
                     {
                         // While the wallet is catching up the entire node will wait.
-                        // If a wallet is recovered to a date in the past. Consensus will stop till the wallet is up to date.
+                        // If a wallet is recovered to a date in the past. Consensus will stop until the wallet is up to date.
 
                         // TODO: This code should be replaced with a different approach
                         // Similar to BlockStore the wallet should be standalone and not depend on consensus.
@@ -169,7 +190,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         {
                             token.ThrowIfCancellationRequested();
 
-                            nextblock = this.blockStoreCache.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                            nextblock = await this.blockStore.GetBlockAsync(next.HashBlock).ConfigureAwait(false);
                             if (nextblock == null)
                             {
                                 // The idea in this abandoning of the loop is to release consensus to push the block.
@@ -216,6 +237,46 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
+        public virtual void ProcessBlock(Block block)
+        {
+            Guard.NotNull(block, nameof(block));
+
+            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
+
+            if (!this.walletManager.ContainsWallets)
+            {
+                this.logger.LogTrace("(-)[NO_WALLET]");
+                return;
+            }
+
+            // If the queue reaches the maximum limit, ignore incoming blocks until the queue is empty.
+            if (!this.maxQueueSizeReached)
+            {
+                if (this.blocksQueueSize >= MaxQueueSize)
+                {
+                    this.maxQueueSizeReached = true;
+                    this.logger.LogTrace("(-)[REACHED_MAX_QUEUE_SIZE]");
+                    return;
+                }
+            }
+            else
+            {
+                // If queue is empty then reset the maxQueueSizeReached flag.
+                this.maxQueueSizeReached = this.blocksQueueSize > 0;
+            }
+
+            if (!this.maxQueueSizeReached)
+            {
+                long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, block.BlockSize.Value);
+                this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
+
+                this.blocksQueue.Enqueue(block);
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
@@ -246,6 +307,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             ChainedHeader chainedHeader = this.chain.GetBlock(height);
             this.walletTip = chainedHeader ?? throw new WalletException("Invalid block height");
             this.walletManager.WalletTipHash = chainedHeader.HashBlock;
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.logger.LogTrace("()");
+
+            this.blocksQueue.Dispose();
 
             this.logger.LogTrace("(-)");
         }

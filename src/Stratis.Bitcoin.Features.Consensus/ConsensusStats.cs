@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly DBreezeCoinView dbreeze;
 
-        private readonly CoinView bottom;
+        private readonly ICoinView bottom;
 
         private readonly LookaheadBlockPuller lookaheadPuller;
 
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IDateTimeProvider dateTimeProvider;
 
         public ConsensusStats(
-            CoinView coinView,
+            ICoinView coinView,
             IConsensusLoop consensusLoop,
             IInitialBlockDownloadState initialBlockDownloadState,
             ConcurrentChain chain,
@@ -85,10 +85,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                 benchLogs.AppendLine("Downloaded:".PadRight(LoggingConfiguration.ColumnLength) + this.lookaheadPuller.MedianDownloadCount + " blocks");
                 benchLogs.AppendLine("==========================");
             }
-            benchLogs.AppendLine("Persistent Tip:".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(await this.bottom.GetBlockHashAsync().ConfigureAwait(false))?.Height);
+            benchLogs.AppendLine("Persistent Tip:".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(await this.bottom.GetTipHashAsync().ConfigureAwait(false))?.Height);
             if (this.cache != null)
             {
-                benchLogs.AppendLine("Cache Tip".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(await this.cache.GetBlockHashAsync().ConfigureAwait(false))?.Height);
+                benchLogs.AppendLine("Cache Tip".PadRight(LoggingConfiguration.ColumnLength) + this.chain.GetBlock(await this.cache.GetTipHashAsync().ConfigureAwait(false))?.Height);
                 benchLogs.AppendLine("Cache entries".PadRight(LoggingConfiguration.ColumnLength) + this.cache.CacheEntryCount);
             }
 

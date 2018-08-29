@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -29,6 +30,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private uint256 blockWithOpReturnId;
 
         private readonly string password = "p@ssw0rd";
+        private readonly string passphrase = "p@ssphr@se";
         private readonly string opReturnContent = "extra informations!";
         private readonly int transferAmount = 31415;
 
@@ -48,8 +50,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
         private void two_proof_of_work_nodes()
         {
-            this.senderNode = this.builder.CreateStratisPowNode();
-            this.receiverNode = this.builder.CreateStratisPowNode();
+            this.senderNode = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
+            this.receiverNode = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
             this.builder.StartAll();
             this.senderNode.NotInIBD();
             this.receiverNode.NotInIBD();
@@ -57,11 +59,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
         private void a_sending_and_a_receiving_wallet()
         {
-            this.receiverNode.FullNode.WalletManager().CreateWallet(this.password, "receiver");
+            this.receiverNode.FullNode.WalletManager().CreateWallet(this.password, "receiver", this.passphrase);
             this.receiverAddress = this.receiverNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference("receiver", "account 0"));
             this.sendingWallet = this.receiverNode.FullNode.WalletManager().GetWalletByName("receiver");
 
-            this.senderNode.FullNode.WalletManager().CreateWallet(this.password, "sender");
+            this.senderNode.FullNode.WalletManager().CreateWallet(this.password, "sender", this.passphrase);
             this.sendingWalletAccountReference = new WalletAccountReference("sender", "account 0");
             this.senderAddress = this.senderNode.FullNode.WalletManager().GetUnusedAddress(this.sendingWalletAccountReference);
             this.sendingWallet = this.senderNode.FullNode.WalletManager().GetWalletByName("sender");
@@ -76,7 +78,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
             this.senderNode.FullNode.WalletManager().GetSpendableTransactionsInWallet("sender")
                 .Sum(utxo => utxo.Transaction.Amount)
-                .Should().Be(Money.COIN * (maturity + 5) * 50);
+                .Should().Be(Money.COIN * 6 * 50);
         }
 
         private void no_fund_in_the_receiving_wallet()
@@ -95,12 +97,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private void a_nulldata_transaction()
         {
             var maturity = (int)this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
-            var transactionBuildContext = new TransactionBuildContext(
-                this.senderNode.FullNode.Network,
-                this.sendingWalletAccountReference,
-                new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } },
-                this.password, this.opReturnContent)
-            { MinConfirmations = maturity };
+            var transactionBuildContext = new TransactionBuildContext(this.senderNode.FullNode.Network)
+            {
+                AccountReference = this.sendingWalletAccountReference,
+                MinConfirmations = maturity,
+                OpReturnData = this.opReturnContent,
+                WalletPassword = this.password,
+                Recipients = new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } }
+            };
+
             this.transaction = this.senderNode.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
 
             this.transaction.Outputs.Single(t => t.ScriptPubKey.IsUnspendable).Value.Should().Be(Money.Zero);

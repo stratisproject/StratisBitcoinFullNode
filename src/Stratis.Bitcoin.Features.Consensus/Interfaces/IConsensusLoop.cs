@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         ChainedHeader Tip { get; }
 
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
-        CoinView UTXOSet { get; }
+        ICoinView UTXOSet { get; }
 
         /// <summary>The rules engine for validation logic for the consensus rules.</summary>
         IConsensusRules ConsensusRules { get; }

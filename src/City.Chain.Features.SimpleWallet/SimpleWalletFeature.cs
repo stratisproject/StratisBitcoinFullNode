@@ -49,7 +49,7 @@ namespace City.Chain.Features.SimpleWallet
         public override void Initialize()
         {
             // subscribe to receiving blocks and transactions
-            this.blockSubscriberdDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletService));
+            this.blockSubscriberdDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletService));
             this.transactionSubscriberdDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletService));
 
             //this.walletManager.Initialize();

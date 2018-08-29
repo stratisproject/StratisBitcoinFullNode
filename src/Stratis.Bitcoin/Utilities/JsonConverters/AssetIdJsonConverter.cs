@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
         /// <inheritdoc />
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            if(reader.TokenType == JsonToken.Null)
+            if (reader.TokenType == JsonToken.Null)
                 return null;
 
             try
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
                 var value = reader.Value.ToString();
                 return new BitcoinAssetId(value, this.Network).AssetId;
             }
-            catch(FormatException)
+            catch (FormatException)
             {
                 throw new JsonObjectException("Invalid BitcoinAssetId ", reader);
             }
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             var assetId = value as AssetId;
-            if(assetId != null)
+            if (assetId != null)
             {
                 writer.WriteValue(assetId.ToString(this.Network));
             }

@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
@@ -24,6 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string AccountZero = "account 0";
         private const string WalletZero = "wallet 0";
         private const string WalletPassword = "123456";
+        private const string WalletPassphrase = "phrase";
         private const string JingTheFastMiner = "Jing";
         private const string Bob = "Bob";
         private const string Charlie = "Charlie";
@@ -36,7 +38,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         protected override void BeforeTest()
         {
             this.sharedSteps = new SharedSteps();
-            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
+            this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.RegTest);
         }
 
         protected override void AfterTest()
@@ -47,10 +49,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void four_miners()
         {
             this.nodes = this.nodeGroupBuilder
-                .StratisPowNode(JingTheFastMiner).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
-                .StratisPowNode(Bob).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
-                .StratisPowNode(Charlie).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
-                .StratisPowNode(Dave).Start().NotInIBD().WithWallet(WalletZero, WalletPassword)
+                .StratisPowNode(JingTheFastMiner).Start().NotInIBD().WithWallet(WalletZero, WalletPassword, WalletPassphrase)
+                .StratisPowNode(Bob).Start().NotInIBD().WithWallet(WalletZero, WalletPassword, WalletPassphrase)
+                .StratisPowNode(Charlie).Start().NotInIBD().WithWallet(WalletZero, WalletPassword, WalletPassphrase)
+                .StratisPowNode(Dave).Start().NotInIBD().WithWallet(WalletZero, WalletPassword, WalletPassphrase)
                 .WithConnections()
                     .Connect(JingTheFastMiner, Bob)
                     .Connect(Bob, Charlie)
@@ -113,7 +115,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void charlie_mines_this_block()
         {
-            this.sharedSteps.MineBlocks(1, this.nodes[Charlie], AccountZero, WalletZero, WalletPassword, this.shortChainTransactionFee.Satoshi);
+            this.sharedSteps.MineBlocks(1, this.nodes[Charlie], AccountZero, WalletZero, WalletPassword);
             this.sharedSteps.WaitForNodeToSync(this.nodes[Bob], this.nodes[Charlie], this.nodes[Dave]);
         }
 
@@ -140,13 +142,13 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void bobs_transaction_from_shorter_chain_is_now_missing()
         {
             this.nodes[Bob].FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.shorterChainTransaction.GetHash()).Result
-                .Should().BeNull("longest chain comes from selfish miner and shouldn't contain the transaction made on the chain with the other 3 nodes.");
+                .Should().BeNull("longest chain comes from selfish miner and shouldn't contain the transaction made on the chain with the other 3 nodes");
         }
 
-        private void bobs_transaction_is_not_returned_to_the_mem_pool()
+        private void bobs_transaction_is_now_in_the_mem_pool()
         {
             this.nodes[Dave].CreateRPCClient().GetRawMempool()
-                .Should().NotContain(x => x == this.shorterChainTransaction.GetHash(), "it is not implemented yet.");
+                .Should().Contain(x => x == this.shorterChainTransaction.GetHash(), "transaction should be in the mempool when not mined in a longer chain");
         }
 
         private void mining_continues_to_maturity_to_allow_spend()

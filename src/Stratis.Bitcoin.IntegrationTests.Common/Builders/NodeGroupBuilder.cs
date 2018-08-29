@@ -11,12 +11,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
         private readonly NodeBuilder nodeBuilder;
         private readonly Dictionary<string, CoreNode> nodes;
         public readonly Dictionary<string, Mnemonic> NodeMnemonics;
+        private readonly Network network;
 
-        public NodeGroupBuilder(string testFolder)
+        public NodeGroupBuilder(string testFolder, Network network)
         {
             this.nodeBuilder = NodeBuilder.Create(testFolder);
             this.nodes = new Dictionary<string, CoreNode>();
             this.NodeMnemonics = new Dictionary<string, Mnemonic>();
+            this.network = network;
         }
 
         public void Dispose()
@@ -31,31 +33,31 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
 
         public NodeGroupBuilder StratisPowNode(string nodeName)
         {
-            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPowNode());
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPowNode(this.network));
             return this;
         }
 
         public NodeGroupBuilder StratisCustomPowNode(string nodeName, NodeConfigParameters configParameters)
         {
-            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisCustomPowNode(configParameters));
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisCustomPowNode(this.network, configParameters));
             return this;
         }
 
         public NodeGroupBuilder CreateStratisPowApiNode(string nodeName)
         {
-            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPowApiNode());
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPowApiNode(this.network));
             return this;
         }
 
         public NodeGroupBuilder CreateStratisPosNode(string nodeName)
         {
-            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPosNode());
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPosNode(this.network));
             return this;
         }
 
         public NodeGroupBuilder CreateStratisPosApiNode(string nodeName)
         {
-            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPosApiNode());
+            this.nodes.Add(nodeName, this.nodeBuilder.CreateStratisPosApiNode(this.network));
             return this;
         }
 
@@ -65,9 +67,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
             return this;
         }
 
-        public NodeGroupBuilder WithWallet(string walletName, string walletPassword)
+        public NodeGroupBuilder WithWallet(string walletName, string walletPassword, string walletPassphrase)
         {
-            Mnemonic mnemonic = this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(walletPassword, walletName);
+            Mnemonic mnemonic = this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
             this.NodeMnemonics.Add(this.nodes.Last().Key, mnemonic);
             return this;
         }

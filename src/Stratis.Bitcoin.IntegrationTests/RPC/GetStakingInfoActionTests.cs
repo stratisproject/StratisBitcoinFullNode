@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Wallet;
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
             var nodeLifetime = fullNode.NodeService<INodeLifetime>();
             nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
-            var controller = fullNode.Services.ServiceProvider.GetService<MiningRPCController>();
+            var controller = fullNode.Services.ServiceProvider.GetService<StakingRpcController>();
 
             Assert.NotNull(fullNode.NodeService<IPosMinting>(true));
 
@@ -58,14 +58,15 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
             var nodeLifetime = fullNode.NodeService<INodeLifetime>();
             nodeLifetime.ApplicationStarted.WaitHandle.WaitOne();
-            var controller = fullNode.Services.ServiceProvider.GetService<MiningRPCController>();
+            var controller = fullNode.Services.ServiceProvider.GetService<StakingRpcController>();
 
             var walletManager = node.NodeService<IWalletManager>() as WalletManager;
 
             string password = "test";
+            string passphrase = "passphrase";
 
             // create the wallet
-            walletManager.CreateWallet(password, "test");
+            walletManager.CreateWallet(password, "test", passphrase);
 
             Assert.NotNull(fullNode.NodeService<IPosMinting>(true));
 

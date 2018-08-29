@@ -524,7 +524,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
             peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
             peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
 
@@ -564,7 +564,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
             peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
             peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
 
@@ -603,7 +603,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
             peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
             peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
 
@@ -642,7 +642,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
             peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
             peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
 
@@ -677,7 +677,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             DataFolder peerFolder = CreateDataFolder(this);
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker());
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
             peerAddressManager.AddPeer(endPointOne, IPAddress.Loopback);
             peerAddressManager.AddPeer(endPointTwo, IPAddress.Loopback);
 
@@ -722,22 +722,22 @@ namespace Stratis.Bitcoin.Tests.P2P
         public void SelectPeersForDiscovery_WhenPeerAddressesContainsOwnIPEndoint_DoesNotReturnOwnEndpoint()
         {
             var selfIpEndPoint = new IPEndPoint(new IPAddress(1), 123);
-            var selfPeerAddress = new PeerAddress() {Endpoint = selfIpEndPoint};
+            var selfPeerAddress = new PeerAddress() { Endpoint = selfIpEndPoint };
             selfPeerAddress.SetDiscoveredFrom(DateTime.MinValue);
 
             var otherIpEndPoint = new IPEndPoint(new IPAddress(2), 345);
-            var otherPeerAddress = new PeerAddress() {Endpoint = otherIpEndPoint};
+            var otherPeerAddress = new PeerAddress() { Endpoint = otherIpEndPoint };
             otherPeerAddress.SetDiscoveredFrom(DateTime.MinValue);
 
             var peerAddresses = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
             peerAddresses.AddOrUpdate(selfIpEndPoint, selfPeerAddress, (x, y) => selfPeerAddress);
             peerAddresses.AddOrUpdate(otherIpEndPoint, otherPeerAddress, (x, y) => otherPeerAddress);
 
-            var selfEndpointTracker = new SelfEndpointTracker();
+            var selfEndpointTracker = new SelfEndpointTracker(this.extendedLoggerFactory);
             selfEndpointTracker.Add(selfIpEndPoint);
 
             var peerSelector = new PeerSelector(new DateTimeProvider(), this.LoggerFactory.Object, peerAddresses, selfEndpointTracker);
-             
+
             IEnumerable<PeerAddress> peers = peerSelector.SelectPeersForDiscovery(2);
 
             Assert.Equal(otherPeerAddress, peers.Single());
@@ -751,6 +751,122 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         [Fact]
+        public void PeerSelector_ReturnConnectedPeers_AfterHandshakeFailure_WithAttemptsRemaining()
+        {
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            DataFolder peerFolder = CreateDataFolder(this);
+            PeerAddressManager peerAddressManager = this.CreatePeerAddressManager(peerFolder);
+            peerAddressManager.AddPeer(new IPEndPoint(ipAddress, 80), IPAddress.Loopback);
+
+            peerAddressManager.PeerConnected(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
+            DateTime handshakeAttempt = DateTime.UtcNow.AddSeconds(-80);
+
+            PeerAddress peer = peerAddressManager.Peers[0];
+
+            // Peer selected after one handshake failure.
+            peer.SetHandshakeAttempted(handshakeAttempt);
+            Assert.Equal(1, peer.HandshakedAttempts);
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
+
+            // Peer selected after two handshake failures.
+            peer.SetHandshakeAttempted(handshakeAttempt);
+            Assert.Equal(2, peer.HandshakedAttempts);
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
+
+            // Peer not selected after three handshake failures.
+            peer.SetHandshakeAttempted(handshakeAttempt);
+            Assert.Equal(3, peer.HandshakedAttempts);
+            Assert.DoesNotContain(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
+        }
+
+        [Fact]
+        public void PeerSelector_ReturnConnectedPeers_AfterHandshakeFailure_ThresholdExceeded()
+        {
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            DataFolder peerFolder = CreateDataFolder(this);
+            PeerAddressManager peerAddressManager = this.CreatePeerAddressManager(peerFolder);
+            peerAddressManager.AddPeer(new IPEndPoint(ipAddress, 80), IPAddress.Loopback);
+
+            peerAddressManager.PeerConnected(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
+            DateTime handshakeAttempt = DateTime.UtcNow.AddSeconds(-80);
+
+            PeerAddress peer = peerAddressManager.Peers[0];
+
+            // Peer selected after one handshake failure.
+            peer.SetHandshakeAttempted(handshakeAttempt.AddHours(-(PeerAddress.AttempThresholdHours + 4)));
+            Assert.Equal(1, peer.HandshakedAttempts);
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
+
+            // Peer selected after two handshake failures.
+            peer.SetHandshakeAttempted(handshakeAttempt.AddHours(-(PeerAddress.AttempThresholdHours + 3)));
+            Assert.Equal(2, peer.HandshakedAttempts);
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
+
+            // Peer selected after two handshake failures when threshold time has elapsed.
+            peer.SetHandshakeAttempted(handshakeAttempt.AddHours(-(PeerAddress.AttempThresholdHours + 2)));
+            Assert.Equal(3, peer.HandshakedAttempts);
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
+        }
+
+        [Fact]
+        public void PeerSelector_ReturnConnectedPeers_AfterHandshakeFailure_HandshakeSucceeded_ResetsCounters()
+        {
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            DataFolder peerFolder = CreateDataFolder(this);
+            PeerAddressManager peerAddressManager = this.CreatePeerAddressManager(peerFolder);
+            peerAddressManager.AddPeer(new IPEndPoint(ipAddress, 80), IPAddress.Loopback);
+
+            peerAddressManager.PeerConnected(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
+            DateTime handshakeAttempt = DateTime.UtcNow.AddSeconds(-80);
+
+            PeerAddress peer = peerAddressManager.Peers[0];
+
+            // Peer selected after one handshake failure.
+            peer.SetHandshakeAttempted(handshakeAttempt);
+            Assert.Equal(1, peer.HandshakedAttempts);
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
+
+            // Peer selected after two handshake failures.
+            peer.SetHandshakeAttempted(handshakeAttempt);
+            Assert.Equal(2, peer.HandshakedAttempts);
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
+
+            // Peer attempt counter and last attempt reset after successful handshake.
+            peer.SetHandshaked(handshakeAttempt);
+            Assert.Equal(0, peer.HandshakedAttempts);
+            Assert.Null(peer.LastHandshakeAttempt);
+        }
+
+        [Fact]
+        public void PeerSelector_ReturnConnectedPeers_AfterThresholdExpired_ResetCounters()
+        {
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            DataFolder peerFolder = CreateDataFolder(this);
+            PeerAddressManager peerAddressManager = this.CreatePeerAddressManager(peerFolder);
+            peerAddressManager.AddPeer(new IPEndPoint(ipAddress, 80), IPAddress.Loopback);
+
+            peerAddressManager.PeerConnected(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
+            DateTime firstHandshakeAttemptTime = DateTime.UtcNow.AddSeconds(-80);
+
+            PeerAddress peer = peerAddressManager.Peers[0];
+
+            // Peer selected after one handshake failure.
+            peer.SetHandshakeAttempted(firstHandshakeAttemptTime);
+            Assert.Equal(1, peer.HandshakedAttempts);
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
+
+            // Peer selected after two handshake failures.
+            peer.SetHandshakeAttempted(firstHandshakeAttemptTime);
+            Assert.Equal(2, peer.HandshakedAttempts);
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
+
+            // Peer attempt counter and last attempt reset when threshold time has elapsed.
+            peer.SetHandshakeAttempted(firstHandshakeAttemptTime.AddHours(-(PeerAddress.AttempThresholdHours + 2)));
+            Assert.Contains(peer, peerAddressManager.PeerSelector.FilterBadHandshakedPeers(peerAddressManager.Peers));
+            Assert.Equal(0, peer.HandshakedAttempts);
+        }
+
+        [Fact]
         public void PeerSelector_HasAllPeersReachedConnectionThreshold()
         {
             var peerAddress = new PeerAddress() { Endpoint = new IPEndPoint(new IPAddress(2), 345) };
@@ -758,7 +874,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var peerAddresses = new ConcurrentDictionary<IPEndPoint, PeerAddress>();
             peerAddresses.AddOrUpdate(peerAddress.Endpoint, peerAddress, (x, y) => peerAddress);
 
-            var peerSelector = new PeerSelector(new DateTimeProvider(), this.LoggerFactory.Object, peerAddresses, new SelfEndpointTracker());
+            var peerSelector = new PeerSelector(new DateTimeProvider(), this.LoggerFactory.Object, peerAddresses, new SelfEndpointTracker(this.extendedLoggerFactory));
 
             Assert.False(peerSelector.HasAllPeersReachedConnectionThreshold());
 
@@ -780,7 +896,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddresses.AddOrUpdate(peerAddress.Endpoint, peerAddress, (x, y) => peerAddress);
             peerAddresses.AddOrUpdate(bannedPeerAddress.Endpoint, bannedPeerAddress, (x, y) => bannedPeerAddress);
 
-            var peerSelector = new PeerSelector(new DateTimeProvider(), this.LoggerFactory.Object, peerAddresses, new SelfEndpointTracker());
+            var peerSelector = new PeerSelector(new DateTimeProvider(), this.LoggerFactory.Object, peerAddresses, new SelfEndpointTracker(this.extendedLoggerFactory));
 
             for (int i = 0; i < 5; i++)
                 peerAddress.SetAttempted(DateTime.UtcNow);
@@ -796,7 +912,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         private PeerAddressManager CreatePeerAddressManager(DataFolder peerFolder)
         {
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory,
-                new SelfEndpointTracker());
+                new SelfEndpointTracker(this.extendedLoggerFactory));
             return peerAddressManager;
         }
     }

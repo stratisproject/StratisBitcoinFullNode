@@ -1,5 +1,7 @@
 ﻿using System.Linq;
 using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.Core.Validation.Validators;
+using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
 
@@ -7,7 +9,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public sealed class DeterminismErrorMessageTests
     {
-        private readonly SmartContractDeterminismValidator validator = new SmartContractDeterminismValidator();
+        private readonly ISmartContractValidator validator = new SmartContractDeterminismValidator();
 
         [Fact]
         public void Validate_Determinism_ErrorMessages_Simple()
@@ -24,15 +26,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                         public void MessageTestFloat()
                         {
-                            float test = (float) 3.5; test = test + 1;
+                            float test = (float) 3.5;
                         }
                     }";
 
             SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
             Assert.True(compilationResult.Success);
 
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
-            SmartContractValidationResult result = this.validator.Validate(decompilation);
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.Equal("Float usage", result.Errors.First().ValidationType);
@@ -61,11 +63,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
             Assert.True(compilationResult.Success);
 
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
-            SmartContractValidationResult result = this.validator.Validate(decompilation);
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
-            Assert.Single(result.Errors);
-            Assert.Equal(SmartContractDeterminismValidator.NonDeterministicMethodReference, result.Errors.First().ValidationType);
+            Assert.True(result.Errors.All(e => e is WhitelistValidator.WhitelistValidationResult));
         }
 
         [Fact]
@@ -83,20 +84,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                         public void MessageTestFloat1()
                         {
-                            float test = (float) 3.5; test = test + 1;
+                            float test = (float) 3.5;
                         }
 
                         public void MessageTestFloat2()
                         {
-                            float test = (float) 3.5; test = test + 1;
+                            float test = (float) 3.5;
                         }
                     }";
 
             SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
             Assert.True(compilationResult.Success);
 
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
-            SmartContractValidationResult result = this.validator.Validate(decompilation);
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Equal(2, result.Errors.Count());
             Assert.Equal("Float usage", result.Errors.First().ValidationType);
@@ -111,8 +112,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                     public class MessageTest : SmartContract
                     {
-                        private int test = 0;
-
                         public MessageTest(ISmartContractState smartContractState)
                             : base(smartContractState)
                         {
@@ -120,25 +119,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                         public void MessageTestFloat1()
                         {
-                            float test = (float) 3.5; test = test + 1;
+                            float test = (float) 3.5;
                         }
 
                         public void MessageTestFloat2()
                         {
-                            this.test = 5;
+                            var test2 = 5;
                         }
 
                         public void MessageTestFloat3()
                         {
-                            float test = (float) 3.5; test = test + 1;
+                            float test = (float) 3.5;
                         }
                     }";
 
             SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
             Assert.True(compilationResult.Success);
 
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
-            SmartContractValidationResult result = this.validator.Validate(decompilation);
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Equal(2, result.Errors.Count());
             Assert.Equal("Float usage", result.Errors.First().ValidationType);
@@ -165,15 +164,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                         public void MessageTestFloat1()
                         {
-                            float test = (float) 3.5; test = test + 1;
+                            float test = (float) 3.5;
                         }
                     }";
 
             SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
             Assert.True(compilationResult.Success);
 
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
-            SmartContractValidationResult result = this.validator.Validate(decompilation);
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.Equal("Float usage", result.Errors.First().ValidationType);
@@ -204,15 +203,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                         public void MessageTestFloat1()
                         {
-                            float test = (float) 3.5; test = test + 1;
+                            float test = (float) 3.5;
                         }
                     }";
 
             SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
             Assert.True(compilationResult.Success);
 
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
-            SmartContractValidationResult result = this.validator.Validate(decompilation);
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.Equal("Float usage", result.Errors.First().ValidationType);
@@ -248,15 +247,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                         public void MessageTestFloat1()
                         {
-                            float test = (float) 3.5; test = test + 1;
+                            float test = (float) 3.5;
                         }
                     }";
 
             SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
             Assert.True(compilationResult.Success);
 
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
-            SmartContractValidationResult result = this.validator.Validate(decompilation);
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.Equal("Float usage", result.Errors.First().ValidationType);
@@ -282,8 +281,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
                         public void MessageTestValid1()
                         {
-                            float test = (float)3.5; 
-                            test = test + 1;
+                            float test = (float)3.5;
                             MessageTestValid();
                         }
                     }";
@@ -291,8 +289,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
             Assert.True(compilationResult.Success);
 
-            SmartContractDecompilation decompilation = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
-            SmartContractValidationResult result = this.validator.Validate(decompilation);
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilationResult.Compilation);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.Equal("Float usage", result.Errors.First().ValidationType);

@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
     /// <summary>
     /// Validates that the supplied transaction satoshis are greater than the gas budget satoshis in the contract invocation
     /// </summary>
-    [FullValidationRule]
+    [PartialValidationRule]
     public class SmartContractFormatRule : UtxoStoreConsensusRule, ISmartContractMempoolRule
     {
         public const ulong GasLimitMaximum = 5_000_000;
@@ -82,6 +82,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 // Supplied gas price is too high.
                 this.ThrowGasPriceMoreThanMaximum();
             }
+
+            // TODO: When checking gas limit, if checking for a CREATE, do BaseFee + CreationAndValidationFee
 
             if (callData.GasLimit < GasLimitMinimum)
             {

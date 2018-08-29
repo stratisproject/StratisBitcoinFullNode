@@ -1,8 +1,10 @@
 ﻿using System;
+using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -13,7 +15,7 @@ namespace Stratis.Bitcoin.Api.Tests
     /// </summary>
     public class ApiSettingsTest : TestBase
     {
-        public ApiSettingsTest() : base(Networks.Main)
+        public ApiSettingsTest() : base(KnownNetworks.Main)
         {
         }
 
@@ -24,15 +26,11 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenNoApiSettingsAreProvided_AndOnBitcoinNetwork_ThenDefaultSettingAreUsed()
         {
             // Arrange.
-            Network network = Networks.Main;
+            Network network = KnownNetworks.Main;
             var nodeSettings = new NodeSettings(network);
 
             // Act.
-            var settings = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseApi()
-                .Build()
-                .NodeService<ApiSettings>();
+            ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
             Assert.Equal(ApiSettings.DefaultBitcoinApiPort, settings.ApiPort);
@@ -46,19 +44,18 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenNoApiSettingsAreProvided_AndOnStratisNetwork_ThenDefaultSettingAreUsed()
         {
             // Arrange.
-            Network network = Networks.StratisMain;
+            Network network = KnownNetworks.StratisMain;
             var nodeSettings = new NodeSettings(network);
 
             // Act.
-            var settings = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseApi()
-                .Build()
-                .NodeService<ApiSettings>();
+            ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
             Assert.Equal(ApiSettings.DefaultStratisApiPort, settings.ApiPort);
             Assert.Equal(new Uri($"{ApiSettings.DefaultApiHost}:{ApiSettings.DefaultStratisApiPort}"), settings.ApiUri);
+
+            settings.HttpsCertificateFilePath.Should().BeNull();
+            settings.UseHttps.Should().BeFalse();
         }
 
         /// <summary>
@@ -72,11 +69,7 @@ namespace Stratis.Bitcoin.Api.Tests
             var nodeSettings = new NodeSettings(args:new[] { $"-apiport={customPort}" });
 
             // Act.
-            var settings = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseApi()
-                .Build()
-                .NodeService<ApiSettings>();
+            ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
             Assert.Equal(customPort, settings.ApiPort);
@@ -91,15 +84,12 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             // Arrange.
             string customApiUri = "http://0.0.0.0";
-            Network network = Networks.Main;
+            Network network = KnownNetworks.Main;
             var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
 
             // Act.
-            var settings = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseApi()
-                .Build()
-                .NodeService<ApiSettings>();
+            ApiSettings settings = FullNodeSetup(nodeSettings);
+
 
             // Assert.
             Assert.Equal(ApiSettings.DefaultBitcoinApiPort, settings.ApiPort);
@@ -114,15 +104,11 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             // Arrange.
             string customApiUri = "http://0.0.0.0";
-            Network network = Networks.StratisMain;
+            Network network = KnownNetworks.StratisMain;
             var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
 
             // Act.
-            var settings = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseApi()
-                .Build()
-                .NodeService<ApiSettings>();
+            ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
             Assert.Equal(ApiSettings.DefaultStratisApiPort, settings.ApiPort);
@@ -138,15 +124,11 @@ namespace Stratis.Bitcoin.Api.Tests
             // Arrange.
             string customApiUri = "http://0.0.0.0";
             int customPort = 55555;
-            Network network = Networks.Main;
+            Network network = KnownNetworks.Main;
             var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}", $"-apiport={customPort}" });
 
             // Act.
-            var settings = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseApi()
-                .Build()
-                .NodeService<ApiSettings>();
+            ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
             Assert.Equal(customPort, settings.ApiPort);
@@ -162,15 +144,11 @@ namespace Stratis.Bitcoin.Api.Tests
             // Arrange.
             int customPort = 5522;
             string customApiUri = $"http://0.0.0.0:{customPort}";
-            Network network = Networks.Main;
+            Network network = KnownNetworks.Main;
             var nodeSettings = new NodeSettings(network, args:new[] { $"-apiuri={customApiUri}" });
 
             // Act.
-            var settings = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseApi()
-                .Build()
-                .NodeService<ApiSettings>();
+            ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
             Assert.Equal(customPort, settings.ApiPort);
@@ -184,14 +162,10 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenBitcoinMain_ThenUseTheCorrectPort()
         {
             // Arrange.
-            NodeSettings nodeSettings = NodeSettings.Default(Networks.Main);
+            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.Main);
 
             // Act.
-            var settings = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseApi()
-                .Build()
-                .NodeService<ApiSettings>();
+            ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
             Assert.Equal(ApiSettings.DefaultBitcoinApiPort, settings.ApiPort);
@@ -204,14 +178,10 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenBitcoinTestnet_ThenUseTheCorrectPort()
         {
             // Arrange.
-            NodeSettings nodeSettings = NodeSettings.Default(Networks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
 
             // Act.
-            var settings = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseApi()
-                .Build()
-                .NodeService<ApiSettings>();
+            ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
             Assert.Equal(ApiSettings.TestBitcoinApiPort, settings.ApiPort);
@@ -224,14 +194,10 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenStratisMainnet_ThenUseTheCorrectPort()
         {
             // Arrange.
-            NodeSettings nodeSettings = NodeSettings.Default(Networks.StratisMain);
+            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.StratisMain);
 
             // Act.
-            var settings = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseApi()
-                .Build()
-                .NodeService<ApiSettings>();
+            ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
             Assert.Equal(ApiSettings.DefaultStratisApiPort, settings.ApiPort);
@@ -244,17 +210,69 @@ namespace Stratis.Bitcoin.Api.Tests
         public void GivenStratisTestnet_ThenUseTheCorrectPort()
         {
             // Arrange.
-            NodeSettings nodeSettings = NodeSettings.Default(Networks.StratisTest);
+            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.StratisTest);
 
             // Act.
-            var settings = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseApi()
-                .Build()
-                .NodeService<ApiSettings>();
+            ApiSettings settings = FullNodeSetup(nodeSettings);
 
             // Assert.
             Assert.Equal(ApiSettings.TestStratisApiPort, settings.ApiPort);
+        }
+
+        [Theory]
+        [InlineData(true, @"https://")]
+        [InlineData(false, @"http://")]
+        public void GivenUseHttps_ThenUsesTheCorrectProtocol(bool useHttps, string expectedProtocolPrefix)
+        {
+            // Arrange.
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new[] { $"-usehttps={useHttps}", "-certificatefilepath=nonNullValue" });
+
+            // Act.
+            var settings = FullNodeSetup(nodeSettings);
+
+            // Assert.
+            settings.UseHttps.Should().Be(useHttps);
+            settings.ApiUri.ToString().Should().StartWith(expectedProtocolPrefix);
+        }
+
+        [Fact]
+        public void GivenCertificateFilePath_ThenUsesTheCorrectFileName()
+        {
+            // Arrange.
+            var certificateFileName = @"abcd/someCertificate.pfx";
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new[] { $"-certificatefilepath={certificateFileName}" });
+
+            // Act.
+            ApiSettings settings = FullNodeSetup(nodeSettings);
+
+            // Assert.
+            settings.HttpsCertificateFilePath.Should().Be(certificateFileName);
+        }
+
+        [Fact]
+        public void GivenUseHttpsAndNoCertificateFilePath_ThenShouldThrowConfigurationException()
+        {
+            // Arrange.
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new[] { $"-usehttps={true}" });
+
+            // Act.
+            var settingsAction = new Action(() =>
+                {
+                    FullNodeSetup(nodeSettings);
+                });
+
+            // Assert.
+            settingsAction.Should().Throw<ConfigurationException>();
+        }
+
+        private static ApiSettings FullNodeSetup(NodeSettings nodeSettings)
+        {
+            return new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseApi()
+                .UsePowConsensus()
+                .Build()
+                .NodeService<ApiSettings>();
         }
     }
 }

@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -32,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
         public PowCoinViewRuleTests()
         {
-            this.network = Networks.RegTest;
+            this.network = KnownNetworks.RegTest;
             this.rule = new PowCoinviewRule();
         }
 
@@ -86,12 +87,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 this.logger = new Mock<ILogger>();
                 rule.Logger = this.logger.Object;
                 rule.Parent = new PowConsensusRules(
-                    Networks.RegTest,
+                    this.network,
                     new Mock<ILoggerFactory>().Object,
                     new Mock<IDateTimeProvider>().Object,
                     new ConcurrentChain(this.network),
-                    new NodeDeployments(Networks.RegTest, new ConcurrentChain(this.network)),
-                    new ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<CoinView>().Object, null);
+                    new NodeDeployments(this.network, new ConcurrentChain(this.network)),
+                    new ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, null);
 
                 rule.Initialize();
 

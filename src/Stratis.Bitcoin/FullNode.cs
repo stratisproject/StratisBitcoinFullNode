@@ -178,6 +178,7 @@ namespace Stratis.Bitcoin
 
             this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
 
+            this.logger.LogInformation(Properties.Resources.AsciiLogo);
             this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
 
             this.State = FullNodeState.Initialized;
@@ -277,13 +278,14 @@ namespace Stratis.Bitcoin
 
             this.ConnectionManager.Dispose();
             this.bestChainSelector.Dispose();
-            this.loggerFactory.Dispose();
 
             foreach (IDisposable disposable in this.Resources)
                 disposable.Dispose();
 
             // Fire the NodeFeatureExecutor.Stop.
             this.fullNodeFeatureExecutor.Dispose();
+
+            this.Settings.Dispose();
 
             // Fire INodeLifetime.Stopped.
             this.nodeLifetime.NotifyStopped();

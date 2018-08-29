@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using NBitcoin;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Tests.Common
 {
@@ -19,7 +20,7 @@ namespace Stratis.Bitcoin.Tests.Common
         public static List<ChainedHeader> CreateConsecutiveHeaders(int count, ChainedHeader prevBlock = null, bool includePrevBlock = false)
         {
             var chainedHeaders = new List<ChainedHeader>();
-            Network network = Networks.StratisMain;
+            Network network = KnownNetworks.StratisMain;
 
             ChainedHeader tip = prevBlock;
 
@@ -55,7 +56,7 @@ namespace Stratis.Bitcoin.Tests.Common
         /// <summary>Creates genesis header for stratis mainnet.</summary>
         public static ChainedHeader CreateGenesisChainedHeader()
         {
-            return new ChainedHeader(Networks.StratisMain.GetGenesis().Header, Networks.StratisMain.GenesisHash, 0);
+            return new ChainedHeader(KnownNetworks.StratisMain.GetGenesis().Header, KnownNetworks.StratisMain.GenesisHash, 0);
         }
     }
 }

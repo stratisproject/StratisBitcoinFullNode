@@ -9,21 +9,24 @@
     public interface IInternalTransactionExecutor
     {
         /// <summary>
-        /// Transfer funds from one contract to another.
+        /// Transfer funds to another address. If address is a contract, will call the receive function.
         /// </summary>
-        /// <param name="smartContractState">State repository to track and persist changes to the contract.</param>
+        /// <param name="smartContractState">State representing existing contract's context.</param>
         /// <param name="addressTo">Where the funds will be transferred to.</param>
         /// <param name="amountToTransfer">The amount to send in satoshi.</param>
-        /// <param name="transferFundsToContractDetails">If the address to where the funds will be tranferred to is a contract, supply the details (method name etc).</param>
-        ITransferResult TransferFunds(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, TransferFundsToContract transferFundsToContractDetails);
+        ITransferResult Transfer(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer);
+
+        /// <summary>
+        /// Call a method on another contract.
+        /// </summary>
+        ITransferResult Call(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer, string methodName, object[] parameters, ulong gasLimit = 0);
 
         /// <summary>
         /// Create a new contract.
         /// </summary>
         /// <typeparam name="T">Type of contract to create.</typeparam>
         /// <param name="smartContractState">State repository to track and persist changes to the contract.</param>
-        /// <param name="parameters">Parameters to be sent to the constructor.</param>
         /// <param name="amountToTransfer">Amount to send in stratoshi.</param>
-        ICreateResult Create<T>(ISmartContractState smartContractState, object[] parameters, ulong amountToTransfer);
+        ICreateResult Create<T>(ISmartContractState smartContractState, ulong amountToTransfer, object[] parameters, ulong gasLimit = 0);
     }
 }
