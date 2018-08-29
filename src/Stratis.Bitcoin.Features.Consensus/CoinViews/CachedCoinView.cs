@@ -453,9 +453,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.innerBlockHash = hash;
                 this.blockHash = hash;
 
-                // We flush the cache after a rewind, new items will have to be fetched from disk.
-                this.unspents.Clear();
-
                 this.logger.LogTrace("(-):'{0}'", hash);
                 return hash;
             }
