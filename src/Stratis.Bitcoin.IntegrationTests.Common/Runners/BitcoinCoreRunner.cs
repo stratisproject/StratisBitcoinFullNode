@@ -21,20 +21,25 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 
         public new bool IsDisposed
         {
-            get { return this.process?.HasExited ?? true; }
+            get
+            {
+                return this.process == null || (this.process?.HasExited == true);
+            }
         }
 
-        public new void Kill()
+        public override void Kill()
         {
             TimeSpan duration = TimeSpan.FromSeconds(30);
             TestHelper.WaitLoop(() =>
             {
                 try
                 {
-                    if (this.IsDisposed) return true; 
+                    if (this.IsDisposed) return true;
+
                     this.process.Kill();
-                    this.process.WaitForExit(5000);
-                    return true;
+                    this.process.WaitForExit(15000);
+
+                    return false;
                 }
                 catch (Exception e)
                 {
