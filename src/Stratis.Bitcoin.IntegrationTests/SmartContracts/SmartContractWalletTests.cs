@@ -406,7 +406,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 MockChainNode sender = chain.Nodes[0];
                 MockChainNode receiver = chain.Nodes[1];
 
-                sender.MineBlocks(10);
+                sender.MineBlocks(1);
 
                 SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/Auction.cs");
                 Assert.True(compilationResult.Success);
