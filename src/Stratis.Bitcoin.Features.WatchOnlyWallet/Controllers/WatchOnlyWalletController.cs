@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet.Controllers
         /// <param name="address">The base58 address to add to the watch list.</param>
         [Route("watch")]
         [HttpPost]
-        public IActionResult Watch([FromQuery]string address)
+        public IActionResult Watch([FromBody]string address)
         {
             // Checks the request is valid.
             if (string.IsNullOrEmpty(address))
