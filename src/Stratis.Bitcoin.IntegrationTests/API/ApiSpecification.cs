@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             Given(a_proof_of_work_node_with_api_enabled);
             When(calling_rpc_getblockhash_via_callbyname);
-            Then(the_blockhash_is_returned);
+            Then(the_blockhash_is_returned_from_post);
         }
 
         [Fact]
