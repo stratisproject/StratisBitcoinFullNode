@@ -441,6 +441,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 // Rewind data was not found in cache, try underlying storage.
                 uint256 hash = await this.inner.Rewind().ConfigureAwait(false);
+
+                // All the cached utxos are now on disk so we can clear the cached entry list.
+                this.unspents.Clear();
+
                 this.innerBlockHash = hash;
                 this.blockHash = hash;
 
