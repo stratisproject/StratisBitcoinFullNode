@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (node1.FullNode.GetBlockStoreTip().HashBlock != node2.FullNode.GetBlockStoreTip().HashBlock)
                 return false;
 
-            if(!ignoreMempool)
+            if (!ignoreMempool)
             {
                 if (node1.FullNode.MempoolManager().InfoAll().Count != node2.FullNode.MempoolManager().InfoAll().Count)
                     return false;
