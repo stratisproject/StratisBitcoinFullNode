@@ -1,11 +1,15 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
+using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.SmartContracts;
@@ -32,6 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
 
         // Services on the node. Used to retrieve information about the state of the network.
         private readonly SmartContractsController smartContractsController;
+        private readonly SmartContractWalletController smartContractWalletController;
         private readonly ContractStateRepositoryRoot stateRoot;
         private readonly IBlockStore blockStore;
 
@@ -44,6 +49,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         /// The address that all new coins are mined to.
         /// </summary>
         public HdAddress MinerAddress { get; }
+
+        /// <summary>
+        /// The transactions available to be spent from this node's wallet.
+        /// </summary>
+        public IEnumerable<UnspentOutputReference> SpendableTransactions
+        {
+            get
+            {
+                return this.CoreNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName);
+            }
+        }
+
+        /// <summary>
+        /// The balance currently available to be spent by this node's wallet.
+        /// </summary>
+        public Money WalletSpendableBalance
+        {
+            get
+            {
+                return this.SpendableTransactions.Sum(s => s.Transaction.Amount);
+            }
+        }
 
         /// <summary>
         /// Whether this node is fully synced.
@@ -61,10 +88,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
             this.CoreNode.NotInIBD();
             this.CoreNode.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
             this.MinerAddress = this.CoreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
-            Features.Wallet.Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(WalletName);
+            Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(WalletName);
             Key key = wallet.GetExtendedPrivateKeyForAddress(Password, this.MinerAddress).PrivateKey;
             this.CoreNode.SetDummyMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
             // Set up services for later
+            this.smartContractWalletController = this.CoreNode.FullNode.NodeService<SmartContractWalletController>();
             this.smartContractsController = this.CoreNode.FullNode.NodeService<SmartContractsController>();
             this.stateRoot = this.CoreNode.FullNode.NodeService<ContractStateRepositoryRoot>();
             this.blockStore = this.CoreNode.FullNode.NodeService<IBlockStore>();
@@ -73,11 +101,39 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         /// <summary>
         /// Mine the given number of blocks. The block reward will go to this node's MinerAddress.
         /// </summary>
-        /// <param name="num"></param>
         public void MineBlocks(int num)
         {
             this.CoreNode.GenerateStratisWithMiner(num);
             this.chain.WaitForAllNodesToSync();
+        }
+
+        /// <summary>
+        /// Get an unused address that can be used to send funds to this node.
+        /// </summary>
+        public HdAddress GetUnusedAddress()
+        {
+            return this.CoreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
+        }
+
+        /// <summary>
+        /// Send a normal transaction.
+        /// </summary>
+        public WalletSendTransactionModel SendTransaction(Script scriptPubKey, Money amount)
+        {
+            var txBuildContext = new TransactionBuildContext(this.chain.Network)
+            {
+                AccountReference = new WalletAccountReference(WalletName, AccountName),
+                MinConfirmations = 1,
+                FeeType = FeeType.Medium,
+                WalletPassword = Password,
+                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } }.ToList()
+            };
+
+            Transaction trx = (this.CoreNode.FullNode.NodeService<IWalletTransactionHandler>() as SmartContractWalletTransactionHandler).BuildTransaction(txBuildContext);
+
+            // Broadcast to the other node.
+            JsonResult response = (JsonResult) this.smartContractWalletController.SendTransaction(new SendTransactionRequest(trx.ToHex()));
+            return (WalletSendTransactionModel) response.Value;
         }
 
         /// <summary>
@@ -86,6 +142,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         /// </summary>
         public BuildCreateContractTransactionResponse SendCreateContractTransaction(
             byte[] contractCode,
+            double amount,
             string[] parameters = null,
             ulong gasLimit = 10000,
             ulong gasPrice = 1,
@@ -93,6 +150,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         {
             var request = new BuildCreateContractTransactionRequest
             {
+                Amount = amount.ToString(),
                 AccountName = AccountName,
                 ContractCode = contractCode.ToHexString(),
                 FeeAmount = feeAmount.ToString(),
@@ -110,9 +168,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         /// <summary>
         /// Retrieves receipts for all cases where a specific event was logged in a specific contract.
         /// </summary>
-        /// <param name="contractAddress"></param>
-        /// <param name="eventName"></param>
-        /// <returns></returns>
         public IList<ReceiptResponse> GetReceipts(string contractAddress, string eventName)
         {
             JsonResult response = (JsonResult)this.smartContractsController.ReceiptSearch(contractAddress, eventName).Result;
@@ -148,6 +203,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
             };
             JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransaction(request);
             return (BuildCallContractTransactionResponse)response.Value;
+        }
+
+        /// <summary>
+        /// Get the balance of a particular contract address.
+        /// </summary>
+        public ulong GetContractBalance(string contractAddress)
+        {
+            return this.stateRoot.GetCurrentBalance(new Address(contractAddress).ToUint160(this.CoreNode.FullNode.Network));
         }
 
         /// <summary>
