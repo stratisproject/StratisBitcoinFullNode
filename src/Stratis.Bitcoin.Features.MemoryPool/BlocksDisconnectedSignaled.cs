@@ -49,6 +49,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                 foreach (Transaction transaction in block.Transactions)
                 {
+                    if(transaction.IsCoinBase)
+                        continue;
+
+                    if(transaction.IsCoinStake)
+                        continue;
+
                     bool success = await this.mempoolValidator.AcceptToMemoryPool(state, transaction);
 
                     if (!success)
