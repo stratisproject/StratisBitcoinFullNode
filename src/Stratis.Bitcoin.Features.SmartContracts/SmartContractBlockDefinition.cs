@@ -190,14 +190,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
+            // As we're not storing receipts, can use only consensus fields. 
             var receipt = new Receipt(
                 new uint256(this.stateSnapshot.Root),
                 result.GasConsumed,
-                result.Logs.ToArray(),
-                transactionContext.TransactionHash,
-                transactionContext.Sender,
-                null, // TODO: Get 'To' in Result.
-                result.NewContractAddress
+                result.Logs.ToArray()
             );
 
             this.receipts.Add(receipt);

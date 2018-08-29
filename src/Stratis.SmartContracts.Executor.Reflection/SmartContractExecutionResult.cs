@@ -17,6 +17,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public uint160 NewContractAddress { get; set; }
 
         /// <inheritdoc/>
+        public uint160 To { get; set; }
+
+        /// <inheritdoc/>
         public Exception Exception { get; set; }
 
         /// <inheritdoc/>
@@ -43,6 +46,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <inheritdoc/>
         public List<TxOut> Refunds { get; set; }
 
+        /// <inheritdoc />
         public IList<Log> Logs { get; set; }
 
         public SmartContractExecutionResult()
