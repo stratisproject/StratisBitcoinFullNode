@@ -106,41 +106,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         }
 
         [Fact]
-        public void CreateNewBlock_WithScript_ValidatesTemplateUsingRuleContext()
-        {
-            var newOptions = new ConsensusOptions();
-
-            this.ExecuteWithConsensusOptions(newOptions, () =>
-            {
-                ConcurrentChain chain = GenerateChainWithHeight(5, this.testNet, this.key);
-                this.SetupRulesEngine(chain);
-
-                this.dateTimeProvider.Setup(d => d.GetAdjustedTimeAsUnixTimestamp())
-                    .Returns(new DateTime(2017, 1, 7, 0, 0, 1, DateTimeKind.Utc).ToUnixTimestamp());
-                this.consensusManager.Setup(c => c.Tip)
-                    .Returns(chain.GetBlock(5));
-
-                Transaction transaction = CreateTransaction(this.testNet, this.key, 5, new Money(400 * 1000 * 1000), new Key(), new uint256(124124));
-                var txFee = new Money(1000);
-                SetupTxMempool(chain, this.testNet.Consensus.Options as ConsensusOptions, txFee, transaction);
-                ValidationContext validationContext = null;
-                var powRuleContext = new PowRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
-                this.consensusRules
-                    .Setup(s => s.CreateRuleContext(It.IsAny<ValidationContext>())).Callback<ValidationContext>((r) => validationContext = r)
-                    .Returns(powRuleContext);
-
-                var blockDefinition = new PowBlockDefinition(this.consensusManager.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.minerSettings.Object, this.testNet, this.consensusRules.Object);
-
-                BlockTemplate blockTemplate = blockDefinition.Build(chain.Tip, this.key.ScriptPubKey);
-                Assert.NotNull(this.callbackRuleContext);
-
-                Assert.True(this.callbackRuleContext.MinedBlock);
-                Assert.Equal(blockTemplate.Block.GetHash(), validationContext.BlockToValidate.GetHash());
-                this.consensusManager.Verify();
-            });
-        }
-
-        [Fact]
         public void ComputeBlockVersion_UsingChainTipAndConsensus_NoBip9DeploymentActive_UpdatesHeightAndVersion()
         {
             this.ExecuteWithConsensusOptions(new ConsensusOptions(), () =>
