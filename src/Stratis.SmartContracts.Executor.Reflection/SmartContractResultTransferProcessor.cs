@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             // If contract received no funds and made no transfers, do nothing.
-            if (transactionContext.TxOutValue == 0 && !internalTransfers.Any(x => x.Value > 0)) // TODO: It's debatable whether we should put 0-value transfers in here anyhow... Maybe nice for tracking in the future
+            if (transactionContext.TxOutValue == 0 && !internalTransfers.Any( x=> x.Value > 0)) // TODO: In future discern whether we should even record internal transfers of 0.
             {
                 return null;
             }
