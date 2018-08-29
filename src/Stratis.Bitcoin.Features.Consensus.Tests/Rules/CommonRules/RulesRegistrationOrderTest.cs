@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     public class ConsensusRulesRegistrationTest
     {
         [Fact]
-        public void StratisMainPowConsensusRulesRegistrationTest()
+        public void BitcoinConsensusRulesRegistrationTest()
         {
             Network network = new BitcoinTest();
             new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public void StratisMainPosConsensusRulesRegistrationTest()
+        public void StratisConsensusRulesRegistrationTest()
         {
             Network network = new StratisTest();
             new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(network.Consensus);
