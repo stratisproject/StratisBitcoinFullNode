@@ -44,7 +44,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger.LogTrace("()");
 
             // Deserialization can't fail because this has already been through SmartContractFormatRule.
-            Result<ContractTxData> callDataDeserializationResult = this.serializer.Deserialize(transactionContext.ScriptPubKey.ToBytes());
+            Result<ContractTxData> callDataDeserializationResult = this.serializer.Deserialize(transactionContext.Data);
             ContractTxData callData = callDataDeserializationResult.Value;
 
             var gasMeter = new GasMeter(callData.GasLimit);
