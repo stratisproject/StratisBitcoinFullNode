@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <param name="blockHash">Hash of the delivered block.</param>
         /// <param name="block">The block.</param>
-        /// <param name="peerId">The ID of the peer delivering the block.</param>
+        /// <param name="peerId">The ID of a peer that delivered the block.</param>
         public delegate void OnBlockDownloadedCallback(uint256 blockHash, Block block, int peerId);
 
         /// <summary>Callback which is called when puller received a block which it was asked for.</summary>
