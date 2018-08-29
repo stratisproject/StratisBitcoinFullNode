@@ -3,8 +3,8 @@ using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.IntegrationTests.Common.MockChain;
+using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
@@ -13,12 +13,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 {
     public class ContractCreationTests
     {
-        private readonly Network network;
         private readonly IAddressGenerator addressGenerator;
 
         public ContractCreationTests()
         {
-            this.network = new SmartContractsRegTest();
             this.addressGenerator = new AddressGenerator();
         }
 
@@ -46,6 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("CreateCat", response.NewContractAddress, 0);
                 receiver.WaitMempoolCount(1);
                 receiver.MineBlocks(1);
+                var bytes = sender.GetStorageValue(response.NewContractAddress, "CatCounter");
                 Assert.Equal(1, BitConverter.ToInt32(sender.GetStorageValue(response.NewContractAddress, "CatCounter")));
                 uint160 lastCreatedCatAddress =  new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));
                 uint160 expectedCreatedCatAddress = this.addressGenerator.GenerateAddress(callResponse.TransactionId, 0);
@@ -60,13 +59,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
 
                 // Do a create that should transfer all funds sent now.
-                BuildCallContractTransactionResponse callResponse2 = sender.SendCallContractTransaction("CreateCatWithFunds", response.NewContractAddress, 99);
+                const double amount = 20;
+                BuildCallContractTransactionResponse callResponse2 = sender.SendCallContractTransaction("CreateCatWithFunds", response.NewContractAddress, amount);
                 receiver.WaitMempoolCount(1);
                 receiver.MineBlocks(1);
 
                 // Check created contract has expected balance.
                 lastCreatedCatAddress = new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));
-                // TODO:
+                Assert.Equal(amount * Money.COIN , sender.GetContractBalance(lastCreatedCatAddress.ToAddress(chain.Network)));
 
                 // Check block has 3 transactions. Coinbase, our tx, and then a condensing tx.
                 var block = receiver.GetLastBlock();

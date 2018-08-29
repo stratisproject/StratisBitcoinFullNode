@@ -97,7 +97,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger.LogTrace("(-)[CONTRACT_EXECUTION_SUCCEEDED]");
             track.Commit();
 
-            // TODO: Add internaltransfer update here
+            this.internalTransferList.Add(new TransferInfo
+            {
+                From = smartContractState.Message.ContractAddress.ToUint160(this.network),
+                To = result.NewContractAddress,
+                Value = amountToTransfer
+            });
 
             this.contractLogHolder.AddRawLogs(result.RawLogs);
 
