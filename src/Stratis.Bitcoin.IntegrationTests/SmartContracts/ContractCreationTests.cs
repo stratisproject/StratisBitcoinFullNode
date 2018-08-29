@@ -59,9 +59,18 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // And sanity test that a random value is not available in bloom.
                 Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
 
-                BuildCallContractTransactionResponse callResponse2 = sender.SendCallContractTransaction("CreateCatWithFunds", response.NewContractAddress, 0);
+                // Do a create that should transfer all funds sent now.
+                BuildCallContractTransactionResponse callResponse2 = sender.SendCallContractTransaction("CreateCatWithFunds", response.NewContractAddress, 99);
                 receiver.WaitMempoolCount(1);
                 receiver.MineBlocks(1);
+
+                // Check created contract has expected balance.
+                lastCreatedCatAddress = new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));
+                // TODO:
+
+                // Check block has 3 transactions. Coinbase, our tx, and then a condensing tx.
+                var block = receiver.GetLastBlock();
+                Assert.Equal(3, block.Transactions.Count);
             }
         }
     }
