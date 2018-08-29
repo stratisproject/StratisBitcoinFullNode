@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -21,6 +24,44 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         {
             this.helper = new BlockPullerTestsHelper();
             this.puller = this.helper.Puller;
+        }
+
+        [Fact]
+        public void RequestPeerServices_PeersThatDontSupportNewServicesAreRemoved()
+        {
+            Mock<INetworkPeer> peer1 = this.helper.CreatePeerMock(out ExtendedBlockPullerBehavior behavior1);
+            Mock<INetworkPeer> peer2 = this.helper.CreatePeerMock(out ExtendedBlockPullerBehavior behavior2);
+
+            List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5);
+
+            this.puller.NewPeerTipClaimed(peer1.Object, headers.Last());
+            this.puller.NewPeerTipClaimed(peer2.Object, headers.Last());
+
+            Assert.Equal(2, this.puller.PullerBehaviorsByPeerId.Count);
+
+            VersionPayload version = new NetworkPeerConnectionParameters().CreateVersion(new IPEndPoint(1, 1), new IPEndPoint(1, 1),
+                KnownNetworks.StratisMain, new DateTimeProvider().GetTimeOffset());
+
+            version.Services = NetworkPeerServices.Network | NetworkPeerServices.NODE_WITNESS;
+
+            peer1.SetupGet(x => x.PeerVersion).Returns(version);
+
+            this.puller.RequestPeerServices(NetworkPeerServices.NODE_WITNESS);
+
+            Assert.Equal(1, this.puller.PullerBehaviorsByPeerId.Count);
+        }
+
+        [Fact]
+        public void RequestPeerServices_PeersThatDontSupportNewServicesAreNotAdded()
+        {
+            this.puller.RequestPeerServices(NetworkPeerServices.NODE_WITNESS);
+
+            Mock<INetworkPeer> peer1 = this.helper.CreatePeerMock(out ExtendedBlockPullerBehavior behavior1);
+            List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5);
+
+            this.puller.NewPeerTipClaimed(peer1.Object, headers.Last());
+
+            Assert.Equal(0, this.puller.PullerBehaviorsByPeerId.Count);
         }
 
         [Fact]

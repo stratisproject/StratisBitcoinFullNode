@@ -53,6 +53,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         /// <summary>Creates a peer with extended puller behavior.</summary>
         public INetworkPeer CreatePeer(out ExtendedBlockPullerBehavior mockedBehavior, bool notSupportedVersion = false)
         {
+            return this.CreatePeerMock(out mockedBehavior, notSupportedVersion).Object;
+        }
+
+        /// <summary>Creates a peer with extended puller behavior.</summary>
+        public Mock<INetworkPeer> CreatePeerMock(out ExtendedBlockPullerBehavior mockedBehavior, bool notSupportedVersion = false)
+        {
             var peer = new Mock<INetworkPeer>();
 
             var connection = new NetworkPeerConnection(KnownNetworks.StratisMain, peer.Object, new TcpClient(), this.currentPeerId, (message, token) => Task.CompletedTask,
@@ -78,7 +84,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             peer.Setup(x => x.Behavior<IBlockPullerBehavior>()).Returns(() => behavior);
 
             mockedBehavior = behavior;
-            return peer.Object;
+            return peer;
         }
 
         private ExtendedBlockPullerBehavior CreateBlockPullerBehavior()
