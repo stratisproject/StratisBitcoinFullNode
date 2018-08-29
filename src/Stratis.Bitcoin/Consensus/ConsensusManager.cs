@@ -361,11 +361,12 @@ namespace Stratis.Bitcoin.Consensus
             {
                 var peersToBan = new List<INetworkPeer>();
 
-                if (validationContext.Error == ConsensusErrors.BadWitnessNonceSize)
+                if (validationContext.MissingServices != null)
                 {
-                    this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
-                    this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
-                    this.blockPuller.RequestPeerServices(NetworkPeerServices.NODE_WITNESS);
+                    this.connectionManager.AddDiscoveredNodesRequirement(validationContext.MissingServices.Value);
+                    this.blockPuller.RequestPeerServices(validationContext.MissingServices.Value);
+
+                    this.logger.LogTrace("(-)[MISSING_SERVICES]");
                     return;
                 }
 
