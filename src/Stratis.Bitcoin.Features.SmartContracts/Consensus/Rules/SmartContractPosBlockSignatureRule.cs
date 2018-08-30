@@ -42,6 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
         /// <summary>
         /// Checks if block signature is valid.
+        /// TODO: Update this code to reflect changes made to the corresponding method in <see cref="Features.Consensus.Rules.CommonRules.PosBlockSignatureRule"/>.
         /// </summary>
         /// <param name="block">The block.</param>
         /// <returns><c>true</c> if the signature is valid, <c>false</c> otherwise.</returns>

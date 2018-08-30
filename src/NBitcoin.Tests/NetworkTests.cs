@@ -339,7 +339,7 @@ namespace NBitcoin.Tests
             Assert.Equal(StratisMain.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(StratisMain.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(10000, network.MinTxFee);
-            Assert.Equal(60000, network.FallbackFee);
+            Assert.Equal(10000, network.FallbackFee);
             Assert.Equal(10000, network.MinRelayTxFee);
             Assert.Equal("STRAT", network.CoinTicker);
 
@@ -418,7 +418,7 @@ namespace NBitcoin.Tests
             Assert.Equal(StratisMain.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(StratisMain.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(10000, network.MinTxFee);
-            Assert.Equal(60000, network.FallbackFee);
+            Assert.Equal(10000, network.FallbackFee);
             Assert.Equal(10000, network.MinRelayTxFee);
             Assert.Equal("TSTRAT", network.CoinTicker);
 

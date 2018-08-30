@@ -3,8 +3,8 @@ using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.IntegrationTests.Common.MockChain;
+using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
@@ -13,12 +13,10 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 {
     public class ContractCreationTests
     {
-        private readonly Network network;
         private readonly IAddressGenerator addressGenerator;
 
         public ContractCreationTests()
         {
-            this.network = new SmartContractsRegTest();
             this.addressGenerator = new AddressGenerator();
         }
 
@@ -30,13 +28,13 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 MockChainNode sender = chain.Nodes[0];
                 MockChainNode receiver = chain.Nodes[1];
 
-                sender.MineBlocks(10);
+                sender.MineBlocks(1);
 
                 SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/ContractCreation.cs");
                 Assert.True(compilationResult.Success);
 
                 // Create contract and ensure code exists
-                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation);
+                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0);
                 receiver.WaitMempoolCount(1);
                 receiver.MineBlocks(2);
                 Assert.NotNull(receiver.GetCode(response.NewContractAddress));
@@ -58,6 +56,27 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes(0)));
                 // And sanity test that a random value is not available in bloom.
                 Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
+
+                // Do a create that should transfer all funds sent now.
+                const double amount = 20;
+                BuildCallContractTransactionResponse callResponse2 = sender.SendCallContractTransaction("CreateCatWithFunds", response.NewContractAddress, amount);
+                receiver.WaitMempoolCount(1);
+                receiver.MineBlocks(1);
+
+                // Check created contract has expected balance.
+                lastCreatedCatAddress = new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));
+                Assert.Equal(amount * Money.COIN , sender.GetContractBalance(lastCreatedCatAddress.ToAddress(chain.Network)));
+
+                // Check block has 3 transactions. Coinbase, our tx, and then a condensing tx.
+                var block = receiver.GetLastBlock();
+                Assert.Equal(3, block.Transactions.Count);
+                // Condensing tx has 1 input and 1 output - FROM: real tx. TO: new contract address.
+                Assert.Single(block.Transactions[2].Inputs);
+                Assert.Single(block.Transactions[2].Outputs);
+                Assert.Equal(block.Transactions[1].GetHash(), block.Transactions[2].Inputs[0].PrevOut.Hash); //  References tx above.
+                Assert.Equal(amount * Money.COIN, (ulong)block.Transactions[2].Outputs[0].Value);
+                Assert.True(block.Transactions[2].Inputs[0].ScriptSig.IsSmartContractSpend());
+                Assert.True(block.Transactions[2].Outputs[0].ScriptPubKey.IsSmartContractInternalCall());
             }
         }
     }

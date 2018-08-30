@@ -41,14 +41,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public static NodeBuilder Create(object caller, [CallerMemberName] string callingMethod = null)
         {
-            KillAnyBitcoinInstances();
             string testFolderPath = TestBase.CreateTestDir(caller, callingMethod);
             return new NodeBuilder(testFolderPath);
         }
 
         public static NodeBuilder Create(string testDirectory)
         {
-            KillAnyBitcoinInstances();
             string testFolderPath = TestBase.CreateTestDir(testDirectory);
             return new NodeBuilder(testFolderPath);
         }
@@ -177,25 +175,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             foreach (CoreNode node in this.Nodes)
                 node.Kill();
-
-            KillAnyBitcoinInstances();
-        }
-
-        internal static void KillAnyBitcoinInstances()
-        {
-            while (true)
-            {
-                Process[] bitcoinDProcesses = Process.GetProcessesByName("bitcoind");
-                IEnumerable<Process> applicableBitcoinDProcesses = bitcoinDProcesses.Where(b => b.MainModule.FileName.Contains("External Libs"));
-                if (!applicableBitcoinDProcesses.Any())
-                    break;
-
-                foreach (Process process in applicableBitcoinDProcesses)
-                {
-                    process.Kill();
-                    Thread.Sleep(1000);
-                }
-            }
         }
     }
 }

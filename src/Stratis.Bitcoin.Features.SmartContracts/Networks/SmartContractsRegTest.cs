@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 maxReorgLength: 500,
                 defaultAssumeValid: null, // turn off assumevalid for regtest.
                 maxMoney: long.MaxValue,
-                coinbaseMaturity: 5,
+                coinbaseMaturity: 1, // Low to the point of being nonexistent to speed up integration tests.
                 premineHeight: default(long),
                 premineReward: Money.Zero,
                 proofOfWorkReward: Money.Coins(50),
