@@ -1,18 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.BlockPulling;
-using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Primitives;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
@@ -36,14 +27,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
-            CoinViews.FetchCoinsResponse response = null;
+            this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
 
-            if (this.coinView != null)
-            {
-                response = await this.coinView.FetchCoinsAsync(new[] { trxid }).ConfigureAwait(false);
-            }
+            FetchCoinsResponse response = await this.coinView.FetchCoinsAsync(new[] { trxid }).ConfigureAwait(false);
 
-            return response?.UnspentOutputs?.SingleOrDefault();
+            UnspentOutputs unspentOutputs = response.UnspentOutputs.FirstOrDefault();
+
+            this.logger.LogTrace("(-):{0}", unspentOutputs);
+            return unspentOutputs;
         }
     }
 }
