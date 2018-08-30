@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 .Returns((INetworkPeer)null);
 
             Block badBlock = await createBadBlock(context);
-            await Assert.ThrowsAsync<ConsensusException>(async () => await context.Consensus.BlockMinedAsync(badBlock));
+            await context.Consensus.BlockMinedAsync(badBlock);
 
             Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
         }
