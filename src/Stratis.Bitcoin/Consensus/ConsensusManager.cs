@@ -637,17 +637,17 @@ namespace Stratis.Bitcoin.Consensus
                 lastValidatedBlockHeader = blockToConnect.ChainedHeader;
 
                 // Block connected successfully.
-                List<int> peersToResync = this.SetConsensusTip(newTip);
+                List<int> peersToResync = this.SetConsensusTip(blockToConnect.ChainedHeader);
 
                 await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
 
                 if (this.network.Consensus.MaxReorgLength != 0)
                 {
-                    int newFinalizedHeight = newTip.Height - (int)this.network.Consensus.MaxReorgLength;
+                    int newFinalizedHeight = blockToConnect.ChainedHeader.Height - (int)this.network.Consensus.MaxReorgLength;
 
                     if (newFinalizedHeight > 0)
                     {
-                        uint256 newFinalizedHash = newTip.GetAncestor(newFinalizedHeight).HashBlock;
+                        uint256 newFinalizedHash = blockToConnect.ChainedHeader.GetAncestor(newFinalizedHeight).HashBlock;
 
                         await this.finalizedBlockInfo.SaveFinalizedBlockHashAndHeightAsync(newFinalizedHash, newFinalizedHeight).ConfigureAwait(false);
                     }
@@ -799,6 +799,8 @@ namespace Stratis.Bitcoin.Consensus
                 chainedHeaderBlocks.Add(chainedHeaderBlock);
                 currentHeader = currentHeader.Previous;
             }
+
+            chainedHeaderBlocks.Reverse();
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(chainedHeaderBlocks.Count), chainedHeaderBlocks.Count);
             return chainedHeaderBlocks;
