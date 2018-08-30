@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
     public interface ISmartContractCoinviewRule
     {
         ISmartContractExecutorFactory ExecutorFactory { get; }
-        ContractStateRepositoryRoot OriginalStateRoot { get; }
+        IContractStateRoot OriginalStateRoot { get; }
         IReceiptRepository ReceiptRepository { get; }
     }
 }

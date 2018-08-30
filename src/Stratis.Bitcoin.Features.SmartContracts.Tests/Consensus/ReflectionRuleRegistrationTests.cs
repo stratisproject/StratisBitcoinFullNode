@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
             Network network = KnownNetworks.StratisRegTest;
 
             var chain = new ConcurrentChain(network);
-            var contractState = new ContractStateRepositoryRoot();
+            var contractState = new ContractStateRoot();
             var executorFactory = new Mock<ISmartContractExecutorFactory>();
             var loggerFactory = new ExtendedLoggerFactory();
 

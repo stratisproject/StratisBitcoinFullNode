@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     null,
                     null);
 
-            var state = new Mock<IContractStateRepository>();
+            var state = new Mock<IContractState>();
             var transferProcessor = new Mock<ISmartContractResultTransferProcessor>();
 
             (Money refund, List<TxOut>) refundResult = (refund, new List<TxOut>());
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var vm = new Mock<ISmartContractVirtualMachine>();
             vm.Setup(v => v.Create(It.Is<IGasMeter>(x => x.GasConsumed == GasPriceList.BaseCost),
-                It.IsAny<IContractStateRepository>(),
+                It.IsAny<IContractState>(),
                 It.IsAny<ICreateData>(),
                 It.IsAny<ITransactionContext>(),
                 It.IsAny<string>()))

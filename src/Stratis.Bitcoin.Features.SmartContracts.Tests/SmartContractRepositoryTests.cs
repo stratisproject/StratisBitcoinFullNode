@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Test3()
         {
-            ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(new MemoryDictionarySource());
+            ContractStateRoot repository = new ContractStateRoot(new MemoryDictionarySource());
 
             uint160 cow = 100;
             uint160 horse = 2000;
@@ -63,9 +63,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Test4()
         {
             MemoryDictionarySource source = new MemoryDictionarySource();
-            ContractStateRepositoryRoot root = new ContractStateRepositoryRoot(source);
+            ContractStateRoot root = new ContractStateRoot(source);
 
-            IContractStateRepository repository = root.StartTracking();
+            IContractState repository = root.StartTracking();
 
             repository.SetStorageValue(new uint160(cow), cowKey, cowValue);
             repository.SetStorageValue(new uint160(horse), horseKey, horseValue);
@@ -78,8 +78,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Test12()
         {
-            ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(new MemoryDictionarySource());
-            IContractStateRepository track = repository.StartTracking();
+            ContractStateRoot repository = new ContractStateRoot(new MemoryDictionarySource());
+            IContractState track = repository.StartTracking();
 
             track.SetCode(new uint160(cow), cowCode);
             track.SetCode(new uint160(horse), horseCode);
@@ -97,13 +97,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Test20()
         {
             ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource());
-            ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB);
+            ContractStateRoot repository = new ContractStateRoot(stateDB);
             byte[] root = repository.Root;
 
             uint160 cowAddress = new uint160(cow);
             uint160 horseAddress = new uint160(horse);
 
-            IContractStateRepository track2 = repository.StartTracking(); //repository
+            IContractState track2 = repository.StartTracking(); //repository
             track2.SetStorageValue(cowAddress, cowKey1, cowVal1);
             track2.SetStorageValue(horseAddress, horseKey1, horseVal1);
             track2.Commit();
@@ -119,19 +119,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] root3 = repository.Root;
 
-            IContractStateRepository snapshot = new ContractStateRepositoryRoot(stateDB, root);
+            IContractState snapshot = new ContractStateRoot(stateDB, root);
             Assert.Null(snapshot.GetStorageValue(cowAddress, cowKey1));
             Assert.Null(snapshot.GetStorageValue(cowAddress, cowKey2));
             Assert.Null(snapshot.GetStorageValue(horseAddress, horseKey1));
             Assert.Null(snapshot.GetStorageValue(horseAddress, horseKey2));
 
-            snapshot = new ContractStateRepositoryRoot(stateDB, root2);
+            snapshot = new ContractStateRoot(stateDB, root2);
             Assert.Equal(cowVal1, snapshot.GetStorageValue(cowAddress, cowKey1));
             Assert.Null(snapshot.GetStorageValue(cowAddress, cowKey2));
             Assert.Equal(horseVal1, snapshot.GetStorageValue(horseAddress, horseKey1));
             Assert.Null(snapshot.GetStorageValue(horseAddress, horseKey2));
 
-            snapshot = new ContractStateRepositoryRoot(stateDB, root3);
+            snapshot = new ContractStateRoot(stateDB, root3);
             Assert.Equal(cowVal1, snapshot.GetStorageValue(cowAddress, cowKey1));
             Assert.Equal(cowVal0, snapshot.GetStorageValue(cowAddress, cowKey2));
             Assert.Equal(horseVal1, snapshot.GetStorageValue(horseAddress, horseKey1));
@@ -148,13 +148,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 t.Commit();
             }
             ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new DBreezeByteStore(engine, DbreezeTestDb));
-            ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB);
+            ContractStateRoot repository = new ContractStateRoot(stateDB);
             byte[] root = repository.Root;
 
             uint160 cowAddress = new uint160(cow);
             uint160 horseAddress = new uint160(horse);
 
-            IContractStateRepository track2 = repository.StartTracking(); //repository
+            IContractState track2 = repository.StartTracking(); //repository
             track2.SetStorageValue(cowAddress, cowKey1, cowVal1);
             track2.SetStorageValue(horseAddress, horseKey1, horseVal1);
             track2.Commit();
@@ -170,19 +170,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] root3 = repository.Root;
 
-            IContractStateRepository snapshot = new ContractStateRepositoryRoot(stateDB, root);
+            IContractState snapshot = new ContractStateRoot(stateDB, root);
             Assert.Null(snapshot.GetStorageValue(cowAddress, cowKey1));
             Assert.Null(snapshot.GetStorageValue(cowAddress, cowKey2));
             Assert.Null(snapshot.GetStorageValue(horseAddress, horseKey1));
             Assert.Null(snapshot.GetStorageValue(horseAddress, horseKey2));
 
-            snapshot = new ContractStateRepositoryRoot(stateDB, root2);
+            snapshot = new ContractStateRoot(stateDB, root2);
             Assert.Equal(cowVal1, snapshot.GetStorageValue(cowAddress, cowKey1));
             Assert.Null(snapshot.GetStorageValue(cowAddress, cowKey2));
             Assert.Equal(horseVal1, snapshot.GetStorageValue(horseAddress, horseKey1));
             Assert.Null(snapshot.GetStorageValue(horseAddress, horseKey2));
 
-            snapshot = new ContractStateRepositoryRoot(stateDB, root3);
+            snapshot = new ContractStateRoot(stateDB, root3);
             Assert.Equal(cowVal1, snapshot.GetStorageValue(cowAddress, cowKey1));
             Assert.Equal(cowVal0, snapshot.GetStorageValue(cowAddress, cowKey2));
             Assert.Equal(horseVal1, snapshot.GetStorageValue(horseAddress, horseKey1));
@@ -193,19 +193,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Repository_CommitAndRollbackTest()
         {
             ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource());
-            ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB);
-            IContractStateRepository txTrack = repository.StartTracking();
+            ContractStateRoot repository = new ContractStateRoot(stateDB);
+            IContractState txTrack = repository.StartTracking();
             txTrack.CreateAccount(testAddress);
             txTrack.SetStorageValue(testAddress, dog, cat);
             txTrack.Commit();
             repository.Commit();
             byte[] root1 = repository.Root;
 
-            IContractStateRepository txTrack2 = repository.StartTracking();
+            IContractState txTrack2 = repository.StartTracking();
             txTrack2.SetStorageValue(testAddress, dog, fish);
             txTrack2.Rollback();
 
-            IContractStateRepository txTrack3 = repository.StartTracking();
+            IContractState txTrack3 = repository.StartTracking();
             txTrack3.SetStorageValue(testAddress, dodecahedron, bird);
             txTrack3.Commit();
             repository.Commit();
@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(cat, repository.GetStorageValue(testAddress, dog));
             Assert.Equal(bird, repository.GetStorageValue(testAddress, dodecahedron));
 
-            IContractStateRepository snapshot = repository.GetSnapshotTo(root1);
+            IContractState snapshot = repository.GetSnapshotTo(root1);
 
             repository.SyncToRoot(root1);
             Assert.Equal(cat, snapshot.GetStorageValue(testAddress, dog));
@@ -226,8 +226,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Repository_CommitPushesToUnderlyingSource()
         {
             ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource());
-            ContractStateRepositoryRoot repository = new ContractStateRepositoryRoot(stateDB);
-            IContractStateRepository txTrack = repository.StartTracking();
+            ContractStateRoot repository = new ContractStateRoot(stateDB);
+            IContractState txTrack = repository.StartTracking();
             txTrack.CreateAccount(testAddress);
             txTrack.SetStorageValue(testAddress, dog, cat);
             Assert.Null(repository.GetStorageValue(testAddress, dog));

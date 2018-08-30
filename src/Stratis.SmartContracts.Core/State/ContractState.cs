@@ -8,17 +8,17 @@ namespace Stratis.SmartContracts.Core.State
     /// <summary>
     /// Handles all of the state for smart contracts. Includes smart contract code, storage, and UTXO balances.
     /// </summary>
-    public class ContractStateRepository : IContractStateRepository
+    public class ContractState : IContractState
     {
-        protected ContractStateRepository parent;
+        protected ContractState parent;
         public ISource<byte[], AccountState> accountStateCache;
         public ISource<byte[], ContractUnspentOutput> vinCache;
         protected ISource<byte[], byte[]> codeCache;
         protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
         
-        protected ContractStateRepository() { }
+        protected ContractState() { }
 
-        public ContractStateRepository(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
+        public ContractState(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
                       MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], ContractUnspentOutput> vinCache)
         {
             this.Init(accountStateCache, codeCache, storageCache, vinCache);
@@ -113,14 +113,14 @@ namespace Stratis.SmartContracts.Core.State
             this.accountStateCache.Put(addr.ToBytes(), accountState);
         }
 
-        public IContractStateRepository StartTracking()
+        public IContractState StartTracking()
         {
             ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(this.accountStateCache, WriteCache<AccountState>.CacheType.SIMPLE);
             ISource<byte[], ContractUnspentOutput> trackVinCache = new WriteCache<ContractUnspentOutput>(this.vinCache, WriteCache<ContractUnspentOutput>.CacheType.SIMPLE);
             ISource<byte[], byte[]> trackCodeCache = new WriteCache<byte[]>(this.codeCache, WriteCache<byte[]>.CacheType.SIMPLE);
             MultiCache<ICachedSource<byte[], byte[]>> trackStorageCache = new RealMultiCache(this.storageCache);
 
-            var stateRepository = new ContractStateRepository(trackAccountStateCache, trackCodeCache, trackStorageCache, trackVinCache)
+            var stateRepository = new ContractState(trackAccountStateCache, trackCodeCache, trackStorageCache, trackVinCache)
             {
                 parent = this
             };
@@ -131,14 +131,14 @@ namespace Stratis.SmartContracts.Core.State
         /// <summary>
         /// Gets a snaphot of the state repository up until the given state root.
         /// </summary>
-        public virtual ContractStateRepositoryRoot GetSnapshotTo(byte[] stateRoot)
+        public virtual IContractStateRoot GetSnapshotTo(byte[] stateRoot)
         {
             return this.parent.GetSnapshotTo(stateRoot);
         }
 
         public virtual void Commit()
         {
-            ContractStateRepository parentSync = this.parent == null ? this : this.parent;
+            ContractState parentSync = this.parent == null ? this : this.parent;
             lock (parentSync)
             {
                 this.storageCache.Flush();

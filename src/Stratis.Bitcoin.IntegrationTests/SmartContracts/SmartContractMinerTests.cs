@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             public int baseheight;
             public CachedCoinView cachedCoinView;
             public ISmartContractResultRefundProcessor refundProcessor;
-            public ContractStateRepositoryRoot stateRoot;
+            public ContractStateRoot stateRoot;
             public ISmartContractResultTransferProcessor transferProcessor;
             public SmartContractValidator validator;
             public IKeyEncodingStrategy keyEncodingStrategy;
@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 byteStore.Empty();
                 ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(byteStore);
 
-                this.stateRoot = new ContractStateRepositoryRoot(stateDB);
+                this.stateRoot = new ContractStateRoot(stateDB);
                 this.validator = new SmartContractValidator();
 
                 this.refundProcessor = new SmartContractResultRefundProcessor(loggerFactory);
@@ -906,14 +906,14 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         public MockServiceProvider(
             ICoinView coinView,
             ISmartContractExecutorFactory executorFactory,
-            ContractStateRepositoryRoot stateRoot,
+            ContractStateRoot stateRoot,
             ILoggerFactory loggerFactory)
         {
             this.registered = new Dictionary<Type, object>
             {
                 { typeof(ICoinView), coinView },
                 { typeof(ISmartContractExecutorFactory), executorFactory },
-                { typeof(ContractStateRepositoryRoot), stateRoot },
+                { typeof(ContractStateRoot), stateRoot },
                 { typeof(ILoggerFactory), loggerFactory }
             };
         }
