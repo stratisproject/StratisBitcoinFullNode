@@ -96,6 +96,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
+                if (!this.rpcSettings.Server)
+                {
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not allowed when RPC is disabled.");
+                }
+
                 ControllerActionDescriptor actionDescriptor = null;
                 if (!this.GetActionDescriptors()?.TryGetValue(methodName, out actionDescriptor) ?? false)
                     throw new Exception($"RPC method '{ methodName }' not found.");
@@ -137,6 +142,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
+                if (!this.rpcSettings.Server)
+                {
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not allowed when RPC is disabled.");
+                }
+
                 var listMethods = new List<Models.RpcCommandModel>();
                 foreach (ControllerActionDescriptor descriptor in this.GetActionDescriptors().Values.Where(desc => desc.ActionName == desc.ActionName.ToLower()))
                 {
