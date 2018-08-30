@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// <param name="inputsExceedOutputs">Tests the scenario where the input amount exceeds the output amount.</param>
         /// <param name="expectedError">The error expected by running this test. Set to <c>null</c> if no error is expected.</param>
         private async Task PosColdStakingRuleTestHelperAsync(bool isColdCoinStake, bool inputScriptPubKeysDiffer, bool outputScriptPubKeysDiffer,
-            bool badSecondOutput, bool inputsExceedOutputs, ConsensusError expectedError)
+            bool badSecondOutput, bool inputsExceedOutputs, bool inputsWithoutOutputs, ConsensusError expectedError)
         {
             Block block = this.ruleContext.ValidationContext.BlockToValidate;
 
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             coinstakeTransaction.Inputs.Add(new TxIn()
             {
-                PrevOut = new OutPoint(prevTransaction, 1),
+                PrevOut = new OutPoint(prevTransaction, inputsWithoutOutputs ? 2 : 1),
                 ScriptSig = new Script()
             });
 
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task PosColdStakeValidBlockDoesNotThrowExceptionAsync()
         {
             await PosColdStakingRuleTestHelperAsync(isColdCoinStake: true, inputScriptPubKeysDiffer: false, outputScriptPubKeysDiffer: false,
-                badSecondOutput: false, inputsExceedOutputs: false, expectedError: null);
+                badSecondOutput: false, inputsExceedOutputs: false, inputsWithoutOutputs: false, expectedError: null);
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task PosColdStakeWithMismatchingScriptPubKeyInputsThrowExceptionAsync()
         {
             await PosColdStakingRuleTestHelperAsync(isColdCoinStake: true, inputScriptPubKeysDiffer: true, outputScriptPubKeysDiffer: false,
-                badSecondOutput: false, inputsExceedOutputs: false, expectedError: ConsensusErrors.BadColdstakeInputs);
+                badSecondOutput: false, inputsExceedOutputs: false, inputsWithoutOutputs: false, expectedError: ConsensusErrors.BadColdstakeInputs);
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task PosColdStakeWithMismatchingScriptPubKeyOutputsThrowExceptionAsync()
         {
             await PosColdStakingRuleTestHelperAsync(isColdCoinStake: true, inputScriptPubKeysDiffer: false, outputScriptPubKeysDiffer: true,
-                badSecondOutput: false, inputsExceedOutputs: false, expectedError: ConsensusErrors.BadColdstakeOutputs);
+                badSecondOutput: false, inputsExceedOutputs: false, inputsWithoutOutputs: false, expectedError: ConsensusErrors.BadColdstakeOutputs);
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task PosColdStakeWithBadSecondOutputThrowExceptionAsync()
         {
             await PosColdStakingRuleTestHelperAsync(isColdCoinStake: true, inputScriptPubKeysDiffer: false, outputScriptPubKeysDiffer: false,
-                badSecondOutput: true, inputsExceedOutputs: false, expectedError: ConsensusErrors.BadColdstakeOutputs);
+                badSecondOutput: true, inputsExceedOutputs: false, inputsWithoutOutputs: false, expectedError: ConsensusErrors.BadColdstakeOutputs);
         }
 
         /// <summary>
@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task PosColdStakeWithOutputsExceedingInputsThrowExceptionAsync()
         {
             await PosColdStakingRuleTestHelperAsync(isColdCoinStake: true, inputScriptPubKeysDiffer: false, outputScriptPubKeysDiffer: false,
-                badSecondOutput: false, inputsExceedOutputs: true, expectedError: ConsensusErrors.BadColdstakeAmount);
+                badSecondOutput: false, inputsExceedOutputs: true, inputsWithoutOutputs: false, expectedError: ConsensusErrors.BadColdstakeAmount);
         }
 
         /// <summary>
@@ -165,7 +165,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         public async Task PosCoinStakeWhichIsNotColdCoinStakeDoesNotThrowExceptionAsync()
         {
             await PosColdStakingRuleTestHelperAsync(isColdCoinStake: false, inputScriptPubKeysDiffer: true, outputScriptPubKeysDiffer: true,
-                badSecondOutput: true, inputsExceedOutputs: true, expectedError: null);
+                badSecondOutput: true, inputsExceedOutputs: true, inputsWithoutOutputs: false, expectedError: null);
+        }
+
+        /// <summary>
+        /// Create a transaction that is a cold coin stake transaction that has inputs without outputs. The validation should fail.
+        /// </summary>
+        [Fact]
+        public async Task PosCoinStakeWhichHasInputsWithoutOutputsThrowExceptionAsync()
+        {
+            await PosColdStakingRuleTestHelperAsync(isColdCoinStake: true, inputScriptPubKeysDiffer: false, outputScriptPubKeysDiffer: false,
+                badSecondOutput: false, inputsExceedOutputs: false, inputsWithoutOutputs: true, expectedError: ConsensusErrors.BadColdstakeInputs);
         }
     }
 }
