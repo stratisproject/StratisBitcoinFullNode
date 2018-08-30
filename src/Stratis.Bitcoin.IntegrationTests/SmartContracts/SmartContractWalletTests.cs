@@ -165,8 +165,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
                 // Ensure that both nodes have the contract.
-                senderState = scSender.FullNode.NodeService<ContractStateRoot>();
-                receiverState = scReceiver.FullNode.NodeService<ContractStateRoot>();
+                senderState = scSender.FullNode.NodeService<IContractStateRoot>();
+                receiverState = scReceiver.FullNode.NodeService<IContractStateRoot>();
                 tokenContractAddress = addressGenerator.GenerateAddress(transferContractTransaction.GetHash(), 0);
                 Assert.NotNull(senderState.GetCode(tokenContractAddress));
                 Assert.NotNull(receiverState.GetCode(tokenContractAddress));
