@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
@@ -137,6 +138,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotEmpty(folder, nameof(folder));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            Directory.CreateDirectory(folder);
             this.DBreeze = new DBreezeEngine(folder);
             this.network = network;
             this.dateTimeProvider = dateTimeProvider;
