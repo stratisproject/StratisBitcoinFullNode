@@ -22,11 +22,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var gasConsumed = (Gas) 100;
             var code = new byte[] {0xAA, 0xBB, 0xCC};
             var contractTxData = new ContractTxData(1, 1, (Gas) 1000, code);
-            var script = new Script(code);
             var refund = new Money(0);
             const ulong mempoolFee = 2UL; // MOQ doesn't like it when you use a type with implicit conversions (Money)
             ISmartContractTransactionContext context = Mock.Of<ISmartContractTransactionContext>(c => 
-                c.ScriptPubKey == script &&
+                c.Data == code &&
                 c.MempoolFee == mempoolFee &&
                 c.Sender == uint160.One);
 

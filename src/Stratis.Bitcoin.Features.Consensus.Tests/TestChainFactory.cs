@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.Consensus = new ConsensusManager(network, testChainContext.LoggerFactory, testChainContext.ChainState, testChainContext.HeaderValidator, testChainContext.IntegrityValidator,
                 testChainContext.PartialValidator, testChainContext.FullValidator, testChainContext.Checkpoints, consensusSettings, testChainContext.ConsensusRules, testChainContext.FinalizedBlockInfo, new Signals.Signals(),
                 testChainContext.PeerBanning, testChainContext.InitialBlockDownloadState, testChainContext.Chain, new Mock<IBlockPuller>().Object, blockStore,
-                new InvalidBlockHashStore(new DateTimeProvider()));
+                new InvalidBlockHashStore(new DateTimeProvider()), new Mock<ConnectionManager>().Object);
 
             await testChainContext.Consensus.InitializeAsync(testChainContext.Chain.Tip);
 

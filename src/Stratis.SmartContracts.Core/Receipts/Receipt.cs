@@ -63,6 +63,11 @@ namespace Stratis.SmartContracts.Core.Receipts
         /// </summary>
         public uint160 NewContractAddress { get; }
 
+        /// <summary>
+        /// Whether execution completed successfully.
+        /// </summary>
+        public bool Success { get; }
+
         #endregion
 
         /// <summary>
@@ -75,8 +80,9 @@ namespace Stratis.SmartContracts.Core.Receipts
             uint256 transactionHash,
             uint160 from, 
             uint160 to, 
-            uint160 newContractAddress) 
-            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, from, to, newContractAddress)
+            uint160 newContractAddress,
+            bool success) 
+            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, from, to, newContractAddress, success)
         { }
 
         /// <summary>
@@ -86,7 +92,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             uint256 postState,
             ulong gasUsed,
             Log[] logs)
-            : this(postState, gasUsed, logs, BuildBloom(logs), null, null, null, null, null)
+            : this(postState, gasUsed, logs, BuildBloom(logs), null, null, null, null, null, false)
         { }
 
         /// <summary>
@@ -97,7 +103,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             ulong gasUsed,
             Log[] logs,
             Bloom bloom) 
-            : this(postState, gasUsed, logs, bloom, null, null, null, null, null)
+            : this(postState, gasUsed, logs, bloom, null, null, null, null, null, false)
         { }
 
         private Receipt(
@@ -109,7 +115,8 @@ namespace Stratis.SmartContracts.Core.Receipts
             uint256 blockHash,
             uint160 from,
             uint160 to,
-            uint160 newContractAddress)
+            uint160 newContractAddress,
+            bool success)
         {
             this.PostState = postState;
             this.GasUsed = gasUsed;
@@ -120,6 +127,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             this.From = from;
             this.To = to;
             this.NewContractAddress = newContractAddress;
+            this.Success = success;
         }
 
         /// <summary>
@@ -205,7 +213,8 @@ namespace Stratis.SmartContracts.Core.Receipts
                 new uint256(innerList[5].RLPData),
                 new uint160(innerList[6].RLPData),
                 innerList[7].RLPData != null ? new uint160(innerList[7].RLPData) : null,
-                innerList[8].RLPData != null ? new uint160(innerList[8].RLPData) : null
+                innerList[8].RLPData != null ? new uint160(innerList[8].RLPData) : null,
+                BitConverter.ToBoolean(innerList[9].RLPData)
             );
 
             return receipt;
@@ -227,7 +236,8 @@ namespace Stratis.SmartContracts.Core.Receipts
                 RLP.EncodeElement(this.BlockHash.ToBytes()),
                 RLP.EncodeElement(this.From.ToBytes()),
                 RLP.EncodeElement(this.To?.ToBytes()),
-                RLP.EncodeElement(this.NewContractAddress?.ToBytes())
+                RLP.EncodeElement(this.NewContractAddress?.ToBytes()),
+                RLP.EncodeElement(BitConverter.GetBytes(this.Success))
             );
         }
 

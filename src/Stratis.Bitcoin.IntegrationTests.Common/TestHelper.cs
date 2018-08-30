@@ -11,10 +11,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 {
     public class TestHelper
     {
-        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int millisecondsTimeout = 150, CancellationToken cancellationToken = default(CancellationToken))
+        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken = cancellationToken == default(CancellationToken)
-                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 40 * 1000).Token
+                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token
                 : cancellationToken;
 
             while (!act())
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 try
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    Thread.Sleep(millisecondsTimeout);
+                    Thread.Sleep(retryDelayInMiliseconds);
                 }
                 catch (OperationCanceledException e)
                 {
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             }
         }
 
-        public static bool AreNodesSynced(CoreNode node1, CoreNode node2)
+        public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
             if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock)
                 return false;
@@ -42,8 +42,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (node1.FullNode.GetBlockStoreTip().HashBlock != node2.FullNode.GetBlockStoreTip().HashBlock)
                 return false;
 
-            if (node1.FullNode.MempoolManager().InfoAll().Count != node2.FullNode.MempoolManager().InfoAll().Count)
-                return false;
+            if (!ignoreMempool)
+            {
+                if (node1.FullNode.MempoolManager().InfoAll().Count != node2.FullNode.MempoolManager().InfoAll().Count)
+                    return false;
+            }
 
             if ((node1.FullNode.WalletManager().ContainsWallets) && (node2.FullNode.WalletManager().ContainsWallets))
                 if (node1.FullNode.WalletManager().WalletTipHash != node2.FullNode.WalletManager().WalletTipHash)

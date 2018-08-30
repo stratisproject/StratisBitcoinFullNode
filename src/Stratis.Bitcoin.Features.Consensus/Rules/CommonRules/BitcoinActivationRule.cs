@@ -17,7 +17,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             BlockHeader header = context.ValidationContext.ChainedHeaderToValidate.Header;
 
-            // TODO ACTIVATION we should check height of the next block, not the one which is already part of best chain
             int height = context.ValidationContext.ChainedHeaderToValidate.Height;
 
             // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:

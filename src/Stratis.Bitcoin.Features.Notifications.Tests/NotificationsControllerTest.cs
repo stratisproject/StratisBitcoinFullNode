@@ -38,20 +38,21 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             NodeSettings nodeSettings = NodeSettings.Default();
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object));
-            var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, this.LoggerFactory.Object, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(this.LoggerFactory.Object));
+            var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, this.LoggerFactory.Object, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(this.LoggerFactory.Object), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings());
             var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.LoggerFactory.Object), this.LoggerFactory.Object, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chainState = new ChainState();
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
             var selfEndpointTracker = new SelfEndpointTracker(this.LoggerFactory.Object);
-            
+
             ConsensusRuleEngine emptyConsensusRules = new Mock<ConsensusRuleEngine>(this.network, this.LoggerFactory.Object, dateTimeProvider, chain, new NodeDeployments(this.network, chain), new ConsensusSettings(new NodeSettings(this.network)), new Checkpoints(), new Mock<IChainState>().Object, new Mock<IInvalidBlockHashStore>().Object).Object;
             var connectionManager = new ConnectionManager(dateTimeProvider, this.LoggerFactory.Object, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider());
             var peerBanning = new PeerBanning(connectionManager, this.LoggerFactory.Object, dateTimeProvider, peerAddressManager);
 
             ConsensusManager consensusManager = new ConsensusManager(this.network, this.LoggerFactory.Object, chainState, new HeaderValidator(emptyConsensusRules, this.LoggerFactory.Object),
-                new IntegrityValidator(emptyConsensusRules, this.LoggerFactory.Object), new PartialValidator(emptyConsensusRules, this.LoggerFactory.Object), new Checkpoints(), consensusSettings, emptyConsensusRules,
-                new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object, new Mock<IInvalidBlockHashStore>().Object);
+                new IntegrityValidator(emptyConsensusRules, this.LoggerFactory.Object), new PartialValidator(emptyConsensusRules, this.LoggerFactory.Object), new FullValidator(emptyConsensusRules, this.LoggerFactory.Object), new Checkpoints(), consensusSettings, emptyConsensusRules,
+                new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
+                new Mock<IInvalidBlockHashStore>().Object, new Mock<IConnectionManager>().Object);
 
             return consensusManager;
         }

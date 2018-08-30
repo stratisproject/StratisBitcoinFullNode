@@ -37,6 +37,15 @@ namespace Stratis.Bitcoin.BlockPulling
     {
         void Initialize(BlockPuller.OnBlockDownloadedCallback callback);
 
+        /// <summary>
+        /// Adds required services to list of services that are required from all peers.
+        /// </summary>
+        /// <remarks>
+        /// In case some of the peers that we are already requesting block from don't support new
+        /// service requirements those peers will be released from their assignments.
+        /// </remarks>
+        void RequestPeerServices(NetworkPeerServices services);
+
         /// <summary>Gets the average size of a block based on sizes of blocks that were previously downloaded.</summary>
         double GetAverageBlockSizeBytes();
 
@@ -151,7 +160,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <remarks>This object has to be protected by <see cref="queueLock"/>.</remarks>
         private int nextJobId;
 
-        /// <summary>Locks access to <see cref="pullerBehaviorsByPeerId"/>.</summary>
+        /// <summary>Locks access to <see cref="pullerBehaviorsByPeerId"/> and <see cref="networkPeerRequirement"/>.</summary>
         private readonly object peerLock;
 
         /// <summary>
@@ -181,6 +190,7 @@ namespace Stratis.Bitcoin.BlockPulling
         private readonly IChainState chainState;
 
         /// <inheritdoc cref="NetworkPeerRequirement"/>
+        /// <remarks>This object has to be protected by <see cref="peerLock"/>.</remarks>
         private readonly NetworkPeerRequirement networkPeerRequirement;
 
         /// <inheritdoc cref="IDateTimeProvider"/>
@@ -241,6 +251,35 @@ namespace Stratis.Bitcoin.BlockPulling
 
             this.assignerLoop = this.AssignerLoopAsync();
             this.stallingLoop = this.StallingLoopAsync();
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public void RequestPeerServices(NetworkPeerServices services)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(services), services);
+
+            var peerIdsToRemove = new List<int>();
+
+            lock (this.peerLock)
+            {
+                this.networkPeerRequirement.RequiredServices |= services;
+
+                foreach (KeyValuePair<int, IBlockPullerBehavior> peerIdToBehavior in this.pullerBehaviorsByPeerId)
+                {
+                    INetworkPeer peer = peerIdToBehavior.Value.AttachedPeer;
+
+                    if ((peer == null) || !this.networkPeerRequirement.Check(peer.PeerVersion))
+                    {
+                        this.logger.LogDebug("Peer Id {0} does not meet requirements.", peerIdToBehavior.Key);
+                        peerIdsToRemove.Add(peerIdToBehavior.Key);
+                    }
+                }
+            }
+
+            foreach (int peerId in peerIdsToRemove)
+                this.PeerDisconnected(peerId);
 
             this.logger.LogTrace("(-)");
         }

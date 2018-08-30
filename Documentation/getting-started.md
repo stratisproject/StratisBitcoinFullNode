@@ -13,7 +13,7 @@
 ## Prerequisites
 
 To install and run the node, you need
-* [.NET Core 2.0](https://www.microsoft.com/net/download/core)
+* [.NET Core 2.1](https://www.microsoft.com/net/download/core)
 * [Git](https://git-scm.com/)
 
 ## Build instructions
@@ -22,8 +22,7 @@ To install and run the node, you need
 
 ```
 git clone https://github.com/stratisproject/StratisBitcoinFullNode.git  
-cd StratisBitcoinFullNode
-git submodule update --init --recursive
+cd StratisBitcoinFullNode/src
 ```
 
 ### Build and run the code
@@ -67,6 +66,8 @@ We have a nifty little script that can execute all the previous commands for you
 You just need to edit the file and specify whether you want to run a Stratis or a Bitcoin node, on MainNet or Testnet.  
 It's located [here](https://gist.github.com/bokobza/e68832f5d7d4102bcb33fcde8d9a72fb#file-build-and-run-a-stratis-node-ps1).
 
+### Faucet
+If you need testnet funds (TSTRAT) for testing there is a faucet located [here](https://faucet.stratisplatform.com/).
 
 Docker Containers
 -------------------

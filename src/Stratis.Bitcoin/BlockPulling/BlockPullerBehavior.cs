@@ -55,9 +55,6 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Maximum number of samples that can be used for quality score calculation.</summary>
         internal const int SamplesCount = 100;
 
-        /// <summary>Minimal interval between <see cref="BlockDeliveryRate"/> recalculation can happen.</summary>
-        internal const int MinRecalculationDelaySeconds = 3;
-
         /// <summary>By how much times <see cref="BlockDeliveryRate"/> can increase per recalculation.</summary>
         private const double MaxBlockDeliveryRateIncrease = 2;
 
@@ -75,9 +72,6 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>The average delay in seconds between asking this peer for a block and it being downloaded.</summary>
         internal readonly AverageCalculator averageDelaySeconds;
-
-        /// <summary>Time of the last <see cref="BlockDeliveryRate"/> recalculation.</summary>
-        private DateTime LastRecalculation;
 
         /// <inheritdoc cref="ILoggerFactory"/>
         private readonly ILoggerFactory loggerFactory;
@@ -98,7 +92,6 @@ namespace Stratis.Bitcoin.BlockPulling
 
             this.averageDelaySeconds = new AverageCalculator(SamplesCount);
             this.BlockDeliveryRate = 1.0;
-            this.LastRecalculation = DateTime.MinValue;
 
             this.blockPuller = blockPuller;
 
@@ -113,20 +106,15 @@ namespace Stratis.Bitcoin.BlockPulling
 
             this.averageDelaySeconds.AddSample(delaySeconds);
 
-            if ((DateTime.Now - this.LastRecalculation).TotalSeconds > MinRecalculationDelaySeconds)
-            {
-                this.LastRecalculation = DateTime.Now;
+            double multiplyer = 1.0 / this.averageDelaySeconds.Average;
 
-                double multiplyer = 1.0 / this.averageDelaySeconds.Average;
+            if (multiplyer > MaxBlockDeliveryRateIncrease)
+                multiplyer = MaxBlockDeliveryRateIncrease;
 
-                if (multiplyer > MaxBlockDeliveryRateIncrease)
-                    multiplyer = MaxBlockDeliveryRateIncrease;
+            if (multiplyer < MaxBlockDeliveryRateDecrease)
+                multiplyer = MaxBlockDeliveryRateDecrease;
 
-                if (multiplyer < MaxBlockDeliveryRateDecrease)
-                    multiplyer = MaxBlockDeliveryRateDecrease;
-
-                this.BlockDeliveryRate *= multiplyer;
-            }
+            this.BlockDeliveryRate *= multiplyer;
 
             this.logger.LogTrace("(-)");
         }
