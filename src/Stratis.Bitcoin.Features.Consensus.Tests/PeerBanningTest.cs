@@ -61,9 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 .Returns((INetworkPeer)null);
 
             Block badBlock = await createBadBlock(context);
-
-            // May either throw a ConsensusException or ConsensusErrorException depending on the test.
-            await Assert.ThrowsAnyAsync<Exception>(async () => await context.Consensus.BlockMinedAsync(badBlock));
+            await context.Consensus.BlockMinedAsync(badBlock);
 
             Assert.True(context.PeerBanning.IsBanned(peerEndPoint));
         }
@@ -113,9 +111,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             MockPeerConnection(context, false);
 
             Block badBlock = await createBadBlock(context);
-
-            // May either throw a ConsensusException or ConsensusErrorException depending on the test.
-            await Assert.ThrowsAnyAsync<Exception>(async () => await context.Consensus.BlockMinedAsync(badBlock));
+            await context.Consensus.BlockMinedAsync(badBlock);
 
             Assert.True(context.PeerBanning.IsBanned(peerEndPoint));
         }
@@ -151,9 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             MockPeerConnection(context, true);
             Block badBlock = await createBadBlock(context);
-
-            // May either throw a ConsensusException or ConsensusErrorException depending on the test.
-            await Assert.ThrowsAnyAsync<Exception>(async () => await context.Consensus.BlockMinedAsync(badBlock));
+            await context.Consensus.BlockMinedAsync(badBlock);
 
             Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
         }
@@ -179,14 +173,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             MockPeerConnection(context, false);
             Block badBlock = await createBadBlock(context);
 
-                var blockValidationContext = new ValidationContext
-                {
-                    BlockToValidate = badBlock,
-                    BanDurationSeconds = ValidationContext.BanDurationNoBan
-                };
+            var blockValidationContext = new ValidationContext
+            {
+                BlockToValidate = badBlock,
+                BanDurationSeconds = ValidationContext.BanDurationNoBan
+            };
 
-            // May either throw a ConsensusException or ConsensusErrorException depending on the test.
-            await Assert.ThrowsAnyAsync<Exception>(async () => await context.Consensus.BlockMinedAsync(badBlock));
+            await context.Consensus.BlockMinedAsync(badBlock);
 
             Assert.False(context.PeerBanning.IsBanned(peerEndPoint));
         }
@@ -218,8 +211,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
                 BanDurationSeconds = 1,
             };
 
-            // May either throw a ConsensusException or ConsensusErrorException depending on the test.
-            await Assert.ThrowsAnyAsync<Exception>(async () => await context.Consensus.BlockMinedAsync(badBlock));
+            await context.Consensus.BlockMinedAsync(badBlock);
 
             // Wait 1 sec for ban to expire.
             Thread.Sleep(1000);
