@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             var blockHeaderRule = testContext.CreateRule<SetActivationDeploymentsPartialValidationRule>();
 
-            var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
+            var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset(), false);
             context.ValidationContext.BlockToValidate = KnownNetworks.RegTest.Consensus.ConsensusFactory.CreateBlock();
             context.ValidationContext.BlockToValidate.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
             context.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(context.ValidationContext.BlockToValidate.Header, context.ValidationContext.BlockToValidate.Header.GetHash(), 0);

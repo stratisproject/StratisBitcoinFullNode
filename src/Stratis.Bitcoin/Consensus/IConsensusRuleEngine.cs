@@ -42,7 +42,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>
         /// Each network type can specify it's own <see cref="RuleContext"/>.
         /// </remarks>
-        RuleContext CreateRuleContext(ValidationContext validationContext);
+        /// <param name="validationContext">Validation context.</param>
+        /// <param name="blockMined">Whether the block was mined or obtained from a peer.</param>
+        RuleContext CreateRuleContext(ValidationContext validationContext, bool blockMined);
 
         /// <summary>
         /// Retrieves the block hash of the current tip of the chain.
@@ -62,24 +64,28 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Execute header validation rules.</summary>
         /// <param name="header">The chained header that is going to be validated.</param>
+        /// <param name="blockMined">Whether the block was mined or obtained from a peer.</param>
         /// <returns>Context that contains validation result related information.</returns>
-        ValidationContext HeaderValidation(ChainedHeader header);
+        ValidationContext HeaderValidation(ChainedHeader header, bool blockMined);
 
         /// <summary>Execute integrity validation rules.</summary>
         /// <param name="header">The chained header that is going to be validated.</param>
         /// <param name="block">The block that is going to be validated.</param>
+        /// <param name="blockMined">Whether the block was mined or obtained from a peer.</param>
         /// <returns>Context that contains validation result related information.</returns>
-        ValidationContext IntegrityValidation(ChainedHeader header, Block block);
+        ValidationContext IntegrityValidation(ChainedHeader header, Block block, bool blockMined);
 
         /// <summary>Execute partial validation rules.</summary>
         /// <param name="header">The chained header that is going to be validated.</param>
         /// <param name="block">The block that is going to be validated.</param>
+        /// <param name="blockMined">Whether the block was mined or obtained from a peer.</param>
         /// <returns>Context that contains validation result related information.</returns>
-        Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block);
+        Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block, bool blockMined);
 
         /// <summary>Execute full validation rules.</summary>
         /// <param name="chainedHeaderBlock">The block and chained header that are going to be validated.</param>
+        /// <param name="blockMined">Whether the block was mined or obtained from a peer.</param>
         /// <returns>Context that contains validation result related information.</returns>
-        Task<ValidationContext> FullValidationAsync(ChainedHeaderBlock chainedHeaderBlock);
+        Task<ValidationContext> FullValidationAsync(ChainedHeaderBlock chainedHeaderBlock, bool blockMined);
     }
 }

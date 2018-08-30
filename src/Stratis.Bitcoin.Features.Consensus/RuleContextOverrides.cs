@@ -11,8 +11,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
         }
 
-        protected UtxoRuleContext(ValidationContext validationContext, DateTimeOffset time)
-            : base(validationContext, time)
+        protected UtxoRuleContext(ValidationContext validationContext, DateTimeOffset time, bool blockMined)
+            : base(validationContext, time, blockMined)
         {
         }
 
@@ -36,8 +36,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.BlockStake = blockStake;
         }
 
-        public PosRuleContext(ValidationContext validationContext, DateTimeOffset time) 
-            : base(validationContext, time)
+        public PosRuleContext(ValidationContext validationContext, DateTimeOffset time, bool blockMined)
+            : base(validationContext, time, blockMined)
         {
         }
 
@@ -59,8 +59,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
         }
 
-        public PowRuleContext(ValidationContext validationContext, DateTimeOffset time)
-            : base(validationContext, time)
+        public PowRuleContext(ValidationContext validationContext, DateTimeOffset time, bool blockMined)
+            : base(validationContext, time, blockMined)
         {
         }
     }
