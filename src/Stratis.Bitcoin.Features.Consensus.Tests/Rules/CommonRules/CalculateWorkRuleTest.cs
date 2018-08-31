@@ -32,14 +32,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public void Run_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsBadDiffBitsConsensusErrorException()
         {
-            Block block = this.network.CreateBlock();
+            Block block = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, this.concurrentChain);
 
             this.ruleContext.ValidationContext = new ValidationContext()
             {
                 BlockToValidate = block,
                 ChainedHeaderToValidate = new ChainedHeader(block.Header, block.Header.GetHash(), this.concurrentChain.GetBlock(block.Header.HashPrevBlock))
             };
-            block.Header.Bits = this.ruleContext.ValidationContext.ChainedHeaderToValidate.GetWorkRequired(this.network.Consensus) + 1;
 
             var exception = Assert.Throws<ConsensusErrorException>(() =>
                 this.consensusRules.RegisterRule<CheckDifficultyPowRule>().Run(this.ruleContext));

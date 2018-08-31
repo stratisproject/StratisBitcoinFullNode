@@ -51,41 +51,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_DoNotCheckPow_SetsStake_SetsNextWorkRequiredAsync()
-        {
-            Block block = this.network.CreateBlock();
-            Transaction transaction = this.network.CreateTransaction();
-            block.AddTransaction(transaction);
-
-            this.ruleContext.ValidationContext = new ValidationContext()
-            {
-                BlockToValidate = block,
-                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
-            };
-
-            var target = new Target(0x1f111115);
-            this.ruleContext.ValidationContext.BlockToValidate.Header.Bits = target;
-
-            this.stakeValidator.Setup(s => s.GetNextTargetRequired(
-                this.stakeChain.Object,
-                this.concurrentChain.GetBlock(3),
-                this.network.Consensus,
-                false))
-                .Returns(target)
-                .Verifiable();
-
-            await this.consensusRules.RegisterRule<CheckDifficultykHybridRule>().RunAsync(this.ruleContext);
-
-            this.stakeValidator.Verify();
-            Assert.NotNull(this.ruleContext as PosRuleContext);
-            Assert.Equal(0, (int)(this.ruleContext as PosRuleContext).BlockStake.Flags);
-            Assert.Equal(uint256.Zero, (this.ruleContext as PosRuleContext).BlockStake.StakeModifierV2);
-            Assert.Equal(uint256.Zero, (this.ruleContext as PosRuleContext).BlockStake.HashProof);
-            Assert.Equal((uint)0, (this.ruleContext as PosRuleContext).BlockStake.StakeTime);
-            Assert.Null((this.ruleContext as PosRuleContext).BlockStake.PrevoutStake);
-        }
-
-        [Fact]
         public async Task RunAsync_ProofOfWorkBlock_CheckPow_ValidPow_SetsStake_SetsNextWorkRequiredAsync()
         {
             this.network = KnownNetworks.RegTest;
