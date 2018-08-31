@@ -42,8 +42,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Money value = Money.Zero;
             //-------------------------------------------------------
 
-            var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            IContractStateRepository stateRepository = repository.StartTracking();
+            var repository = new ContractStateRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            IContractState stateRepository = repository.StartTracking();
 
             var gasMeter = new GasMeter(callData.GasLimit);
 
@@ -81,8 +81,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Money value = Money.Zero;
             //-------------------------------------------------------
 
-            var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            IContractStateRepository track = repository.StartTracking();
+            var repository = new ContractStateRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            IContractState track = repository.StartTracking();
 
             var gasMeter = new GasMeter(callData.GasLimit);
 
@@ -122,8 +122,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Money value = Money.Zero;
             //-------------------------------------------------------            
 
-            var repository = new ContractStateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            IContractStateRepository track = repository.StartTracking();
+            var repository = new ContractStateRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            IContractState track = repository.StartTracking();
 
             var gasMeter = new GasMeter(callData.GasLimit);
 

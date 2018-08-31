@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// <summary>
         /// Reference to the current smart contract state.
         /// </summary>
-        private readonly IContractStateRepository stateRepository;
+        private readonly IContractState stateRepository;
 
         /// <summary>
         /// Address of the contract that was just called or created.
@@ -53,7 +53,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
         private readonly Network network;
 
-        public TransactionCondenser(uint160 contractAddress, ILoggerFactory loggerFactory, IList<TransferInfo> transfers, IContractStateRepository stateRepository, Network network, ISmartContractTransactionContext transactionContext)
+        public TransactionCondenser(uint160 contractAddress, ILoggerFactory loggerFactory, IList<TransferInfo> transfers, IContractState stateRepository, Network network, ISmartContractTransactionContext transactionContext)
         {
             this.contractAddress = contractAddress;
             this.logger = loggerFactory.CreateLogger(this.GetType());

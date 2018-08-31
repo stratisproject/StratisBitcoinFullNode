@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         // Services on the node. Used to retrieve information about the state of the network.
         private readonly SmartContractsController smartContractsController;
         private readonly SmartContractWalletController smartContractWalletController;
-        private readonly ContractStateRepositoryRoot stateRoot;
+        private readonly IContractStateRoot stateRoot;
         private readonly IBlockStore blockStore;
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
             // Set up services for later
             this.smartContractWalletController = this.CoreNode.FullNode.NodeService<SmartContractWalletController>();
             this.smartContractsController = this.CoreNode.FullNode.NodeService<SmartContractsController>();
-            this.stateRoot = this.CoreNode.FullNode.NodeService<ContractStateRepositoryRoot>();
+            this.stateRoot = this.CoreNode.FullNode.NodeService<IContractStateRoot>();
             this.blockStore = this.CoreNode.FullNode.NodeService<IBlockStore>();
         }
 

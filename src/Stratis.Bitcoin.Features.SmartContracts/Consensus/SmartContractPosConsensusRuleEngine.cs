@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
     public sealed class SmartContractPosConsensusRuleEngine : PosConsensusRuleEngine, ISmartContractCoinviewRule
     {
         public ISmartContractExecutorFactory ExecutorFactory { get; private set; }
-        public ContractStateRepositoryRoot OriginalStateRoot { get; private set; }
+        public IContractStateRoot OriginalStateRoot { get; private set; }
         public IReceiptRepository ReceiptRepository { get; private set; }
         public ISenderRetriever SenderRetriever { get; private set; }
 
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             ILoggerFactory loggerFactory,
             Network network,
             NodeDeployments nodeDeployments,
-            ContractStateRepositoryRoot originalStateRoot,
+            IContractStateRoot originalStateRoot,
             IReceiptRepository receiptRepository,
             ISenderRetriever senderRetriever,
             IStakeChain stakeChain,

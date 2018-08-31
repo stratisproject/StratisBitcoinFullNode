@@ -10,11 +10,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </summary>
     public class MeteredPersistenceStrategy : IPersistenceStrategy
     {
-        private readonly IContractStateRepository stateDb;
+        private readonly IContractState stateDb;
         private readonly IGasMeter gasMeter;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
 
-        public MeteredPersistenceStrategy(IContractStateRepository stateDb, IGasMeter gasMeter, IKeyEncodingStrategy keyEncodingStrategy)
+        public MeteredPersistenceStrategy(IContractState stateDb, IGasMeter gasMeter, IKeyEncodingStrategy keyEncodingStrategy)
         {
             Guard.NotNull(stateDb, nameof(stateDb));
             Guard.NotNull(gasMeter, nameof(gasMeter));
