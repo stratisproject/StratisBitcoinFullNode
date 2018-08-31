@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 BlockToValidate = block,
                 ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
             };
-            this.ruleContext.MinedBlock = true;
+
             var target = new Target(0x1f111115);
             this.ruleContext.ValidationContext.BlockToValidate.Header.Bits = target;
 
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 BlockToValidate = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain),
                 ChainedHeaderToValidate = this.concurrentChain.Tip
             };
-            this.ruleContext.MinedBlock = false;
+
             var target = this.ruleContext.ValidationContext.BlockToValidate.Header.Bits;
 
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(
@@ -131,7 +131,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 BlockToValidate = block,
                 ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
             };
-            this.ruleContext.MinedBlock = false;
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultykHybridRule>().RunAsync(this.ruleContext));
 
