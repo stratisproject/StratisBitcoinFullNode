@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var classToSave = new ReferencedType();
             classToSave.TestValueType = NewTestValueType();
 
-            Assert.Throws<PersistentStateSerializationException>(() =>
+            Assert.Throws<ContractPrimitiveSerializationException>(() =>
                 this.serializer.Serialize(classToSave));
         }
 
