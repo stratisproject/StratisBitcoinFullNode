@@ -209,13 +209,13 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.transferProcessor = new SmartContractResultTransferProcessor(loggerFactory, this.network);
 
                 this.serializer = CallDataSerializer.Default;
-                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, loggerFactory, this.network);
                 this.AddressGenerator = new AddressGenerator();
                 this.assemblyLoader = new ContractAssemblyLoader();
                 this.moduleDefinitionReader = new ContractModuleDefinitionReader();
                 this.contractPrimitiveSerializer = new ContractPrimitiveSerializer(this.network);
-                this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, loggerFactory, this.network, this.AddressGenerator, this.assemblyLoader, this.moduleDefinitionReader, this.contractPrimitiveSerializer);
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(loggerFactory, this.contractPrimitiveSerializer, this.serializer, this.refundProcessor, this.transferProcessor, this.vm);
+                this.vm = new ReflectionVirtualMachine(this.validator, loggerFactory, this.network, this.assemblyLoader, this.moduleDefinitionReader);
+                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(loggerFactory, this.network);
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(loggerFactory, this.contractPrimitiveSerializer, this.serializer, this.refundProcessor, this.transferProcessor, this.vm, this.AddressGenerator, this.network, this.internalTxExecutorFactory);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker(loggerFactory));
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
