@@ -400,7 +400,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="block">Block that we get weight of.</param>
         /// <returns>Block weight.</returns>
         /// TODO: this is a duplicate of the same method in BlockSizeRule <see cref="BlockSizeRule.GetBlockWeight"/>
-        public long GetBlockWeight(Block block)
+        public virtual long GetBlockWeight(Block block)
         {
             return this.GetSize(block, TransactionOptions.None)
                    * (this.ConsensusOptions.WitnessScaleFactor - 1)

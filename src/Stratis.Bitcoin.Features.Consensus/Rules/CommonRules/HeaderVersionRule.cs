@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -22,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <remarks>This method is currently used during block creation only. Different nodes may not implement
         /// BIP9, or may disagree about what the current valid set of deployments are. It is therefore not strictly
         /// possible to validate a block version number in anything more than general terms.</remarks>
-        public int ComputeBlockVersion(ChainedHeader prevChainedHeader)
+        public virtual int ComputeBlockVersion(ChainedHeader prevChainedHeader)
         {
             uint version = ThresholdConditionCache.VersionbitsTopBits;
             var thresholdConditionCache = new ThresholdConditionCache(this.Parent.Network.Consensus);
