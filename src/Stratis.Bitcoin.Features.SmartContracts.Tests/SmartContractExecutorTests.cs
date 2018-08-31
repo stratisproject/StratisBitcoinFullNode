@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
         private readonly ISmartContractResultRefundProcessor refundProcessor;
-        private readonly IContractState state;
+        private readonly IContractStateRoot state;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
         private readonly SmartContractValidator validator;
         private InternalTransactionExecutorFactory internalTxExecutorFactory;
@@ -50,12 +50,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.state = new ContractStateRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);
             this.validator = new SmartContractValidator();
-            this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
             this.addressGenerator = new AddressGenerator();
             this.assemblyLoader = new ContractAssemblyLoader();
             this.moduleDefinitionReader = new ContractModuleDefinitionReader();
             this.contractPrimitiveSerializer = new ContractPrimitiveSerializer(this.network);
-            this.vm = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network, this.addressGenerator, this.assemblyLoader, this.moduleDefinitionReader, this.contractPrimitiveSerializer);
+            this.vm = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.network, this.assemblyLoader, this.moduleDefinitionReader);
+            this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.loggerFactory, this.network);
             this.serializer = CallDataSerializer.Default;
         }
 
@@ -90,7 +90,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor, 
-                this.vm);
+                this.vm,
+                this.addressGenerator,
+                this.network,
+                this.internalTxExecutorFactory);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
@@ -121,7 +124,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor, 
-                this.vm);
+                this.vm,
+                this.addressGenerator,
+                this.network,
+                this.internalTxExecutorFactory);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
             Assert.IsType<SmartContractDoesNotExistException>(result.Exception);
@@ -146,7 +152,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor, 
-                this.vm);
+                this.vm,
+                this.addressGenerator,
+                this.network,
+                this.internalTxExecutorFactory);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
@@ -179,7 +188,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor, 
-                this.vm);
+                this.vm,
+                this.addressGenerator,
+                this.network,
+                this.internalTxExecutorFactory);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
             Assert.NotNull(result.Exception);
@@ -210,7 +222,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor, 
-                this.vm);
+                this.vm,
+                this.addressGenerator,
+                this.network,
+                this.internalTxExecutorFactory);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
@@ -246,7 +261,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor, 
-                this.vm);
+                this.vm,
+                this.addressGenerator,
+                this.network,
+                this.internalTxExecutorFactory);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
             uint160 address1 = result.NewContractAddress;
@@ -301,7 +319,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor, 
-                this.vm);
+                this.vm,
+                this.addressGenerator,
+                this.network,
+                this.internalTxExecutorFactory);
 
             // Because our contract contains an infinite loop, we want to kill our test after
             // some amount of time without achieving a result. 3 seconds is an arbitrarily high enough timeout
