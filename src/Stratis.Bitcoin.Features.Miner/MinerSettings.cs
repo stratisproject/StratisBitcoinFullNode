@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Settings for <see cref="BlockDefinition"/>.
         /// </summary>
-        public virtual BlockDefinitionOptions BlockDefinitionOptions { get; }
+        public BlockDefinitionOptions BlockDefinitionOptions { get; }
 
         /// <summary>
         /// Initializes an instance of the object from the default configuration.
