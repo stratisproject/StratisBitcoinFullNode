@@ -33,6 +33,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
             this.rawLogs.AddRange(toAdd);
         }
 
+        /// <inheritdoc />
         public void Clear()
         {
             this.rawLogs.Clear();
