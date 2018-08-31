@@ -22,7 +22,7 @@ namespace Stratis.SmartContracts.Core.State
     /// -If unsuccessful, just rollback() the particular changes that didn't work.
     /// 
     /// </summary>
-    public class ContractStateRepositoryRoot : ContractStateRepository
+    public class ContractStateRoot : ContractState, IContractStateRoot
     {
         private class StorageCache : ReadWriteCache<byte[]>
         {
@@ -36,9 +36,9 @@ namespace Stratis.SmartContracts.Core.State
 
         private class MultiStorageCache : MultiCache<ICachedSource<byte[], byte[]>>
         {
-            ContractStateRepositoryRoot parentRepo;
+            ContractStateRoot parentRepo;
 
-            public MultiStorageCache(ContractStateRepositoryRoot parentRepo) : base(null)
+            public MultiStorageCache(ContractStateRoot parentRepo) : base(null)
             {
                 this.parentRepo = parentRepo;
             }
@@ -92,13 +92,13 @@ namespace Stratis.SmartContracts.Core.State
         private ICachedSource<byte[], byte[]> trieCache;
         private IPatriciaTrie stateTrie;
 
-        public ContractStateRepositoryRoot() { }
+        public ContractStateRoot() { }
 
-        public ContractStateRepositoryRoot(NoDeleteContractStateSource stateDS) : this(stateDS, null) { }
+        public ContractStateRoot(NoDeleteContractStateSource stateDS) : this(stateDS, null) { }
 
-        public ContractStateRepositoryRoot(ISource<byte[], byte[]> stateDS) : this(stateDS, null) { }
+        public ContractStateRoot(ISource<byte[], byte[]> stateDS) : this(stateDS, null) { }
 
-        public ContractStateRepositoryRoot(ISource<byte[], byte[]> stateDS, byte[] stateRoot)
+        public ContractStateRoot(ISource<byte[], byte[]> stateDS, byte[] stateRoot)
         {
             this.stateDS = stateDS;
             this.trieCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
@@ -134,9 +134,9 @@ namespace Stratis.SmartContracts.Core.State
             this.Commit();
         }
 
-        public override ContractStateRepositoryRoot GetSnapshotTo(byte[] stateRoot)
+        public override IContractStateRoot GetSnapshotTo(byte[] stateRoot)
         {
-            return new ContractStateRepositoryRoot(this.stateDS, stateRoot);
+            return new ContractStateRoot(this.stateDS, stateRoot);
         }
 
         public void SyncToRoot(byte[] root)

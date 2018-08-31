@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TransferProcessor_NoBalance_NoTransfers()
         {
             // Scenario where contract was sent 0, doesn't yet have any UTXO assigned, and no transfers were made.
-            var stateMock = new Mock<IContractStateRepository>();
+            var stateMock = new Mock<IContractState>();
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
             var txContextMock = new Mock<ISmartContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TransferProcessor_NoBalance_ReceivedFunds()
         {
             // Scenario where contract was sent some funds, doesn't yet have any UTXO assigned, and no transfers were made.
-            var stateMock = new Mock<IContractStateRepository>();
+            var stateMock = new Mock<IContractState>();
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
             var txContextMock = new Mock<ISmartContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TransferProcessor_NoBalance_MadeTransfer()
         {
             // Scenario where contract was not sent any funds, but did make a method call with value 0.
-            var stateMock = new Mock<IContractStateRepository>();
+            var stateMock = new Mock<IContractState>();
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
             var txContextMock = new Mock<ISmartContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);

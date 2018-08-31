@@ -39,7 +39,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </para>
         /// </summary>
         public ISmartContractExecutor CreateExecutor(
-            IContractStateRepository stateRepository,
+            IContractState stateRepository,
             ISmartContractTransactionContext transactionContext)
         {
             return new Executor(this.loggerFactory, this.contractPrimitiveSerializer, this.serializer, 

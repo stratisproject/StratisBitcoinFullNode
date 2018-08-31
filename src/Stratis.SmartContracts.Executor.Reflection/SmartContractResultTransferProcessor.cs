@@ -20,7 +20,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <inheritdoc />
-        public Transaction Process(IContractStateRepository stateSnapshot,
+        public Transaction Process(IContractState stateSnapshot,
             uint160 contractAddress,
             ISmartContractTransactionContext transactionContext,
             IList<TransferInfo> internalTransfers,
