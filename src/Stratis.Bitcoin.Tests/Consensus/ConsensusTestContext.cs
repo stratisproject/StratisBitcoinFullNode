@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             this.PartialValidation = new PartialValidator(powConsensusRulesEngine, extendedLoggerFactory);
             this.HeaderValidator = new Mock<IHeaderValidator>();
-            this.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+            this.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>(), It.IsAny<bool>())).Returns(new ValidationContext());
 
             this.ChainedHeaderTree = new ChainedHeaderTree(
                 this.Network,
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 new Mock<IBlockPuller>().Object,
                 null,
                 new InvalidBlockHashStore(new DateTimeProvider()),
-                new Mock<ConnectionManager>().Object);
+                new Mock<IConnectionManager>().Object);
 
             return this.ConsensusManager;
         }

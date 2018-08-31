@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             var rule = testContext.CreateRule<HeaderTimeChecksRule>();
 
-            RuleContext context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
+            RuleContext context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset(), false);
             context.ValidationContext.BlockToValidate = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, testContext.Chain);
             context.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(context.ValidationContext.BlockToValidate.Header, context.ValidationContext.BlockToValidate.Header.GetHash(), testContext.Chain.Tip);
             context.Time = DateTimeProvider.Default.GetTimeOffset();
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             var rule = testContext.CreateRule<HeaderTimeChecksRule>();
 
-            RuleContext context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
+            RuleContext context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset(), false);
             context.ValidationContext.BlockToValidate = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, testContext.Chain);
             context.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(context.ValidationContext.BlockToValidate.Header, context.ValidationContext.BlockToValidate.Header.GetHash(), testContext.Chain.Tip);
             context.Time = DateTimeProvider.Default.GetTimeOffset();

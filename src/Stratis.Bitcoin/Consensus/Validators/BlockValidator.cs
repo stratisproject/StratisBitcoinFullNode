@@ -19,8 +19,9 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// Validates a block header.
         /// </summary>
         /// <param name="chainedHeader">The chained header to be validated.</param>
+        /// <param name="blockMined">Whether the block was mined or obtained from a peer.</param>
         /// <returns>Context that contains validation result related information.</returns>
-        ValidationContext ValidateHeader(ChainedHeader chainedHeader);
+        ValidationContext ValidateHeader(ChainedHeader chainedHeader, bool blockMined);
     }
 
     public interface IPartialValidator : IDisposable
@@ -33,8 +34,9 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// </summary>
         /// <param name="header">The chained header that is going to be validated.</param>
         /// <param name="block">The block that is going to be validated.</param>
+        /// <param name="blockMined">Whether the block was mined or obtained from a peer.</param>
         /// <param name="onPartialValidationCompletedAsyncCallback">A callback that is called when validation is complete.</param>
-        void StartPartialValidation(ChainedHeader header, Block block, OnPartialValidationCompletedAsyncCallback onPartialValidationCompletedAsyncCallback);
+        void StartPartialValidation(ChainedHeader header, Block block, bool blockMined, OnPartialValidationCompletedAsyncCallback onPartialValidationCompletedAsyncCallback);
 
         /// <summary>
         /// Executes the partial validation rule set on a block.
@@ -44,8 +46,9 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// </summary>
         /// <param name="header">The chained header that is going to be validated.</param>
         /// <param name="block">The block that is going to be validated.</param>
+        /// <param name="blockMined">Whether the block was mined or obtained from a peer.</param>
         /// <returns>Context that contains validation result related information.</returns>
-        Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block);
+        Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block, bool blockMined);
     }
 
     public interface IIntegrityValidator
@@ -59,8 +62,9 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// </remarks>
         /// <param name="header">The chained header that is going to be validated.</param>
         /// <param name="block">The block that is going to be validated.</param>
+        /// <param name="blockMined">Whether the block was mined or obtained from a peer.</param>
         /// <returns>Context that contains validation result related information.</returns>
-        ValidationContext VerifyBlockIntegrity(ChainedHeader header, Block block);
+        ValidationContext VerifyBlockIntegrity(ChainedHeader header, Block block, bool blockMined);
     }
 
     /// <inheritdoc />
@@ -76,11 +80,11 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         /// <inheritdoc />
-        public ValidationContext ValidateHeader(ChainedHeader chainedHeader)
+        public ValidationContext ValidateHeader(ChainedHeader chainedHeader, bool blockMined)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            ValidationContext result = this.consensusRules.HeaderValidation(chainedHeader);
+            ValidationContext result = this.consensusRules.HeaderValidation(chainedHeader, blockMined);
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
@@ -100,11 +104,11 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         /// <inheritdoc />
-        public ValidationContext VerifyBlockIntegrity(ChainedHeader header, Block block)
+        public ValidationContext VerifyBlockIntegrity(ChainedHeader header, Block block, bool blockMined)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(header), header, nameof(block), block);
 
-            ValidationContext result = this.consensusRules.IntegrityValidation(header, block);
+            ValidationContext result = this.consensusRules.IntegrityValidation(header, block, blockMined);
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
@@ -136,7 +140,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(item), item);
 
-            ValidationContext result = await this.consensusRules.PartialValidationAsync(item.ChainedHeader, item.Block).ConfigureAwait(false);
+            ValidationContext result = await this.consensusRules.PartialValidationAsync(item.ChainedHeader, item.Block, item.BlockMined).ConfigureAwait(false);
 
             try
             {
@@ -152,7 +156,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         /// <inheritdoc />
-        public void StartPartialValidation(ChainedHeader header, Block block, OnPartialValidationCompletedAsyncCallback onPartialValidationCompletedAsyncCallback)
+        public void StartPartialValidation(ChainedHeader header, Block block, bool blockMined, OnPartialValidationCompletedAsyncCallback onPartialValidationCompletedAsyncCallback)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(header), header, nameof(block), block);
 
@@ -160,6 +164,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
             {
                 ChainedHeader = header,
                 Block = block,
+                BlockMined = blockMined,
                 PartialValidationCompletedAsyncCallback = onPartialValidationCompletedAsyncCallback
             });
 
@@ -167,11 +172,11 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         /// <inheritdoc />
-        public async Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block)
+        public async Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block, bool blockMined)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(header), header, nameof(block), block);
 
-            ValidationContext result = await this.consensusRules.PartialValidationAsync(header, block).ConfigureAwait(false);
+            ValidationContext result = await this.consensusRules.PartialValidationAsync(header, block, blockMined).ConfigureAwait(false);
 
             this.logger.LogTrace("(-):'{0}'", result);
             return result;
@@ -187,6 +192,9 @@ namespace Stratis.Bitcoin.Consensus.Validators
 
             /// <summary>The block to be partially validated.</summary>
             public Block Block { get; set; }
+
+            /// <summary>Whether the block was mined or obtained from a peer.</summary>
+            public bool BlockMined { get; set; }
 
             /// <summary>After validation a call back will be invoked asynchronously.</summary>
             public OnPartialValidationCompletedAsyncCallback PartialValidationCompletedAsyncCallback { get; set; }

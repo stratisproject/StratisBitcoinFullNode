@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             return this.ruleRegistrationHelper.RegisterRule<T>(this);
         }
 
-        public override RuleContext CreateRuleContext(ValidationContext validationContext)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext, bool blockMined)
         {
             return this.RuleContext ?? new PowRuleContext();
         }

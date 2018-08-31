@@ -31,9 +31,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override RuleContext CreateRuleContext(ValidationContext validationContext)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext, bool blockMined)
         {
-            return new PowRuleContext(validationContext, this.DateTimeProvider.GetTimeOffset());
+            return new PowRuleContext(validationContext, this.DateTimeProvider.GetTimeOffset(), blockMined);
         }
 
         /// <inheritdoc />

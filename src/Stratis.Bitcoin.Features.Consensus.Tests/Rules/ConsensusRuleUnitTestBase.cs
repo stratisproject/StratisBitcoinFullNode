@@ -52,9 +52,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.ruleRegistration = new Mock<IRuleRegistration>();
 
             if (network.Consensus.IsProofOfStake)
-                this.ruleContext = new PosRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
+                this.ruleContext = new PosRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset(), false);
             else
-                this.ruleContext = new PowRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
+                this.ruleContext = new PowRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset(), false);
         }
 
         protected void AddBlocksToChain(ConcurrentChain chain, int blockAmount)
@@ -137,11 +137,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             if (network.Consensus.IsProofOfStake)
             {
-                this.ruleContext = new PosRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
+                this.ruleContext = new PosRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset(), false);
             }
             else
             {
-                this.ruleContext = new PowRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
+                this.ruleContext = new PowRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset(), false);
             }
         }
 

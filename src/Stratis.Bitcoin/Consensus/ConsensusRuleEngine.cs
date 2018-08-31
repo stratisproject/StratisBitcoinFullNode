@@ -158,12 +158,12 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public ValidationContext HeaderValidation(ChainedHeader header)
+        public ValidationContext HeaderValidation(ChainedHeader header, bool blockMined)
         {
             Guard.NotNull(header, nameof(header));
 
             var validationContext = new ValidationContext { ChainedHeaderToValidate = header };
-            RuleContext ruleContext = this.CreateRuleContext(validationContext);
+            RuleContext ruleContext = this.CreateRuleContext(validationContext, blockMined);
 
             this.ExecuteRules(this.headerValidationRules, ruleContext);
 
@@ -171,13 +171,13 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public ValidationContext IntegrityValidation(ChainedHeader header, Block block)
+        public ValidationContext IntegrityValidation(ChainedHeader header, Block block, bool blockMined)
         {
             Guard.NotNull(header, nameof(header));
             Guard.NotNull(block, nameof(block));
 
             var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = header };
-            RuleContext ruleContext = this.CreateRuleContext(validationContext);
+            RuleContext ruleContext = this.CreateRuleContext(validationContext, blockMined);
 
             this.ExecuteRules(this.integrityValidationRules, ruleContext);
 
@@ -185,12 +185,12 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public async Task<ValidationContext> FullValidationAsync(ChainedHeaderBlock chainedHeaderBlock)
+        public async Task<ValidationContext> FullValidationAsync(ChainedHeaderBlock chainedHeaderBlock, bool blockMined)
         {
             Guard.NotNull(chainedHeaderBlock, nameof(chainedHeaderBlock));
 
             var validationContext = new ValidationContext { BlockToValidate = chainedHeaderBlock.Block, ChainedHeaderToValidate = chainedHeaderBlock.ChainedHeader };
-            RuleContext ruleContext = this.CreateRuleContext(validationContext);
+            RuleContext ruleContext = this.CreateRuleContext(validationContext, blockMined);
 
             await this.ExecuteRulesAsync(this.fullValidationRules, ruleContext).ConfigureAwait(false);
 
@@ -201,13 +201,13 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public async Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block)
+        public async Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block, bool blockMined)
         {
             Guard.NotNull(header, nameof(header));
             Guard.NotNull(block, nameof(block));
 
             var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = header };
-            RuleContext ruleContext = this.CreateRuleContext(validationContext);
+            RuleContext ruleContext = this.CreateRuleContext(validationContext, blockMined);
 
             await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
 
@@ -275,7 +275,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public abstract RuleContext CreateRuleContext(ValidationContext validationContext);
+        public abstract RuleContext CreateRuleContext(ValidationContext validationContext, bool blockMined);
 
         /// <inheritdoc />
         public abstract Task<uint256> GetBlockHashAsync();

@@ -26,13 +26,13 @@ namespace Stratis.Bitcoin.Consensus.Rules
         {
         }
 
-        public RuleContext(ValidationContext validationContext, DateTimeOffset time) : base()
+        public RuleContext(ValidationContext validationContext, DateTimeOffset time, bool blockMined) : base()
         {
             Guard.NotNull(validationContext, nameof(validationContext));
 
             this.ValidationContext = validationContext;
             this.Time = time;
-            this.MinedBlock = false;
+            this.MinedBlock = blockMined;
         }
     }
 }

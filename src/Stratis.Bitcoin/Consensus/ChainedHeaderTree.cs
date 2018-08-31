@@ -674,7 +674,7 @@ namespace Stratis.Bitcoin.Consensus
             List<ChainedHeader> newChainedHeaders = null;
 
             if (!this.chainedHeadersByHash.ContainsKey(lastHash))
-                newChainedHeaders = this.CreateNewHeaders(headers);
+                newChainedHeaders = this.CreateNewHeaders(headers, false);
             else
                 this.logger.LogTrace("No new headers presented.");
 
@@ -998,7 +998,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
-            this.CreateNewHeaders(new List<BlockHeader>() { block.Header });
+            this.CreateNewHeaders(new List<BlockHeader>() { block.Header }, true);
 
             ChainedHeader chainedHeader = this.GetChainedHeader(block.GetHash());
             this.BlockDataDownloaded(chainedHeader, block);
@@ -1017,11 +1017,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <para>When headers are connected the next pointers of their previous headers are updated.</para>
         /// </remarks>
         /// <param name="headers">The new headers that should be connected to a chain.</param>
+        /// <param name="createdByMiner">Whether the headers were created by miner or obtained from a peer.</param>
         /// <returns>A list of newly created chained headers or <c>null</c> if no new headers were found.</returns>
         /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
         /// <exception cref="ConnectHeaderException">Thrown if it wasn't possible to connect the first new header.</exception>
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
-        private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers)
+        private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers, bool createdByMiner)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(headers), nameof(headers.Count), headers.Count);
 
@@ -1041,7 +1042,7 @@ namespace Stratis.Bitcoin.Consensus
 
             var newChainedHeaders = new List<ChainedHeader>();
 
-            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader);
+            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader, createdByMiner);
             newChainedHeaders.Add(newChainedHeader);
             newHeaderIndex++;
 
@@ -1055,7 +1056,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 for (; newHeaderIndex < headers.Count; newHeaderIndex++)
                 {
-                    newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader);
+                    newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader, createdByMiner);
                     newChainedHeaders.Add(newChainedHeader);
                     this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
 
@@ -1078,7 +1079,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
-        private ChainedHeader CreateAndValidateNewChainedHeader(BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader)
+        private ChainedHeader CreateAndValidateNewChainedHeader(BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader, bool createdByMiner)
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(currentBlockHeader), currentBlockHeader, nameof(previousChainedHeader), previousChainedHeader);
 
@@ -1092,7 +1093,7 @@ namespace Stratis.Bitcoin.Consensus
 
             var newChainedHeader = new ChainedHeader(currentBlockHeader, newHeaderHash, previousChainedHeader);
 
-            ValidationContext result = this.headerValidator.ValidateHeader(newChainedHeader);
+            ValidationContext result = this.headerValidator.ValidateHeader(newChainedHeader, createdByMiner);
 
             if (result.Error != null)
             {

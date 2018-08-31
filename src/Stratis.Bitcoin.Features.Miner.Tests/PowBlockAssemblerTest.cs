@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 var txFee = new Money(1000);
                 SetupTxMempool(chain, this.testNet.Consensus.Options as ConsensusOptions, txFee, transaction);
                 this.consensusRules
-                    .Setup(s => s.CreateRuleContext(It.IsAny<ValidationContext>()))
+                    .Setup(s => s.CreateRuleContext(It.IsAny<ValidationContext>(), It.IsAny<bool>()))
                     .Returns(new PowRuleContext());
 
                 var blockDefinition = new PowBlockDefinition(this.consensusManager.Object, this.dateTimeProvider.Object, this.LoggerFactory.Object, this.txMempool.Object, new MempoolSchedulerLock(), this.minerSettings.Object, this.testNet, this.consensusRules.Object);
@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         {
             this.callbackRuleContext = null;
 
-            this.consensusManager.Setup(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ChainedHeader>(), It.IsAny<Block>()))
+            this.consensusManager.Setup(c => c.ConsensusRules.PartialValidationAsync(It.IsAny<ChainedHeader>(), It.IsAny<Block>(), It.IsAny<bool>()))
                 .Callback((ChainedHeader ch, Block b) =>
                 {
                     this.callbackRuleContext = new RuleContext();
