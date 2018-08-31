@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -170,7 +169,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private void UpdateLogsBloom(SmartContractBlockHeader scHeader)
         {
             Bloom logsBloom = new Bloom();
-            foreach(Receipt receipt in this.receipts)
+            foreach (Receipt receipt in this.receipts)
             {
                 logsBloom.Or(receipt.Bloom);
             }
