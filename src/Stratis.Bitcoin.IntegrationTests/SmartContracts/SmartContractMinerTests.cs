@@ -266,7 +266,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.mempool = new TxMempool(dateTimeProviderSet, new BlockPolicyEstimator(new MempoolSettings(this.NodeSettings), this.loggerFactory, this.NodeSettings), this.loggerFactory, this.NodeSettings);
                 this.mempoolLock = new MempoolSchedulerLock();
 
-                //this.baseheight = 0;
                 var blocks = new List<NBitcoin.Block>();
                 this.txFirst = new List<Transaction>();
 
@@ -286,9 +285,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     coinbaseTx.AddOutput(new TxOut(Money.Coins(50), this.scriptPubKey));
                     coinbaseTx.AddOutput(new TxOut(Money.Zero, new Script()));
                     block.AddTransaction(coinbaseTx);
-
-                    //if (this.txFirst.Count == 0)
-                    //    this.baseheight = this.chain.Height;
 
                     if (this.txFirst.Count < 4)
                         this.txFirst.Add(block.Transactions[0]);
