@@ -60,7 +60,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Returns(refundResult);
 
             var vm = new Mock<ISmartContractVirtualMachine>();
-            vm.Setup(v => v.Create(It.IsAny<ISmartContractState>(),
+            vm.Setup(v => v.Create(
+                It.IsAny<IContractState>(),
+                It.IsAny<ISmartContractState>(),
                 code,
                 It.IsAny<object[]>(),
                 It.IsAny<string>()))
@@ -88,7 +90,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             serializer.Verify(s => s.Deserialize(code), Times.Once);
             
             vm.Verify(v => 
-                v.Create(It.IsAny<ISmartContractState>(),
+                v.Create(
+                    It.IsAny<IContractState>(),
+                    It.IsAny<ISmartContractState>(),
                     code,
                     It.IsAny<object[]>(),
                     It.IsAny<string>()), 
