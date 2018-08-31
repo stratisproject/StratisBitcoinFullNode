@@ -423,7 +423,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     .SpendsCoinbase(true)
                     .FromTx(maliciousTx));
 
-            await Assert.ThrowsAsync<ConsensusErrorException>(async () =>
+            await Assert.ThrowsAsync<ConsensusException>(async () =>
             {
                 await this.BuildBlockAsync(context);
             });
