@@ -38,6 +38,7 @@ using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
@@ -68,6 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 testContext.mempoolLock,
                 new MinerSettings(testContext.nodeSettings),
                 testContext.network,
+                new SenderRetriever(),
                 testContext.stateRoot);
         }
 
@@ -226,10 +228,11 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, this.nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new SmartContractVersionProvider());
                 var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
+                var senderRetriever = new SenderRetriever();
 
                 var chainState = new ChainState();
                 var consensusRules = new SmartContractPowConsensusRuleEngine(this.chain, new Checkpoints(), consensusSettings,
-                    dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, new PersistentReceiptRepository(new DataFolder(folder)),
+                    dateTimeProvider, this.executorFactory, loggerFactory, this.network, nodeDeployments, this.stateRoot, new PersistentReceiptRepository(new DataFolder(folder)), senderRetriever,
                     this.cachedCoinView, chainState, new InvalidBlockHashStore(new DateTimeProvider())).Register();
                 this.newBlock = AssemblerForTest(this).Build(this.chain.Tip, this.scriptPubKey);
 
