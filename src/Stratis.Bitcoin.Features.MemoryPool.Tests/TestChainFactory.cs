@@ -118,7 +118,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // Simple block creation, nothing special yet:
             PowBlockDefinition blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules);
             BlockTemplate newBlock = blockDefinition.Build(chain.Tip, scriptPubKey);
-            chain.SetTip(newBlock.Block.Header);
 
             await consensus.BlockMinedAsync(newBlock.Block);
 
