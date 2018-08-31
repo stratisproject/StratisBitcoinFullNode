@@ -41,8 +41,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             MempoolSchedulerLock mempoolLock,
             MinerSettings minerSettings,
             Network network,
-            IContractStateRoot stateRoot,
-            ISenderRetriever senderRetriever)
+            ISenderRetriever senderRetriever,
+            IContractStateRoot stateRoot)
             : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.coinView = coinView;
