@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var peerBanning = new PeerBanning(connectionManager, this.LoggerFactory.Object, dateTimeProvider, peerAddressManager);
 
             ConsensusManager consensusManager = new ConsensusManager(this.network, this.LoggerFactory.Object, chainState, new HeaderValidator(emptyConsensusRules, this.LoggerFactory.Object),
-                new IntegrityValidator(emptyConsensusRules, this.LoggerFactory.Object), new PartialValidator(emptyConsensusRules, this.LoggerFactory.Object), new Checkpoints(), consensusSettings, emptyConsensusRules,
+                new IntegrityValidator(emptyConsensusRules, this.LoggerFactory.Object), new PartialValidator(emptyConsensusRules, this.LoggerFactory.Object), new FullValidator(emptyConsensusRules, this.LoggerFactory.Object), new Checkpoints(), consensusSettings, emptyConsensusRules,
                 new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
                 new Mock<IInvalidBlockHashStore>().Object, new Mock<IConnectionManager>().Object);
 

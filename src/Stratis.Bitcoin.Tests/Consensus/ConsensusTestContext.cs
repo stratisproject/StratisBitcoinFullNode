@@ -42,6 +42,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         internal ChainedHeader InitialChainTip;
         public Mock<IIntegrityValidator> IntegrityValidator = new Mock<IIntegrityValidator>();
         public readonly IPartialValidator PartialValidation;
+        public readonly IFullValidator FullValidation;
         public readonly Mock<IPeerBanning> PeerBanning = new Mock<IPeerBanning>();
 
         private static int nonceValue;
@@ -55,6 +56,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 new NodeDeployments(this.Network, chain), this.ConsensusSettings, this.Checkpoints.Object, new Mock<ICoinView>().Object, this.ChainState.Object, new InvalidBlockHashStore(new DateTimeProvider()));
 
             this.PartialValidation = new PartialValidator(powConsensusRulesEngine, extendedLoggerFactory);
+            this.FullValidation = new FullValidator(powConsensusRulesEngine, extendedLoggerFactory);
             this.HeaderValidator = new Mock<IHeaderValidator>();
             this.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
 
@@ -94,6 +96,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.HeaderValidator.Object,
                 this.IntegrityValidator.Object,
                 this.PartialValidation,
+                this.FullValidation,
                 this.Checkpoints.Object,
                 this.ConsensusSettings,
                 this.ConsensusRulesEngine.Object,

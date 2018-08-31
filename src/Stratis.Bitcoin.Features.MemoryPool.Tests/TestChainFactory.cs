@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 inMemoryCoinView, chainState, new InvalidBlockHashStore(new DateTimeProvider())).Register();
 
             var consensus = new ConsensusManager(network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),
-                new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory),new Checkpoints(), consensusSettings, consensusRules,
+                new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory), new FullValidator(consensusRules, loggerFactory), new Checkpoints(), consensusSettings, consensusRules,
                 new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chain, new Mock<IBlockPuller>().Object,
                 new Mock<IBlockStore>().Object, new InvalidBlockHashStore(new DateTimeProvider()), new Mock<ConnectionManager>().Object);
 
