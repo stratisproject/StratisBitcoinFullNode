@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
@@ -11,11 +12,11 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Interfaces;
@@ -76,6 +77,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             network.Consensus.Options = new ConsensusOptions();
             new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
+
+            // Dont check PoW of a header in this test.
+            IHeaderValidationConsensusRule checkDiffRule = network.Consensus.HeaderValidationRules.SingleOrDefault(x => x.GetType() == typeof(CheckDifficultyPowRule));
+            network.Consensus.HeaderValidationRules.Remove(checkDiffRule);
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chain = new ConcurrentChain(network);
