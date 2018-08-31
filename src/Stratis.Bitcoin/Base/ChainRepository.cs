@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
@@ -62,6 +63,7 @@ namespace Stratis.Bitcoin.Base
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
+            Directory.CreateDirectory(folder);
             this.dbreeze = new DBreezeEngine(folder);
         }
 
