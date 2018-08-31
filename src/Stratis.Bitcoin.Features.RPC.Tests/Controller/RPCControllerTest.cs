@@ -152,9 +152,6 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 });
             }
             this.descriptors.Add(descriptor);
-            var values = new Dictionary<string, StringValues>();
-            values.Add("hash", new StringValues(new uint256(1000).ToString()));
-            values.Add("isjsonformat", new StringValues("true"));
 
             this.controller.ControllerContext = new ControllerContext();
             this.controller.ControllerContext.HttpContext = new DefaultHttpContext();
