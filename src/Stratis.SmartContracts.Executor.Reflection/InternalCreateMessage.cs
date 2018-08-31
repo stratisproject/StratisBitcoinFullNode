@@ -3,7 +3,7 @@
 namespace Stratis.SmartContracts.Executor.Reflection
 {
     /// <summary>
-    /// Represents a contract creation message originating internally. Occurs when a contract creates another contract
+    /// Represents an internal contract creation message. Occurs when a contract creates another contract
     /// using its <see cref="SmartContract.Create{T}"/> method.
     /// </summary>
     public class InternalCreateMessage : BaseMessage

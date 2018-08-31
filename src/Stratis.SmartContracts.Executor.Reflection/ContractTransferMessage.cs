@@ -3,7 +3,7 @@
 namespace Stratis.SmartContracts.Executor.Reflection
 {
     /// <summary>
-    /// Represents a internal contract transfer message. Occurs when a contract generates a funds transfer using
+    /// Represents an internal contract transfer message. Occurs when a contract generates a funds transfer using
     /// its <see cref="SmartContract.Transfer"/> method.  If the recipient is another contract, the recipient's
     /// receive handler will be invoked. If the recipient is a P2PKH, a UTXO will be generated and included in the
     /// transaction.

@@ -3,7 +3,7 @@
 namespace Stratis.SmartContracts.Executor.Reflection
 {
     /// <summary>
-    /// Represents a contract creation message originating externally. Occurs when a transaction is received that contains contract creation data.
+    /// Represents an external contract creation message. Occurs when a transaction is received that contains contract creation data.
     /// </summary>
     public class ExternalCreateMessage : BaseMessage
     {

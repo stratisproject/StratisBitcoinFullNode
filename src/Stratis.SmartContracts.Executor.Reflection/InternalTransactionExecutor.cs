@@ -29,8 +29,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             object[] parameters,
             ulong gasLimit = 0)
         {
-            // TODO: Expend any neccessary costs.
-
             ulong gasBudget = (gasLimit != 0) ? gasLimit : smartContractState.GasMeter.GasAvailable;
 
             var message = new InternalCreateMessage(
@@ -57,7 +55,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             object[] parameters,
             ulong gasLimit = 0)
         {
-            // Here, we know contract has code, so we execute it
             // For a method call, send all the gas unless an amount was selected.Should only call trusted methods so re - entrance is less problematic.
             ulong gasBudget = (gasLimit != 0) ? gasLimit : smartContractState.GasMeter.GasAvailable;
 
@@ -81,7 +78,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
 
-            // Calling a receive handler:
             ulong gasBudget = DefaultGasLimit; // for Transfer always send limited gas to prevent re-entrance.
            
             var message = new ContractTransferMessage(
