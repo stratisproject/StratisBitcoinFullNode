@@ -27,10 +27,71 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     public class PosCoinViewRuleTests : TestPosConsensusRulesUnitTestBase
     {
         /// <summary>
-        /// Initializes the test object.
+        /// Creates the consensus manager used by this test only.
         /// </summary>
-        public PosCoinViewRuleTests() : base()
+        /// <param name="unspentOutputs">The dictionary used to mock up the <see cref="ICoinView"/>.</param>
+        /// <returns>The constructed consensus manager.</returns>
+        private async Task<ConsensusManager> CreateConsensusManagerAsync(Dictionary<uint256, UnspentOutputs> unspentOutputs)
         {
+            string dataDir = TestBase.GetTestDirectoryPath(this);
+            var nodeSettings = new Configuration.NodeSettings(this.network, args: new string[] { $"-datadir={dataDir}" });
+            var loggerFactory = nodeSettings.LoggerFactory;
+            var consensusSettings = new ConsensusSettings(nodeSettings);
+            var checkpoints = new Checkpoints();
+            var chainState = new ChainState() { BlockStoreTip = this.concurrentChain.Tip };
+            var initialBlockDownloadState = new InitialBlockDownloadState(chainState, this.network, consensusSettings, new Checkpoints());
+            var coinView = new Mock<ICoinView>();
+            var deployments = new NodeDeployments(this.network, this.concurrentChain);
+            var stakeChain = new Mock<IStakeChain>();
+            var stakeValidator = new Mock<Interfaces.IStakeValidator>();
+
+            // Register POS consensus rules.
+            new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.network.Consensus);
+            var consensusRules = new PosConsensusRuleEngine(this.network, loggerFactory, DateTimeProvider.Default,
+                this.concurrentChain, deployments, consensusSettings, checkpoints, coinView.Object, stakeChain.Object, stakeValidator.Object, chainState, new InvalidBlockHashStore(new DateTimeProvider()))
+                .Register();
+            var headerValidator = new HeaderValidator(consensusRules, loggerFactory);
+            var integrityValidator = new IntegrityValidator(consensusRules, loggerFactory);
+            var partialValidator = new PartialValidator(consensusRules, loggerFactory);
+
+            // Create consensus manager.
+            var consensus = new ConsensusManager(this.network, loggerFactory, chainState, headerValidator, integrityValidator,
+                partialValidator, checkpoints, consensusSettings, consensusRules, new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(),
+                new Mock<IPeerBanning>().Object, initialBlockDownloadState, this.concurrentChain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
+                new InvalidBlockHashStore(new DateTimeProvider()));
+
+            // Mock the coinviews "FetchCoinsAsync" method. We will use the "unspentOutputs" dictionary to track spendable outputs.
+            coinView.Setup(d => d.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Returns((uint256[] txIds, CancellationToken cancel) => Task.Run(() => {
+
+                    var result = new UnspentOutputs[txIds.Length];
+
+                    for (int i = 0; i < txIds.Length; i++)
+                        result[i] = unspentOutputs.TryGetValue(txIds[i], out UnspentOutputs unspent) ? unspent : null;
+
+                    return new FetchCoinsResponse(result, this.concurrentChain.Tip.HashBlock);
+                }));
+
+            // Mock the coinviews "GetTipHashAsync" method.
+            coinView.Setup(d => d.GetTipHashAsync(It.IsAny<CancellationToken>())).Returns(() => Task.Run(() => {
+                return this.concurrentChain.Tip.HashBlock;
+            }));
+
+            // Since we are mocking the stake validator ensure that GetNextTargetRequired returns something sensible. Otherwise we get the "bad-diffbits" error.
+            stakeValidator.Setup(s => s.GetNextTargetRequired(It.IsAny<IStakeChain>(), It.IsAny<ChainedHeader>(), It.IsAny<IConsensus>(), It.IsAny<bool>())).Returns(network.Consensus.PowLimit);
+
+            // Since we are mocking the stakechain ensure that the Get returns a BlockStake. Otherwise this results in "previous stake is not found".
+            stakeChain.Setup(d => d.Get(It.IsAny<uint256>())).Returns(new BlockStake()
+            {
+                Flags = BlockFlag.BLOCK_PROOF_OF_STAKE,
+                StakeModifierV2 = 0,
+                StakeTime = (this.concurrentChain.Tip.Header.Time + 60) & ~PosTimeMaskRule.StakeTimestampMask
+            });
+
+            // Initialize the consensus manager.
+            await consensus.InitializeAsync(this.concurrentChain.Tip);
+
+            return consensus;
         }
 
         /// <summary>
@@ -52,72 +113,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         {
             var unspentOutputs = new Dictionary<uint256, UnspentOutputs>();
 
-            // Creates the consensus manager used by this test only.
-            async Task<ConsensusManager> CreateConsensusManagerAsync()
-            {
-                string dataDir = TestBase.GetTestDirectoryPath(this);
-                var nodeSettings = new Configuration.NodeSettings(this.network, args: new string[] { $"-datadir={dataDir}" });
-                var loggerFactory = nodeSettings.LoggerFactory;
-                var consensusSettings = new ConsensusSettings(nodeSettings);
-                var checkpoints = new Checkpoints();
-                var chainState = new ChainState() { BlockStoreTip = this.concurrentChain.Tip };
-                var initialBlockDownloadState = new InitialBlockDownloadState(chainState, this.network, consensusSettings, new Checkpoints());
-                var coinView = new Mock<ICoinView>();
-                var deployments = new NodeDeployments(this.network, this.concurrentChain);
-                var stakeChain = new Mock<IStakeChain>();
-                var stakeValidator = new Mock<Interfaces.IStakeValidator>();
-
-                // Register POS consensus rules.
-                new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.network.Consensus);
-                var consensusRules = new PosConsensusRuleEngine(this.network, loggerFactory, DateTimeProvider.Default,
-                    this.concurrentChain, deployments, consensusSettings, checkpoints, coinView.Object, stakeChain.Object, stakeValidator.Object, chainState, new InvalidBlockHashStore(new DateTimeProvider()))
-                    .Register();
-                var headerValidator = new HeaderValidator(consensusRules, loggerFactory);
-                var integrityValidator = new IntegrityValidator(consensusRules, loggerFactory);
-                var partialValidator = new PartialValidator(consensusRules, loggerFactory);
-
-                // Create consensus manager.
-                var consensus = new ConsensusManager(this.network, loggerFactory, chainState, headerValidator, integrityValidator,
-                    partialValidator, checkpoints, consensusSettings, consensusRules, new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(),
-                    new Mock<IPeerBanning>().Object, initialBlockDownloadState, this.concurrentChain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
-                    new InvalidBlockHashStore(new DateTimeProvider()));
-
-                // Mock the coinviews "FetchCoinsAsync" method. We will use the "unspentOutputs" dictionary to track spendable outputs.
-                unspentOutputs = new Dictionary<uint256, UnspentOutputs>();
-                coinView.Setup(d => d.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                    .Returns((uint256[] txIds, CancellationToken cancel) => Task.Run(() => {
-
-                        var result = new UnspentOutputs[txIds.Length];
-
-                        for (int i = 0; i < txIds.Length; i++)
-                            result[i] = unspentOutputs.TryGetValue(txIds[i], out UnspentOutputs unspent) ? unspent : null;
-
-                        return new FetchCoinsResponse(result, this.concurrentChain.Tip.HashBlock);
-                    }));
-
-                // Mock the coinviews "GetTipHashAsync" method.
-                coinView.Setup(d => d.GetTipHashAsync(It.IsAny<CancellationToken>())).Returns(() => Task.Run(() => {
-                    return this.concurrentChain.Tip.HashBlock;
-                }));
-
-                // Since we are mocking the stake validator ensure that GetNextTargetRequired returns something sensible. Otherwise we get the "bad-diffbits" error.
-                stakeValidator.Setup(s => s.GetNextTargetRequired(It.IsAny<IStakeChain>(), It.IsAny<ChainedHeader>(), It.IsAny<IConsensus>(), It.IsAny<bool>())).Returns(network.Consensus.PowLimit);
-
-                // Since we are mocking the stakechain ensure that the Get returns a BlockStake. Otherwise this results in "previous stake is not found".
-                stakeChain.Setup(d => d.Get(It.IsAny<uint256>())).Returns(new BlockStake()
-                {
-                    Flags = BlockFlag.BLOCK_PROOF_OF_STAKE,
-                    StakeModifierV2 = 0,
-                    StakeTime = (this.concurrentChain.Tip.Header.Time + 60) & ~PosTimeMaskRule.StakeTimestampMask
-                });
-
-                // Initialize the consensus manager.
-                await consensus.InitializeAsync(this.concurrentChain.Tip);
-
-                return consensus;
-            }
-
-            var consensusManager = await CreateConsensusManagerAsync();
+            var consensusManager = await CreateConsensusManagerAsync(unspentOutputs);
 
             // The keys used by miner 1 and miner 2.
             var minerKey1 = new Key();
