@@ -43,6 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private const string SecondaryWalletName = "secondary_wallet_name";
         private const string WalletAccountName = "account 0";
         private const string WalletPassword = "wallet_password";
+        private const string WalletPassphrase = "wallet_passphrase";
         private const string StratisRegTest = "StratisRegTest";
 
         // BlockStore
@@ -163,7 +164,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .CreateStratisPowApiNode(FirstPowNode)
                 .Start()
                 .NotInIBD()
-                .WithWallet(PrimaryWalletName, WalletPassword)
+                .WithWallet(PrimaryWalletName, WalletPassword, WalletPassphrase)
                 .Build();
 
             this.nodes[FirstPowNode].FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
@@ -179,7 +180,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 .CreateStratisPowApiNode(SecondPowNode)
                 .Start()
                 .NotInIBD()
-                .WithWallet(SecondaryWalletName, WalletPassword)
+                .WithWallet(SecondaryWalletName, WalletPassword, WalletPassphrase)
                 .Build();
         }
 
@@ -208,7 +209,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var stakingRequest = new StartStakingRequest() { Name = PrimaryWalletName, Password = WalletPassword };
 
-            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName);
+            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName, WalletPassphrase);
 
             var httpRequestContent = new StringContent(stakingRequest.ToString(), Encoding.UTF8, JsonContentType);
             this.response = this.httpClient.PostAsync($"{this.apiUri}{StartStakingUri}", httpRequestContent).GetAwaiter().GetResult();
@@ -220,7 +221,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void calling_rpc_getblockhash_via_callbyname()
         {
-            this.send_api_get_request($"{RPCCallByNameUri}?methodName=getblockhash&height=0");
+            this.send_api_post_request(RPCCallByNameUri, new { methodName = "getblockhash", height = 0 });
         }
 
         private void calling_rpc_listmethods()
@@ -295,7 +296,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void calling_general_info()
         {
-            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName);
+            this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName, WalletPassphrase);
             this.send_api_get_request($"{GeneralInfoUri}?name={PrimaryWalletName}");
         }
 
@@ -416,6 +417,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private void the_blockhash_is_returned()
         {
             this.responseText.Should().Be("\"" + KnownNetworks.RegTest.Consensus.HashGenesisBlock.ToString() + "\"");
+        }
+
+        private void the_blockhash_is_returned_from_post()
+        {
+            var responseContent = this.response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            responseContent.Should().Be("\"" + KnownNetworks.RegTest.Consensus.HashGenesisBlock.ToString() + "\"");
         }
 
         private void a_full_list_of_available_commands_is_returned()

@@ -46,13 +46,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Receipts
 
             var receipt = new Receipt(new uint256(1234), 12345, new Log[] { log1, log2 });
             TestConsensusSerialize(receipt);
-            receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), new uint160(24), new uint160(23)) { BlockHash = new uint256(1234) };
+            receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), new uint160(24), new uint160(23), true) { BlockHash = new uint256(1234) };
             TestStorageSerialize(receipt);
 
             // Test cases where either the sender or contract is null - AKA CALL vs CREATE
-            receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), new uint160(24), null) { BlockHash = new uint256(1234) };
+            receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), new uint160(24), null, true) { BlockHash = new uint256(1234) };
             TestStorageSerialize(receipt);
-            receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), null, new uint160(23)) { BlockHash = new uint256(1234) };
+            receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), null, new uint160(23), true) { BlockHash = new uint256(1234) };
             TestStorageSerialize(receipt);
         }
 
@@ -98,6 +98,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Receipts
             Assert.Equal(receipt1.From, receipt2.From);
             Assert.Equal(receipt1.To, receipt2.To);
             Assert.Equal(receipt1.NewContractAddress, receipt2.NewContractAddress);
+            Assert.Equal(receipt1.Success, receipt2.Success);
         }
 
         private static void TestLogsEqual(Log log1, Log log2)

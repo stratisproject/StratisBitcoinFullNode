@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Consensus.ValidationResults;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
@@ -50,6 +51,9 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IFinalizedBlockInfo finalizedBlockInfo;
         private readonly IBlockPuller blockPuller;
         private readonly IIntegrityValidator integrityValidator;
+
+        /// <summary>Connection manager of all the currently connected peers.</summary>
+        private readonly IConnectionManager connectionManager;
 
         /// <inheritdoc />
         public ChainedHeader Tip { get; private set; }
@@ -99,7 +103,8 @@ namespace Stratis.Bitcoin.Consensus
             ConcurrentChain chain,
             IBlockPuller blockPuller,
             IBlockStore blockStore,
-            IInvalidBlockHashStore invalidHashesStore)
+            IInvalidBlockHashStore invalidHashesStore,
+            IConnectionManager connectionManager)
         {
             this.network = network;
             this.chainState = chainState;
@@ -111,6 +116,7 @@ namespace Stratis.Bitcoin.Consensus
             this.blockStore = blockStore;
             this.finalizedBlockInfo = finalizedBlockInfo;
             this.chain = chain;
+            this.connectionManager = connectionManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, invalidHashesStore);
@@ -355,14 +361,14 @@ namespace Stratis.Bitcoin.Consensus
             {
                 var peersToBan = new List<INetworkPeer>();
 
-                // TODO ACTIVATION implement following (used to be in consensus loop)
-                //if (validationContext.Error == ConsensusErrors.BadWitnessNonceSize)
-                //{
-                //    this.logger.LogInformation("You probably need witness information, activating witness requirement for peers.");
-                //    this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
-                //    this.Puller.RequestOptions(TransactionOptions.Witness);
-                //    return;
-                //}
+                if (validationContext.MissingServices != null)
+                {
+                    this.connectionManager.AddDiscoveredNodesRequirement(validationContext.MissingServices.Value);
+                    this.blockPuller.RequestPeerServices(validationContext.MissingServices.Value);
+
+                    this.logger.LogTrace("(-)[MISSING_SERVICES]");
+                    return;
+                }
 
                 lock (this.peerLock)
                 {
@@ -637,17 +643,17 @@ namespace Stratis.Bitcoin.Consensus
                 lastValidatedBlockHeader = blockToConnect.ChainedHeader;
 
                 // Block connected successfully.
-                List<int> peersToResync = this.SetConsensusTip(newTip);
+                List<int> peersToResync = this.SetConsensusTip(blockToConnect.ChainedHeader);
 
                 await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
 
                 if (this.network.Consensus.MaxReorgLength != 0)
                 {
-                    int newFinalizedHeight = newTip.Height - (int)this.network.Consensus.MaxReorgLength;
+                    int newFinalizedHeight = blockToConnect.ChainedHeader.Height - (int)this.network.Consensus.MaxReorgLength;
 
                     if (newFinalizedHeight > 0)
                     {
-                        uint256 newFinalizedHash = newTip.GetAncestor(newFinalizedHeight).HashBlock;
+                        uint256 newFinalizedHash = blockToConnect.ChainedHeader.GetAncestor(newFinalizedHeight).HashBlock;
 
                         await this.finalizedBlockInfo.SaveFinalizedBlockHashAndHeightAsync(newFinalizedHash, newFinalizedHeight).ConfigureAwait(false);
                     }
@@ -799,6 +805,8 @@ namespace Stratis.Bitcoin.Consensus
                 chainedHeaderBlocks.Add(chainedHeaderBlock);
                 currentHeader = currentHeader.Previous;
             }
+
+            chainedHeaderBlocks.Reverse();
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(chainedHeaderBlocks.Count), chainedHeaderBlocks.Count);
             return chainedHeaderBlocks;
