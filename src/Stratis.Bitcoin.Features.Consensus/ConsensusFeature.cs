@@ -108,6 +108,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>();
+                    services.AddSingleton<IGetUnspentTransaction, ConsensusQuery>();
 
                     new PowConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                 });
@@ -134,6 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<IConsensusRuleEngine, PosConsensusRuleEngine>();
+                        services.AddSingleton<IGetUnspentTransaction, ConsensusQuery>();
 
                         new PosConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                     });

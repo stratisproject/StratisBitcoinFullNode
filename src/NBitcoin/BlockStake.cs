@@ -175,6 +175,11 @@ namespace NBitcoin
         {
             this.FromBytes(bytes);
         }
+
+        public override bool IsProtocolTransaction()
+        {
+            return this.IsCoinStake || this.IsCoinBase;
+        }
     }
 
     /// <summary>

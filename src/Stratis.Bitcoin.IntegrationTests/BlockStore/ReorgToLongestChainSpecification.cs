@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             When(jings_connection_comes_back);
             Then(bob_charlie_and_dave_reorg_to_jings_longest_chain);
             And(bobs_transaction_from_shorter_chain_is_now_missing);
-            But(bobs_transaction_is_now_in_the_mem_pool); 
+            But(bobs_transaction_is_now_in_the_mem_pool);
         }
     }
 }

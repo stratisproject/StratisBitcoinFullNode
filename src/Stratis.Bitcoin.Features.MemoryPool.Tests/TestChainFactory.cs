@@ -82,7 +82,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             InMemoryCoinView inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
 
             var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, loggerFactory);
-            var networkPeerFactory = new NetworkPeerFactory(network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(loggerFactory));
+            var networkPeerFactory = new NetworkPeerFactory(network, 
+                dateTimeProvider, 
+                loggerFactory, new PayloadProvider().DiscoverPayloads(), 
+                new SelfEndpointTracker(loggerFactory), 
+                new Mock<IInitialBlockDownloadState>().Object, 
+                new ConnectionManagerSettings());
 
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
             var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
@@ -98,7 +103,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var consensus = new ConsensusManager(network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),
                 new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory),new Checkpoints(), consensusSettings, consensusRules,
                 new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chain, new Mock<IBlockPuller>().Object,
-                new Mock<IBlockStore>().Object, new InvalidBlockHashStore(new DateTimeProvider()));
+                new Mock<IBlockStore>().Object, new InvalidBlockHashStore(new DateTimeProvider()), new Mock<ConnectionManager>().Object);
 
             var blockPolicyEstimator = new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings);
             var mempool = new TxMempool(dateTimeProvider, blockPolicyEstimator, loggerFactory, nodeSettings);
