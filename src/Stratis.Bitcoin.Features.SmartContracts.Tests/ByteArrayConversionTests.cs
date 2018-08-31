@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Text;
+using Stratis.SmartContracts.Core;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -66,6 +66,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(expectedBytes, actualBytes);
         }
 
+        [Fact]
+        public void HexConversion()
+        {
+            string hex = "FC65A311";
+            byte[] expected = hex.HexToByteArray();
+            byte[] actual = ByteArrayConversion.HexStringToBytes(hex);
+            Assert.Equal(expected, actual);
+
+            byte[] bytes = new byte[] { 1, 2, 3, 4 };
+            string expectedString = BitConverter.ToString(bytes).Replace("-", "");
+            string actualString = ByteArrayConversion.BytesToHexString(bytes);
+            Assert.Equal(expectedString, actualString);
+        }
         
     }
 }

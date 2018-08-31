@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
 
         private readonly Network network;
-        private readonly ContractStateRepositoryRoot repository;
+        private readonly ContractStateRoot repository;
         private readonly ReflectionVirtualMachine vm;
 
         public GasInjectorTests()

@@ -25,6 +25,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
@@ -38,9 +39,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly IConsensusManager consensusManager;
         private readonly ILogger logger;
         private readonly Network network;
-        private readonly ContractStateRepositoryRoot stateRoot;
+        private readonly IContractStateRoot stateRoot;
 
-        public SmartContractFeature(IConsensusManager consensusLoop, ILoggerFactory loggerFactory, Network network, ContractStateRepositoryRoot stateRoot)
+        public SmartContractFeature(IConsensusManager consensusLoop, ILoggerFactory loggerFactory, Network network, IContractStateRoot stateRoot)
         {
             this.consensusManager = consensusLoop;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -78,7 +79,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         // STATE ----------------------------------------------------------------------------
                         services.AddSingleton<DBreezeContractStateStore>();
                         services.AddSingleton<NoDeleteContractStateSource>();
-                        services.AddSingleton<ContractStateRepositoryRoot>();
+                        services.AddSingleton<IContractStateRoot, ContractStateRoot>();
 
                         // CONSENSUS ------------------------------------------------------------------------
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
@@ -95,6 +96,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                         // RECEIPTS -------------------------------------------------------------------------
                         services.AddSingleton<IReceiptRepository, PersistentReceiptRepository>();
+
+                        // UTILS ----------------------------------------------------------------------------
+                        services.AddSingleton<ISenderRetriever, SenderRetriever>();
 
                         ICallDataSerializer callDataSerializer = CallDataSerializer.Default;
                         services.AddSingleton(callDataSerializer);

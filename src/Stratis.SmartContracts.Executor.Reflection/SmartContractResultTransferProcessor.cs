@@ -20,7 +20,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <inheritdoc />
-        public Transaction Process(IContractStateRepository stateSnapshot,
+        public Transaction Process(IContractState stateSnapshot,
             uint160 contractAddress,
             ISmartContractTransactionContext transactionContext,
             IList<TransferInfo> internalTransfers,
@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             // If contract received no funds and made no transfers, do nothing.
-            if (transactionContext.TxOutValue == 0 && !internalTransfers.Any())
+            if (transactionContext.TxOutValue == 0 && !internalTransfers.Any( x=> x.Value > 0)) // TODO: In future discern whether we should even record internal transfers of 0.
             {
                 return null;
             }
