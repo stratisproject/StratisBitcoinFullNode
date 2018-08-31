@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
             Network network = KnownNetworks.StratisRegTest;
 
             var chain = new ConcurrentChain(network);
-            var contractState = new ContractStateRepositoryRoot();
+            var contractState = new ContractStateRoot();
             var executorFactory = new Mock<ISmartContractExecutorFactory>();
             var loggerFactory = new ExtendedLoggerFactory();
 
@@ -35,6 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
                 new Base.Deployments.NodeDeployments(network, chain), contractState,
                 new Mock<ILookaheadBlockPuller>().Object,
                 new Mock<IReceiptRepository>().Object,
+                new Mock<ISenderRetriever>().Object,
                 new Mock<ICoinView>().Object);
 
             var feature = new ReflectionVirtualMachineFeature(loggerFactory, network);

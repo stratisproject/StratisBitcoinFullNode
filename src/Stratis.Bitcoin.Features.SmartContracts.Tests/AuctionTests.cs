@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -29,10 +31,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             };
             var getBalance = new Func<ulong>(() => Balance);
             var persistentState = new TestPersistentState();
+            var network = new SmartContractsRegTest();
+            var serializer = new ContractPrimitiveSerializer(network);
             this.smartContractState = new TestSmartContractState(
                 block,
                 message,
                 persistentState,
+                serializer,
                 null,
                 null,
                 getBalance,
@@ -76,6 +81,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IBlock block,
             IMessage message,
             IPersistentState persistentState,
+            ISerializer serializer,
             IGasMeter gasMeter,
             IInternalTransactionExecutor transactionExecutor,
             Func<ulong> getBalance,
@@ -85,6 +91,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.Block = block;
             this.Message = message;
             this.PersistentState = persistentState;
+            this.Serializer = serializer;
             this.GasMeter = gasMeter;
             this.InternalTransactionExecutor = transactionExecutor;
             this.GetBalance = getBalance;
@@ -95,6 +102,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public IBlock Block { get; }
         public IMessage Message { get; }
         public IPersistentState PersistentState { get; }
+        public ISerializer Serializer { get; }
         public IGasMeter GasMeter { get; }
         public IInternalTransactionExecutor InternalTransactionExecutor { get; }
         public Func<ulong> GetBalance { get; }

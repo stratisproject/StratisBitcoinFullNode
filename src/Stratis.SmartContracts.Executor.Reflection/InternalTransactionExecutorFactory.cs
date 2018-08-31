@@ -26,7 +26,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IInternalTransactionExecutor Create(ISmartContractVirtualMachine vm,
             IContractLogHolder contractLogHolder,
-            IContractStateRepository stateRepository, 
+            IContractState stateRepository, 
             List<TransferInfo> internalTransferList,
             ITransactionContext transactionContext)
         {
