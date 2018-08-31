@@ -35,6 +35,16 @@ namespace Stratis.Bitcoin.Consensus
         }
     }
 
+    public class ConsensusRuleException : ConsensusException
+    {
+        public ConsensusError ConsensusError { get; }
+
+        public ConsensusRuleException(ConsensusError consensusError) : base()
+        {
+            this.ConsensusError = consensusError;
+        }
+    }
+
     public class CheckpointMismatchException : ConsensusException
     {
         public CheckpointMismatchException() : base()
