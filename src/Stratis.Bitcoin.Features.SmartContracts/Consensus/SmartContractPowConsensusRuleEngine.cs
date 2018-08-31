@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
 {
@@ -23,6 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
         public ISmartContractExecutorFactory ExecutorFactory { get; private set; }
         public IContractStateRoot OriginalStateRoot { get; private set; }
         public IReceiptRepository ReceiptRepository { get; private set; }
+        public ISenderRetriever SenderRetriever { get; private set; }
 
         public SmartContractPowConsensusRuleEngine(
             ConcurrentChain chain,
@@ -36,12 +38,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             IContractStateRoot originalStateRoot,
             ILookaheadBlockPuller puller,
             IReceiptRepository receiptRepository,
+            ISenderRetriever senderRetriever,
             ICoinView utxoSet)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, puller)
         {
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;
             this.ReceiptRepository = receiptRepository;
+            this.SenderRetriever = senderRetriever;
         }
 
         /// <inheritdoc />

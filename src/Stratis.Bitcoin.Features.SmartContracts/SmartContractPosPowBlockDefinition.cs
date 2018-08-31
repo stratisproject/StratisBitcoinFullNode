@@ -41,6 +41,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly List<Receipt> receipts = new List<Receipt>();
         private readonly IContractStateRoot stateRoot;
         private IContractStateRoot stateSnapshot;
+        private readonly ISenderRetriever senderRetriever;
+
 
         public SmartContractPosPowBlockDefinition(
             ICoinView coinView,
@@ -52,6 +54,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             MempoolSchedulerLock mempoolLock,
             MinerSettings minerSettings,
             Network network,
+            ISenderRetriever senderRetriever,
             IStakeChain stakeChain,
             IStakeValidator stakeValidator,
             IContractStateRoot stateRoot)
@@ -60,6 +63,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.coinView = coinView;
             this.executorFactory = executorFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.senderRetriever = senderRetriever;
             this.stakeChain = stakeChain;
             this.stakeValidator = stakeValidator;
             this.stateRoot = stateRoot;
@@ -113,7 +117,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.logger.LogTrace("()");
 
-            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetAddressFromScript(scriptPubKey);
+            GetSenderResult getSenderResult = this.senderRetriever.GetAddressFromScript(scriptPubKey);
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-createnewblock", getSenderResult.Error));
 
@@ -184,7 +188,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.logger.LogTrace("()");
 
-            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
+            GetSenderResult getSenderResult = this.senderRetriever.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));
 
