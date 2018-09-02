@@ -41,6 +41,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private ConsensusManagerBehavior consensusManagerBehavior;
 
+        private readonly IPeerBanning peerBanning;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -75,7 +77,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
 
-        public BlockStoreBehavior(ConcurrentChain chain, IBlockStore blockStore, IChainState chainState, ILoggerFactory loggerFactory)
+        public BlockStoreBehavior(ConcurrentChain chain, IBlockStore blockStore, IChainState chainState, ILoggerFactory loggerFactory, IPeerBanning peerBanning)
         {
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(blockStore, nameof(blockStore));
@@ -86,6 +88,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
+            this.peerBanning = peerBanning;
 
             this.CanRespondToGetBlocksPayload = true;
             this.CanRespondToGetDataPayload = true;
@@ -185,6 +188,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private async Task ProcessGetBlocksAsync(INetworkPeer peer, GetBlocksPayload getBlocksPayload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getBlocksPayload), getBlocksPayload);
+
+            if (getBlocksPayload.BlockLocators.Blocks.Count > ConsensusManagerBehavior.MaxLocatorSize)
+            {
+                this.logger.LogTrace("Peer '{0}' sent getblocks with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
+
+                this.peerBanning.BanAndDisconnectPeer(peer.RemoteSocketEndpoint, 0);
+
+                this.logger.LogTrace("(-)[LOCATOR_TOO_LARGE]");
+                return;
+            }
 
             // We only want to work with blocks that are in the store,
             // so we first get information about the store's tip.
@@ -504,7 +517,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            var res = new BlockStoreBehavior(this.chain, this.blockStore, this.chainState, this.loggerFactory)
+            var res = new BlockStoreBehavior(this.chain, this.blockStore, this.chainState, this.loggerFactory, this.peerBanning)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload

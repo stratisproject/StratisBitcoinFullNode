@@ -64,6 +64,11 @@ namespace Stratis.Bitcoin.Consensus
         /// <seealso cref="https://en.bitcoin.it/wiki/Protocol_documentation#getheaders"/>
         private const int MaxItemsPerHeadersMessage = 2000;
 
+        /// <summary>Maximum number of hashes that we will accept in a message from a peer.</summary>
+        /// <seealso cref="https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2018-August/016285.html"/>
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/pull/13907"/>
+        public const int MaxLocatorSize = 101;
+
         /// <summary>List of block headers that were not yet consumed by <see cref="ConsensusManager"/>.</summary>
         /// <remarks>Should be protected by <see cref="asyncLock"/>.</remarks>
         private readonly List<BlockHeader> cachedHeaders;
@@ -176,6 +181,16 @@ namespace Stratis.Bitcoin.Consensus
             if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<IConnectionManagerBehavior>().Whitelisted)
             {
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
+                return;
+            }
+
+            if (getHeadersPayload.BlockLocator.Blocks.Count > MaxLocatorSize)
+            {
+                this.logger.LogTrace("Peer '{0}' sent getheader with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
+
+                this.peerBanning.BanAndDisconnectPeer(peer.RemoteSocketEndpoint, 0);
+
+                this.logger.LogTrace("(-)[LOCATOR_TOO_LARGE]");
                 return;
             }
 

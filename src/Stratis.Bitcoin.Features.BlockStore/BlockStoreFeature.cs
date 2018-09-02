@@ -40,6 +40,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IBlockStoreQueue blockStoreQueue;
 
+        private readonly IPeerBanning peerBanning;
+
         public BlockStoreFeature(
             ConcurrentChain chain,
             IConnectionManager connectionManager,
@@ -48,7 +50,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ILoggerFactory loggerFactory,
             StoreSettings storeSettings,
             IChainState chainState,
-            IBlockStoreQueue blockStoreQueue)
+            IBlockStoreQueue blockStoreQueue,
+            IPeerBanning peerBanning)
         {
             this.chain = chain;
             this.blockStoreQueue = blockStoreQueue;
@@ -59,6 +62,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.loggerFactory = loggerFactory;
             this.storeSettings = storeSettings;
             this.chainState = chainState;
+            this.peerBanning = peerBanning;
         }
 
         /// <inheritdoc />
@@ -85,9 +89,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.blockStoreQueue, this.chainState, this.loggerFactory));
+            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.blockStoreQueue, this.chainState, this.loggerFactory, this.peerBanning));
 
-            // signal to peers that this node can serve blocks
+            // Signal to peers that this node can serve blocks.
             this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network) | NetworkPeerServices.NODE_WITNESS;
 
             this.signals.SubscribeForBlocksConnected(this.blockStoreSignaled);
@@ -124,6 +128,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         services.AddSingleton<BlockStoreSignaled>();
                         services.AddSingleton<StoreSettings>();
                         services.AddSingleton<BlockStoreController>();
+                        services.AddSingleton<IPeerBanning, PeerBanning>();
                     });
             });
 
