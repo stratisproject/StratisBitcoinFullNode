@@ -28,12 +28,6 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         public DateTime? RejectUntil { get; set; }
 
-        /// <summary>
-        /// If the block validation failed with a <see cref="ConsensusError"/> that is considered malicious the peer will get banned.
-        /// The ban, unless specified otherwise, will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
-        /// </summary>
-        public int BanDurationSeconds { get; set; }
-
         /// <summary>Services that are missing from the peers.</summary>
         /// <remarks>
         /// Set in case some information is missing from the block which leads

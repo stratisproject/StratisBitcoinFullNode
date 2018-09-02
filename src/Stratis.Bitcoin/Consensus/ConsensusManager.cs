@@ -383,7 +383,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
 
                 foreach (INetworkPeer peer in peersToBan)
-                    this.peerBanning.BanAndDisconnectPeer(peer.RemoteSocketEndpoint, validationContext.BanDurationSeconds, $"Invalid block received: {validationContext.Error.Message}");
+                    this.peerBanning.BanAndDisconnectPeerForDefaultInterval(peer.RemoteSocketEndpoint, $"Invalid block received: {validationContext.Error.Message}");
             }
 
             this.logger.LogTrace("(-)");
@@ -762,7 +762,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 var failureResult = new ConnectBlocksResult(false)
                 {
-                    BanDurationSeconds = validationContext.BanDurationSeconds,
+                    BanDurationSeconds = this.connectionManager.ConnectionSettings.BanTimeSeconds,
                     BanReason = validationContext.Error.Message,
                     ConsensusTipChanged = false,
                     Error = validationContext.Error,
@@ -976,7 +976,7 @@ namespace Stratis.Bitcoin.Consensus
                     // Integrity validation failing for this block doesn't automatically make other blocks with the same hash invalid,
                     // therefore banning other peers that claim to be on a chain that contains a block with the same hash is not required.
                     if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
-                        this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, result.BanDurationSeconds, $"Integrity validation failed: {result.Error.Message}");
+                        this.peerBanning.BanAndDisconnectPeerForDefaultInterval(peer.PeerEndPoint, $"Integrity validation failed: {result.Error.Message}");
 
                     lock (this.peerLock)
                     {
