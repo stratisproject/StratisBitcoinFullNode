@@ -5,8 +5,6 @@
     /// </summary>
     public class ValidationResult
     {
-        public int BanDurationSeconds { get; set; }
-
         public string BanReason { get; set; }
 
         public ConsensusError Error { get; set; }
@@ -19,7 +17,7 @@
             if (this.Succeeded)
                 return $"{nameof(this.Succeeded)}={this.Succeeded}";
 
-            return $"{nameof(this.Succeeded)}={this.Succeeded},{nameof(this.BanReason)}={this.BanReason},{nameof(this.BanDurationSeconds)}={this.BanDurationSeconds}";
+            return $"{nameof(this.Succeeded)}={this.Succeeded},{nameof(this.BanReason)}={this.BanReason}";
         }
     }
 }
