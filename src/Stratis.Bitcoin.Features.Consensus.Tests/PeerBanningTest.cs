@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             var blockValidationContext = new ValidationContext
             {
                 BlockToValidate = badBlock,
-                BanDurationSeconds = ValidationContext.BanDurationNoBan
+                BanDurationSeconds = 0
             };
 
             await context.Consensus.BlockMinedAsync(badBlock);
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
             // Act
-            context.PeerBanning.BanAndDisconnectPeer(endpoint, context.ConnectionManager.ConnectionSettings.BanTimeSeconds, nameof(PeerBanningTest));
+            context.PeerBanning.BanAndDisconnectPeerForDefaultInterval(endpoint, nameof(PeerBanningTest));
 
             // Assert
             PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
@@ -268,7 +268,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
             // Act - Ban Peer, save store, clear current Peers, load store
-            context.PeerBanning.BanAndDisconnectPeer(endpoint, context.ConnectionManager.ConnectionSettings.BanTimeSeconds, nameof(PeerBanningTest));
+            context.PeerBanning.BanAndDisconnectPeerForDefaultInterval(endpoint, nameof(PeerBanningTest));
             context.PeerAddressManager.SavePeers();
             context.PeerAddressManager.Peers.Clear();
             context.PeerAddressManager.LoadPeers();

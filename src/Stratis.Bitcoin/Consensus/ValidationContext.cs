@@ -13,12 +13,6 @@ namespace Stratis.Bitcoin.Consensus
     /// </summary>
     public class ValidationContext
     {
-        /// <summary>A value indicating the peer should not be banned.</summary>
-        public const int BanDurationNoBan = -1;
-
-        /// <summary>A value indicating the peer ban time should be <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.</summary>
-        public const int BanDurationDefaultBan = 0;
-
         /// <summary>Chained header of the block being validated.</summary>
         public ChainedHeader ChainedHeaderToValidate { get; set; }
 
@@ -38,10 +32,6 @@ namespace Stratis.Bitcoin.Consensus
         /// If the block validation failed with a <see cref="ConsensusError"/> that is considered malicious the peer will get banned.
         /// The ban, unless specified otherwise, will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
         /// </summary>
-        /// <remarks>
-        /// Setting this value to be <see cref="BanDurationNoBan"/> will prevent the peer from being banned.
-        /// Setting this value to be <see cref="BanDurationDefaultBan"/> will default to <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.
-        /// </remarks>
         public int BanDurationSeconds { get; set; }
 
         /// <summary>Services that are missing from the peers.</summary>
