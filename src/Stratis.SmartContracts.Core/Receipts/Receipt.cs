@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using NBitcoin;
 using Nethereum.RLP;
 using Stratis.SmartContracts.Core.Hashing;
@@ -68,6 +69,11 @@ namespace Stratis.SmartContracts.Core.Receipts
         /// </summary>
         public bool Success { get; }
 
+        /// <summary>
+        /// If execution didn't complete successfully, the exception that caused why will be stored here.
+        /// </summary>
+        public string Exception { get; }
+
         #endregion
 
         /// <summary>
@@ -81,8 +87,9 @@ namespace Stratis.SmartContracts.Core.Receipts
             uint160 from, 
             uint160 to, 
             uint160 newContractAddress,
-            bool success) 
-            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, from, to, newContractAddress, success)
+            bool success,
+            string exception) 
+            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, from, to, newContractAddress, success, null)
         { }
 
         /// <summary>
@@ -92,7 +99,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             uint256 postState,
             ulong gasUsed,
             Log[] logs)
-            : this(postState, gasUsed, logs, BuildBloom(logs), null, null, null, null, null, false)
+            : this(postState, gasUsed, logs, BuildBloom(logs), null, null, null, null, null, false, null)
         { }
 
         /// <summary>
@@ -103,7 +110,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             ulong gasUsed,
             Log[] logs,
             Bloom bloom) 
-            : this(postState, gasUsed, logs, bloom, null, null, null, null, null, false)
+            : this(postState, gasUsed, logs, bloom, null, null, null, null, null, false, null)
         { }
 
         private Receipt(
@@ -116,7 +123,8 @@ namespace Stratis.SmartContracts.Core.Receipts
             uint160 from,
             uint160 to,
             uint160 newContractAddress,
-            bool success)
+            bool success,
+            string exception)
         {
             this.PostState = postState;
             this.GasUsed = gasUsed;
@@ -128,6 +136,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             this.To = to;
             this.NewContractAddress = newContractAddress;
             this.Success = success;
+            this.Exception = exception;
         }
 
         /// <summary>
@@ -214,7 +223,8 @@ namespace Stratis.SmartContracts.Core.Receipts
                 new uint160(innerList[6].RLPData),
                 innerList[7].RLPData != null ? new uint160(innerList[7].RLPData) : null,
                 innerList[8].RLPData != null ? new uint160(innerList[8].RLPData) : null,
-                BitConverter.ToBoolean(innerList[9].RLPData)
+                BitConverter.ToBoolean(innerList[9].RLPData),
+                innerList[10].RLPData != null ? Encoding.UTF8.GetString(innerList[10].RLPData) : null
             );
 
             return receipt;
@@ -237,7 +247,8 @@ namespace Stratis.SmartContracts.Core.Receipts
                 RLP.EncodeElement(this.From.ToBytes()),
                 RLP.EncodeElement(this.To?.ToBytes()),
                 RLP.EncodeElement(this.NewContractAddress?.ToBytes()),
-                RLP.EncodeElement(BitConverter.GetBytes(this.Success))
+                RLP.EncodeElement(BitConverter.GetBytes(this.Success)),
+                RLP.EncodeElement(Encoding.UTF8.GetBytes(this.Exception ?? ""))
             );
         }
 

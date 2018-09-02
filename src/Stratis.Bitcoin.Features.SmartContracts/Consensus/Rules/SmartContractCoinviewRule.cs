@@ -271,7 +271,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 txContext.Sender,
                 result.To,
                 result.NewContractAddress,
-                !result.Revert
+                !result.Revert,
+                result.Exception.ToString()
             )
             {
                 BlockHash = context.ValidationContext.Block.GetHash()
