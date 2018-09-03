@@ -93,17 +93,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void node2_receives_the_funds()
         {
+            // Need to mine a block prior to checking for spendable transactions in node2's wallet.
+            this.sharedSteps.MineBlocks(1, this.nodes[NodeOne], WalletAccountName, WalletName, WalletPassword);
+
             TestHelper.WaitLoop(() => this.nodes[NodeTwo].FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
 
             this.nodeTwoBalance = this.nodes[NodeTwo].WalletBalance(WalletName);
 
             this.nodeTwoBalance.Should().Be(Money.Coins(50));
 
-            this.nodes[NodeTwo].WalletHeight(WalletName).Should().BeNull();
+            this.nodes[NodeTwo].WalletHeight(WalletName).Should().Be(4);
 
             this.nodes[NodeTwo].WalletSpendableTransactionCount(WalletName).Should().Be(UnspentTransactionOutputs);
-
-            this.sharedSteps.MineBlocks(1, this.nodes[NodeTwo], WalletAccountName, WalletName, WalletPassword);
 
             this.nodes[NodeTwo].WalletHeight(WalletName).Should().Be(this.CoinBaseMaturity + 3);
         }
@@ -136,7 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             this.nodes[NodeOne].WalletBalance(WalletName).Should().Be(nodeOneBeforeBalance + Money.Coins(49));
 
-            this.nodes[NodeTwo].WalletSpendableTransactionCount(WalletName).Should().Be(3);
+            this.nodes[NodeTwo].WalletSpendableTransactionCount(WalletName).Should().Be(2);
         }
 
         private void funds_across_fifty_addresses_on_node2_wallet()
