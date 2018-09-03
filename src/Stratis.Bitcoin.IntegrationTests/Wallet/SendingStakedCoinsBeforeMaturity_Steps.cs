@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.proofOfStakeSteps.MineGenesisAndPremineBlocks();
 
             this.receiverNode = this.proofOfStakeSteps.NodeGroupBuilder
-                                    .CreateStratisPosApiNode(NodeReceiver).Start().NotInIBD()
+                                    .CreateStratisPosNode(NodeReceiver).Start().NotInIBD()
                                     .WithWallet(WalletName, WalletPassword, WalletPassphrase)
                                     .WithConnections().Connect(this.proofOfStakeSteps.PremineNode, NodeReceiver).AndNoMoreConnections()
                                     .Build()[NodeReceiver];

@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
             // Start state from previous block's root
-            this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Header).HashStateRoot.ToBytes());
+            this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes());
             IContractState trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
 
             this.receipts = new List<Receipt>();

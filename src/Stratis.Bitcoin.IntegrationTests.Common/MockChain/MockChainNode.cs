@@ -3,7 +3,6 @@ using System.Linq;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
@@ -132,8 +131,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
             Transaction trx = (this.CoreNode.FullNode.NodeService<IWalletTransactionHandler>() as SmartContractWalletTransactionHandler).BuildTransaction(txBuildContext);
 
             // Broadcast to the other node.
-            JsonResult response = (JsonResult) this.smartContractWalletController.SendTransaction(new SendTransactionRequest(trx.ToHex()));
-            return (WalletSendTransactionModel) response.Value;
+            JsonResult response = (JsonResult)this.smartContractWalletController.SendTransaction(new SendTransactionRequest(trx.ToHex()));
+            return (WalletSendTransactionModel)response.Value;
         }
 
         /// <summary>
@@ -171,7 +170,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         public IList<ReceiptResponse> GetReceipts(string contractAddress, string eventName)
         {
             JsonResult response = (JsonResult)this.smartContractsController.ReceiptSearch(contractAddress, eventName).Result;
-            return (IList<ReceiptResponse>) response.Value;
+            return (IList<ReceiptResponse>)response.Value;
         }
 
         /// <summary>
