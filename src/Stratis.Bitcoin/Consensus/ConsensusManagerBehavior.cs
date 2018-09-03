@@ -64,11 +64,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <seealso cref="https://en.bitcoin.it/wiki/Protocol_documentation#getheaders"/>
         private const int MaxItemsPerHeadersMessage = 2000;
 
-        /// <summary>Maximum number of hashes that we will accept in a message from a peer.</summary>
-        /// <seealso cref="https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2018-August/016285.html"/>
-        /// <seealso cref="https://github.com/bitcoin/bitcoin/pull/13907"/>
-        public const int MaxLocatorSize = 101;
-
         /// <summary>List of block headers that were not yet consumed by <see cref="ConsensusManager"/>.</summary>
         /// <remarks>Should be protected by <see cref="asyncLock"/>.</remarks>
         private readonly List<BlockHeader> cachedHeaders;
@@ -175,22 +170,22 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getHeadersPayload), getHeadersPayload);
 
+            if (getHeadersPayload.BlockLocator.Blocks.Count > BlockLocator.MaxLocatorSize)
+            {
+                this.logger.LogTrace("Peer '{0}' sent getheader with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
+
+                peer.Disconnect("Peer sent getheaders with oversized locator");
+
+                this.logger.LogTrace("(-)[LOCATOR_TOO_LARGE]");
+                return;
+            }
+
             // Ignoring "getheaders" from peers because node is in initial block download unless the peer is whitelisted.
             // We don't want to reveal our position in IBD which can be used by attacker. Also we don't won't to deliver peers any blocks
             // because that will slow down our own syncing process.
             if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<IConnectionManagerBehavior>().Whitelisted)
             {
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
-                return;
-            }
-
-            if (getHeadersPayload.BlockLocator.Blocks.Count > MaxLocatorSize)
-            {
-                this.logger.LogTrace("Peer '{0}' sent getheader with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
-
-                this.peerBanning.BanAndDisconnectPeer(peer.RemoteSocketEndpoint, 0);
-
-                this.logger.LogTrace("(-)[LOCATOR_TOO_LARGE]");
                 return;
             }
 
