@@ -3,6 +3,7 @@ using Moq;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.BlockPulling
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
 
-            this.behavior = new BlockPullerBehavior(puller.Object, ibdState.Object, loggerFactory);
+            this.behavior = new BlockPullerBehavior(puller.Object, ibdState.Object, new DateTimeProvider(), loggerFactory);
         }
 
         [Fact]

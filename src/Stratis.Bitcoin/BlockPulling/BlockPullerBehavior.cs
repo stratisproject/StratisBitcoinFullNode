@@ -103,9 +103,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc cref="IInitialBlockDownloadState"/>
         private readonly IInitialBlockDownloadState ibdState;
 
-        public BlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, ILoggerFactory loggerFactory)
+        /// <inheritdoc cref="IDateTimeProvider"/>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        public BlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.ibdState = ibdState;
+            this.dateTimeProvider = dateTimeProvider;
             this.QualityScore = SamplelessQualityScore;
 
             int samplesCount = ibdState.IsInitialBlockDownload() ? IbdSamplesCount : NormalSamplesCount;
@@ -125,18 +129,16 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(blockSizeBytes), blockSizeBytes, nameof(delaySinceRequestedSeconds), delaySinceRequestedSeconds);
 
-            double adjustedDelay;
+            double adjustedDelay = delaySinceRequestedSeconds;
 
-            if (this.lastDeliveryTime == null)
-                adjustedDelay = delaySinceRequestedSeconds;
-            else
+            if (this.lastDeliveryTime != null)
             {
-                double deliveryDiff = (DateTime.Now - this.lastDeliveryTime).Value.TotalSeconds;
+                double deliveryDiff = (this.dateTimeProvider.GetUtcNow() - this.lastDeliveryTime).Value.TotalSeconds;
 
                 adjustedDelay = Math.Min(delaySinceRequestedSeconds, deliveryDiff);
             }
 
-            this.lastDeliveryTime = DateTime.Now;
+            this.lastDeliveryTime = this.dateTimeProvider.GetUtcNow();
 
             this.averageSizeBytes.AddSample(blockSizeBytes);
             this.averageDelaySeconds.AddSample(adjustedDelay);
@@ -250,7 +252,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc />
         public override object Clone()
         {
-            return new BlockPullerBehavior(this.blockPuller, this.ibdState, this.loggerFactory);
+            return new BlockPullerBehavior(this.blockPuller, this.ibdState, this.dateTimeProvider, this.loggerFactory);
         }
 
         /// <inheritdoc />
