@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (!this.ValidateHeadersPayload(peer, headersPayload, out string validationError))
             {
-                this.peerBanning.BanAndDisconnectPeerForDefaultInterval(peer.PeerEndPoint, validationError);
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, validationError);
 
                 this.logger.LogTrace("(-)[VALIDATION_FAILED]");
                 return;
@@ -385,17 +385,17 @@ namespace Stratis.Bitcoin.Consensus
             catch (ConsensusErrorException exception)
             {
                 this.logger.LogDebug("Peer's header is invalid. Peer will be banned and disconnected. Error: {0}.", exception.ConsensusError);
-                this.peerBanning.BanAndDisconnectPeerForDefaultInterval(peer.PeerEndPoint, $"Peer presented invalid header, error: {exception.ConsensusError}.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header, error: {exception.ConsensusError}.");
             }
             catch (CheckpointMismatchException)
             {
                 this.logger.LogDebug("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeerForDefaultInterval(peer.PeerEndPoint, "Peer presented header that violates a checkpoint.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer presented header that violates a checkpoint.");
             }
             catch (MaxReorgViolationException)
             {
                 this.logger.LogDebug("Peer violates max reorg. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeerForDefaultInterval(peer.PeerEndPoint, "Peer violates max reorg rule.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer violates max reorg rule.");
             }
 
             this.logger.LogTrace("(-):'{0}'", result);

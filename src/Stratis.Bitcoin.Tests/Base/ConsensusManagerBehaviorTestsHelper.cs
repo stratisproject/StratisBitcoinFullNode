@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Tests.Base
                 this.WasBanningCalled = true;
             }
 
-            public void BanAndDisconnectPeerForDefaultInterval(IPEndPoint endpoint, string reason = null)
+            public void BanAndDisconnectPeer(IPEndPoint endpoint, string reason = null)
             {
                 this.WasBanningCalled = true;
             }

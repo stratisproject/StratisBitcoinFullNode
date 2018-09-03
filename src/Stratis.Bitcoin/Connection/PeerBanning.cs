@@ -24,12 +24,12 @@ namespace Stratis.Bitcoin.Connection
         void BanAndDisconnectPeer(IPEndPoint endpoint, int banTimeSeconds, string reason = null);
 
         /// <summary>
-        /// Overload for the BanAndDisconnectPeer method that uses the connection manager's default ban interval.
+        /// Bans and disconnects the peer using the connection manager's default ban interval.
         /// This allows features to depend solely on the peer banning interface and not the connection manager directly.
         /// </summary>
         /// <param name="endpoint">The endpoint to set that it was banned.</param>
         /// <param name="reason">An optional reason for the ban, the 'reason' is only use for tracing.</param>
-        void BanAndDisconnectPeerForDefaultInterval(IPEndPoint endpoint, string reason = null);
+        void BanAndDisconnectPeer(IPEndPoint endpoint, string reason = null);
 
         /// <summary>
         /// Check if a peer is banned.
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <inheritdoc />
-        public void BanAndDisconnectPeerForDefaultInterval(IPEndPoint endpoint, string reason = null)
+        public void BanAndDisconnectPeer(IPEndPoint endpoint, string reason = null)
         {
             this.BanAndDisconnectPeer(endpoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, reason);
         }
