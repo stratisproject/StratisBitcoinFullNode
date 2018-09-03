@@ -141,7 +141,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         private StateSnapshot TakeSnapshot()
         {
-            var root = this.Repository.Root;
+            byte[] root = this.Repository.Root;
             return new StateSnapshot(this.LogHolder, this.InternalTransfers, this.Nonce, root);
         }
 
@@ -150,21 +150,21 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (this.GasRemaining < message.GasLimit || this.GasRemaining < GasPriceList.BaseCost)
                 throw new InsufficientGasException();
 
-            var stateSnapshot = this.TakeSnapshot();
+            StateSnapshot stateSnapshot = this.TakeSnapshot();
 
             var gasMeter = new GasMeter(message.GasLimit);
 
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
-            var address = this.GetNewAddress();
+            uint160 address = this.GetNewAddress();
 
             this.Repository.CreateAccount(address);
 
-            var contractState = this.ContractState(gasMeter, address, message, this.Repository);
+            ISmartContractState contractState = this.ContractState(gasMeter, address, message, this.Repository);
 
-            var result = this.Vm.Create(this.Repository, contractState, code, parameters, type);
+            VmExecutionResult result = this.Vm.Create(this.Repository, contractState, code, parameters, type);
 
-            var revert = result.ExecutionException != null;
+            bool revert = result.ExecutionException != null;
 
             if (revert)
             {
@@ -197,14 +197,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public StateTransitionResult Apply(InternalCreateMessage message)
         {
-            var enoughBalance = this.EnsureContractHasEnoughBalance(message.From, message.Amount);
+            bool enoughBalance = this.EnsureContractHasEnoughBalance(message.From, message.Amount);
 
             if (!enoughBalance)
                 throw new InsufficientBalanceException();
 
             byte[] contractCode = this.Repository.GetCode(message.From);
 
-            var result = this.ApplyCreate(message.Parameters, contractCode, message, message.Type);
+            StateTransitionResult result = this.ApplyCreate(message.Parameters, contractCode, message, message.Type);
 
             // For successful internal creates we need to add the transfer to the internal transfer list.
             // For external creates we do not need to do this.
@@ -240,15 +240,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 );
             }
 
-            var stateSnapshot = this.TakeSnapshot();
+            StateSnapshot stateSnapshot = this.TakeSnapshot();
 
-            var type = this.Repository.GetContractType(message.To);
+            string type = this.Repository.GetContractType(message.To);
 
-            var contractState = this.ContractState(gasMeter, message.To, message, this.Repository);
+            ISmartContractState contractState = this.ContractState(gasMeter, message.To, message, this.Repository);
 
-            var result = this.Vm.ExecuteMethod(contractState, message.Method, contractCode, type);
+            VmExecutionResult result = this.Vm.ExecuteMethod(contractState, message.Method, contractCode, type);
 
-            var revert = result.ExecutionException != null;
+            bool revert = result.ExecutionException != null;
 
             if (revert)
             {
@@ -273,7 +273,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public StateTransitionResult Apply(InternalCallMessage message)
         {
-            var enoughBalance = this.EnsureContractHasEnoughBalance(message.From, message.Amount);
+            bool enoughBalance = this.EnsureContractHasEnoughBalance(message.From, message.Amount);
 
             if (!enoughBalance)
                 throw new InsufficientBalanceException();
@@ -290,7 +290,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 );
             }
 
-            var result = this.ApplyCall(message, contractCode);
+            StateTransitionResult result = this.ApplyCall(message, contractCode);
 
             // For successful internal calls we need to add the transfer to the internal transfer list.
             // For external calls we do not need to do this.
@@ -332,7 +332,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public StateTransitionResult Apply(ContractTransferMessage message)
         {
-            var enoughBalance = this.EnsureContractHasEnoughBalance(message.From, message.Amount);
+            bool enoughBalance = this.EnsureContractHasEnoughBalance(message.From, message.Amount);
 
             if (!enoughBalance)
                 throw new InsufficientBalanceException();
