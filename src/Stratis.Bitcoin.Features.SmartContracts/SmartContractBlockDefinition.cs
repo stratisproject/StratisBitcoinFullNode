@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ISenderRetriever senderRetriever;
 
         public SmartContractBlockDefinition(
+            IBlockBufferGenerator blockBufferGenerator,
             ICoinView coinView,
             IConsensusManager consensusManager,
             IDateTimeProvider dateTimeProvider,
@@ -51,6 +52,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.stateRoot = stateRoot;
             this.refundOutputs = new List<TxOut>();
             this.receipts = new List<Receipt>();
+
+            // When building smart contract blocks, we will be generating and adding both transactions to the block and txouts to the coinbase. 
+            // At the moment, these generated objects aren't accounted for in the block size and weight accounting. 
+            // This means that if blocks started getting full, this miner could start generating blocks greater than the max consensus block size.
+            // To avoid this without significantly overhauling the BlockDefinition, for now we just lower the block size by a percentage buffer.
+            // If in the future blocks are being built over the size limit and you need an easy fix, just increase the size of this buffer.
+            this.Options = blockBufferGenerator.GetOptionsWithBuffer(this.Options);
         }
 
         /// <summary>
