@@ -13,6 +13,12 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class Wallet
     {
+        /// <summary>The account index of the cold wallet account.</summary>
+        public const int ColdWalletAccountIndex = 100_000_000;
+
+        /// <summary>The account index of the hot wallet account.</summary>
+        public const int HotWalletAccountIndex = 100_000_001;
+
         /// <summary>
         /// Initializes a new instance of the wallet.
         /// </summary>
@@ -379,24 +385,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (hdAccounts.Any())
             {
-                newAccountIndex = hdAccounts.Max(a => a.Index) + 1;
+                newAccountIndex = hdAccounts.Where(a => a.Index < Wallet.ColdWalletAccountIndex).Max(a => a.Index) + 1;
             }
 
-            // Get the extended pub key used to generate addresses for this account.
-            string accountHdPath = HdOperations.GetAccountHdPath((int) this.CoinType, newAccountIndex);
-            Key privateKey = HdOperations.DecryptSeed(encryptedSeed, password, network);
-            ExtPubKey accountExtPubKey = HdOperations.GetExtendedPublicKey(privateKey, chainCode, accountHdPath);
-
-            var newAccount = new HdAccount
-            {
-                Index = newAccountIndex,
-                ExtendedPubKey = accountExtPubKey.ToString(network),
-                ExternalAddresses = new List<HdAddress>(),
-                InternalAddresses = new List<HdAddress>(),
-                Name = $"account {newAccountIndex}",
-                HdPath = accountHdPath,
-                CreationTime = accountCreationTime
-            };
+            HdAccount newAccount = CreateAccount(password, encryptedSeed, chainCode, network, accountCreationTime, newAccountIndex);
 
             hdAccounts.Add(newAccount);
             this.Accounts = hdAccounts;
@@ -404,6 +396,37 @@ namespace Stratis.Bitcoin.Features.Wallet
             return newAccount;
         }
 
+        /// <summary>
+        /// Create an account for a specific account index and account name pattern.
+        /// </summary>
+        /// <param name="password">The password used to decrypt the wallet's encrypted seed.</param>
+        /// <param name="encryptedSeed">The encrypted private key for this wallet.</param>
+        /// <param name="chainCode">The chain code for this wallet.</param>
+        /// <param name="network">The network for which this account will be created.</param>
+        /// <param name="accountCreationTime">Creation time of the account to be created.</param>
+        /// <param name="newAccountIndex">The account index to use.</param>
+        /// <param name="newAccountNamePattern">The account name pattern to use.</param>
+        /// <returns>A new HD account.</returns>
+        public HdAccount CreateAccount(string password, string encryptedSeed, byte[] chainCode,
+            Network network, DateTimeOffset accountCreationTime,
+            int newAccountIndex, string newAccountNamePattern = "account {0}")
+        {
+            // Get the extended pub key used to generate addresses for this account.
+            string accountHdPath = HdOperations.GetAccountHdPath((int)this.CoinType, newAccountIndex);
+            Key privateKey = HdOperations.DecryptSeed(encryptedSeed, password, network);
+            ExtPubKey accountExtPubKey = HdOperations.GetExtendedPublicKey(privateKey, chainCode, accountHdPath);
+
+            return new HdAccount
+            {
+                Index = newAccountIndex,
+                ExtendedPubKey = accountExtPubKey.ToString(network),
+                ExternalAddresses = new List<HdAddress>(),
+                InternalAddresses = new List<HdAddress>(),
+                Name = string.Format(newAccountNamePattern, newAccountIndex),
+                HdPath = accountHdPath,
+                CreationTime = accountCreationTime
+            };
+        }
 
         /// <inheritdoc cref="AddNewAccount(string, string, byte[], Network, DateTimeOffset)"/>
         /// <summary>
@@ -736,7 +759,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     // This output can unconditionally be included in the results.
                     // Or this output is a CoinBase or CoinStake and has reached maturity.
-                    if ((!isCoinBase && !isCoinStake) || 
+                    if ((!isCoinBase && !isCoinStake) ||
                         ((isCoinBase || isCoinStake) && (confirmationCount >= network.Consensus.CoinbaseMaturity)))
                     {
                         yield return new UnspentOutputReference
