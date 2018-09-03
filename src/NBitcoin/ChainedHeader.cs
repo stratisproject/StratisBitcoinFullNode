@@ -296,7 +296,7 @@ namespace NBitcoin
             ChainedHeader currentBlock = this;
             while (currentBlock != null)
             {
-                if (currentBlock.HashBlock == blockHash || currentBlock.Height == height)
+                if ((currentBlock.HashBlock == blockHash) || (currentBlock.Height == height))
                     break;
 
                 currentBlock = currentBlock.Previous;
