@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var state = new Mock<IContractState>();
             var transferProcessor = new Mock<ISmartContractResultTransferProcessor>();
 
-            (Money refund, List<TxOut>) refundResult = (refund, new List<TxOut>());
+            (Money refund, TxOut) refundResult = (refund, null);
             var refundProcessor = new Mock<ISmartContractResultRefundProcessor>();
             refundProcessor
                 .Setup(r => r.Process(
