@@ -79,8 +79,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(network.Consensus);
 
             // Dont check PoW of a header in this test.
-            IHeaderValidationConsensusRule checkDiffRule = network.Consensus.HeaderValidationRules.SingleOrDefault(x => x.GetType() == typeof(CheckDifficultyPowRule));
-            network.Consensus.HeaderValidationRules.Remove(checkDiffRule);
+            network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chain = new ConcurrentChain(network);
