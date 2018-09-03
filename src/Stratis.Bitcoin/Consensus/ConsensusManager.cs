@@ -436,7 +436,7 @@ namespace Stratis.Bitcoin.Consensus
                     this.logger.LogTrace("{0} peers will be banned.", peersToBan.Count);
 
                     foreach (INetworkPeer peer in peersToBan)
-                        this.peerBanning.BanAndDisconnectPeerForDefaultInterval(peer.PeerEndPoint, connectBlocksResult.BanReason);
+                        this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, connectBlocksResult.BanDurationSeconds, connectBlocksResult.BanReason);
                 }
 
                 if (connectBlocksResult.ConsensusTipChanged)
@@ -762,6 +762,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 var failureResult = new ConnectBlocksResult(false)
                 {
+                    BanDurationSeconds = this.connectionManager.ConnectionSettings.BanTimeSeconds,
                     BanReason = validationContext.Error.Message,
                     ConsensusTipChanged = false,
                     Error = validationContext.Error,
