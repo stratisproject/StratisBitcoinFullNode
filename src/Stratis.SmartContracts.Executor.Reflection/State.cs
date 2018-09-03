@@ -34,15 +34,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         private class StateSnapshot
         {
-            public StateSnapshot(IContractLogHolder logHolder, List<TransferInfo> internalTransfers, ulong nonce, byte[] root)
+            public StateSnapshot(IContractLogHolder logHolder, List<TransferInfo> internalTransfers, ulong nonce, IContractState contractState)
             {
                 this.Logs = logHolder.GetRawLogs().ToImmutableList();
                 this.InternalTransfers = internalTransfers.ToImmutableList();
                 this.Nonce = nonce;
-                this.Root = root;
+                this.ContractState = contractState;
             }
 
-            public byte[] Root { get; }
+            public IContractState ContractState { get; }
 
             public ImmutableList<RawLog> Logs { get; }
 
@@ -63,10 +63,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IAddressGenerator addressGenerator,
             Gas gasLimit)
         {
-            this.Repository = repository;
+            this.intermediateState = repository;
             this.LogHolder = new ContractLogHolder(network);
             this.InternalTransfers = new List<TransferInfo>();
-            this.BalanceState = new BalanceState(this.Repository, txAmount, this.InternalTransfers);
+            this.BalanceState = new BalanceState(this.intermediateState, txAmount, this.InternalTransfers);
             this.Network = network;
             this.Nonce = 0;
             this.Block = block;
@@ -92,7 +92,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public Network Network { get; }
 
-        public IContractStateRoot Repository { get; }
+        private IContractState intermediateState;
 
         public IContractLogHolder LogHolder { get; }
 
@@ -122,7 +122,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         private void Rollback(StateSnapshot snapshot)
         {
-            this.Repository.SyncToRoot(snapshot.Root);
+            this.intermediateState = snapshot.ContractState;
 
             // Reset the nonce
             this.Nonce = snapshot.Nonce;
@@ -141,8 +141,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         private StateSnapshot TakeSnapshot()
         {
-            byte[] root = this.Repository.Root;
-            return new StateSnapshot(this.LogHolder, this.InternalTransfers, this.Nonce, root);
+            return new StateSnapshot(this.LogHolder, this.InternalTransfers, this.Nonce, this.intermediateState);
         }
 
         private StateTransitionResult ApplyCreate(object[] parameters, byte[] code, BaseMessage message, string type = null)
@@ -157,12 +156,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
             uint160 address = this.GetNewAddress();
+            
+            // Begin tracking the new intermediate state. We need to keep this reference around
+            // for the scope of the transaction, so we can commit it later.
+            IContractState state = this.CreateIntermediateState();
 
-            this.Repository.CreateAccount(address);
+            state.CreateAccount(address);
 
-            ISmartContractState contractState = this.ContractState(gasMeter, address, message, this.Repository);
+            ISmartContractState contractState = this.ContractState(gasMeter, address, message, state);
 
-            VmExecutionResult result = this.Vm.Create(this.Repository, contractState, code, parameters, type);
+            VmExecutionResult result = this.Vm.Create(state, contractState, code, parameters, type);
 
             bool revert = result.ExecutionException != null;
 
@@ -172,7 +175,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
             else
             {
-                this.Repository.Commit();
+                state.Commit();
                 this.GasRemaining -= gasMeter.GasConsumed;
             }
 
@@ -202,7 +205,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (!enoughBalance)
                 throw new InsufficientBalanceException();
 
-            byte[] contractCode = this.Repository.GetCode(message.From);
+            byte[] contractCode = this.intermediateState.GetCode(message.From);
 
             StateTransitionResult result = this.ApplyCreate(message.Parameters, contractCode, message, message.Type);
 
@@ -242,9 +245,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             StateSnapshot stateSnapshot = this.TakeSnapshot();
 
-            string type = this.Repository.GetContractType(message.To);
+            IContractState state = this.CreateIntermediateState();
 
-            ISmartContractState contractState = this.ContractState(gasMeter, message.To, message, this.Repository);
+            string type = state.GetContractType(message.To);
+
+            ISmartContractState contractState = this.ContractState(gasMeter, message.To, message, state);
 
             VmExecutionResult result = this.Vm.ExecuteMethod(contractState, message.Method, contractCode, type);
 
@@ -255,8 +260,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 this.Rollback(stateSnapshot);
             }
             else
-            {                
-                this.Repository.Commit();
+            {
+                state.Commit();
                 this.GasRemaining -= gasMeter.GasConsumed;
             }
 
@@ -278,7 +283,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (!enoughBalance)
                 throw new InsufficientBalanceException();
 
-            byte[] contractCode = this.Repository.GetCode(message.To);
+            byte[] contractCode = this.intermediateState.GetCode(message.To);
 
             if (contractCode == null || contractCode.Length == 0)
             {
@@ -312,7 +317,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public StateTransitionResult Apply(ExternalCallMessage message)
         {
-            byte[] contractCode = this.Repository.GetCode(message.To);
+            byte[] contractCode = this.intermediateState.GetCode(message.To);
 
             if (contractCode == null || contractCode.Length == 0)
             {
@@ -339,7 +344,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // If it's not a contract, create a regular P2PKH tx
             // If it is a contract, do a regular contract call
-            byte[] contractCode = this.Repository.GetCode(message.To);
+            byte[] contractCode = this.intermediateState.GetCode(message.To);
 
             if (contractCode == null || contractCode.Length == 0)
             {
@@ -359,6 +364,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             return this.ApplyCall(message, contractCode);
+        }
+
+        /// <summary>
+        /// Create a new intermediate <see cref="IContractState"/> based on the previous intermediate state.
+        /// Updates the intermediate state reference to point to the new state.
+        /// </summary>
+        private IContractState CreateIntermediateState()
+        {
+            this.intermediateState = this.intermediateState.StartTracking();
+            return this.intermediateState;
         }
 
         /// <summary>
