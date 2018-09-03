@@ -36,9 +36,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         {
             // Add a lot of bad samples to push quality score down. After that peer will have only bad samples.
             for (int i = 0; i < 10; i++)
-                this.behavior.AddSample(100, 10);
+                this.behavior.AddSample(1, 10);
 
-            this.behavior.RecalculateQualityScore(1000);
+            this.behavior.RecalculateQualityScore(100000);
 
             Assert.Equal(BlockPullerBehavior.MinQualityScore, this.behavior.QualityScore);
         }
