@@ -79,6 +79,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             // Ensure no state changes were made and no transaction has been added
             Assert.Null(internalTransaction);
+            stateMock.Verify(x => x.SetUnspent(It.IsAny<uint160>(), It.IsAny<ContractUnspentOutput>()), Times.Never);
         }
 
         [Fact]
@@ -149,6 +150,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             // No balance
             var stateMock = new Mock<IContractState>();
+            stateMock.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState
+            {
+                CodeHash = new byte[32],
+                StateRoot = new byte[32],
+                TypeName = "Mock",
+                UnspentHash = new byte[32]
+            });
             stateMock.Setup(x => x.GetUnspent(contractAddress)).Returns<ContractUnspentOutput>(null);
 
             // tx value 100
@@ -157,14 +165,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
             txContextMock.SetupGet(p => p.Nvout).Returns(1);
 
-            // transfer 50
+            // transfer 75
             var transferInfos = new List<TransferInfo>
             {
                 new TransferInfo
                 {
-                    From = uint160.One,
-                    To = new uint160(2),
-                    Value = 50
+                    From = contractAddress,
+                    To = receiverAddress,
+                    Value = 75
                 }
             };
 
@@ -174,14 +182,217 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
             Assert.NotNull(internalTransaction);
             Assert.Single(internalTransaction.Inputs);
+            Assert.Equal(2, internalTransaction.Outputs.Count);
             Assert.Equal(txContextMock.Object.TransactionHash, internalTransaction.Inputs[0].PrevOut.Hash);
             Assert.Equal(txContextMock.Object.Nvout, internalTransaction.Inputs[0].PrevOut.N);
-            // TODO: Outputs
+            string output1Address = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(internalTransaction.Outputs[0].ScriptPubKey).GetAddress(this.network).ToString();
+            Assert.Equal(receiverAddress.ToAddress(this.network).Value, output1Address);
+            Assert.Equal(75, internalTransaction.Outputs[0].Value); // Note outputs are in descending order by value.
+            Assert.True(internalTransaction.Outputs[1].ScriptPubKey.IsSmartContractInternalCall());
+            Assert.Equal(25, internalTransaction.Outputs[1].Value);
+
+            // Ensure db updated
+            stateMock.Verify(x => x.SetUnspent(contractAddress, It.Is<ContractUnspentOutput>(unspent => unspent.Value == 25)), Times.Once);
         }
 
+        [Fact]
+        public void HasBalance_TxValue0_TransferValue0()
+        {
+            uint160 contractAddress = new uint160(1);
+
+            // balance of 100
+            var stateMock = new Mock<IContractState>();
+            stateMock.Setup(x => x.GetUnspent(contractAddress)).Returns(new ContractUnspentOutput
+            {
+                Hash = new uint256(1),
+                Nvout = 1,
+                Value = 100
+            });
+
+            // No tx value
+            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
+
+            // No transfers
+            var transfers = new List<TransferInfo>();
+
+            var result = new SmartContractExecutionResult();
+
+            Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transfers, false);
+
+            // Ensure no state changes were made and no transaction has been added
+            Assert.Null(internalTransaction);
+            stateMock.Verify(x => x.SetUnspent(It.IsAny<uint160>(), It.IsAny<ContractUnspentOutput>()), Times.Never);
+        }
 
         [Fact]
-        public void Transfers_With_0Balance()
+        public void HasBalance_TxValue1_TransferValue0()
+        {
+            uint160 contractAddress = new uint160(1);
+
+            // Has balance
+            var stateMock = new Mock<IContractState>();
+            stateMock.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState
+            {
+                CodeHash = new byte[32],
+                StateRoot = new byte[32],
+                TypeName = "Mock",
+                UnspentHash = new byte[32]
+            });
+            stateMock.Setup(x => x.GetUnspent(contractAddress)).Returns(new ContractUnspentOutput
+            {
+                Hash = new uint256(1),
+                Nvout = 1,
+                Value = 100
+            });
+
+            // tx value 100
+            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
+            txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
+            txContextMock.SetupGet(p => p.Nvout).Returns(1);
+
+            // no transfers
+            var transferInfos = new List<TransferInfo>();
+
+            var result = new SmartContractExecutionResult();
+
+            // Condensing tx generated. 2 inputs. Current tx and stored spendable output. 1 output. 
+            Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
+            Assert.NotNull(internalTransaction);
+            Assert.Equal(2, internalTransaction.Inputs.Count);
+            Assert.Single(internalTransaction.Outputs);
+            Assert.Equal(txContextMock.Object.TransactionHash, internalTransaction.Inputs[0].PrevOut.Hash);
+            Assert.Equal(txContextMock.Object.Nvout, internalTransaction.Inputs[0].PrevOut.N);
+            Assert.Equal(new uint256(1), internalTransaction.Inputs[1].PrevOut.Hash);
+            Assert.Equal((uint) 1, internalTransaction.Inputs[1].PrevOut.N);
+            Assert.True(internalTransaction.Outputs[0].ScriptPubKey.IsSmartContractInternalCall());
+            Assert.Equal(200, internalTransaction.Outputs[0].Value);
+
+            // Ensure db updated
+            stateMock.Verify(x => x.SetUnspent(contractAddress, It.Is<ContractUnspentOutput>(unspent => unspent.Value == 200)), Times.Once);
+        }
+
+        [Fact]
+        public void HasBalance_TxValue0_TransferValue1()
+        {
+            uint160 contractAddress = new uint160(1);
+            uint160 receiverAddress = new uint160(2);
+
+            // Has balance
+            var stateMock = new Mock<IContractState>();
+            stateMock.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState
+            {
+                CodeHash = new byte[32],
+                StateRoot = new byte[32],
+                TypeName = "Mock",
+                UnspentHash = new byte[32]
+            });
+            stateMock.Setup(x => x.GetUnspent(contractAddress)).Returns(new ContractUnspentOutput
+            {
+                Hash = new uint256(1),
+                Nvout = 1,
+                Value = 100
+            });
+
+            // no tx value
+            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
+
+            // transfer 75
+            var transferInfos = new List<TransferInfo>
+            {
+                new TransferInfo
+                {
+                    From = contractAddress,
+                    To = receiverAddress,
+                    Value = 75
+                }
+            };
+
+            var result = new SmartContractExecutionResult();
+
+            // Condensing tx generated. 1 input. 2 outputs for each receiver and contract.
+            Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
+            Assert.NotNull(internalTransaction);
+            Assert.Single(internalTransaction.Inputs);
+            Assert.Equal(2, internalTransaction.Outputs.Count);
+            Assert.Equal(new uint256(1), internalTransaction.Inputs[0].PrevOut.Hash);
+            Assert.Equal((uint) 1, internalTransaction.Inputs[0].PrevOut.N);
+            string output1Address = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(internalTransaction.Outputs[0].ScriptPubKey).GetAddress(this.network).ToString();
+            Assert.Equal(receiverAddress.ToAddress(this.network).Value, output1Address);
+            Assert.Equal(75, internalTransaction.Outputs[0].Value);
+            Assert.True(internalTransaction.Outputs[1].ScriptPubKey.IsSmartContractInternalCall());
+            Assert.Equal(25, internalTransaction.Outputs[1].Value);
+
+            // Ensure db updated
+            stateMock.Verify(x => x.SetUnspent(contractAddress, It.Is<ContractUnspentOutput>(unspent => unspent.Value == 25)), Times.Once);
+        }
+
+        [Fact]
+        public void HasBalance_TxValue1_TransferValue1()
+        {
+            uint160 contractAddress = new uint160(1);
+            uint160 receiverAddress = new uint160(2);
+
+            // Has balance
+            var stateMock = new Mock<IContractState>();
+            stateMock.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState
+            {
+                CodeHash = new byte[32],
+                StateRoot = new byte[32],
+                TypeName = "Mock",
+                UnspentHash = new byte[32]
+            });
+            stateMock.Setup(x => x.GetUnspent(contractAddress)).Returns(new ContractUnspentOutput
+            {
+                Hash = new uint256(1),
+                Nvout = 1,
+                Value = 100
+            });
+
+            // no tx value
+            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
+            txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
+            txContextMock.SetupGet(p => p.Nvout).Returns(1);
+
+            // transfer 75
+            var transferInfos = new List<TransferInfo>
+            {
+                new TransferInfo
+                {
+                    From = contractAddress,
+                    To = receiverAddress,
+                    Value = 75
+                }
+            };
+
+            var result = new SmartContractExecutionResult();
+
+            // Condensing tx generated. 2 inputs from currently stored utxo and current tx. 2 outputs for each receiver and contract.
+            Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
+            Assert.NotNull(internalTransaction);
+            Assert.Equal(2, internalTransaction.Inputs.Count);
+            Assert.Equal(2, internalTransaction.Outputs.Count);
+            Assert.Equal(new uint256(123), internalTransaction.Inputs[0].PrevOut.Hash);
+            Assert.Equal((uint)1, internalTransaction.Inputs[0].PrevOut.N);
+            Assert.Equal(new uint256(1), internalTransaction.Inputs[1].PrevOut.Hash);
+            Assert.Equal((uint)1, internalTransaction.Inputs[1].PrevOut.N);
+
+            Assert.True(internalTransaction.Outputs[0].ScriptPubKey.IsSmartContractInternalCall());
+            Assert.Equal(125, internalTransaction.Outputs[0].Value);
+
+            string output2Address = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(internalTransaction.Outputs[1].ScriptPubKey).GetAddress(this.network).ToString();
+            Assert.Equal(receiverAddress.ToAddress(this.network).Value, output2Address);
+            Assert.Equal(75, internalTransaction.Outputs[1].Value);
+
+            // Ensure db updated
+            stateMock.Verify(x => x.SetUnspent(contractAddress, It.Is<ContractUnspentOutput>(unspent => unspent.Value == 125)), Times.Once);
+        }
+
+        [Fact]
+        public void Transfers_With_0Value()
         {
             // Scenario where contract was not sent any funds, but did make a method call with value 0.
             var stateMock = new Mock<IContractState>();
