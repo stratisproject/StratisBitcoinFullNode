@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
     public class PosCoinViewRuleTests : TestPosConsensusRulesUnitTestBase
     {
         /// <summary>
-        /// Creates the consensus manager used by this test only.
+        /// Creates the consensus manager used by <see cref="PosCoinViewRuleFailsAsync"/>.
         /// </summary>
         /// <param name="unspentOutputs">The dictionary used to mock up the <see cref="ICoinView"/>.</param>
         /// <returns>The constructed consensus manager.</returns>
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// Now miner 2 creates a proof of stake block with coinstake transaction which will have two inputs corresponding to both the
         /// outputs of the previous transaction. The coinstake transaction will be just two outputs, first is the coinstake marker and
         /// the second is normal pay to public key that belongs to miner 2 with value that equals to the sum of the inputs.
-        /// The testable outcome is whether the first miner accepts such a block. Obviously, the test should fail if the block is accepted.
+        /// The testable outcome is whether the consensus engine accepts such a block. Obviously, the test should fail if the block is accepted.
         /// </para><para>
         /// We use <see cref="ConsensusManager.BlockMinedAsync(Block)"/> to run partial validation and full validation rules and expect that
         /// the rules engine will reject the block with the specific error of <see cref="ConsensusErrors.BadTransactionScriptError"/>,
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var minerKey1 = new Key();
             var minerKey2 = new Key();
 
-            // The scriptPubKeys of the miners.
+            // The scriptPubKeys (P2PK) of the miners.
             Script scriptPubKey1 = minerKey1.PubKey.ScriptPubKey;
             Script scriptPubKey2 = minerKey2.PubKey.ScriptPubKey;
 
@@ -137,9 +137,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             // Create a previous transaction with scriptPubKey outputs.
             Transaction prevTransaction = this.network.CreateTransaction();
-            // Received coin.
+            // Coins sent to miner 2.
             prevTransaction.Outputs.Add(new TxOut(Money.COIN * 5_000_000, scriptPubKey2));
-            // Change address.
+            // Coins sent to miner 1.
             prevTransaction.Outputs.Add(new TxOut(Money.COIN * 10_000_000, scriptPubKey1));
 
             // Record the spendable outputs.
@@ -157,9 +157,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             // equals to the sum of the inputs.
             coinstakeTransaction.Outputs.Add(new TxOut(Money.COIN * 15_000_000, scriptPubKey2));
 
-            // Attempt to sign the transaction inputs. We expect that only the first will be signed
-            // due to the second requiring minerKey1. The second ScriptSig will be empty and
-            // therefore will be invalid.
+            // The second miner signs the first transaction input which requires minerKey2.
+            // Miner 2 will not have minerKey1 so we leave the second ScriptSig empty/invalid.
             new TransactionBuilder(this.network)
                 .AddKeys(minerKey2)
                 .AddCoins(new Coin(new OutPoint(prevTransaction, 0), prevTransaction.Outputs[0]))
