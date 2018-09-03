@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             var ibdState = new Mock<IInitialBlockDownloadState>();
             ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
 
-            var behavior = new ExtendedBlockPullerBehavior(this.Puller, ibdState.Object, this.loggerFactory);
+            var behavior = new ExtendedBlockPullerBehavior(this.Puller, ibdState.Object, new DateTimeProvider(), this.loggerFactory);
 
             return behavior;
         }
@@ -221,12 +221,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
         private readonly BlockPullerBehavior underlyingBehavior;
 
-        public ExtendedBlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, ILoggerFactory loggerFactory)
+        public ExtendedBlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.ShouldThrowAtRequestBlocksAsync = false;
             this.RecalculateQualityScoreWasCalled = false;
             this.RequestedHashes = new List<uint256>();
-            this.underlyingBehavior = new BlockPullerBehavior(blockPuller, ibdState, loggerFactory);
+            this.underlyingBehavior = new BlockPullerBehavior(blockPuller, ibdState, dateTimeProvider, loggerFactory);
         }
 
         public Task RequestBlocksAsync(List<uint256> hashes)
