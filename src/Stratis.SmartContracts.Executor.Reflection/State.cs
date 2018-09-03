@@ -163,9 +163,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             state.CreateAccount(address);
 
-            ISmartContractState contractState = this.ContractState(gasMeter, address, message, state);
+            ISmartContractState smartContractState = this.CreateSmartContractState(gasMeter, address, message, state);
 
-            VmExecutionResult result = this.Vm.Create(state, contractState, code, parameters, type);
+            VmExecutionResult result = this.Vm.Create(state, smartContractState, code, parameters, type);
 
             bool revert = result.ExecutionException != null;
 
@@ -249,9 +249,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             string type = state.GetContractType(message.To);
 
-            ISmartContractState contractState = this.ContractState(gasMeter, message.To, message, state);
+            ISmartContractState smartContractState = this.CreateSmartContractState(gasMeter, message.To, message, state);
 
-            VmExecutionResult result = this.Vm.ExecuteMethod(contractState, message.Method, contractCode, type);
+            VmExecutionResult result = this.Vm.ExecuteMethod(smartContractState, message.Method, contractCode, type);
 
             bool revert = result.ExecutionException != null;
 
@@ -379,7 +379,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Sets up a new <see cref="ISmartContractState"/> based on the current state.
         /// </summary>        
-        private ISmartContractState ContractState(IGasMeter gasMeter, uint160 address, BaseMessage message, IContractState repository)
+        private ISmartContractState CreateSmartContractState(IGasMeter gasMeter, uint160 address, BaseMessage message, IContractState repository)
         {
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
 
