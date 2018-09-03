@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Utilities.ValidationAttributes;
@@ -37,9 +38,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
     public class SetupColdStakingResponse
     {
-        // The change of the cold staking setup transaction.
-        [JsonProperty(PropertyName = "change")]
-        public Money Change { get; set; }
+        /// <summary>
+        /// The transaction id.
+        /// </summary>
+        [JsonProperty(PropertyName = "transactionId")]
+        public uint256 TransactionId { get; set; }
+
+        /// <summary>
+        /// The list of outputs in this transaction.
+        /// </summary>
+        [JsonProperty(PropertyName = "outputs")]
+        public ICollection<TransactionOutputModel> Outputs { get; set; }
     }
 
     public class SetupColdStakingRequest

@@ -737,7 +737,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                Money change = 0;
                 Money amount = string.IsNullOrEmpty(request.Amount) ? null : Money.Parse(request.Amount);
                 Money feeAmount = string.IsNullOrEmpty(request.Fees) ? null : Money.Parse(request.Fees);
 
@@ -746,6 +745,24 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     amount, feeAmount);
 
                 Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
+
+                var model = new SetupColdStakingResponse
+                {
+                    TransactionId = transaction.GetHash(),
+                    Outputs = new List<TransactionOutputModel>()
+                };
+
+                foreach (TxOut output in transaction.Outputs)
+                {
+                    bool isUnspendable = output.ScriptPubKey.IsUnspendable;
+
+                    model.Outputs.Add(new TransactionOutputModel
+                    {
+                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
+                        Amount = output.Value,
+                        OpReturnData = isUnspendable ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData) : null
+                    });
+                }
 
                 this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
@@ -756,11 +773,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
                 }
-
-                var model = new SetupColdStakingResponse
-                {
-                    Change = change
-                };
 
                 return this.Json(model);
             }
