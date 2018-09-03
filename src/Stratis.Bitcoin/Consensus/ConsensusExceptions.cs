@@ -28,6 +28,10 @@ namespace Stratis.Bitcoin.Consensus
         }
     }
 
+    /// <summary>
+    /// This throws when the header of a previously block that failed
+    /// partial or full validation and was marked as invalid is passed to the node.
+    /// </summary>
     public class HeaderInvalidException : ConsensusException
     {
         public HeaderInvalidException() : base()
@@ -35,6 +39,9 @@ namespace Stratis.Bitcoin.Consensus
         }
     }
 
+    /// <summary>
+    /// An exception that is contains exception coming from the <see cref="IConsensusRuleEngine"/> execution.
+    /// </summary>
     public class ConsensusRuleException : ConsensusException
     {
         public ConsensusError ConsensusError { get; }
