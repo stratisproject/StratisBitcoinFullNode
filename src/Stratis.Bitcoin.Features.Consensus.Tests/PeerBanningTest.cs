@@ -173,7 +173,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             MockPeerConnection(context, false);
             Block badBlock = await createBadBlock(context);
 
-            // TODO: Test banning can be overridden.
+            var blockValidationContext = new ValidationContext
+            {
+                BlockToValidate = badBlock,
+                BanDurationSeconds = 0
+            };
 
             await context.Consensus.BlockMinedAsync(badBlock);
 
@@ -201,9 +205,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             MockPeerConnection(context, false);
             Block badBlock = await createBadBlock(context);
 
-            await context.Consensus.BlockMinedAsync(badBlock);
+            var blockValidationContext = new ValidationContext
+            {
+                BlockToValidate = badBlock,
+                BanDurationSeconds = 1,
+            };
 
-            // TODO: Test banning expires after expected interval when a bad block is delivered. We already test banning expiry standalone in a different test.
+            await context.Consensus.BlockMinedAsync(badBlock);
 
             // Wait 1 sec for ban to expire.
             Thread.Sleep(1000);
