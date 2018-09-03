@@ -416,5 +416,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // No condensing transaction was generated.
             Assert.Null(internalTransaction);
         }
+
+        [Fact]
+        public void Create_Refund()
+        {
+            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
+            txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
+            txContextMock.SetupGet(p => p.Nvout).Returns(1);
+            txContextMock.SetupGet(p => p.Sender).Returns(new uint160(2));
+
+            Transaction refundTransaction = this.transferProcessor.Process(null, null, txContextMock.Object, null, true);
+
+            Assert.Single(refundTransaction.Inputs);
+            Assert.Single(refundTransaction.Outputs);
+            Assert.Equal(new uint256(123), refundTransaction.Inputs[0].PrevOut.Hash);
+            Assert.Equal((uint)1, refundTransaction.Inputs[0].PrevOut.N);
+            Assert.Equal(txContextMock.Object.TxOutValue, (ulong) refundTransaction.Outputs[0].Value);
+            string outputAddress = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(refundTransaction.Outputs[0].ScriptPubKey).GetAddress(this.network).ToString();
+
+            Assert.Equal(txContextMock.Object.Sender.ToAddress(this.network).Value, outputAddress);
+        }
     }
 }
