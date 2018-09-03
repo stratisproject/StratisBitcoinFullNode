@@ -46,7 +46,8 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.fullNode.Setup(f => f.Network)
                 .Returns(this.testNetwork);
             this.rpcHost = new Mock<IWebHost>();
-            this.rpcSettings = new RpcSettings(new NodeSettings(this.testNetwork));
+            var nodeSettings = new NodeSettings(this.testNetwork, args: new string[] { "-server=1" });
+            this.rpcSettings = new RpcSettings(nodeSettings);
             this.serviceProvider = new Mock<IServiceProvider>();
             this.rpcClientFactory = new Mock<IRPCClientFactory>();
             this.actionDescriptorCollectionProvider = new Mock<IActionDescriptorCollectionProvider>();

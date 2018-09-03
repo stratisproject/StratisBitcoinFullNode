@@ -100,6 +100,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             try
             {
+                if (!this.rpcSettings.Server)
+                {
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not allowed when RPC is disabled.");
+                }
+
                 StringComparison ignoreCase = StringComparison.InvariantCultureIgnoreCase;
                 string methodName = (string)body.GetValue("methodName", ignoreCase);
 
@@ -152,6 +157,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             try
             {
+                if (!this.rpcSettings.Server)
+                {
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", "Method not allowed when RPC is disabled.");
+                }
+
                 var listMethods = new List<Models.RpcCommandModel>();
                 foreach (ControllerActionDescriptor descriptor in this.GetActionDescriptors().Values.Where(desc => desc.ActionName == desc.ActionName.ToLower()))
                 {
