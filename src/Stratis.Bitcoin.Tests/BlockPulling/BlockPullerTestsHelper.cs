@@ -250,17 +250,28 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             }
         }
 
-        public double BlockDeliveryRate => this.underlyingBehavior.BlockDeliveryRate;
-
         public ChainedHeader Tip { get => this.underlyingBehavior.Tip; set => this.underlyingBehavior.Tip = value; }
 
-        public void AddSample(double delaySeconds) { this.underlyingBehavior.AddSample(delaySeconds); }
+        public int SpeedBytesPerSecond { get => this.SpeedBytesPerSecond; }
 
-        public void RecalculateQualityScore(double bestRate)
+        public void AddSample(long blockSizeBytes, double delaySinceRequestedSeconds) { this.underlyingBehavior.AddSample(blockSizeBytes, delaySinceRequestedSeconds); }
+
+        public void RecalculateQualityScore(int bestSpeedBytesPerSecond)
         {
-            this.underlyingBehavior.RecalculateQualityScore(bestRate);
+            this.underlyingBehavior.RecalculateQualityScore(bestSpeedBytesPerSecond);
             this.RecalculateQualityScoreWasCalled = true;
         }
+
+        public void Penalize(double delaySeconds, int notDeliveredBlocksCount)
+        {
+            this.underlyingBehavior.Penalize(delaySeconds, notDeliveredBlocksCount);
+        }
+
+        public void OnIbdStateChanged(bool isIbd)
+        {
+            this.underlyingBehavior.OnIbdStateChanged(isIbd);
+        }
+
 
         public override object Clone() { return null; }
 
