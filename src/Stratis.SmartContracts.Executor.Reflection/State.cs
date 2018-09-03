@@ -167,6 +167,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             VmExecutionResult result = this.Vm.Create(state, smartContractState, code, parameters, type);
 
+            this.GasRemaining -= gasMeter.GasConsumed;
+
             bool revert = result.ExecutionException != null;
 
             if (revert)
@@ -176,7 +178,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             else
             {
                 state.Commit();
-                this.GasRemaining -= gasMeter.GasConsumed;
             }
 
             return new StateTransitionResult(
@@ -252,6 +253,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ISmartContractState smartContractState = this.CreateSmartContractState(gasMeter, message.To, message, state);
 
             VmExecutionResult result = this.Vm.ExecuteMethod(smartContractState, message.Method, contractCode, type);
+
+            this.GasRemaining -= gasMeter.GasConsumed;
 
             bool revert = result.ExecutionException != null;
 
