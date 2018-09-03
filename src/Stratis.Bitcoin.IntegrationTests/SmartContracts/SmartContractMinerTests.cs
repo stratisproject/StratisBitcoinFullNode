@@ -60,6 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
         public static BlockDefinition AssemblerForTest(TestContext testContext)
         {
             return new SmartContractBlockDefinition(
+                new BlockBufferGenerator(),
                 testContext.cachedCoinView,
                 testContext.consensusManager,
                 DateTimeProvider.Default,
