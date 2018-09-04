@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     new SetActivationDeploymentsPartialValidationRule(),
 
-                    new CheckDifficultykHybridRule(),
+                    new CheckDifficultyHybridRule(),
                     new PosTimeMaskRule(),
 
                     // rules that are inside the method ContextualCheckBlock
