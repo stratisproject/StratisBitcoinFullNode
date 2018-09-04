@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -26,8 +27,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// Wallet feature for the full node.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
-    /// <seealso cref="Stratis.Bitcoin.Interfaces.INodeStats" />
-    public class WalletFeature : FullNodeFeature, INodeStats, IFeatureStats
+    public class WalletFeature : FullNodeFeature
     {
         private readonly IWalletSyncManager walletSyncManager;
 
@@ -68,7 +68,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             IConnectionManager connectionManager,
             BroadcasterBehavior broadcasterBehavior,
             NodeSettings nodeSettings,
-            WalletSettings walletSettings)
+            WalletSettings walletSettings,
+            INodeStats nodeStats)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
@@ -78,6 +79,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.broadcasterBehavior = broadcasterBehavior;
             this.nodeSettings = nodeSettings;
             this.walletSettings = walletSettings;
+
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 800);
         }
 
         /// <summary>
@@ -99,8 +103,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             WalletSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
-        /// <inheritdoc />
-        public void AddNodeStats(StringBuilder benchLogs)
+        private void AddInlineStats(StringBuilder benchLogs)
         {
             var walletManager = this.walletManager as WalletManager;
 
@@ -116,8 +119,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
-        /// <inheritdoc />
-        public void AddFeatureStats(StringBuilder benchLog)
+        private void AddComponentStats(StringBuilder benchLog)
         {
             IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
 

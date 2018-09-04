@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Base
     /// </list>
     /// </para>
     /// </summary>
-    public sealed class BaseFeature : FullNodeFeature, INodeStats
+    public sealed class BaseFeature : FullNodeFeature
     {
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -168,11 +168,6 @@ namespace Stratis.Bitcoin.Base
             this.dbreezeSerializer = dbreezeSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.disposableResources = new List<IDisposable>();
-        }
-
-        /// <inheritdoc />
-        public void AddNodeStats(StringBuilder benchLogs)
-        {
         }
 
         /// <inheritdoc />
@@ -369,6 +364,9 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IIntegrityValidator, IntegrityValidator>();
                     services.AddSingleton<IPartialValidator, PartialValidator>();
                     services.AddSingleton<IFullValidator, FullValidator>();
+
+                    // Console
+                    services.AddSingleton<INodeStats, NodeStats>();
                 });
             });
 

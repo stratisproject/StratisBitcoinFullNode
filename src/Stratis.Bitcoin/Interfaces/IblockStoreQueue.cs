@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Stratis.Bitcoin.Primitives;
+﻿using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.Interfaces
 {
@@ -8,8 +7,5 @@ namespace Stratis.Bitcoin.Interfaces
         /// <summary>Adds a block to the saving queue.</summary>
         /// <param name="chainedHeaderBlock">The block and its chained header pair to be added to pending storage.</param>
         void AddToPending(ChainedHeaderBlock chainedHeaderBlock);
-
-        /// <summary>Shows the stats to the console.</summary>
-        void ShowStats(StringBuilder benchLog);
     }
 }
