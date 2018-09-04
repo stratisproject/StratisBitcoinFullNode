@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             var ibdState = new Mock<IInitialBlockDownloadState>();
             ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
 
-            var behavior = new ExtendedBlockPullerBehavior(this.Puller, ibdState.Object, this.loggerFactory);
+            var behavior = new ExtendedBlockPullerBehavior(this.Puller, ibdState.Object, new DateTimeProvider(), this.loggerFactory);
 
             return behavior;
         }
@@ -221,12 +221,12 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
         private readonly BlockPullerBehavior underlyingBehavior;
 
-        public ExtendedBlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, ILoggerFactory loggerFactory)
+        public ExtendedBlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.ShouldThrowAtRequestBlocksAsync = false;
             this.RecalculateQualityScoreWasCalled = false;
             this.RequestedHashes = new List<uint256>();
-            this.underlyingBehavior = new BlockPullerBehavior(blockPuller, ibdState, loggerFactory);
+            this.underlyingBehavior = new BlockPullerBehavior(blockPuller, ibdState, dateTimeProvider, loggerFactory);
         }
 
         public Task RequestBlocksAsync(List<uint256> hashes)
@@ -250,17 +250,28 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             }
         }
 
-        public double BlockDeliveryRate => this.underlyingBehavior.BlockDeliveryRate;
-
         public ChainedHeader Tip { get => this.underlyingBehavior.Tip; set => this.underlyingBehavior.Tip = value; }
 
-        public void AddSample(double delaySeconds) { this.underlyingBehavior.AddSample(delaySeconds); }
+        public int SpeedBytesPerSecond { get => this.underlyingBehavior.SpeedBytesPerSecond; }
 
-        public void RecalculateQualityScore(double bestRate)
+        public void AddSample(long blockSizeBytes, double delaySinceRequestedSeconds) { this.underlyingBehavior.AddSample(blockSizeBytes, delaySinceRequestedSeconds); }
+
+        public void RecalculateQualityScore(int bestSpeedBytesPerSecond)
         {
-            this.underlyingBehavior.RecalculateQualityScore(bestRate);
+            this.underlyingBehavior.RecalculateQualityScore(bestSpeedBytesPerSecond);
             this.RecalculateQualityScoreWasCalled = true;
         }
+
+        public void Penalize(double delaySeconds, int notDeliveredBlocksCount)
+        {
+            this.underlyingBehavior.Penalize(delaySeconds, notDeliveredBlocksCount);
+        }
+
+        public void OnIbdStateChanged(bool isIbd)
+        {
+            this.underlyingBehavior.OnIbdStateChanged(isIbd);
+        }
+
 
         public override object Clone() { return null; }
 
