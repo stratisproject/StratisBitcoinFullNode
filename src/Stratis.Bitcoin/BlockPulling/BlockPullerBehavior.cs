@@ -138,8 +138,6 @@ namespace Stratis.Bitcoin.BlockPulling
                 adjustedDelay = Math.Min(delaySinceRequestedSeconds, deliveryDiff);
             }
 
-            this.lastDeliveryTime = this.dateTimeProvider.GetUtcNow();
-
             this.averageSizeBytes.AddSample(blockSizeBytes);
             this.averageDelaySeconds.AddSample(adjustedDelay);
 
@@ -208,7 +206,9 @@ namespace Stratis.Bitcoin.BlockPulling
                 uint256 blockHash = block.Obj.GetHash();
 
                 this.logger.LogTrace("Block '{0}' delivered.", blockHash);
+
                 this.blockPuller.PushBlock(blockHash, block.Obj, peer.Connection.Id);
+                this.lastDeliveryTime = this.dateTimeProvider.GetUtcNow();
             }
 
             this.logger.LogTrace("(-)");

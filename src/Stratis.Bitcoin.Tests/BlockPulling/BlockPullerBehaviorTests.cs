@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
 
-            this.behavior = new BlockPullerBehavior(puller.Object, ibdState.Object, new DateTimeProvider(), loggerFactory);
+            this.behavior = new BlockPullerBehavior(puller.Object, ibdState.Object, DateTimeProvider.Default, loggerFactory);
         }
 
         [Fact]
