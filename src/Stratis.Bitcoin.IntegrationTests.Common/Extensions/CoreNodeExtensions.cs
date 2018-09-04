@@ -54,10 +54,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// </summary>
         /// <param name="coreNode">The node we want to create the block with.</param>
         /// <param name="transactions">Transactions we want to manually include in the block.</param>
-        public static Block GenerateBlockManually(this CoreNode coreNode, List<Transaction> transactions)
+        /// <param name="nonce">Optional nonce.</param>
+        public static Block GenerateBlockManually(this CoreNode coreNode, List<Transaction> transactions, uint nonce = 0)
         {
-            uint nonce = 0;
-
             var block = coreNode.FullNode.Network.CreateBlock();
             block.Header.HashPrevBlock = coreNode.FullNode.Chain.Tip.HashBlock;
             block.Header.Bits = block.Header.GetWorkRequired(coreNode.FullNode.Network, coreNode.FullNode.Chain.Tip);

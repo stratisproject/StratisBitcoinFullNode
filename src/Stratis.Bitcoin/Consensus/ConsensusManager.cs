@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -44,6 +45,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IChainedHeaderTree chainedHeaderTree;
         private readonly IChainState chainState;
         private readonly IPartialValidator partialValidator;
+        private readonly IFullValidator fullValidator;
         private readonly IConsensusRuleEngine consensusRules;
         private readonly Signals.Signals signals;
         private readonly IPeerBanning peerBanning;
@@ -93,6 +95,7 @@ namespace Stratis.Bitcoin.Consensus
             IHeaderValidator headerValidator,
             IIntegrityValidator integrityValidator,
             IPartialValidator partialValidator,
+            IFullValidator fullValidator,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
             IConsensusRuleEngine consensusRules,
@@ -110,6 +113,7 @@ namespace Stratis.Bitcoin.Consensus
             this.chainState = chainState;
             this.integrityValidator = integrityValidator;
             this.partialValidator = partialValidator;
+            this.fullValidator = fullValidator;
             this.consensusRules = consensusRules;
             this.signals = signals;
             this.peerBanning = peerBanning;
@@ -262,11 +266,6 @@ namespace Stratis.Bitcoin.Consensus
                         ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
                         if (!fullValidationResult.Succeeded)
                         {
-                            lock (this.peerLock)
-                            {
-                                this.chainedHeaderTree.PartialOrFullValidationFailed(chainedHeader);
-                            }
-
                             this.logger.LogTrace("Miner produced an invalid block, full validation failed: {0}", fullValidationResult.Error.Message);
                             this.logger.LogTrace("(-)[FULL_VALIDATION_FAILED]");
                             throw new ConsensusException(fullValidationResult.Error.Message);
@@ -569,6 +568,10 @@ namespace Stratis.Bitcoin.Consensus
             // Reconnect disconnected blocks.
             ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(fork, disconnectedBlocks).ConfigureAwait(false);
 
+            // Add peers that needed to be banned as a result of a failure to connect blocks.
+            // Otherwise they get lost as we are returning a different ConnnectBlocksResult.
+            reconnectionResult.PeersToBan = connectBlockResult.PeersToBan;
+
             this.logger.LogTrace("(-):'{0}'", reconnectionResult);
             return reconnectionResult;
         }
@@ -746,7 +749,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             // Call the validation engine.
-            ValidationContext validationContext = await this.consensusRules.FullValidationAsync(blockToConnect).ConfigureAwait(false);
+            ValidationContext validationContext = await this.fullValidator.ValidateAsync(blockToConnect.ChainedHeader, blockToConnect.Block).ConfigureAwait(false);
 
             if (validationContext.Error != null)
             {
@@ -925,9 +928,9 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        private void BlockDownloaded(uint256 blockHash, Block block)
+        private void BlockDownloaded(uint256 blockHash, Block block, int peerId)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(blockHash), blockHash, nameof(peerId), peerId);
 
             ChainedHeader chainedHeader = null;
 
@@ -969,7 +972,11 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (result.Error != null)
                 {
-                    this.peerBanning.BanAndDisconnectPeer(result.Peer, result.BanDurationSeconds, $"Integrity validation failed: {result.Error.Message}");
+                    // When integrity validation fails we want to ban only the particular peer that provided the invalid block.
+                    // Integrity validation failing for this block doesn't automatically make other blocks with the same hash invalid,
+                    // therefore banning other peers that claim to be on a chain that contains a block with the same hash is not required.
+                    if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
+                        this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, result.BanDurationSeconds, $"Integrity validation failed: {result.Error.Message}");
 
                     lock (this.peerLock)
                     {

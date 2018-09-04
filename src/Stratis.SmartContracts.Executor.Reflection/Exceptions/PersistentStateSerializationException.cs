@@ -2,10 +2,10 @@
 
 namespace Stratis.SmartContracts.Executor.Reflection.Exceptions
 {
-    public sealed class PersistentStateSerializationException : SmartContractException
+    public sealed class ContractPrimitiveSerializationException : SmartContractException
     {
-        public PersistentStateSerializationException() { }
+        public ContractPrimitiveSerializationException() { }
 
-        public PersistentStateSerializationException(string message) : base(message) {}
+        public ContractPrimitiveSerializationException(string message) : base(message) {}
     }
 }

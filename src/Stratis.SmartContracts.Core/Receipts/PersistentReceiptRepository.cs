@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using DBreeze;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -12,7 +13,9 @@ namespace Stratis.SmartContracts.Core.Receipts
 
         public PersistentReceiptRepository(DataFolder dataFolder)
         {
-            this.engine = new DBreezeEngine(dataFolder.SmartContractStatePath + TableName);
+            string folder = dataFolder.SmartContractStatePath + TableName;
+            Directory.CreateDirectory(folder);
+            this.engine = new DBreezeEngine(folder);
         }
 
         // TODO: Handle pruning old data in case of reorg.

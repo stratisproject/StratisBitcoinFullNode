@@ -6,16 +6,19 @@ public class ByteArrayConversion : SmartContract
     {
     }
 
+    // Note: Use The Serializer/Converter property on SmartContract instead.
     public static int BytesToInt(byte[] value)
     {
         return value[0] | (value[1] << 8) | (value[2] << 16) | (value[3] << 24);
     }
 
+    // Note: Use The Serializer/Converter property on SmartContract instead.
     public static uint BytesToUInt(byte[] value)
     {
         return (uint) value[0] | (uint) (value[1] << 8) | (uint) (value[2] << 16) | (uint) (value[3] << 24);
     }
 
+    // Note: Use The Serializer/Converter property on SmartContract instead.
     public static ulong BytesToULong(byte[] value)
     {
         return (ulong) value[0] 
@@ -28,6 +31,7 @@ public class ByteArrayConversion : SmartContract
             | (ulong)(value[7] << 56);
     }
 
+    // Note: Use The Serializer/Converter property on SmartContract instead.
     public static long BytesToLong(byte[] value)
     {
         return (long)value[0]
@@ -40,6 +44,7 @@ public class ByteArrayConversion : SmartContract
             | (long)(value[7] << 56);
     }
 
+    // Note: Use The Serializer/Converter property on SmartContract instead.
     public static byte[] IntToBytes(int value)
     {
         unchecked
@@ -53,6 +58,7 @@ public class ByteArrayConversion : SmartContract
         }
     }
 
+    // Note: Use The Serializer/Converter property on SmartContract instead.
     public static byte[] UIntToBytes(uint value)
     {
         unchecked
@@ -66,6 +72,7 @@ public class ByteArrayConversion : SmartContract
         }
     }
 
+    // Note: Use The Serializer/Converter property on SmartContract instead.
     public static byte[] ULongToBytes(ulong value)
     {
         unchecked
@@ -83,6 +90,7 @@ public class ByteArrayConversion : SmartContract
         }
     }
 
+    // Note: Use The Serializer/Converter property on SmartContract instead.
     public static byte[] LongToBytes(long value)
     {
         unchecked
@@ -98,5 +106,30 @@ public class ByteArrayConversion : SmartContract
             bytes[7] = (byte)(value >> 56);
             return bytes;
         }
+    }
+
+    public static byte[] HexStringToBytes(string val)
+    {
+        byte[] ret = new byte[val.Length / 2];
+        for(int i=0; i < val.Length; i= i+2)
+        {
+            string hexChars = val.Substring(i, 2);
+            ret[i / 2] = byte.Parse(hexChars, System.Globalization.NumberStyles.HexNumber);
+        }
+        return ret;
+    }
+
+    public static string BytesToHexString(byte[] val)
+    {
+        string result = "";
+        string alphabet = "0123456789ABCDEF";
+
+        foreach (byte b in val)
+        {
+            result += alphabet[(int)(b >> 4)];
+            result += alphabet[(int)(b & 0xF)];
+        }
+
+        return result;
     }
 }
