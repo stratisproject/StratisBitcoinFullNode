@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             partialValidationRules.Count.Should().Be(13);
 
             partialValidationRules[0].Should().BeOfType<SetActivationDeploymentsPartialValidationRule>();
-            partialValidationRules[1].Should().BeOfType<CheckDifficultykHybridRule>();
+            partialValidationRules[1].Should().BeOfType<CheckDifficultyHybridRule>();
             partialValidationRules[2].Should().BeOfType<PosTimeMaskRule>();
             partialValidationRules[3].Should().BeOfType<TransactionLocktimeActivationRule>();
             partialValidationRules[4].Should().BeOfType<CoinbaseHeightActivationRule>();
