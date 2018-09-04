@@ -102,8 +102,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             this.nodeTwoBalance.Should().Be(Money.Coins(50));
 
-            this.nodes[NodeTwo].WalletHeight(WalletName).Should().Be(4);
-
             this.nodes[NodeTwo].WalletSpendableTransactionCount(WalletName).Should().Be(UnspentTransactionOutputs);
 
             this.nodes[NodeTwo].WalletHeight(WalletName).Should().Be(this.CoinBaseMaturity + 3);
