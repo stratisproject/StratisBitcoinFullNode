@@ -25,11 +25,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Downloaded or mined block to be validated.</summary>
         public Block BlockToValidate { get; set; }
 
-        /// <summary>
-        /// The peer this block came from, <c>null</c> if the block was mined.
-        /// </summary>
-        public IPEndPoint Peer { get; set; }
-
         /// <summary>If the block validation failed this will be set with the reason of failure.</summary>
         public ConsensusError Error { get; set; }
 

@@ -73,8 +73,6 @@
 
         public static readonly ConsensusError CheckpointViolation = new ConsensusError("checkpoint-violation", "block header hash does not match the checkpointed value");
 
-        public static readonly ConsensusError BannedHash = new ConsensusError("banned-hash", "block header hash was previously marked invalid");
-
         public static readonly ConsensusError BadColdstakeAmount = new ConsensusError("bad-coldstake-amount", "coldstake is negative");
         public static readonly ConsensusError BadColdstakeInputs = new ConsensusError("bad-coldstake-inputs", "coldstake inputs contain mismatching scriptpubkeys");
         public static readonly ConsensusError BadColdstakeOutputs = new ConsensusError("bad-coldstake-outputs", "coldstake outputs contain unexpected scriptpubkeys");

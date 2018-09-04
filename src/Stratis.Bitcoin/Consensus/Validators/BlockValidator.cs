@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus.Validators
@@ -40,6 +41,20 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// Executes the partial validation rule set on a block.
         /// <para>
         /// Partial validation doesn't involve change to the underlying store like rewinding or updating the database.
+        /// </para>
+        /// </summary>
+        /// <param name="header">The chained header that is going to be validated.</param>
+        /// <param name="block">The block that is going to be validated.</param>
+        /// <returns>Context that contains validation result related information.</returns>
+        Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block);
+    }
+
+    public interface IFullValidator
+    {
+        /// <summary>
+        /// Executes the full validation rule set on a block.
+        /// <para>
+        /// Full validation may involve changes to the underlying store like rewinding or updating the database.
         /// </para>
         /// </summary>
         /// <param name="header">The chained header that is going to be validated.</param>
@@ -178,7 +193,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         /// <summary>
-        /// Hold information related to partial validation.
+        /// Holds information related to partial validation.
         /// </summary>
         private class PartialValidationItem
         {
@@ -196,6 +211,30 @@ namespace Stratis.Bitcoin.Consensus.Validators
             {
                 return $"{nameof(this.ChainedHeader)}={this.ChainedHeader},{nameof(this.Block)}={this.Block}";
             }
+        }
+    }
+
+    /// <inheritdoc />
+    public class FullValidator : IFullValidator
+    {
+        private readonly IConsensusRuleEngine consensusRules;
+        private readonly ILogger logger;
+
+        public FullValidator(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
+        {
+            this.consensusRules = consensusRules;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        /// <inheritdoc />
+        public async Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(header), header, nameof(block), block);
+
+            ValidationContext result = await this.consensusRules.FullValidationAsync(header, block).ConfigureAwait(false);
+
+            this.logger.LogTrace("(-):'{0}'", result);
+            return result;
         }
     }
 }

@@ -37,6 +37,11 @@ namespace Stratis.SmartContracts
         protected readonly IPersistentState PersistentState;
 
         /// <summary>
+        /// Provides functionality for the serialization and deserialization of primitives to bytes inside smart contracts.
+        /// </summary>
+        protected readonly ISerializer Serializer;
+
+        /// <summary>
         /// Tracks the gas usage for this contract instance.
         /// </summary>
         private readonly IGasMeter gasMeter;
@@ -79,6 +84,7 @@ namespace Stratis.SmartContracts
             this.internalHashHelper = smartContractState.InternalHashHelper;
             this.Message = smartContractState.Message;
             this.PersistentState = smartContractState.PersistentState;
+            this.Serializer = smartContractState.Serializer;
             this.smartContractState = smartContractState;
         }
 

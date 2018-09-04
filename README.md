@@ -78,8 +78,17 @@ dotnet build
 
 ```
 
-To run on the Bitcoin network: ``` Stratis.BitcoinD\dotnet run ```  
-To run on the Stratis network: ``` Stratis.StratisD\dotnet run ```  
+To run on the Bitcoin network:
+```
+cd Stratis.BitcoinD
+dotnet run
+```  
+
+To run on the Stratis network:
+```
+cd Stratis.StratisD
+dotnet run
+```  
 
 Getting Started Guide
 -----------

@@ -16,9 +16,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
         public DeploymentFlags Flags { get; set; }
 
-        /// <summary>Indicate the block was created by our node.</summary>
-        public bool MinedBlock { get; set; }
-
         /// <summary>Whether to skip block validation for this block due to either a checkpoint or assumevalid hash set.</summary>
         public bool SkipValidation { get; set; }
 
@@ -32,7 +29,6 @@ namespace Stratis.Bitcoin.Consensus.Rules
 
             this.ValidationContext = validationContext;
             this.Time = time;
-            this.MinedBlock = false;
         }
     }
 }

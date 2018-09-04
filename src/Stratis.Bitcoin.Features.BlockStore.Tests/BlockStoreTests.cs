@@ -365,7 +365,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
 
             // Make sure chain is saved.
-            Assert.Equal(2, this.repositorySavesCount);
             Assert.Equal(this.chain.Tip.Height + alternativeBlocks.Count, this.repositoryTotalBlocksSaved);
             Assert.Equal(alternativeBlocks.Count, this.repositoryTotalBlocksDeleted);
 
