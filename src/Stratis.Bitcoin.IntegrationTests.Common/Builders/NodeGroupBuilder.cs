@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
 {
@@ -10,14 +11,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
     {
         private readonly NodeBuilder nodeBuilder;
         private readonly Dictionary<string, CoreNode> nodes;
-        public readonly Dictionary<string, Mnemonic> NodeMnemonics;
         private readonly Network network;
 
         public NodeGroupBuilder(string testFolder, Network network)
         {
             this.nodeBuilder = NodeBuilder.Create(testFolder);
             this.nodes = new Dictionary<string, CoreNode>();
-            this.NodeMnemonics = new Dictionary<string, Mnemonic>();
             this.network = network;
         }
 
@@ -69,8 +68,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
 
         public NodeGroupBuilder WithWallet(string walletName, string walletPassword, string walletPassphrase)
         {
-            Mnemonic mnemonic = this.nodes.Last().Value.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
-            this.NodeMnemonics.Add(this.nodes.Last().Key, mnemonic);
+            CoreNode node = this.nodes.Last().Value;
+            Mnemonic mnemonic = node.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
+            node.Mnemonic = mnemonic;
             return this;
         }
 
@@ -83,6 +83,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
         public NodeConnectionBuilder WithConnections()
         {
             return new NodeConnectionBuilder(this).With(this.nodes);
+        }
+
+        public CoreNode GetNode(string nodeName)
+        {
+            Guard.NotEmpty(nodeName, nameof(nodeName));
+            return this.nodes.SingleOrDefault(n => n.Key == nodeName).Value;
         }
     }
 }

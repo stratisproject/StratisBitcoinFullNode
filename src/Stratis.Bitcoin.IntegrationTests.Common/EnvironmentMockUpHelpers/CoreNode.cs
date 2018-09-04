@@ -47,6 +47,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public bool CookieAuth { get; set; }
 
+        public Mnemonic Mnemonic { get; set; }
+
         public CoreNode(NodeRunner runner, NodeBuilder builder, string configfile, bool useCookieAuth = false)
         {
             this.runner = runner;
