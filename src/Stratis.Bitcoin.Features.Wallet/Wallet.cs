@@ -13,11 +13,8 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class Wallet
     {
-        /// <summary>The account index of the cold wallet account.</summary>
-        public const int ColdWalletAccountIndex = 100_000_000;
-
-        /// <summary>The account index of the hot wallet account.</summary>
-        public const int HotWalletAccountIndex = 100_000_001;
+        /// <summary>Account numbers greater or equal to this number are reserved for cold staking.</summary>
+        public const int ColdStakingAccountIndex = 100_000_000;
 
         /// <summary>
         /// Initializes a new instance of the wallet.
@@ -385,10 +382,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (hdAccounts.Any())
             {
-                newAccountIndex = hdAccounts.Where(a => a.Index < Wallet.ColdWalletAccountIndex).Max(a => a.Index) + 1;
+                newAccountIndex = hdAccounts.Where(a => a.Index < Wallet.ColdStakingAccountIndex).Max(a => a.Index) + 1;
             }
 
-            HdAccount newAccount = CreateAccount(password, encryptedSeed, chainCode, network, accountCreationTime, newAccountIndex);
+            HdAccount newAccount = this.CreateAccount(password, encryptedSeed, chainCode, network, accountCreationTime, newAccountIndex);
 
             hdAccounts.Add(newAccount);
             this.Accounts = hdAccounts;
