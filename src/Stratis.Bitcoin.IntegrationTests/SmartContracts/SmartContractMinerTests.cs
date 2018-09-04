@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             private ISmartContractResultTransferProcessor transferProcessor;
             private SmartContractValidator validator;
 
-            #endregion  
+            #endregion
 
             public async Task InitializeAsync([CallerMemberName] string callingMethod = "")
             {
@@ -202,7 +202,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.loggerFactory), this.loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), this.NodeSettings, peerAddressManager);
                 var connectionSettings = new ConnectionManagerSettings(this.NodeSettings);
                 var selfEndpointTracker = new SelfEndpointTracker(this.loggerFactory);
-                var connectionManager = new ConnectionManager(DateTimeProvider.Default, this.loggerFactory, this.network, networkPeerFactory, this.NodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider());
+                var connectionManager = new ConnectionManager(DateTimeProvider.Default, this.loggerFactory, this.network, networkPeerFactory,
+                    this.NodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { },
+                    peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider(), new Mock<INodeStats>().Object);
                 var peerBanning = new PeerBanning(connectionManager, this.loggerFactory, DateTimeProvider.Default, peerAddressManager);
                 var senderRetriever = new SenderRetriever();
 

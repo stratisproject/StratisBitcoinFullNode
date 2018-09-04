@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             connectionManagerExisting.SetupGet(np => np.ConnectedPeers).Returns(new NetworkPeerCollection());
 
             var peerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.Network, networkPeerFactoryExisting.Object, this.nodeLifetime, nodeSettings, connectionManagerSettingsExisting, peerAddressManager, new SelfEndpointTracker(this.extendedLoggerFactory));
-            
+
             peerConnector.Initialize(connectionManagerExisting.Object);
 
             // Peer 1.
@@ -455,7 +455,8 @@ namespace Stratis.Bitcoin.Tests.P2P
                 peerDiscovery.Object,
                 selfEndpointTracker,
                 connectionSettings,
-                new VersionProvider());
+                new VersionProvider(),
+                new Mock<INodeStats>().Object);
 
             return connectionManager;
         }

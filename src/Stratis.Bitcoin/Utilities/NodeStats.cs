@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.Utilities
 
         public NodeStats(IDateTimeProvider dateTimeProvider)
         {
+            this.locker = new object();
             this.dateTimeProvider = dateTimeProvider;
 
             this.stats = new List<StatsItem>();

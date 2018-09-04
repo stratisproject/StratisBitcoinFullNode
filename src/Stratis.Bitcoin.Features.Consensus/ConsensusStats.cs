@@ -80,6 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void BenchStats()
         {
+            // TODO use NodeStats instead.
             var benchLogs = new StringBuilder();
 
             if (this.cache != null)
