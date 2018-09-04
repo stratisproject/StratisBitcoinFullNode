@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var consensus = new ConsensusManager(this.network, this.loggerFactory.Object, this.chainState.Object, headerValidator, integrityValidator,
                 partialValidator, this.checkpoints.Object, this.consensusSettings, consensusRuleEngine, new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(),
                 new Mock<IPeerBanning>().Object, initialBlockDownloadState, this.concurrentChain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
-                new InvalidBlockHashStore(new DateTimeProvider()));
+                new InvalidBlockHashStore(new DateTimeProvider()), new Mock<IConnectionManager>().Object);
 
             // Mock the coinviews "FetchCoinsAsync" method. We will use the "unspentOutputs" dictionary to track spendable outputs.
             this.coinView.Setup(d => d.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
