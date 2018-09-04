@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         [Fact]
         public void AddNodeAPI_InvalidEndpoint_ThrowsException()
         {
-            string endpoint = "a.b.c.d";
+            string endpoint = "-1.0.0.0";
             string command = "onetry";
 
             IActionResult result = this.controller.AddNodeAPI(endpoint, command);

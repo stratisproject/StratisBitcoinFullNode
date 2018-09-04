@@ -6,6 +6,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
@@ -85,9 +86,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return this;
         }
 
-        public Mnemonic WithWallet(string walletPassword = "password", string walletName = "name")
+        public Mnemonic WithWallet(string walletPassword = "password", string walletName = "name", string walletPassphrase = "passphrase")
         {
-            return this.FullNode.WalletManager().CreateWallet(walletPassword, walletName);
+            return this.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
         }
 
         public RPCClient CreateRPCClient()
@@ -105,7 +106,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             // Needs to be initialized beforehand.
             selfEndPointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.ProtocolPort), false);
 
-            var networkPeerFactory = new NetworkPeerFactory(this.runner.Network, DateTimeProvider.Default, loggerFactory, new PayloadProvider().DiscoverPayloads(), selfEndPointTracker);
+            var ibdState = new Mock<IInitialBlockDownloadState>();
+            ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
+
+            var networkPeerFactory = new NetworkPeerFactory(this.runner.Network, 
+                DateTimeProvider.Default, 
+                loggerFactory, 
+                new PayloadProvider().DiscoverPayloads(), 
+                selfEndPointTracker,
+                ibdState.Object,
+                new Configuration.Settings.ConnectionManagerSettings());
+
             return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
         }
 
@@ -175,11 +186,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private void StartStratisRunner()
         {
-            var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
-            TestHelper.WaitLoop(() => this.runner.FullNode != null, cancellationToken: cancellationToken);
+            var timeToNodeInit = TimeSpan.FromMinutes(1);
+            var timeToNodeStart = TimeSpan.FromMinutes(1);
 
-            cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
-            TestHelper.WaitLoop(() => this.runner.FullNode.State == FullNodeState.Started, cancellationToken: cancellationToken);
+            TestHelper.WaitLoop(() => this.runner.FullNode != null, 
+                cancellationToken: new CancellationTokenSource(timeToNodeInit).Token,
+                failureReason: $"Failed to assign instance of FullNode within {timeToNodeInit}");
+
+            TestHelper.WaitLoop(() => this.runner.FullNode.State == FullNodeState.Started,
+                cancellationToken: new CancellationTokenSource(timeToNodeStart).Token,
+                failureReason: $"Failed to achieve state = started within {timeToNodeStart}");
         }
 
         public void Broadcast(Transaction transaction)
@@ -236,6 +252,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             lock (this.lockObject)
             {
                 this.runner.Kill();
+
+                if (!this.runner.IsDisposed)
+                {
+                    throw new Exception($"Problem disposing of a node of type {this.runner.GetType()}.");
+                }
+
                 this.State = CoreNodeState.Killed;
             }
         }

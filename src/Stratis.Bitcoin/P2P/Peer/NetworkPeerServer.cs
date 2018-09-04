@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -6,7 +7,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
@@ -49,6 +54,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Task accepting new clients in a loop.</summary>
         private Task acceptTask;
 
+        /// <summary>Provider of IBD state.</summary>
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
+
+        /// <summary>Configuration related to incoming and outgoing connections.</summary>
+        private readonly ConnectionManagerSettings connectionManagerSettings;
+
         /// <summary>
         /// Initializes instance of a network peer server.
         /// </summary>
@@ -58,18 +69,24 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="version">Version of the network protocol that the server should run.</param>
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         /// <param name="networkPeerFactory">Factory for creating P2P network peers.</param>
+        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
+        /// <param name="connectionManagerSettings">Configuration related to incoming and outgoing connections.</param>
         public NetworkPeerServer(Network network,
             IPEndPoint localEndPoint,
             IPEndPoint externalEndPoint,
             ProtocolVersion version,
             ILoggerFactory loggerFactory,
-            INetworkPeerFactory networkPeerFactory)
+            INetworkPeerFactory networkPeerFactory,
+            IInitialBlockDownloadState initialBlockDownloadState,
+            ConnectionManagerSettings connectionManagerSettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndPoint}] ");
             this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(network), network, nameof(localEndPoint), localEndPoint, nameof(externalEndPoint), externalEndPoint, nameof(version), version);
 
             this.networkPeerFactory = networkPeerFactory;
             this.networkPeerDisposer = new NetworkPeerDisposer(loggerFactory);
+            this.initialBlockDownloadState = initialBlockDownloadState;
+            this.connectionManagerSettings = connectionManagerSettings;
 
             this.InboundNetworkPeerConnectionParameters = new NetworkPeerConnectionParameters();
 
@@ -151,9 +168,9 @@ namespace Stratis.Bitcoin.P2P.Peer
                     if (error != null)
                         throw error;
 
-                    if (this.networkPeerDisposer.ConnectedPeersCount >= MaxConnectionThreshold)
+                    if (!this.AllowClientConnection(tcpClient))
                     {
-                        this.logger.LogTrace("Maximum connection threshold [{0}] reached, closing the client.", MaxConnectionThreshold);
+                        this.logger.LogTrace("Connection from client '{0}' was rejected and will be closed.", tcpClient.Client.RemoteEndPoint);
                         tcpClient.Close();
                         continue;
                     }
@@ -207,6 +224,42 @@ namespace Stratis.Bitcoin.P2P.Peer
             param2.Version = this.Version;
             param2.AddressFrom = myExternal;
             return param2;
+        }
+
+        /// <summary>
+        /// Check if the client is allowed to connect based on certain criteria.
+        /// </summary>
+        /// <returns>When criteria is met returns <c>true</c>, to allow connection.</returns>
+        private bool AllowClientConnection(TcpClient tcpClient)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(tcpClient), tcpClient.Client.RemoteEndPoint);
+
+            if (this.networkPeerDisposer.ConnectedPeersCount >= MaxConnectionThreshold)
+            {
+                this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:false");
+                return false;
+            }
+
+            if (!this.initialBlockDownloadState.IsInitialBlockDownload())
+            {
+                this.logger.LogTrace("(-)[IBD_COMPLETE_ALLOW_CONNECTION]:true");
+                return true;
+            }
+
+            var clientRemoteEndPoint = tcpClient.Client.RemoteEndPoint as IPEndPoint;
+
+            NodeServerEndpoint endpoint = this.connectionManagerSettings.Listen.FirstOrDefault(e => e.Endpoint.Match(clientRemoteEndPoint));
+
+            if ((endpoint != null) && endpoint.Whitelisted)
+            {
+                this.logger.LogTrace("(-)[ENDPOINT_WHITELISTED_ALLOW_CONNECTION]:true");
+                return true;
+            }
+
+            this.logger.LogTrace("Node '{0}' is not white listed during initial block download.", clientRemoteEndPoint);
+
+            this.logger.LogTrace("(-):false");
+            return false;
         }
     }
 }

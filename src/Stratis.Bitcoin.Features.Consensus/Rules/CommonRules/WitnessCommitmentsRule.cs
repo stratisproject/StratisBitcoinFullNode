@@ -8,6 +8,7 @@ using NBitcoin.Crypto;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -48,6 +49,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     WitScript witness = block.Transactions[0].Inputs[0].WitScript;
                     if ((witness.PushCount != 1) || (witness.Pushes.First().Length != 32))
                     {
+                        // Witness information is missing, activating witness requirement for peers is required.
+                        context.ValidationContext.MissingServices = NetworkPeerServices.NODE_WITNESS;
+
                         this.Logger.LogTrace("(-)[BAD_WITNESS_NONCE_SIZE]");
                         ConsensusErrors.BadWitnessNonceSize.Throw();
                     }
