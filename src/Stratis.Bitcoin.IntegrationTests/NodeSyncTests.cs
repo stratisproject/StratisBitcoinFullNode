@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
@@ -227,9 +225,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisSyncer.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
 
-                Task<List<uint256>> t1 = Task.Run(() => stratisMiner.GenerateStratisWithMiner(11));
-                Task<List<uint256>> t2 = Task.Delay(1000).ContinueWith(t => stratisReorg.GenerateStratisWithMiner(12));
-                Task.WaitAll(t1, t2);
+                stratisMiner.GenerateStratisWithMiner(11);
+                stratisReorg.GenerateStratisWithMiner(12);
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
