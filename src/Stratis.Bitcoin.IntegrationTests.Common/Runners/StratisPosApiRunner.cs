@@ -33,6 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                             .UseWallet()
                             .UseApi()
                             .AddRPC()
+                            .MockIBD()
                             .Build();
         }
 

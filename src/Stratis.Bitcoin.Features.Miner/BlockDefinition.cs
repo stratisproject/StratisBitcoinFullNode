@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -168,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.BlockSize = 1000;
             this.BlockTemplate = new BlockTemplate(this.Network);
             this.BlockTx = 0;
-            this.BlockWeight = 4000;
+            this.BlockWeight = 1000 * this.Network.Consensus.Options.WitnessScaleFactor;
             this.BlockSigOpsCost = 400;
             this.fees = 0;
             this.inBlock = new TxMempool.SetEntries();

@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// Creates a new instance of a smart contract by invoking the contract's constructor
         /// </summary>
         public VmExecutionResult Create(IGasMeter gasMeter,
-            IContractStateRepository repository,
+            IContractState repository,
             ICreateData createData,
             ITransactionContext transactionContext,
             string typeName = null)
@@ -143,7 +143,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public VmExecutionResult ExecuteMethod(
             IGasMeter gasMeter,
-            IContractStateRepository repository,
+            IContractState repository,
             ICallData callData,
             ITransactionContext transactionContext)
         {
@@ -226,7 +226,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IContractLogHolder contractLogger,
             List<TransferInfo> internalTransferList,
             IGasMeter gasMeter,
-            IContractStateRepository repository,
+            IContractState repository,
             ITransactionContext transactionContext,
             uint160 contractAddress)
         {
@@ -250,6 +250,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     transactionContext.Amount
                 ),
                 persistentState,
+                this.contractPrimitiveSerializer,
                 gasMeter,
                 contractLogger,
                 internalTransactionExecutor,

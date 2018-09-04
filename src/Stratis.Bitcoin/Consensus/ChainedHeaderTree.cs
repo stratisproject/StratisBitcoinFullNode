@@ -1087,7 +1087,7 @@ namespace Stratis.Bitcoin.Consensus
             if (this.invalidHashesStore.IsInvalid(newHeaderHash))
             {
                 this.logger.LogTrace("(-)[HEADER_HASH_MARKED_INVALID]");
-                ConsensusErrors.BannedHash.Throw();
+                throw new HeaderInvalidException();
             }
 
             var newChainedHeader = new ChainedHeader(currentBlockHeader, newHeaderHash, previousChainedHeader);
@@ -1097,7 +1097,7 @@ namespace Stratis.Bitcoin.Consensus
             if (result.Error != null)
             {
                 this.logger.LogTrace("(-)[INVALID_HEADER]");
-                result.Error.Throw();
+                throw new ConsensusRuleException(result.Error);
             }
 
             newChainedHeader.BlockValidationState = ValidationState.HeaderValidated;

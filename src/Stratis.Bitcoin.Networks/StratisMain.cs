@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Networks
             this.RPCPort = 16174;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
-            this.FallbackFee = 60000;
+            this.FallbackFee = 10000;
             this.MinRelayTxFee = 10000;
             this.RootFolderName = StratisRootFolderName;
             this.DefaultConfigFilename = StratisDefaultConfigFilename;

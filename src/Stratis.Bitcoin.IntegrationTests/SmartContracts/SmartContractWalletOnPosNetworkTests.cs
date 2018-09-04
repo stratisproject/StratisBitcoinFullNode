@@ -7,7 +7,6 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
@@ -90,8 +89,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
                 // Ensure that boths nodes has the contract
-                ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
-                ContractStateRepositoryRoot receiverState = scReceiver.FullNode.NodeService<ContractStateRepositoryRoot>();
+                IContractStateRoot senderState = scSender.FullNode.NodeService<IContractStateRoot>();
+                IContractStateRoot receiverState = scReceiver.FullNode.NodeService<IContractStateRoot>();
                 IAddressGenerator addressGenerator = scSender.FullNode.NodeService<IAddressGenerator>();
 
                 uint160 tokenContractAddress = addressGenerator.GenerateAddress(transferContractTransaction.GetHash(), 0);
@@ -129,10 +128,6 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // Ensure both nodes are synced with each other
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
-
-                // Ensure that boths nodes has the contract
-                senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
-                receiverState = scReceiver.FullNode.NodeService<ContractStateRepositoryRoot>();
 
                 tokenContractAddress = addressGenerator.GenerateAddress(transferContractTransaction.GetHash(), 0); // nonce is 0 for user contract creation.
                 Assert.NotNull(senderState.GetCode(tokenContractAddress));

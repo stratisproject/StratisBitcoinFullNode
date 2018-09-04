@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void jings_connection_comes_back()
         {
             this.nodes[JingTheFastMiner].CreateRPCClient().AddNode(this.nodes[Bob].Endpoint);
-            this.sharedSteps.WaitForNodeToSync(this.nodes.Values.ToArray());
+            this.sharedSteps.WaitForNodeToSyncIgnoreMempool(this.nodes.Values.ToArray());
         }
 
         private void bob_charlie_and_dave_reorg_to_jings_longest_chain()
@@ -153,8 +153,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void mining_continues_to_maturity_to_allow_spend()
         {
-            int coinbaseMaturity = (int)this.nodes[Bob].FullNode
-                .Network.Consensus.CoinbaseMaturity;
+            int coinbaseMaturity = (int)this.nodes[Bob].FullNode.Network.Consensus.CoinbaseMaturity;
 
             this.sharedSteps.MineBlocks(coinbaseMaturity, this.nodes[Bob], AccountZero, WalletZero, WalletPassword);
 
@@ -162,6 +161,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[Bob]));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[Charlie]));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[Dave]));
+
+            // Ensure that all the nodes are synced to at least coinbase maturity.
+            TestHelper.WaitLoop(() => this.nodes[JingTheFastMiner].FullNode.ConsensusManager().Tip.Height >= this.nodes[Charlie].FullNode.Network.Consensus.CoinbaseMaturity);
+            TestHelper.WaitLoop(() => this.nodes[Bob].FullNode.ConsensusManager().Tip.Height >= this.nodes[Charlie].FullNode.Network.Consensus.CoinbaseMaturity);
+            TestHelper.WaitLoop(() => this.nodes[Charlie].FullNode.ConsensusManager().Tip.Height >= this.nodes[Charlie].FullNode.Network.Consensus.CoinbaseMaturity);
+            TestHelper.WaitLoop(() => this.nodes[Dave].FullNode.ConsensusManager().Tip.Height >= this.nodes[Charlie].FullNode.Network.Consensus.CoinbaseMaturity);
         }
 
         private void meanwhile_jings_chain_advanced_ahead_of_the_others()

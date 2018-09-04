@@ -368,6 +368,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IHeaderValidator, HeaderValidator>();
                     services.AddSingleton<IIntegrityValidator, IntegrityValidator>();
                     services.AddSingleton<IPartialValidator, PartialValidator>();
+                    services.AddSingleton<IFullValidator, FullValidator>();
                 });
             });
 

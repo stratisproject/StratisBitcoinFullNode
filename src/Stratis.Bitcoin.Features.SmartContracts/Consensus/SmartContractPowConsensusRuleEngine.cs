@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
 {
@@ -21,8 +22,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
     public sealed class SmartContractPowConsensusRuleEngine : PowConsensusRuleEngine, ISmartContractCoinviewRule
     {
         public ISmartContractExecutorFactory ExecutorFactory { get; private set; }
-        public ContractStateRepositoryRoot OriginalStateRoot { get; private set; }
+        public IContractStateRoot OriginalStateRoot { get; private set; }
         public IReceiptRepository ReceiptRepository { get; private set; }
+        public ISenderRetriever SenderRetriever { get; private set; }
 
         public SmartContractPowConsensusRuleEngine(
             ConcurrentChain chain,
@@ -33,8 +35,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             ILoggerFactory loggerFactory,
             Network network,
             NodeDeployments nodeDeployments,
-            ContractStateRepositoryRoot originalStateRoot,
+            IContractStateRoot originalStateRoot,
             IReceiptRepository receiptRepository,
+            ISenderRetriever senderRetriever,
             ICoinView utxoSet,
             IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore)
@@ -43,6 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;
             this.ReceiptRepository = receiptRepository;
+            this.SenderRetriever = senderRetriever;
         }
 
         /// <inheritdoc />

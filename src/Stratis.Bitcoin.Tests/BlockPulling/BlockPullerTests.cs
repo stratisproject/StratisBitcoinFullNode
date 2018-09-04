@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -24,9 +27,47 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         }
 
         [Fact]
+        public void RequestPeerServices_PeersThatDontSupportNewServicesAreRemoved()
+        {
+            Mock<INetworkPeer> peer1 = this.helper.CreatePeerMock(out ExtendedBlockPullerBehavior behavior1);
+            Mock<INetworkPeer> peer2 = this.helper.CreatePeerMock(out ExtendedBlockPullerBehavior behavior2);
+
+            List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5);
+
+            this.puller.NewPeerTipClaimed(peer1.Object, headers.Last());
+            this.puller.NewPeerTipClaimed(peer2.Object, headers.Last());
+
+            Assert.Equal(2, this.puller.PullerBehaviorsByPeerId.Count);
+
+            VersionPayload version = new NetworkPeerConnectionParameters().CreateVersion(new IPEndPoint(1, 1), new IPEndPoint(1, 1),
+                KnownNetworks.StratisMain, new DateTimeProvider().GetTimeOffset());
+
+            version.Services = NetworkPeerServices.Network | NetworkPeerServices.NODE_WITNESS;
+
+            peer1.SetupGet(x => x.PeerVersion).Returns(version);
+
+            this.puller.RequestPeerServices(NetworkPeerServices.NODE_WITNESS);
+
+            Assert.Equal(1, this.puller.PullerBehaviorsByPeerId.Count);
+        }
+
+        [Fact]
+        public void RequestPeerServices_PeersThatDontSupportNewServicesAreNotAdded()
+        {
+            this.puller.RequestPeerServices(NetworkPeerServices.NODE_WITNESS);
+
+            Mock<INetworkPeer> peer1 = this.helper.CreatePeerMock(out ExtendedBlockPullerBehavior behavior1);
+            List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5);
+
+            this.puller.NewPeerTipClaimed(peer1.Object, headers.Last());
+
+            Assert.Equal(0, this.puller.PullerBehaviorsByPeerId.Count);
+        }
+
+        [Fact]
         public async Task CanInitializeAndDisposeAsync()
         {
-            this.puller.Initialize((hash, block) => { });
+            this.puller.Initialize((hash, block, peerId) => { });
 
             // Let dequeue and stalling loops start.
             await Task.Delay(1000);
@@ -42,7 +83,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public async Task TotalSpeedOfAllPeersBytesPerSec_CalculatedCorrectlyAsync()
         {
-            this.puller.SetCallback((hash, block) => { this.helper.CallbacksCalled.Add(hash, block); });
+            this.puller.SetCallback((hash, block, peerId) => { this.helper.CallbacksCalled.Add(hash, block); });
 
             Assert.Equal(0, this.puller.GetAverageBlockSizeBytes());
             Assert.Equal(0, this.puller.GetTotalSpeedOfAllPeersBytesPerSec());
@@ -173,7 +214,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public async Task PeerDisconnected_AnotherPeerThatClaimsDifferentChainAssignedNothingAsync()
         {
-            this.puller.SetCallback((hash, block) => { this.helper.CallbacksCalled.Add(hash, block); });
+            this.puller.SetCallback((hash, block, peerId) => { this.helper.CallbacksCalled.Add(hash, block); });
 
             INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
             INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
@@ -223,7 +264,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public async Task RequestBlocksDownload_WhileThereAreNoPeers_JobFailedAsync()
         {
-            this.puller.SetCallback((hash, block) => { this.helper.CallbacksCalled.Add(hash, block); });
+            this.puller.SetCallback((hash, block, pereId) => { this.helper.CallbacksCalled.Add(hash, block); });
 
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(2);
 
@@ -254,7 +295,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public async Task RequestBlocksDownload_AssignedPeerThrows_JobIsFailedAndPeerDisconnectedAsync()
         {
-            this.puller.SetCallback((hash, block) => { this.helper.CallbacksCalled.Add(hash, block); });
+            this.puller.SetCallback((hash, block, peerId) => { this.helper.CallbacksCalled.Add(hash, block); });
 
             INetworkPeer peer = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior);
 
@@ -511,7 +552,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public async Task AssignDownloadJobs_CalledOnEmptyQueuesAsync()
         {
-            this.puller.Initialize((hash, block) => { this.helper.CallbacksCalled.Add(hash, block); });
+            this.puller.Initialize((hash, block, peerId) => { this.helper.CallbacksCalled.Add(hash, block); });
 
             this.puller.ProcessQueuesSignal.Set();
 
@@ -597,7 +638,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public async Task AssignDownloadJobs_PeerDisconnectedAndJobFailedAsync()
         {
-            this.puller.SetCallback((hash, block) => { this.helper.CallbacksCalled.Add(hash, block); });
+            this.puller.SetCallback((hash, block, peerId) => { this.helper.CallbacksCalled.Add(hash, block); });
 
             INetworkPeer peer = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior);
 
@@ -665,7 +706,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public async Task AssignDownloadJobs_ReassignQueueIgnoresEmptySlotsAsync()
         {
-            this.puller.SetCallback((hash, block) => { this.helper.CallbacksCalled.Add(hash, block); });
+            this.puller.SetCallback((hash, block, peerId) => { this.helper.CallbacksCalled.Add(hash, block); });
 
             INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
             INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
@@ -709,7 +750,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public async Task Stalling_DoesntAffectPeersThatFailedToDeliverNotImportantBlocksAsync()
         {
-            this.puller.SetCallback((hash, block) => { this.helper.CallbacksCalled.Add(hash, block); });
+            this.puller.SetCallback((hash, block, peerId) => { this.helper.CallbacksCalled.Add(hash, block); });
 
             INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
             INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
@@ -827,7 +868,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public async Task Stalling_PeerStallsButQualityScoreIsTheBestBecausePeerIsTheOnlyOneAsync()
         {
-            this.puller.SetCallback((hash, block) => { this.helper.CallbacksCalled.Add(hash, block); });
+            this.puller.SetCallback((hash, block, peerId) => { this.helper.CallbacksCalled.Add(hash, block); });
 
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(1000);
 
@@ -878,7 +919,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         [Fact]
         public async Task PushBlock_AppropriateStructuresAreUpdatedAsync()
         {
-            this.puller.SetCallback((hash, block) => { this.helper.CallbacksCalled.Add(hash, block); });
+            this.puller.SetCallback((hash, block, peerId) => { this.helper.CallbacksCalled.Add(hash, block); });
 
             INetworkPeer peer = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior);
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(2);
