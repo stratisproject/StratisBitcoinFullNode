@@ -390,7 +390,7 @@ namespace Stratis.Bitcoin.Consensus
             catch (HeaderInvalidException)
             {
                 this.logger.LogDebug("Peer's header is invalid. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, $"Peer presented invalid header.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header.");
             }
             catch (CheckpointMismatchException)
             {
