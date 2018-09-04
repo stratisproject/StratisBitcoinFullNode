@@ -115,5 +115,8 @@ namespace NBitcoin
 
         /// <summary>Group of rules that are used during full validation (connection of a new block) specific to the given network.</summary>
         List<IFullValidationConsensusRule> FullValidationRules { get; set; }
+
+        /// <summary>Merge an instance of <see cref="IConsensus"/> to the current.</summary>
+        void Merge(IConsensus consensus);
     }
 }
