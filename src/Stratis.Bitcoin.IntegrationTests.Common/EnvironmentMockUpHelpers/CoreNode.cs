@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public Mnemonic Mnemonic { get; set; }
 
-        public CoreNode(NodeRunner runner, NodeBuilder builder, string configfile, bool useCookieAuth = false)
+        public CoreNode(NodeRunner runner, NodeConfigParameters configParameters, string configfile, bool useCookieAuth = false)
         {
             this.runner = runner;
 
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.creds = new NetworkCredential(pass, pass);
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.CookieAuth = useCookieAuth;
-            this.ConfigParameters.Import(builder.ConfigParameters);
+            this.ConfigParameters.Import(configParameters);
             var randomFoundPorts = new int[3];
             IpHelper.FindPorts(randomFoundPorts);
             this.ConfigParameters.SetDefaultValueIfUndefined("port", randomFoundPorts[0].ToString());
