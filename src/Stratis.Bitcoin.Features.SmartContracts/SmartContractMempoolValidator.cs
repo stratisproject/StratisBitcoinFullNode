@@ -20,23 +20,31 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// These rules can be checked instantly. They don't rely on other parts of the context to be loaded.
         /// </summary>
-        private static readonly List<ISmartContractMempoolRule> preTxRules = new List<ISmartContractMempoolRule>
-        {
-            new MempoolOpSpendRule(),
-            new TxOutSmartContractExecRule()
-        };
+        private readonly List<ISmartContractMempoolRule> preTxRules;
 
-        /// <summary>mar
+        /// <summary>
         /// These rules rely on the fee part of the context to be loaded in parent class. See 'AcceptToMemoryPoolWorkerAsync'.
         /// </summary>
-        private static readonly List<ISmartContractMempoolRule> feeTxRules = new List<ISmartContractMempoolRule>
-        {
-            new SmartContractFormatRule()
-        };
+        private readonly List<ISmartContractMempoolRule> feeTxRules;
 
         public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRules consensusRules)
             : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
         {
+            var p2pkhRule = new P2PKHNotContractRule();
+            p2pkhRule.Parent = (ConsensusRules) consensusRules;
+            p2pkhRule.Initialize();
+
+            this.preTxRules = new List<ISmartContractMempoolRule>
+            {
+                new MempoolOpSpendRule(),
+                new TxOutSmartContractExecRule(),
+                p2pkhRule
+            };
+
+            this.feeTxRules = new List<ISmartContractMempoolRule>()
+            {
+                new SmartContractFormatRule(),
+            };
         }
 
         /// <inheritdoc />
