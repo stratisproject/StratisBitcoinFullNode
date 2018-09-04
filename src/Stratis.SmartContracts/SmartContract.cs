@@ -37,6 +37,11 @@ namespace Stratis.SmartContracts
         protected readonly IPersistentState PersistentState;
 
         /// <summary>
+        /// Provides functionality for the serialization and deserialization of primitives to bytes inside smart contracts.
+        /// </summary>
+        protected readonly ISerializer Serializer;
+
+        /// <summary>
         /// Tracks the gas usage for this contract instance.
         /// </summary>
         private readonly IGasMeter gasMeter;
@@ -47,7 +52,12 @@ namespace Stratis.SmartContracts
         private readonly Func<ulong> getBalance;
 
         /// <summary>
-        /// Executes the smart contract.
+        /// Saves any logs during contract execution.
+        /// </summary>
+        private readonly IContractLogger contractLogger;
+
+        /// <summary>
+        /// Executes any internal calls or creates to other smart contracts.
         /// </summary>
         private readonly IInternalTransactionExecutor internalTransactionExecutor;
 
@@ -69,10 +79,12 @@ namespace Stratis.SmartContracts
             this.gasMeter = smartContractState.GasMeter;
             this.Block = smartContractState.Block;
             this.getBalance = smartContractState.GetBalance;
+            this.contractLogger = smartContractState.ContractLogger;
             this.internalTransactionExecutor = smartContractState.InternalTransactionExecutor;
             this.internalHashHelper = smartContractState.InternalHashHelper;
             this.Message = smartContractState.Message;
             this.PersistentState = smartContractState.PersistentState;
+            this.Serializer = smartContractState.Serializer;
             this.smartContractState = smartContractState;
         }
 
@@ -91,7 +103,7 @@ namespace Stratis.SmartContracts
         /// <summary>
         /// Sends funds to an address.
         /// 
-        /// If address belongs to a contract, will invoke the fallback function on this contract. 
+        /// If address belongs to a contract, will invoke the receive function on this contract. 
         /// </summary>
         /// <param name="addressTo">The address to transfer the funds to.</param>
         /// <param name="amountToTransfer">The amount of funds to transfer in satoshi.</param>
@@ -144,5 +156,24 @@ namespace Stratis.SmartContracts
             if (!condition)
                 throw new SmartContractAssertException(message);
         }
+
+        /// <summary>
+        /// Log an event. Useful for front-end interactions with your contract.
+        /// </summary>
+        /// <typeparam name="T">Any struct.</typeparam>
+        /// <param name="toLog">Object with fields to save in logs.</param>
+        protected void Log<T>(T toLog) where T : struct
+        {
+            this.contractLogger.Log(this.smartContractState, toLog);
+        }
+
+        /// The fallback method, invoked when a transaction provides a method name of <see cref="string.Empty"/>.
+        /// The fallback method. Override this method to define behaviour when the contract receives funds and the method name in the calling transaction equals <see cref="string.Empty"/>.
+        /// Override this method to define behaviour when the contract receives funds and the method name in the calling transaction equals <see cref="string.Empty"/>.
+        /// <para>
+        /// This occurs when a contract sends funds to another contract using <see cref="Transfer"/>.
+        /// </para>
+        /// </summary>
+        public virtual void Receive() {}
     }
 }

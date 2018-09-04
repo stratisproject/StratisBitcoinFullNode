@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// This class serializes and deserializes specific data types
     /// when persisting items inside a smart contract.
     /// </summary>
-    public class ContractPrimitiveSerializer : IContractPrimitiveSerializer
+    public class ContractPrimitiveSerializer : IContractPrimitiveSerializer, ISerializer
     {
         private readonly Network network;
 
@@ -34,36 +34,75 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return new byte[] { b1 };
 
             if (o is char c)
-                return new byte[] { Convert.ToByte(c) };
+                return Serialize(c.ToString());
 
             if (o is Address address)
-                return address.ToUint160(this.network).ToBytes();
+                return Serialize(address);
 
             if (o is bool b)
-                return (BitConverter.GetBytes(b));
+                return Serialize(b);
 
             if (o is int i)
-                return BitConverter.GetBytes(i);
+                return Serialize(i);
 
             if (o is long l)
-                return BitConverter.GetBytes(l);
+                return Serialize(l);
 
             if (o is uint u)
-                return BitConverter.GetBytes(u);
+                return Serialize(u);
 
             if (o is ulong ul)
-                return BitConverter.GetBytes(ul);
+                return Serialize(ul);
 
             if (o is string s)
-                return Encoding.UTF8.GetBytes(s);
+                return Serialize(s);
             
             if (o.GetType().IsValueType)
-                return SerializeType(o);
+                return SerializeStruct(o);
                 
-            throw new PersistentStateSerializationException(string.Format("{0} is not supported.", o.GetType().Name));
+            throw new ContractPrimitiveSerializationException(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
-        private byte[] SerializeType(object o)
+        #region Primitive serialization
+
+        public byte[] Serialize(Address address)
+        {
+            return address.ToUint160(this.network).ToBytes();
+        }
+
+        public byte[] Serialize(bool b)
+        {
+            return BitConverter.GetBytes(b);
+        }
+
+        public byte[] Serialize(int i)
+        {
+            return BitConverter.GetBytes(i);
+        }
+
+        public byte[] Serialize(long l)
+        {
+            return BitConverter.GetBytes(l);
+        }
+
+        public byte[] Serialize(uint u)
+        {
+            return BitConverter.GetBytes(u);
+        }
+
+        public byte[] Serialize(ulong ul)
+        {
+            return BitConverter.GetBytes(ul);
+        }
+
+        public byte[] Serialize(string s)
+        {
+            return Encoding.UTF8.GetBytes(s);
+        }
+
+        #endregion
+
+        private byte[] SerializeStruct(object o)
         {
             List<byte[]> toEncode = new List<byte[]>(); 
 
@@ -98,36 +137,75 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return stream[0];
 
             if (type == typeof(char))
-                return Convert.ToChar(stream[0]);
+                return ToString(stream)[0];
 
             if (type == typeof(Address))
-                return new uint160(stream).ToAddress(this.network);
+                return ToAddress(stream);
 
             if (type == typeof(bool))
-                return Convert.ToBoolean(stream[0]);
+                return ToBool(stream);
 
             if (type == typeof(int))
-                return BitConverter.ToInt32(stream, 0);
+                return ToInt32(stream);
 
             if (type == typeof(long))
-                return BitConverter.ToInt64(stream, 0);
+                return ToInt64(stream);
 
             if (type == typeof(string))
-                return Encoding.UTF8.GetString(stream);
+                return ToString(stream);
 
             if (type == typeof(uint))
-                return BitConverter.ToUInt32(stream, 0);
+                return ToUInt32(stream);
 
             if (type == typeof(ulong))
-                return BitConverter.ToUInt64(stream, 0);
+                return ToUInt64(stream);
 
             if (type.IsValueType)
-                return DeserializeType(type, stream);
+                return DeserializeStruct(type, stream);
                 
-            throw new PersistentStateSerializationException(string.Format("{0} is not supported.", type.Name));
+            throw new ContractPrimitiveSerializationException(string.Format("{0} is not supported.", type.Name));
         }
 
-        private object DeserializeType(Type type, byte[] bytes)
+        #region Primitive Deserialization
+
+        public bool ToBool(byte[] val)
+        {
+            return BitConverter.ToBoolean(val);
+        }
+
+        public Address ToAddress(byte[] val)
+        {
+            return new uint160(val).ToAddress(this.network);
+        }
+
+        public int ToInt32(byte[] val)
+        {
+            return BitConverter.ToInt32(val, 0);
+        }
+
+        public uint ToUInt32(byte[] val)
+        {
+            return BitConverter.ToUInt32(val, 0);
+        }
+
+        public long ToInt64(byte[] val)
+        {
+            return BitConverter.ToInt64(val, 0);
+        }
+
+        public ulong ToUInt64(byte[] val)
+        {
+            return BitConverter.ToUInt64(val, 0);
+        }
+
+        public string ToString(byte[] val)
+        {
+            return Encoding.UTF8.GetString(val);
+        }
+
+        #endregion
+
+        private object DeserializeStruct(Type type, byte[] bytes)
         {
             RLPCollection collection = (RLPCollection) RLP.Decode(bytes)[0];
 

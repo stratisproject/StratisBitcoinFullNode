@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
@@ -14,6 +15,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         /// <inheritdoc/>
         public uint160 NewContractAddress { get; set; }
+
+        /// <inheritdoc/>
+        public uint160 To { get; set; }
 
         /// <inheritdoc/>
         public Exception Exception { get; set; }
@@ -42,9 +46,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <inheritdoc/>
         public List<TxOut> Refunds { get; set; }
 
+        /// <inheritdoc />
+        public IList<Log> Logs { get; set; }
+
         public SmartContractExecutionResult()
         {
             this.Refunds = new List<TxOut>();
+            this.Logs = new List<Log>();
         }
 
         /// <summary>

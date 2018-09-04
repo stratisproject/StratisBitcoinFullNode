@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts.Core.State
         ulong GetCurrentBalance(uint160 address);
     }
 
-    public interface IContractStateRepository : IBalanceRepository
+    public interface IContractState : IBalanceRepository
     {
         AccountState CreateAccount(uint160 addr);
         bool IsExist(uint160 addr);
@@ -21,11 +21,11 @@ namespace Stratis.SmartContracts.Core.State
         byte[] GetStorageValue(uint160 addr, byte[] key);
         string GetContractType(uint160 addr);
         void SetContractType(uint160 addr, string type);
-        IContractStateRepository StartTracking();
+        IContractState StartTracking();
         void Flush();
         void Commit();
         void Rollback();
-        ContractStateRepositoryRoot GetSnapshotTo(byte[] stateRoot);
+        IContractStateRoot GetSnapshotTo(byte[] stateRoot);
 
         #region Account Abstraction Layer        
 

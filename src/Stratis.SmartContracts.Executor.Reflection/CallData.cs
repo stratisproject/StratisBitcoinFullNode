@@ -16,8 +16,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         public object[] MethodParameters { get; }
+
         public uint160 ContractAddress { get; }
+
         public Gas GasLimit { get; }
+
         public string MethodName { get; }
     }
 }

@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             // Start state from previous block's root
             this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
-            IContractStateRepository trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
+            IContractState trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
 
             this.receipts = new List<Receipt>();
 
@@ -266,8 +266,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             var receipt = new Receipt(
                 new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root),
                 result.GasConsumed,
-                new Log[0] 
-                );
+                result.Logs.ToArray(),
+                txContext.TransactionHash,
+                txContext.Sender,
+                result.To,
+                result.NewContractAddress,
+                !result.Revert
+            )
+            {
+                BlockHash = context.ValidationContext.Block.GetHash()
+            };
+
             this.receipts.Add(receipt);
 
             ValidateRefunds(result.Refunds, context.ValidationContext.Block.Transactions[0]);
@@ -283,13 +292,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainedHeader.Height);
 
-            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(transaction, ((PowConsensusRules)this.Parent).UtxoSet, this.blockTxsProcessed);
+            GetSenderResult getSenderResult = this.ContractCoinviewRule.SenderRetriever.GetSender(transaction, ((PowConsensusRules)this.Parent).UtxoSet, this.blockTxsProcessed);
 
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-sender", getSenderResult.Error));
 
             Script coinbaseScriptPubKey = context.ValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
-            GetSenderUtil.GetSenderResult getCoinbaseResult = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
+            GetSenderResult getCoinbaseResult = this.ContractCoinviewRule.SenderRetriever.GetAddressFromScript(coinbaseScriptPubKey);
             if (!getCoinbaseResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-coinbase", getCoinbaseResult.Error));
 

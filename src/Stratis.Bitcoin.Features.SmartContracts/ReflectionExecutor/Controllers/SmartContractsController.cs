@@ -2,21 +2,26 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
@@ -33,35 +38,43 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private const int MinConfirmationsAllChecks = 1;
 
         private readonly IBroadcasterManager broadcasterManager;
+        private readonly IBlockStoreCache blockStoreCache;
         private readonly CoinType coinType;
+        private readonly ConcurrentChain chain;
         private readonly ILogger logger;
         private readonly Network network;
-        private readonly ContractStateRepositoryRoot stateRoot;
+        private readonly IContractStateRoot stateRoot;
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IAddressGenerator addressGenerator;
         private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
+        private readonly IReceiptRepository receiptRepository;
 
         public SmartContractsController(IBroadcasterManager broadcasterManager,
-            IConsensusLoop consensus,
+            IBlockStoreCache blockStoreCache,
+            ConcurrentChain chain,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
-            ContractStateRepositoryRoot stateRoot,
+            IContractStateRoot stateRoot,
             IWalletManager walletManager,
             IWalletTransactionHandler walletTransactionHandler,
             IAddressGenerator addressGenerator,
-            IContractPrimitiveSerializer contractPrimitiveSerializer)
+            IContractPrimitiveSerializer contractPrimitiveSerializer,
+            IReceiptRepository receiptRepository)
         {
             this.stateRoot = stateRoot;
             this.walletTransactionHandler = walletTransactionHandler;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
+            this.chain = chain;
+            this.blockStoreCache = blockStoreCache;
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
             this.addressGenerator = addressGenerator;
             this.contractPrimitiveSerializer = contractPrimitiveSerializer;
+            this.receiptRepository = receiptRepository;
         }
 
         [Route("code")]
@@ -131,6 +144,75 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             return Json(GetStorageValue(request.DataType, storageValue).ToString());
         }
+
+        [Route("receipt")]
+        [HttpGet]
+        public IActionResult GetReceipt([FromQuery] string txHash)
+        {
+            uint256 txHashNum = new uint256(txHash);
+            Receipt receipt = this.receiptRepository.Retrieve(txHashNum);
+
+            if (receipt == null)
+            {
+                this.logger.LogTrace("(-)[RECEIPT_NOT_FOUND]");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest,
+                    "Receipt not found.",
+                    "Could not find a stored transaction for this hash.");
+            }
+
+            var receiptResponse = new ReceiptResponse(receipt, this.network);
+
+            return Json(receiptResponse);
+        }
+
+        // Note: We may not know exactly how to best structure "receipt search" queries until we start building 
+        // a web3-like library. For now the following method serves as a very basic example of how we can query the block
+        // bloom filters to retrieve events.
+
+        [Route("receipt-search")]
+        [HttpGet]
+        public async Task<IActionResult> ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName)
+        {
+            // Build the bytes we can use to check for this event.
+            uint160 addressUint160 = new Address(contractAddress).ToUint160(this.network);
+            byte[] addressBytes = addressUint160.ToBytes();
+            byte[] eventBytes = Encoding.UTF8.GetBytes(eventName);
+
+            // Loop through all headers and check bloom.
+            IEnumerable<ChainedHeader> blockHeaders = this.chain.EnumerateToTip(this.chain.Genesis);
+            List<ChainedHeader> matches = new List<ChainedHeader>();
+            foreach(ChainedHeader chainedHeader in blockHeaders)
+            {
+                var scHeader = (SmartContractBlockHeader) chainedHeader.Header;
+                if (scHeader.LogsBloom.Test(addressBytes) && scHeader.LogsBloom.Test(eventBytes)) // TODO: This is really inefficient, should build bloom for query and then compare.
+                    matches.Add(chainedHeader);
+            }
+
+            // For all matching headers, get the block from local db.
+            List<NBitcoin.Block> blocks = new List<NBitcoin.Block>();
+            foreach(ChainedHeader chainedHeader in matches)
+            {
+                blocks.Add(await this.blockStoreCache.GetBlockAsync(chainedHeader.HashBlock).ConfigureAwait(false));
+            }
+
+            // For each block, get all receipts, and if they match, add to list to return.
+            List<ReceiptResponse> receiptResponses = new List<ReceiptResponse>();
+            foreach(NBitcoin.Block block in blocks)
+            {
+                foreach(Transaction transaction in block.Transactions)
+                {
+                    Receipt storedReceipt = this.receiptRepository.Retrieve(transaction.GetHash());
+                    if (storedReceipt == null) // not a smart contract transaction. Move to next transaction.
+                        continue;
+
+                    // Check if address and first topic (event name) match.
+                    if (storedReceipt.Logs.Any(x => x.Address == addressUint160 && Enumerable.SequenceEqual(x.Topics[0], eventBytes)))
+                        receiptResponses.Add(new ReceiptResponse(storedReceipt, this.network));
+                }
+            }
+
+            return Json(receiptResponses);
+        } 
 
         [Route("build-create")]
         [HttpPost]

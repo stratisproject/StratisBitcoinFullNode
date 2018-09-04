@@ -354,11 +354,15 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>
         /// Triggers a shutdown of the currently running node.
         /// </summary>
+        /// <param name="corsProtection">This body parameter is here to prevent a CORS call from triggering method execution.</param>
+        /// <remarks>
+        /// <seealso cref="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"/>
+        /// </remarks>
         /// <returns><see cref="OkResult"/></returns>
         [HttpPost]
         [Route("shutdown")]
         [Route("stop")]
-        public IActionResult Shutdown()
+        public IActionResult Shutdown([FromBody] bool corsProtection = true)
         {
             // Start the node shutdown process.
             this.fullNode?.Dispose();

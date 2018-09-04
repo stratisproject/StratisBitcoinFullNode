@@ -5,6 +5,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -14,7 +15,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private const ulong DefaultGasLimit = GasPriceList.BaseCost - 1;
 
         private readonly IAddressGenerator addressGenerator;
-        private readonly IContractStateRepository contractStateRepository;
+        private readonly IContractLogHolder contractLogHolder;
+        private readonly IContractState contractStateRepository;
         private readonly List<TransferInfo> internalTransferList;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILogger logger;
@@ -23,14 +25,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ISmartContractVirtualMachine vm;
         private readonly ITransactionContext transactionContext;
 
-        public InternalTransactionExecutor(ITransactionContext transactionContext, ISmartContractVirtualMachine vm,
-            IContractStateRepository contractStateRepository,
+        public InternalTransactionExecutor(ITransactionContext transactionContext,
+            ISmartContractVirtualMachine vm,
+            IContractLogHolder contractLogHolder,
+            IContractState contractStateRepository,
             List<TransferInfo> internalTransferList,
             IKeyEncodingStrategy keyEncodingStrategy,
             ILoggerFactory loggerFactory,
             Network network)
         {
             this.transactionContext = transactionContext;
+            this.contractLogHolder = contractLogHolder;
             this.contractStateRepository = contractStateRepository;
             this.internalTransferList = internalTransferList;
             this.keyEncodingStrategy = keyEncodingStrategy;
@@ -70,7 +75,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 amountToTransfer,
                 this.transactionContext.GetNonceAndIncrement());
 
-            IContractStateRepository track = this.contractStateRepository.StartTracking();
+            IContractState track = this.contractStateRepository.StartTracking();
 
             var createData = new CreateData(nestedGasMeter.GasLimit, contractCode, parameters);
 
@@ -91,6 +96,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.logger.LogTrace("(-)[CONTRACT_EXECUTION_SUCCEEDED]");
             track.Commit();
+
+            this.internalTransferList.Add(new TransferInfo
+            {
+                From = smartContractState.Message.ContractAddress.ToUint160(this.network),
+                To = result.NewContractAddress,
+                Value = amountToTransfer
+            });
+
+            this.contractLogHolder.AddRawLogs(result.RawLogs);
+
             return CreateResult.Succeeded(result.NewContractAddress.ToAddress(this.network));
         }
 
@@ -146,8 +161,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.logger.LogTrace("(-)[TRANSFER_TO_CONTRACT]");
 
-            // Calling a fallback:
-            string methodName = "";
+            // Calling a receive handler:
+            string methodName = MethodCall.ExternalReceiveHandlerName;
             object[] parameters = new object[] { };
             ulong gasBudget = DefaultGasLimit; // for Transfer always send limited gas to prevent re-entrance.
 
@@ -174,7 +189,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var nestedGasMeter = new GasMeter((Gas)gasBudget);
 
-            IContractStateRepository track = this.contractStateRepository.StartTracking();
+            IContractState track = this.contractStateRepository.StartTracking();
 
             var callData = new CallData((Gas) gasBudget, addressTo.ToUint160(this.network), methodName, parameters);
             
@@ -211,6 +226,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 To = addressTo.ToUint160(this.network),
                 Value = amountToTransfer
             });
+
+            this.contractLogHolder.AddRawLogs(result.RawLogs);
 
             this.logger.LogTrace("(-)");
 

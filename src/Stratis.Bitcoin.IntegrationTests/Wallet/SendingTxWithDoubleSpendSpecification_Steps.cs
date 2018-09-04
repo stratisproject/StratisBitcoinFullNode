@@ -44,8 +44,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void wallets_with_coins()
         {
-            var mnemonic1 = this.stratisSender.FullNode.WalletManager().CreateWallet("123456", "mywallet");
-            var mnemonic2 = this.stratisReceiver.FullNode.WalletManager().CreateWallet("123456", "mywallet");
+            var mnemonic1 = this.stratisSender.FullNode.WalletManager().CreateWallet("123456", "mywallet", "passphrase");
+            var mnemonic2 = this.stratisReceiver.FullNode.WalletManager().CreateWallet("123456", "mywallet", "passphrase");
             mnemonic1.Words.Length.Should().Equals(12);
             mnemonic2.Words.Length.Should().Equals(12);
 

@@ -27,7 +27,6 @@ public class CatOwner : SmartContract
         }
     }
 
-
     public CatOwner(ISmartContractState smartContractState) : base(smartContractState)
     {
     }
@@ -35,10 +34,20 @@ public class CatOwner : SmartContract
     public void CreateCat()
     {
         var result = Create<Cat>(0, new object[] { CatCounter });
-        CatCounter++;
-        LastCreatedCat = result.NewContractAddress;
+        UpdateLastCreatedCat(result.NewContractAddress);
     }
 
+    public void CreateCatWithFunds()
+    {
+        var result = Create<Cat>(Balance, new object[] { CatCounter });
+        UpdateLastCreatedCat(result.NewContractAddress);
+    }
+
+    private void UpdateLastCreatedCat(Address newContractAddress)
+    {
+        CatCounter++;
+        LastCreatedCat = newContractAddress;
+    }
 }
 
 public class Cat : SmartContract
@@ -59,7 +68,11 @@ public class Cat : SmartContract
     public Cat(ISmartContractState smartContractState, int catNumber) : base(smartContractState)
     {
         CatNumber = catNumber;
+        Log(new CatCreated { CatNumber = catNumber });
     }
 
-
+    public struct CatCreated
+    {
+        public int CatNumber;
+    }
 }
