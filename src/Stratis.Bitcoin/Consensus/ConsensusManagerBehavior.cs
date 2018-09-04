@@ -27,9 +27,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc cref="ConcurrentChain"/>
         private readonly ConcurrentChain chain;
 
-        /// <inheritdoc cref="IConnectionManager"/>
-        private readonly IConnectionManager connectionManager;
-
         /// <inheritdoc cref="IPeerBanning"/>
         private readonly IPeerBanning peerBanning;
 
@@ -74,13 +71,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
         private readonly object bestSentHeaderLock;
 
-        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, IConnectionManager connectionManager, ILoggerFactory loggerFactory)
+        public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.consensusManager = consensusManager;
             this.chain = chain;
-            this.connectionManager = connectionManager;
             this.peerBanning = peerBanning;
 
             this.cachedHeaders = new List<BlockHeader>();
@@ -263,7 +259,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (!this.ValidateHeadersPayload(peer, headersPayload, out string validationError))
             {
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, validationError);
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, validationError);
 
                 this.logger.LogTrace("(-)[VALIDATION_FAILED]");
                 return;
@@ -389,7 +385,7 @@ namespace Stratis.Bitcoin.Consensus
             catch (ConsensusRuleException exception)
             {
                 this.logger.LogDebug("Peer's header is invalid. Peer will be banned and disconnected. Error: {0}.", exception.ConsensusError);
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, $"Peer presented invalid header, error: {exception.ConsensusError}.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, $"Peer presented invalid header, error: {exception.ConsensusError}.");
             }
             catch (HeaderInvalidException)
             {
@@ -399,12 +395,12 @@ namespace Stratis.Bitcoin.Consensus
             catch (CheckpointMismatchException)
             {
                 this.logger.LogDebug("Peer's headers violated a checkpoint. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer presented header that violates a checkpoint.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer presented header that violates a checkpoint.");
             }
             catch (MaxReorgViolationException)
             {
                 this.logger.LogDebug("Peer violates max reorg. Peer will be banned and disconnected.");
-                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, "Peer violates max reorg rule.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer violates max reorg rule.");
             }
 
             this.logger.LogTrace("(-):'{0}'", result);
@@ -543,7 +539,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public override object Clone()
         {
-            return new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.connectionManager, this.loggerFactory);
+            return new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory);
         }
     }
 }
