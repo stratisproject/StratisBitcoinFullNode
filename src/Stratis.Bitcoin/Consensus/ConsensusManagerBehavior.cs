@@ -166,6 +166,16 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getHeadersPayload), getHeadersPayload);
 
+            if (getHeadersPayload.BlockLocator.Blocks.Count > BlockLocator.MaxLocatorSize)
+            {
+                this.logger.LogTrace("Peer '{0}' sent getheader with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
+
+                peer.Disconnect("Peer sent getheaders with oversized locator");
+
+                this.logger.LogTrace("(-)[LOCATOR_TOO_LARGE]");
+                return;
+            }
+
             // Ignoring "getheaders" from peers because node is in initial block download unless the peer is whitelisted.
             // We don't want to reveal our position in IBD which can be used by attacker. Also we don't won't to deliver peers any blocks
             // because that will slow down our own syncing process.

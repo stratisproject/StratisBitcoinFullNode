@@ -186,6 +186,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getBlocksPayload), getBlocksPayload);
 
+            if (getBlocksPayload.BlockLocators.Blocks.Count > BlockLocator.MaxLocatorSize)
+            {
+                this.logger.LogTrace("Peer '{0}' sent getblocks with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
+
+                peer.Disconnect("Peer sent getblocks with oversized locator");
+
+                this.logger.LogTrace("(-)[LOCATOR_TOO_LARGE]");
+                return;
+            }
+
             // We only want to work with blocks that are in the store,
             // so we first get information about the store's tip.
             ChainedHeader blockStoreTip = this.chainState.BlockStoreTip;
