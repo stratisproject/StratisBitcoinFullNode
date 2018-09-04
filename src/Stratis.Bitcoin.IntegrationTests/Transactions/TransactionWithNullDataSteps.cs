@@ -73,7 +73,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
             this.key = this.sendingWallet.GetExtendedPrivateKeyForAddress(this.password, this.senderAddress).PrivateKey;
             this.senderNode.SetDummyMinerSecret(new BitcoinSecret(this.key, this.senderNode.FullNode.Network));
             int maturity = (int)this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
-            this.senderNode.GenerateStratisWithMiner(maturity + 5);
+            TestHelper.MineBlocks(this.senderNode, "receiver", this.password, "account 0", (uint)maturity + 5);
+
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.senderNode));
 
             this.senderNode.FullNode.WalletManager().GetSpendableTransactionsInWallet("sender")
@@ -117,9 +118,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
                 .SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
         }
         private void the_block_is_mined()
-        {
-            this.blockWithOpReturnId = this.senderNode.GenerateStratisWithMiner(1).Single();
-            this.senderNode.GenerateStratisWithMiner(1);
+        {            
+            this.blockWithOpReturnId = TestHelper.MineBlocks(this.senderNode, "receiver", this.password, "account 0", 1).BlockHashes.Single();
+            TestHelper.MineBlocks(this.senderNode, "receiver", this.password, "account 0", 1);
+
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.senderNode));
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.senderNode, this.receiverNode));
         }

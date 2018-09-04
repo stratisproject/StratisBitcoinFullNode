@@ -27,7 +27,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private int coinbaseMaturity;
         private Exception caughtException;
         private Transaction lastTransaction;
-        private SharedSteps sharedSteps;
         private NodeGroupBuilder nodeGroupBuilder;
 
         public ProofOfWorkSpendingSpecification(ITestOutputHelper outputHelper) : base(outputHelper)
@@ -37,7 +36,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         protected override void BeforeTest()
         {
             this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.RegTest);
-            this.sharedSteps = new SharedSteps();
         }
 
         protected override void AfterTest()
@@ -65,17 +63,17 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected void a_block_is_mined_creating_spendable_coins()
         {
-            this.sharedSteps.MineBlocks(1, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
+            TestHelper.MineBlocks(this.sendingStratisBitcoinNode, SendingWalletName, WalletPassword, AccountName, 1);
         }
 
         private void more_blocks_mined_to_just_BEFORE_maturity_of_original_block()
         {
-            this.sharedSteps.MineBlocks(this.coinbaseMaturity - 1, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
+            TestHelper.MineBlocks(this.sendingStratisBitcoinNode, SendingWalletName, WalletPassword, AccountName, (uint)this.coinbaseMaturity - 1);
         }
 
         protected void more_blocks_mined_to_just_AFTER_maturity_of_original_block()
         {
-            this.sharedSteps.MineBlocks(this.coinbaseMaturity, this.sendingStratisBitcoinNode, AccountName, SendingWalletName, WalletPassword);
+            TestHelper.MineBlocks(this.sendingStratisBitcoinNode, SendingWalletName, WalletPassword, AccountName, (uint)this.coinbaseMaturity);
         }
 
         private void spending_the_coins_from_original_block()
@@ -85,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             try
             {
-                TransactionBuildContext transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
+                TransactionBuildContext transactionBuildContext = TestHelper.CreateTransactionBuildContext(
                     this.sendingStratisBitcoinNode.FullNode.Network,
                     SendingWalletName,
                     AccountName,

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Security;
 using System.Text;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -90,12 +89,11 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private HttpResponseMessage response;
         private string responseText;
 
-        private int maturity = 1;
+        private uint maturity = 1;
         private HdAddress receiverAddress;
         private readonly Money transferAmount = Money.COIN * 1;
         private NodeGroupBuilder powNodeGroupBuilder;
         private NodeGroupBuilder posNodeGroupBuilder;
-        private SharedSteps sharedSteps;
         private Transaction transaction;
         private uint256 block;
         private Uri apiUri;
@@ -108,7 +106,6 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         protected override void BeforeTest()
         {
-            this.sharedSteps = new SharedSteps();
             this.httpHandler = new HttpClientHandler() { ServerCertificateCustomValidationCallback = (request, cert, chain, errors) => true };
             this.httpClient = new HttpClient(this.httpHandler);
             this.httpClient.DefaultRequestHeaders.Accept.Clear();
@@ -186,12 +183,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         protected void a_block_is_mined_creating_spendable_coins()
         {
-            this.sharedSteps.MineBlocks(1, this.nodes[FirstPowNode], WalletAccountName, PrimaryWalletName, WalletPassword);
+            TestHelper.MineBlocks(this.nodes[FirstPowNode], PrimaryWalletName, WalletPassword, WalletAccountName, 1);
         }
 
         private void more_blocks_mined_past_maturity_of_original_block()
         {
-            this.sharedSteps.MineBlocks(this.maturity, this.nodes[FirstPowNode], WalletAccountName, PrimaryWalletName, WalletPassword);
+            TestHelper.MineBlocks(this.nodes[FirstPowNode], PrimaryWalletName, WalletPassword, WalletAccountName, this.maturity);
         }
 
         private void a_real_transaction()

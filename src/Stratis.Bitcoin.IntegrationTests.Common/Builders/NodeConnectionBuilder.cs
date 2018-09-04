@@ -9,19 +9,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
     {
         private readonly NodeGroupBuilder parentNodeGroupBuilder;
         private IDictionary<string, CoreNode> nodes;
-        private SharedSteps sharedSteps;
 
-        private NodeConnectionBuilder()
-        {
-            this.sharedSteps = new SharedSteps();
-        }
-
-        public NodeConnectionBuilder(NodeGroupBuilder parentNodeGroupBuilder) : this()
+        public NodeConnectionBuilder(NodeGroupBuilder parentNodeGroupBuilder) 
         {
             this.parentNodeGroupBuilder = parentNodeGroupBuilder;
         }
 
-        public NodeConnectionBuilder(IDictionary<string, CoreNode> nodesDictionary) : this()
+        public NodeConnectionBuilder(IDictionary<string, CoreNode> nodesDictionary)
         {
             this.nodes = nodesDictionary;
         }
@@ -35,7 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Builders
         public NodeConnectionBuilder Connect(string from, string to)
         {
             this.nodes[from].CreateRPCClient().AddNode(this.nodes[to].Endpoint, true);
-            this.sharedSteps.WaitForNodeToSync(this.nodes[from], this.nodes[to]);
+            TestHelper.WaitForNodeToSync(this.nodes[from], this.nodes[to]);
             return this;
         }
 

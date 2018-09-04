@@ -25,7 +25,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private const string ReceivingNodeName = "receiving";
         private const string SendingNodeName = "sending";
 
-        private SharedSteps sharedSteps;
         private NodeGroupBuilder nodeGroupBuilder;
         private IDictionary<string, CoreNode> nodeGroup;
         private CoreNode sendingStratisBitcoinNode;
@@ -36,7 +35,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         protected override void BeforeTest()
         {
             this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.RegTest);
-            this.sharedSteps = new SharedSteps();
         }
 
         protected override void AfterTest()
@@ -64,8 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = coinbaseMaturity;
             this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = coinbaseMaturity;
 
-            this.sharedSteps.MineBlocks(coinbaseMaturity + 1, this.sendingStratisBitcoinNode, AccountZero, SendingWalletName,
-                WalletPassword);
+            TestHelper.MineBlocks(this.sendingStratisBitcoinNode, SendingWalletName, WalletPassword, AccountZero, (uint)coinbaseMaturity + 1);
         }
 
         private void a_default_gap_limit_of_20()
@@ -108,7 +105,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             ExtPubKey xPublicKey = this.GetExtendedPublicKey(ReceivingNodeName);
             var recipientAddressBeyondGapLimit = xPublicKey.Derive(new KeyPath("0/20")).PubKey.GetAddress(KnownNetworks.RegTest);
 
-            TransactionBuildContext transactionBuildContext = SharedSteps.CreateTransactionBuildContext(
+            TransactionBuildContext transactionBuildContext = TestHelper.CreateTransactionBuildContext(
                 this.sendingStratisBitcoinNode.FullNode.Network,
                 SendingWalletName,
                 AccountZero,
@@ -127,7 +124,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.sendingStratisBitcoinNode.FullNode.NodeService<WalletController>()
                 .SendTransaction(new SendTransactionRequest(transaction.ToHex()));
 
-            this.sharedSteps.MineBlocks(1, this.sendingStratisBitcoinNode, AccountZero, SendingWalletName, WalletPassword);
+            TestHelper.MineBlocks(this.sendingStratisBitcoinNode, SendingWalletName, WalletPassword, AccountZero, 1);
         }
 
         private ExtPubKey GetExtendedPublicKey(string nodeName)
@@ -140,7 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void getting_wallet_balance()
         {
-            this.sharedSteps.WaitForNodeToSync(this.nodeGroup.Values.ToArray());
+            TestHelper.WaitForNodeToSync(this.nodeGroup.Values.ToArray());
 
             this.walletBalance = this.receivingStratisBitcoinNode.FullNode.WalletManager()
                .GetSpendableTransactionsInWallet(ReceivingWalletName)

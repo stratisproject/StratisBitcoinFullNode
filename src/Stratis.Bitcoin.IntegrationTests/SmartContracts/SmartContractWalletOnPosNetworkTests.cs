@@ -36,13 +36,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
                 scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
-                HdAddress senderAddress = scSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, AccountName));
-                Features.Wallet.Wallet wallet = scSender.FullNode.WalletManager().GetWalletByName(WalletName);
-                Key senderKey = wallet.GetExtendedPrivateKeyForAddress(Password, senderAddress).PrivateKey;
 
-                scSender.SetDummyMinerSecret(new BitcoinSecret(senderKey, scSender.FullNode.Network));
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                scSender.GenerateStratisWithMiner(maturity + 5);
+                HdAddress senderAddress = TestHelper.MineBlocks(scSender, WalletName, Password, AccountName, (uint)maturity + 5).AddressUsed;
 
                 // Wait for block repo for block sync to work.
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));

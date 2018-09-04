@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, this.stratisSender.FullNode.Network));
             var maturity = (int)this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
 
-            this.stratisSender.GenerateStratisWithMiner(maturity + 5);
+            TestHelper.MineBlocks(this.stratisSender, "myWallet", "123456", "account 0", (uint)maturity + 5);
 
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.stratisSender));
 
@@ -100,8 +100,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void trx_is_mined_into_a_block_and_removed_from_mempools()
         {
-            new SharedSteps().MineBlocks(1, this.stratisSender, "account 0", "mywallet", "123456");
-            new SharedSteps().WaitForNodeToSync(this.stratisSender, this.stratisReceiver);
+            TestHelper.MineBlocks(this.stratisSender, "mywallet", "123456", "account 0", 1);
+            TestHelper.WaitForNodeToSync(this.stratisSender, this.stratisReceiver);
 
             this.stratisSender.FullNode.MempoolManager().GetMempoolAsync().Result.Should().NotContain(this.transaction.GetHash());
             this.stratisReceiver.FullNode.MempoolManager().GetMempoolAsync().Result.Should().NotContain(this.transaction.GetHash());

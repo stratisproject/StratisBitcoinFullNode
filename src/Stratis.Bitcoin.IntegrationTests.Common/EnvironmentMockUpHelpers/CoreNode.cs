@@ -301,7 +301,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
                     if (includeUnbroadcasted)
                     {
-                        this.transactions = CoreNodeExtensions.Reorder(this.transactions);
+                        this.transactions = TestHelper.Reorder(this.transactions);
                         block.Transactions.AddRange(this.transactions);
                         this.transactions.Clear();
                     }
