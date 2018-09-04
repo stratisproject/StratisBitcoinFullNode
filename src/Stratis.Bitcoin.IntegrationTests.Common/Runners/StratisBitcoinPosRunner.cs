@@ -36,11 +36,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 .Build();
         }
 
-        public override void OnStart()
-        {
-            this.FullNode.Start();
-        }
-
         /// <summary>
         /// Builds a node with POS miner and RPC enabled.
         /// </summary>

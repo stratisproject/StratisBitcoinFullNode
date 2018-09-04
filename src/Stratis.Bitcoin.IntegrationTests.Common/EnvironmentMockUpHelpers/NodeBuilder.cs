@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Tests.Common;
@@ -118,12 +119,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public CoreNode CreateSmartContractPowNode()
         {
-            return CreateNode(new StratisSmartContractNode(this.GetNextDataFolderName()), false, "stratis.conf");
+            Network network = new SmartContractsRegTest();
+            return CreateNode(new StratisSmartContractNode(this.GetNextDataFolderName(), network), false, "stratis.conf");
         }
 
         public CoreNode CreateSmartContractPosNode()
         {
-            return CreateNode(new StratisSmartContractPosNode(this.GetNextDataFolderName()), false, "stratis.conf");
+            Network network = new SmartContractPosRegTest();
+            return CreateNode(new StratisSmartContractPosNode(this.GetNextDataFolderName(), network), false, "stratis.conf");
         }
 
         public CoreNode CloneStratisNode(CoreNode cloneNode)

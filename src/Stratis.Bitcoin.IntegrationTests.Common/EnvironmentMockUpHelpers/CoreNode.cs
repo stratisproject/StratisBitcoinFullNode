@@ -126,6 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
+                this.runner.BuildNode();
                 this.runner.Start();
                 this.State = CoreNodeState.Starting;
             }
@@ -253,7 +254,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
-                this.runner.Kill();
+                this.runner.Stop();
 
                 if (!this.runner.IsDisposed)
                 {
