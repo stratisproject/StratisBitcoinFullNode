@@ -78,7 +78,7 @@ public class Auction : SmartContract
         EndBlock = Block.Number + durationBlocks;
         HasEnded = false;
 
-        Log(new Created { duration = durationBlocks });
+        Log(new Created { duration = durationBlocks, sender = Message.Sender });
     }
 
     public void Bid()
@@ -114,6 +114,8 @@ public class Auction : SmartContract
 
     public struct Created
     {
+        [Index]
         public ulong duration;
+        public string sender;
     }
 }

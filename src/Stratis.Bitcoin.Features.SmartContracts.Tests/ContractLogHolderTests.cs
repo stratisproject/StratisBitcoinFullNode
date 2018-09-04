@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var log2 = new Example1("John", 123);
 
             var state2 = new TestSmartContractState(null, new TestMessage { ContractAddress = contractAddress2.ToAddress(this.network) }, null, null, null, null, null, null, null);
-            var log3 = new Example2(new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn"), "This is a test message.", 16);
+            var log3 = new Example2(new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn"), 16, "This is a test message.");
 
             this.logHolder.Log(state1, log1);
             this.logHolder.Log(state1, log2);
@@ -59,18 +59,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(log2.Name, Encoding.UTF8.GetString(logs[1].Topics[1]));
             Assert.Equal(log2.Amount, BitConverter.ToUInt32(logs[1].Topics[2]));
 
-            // Third log has 4 topics, for name and 3 fields.
+            // Third log has 3 topics, for name and 2 indexed fields - message is not included.
             Assert.Equal(contractAddress2, logs[2].Address);
-            Assert.Equal(4, logs[2].Topics.Count);
+            Assert.Equal(3, logs[2].Topics.Count);
             Assert.Equal(nameof(Example2), Encoding.UTF8.GetString(logs[2].Topics[0]));
             Assert.Equal(log3.Address, new uint160(logs[2].Topics[1]).ToAddress(this.network));
-            Assert.Equal(log3.Message, Encoding.UTF8.GetString(logs[2].Topics[2]));
-            Assert.Equal(log3.Id, BitConverter.ToInt32(logs[2].Topics[3]));
+            Assert.Equal(log3.Id, BitConverter.ToInt32(logs[2].Topics[2]));
         }
 
         public struct Example1
         {
+            [Index]
             public string Name;
+            [Index]
             public uint Amount;
 
             public Example1(string name, uint amount)
@@ -82,15 +83,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         public struct Example2
         {
+            [Index]
             public Address Address;
-            public string Message;
+            [Index]
             public int Id;
+            public string Message;
 
-            public Example2(Address address, string message, int id)
+            public Example2(Address address, int id, string message)
             {
                 this.Address = address;
-                this.Message = message;
                 this.Id = id;
+                this.Message = message;
             }
         }
     }
