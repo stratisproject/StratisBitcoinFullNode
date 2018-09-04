@@ -648,9 +648,9 @@ namespace Stratis.Bitcoin.Consensus
 
                 await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
 
-                if (this.chainState.MaxReorgLength != 0)
+                if (this.network.Consensus.MaxReorgLength != 0)
                 {
-                    int newFinalizedHeight = blockToConnect.ChainedHeader.Height - (int)this.chainState.MaxReorgLength;
+                    int newFinalizedHeight = blockToConnect.ChainedHeader.Height - (int)this.network.Consensus.MaxReorgLength;
 
                     if (newFinalizedHeight > 0)
                     {
