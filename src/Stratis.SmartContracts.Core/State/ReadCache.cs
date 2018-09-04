@@ -5,8 +5,9 @@ namespace Stratis.SmartContracts.Core.State
 {
     /// <summary>
     /// Adapted from EthereumJ.
+    /// 
+    /// When reading values, will cache them for performance.
     /// </summary>
-    /// <typeparam name="Value"></typeparam>
     public class ReadCache<Value> : AbstractCachedSource<byte[], Value>
     {
         private Dictionary<byte[], Value> cache;
@@ -31,8 +32,7 @@ namespace Stratis.SmartContracts.Core.State
             else
             {
                 this.cache[key] = val;
-                this.CacheAdded(key, val);
-                this.GetSource().Put(key, val);
+                this.Source.Put(key, val);
             }
         }
 
@@ -44,10 +44,9 @@ namespace Stratis.SmartContracts.Core.State
 
             if (ret == null)
             {
-                ret = this.GetSource().Get(key);
+                ret = this.Source.Get(key);
                 if (ret != null)
                     this.cache[key] = ret;
-                this.CacheAdded(key, ret);
             }
             return ret;
         }
@@ -56,8 +55,7 @@ namespace Stratis.SmartContracts.Core.State
         {
             Value value = this.cache[key];
             this.cache.Remove(key);
-            this.CacheRemoved(key, value);
-            this.GetSource().Delete(key);
+            this.Source.Delete(key);
         }
 
         protected override bool FlushImpl()

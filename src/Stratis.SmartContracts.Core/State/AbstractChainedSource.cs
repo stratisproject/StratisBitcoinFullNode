@@ -5,13 +5,9 @@ namespace Stratis.SmartContracts.Core.State
     /// <summary>
     /// Adapted from EthereumJ. 
     /// </summary>
-    /// <typeparam name="Key"></typeparam>
-    /// <typeparam name="Value"></typeparam>
-    /// <typeparam name="SourceKey"></typeparam>
-    /// <typeparam name="SourceValue"></typeparam>
     public abstract class AbstractChainedSource<Key, Value, SourceKey, SourceValue> : ISource<Key, Value>
     {
-        private ISource<SourceKey, SourceValue> source;
+        public ISource<SourceKey, SourceValue> Source { get; protected set; }
         protected bool flushSource;
 
         protected AbstractChainedSource()
@@ -20,17 +16,7 @@ namespace Stratis.SmartContracts.Core.State
 
         public AbstractChainedSource(ISource<SourceKey, SourceValue> source)
         {
-            this.source = source;
-        }
-
-        protected void SetSource(ISource<SourceKey, SourceValue> src)
-        {
-            this.source = src;
-        }
-
-        public ISource<SourceKey, SourceValue> GetSource()
-        {
-            return this.source;
+            this.Source = source;
         }
 
         public void SetFlushSource(bool flushSource)
@@ -42,7 +28,7 @@ namespace Stratis.SmartContracts.Core.State
         {
             bool ret = this.FlushImpl();
             if (this.flushSource)
-                ret |= this.GetSource().Flush();
+                ret |= this.Source.Flush();
             return ret;
         }
 

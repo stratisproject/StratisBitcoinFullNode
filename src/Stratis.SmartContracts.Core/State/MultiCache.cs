@@ -2,11 +2,12 @@
 {
     /// <summary>
     /// Adapted from EthereumJ.
+    /// 
+    /// This is a cache of caches.
     /// </summary>
-    /// <typeparam name="V"></typeparam>
-    public abstract class MultiCache<V> : ReadWriteCache<V> where V : ICachedSource<byte[], byte[]>
+    public abstract class MultiCacheBase<V> : ReadWriteCache<V> where V : ICachedSource<byte[], byte[]>
     {
-        public MultiCache(ICachedSource<byte[], V> src) : base(src, WriteCache<V>.CacheType.SIMPLE)
+        public MultiCacheBase(ICachedSource<byte[], V> src) : base(src, WriteCache<V>.CacheType.SIMPLE)
         {
         }
 
@@ -16,7 +17,7 @@
             V ownCache = ownCacheEntry == null ? default(V) : ownCacheEntry.Value();
             if (ownCache == null)
             {
-                V v = this.GetSource() != null ? base.Get(key) : default(V);
+                V v = this.Source != null ? base.Get(key) : default(V);
                 ownCache = this.Create(key, v);
                 this.Put(key, ownCache);
             }
@@ -33,18 +34,18 @@
                 {
                     // cache was deleted
                     ret |= this.FlushChild(key, value);
-                    if (this.GetSource() != null)
+                    if (this.Source != null)
                     {
-                        this.GetSource().Delete(key);
+                        this.Source.Delete(key);
                     }
                 }
-                else if (value.GetSource() != null)
+                else if (value.Source != null)
                 {
                     ret |= this.FlushChild(key, value);
                 }
                 else
                 {
-                    this.GetSource().Put(key, value);
+                    this.Source.Put(key, value);
                     ret = true;
                 }
             }
@@ -59,9 +60,12 @@
         protected abstract V Create(byte[] key, V srcCache);
     }
 
-    public class RealMultiCache : MultiCache<ICachedSource<byte[], byte[]>>
+    /// <summary>
+    /// Implementation of a cache of caches.
+    /// </summary>
+    public class MultiCache : MultiCacheBase<ICachedSource<byte[], byte[]>>
     {
-        public RealMultiCache(ICachedSource<byte[], ICachedSource<byte[], byte[]>> src) : base(src)
+        public MultiCache(ICachedSource<byte[], ICachedSource<byte[], byte[]>> src) : base(src)
         {
         }
 
