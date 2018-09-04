@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.ColdStaking.Controllers;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.ColdStaking
 {
@@ -31,14 +32,16 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
     public class ColdStakingFeature : FullNodeFeature
     {
-        /// <summary>Logger factory to create loggers.</summary>
+        /// <summary>The logger factory used to create instance loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
-        /// <summary>Instance logger.</summary>
+        /// <summary>The instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>The wallet manager.</summary>
         private readonly IWalletManager walletManager;
 
+        /// <summary>The cold staking manager.</summary>
         private readonly ColdStakingManager coldStakingManager;
 
         /// <summary>
@@ -46,27 +49,38 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// </summary>
         /// <param name="coldStakingManager">The cold staking manager.</param>
         /// <param name="walletManager">The wallet manager.</param>
-        /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
+        /// <param name="loggerFactory">The factory used to create instance loggers.</param>
         public ColdStakingFeature(
             ColdStakingManager coldStakingManager,
             IWalletManager walletManager,
             ILoggerFactory loggerFactory)
         {
+            Guard.NotNull(coldStakingManager, nameof(coldStakingManager));
+            Guard.NotNull(walletManager, nameof(walletManager));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+
             this.coldStakingManager = coldStakingManager;
             this.walletManager = walletManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
         }
 
+        /// <inheritdoc/>
         public override void Initialize()
         {
+            this.logger.LogTrace("()");
+
+            // The FullNodeFeature base class requires us to override this method for any feature-specific
+            // initialization. If initialization is required it will be added here.
+
+            this.logger.LogTrace("(-)");
         }
     }
 
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
-    public static class FullNodeBuilderLightWalletExtension
+    public static class FullNodeBuilderColdStakingExtension
     {
         public static IFullNodeBuilder UseColdStaking(this IFullNodeBuilder fullNodeBuilder)
         {
