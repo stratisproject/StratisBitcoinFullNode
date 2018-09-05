@@ -26,13 +26,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public NodeConfigParameters ConfigParameters { get; }
 
-        private int lastDataFolderIndex;
-
         private string rootFolder;
 
         public NodeBuilder(string rootFolder)
         {
-            this.lastDataFolderIndex = 0;
             this.Nodes = new List<CoreNode>();
             this.ConfigParameters = new NodeConfigParameters();
 
@@ -156,10 +153,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private string GetNextDataFolderName(string folderName = null)
         {
-            var numberedFolderName = string.Join(".",
-                new[] { this.lastDataFolderIndex.ToString(), folderName }.Where(s => s != null));
+            string hash = Guid.NewGuid().ToString("N").Substring(0, 7);
+            string numberedFolderName = string.Join(
+                ".",
+                new[] {hash, folderName}.Where(s => s != null));
             string dataFolderName = Path.Combine(this.rootFolder, numberedFolderName);
-            this.lastDataFolderIndex++;
+
             return dataFolderName;
         }
 
