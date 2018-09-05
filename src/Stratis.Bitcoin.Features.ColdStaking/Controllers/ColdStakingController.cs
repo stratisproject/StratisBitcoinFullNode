@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.ColdStaking.Models;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
@@ -57,8 +56,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
 
                 var model = new GetColdStakingAddressResponse
                 {
-                    Address = this.ColdStakingManager.GetColdStakingAddress(wallet, request.WalletPassword, request.IsColdWalletAddress).Address
+                    Address = this.ColdStakingManager.GetColdStakingAddress(wallet, request.IsColdWalletAddress, request.WalletPassword)?.Address
                 };
+
+                if (model.Address == null)
+                    throw new WalletException("The address or associated account does not exist.");
 
                 return this.Json(model);
             }
@@ -104,16 +106,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 {
                     TransactionHex = transaction.ToHex()
                 };
-
-                this.ColdStakingManager.BroadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
-
-                TransactionBroadcastEntry transactionBroadCastEntry = this.ColdStakingManager.BroadcasterManager.GetTransaction(transaction.GetHash());
-
-                if (!string.IsNullOrEmpty(transactionBroadCastEntry?.ErrorMessage))
-                {
-                    this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
-                }
 
                 return this.Json(model);
             }

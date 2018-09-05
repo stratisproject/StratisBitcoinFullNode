@@ -22,14 +22,14 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// with the number of coins that the UTXO presents. This implies that the biggest miners on the
     /// network are required to keep the coins in a hot wallet. This is dangerous in case the machine
     /// where the hot wallet runs is compromised.</para>
-    /// <para>We propose cold staking, which is mechanism that eliminates the need to keep the coins
-    /// in the hot wallet. With cold staking implemented, the miner still needs to be online and running
-    /// a node with an open wallet, but the coins that are used for staking, can be safely stored in cold
-    /// storage. Therefore the open hot wallet does not need to hold any significant amount of coins, or
-    /// it can even be completely empty.</para>
+    /// <para>Cold staking is a mechanism that eliminates the need to keep the coins in the hot wallet.
+    /// With cold staking implemented, the miner still needs to be online and running a node with an open
+    /// wallet, but the coins that are used for staking can be safely stored in cold storage. Therefore
+    /// the open hot wallet does not need to hold any significant amount of coins, or it can even be
+    /// completely empty.</para>
     /// </remarks>
-    /// <seealso cref="<see cref="ColdStakingManager.GetColdStakingScript(NBitcoin.ScriptId, NBitcoin.ScriptId)"/>"/>
-    /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
+    /// <seealso cref="ColdStakingManager.GetColdStakingScript(NBitcoin.ScriptId, NBitcoin.ScriptId)"/>
+    /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature"/>
     public class ColdStakingFeature : FullNodeFeature
     {
         /// <summary>The logger factory used to create instance loggers.</summary>

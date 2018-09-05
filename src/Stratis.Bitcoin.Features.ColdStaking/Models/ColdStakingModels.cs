@@ -15,8 +15,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         [JsonProperty(PropertyName = "walletName")]
         public string WalletName { get; set; }
 
-        /// <summary>The wallet password.</summary>
-        [Required]
+        /// <summary>The (optional) wallet password. Required for generating cold staking accounts on demand.</summary>
         [JsonProperty(PropertyName = "walletPassword")]
         public string WalletPassword { get; set; }
 
