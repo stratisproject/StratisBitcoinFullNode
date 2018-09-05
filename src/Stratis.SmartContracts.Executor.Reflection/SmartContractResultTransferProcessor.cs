@@ -23,7 +23,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public Transaction Process(IContractState stateSnapshot,
             uint160 contractAddress,
             ISmartContractTransactionContext transactionContext,
-            IList<TransferInfo> internalTransfers,
+            IReadOnlyList<TransferInfo> internalTransfers,
             bool reversionRequired)
         {
             if (reversionRequired)

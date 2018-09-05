@@ -160,6 +160,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             private InternalTransactionExecutorFactory internalTxExecutorFactory;
             private IKeyEncodingStrategy keyEncodingStrategy;
             private IContractModuleDefinitionReader moduleDefinitionReader;
+            private StateFactory stateFactory;
             private IContractPrimitiveSerializer primitiveSerializer;
             internal Key PrivateKey { get; private set; }
             private ReflectionVirtualMachine reflectionVirtualMachine;
@@ -329,11 +330,12 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.AddressGenerator = new AddressGenerator();
                 this.assemblyLoader = new ContractAssemblyLoader();
                 this.callDataSerializer = CallDataSerializer.Default;
-                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
+                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.loggerFactory, this.network);
                 this.moduleDefinitionReader = new ContractModuleDefinitionReader();
                 this.primitiveSerializer = new ContractPrimitiveSerializer(this.network);
-                this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network, this.AddressGenerator, this.assemblyLoader, this.moduleDefinitionReader, this.primitiveSerializer);
-                this.ExecutorFactory = new ReflectionSmartContractExecutorFactory(this.loggerFactory, this.primitiveSerializer, this.callDataSerializer, this.refundProcessor, this.transferProcessor, this.reflectionVirtualMachine);
+                this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.network, this.assemblyLoader, this.moduleDefinitionReader);
+                this.stateFactory = new StateFactory(this.network, this.primitiveSerializer, this.reflectionVirtualMachine, this.AddressGenerator, this.internalTxExecutorFactory);
+                this.ExecutorFactory = new ReflectionSmartContractExecutorFactory(this.loggerFactory, this.callDataSerializer, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory);
             }
         }
 
