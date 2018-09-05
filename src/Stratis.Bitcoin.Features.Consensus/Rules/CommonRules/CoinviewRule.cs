@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
-                    if (!this.IsProtocolTransaction(tx))
+                    if (!tx.IsCoinBase)
                     {
                         if (!view.HaveInputs(tx))
                         {
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         ConsensusErrors.BadBlockSigOps.Throw();
                     }
 
-                    if (!this.IsProtocolTransaction(tx))
+                    if (!tx.IsCoinBase)
                     {
                         this.CheckInputs(tx, view, index.Height);
                         fees += view.GetValueIn(tx) - tx.TotalOut;
