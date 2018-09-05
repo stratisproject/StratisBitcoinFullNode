@@ -55,7 +55,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     new SmartContractLoadCoinviewRule(),
                     new TransactionDuplicationActivationRule(), // implements BIP30
                     new SmartContractPosCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
-                    new SmartContractSaveCoinviewRule()
+                    new SmartContractSaveCoinviewRule(),
+                    new P2PKHNotContractRule()
                 };
         }
     }

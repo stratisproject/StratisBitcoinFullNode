@@ -13,10 +13,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class BalanceState
     {
         private readonly IBalanceRepository repository;
-        private readonly List<TransferInfo> internalTransfers;
+        private readonly IReadOnlyList<TransferInfo> internalTransfers;
         private readonly ulong txAmount;
 
-        public BalanceState(IBalanceRepository repository, ulong txAmount, List<TransferInfo> internalTransfers)
+        public BalanceState(IBalanceRepository repository, ulong txAmount, IReadOnlyList<TransferInfo> internalTransfers)
         {
             this.repository = repository;
             this.txAmount = txAmount;

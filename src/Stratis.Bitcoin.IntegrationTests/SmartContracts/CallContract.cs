@@ -31,7 +31,7 @@ public class CallContract : SmartContract
     public bool Tester(string addressString)
     {
         Test = "Not Initial!";
-        ITransferResult result = Call(new Address(addressString), 0, "Callback", null, 2000);
+        ITransferResult result = Call(new Address(addressString), 0, "Callback");
         return (bool)result.ReturnValue;
     }
 

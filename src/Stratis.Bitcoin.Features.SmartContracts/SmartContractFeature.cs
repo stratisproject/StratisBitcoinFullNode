@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IAddressGenerator, AddressGenerator>();
                         services.AddSingleton<ILoader, ContractAssemblyLoader>();
                         services.AddSingleton<IContractModuleDefinitionReader, ContractModuleDefinitionReader>();
-
+                        services.AddSingleton<IStateFactory, StateFactory>();
                         services.AddSingleton<SmartContractTransactionPolicy>();
 
                         // RECEIPTS -------------------------------------------------------------------------
@@ -212,6 +212,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IPowMining, PowMining>();
                         services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
                         services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
+                        services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
                         services.AddSingleton<MiningController>();
                         services.AddSingleton<MiningRpcController>();
                         services.AddSingleton<MinerSettings>();
@@ -242,6 +243,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
                         services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
                         services.AddSingleton<BlockDefinition, SmartContractPosPowBlockDefinition>();
+                        services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
                         services.AddSingleton<MiningRpcController>();
                         services.AddSingleton<MiningController>();
                         services.AddSingleton<StakingController>();
