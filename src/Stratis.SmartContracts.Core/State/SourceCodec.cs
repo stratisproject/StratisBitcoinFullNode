@@ -3,12 +3,10 @@
 namespace Stratis.SmartContracts.Core.State
 {
     /// <summary>
-    /// Adapted from EthereumJ. Used to transform one datatype into another on the way in or out of a source.
+    /// Adapted from EthereumJ.
+    /// 
+    /// Used to transform one datatype into another on the way in or out of a source.
     /// </summary>
-    /// <typeparam name="Key"></typeparam>
-    /// <typeparam name="Value"></typeparam>
-    /// <typeparam name="SourceKey"></typeparam>
-    /// <typeparam name="SourceValue"></typeparam>
     public class SourceCodec<Key, Value, SourceKey, SourceValue> : AbstractChainedSource<Key, Value, SourceKey, SourceValue>
     {
         protected ISerializer<Key, SourceKey> keySerializer;
@@ -23,17 +21,17 @@ namespace Stratis.SmartContracts.Core.State
 
         public override void Put(Key key, Value val)
         {
-            this.GetSource().Put(this.keySerializer.Serialize(key), this.valSerializer.Serialize(val));
+            this.Source.Put(this.keySerializer.Serialize(key), this.valSerializer.Serialize(val));
         }
 
         public override Value Get(Key key)
         {
-            return this.valSerializer.Deserialize(this.GetSource().Get(this.keySerializer.Serialize(key)));
+            return this.valSerializer.Deserialize(this.Source.Get(this.keySerializer.Serialize(key)));
         }
 
         public override void Delete(Key key)
         {
-            this.GetSource().Delete(this.keySerializer.Serialize(key));
+            this.Source.Delete(this.keySerializer.Serialize(key));
         }
 
         protected override bool FlushImpl()
