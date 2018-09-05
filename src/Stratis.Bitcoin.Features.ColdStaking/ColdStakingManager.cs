@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// staking using the hot wallet key so that even if the key becomes compromised it can't be used
         /// to reduce the balance. Only the person with the cold wallet key can retrieve the coins and move
         /// them elsewhere. This behavior is enforced by the <see cref="OpcodeType.OP_CHECKCOLDSTAKEVERIFY"/>
-        /// opcode which sets the <see cref="PosTransaction.IsColdCoinStake"/> if the transaction spending
+        /// opcode which sets the <see cref="PosTransaction.IsColdCoinStake"/> flag if the transaction spending
         /// an output, which contains this instruction, is a coinstake transaction. If this flag is set then
         /// further rules are enforced by <see cref="Consensus.Rules.CommonRules.PosColdStakingRule"/>.
         /// </remarks>
