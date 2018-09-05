@@ -7,7 +7,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class PersistentState : IPersistentState
     {
         public uint160 ContractAddress { get; }
-        private readonly IContractPrimitiveSerializer serializer;
         private readonly IPersistenceStrategy persistenceStrategy;
         private readonly Network network;
 
@@ -21,9 +20,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             uint160 contractAddress)
         {
             this.persistenceStrategy = persistenceStrategy;
-            this.serializer = contractPrimitiveSerializer;
+            this.Serializer = contractPrimitiveSerializer;
             this.ContractAddress = contractAddress;
         }
+
+        internal IContractPrimitiveSerializer Serializer { get; }
 
         internal T GetObject<T>(string key)
         {
@@ -33,7 +34,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (bytes == null)
                 return default(T);
 
-            return this.serializer.Deserialize<T>(bytes);
+            return this.Serializer.Deserialize<T>(bytes);
         }
 
         public byte GetByte(string key)
@@ -99,7 +100,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         internal void SetObject<T>(string key, T obj)
         {
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, this.serializer.Serialize(obj));
+            this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, this.Serializer.Serialize(obj));
         }
 
         public void SetByte(string key, byte value)

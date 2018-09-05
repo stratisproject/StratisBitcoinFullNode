@@ -4,17 +4,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public interface ISmartContractVirtualMachine
     {
-        VmExecutionResult Create(
-            IGasMeter gasMeter,
-            IContractState repository,
-            ICreateData createData, 
-            ITransactionContext transactionContext,
+        VmExecutionResult Create(IContractState repository, ISmartContractState contractState,
+            byte[] contractCode,
+            object[] parameters,
             string typeName = null);
 
-        VmExecutionResult ExecuteMethod(
-            IGasMeter gasMeter,
-            IContractState repository,
-            ICallData callData, 
-            ITransactionContext transactionContext);
+        VmExecutionResult ExecuteMethod(ISmartContractState contractState, MethodCall methodCall,
+            byte[] contractCode, string typeName);
     }
 }
