@@ -103,8 +103,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
             if (numberOfBlocks == 0) throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
-            HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
+            WaitForNodeToSync(node);
 
+            HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
+            
             Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
             Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address).PrivateKey;
 

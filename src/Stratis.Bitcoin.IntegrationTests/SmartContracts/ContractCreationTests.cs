@@ -37,14 +37,15 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Create contract and ensure code exists
                 BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0);
                 receiver.WaitMempoolCount(1);
-                TestHelper.MineBlocks(receiver.CoreNode, sender.WalletName, sender.Password, sender.AccountName, 2);
+                TestHelper.MineBlocks(receiver.CoreNode, receiver.WalletName, receiver.Password, receiver.AccountName, 2);
                 Assert.NotNull(receiver.GetCode(response.NewContractAddress));
                 Assert.NotNull(sender.GetCode(response.NewContractAddress));
 
                 // Call contract and ensure internal contract was created.
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("CreateCat", response.NewContractAddress, 0);
                 receiver.WaitMempoolCount(1);
-                TestHelper.MineBlocks(receiver.CoreNode, sender.WalletName, sender.Password, sender.AccountName, 1);
+                TestHelper.MineBlocks(receiver.CoreNode, receiver.WalletName, receiver.Password, receiver.AccountName, 1);
+                chain.WaitForAllNodesToSync();
                 Assert.Equal(1, BitConverter.ToInt32(sender.GetStorageValue(response.NewContractAddress, "CatCounter")));
                 uint160 lastCreatedCatAddress =  new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));
                 uint160 expectedCreatedCatAddress = this.addressGenerator.GenerateAddress(callResponse.TransactionId, 0);
@@ -62,7 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 const double amount = 20;
                 BuildCallContractTransactionResponse callResponse2 = sender.SendCallContractTransaction("CreateCatWithFunds", response.NewContractAddress, amount);
                 receiver.WaitMempoolCount(1);
-                TestHelper.MineBlocks(receiver.CoreNode, sender.WalletName, sender.Password, sender.AccountName, 1);
+                TestHelper.MineBlocks(receiver.CoreNode, receiver.WalletName, receiver.Password, receiver.AccountName, 1);
 
                 // Check created contract has expected balance.
                 lastCreatedCatAddress = new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));

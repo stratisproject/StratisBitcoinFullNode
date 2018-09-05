@@ -40,7 +40,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             KnownNetworks.RegTest.Consensus.CoinbaseMaturity = 1;
             this.CoinBaseMaturity = (int)KnownNetworks.RegTest.Consensus.CoinbaseMaturity;
-//            KnownNetworks.RegTest.Consensus.ProofOfStakeReward
             this.nodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName), KnownNetworks.RegTest);
         }
 
@@ -83,6 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.transactionFee = this.nodes[NodeOne].GetFee(this.transactionBuildContext);
 
             this.nodes[NodeOne].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
+            //TestHelper.AreNodesSynced(this.nodes[NodeOne], this.nodes[NodeTwo]);
         }
 
         private void node2_receives_the_funds()
@@ -120,6 +120,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             transaction.Inputs.Count.Should().Be(50);
 
             this.nodes[NodeTwo].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
+            TestHelper.AreNodesSynced(this.nodes[NodeOne], this.nodes[NodeTwo]);
         }
 
         private void node1_receives_the_funds()
