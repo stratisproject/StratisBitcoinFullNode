@@ -2,7 +2,6 @@
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -14,32 +13,23 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ILoggerFactory loggerFactory;
         private readonly ISmartContractResultRefundProcessor refundProcessor;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
-        private readonly ISmartContractVirtualMachine vm;
-        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
         private readonly ICallDataSerializer serializer;
         private readonly Network network;
-        private readonly InternalTransactionExecutorFactory internalTransactionExecutorFactory;
-        private readonly IAddressGenerator addressGenerator;
+        private readonly IStateFactory stateFactory;
 
         public ReflectionSmartContractExecutorFactory(ILoggerFactory loggerFactory,
-            IContractPrimitiveSerializer contractPrimitiveSerializer,
             ICallDataSerializer serializer,
             ISmartContractResultRefundProcessor refundProcessor,
             ISmartContractResultTransferProcessor transferProcessor,
-            ISmartContractVirtualMachine vm,
-            IAddressGenerator addressGenerator,
             Network network,
-            InternalTransactionExecutorFactory internalTransactionExecutorFactory)
+            IStateFactory stateFactory)
         {
             this.loggerFactory = loggerFactory;
             this.refundProcessor = refundProcessor;
             this.transferProcessor = transferProcessor;
-            this.vm = vm;
-            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
             this.serializer = serializer;
             this.network = network;
-            this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
-            this.addressGenerator = addressGenerator;
+            this.stateFactory = stateFactory;
         }
 
         /// <summary>
@@ -52,8 +42,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IContractStateRoot stateRepository,
             ISmartContractTransactionContext transactionContext)
         {
-            return new Executor(this.loggerFactory, this.contractPrimitiveSerializer, this.serializer, 
-                    stateRepository, this.refundProcessor, this.transferProcessor, this.vm, this.addressGenerator, this.network, this.internalTransactionExecutorFactory);
+            return new Executor(this.loggerFactory, this.serializer, 
+                    stateRepository, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory);
         }
     }
 }

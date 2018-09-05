@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Exceptions;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
@@ -34,7 +35,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         private class StateSnapshot
         {
-            public StateSnapshot(IContractLogHolder logHolder, List<TransferInfo> internalTransfers, ulong nonce, IContractState contractState)
+            public StateSnapshot(IContractLogHolder logHolder, IReadOnlyList<TransferInfo> internalTransfers, ulong nonce, IContractState contractState)
             {
                 this.Logs = logHolder.GetRawLogs().ToImmutableList();
                 this.InternalTransfers = internalTransfers.ToImmutableList();
@@ -51,6 +52,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             public ulong Nonce { get; }
         }
 
+        private readonly List<TransferInfo> internalTransfers;
+
         public State(
             IContractPrimitiveSerializer serializer,
             InternalTransactionExecutorFactory internalTransactionExecutorFactory,
@@ -65,7 +68,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.intermediateState = repository;
             this.LogHolder = new ContractLogHolder(network);
-            this.InternalTransfers = new List<TransferInfo>();
+            this.internalTransfers = new List<TransferInfo>();
             this.BalanceState = new BalanceState(this.intermediateState, txAmount, this.InternalTransfers);
             this.Network = network;
             this.Nonce = 0;
@@ -98,7 +101,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public BalanceState BalanceState { get; }
 
-        public List<TransferInfo> InternalTransfers { get; }
+        public IReadOnlyList<TransferInfo> InternalTransfers => this.internalTransfers;
 
         public InternalTransactionExecutorFactory InternalTransactionExecutorFactory { get; }
 
@@ -109,6 +112,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.Nonce++;
         }
 
+        /// <summary>
+        /// Returns contract logs in the log type used by consensus.
+        /// </summary>
+        public IList<Log> GetLogs()
+        {
+            return this.LogHolder.GetRawLogs().ToLogs(this.Serializer);
+        }
+        
         /// <summary>
         /// Returns a new contract address and increments the address generation nonce.
         /// </summary>
@@ -128,8 +139,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.Nonce = snapshot.Nonce;
 
             // Rollback internal transfers
-            this.InternalTransfers.Clear();
-            this.InternalTransfers.AddRange(snapshot.InternalTransfers);
+            this.internalTransfers.Clear();
+            this.internalTransfers.AddRange(snapshot.InternalTransfers);
             
             // Rollback logs
             this.LogHolder.Clear();
@@ -214,7 +225,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // For external creates we do not need to do this.
             if (result.Success)
             {
-                this.InternalTransfers.Add(new TransferInfo
+                this.internalTransfers.Add(new TransferInfo
                 {
                     From = message.From,
                     To = result.ContractAddress,
@@ -304,7 +315,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // For external calls we do not need to do this.
             if (result.Success)
             {
-                this.InternalTransfers.Add(new TransferInfo
+                this.internalTransfers.Add(new TransferInfo
                 {
                     From = message.From,
                     To = message.To,
@@ -352,7 +363,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (contractCode == null || contractCode.Length == 0)
             {
                 // No contract at this address, create a regular P2PKH xfer
-                this.InternalTransfers.Add(new TransferInfo
+                this.internalTransfers.Add(new TransferInfo
                 {
                     From = message.From,
                     To = message.To,
