@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Create a token contract.
                 ulong gasPrice = 1;
                 int vmVersion = 1;
-                Gas gasLimit = (Gas)2000;
+                Gas gasLimit = (Gas)5000;
                 SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
                 Assert.True(compilationResult.Success);
 
@@ -127,8 +127,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
                 // Ensure that both nodes have the contract.
-                ContractStateRepositoryRoot senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
-                ContractStateRepositoryRoot receiverState = scReceiver.FullNode.NodeService<ContractStateRepositoryRoot>();
+                IContractStateRoot senderState = scSender.FullNode.NodeService<IContractStateRoot>();
+                IContractStateRoot receiverState = scReceiver.FullNode.NodeService<IContractStateRoot>();
                 IAddressGenerator addressGenerator = scSender.FullNode.NodeService<IAddressGenerator>();
 
                 uint160 tokenContractAddress = addressGenerator.GenerateAddress(transferContractTransaction.GetHash(), 0);
@@ -165,8 +165,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
                 // Ensure that both nodes have the contract.
-                senderState = scSender.FullNode.NodeService<ContractStateRepositoryRoot>();
-                receiverState = scReceiver.FullNode.NodeService<ContractStateRepositoryRoot>();
+                senderState = scSender.FullNode.NodeService<IContractStateRoot>();
+                receiverState = scReceiver.FullNode.NodeService<IContractStateRoot>();
                 tokenContractAddress = addressGenerator.GenerateAddress(transferContractTransaction.GetHash(), 0);
                 Assert.NotNull(senderState.GetCode(tokenContractAddress));
                 Assert.NotNull(receiverState.GetCode(tokenContractAddress));
@@ -392,6 +392,35 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 });
                 walletHistoryModel = (WalletHistoryModel)result.Value;
                 Assert.Equal(2, walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send).Count());
+
+                // Test serialization
+                // TODO: When refactoring integration tests, move this to the one place and test all types, from method param to storage to serialization.
+
+                var serializationRequest = new BuildCallContractTransactionRequest
+                {
+                    AccountName = AccountName,
+                    GasLimit = "10000",
+                    GasPrice = "1",
+                    Amount = "0",
+                    MethodName = "TestSerializer",
+                    ContractAddress = response.NewContractAddress,
+                    FeeAmount = "0.001",
+                    Password = Password,
+                    WalletName = WalletName,
+                    Sender = addr.Address
+                };
+                result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(serializationRequest);
+                var serializationResponse = (BuildCallContractTransactionResponse)result.Value;
+                SmartContractSharedSteps.SendTransactionAndMine(scSender, scReceiver, senderWalletController, serializationResponse.Hex);
+
+                // Would have only saved if execution completed successfully
+                counterRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
+                {
+                    ContractAddress = response.NewContractAddress.ToString(),
+                    StorageKey = "Int32",
+                    DataType = SmartContractDataType.Int
+                })).Value;
+                Assert.Equal("12345", counterRequestResult);
             }
         }
 
@@ -430,7 +459,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.True(scBlockHeader.LogsBloom.Test(new Address(response.NewContractAddress).ToUint160(network).ToBytes()));
                 Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("Created")));
                 Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes((ulong) 20)));
-                // And sanity test that a random value is not available in bloom.
+                // And sanity test that a non-indexed field and random value is not available in bloom.
+                Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes(sender.MinerAddress.Address)));
                 Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
 
                 // Test that the event can be searched for...

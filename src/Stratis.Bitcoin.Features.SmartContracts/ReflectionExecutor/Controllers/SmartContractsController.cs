@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly ConcurrentChain chain;
         private readonly ILogger logger;
         private readonly Network network;
-        private readonly ContractStateRepositoryRoot stateRoot;
+        private readonly IContractStateRoot stateRoot;
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IAddressGenerator addressGenerator;
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
-            ContractStateRepositoryRoot stateRoot,
+            IContractStateRoot stateRoot,
             IWalletManager walletManager,
             IWalletTransactionHandler walletTransactionHandler,
             IAddressGenerator addressGenerator,

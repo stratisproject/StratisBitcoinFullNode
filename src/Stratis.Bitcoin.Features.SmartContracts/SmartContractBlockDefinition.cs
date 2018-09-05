@@ -27,10 +27,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly ILogger logger;
         private readonly List<TxOut> refundOutputs;
         private readonly List<Receipt> receipts;
-        private readonly ContractStateRepositoryRoot stateRoot;
-        private ContractStateRepositoryRoot stateSnapshot;
+        private readonly IContractStateRoot stateRoot;
+        private IContractStateRoot stateSnapshot;
+        private readonly ISenderRetriever senderRetriever;
 
         public SmartContractBlockDefinition(
+            IBlockBufferGenerator blockBufferGenerator,
             ICoinView coinView,
             IConsensusLoop consensusLoop,
             IDateTimeProvider dateTimeProvider,
@@ -40,15 +42,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             MempoolSchedulerLock mempoolLock,
             MinerSettings minerSettings,
             Network network,
-            ContractStateRepositoryRoot stateRoot)
+            ISenderRetriever senderRetriever,
+            IContractStateRoot stateRoot)
             : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.coinView = coinView;
             this.executorFactory = executorFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
+            this.senderRetriever = senderRetriever;
             this.stateRoot = stateRoot;
             this.refundOutputs = new List<TxOut>();
             this.receipts = new List<Receipt>();
+
+            // When building smart contract blocks, we will be generating and adding both transactions to the block and txouts to the coinbase. 
+            // At the moment, these generated objects aren't accounted for in the block size and weight accounting. 
+            // This means that if blocks started getting full, this miner could start generating blocks greater than the max consensus block size.
+            // To avoid this without significantly overhauling the BlockDefinition, for now we just lower the block size by a percentage buffer.
+            // If in the future blocks are being built over the size limit and you need an easy fix, just increase the size of this buffer.
+            this.Options = blockBufferGenerator.GetOptionsWithBuffer(this.Options);
         }
 
         /// <summary>
@@ -84,10 +95,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 this.UpdateTotalFees(result.Fee);
 
                 // If there are refunds, add them to the block.
-                if (result.Refunds.Any())
+                if (result.Refund != null)
                 {
-                    this.refundOutputs.AddRange(result.Refunds);
-                    this.logger.LogTrace("{0} refunds were added.", result.Refunds.Count);
+                    this.refundOutputs.Add(result.Refund);
+                    this.logger.LogTrace("refund was added with value {0}.", result.Refund.Value);
                 }
 
                 // Add internal transactions made during execution.
@@ -106,7 +117,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.logger.LogTrace("()");
 
-            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetAddressFromScript(scriptPubKeyIn);
+            GetSenderResult getSenderResult = this.senderRetriever.GetAddressFromScript(scriptPubKeyIn);
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-createnewblock", getSenderResult.Error));
 
@@ -182,7 +193,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.logger.LogTrace("()");
 
-            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
+            GetSenderResult getSenderResult = this.senderRetriever.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));
 

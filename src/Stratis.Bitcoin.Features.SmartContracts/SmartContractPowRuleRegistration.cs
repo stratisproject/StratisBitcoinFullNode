@@ -52,7 +52,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
                 new SmartContractPowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward 
-                new SmartContractSaveCoinviewRule()
+                new SmartContractSaveCoinviewRule(),
+                new P2PKHNotContractRule()
             };
 
             return rules;

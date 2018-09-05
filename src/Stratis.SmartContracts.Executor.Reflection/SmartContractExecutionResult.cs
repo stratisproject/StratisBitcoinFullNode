@@ -44,14 +44,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public ulong Fee { get; set; }
 
         /// <inheritdoc/>
-        public List<TxOut> Refunds { get; set; }
+        public TxOut Refund { get; set; }
 
         /// <inheritdoc />
         public IList<Log> Logs { get; set; }
 
         public SmartContractExecutionResult()
         {
-            this.Refunds = new List<TxOut>();
             this.Logs = new List<Log>();
         }
 

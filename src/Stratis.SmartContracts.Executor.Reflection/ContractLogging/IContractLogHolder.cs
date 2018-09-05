@@ -13,5 +13,10 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
         /// Add several raw logs to the holder. Likely to be used after nested contract execution.
         /// </summary>
         void AddRawLogs(IEnumerable<RawLog> toAdd);
+
+        /// <summary>
+        /// Clears all logs from the holder.
+        /// </summary>
+        void Clear();
     }
 }
