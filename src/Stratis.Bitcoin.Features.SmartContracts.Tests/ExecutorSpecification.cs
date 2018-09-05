@@ -97,6 +97,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     contractTxData.GasLimit),
                 Times.Once);
 
+            stateMock.Verify(sm => sm
+                .Apply(It.IsAny<ExternalCreateMessage>()), Times.Once);
+
             transferProcessor.Verify(t => t
                 .Process(
                     contractStateRoot.Object, 
