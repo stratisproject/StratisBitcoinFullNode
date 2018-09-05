@@ -1,17 +1,14 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Threading;
 using FluentAssertions;
+using Moq;
 using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Networks;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
@@ -25,48 +22,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public NodeSyncTests()
         {
-            this.posNetwork = NetworkRegistration.Register(new StratisRegTestMaxReorg());
+            this.posNetwork = KnownNetworks.StratisRegTest;
+            var maxReorgAdjusted = new Mock<IConsensus>();
+            maxReorgAdjusted.SetupGet(c => c.MaxReorgLength).Returns(10);
+            this.posNetwork.Consensus.Merge(maxReorgAdjusted.Object);
             this.powNetwork = KnownNetworks.RegTest;
-        }
-
-        private class StratisRegTestMaxReorg : StratisRegTest
-        {
-            public StratisRegTestMaxReorg()
-            {
-                this.Consensus = new NBitcoin.Consensus(
-                consensusFactory: base.Consensus.ConsensusFactory,
-                consensusOptions: base.Consensus.Options,
-                coinType: 105,
-                hashGenesisBlock: base.GenesisHash,
-                subsidyHalvingInterval: 210000,
-                majorityEnforceBlockUpgrade: 750,
-                majorityRejectBlockOutdated: 950,
-                majorityWindow: 1000,
-                buriedDeployments: base.Consensus.BuriedDeployments,
-                bip9Deployments: base.Consensus.BIP9Deployments,
-                bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
-                ruleChangeActivationThreshold: 1916, // 95% of 2016
-                minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 10,
-                defaultAssumeValid: null, // turn off assumevalid for regtest.
-                maxMoney: long.MaxValue,
-                coinbaseMaturity: 10,
-                premineHeight: 2,
-                premineReward: Money.Coins(98000000),
-                proofOfWorkReward: Money.Coins(4),
-                powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
-                powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
-                powAllowMinDifficultyBlocks: true,
-                powNoRetargeting: true,
-                powLimit: base.Consensus.PowLimit,
-                minimumChainWork: null,
-                isProofOfStake: true,
-                lastPowBlock: 12500,
-                proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeReward: Money.COIN
-            );
-            }
         }
 
         [Fact]
