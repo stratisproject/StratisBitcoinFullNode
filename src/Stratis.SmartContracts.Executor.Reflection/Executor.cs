@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using CSharpFunctionalExtensions;
+﻿using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
@@ -96,7 +95,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 state.InternalTransfers,
                 revert);
 
-            (Money fee, List<TxOut> refundTxOuts) = this.refundProcessor.Process(
+            (Money fee, TxOut refundTxOut) = this.refundProcessor.Process(
                 callData,
                 transactionContext.MempoolFee,
                 transactionContext.Sender,
@@ -112,7 +111,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 Return = result.VmExecutionResult.Result,
                 InternalTransaction = internalTransaction,
                 Fee = fee,
-                Refunds = refundTxOuts,
+                Refund = refundTxOut,
                 Logs = state.GetLogs()
             };
 
