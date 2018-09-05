@@ -5,8 +5,9 @@ namespace Stratis.SmartContracts.Core.State
 {
     /// <summary>
     /// Adapted from EthereumJ.
+    /// 
+    /// Wrapper for situations when you wish to cache the items being read and cache the values being set.
     /// </summary>
-    /// <typeparam name="Value"></typeparam>
     public class ReadWriteCache<Value> : SourceChainBox<byte[], Value, byte[], Value>, ICachedSource<byte[], Value>
     {
         protected ReadCache<Value> readCache;
@@ -41,11 +42,6 @@ namespace Stratis.SmartContracts.Core.State
                 v = this.writeCache.GetCached(key);
             }
             return v;
-        }
-
-        public long EstimateCacheSize()
-        {
-            return this.readCache.EstimateCacheSize() + this.writeCache.EstimateCacheSize();
         }
     }
 }

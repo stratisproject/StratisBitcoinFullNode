@@ -40,8 +40,8 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
             // first topic is the log type name
             topics.Add(Encoding.UTF8.GetBytes(this.LogStruct.GetType().Name));
 
-            // rest of the topics are the indexed fields. TODO: This currently gets all fields.
-            foreach (FieldInfo field in this.LogStruct.GetType().GetFields())
+            // rest of the topics are the indexed fields.
+            foreach (FieldInfo field in this.LogStruct.GetType().GetFields().Where(x=>x.CustomAttributes.Any(y=>y.AttributeType == typeof(IndexAttribute))))
             {
                 object value = field.GetValue(this.LogStruct);
                 byte[] serialized = serializer.Serialize(value);
