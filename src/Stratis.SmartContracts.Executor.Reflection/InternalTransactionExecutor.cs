@@ -70,7 +70,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             return result.Success
                 ? TransferResult.Transferred(result.VmExecutionResult.Result)
-                : TransferResult.Failed(result.VmExecutionResult.ExecutionException);
+                : TransferResult.Failed();
         }
 
         ///<inheritdoc />
@@ -91,7 +91,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             return result.Success 
                 ? TransferResult.Empty() 
-                : TransferResult.Failed(result.VmExecutionResult?.ExecutionException);
+                : TransferResult.Failed();
         }
     }
 }
