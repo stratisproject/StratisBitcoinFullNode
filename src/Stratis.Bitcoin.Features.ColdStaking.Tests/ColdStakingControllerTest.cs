@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         /// Adds a spendable transaction to a wallet.
         /// </summary>
         /// <param name="wallet">Wallet to add the transaction to.</param>
-        private void AddSpendableTransactionToWallet(Wallet.Wallet wallet)
+        private Transaction AddSpendableTransactionToWallet(Wallet.Wallet wallet)
         {
             HdAddress address = wallet.GetAllAddressesByCoinType(CoinType.Stratis).FirstOrDefault();
 
@@ -97,6 +97,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 BlockHash = this.Network.GenesisHash,
                 ScriptPubKey = address.ScriptPubKey
             });
+
+            return transaction;
         }
 
         /// <summary>
@@ -224,7 +226,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 WalletAccount = walletAccount,
                 WalletPassword = walletPassword,
                 Amount = "100",
-                Fees = "1"
+                Fees = "0.01"
             });
 
             var errorResult = Assert.IsType<ErrorResult>(result);
@@ -256,7 +258,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 WalletAccount = walletAccount,
                 WalletPassword = walletPassword,
                 Amount = "100",
-                Fees = "1"
+                Fees = "0.01"
             });
 
             var errorResult = Assert.IsType<ErrorResult>(result);
@@ -288,7 +290,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 WalletAccount = $"account { Wallet.Wallet.ColdStakingAccountIndex }",
                 WalletPassword = walletPassword,
                 Amount = "100",
-                Fees = "1"
+                Fees = "0.01"
             });
 
             var errorResult = Assert.IsType<ErrorResult>(result);
@@ -302,7 +304,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         }
 
         /// <summary>
-        /// Confirms that cold staking setup will succeed if no issues (as per above test cases) are encountered.
+        /// Confirms that cold staking setup with the hot wallet will succeed if no issues (as per above test cases) are encountered.
         /// </summary>
         [Fact]
         public void SetupColdStakingWithHotWalletSucceeds()
@@ -311,7 +313,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
-            this.AddSpendableTransactionToWallet(this.walletManager.GetWalletByName(walletName1));
+            Transaction prevTran = this.AddSpendableTransactionToWallet(this.walletManager.GetWalletByName(walletName1));
 
             IActionResult result = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
             {
@@ -326,9 +328,53 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             var jsonResult = Assert.IsType<JsonResult>(result);
             var response = Assert.IsType<SetupColdStakingResponse>(jsonResult.Value);
+            var transaction = Assert.IsType<PosTransaction>(this.Network.CreateTransaction(response.TransactionHex));
+            Assert.Single(transaction.Inputs);
+            Assert.Equal(prevTran.GetHash(), transaction.Inputs[0].PrevOut.Hash);
+            Assert.Equal((uint)0, transaction.Inputs[0].PrevOut.N);
+            Assert.Equal(2, transaction.Outputs.Count);
+            Assert.Equal(Money.Coins(0.99m), transaction.Outputs[0].Value);
+            Assert.Equal("OP_DUP OP_HASH160 970e19fc2f6565b0b1c65fd88ef1512cb3da4d7b OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[0].ScriptPubKey.ToString());
+            Assert.Equal(Money.Coins(100), transaction.Outputs[1].Value);
+            Assert.Equal("OP_DUP OP_HASH160 OP_ROT OP_IF OP_CHECKCOLDSTAKEVERIFY ba11d4970e64351c88bf00f10b6280d658785a94 OP_ELSE 6032478c6ac8caa056668ea7d065c32ae7e6da55 OP_ENDIF OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[1].ScriptPubKey.ToString());
+            Assert.False(transaction.IsCoinBase || transaction.IsCoinStake || transaction.IsColdCoinStake);
+        }
 
-            // TODO: Unpack and check the cold staking setup transaction.
-            // TODO: This test currently throws an exception due to our new script not being recognised in the output.
+        /// <summary>
+        /// Confirms that cold staking setup with the cold wallet will succeed if no issues (as per above test cases) are encountered.
+        /// </summary>
+        [Fact]
+        public void SetupColdStakingWithColdWalletSucceeds()
+        {
+            this.Initialize(this);
+
+            this.walletManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
+
+            Transaction prevTran = this.AddSpendableTransactionToWallet(this.walletManager.GetWalletByName(walletName2));
+
+            IActionResult result = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
+            {
+                HotWalletAddress = hotWalletAddress1,
+                ColdWalletAddress = coldWalletAddress2,
+                WalletName = walletName2,
+                WalletAccount = $"account 0",
+                WalletPassword = walletPassword,
+                Amount = "100",
+                Fees = "0.01"
+            });
+
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            var response = Assert.IsType<SetupColdStakingResponse>(jsonResult.Value);
+            var transaction = Assert.IsType<PosTransaction>(this.Network.CreateTransaction(response.TransactionHex));
+            Assert.Single(transaction.Inputs);
+            Assert.Equal(prevTran.GetHash(), transaction.Inputs[0].PrevOut.Hash);
+            Assert.Equal((uint)0, transaction.Inputs[0].PrevOut.N);
+            Assert.Equal(2, transaction.Outputs.Count);
+            Assert.Equal(Money.Coins(0.99m), transaction.Outputs[0].Value);
+            Assert.Equal("OP_DUP OP_HASH160 3d36028dc0fd3d3e433c801d9ebfff05ea663816 OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[0].ScriptPubKey.ToString());
+            Assert.Equal(Money.Coins(100), transaction.Outputs[1].Value);
+            Assert.Equal("OP_DUP OP_HASH160 OP_ROT OP_IF OP_CHECKCOLDSTAKEVERIFY ba11d4970e64351c88bf00f10b6280d658785a94 OP_ELSE 6032478c6ac8caa056668ea7d065c32ae7e6da55 OP_ENDIF OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[1].ScriptPubKey.ToString());
+            Assert.False(transaction.IsCoinBase || transaction.IsCoinStake || transaction.IsColdCoinStake);
         }
     }
 }
