@@ -6,11 +6,13 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
@@ -27,14 +29,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
     public class CoreNode
     {
-        private readonly NodeRunner runner;
+        private readonly ConnectionManagerSettings connectionManagerSettings;
         private readonly NetworkCredential creds;
-        private List<Transaction> transactions = new List<Transaction>();
         private readonly object lockObject = new object();
+        private readonly ILoggerFactory loggerFactory;
+        private readonly NodeRunner runner;
+        private List<Transaction> transactions = new List<Transaction>();
 
+        public int ApiPort => int.Parse(this.ConfigParameters["apiport"]);
         public int ProtocolPort => int.Parse(this.ConfigParameters["port"]);
         public int RpcPort => int.Parse(this.ConfigParameters["rpcport"]);
-        public int ApiPort => int.Parse(this.ConfigParameters["apiport"]);
 
         /// <summary>Location of the data directory for the node.</summary>
         public string DataFolder => this.runner.DataFolder;
@@ -64,6 +68,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.ConfigParameters.SetDefaultValueIfUndefined("port", randomFoundPorts[0].ToString());
             this.ConfigParameters.SetDefaultValueIfUndefined("rpcport", randomFoundPorts[1].ToString());
             this.ConfigParameters.SetDefaultValueIfUndefined("apiport", randomFoundPorts[2].ToString());
+
+            this.connectionManagerSettings = new ConnectionManagerSettings();
+            this.loggerFactory = new ExtendedLoggerFactory();
+            this.loggerFactory.AddConsoleWithFilters();
 
             CreateConfigFile(this.ConfigParameters);
         }
@@ -100,10 +108,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public INetworkPeer CreateNetworkPeerClient()
         {
-            var loggerFactory = new ExtendedLoggerFactory();
-            loggerFactory.AddConsoleWithFilters();
-
-            var selfEndPointTracker = new SelfEndpointTracker(loggerFactory);
+            var selfEndPointTracker = new SelfEndpointTracker(this.loggerFactory);
 
             // Needs to be initialized beforehand.
             selfEndPointTracker.UpdateAndAssignMyExternalAddress(new IPEndPoint(IPAddress.Parse("0.0.0.0").MapToIPv6Ex(), this.ProtocolPort), false);
@@ -111,13 +116,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             var ibdState = new Mock<IInitialBlockDownloadState>();
             ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
 
-            var networkPeerFactory = new NetworkPeerFactory(this.runner.Network, 
-                DateTimeProvider.Default, 
-                loggerFactory, 
-                new PayloadProvider().DiscoverPayloads(), 
+            var networkPeerFactory = new NetworkPeerFactory(this.runner.Network,
+                DateTimeProvider.Default,
+                this.loggerFactory,
+                new PayloadProvider().DiscoverPayloads(),
                 selfEndPointTracker,
                 ibdState.Object,
-                new Configuration.Settings.ConnectionManagerSettings());
+                this.connectionManagerSettings);
 
             return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
         }
@@ -192,7 +197,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             var timeToNodeInit = TimeSpan.FromMinutes(1);
             var timeToNodeStart = TimeSpan.FromMinutes(1);
 
-            TestHelper.WaitLoop(() => this.runner.FullNode != null, 
+            TestHelper.WaitLoop(() => this.runner.FullNode != null,
                 cancellationToken: new CancellationTokenSource(timeToNodeInit).Token,
                 failureReason: $"Failed to assign instance of FullNode within {timeToNodeInit}");
 
@@ -239,7 +244,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return after - before;
             }
         }
-
 
         public void SelectMempoolTransactions()
         {
