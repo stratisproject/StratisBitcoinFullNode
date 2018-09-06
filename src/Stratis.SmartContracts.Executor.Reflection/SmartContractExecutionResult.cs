@@ -23,10 +23,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public Exception Exception { get; set; }
 
         /// <inheritdoc/>
-        public bool Revert
-        {
-            get { return this.Exception != null; }
-        }
+        public bool Revert { get; set; }
 
         /// <inheritdoc/>
         public ulong FutureRefund { get; set; }
