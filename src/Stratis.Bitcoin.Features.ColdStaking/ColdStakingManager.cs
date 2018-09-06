@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
+
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.ColdStaking.Tests")]
 
 namespace Stratis.Bitcoin.Features.ColdStaking
 {
@@ -80,14 +83,14 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="isColdWalletAccount">Indicates whether we need the cold wallet account (versus the hot wallet account).</param>
         /// <param name="walletPassword">The (optional) wallet password. If not <c>null</c> the account will be created if it does not exist.</param>
         /// <returns>The cold staking account or null if the account does not exist.</returns>
-        private HdAccount GetColdStakingAccount(Wallet.Wallet wallet, bool isColdWalletAccount, string walletPassword = null)
+        internal HdAccount GetColdStakingAccount(Wallet.Wallet wallet, bool isColdWalletAccount, string walletPassword = null)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})",
                 nameof(wallet), wallet.Name,
                 nameof(isColdWalletAccount), isColdWalletAccount
                 );
 
-            bool createIfNotExists = string.IsNullOrEmpty(walletPassword);
+            bool createIfNotExists = !string.IsNullOrEmpty(walletPassword);
 
             int accountIndex = isColdWalletAccount ? ColdWalletAccountIndex : HotWalletAccountIndex;
 
@@ -205,8 +208,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 );
 
             Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
-            HdAccount coldAccount = this.GetColdStakingAccount(wallet, true);
-            HdAccount hotAccount = this.GetColdStakingAccount(wallet, false);
+            HdAccount coldAccount = this.GetColdStakingAccount(wallet, true, walletPassword);
+            HdAccount hotAccount = this.GetColdStakingAccount(wallet, false, walletPassword);
 
             bool thisIsColdWallet = coldAccount?.ExternalAddresses.Select(a => a.Address).Contains(coldWalletAddress) ?? false;
             bool thisIsHotWallet = hotAccount?.ExternalAddresses.Select(a => a.Address).Contains(hotWalletAddress) ?? false;
@@ -231,7 +234,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             if (this.WalletManager.GetAccounts(walletName).Single(a => a.Name == walletAccount).Index >= ColdWalletAccountIndex)
             {
                 this.logger.LogTrace("(-)[COLDSTAKE_OPERATION_NOT_ALLOWED]");
-                throw new WalletException($"You can't perform this operation with wallet account '{ walletAccount }'");
+                throw new WalletException($"You can't perform this operation with wallet account '{ walletAccount }'.");
             }
 
             var context = new TransactionBuildContext(wallet.Network)
