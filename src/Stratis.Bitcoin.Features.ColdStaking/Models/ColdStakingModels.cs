@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
 {
     /// <summary>
     /// The data structure used by a client requesting a cold staking address.
-    /// Refer to <see cref="ColdStakingController.GetColdStakingAddress(GetColdStakingAddressRequest)"/>.
+    /// Refer to <see cref="Controllers.ColdStakingController.GetColdStakingAddress(GetColdStakingAddressRequest)"/>.
     /// </summary>
     public class GetColdStakingAddressRequest
     {
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
 
     /// <summary>
     /// The data structure used by a client requesting that a cold staking setup be performed.
-    /// Refer to <see cref="ColdStakingController.SetupColdStaking(SetupColdStakingRequest)"/>.
+    /// Refer to <see cref="Controllers.ColdStakingController.SetupColdStaking(SetupColdStakingRequest)"/>.
     /// </summary>
     public class SetupColdStakingRequest
     {

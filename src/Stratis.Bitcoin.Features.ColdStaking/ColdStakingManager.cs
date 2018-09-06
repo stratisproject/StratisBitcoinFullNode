@@ -17,8 +17,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// See the comments for each method listed below for more details.
     /// </remarks>
     /// <seealso cref="ColdStakingFeature"/>
-    /// <seealso cref="GetColdStakingAddress(Wallet.Wallet, string, bool)"/>
-    /// <seealso cref="GetColdStakingAccount(Wallet.Wallet, string, bool, bool)"/>
+    /// <seealso cref="GetColdStakingAddress(Wallet.Wallet, bool, string)"/>
+    /// <seealso cref="GetColdStakingAccount(Wallet.Wallet, bool, string)"/>
     /// <seealso cref="GetColdStakingScript(ScriptId, ScriptId)"/>
     /// <seealso cref="GetSetupBuildContext(string, string, string, string, string, Money, Money)"/>
     public class ColdStakingManager
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         private const int HotWalletAccountIndex = Wallet.Wallet.ColdStakingAccountIndex + 1;
 
         /// <summary>Instance logger.</summary>
-        private ILogger logger;
+        private readonly ILogger logger;
 
         /// <summary>The wallet manager to use for accessing wallets and their accounts.</summary>
         public IWalletManager WalletManager { get; private set; }
@@ -91,9 +91,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             int accountIndex = isColdWalletAccount ? ColdWalletAccountIndex : HotWalletAccountIndex;
 
-            CoinType coinType = (CoinType)wallet.Network.Consensus.CoinType;
+            var coinType = (CoinType)wallet.Network.Consensus.CoinType;
 
-            HdAccount account = wallet.GetAccountsByCoinType(coinType).Where(a => a.Index == accountIndex).FirstOrDefault();
+            HdAccount account = wallet.GetAccountsByCoinType(coinType).FirstOrDefault(a => a.Index == accountIndex);
 
             if (account == null)
             {
@@ -205,7 +205,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 );
 
             Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
-            CoinType coinType = (CoinType)wallet.Network.Consensus.CoinType;
             HdAccount coldAccount = this.GetColdStakingAccount(wallet, true);
             HdAccount hotAccount = this.GetColdStakingAccount(wallet, false);
 
@@ -226,10 +225,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             ScriptId hotPubKey = BitcoinAddress.Create(hotWalletAddress, wallet.Network).ScriptPubKey.Hash;
             ScriptId coldPubKey = BitcoinAddress.Create(coldWalletAddress, wallet.Network).ScriptPubKey.Hash;
-            Script destination = GetColdStakingScript(hotPubKey, coldPubKey);
+            Script destination = this.GetColdStakingScript(hotPubKey, coldPubKey);
 
             // Only normal accounts should be allowed.
-            if (this.WalletManager.GetAccounts(walletName).Where(a => a.Name == walletAccount).Single().Index >= ColdWalletAccountIndex)
+            if (this.WalletManager.GetAccounts(walletName).Single(a => a.Name == walletAccount).Index >= ColdWalletAccountIndex)
             {
                 this.logger.LogTrace("(-)[COLDSTAKE_OPERATION_NOT_ALLOWED]");
                 throw new WalletException($"You can't perform this operation with wallet account '{ walletAccount }'");

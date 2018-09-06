@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// </summary>
         /// <remarks>This method is used to generate cold staking addresses on each machine/wallet
         /// which will then be used with <see cref="SetupColdStaking(SetupColdStakingRequest)"/>.</remarks>
-        /// <param name="request">A <see cref="GetColdStakingAddressRequest"/> object containging the parameters
+        /// <param name="request">A <see cref="GetColdStakingAddressRequest"/> object containing the parameters
         /// required for generating the cold-staking-address.</param>
         /// <returns>A <see cref="GetColdStakingAddressResponse>"/> object containing the cold staking address.</returns>
         [Route("get-cold-staking-address")]
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         {
             Guard.NotNull(request, nameof(request));
 
-            // Vhecks the request is valid.
+            // Checks that the request is valid.
             if (!this.ModelState.IsValid)
             {
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
