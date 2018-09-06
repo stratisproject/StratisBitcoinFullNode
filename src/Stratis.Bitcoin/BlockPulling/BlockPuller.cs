@@ -1042,7 +1042,10 @@ namespace Stratis.Bitcoin.BlockPulling
             {
                 int pendingBlocks = this.assignedDownloadsByHash.Count;
                 statsBuilder.AppendLine($"Blocks being downloaded: {pendingBlocks}");
+            }
 
+            lock (this.queueLock)
+            {
                 int unassignedDownloads = 0;
 
                 foreach (DownloadJob downloadJob in this.downloadJobsQueue)
