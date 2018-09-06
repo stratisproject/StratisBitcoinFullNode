@@ -44,13 +44,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
     public class StateTransitionError
     {
-        public StateTransitionError(Gas gasConsumed, StateTransitionErrorKind kind)
+        public StateTransitionError(Gas gasConsumed, StateTransitionErrorKind kind, Exception vmException)
         {
             this.Kind = kind;
             this.GasConsumed = gasConsumed;
+            this.VmException = vmException;
         }
 
+        public Exception VmException { get; }
+
         public StateTransitionErrorKind Kind { get; }
+
         public Gas GasConsumed { get; }
     }
 
@@ -91,9 +95,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 new StateTransitionSuccess(gasConsumed, contractAddress, result));
         }
 
+        public static StateTransitionResult Fail(Gas gasConsumed, StateTransitionErrorKind kind, Exception vmException)
+        {
+            return new StateTransitionResult(new StateTransitionError(gasConsumed, kind, vmException));
+        }
+
         public static StateTransitionResult Fail(Gas gasConsumed, StateTransitionErrorKind kind)
         {
-            return new StateTransitionResult(new StateTransitionError(gasConsumed, kind));
+            return new StateTransitionResult(new StateTransitionError(gasConsumed, kind, null));
         }
     }
 }

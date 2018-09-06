@@ -192,8 +192,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 return StateTransitionResult.Fail(
                     gasMeter.GasConsumed,
-                    errorKind
-                );
+                    errorKind,
+                    result.ExecutionException);
             }
             else
             {
@@ -282,8 +282,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 return StateTransitionResult.Fail(
                     gasMeter.GasConsumed,
-                    errorKind
-                );
+                    errorKind,
+                    result.ExecutionException);
             }
             else
             {
