@@ -357,8 +357,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             uint length = BitConverter.ToUInt32(messageHeader, lengthOffset);
 
             // 4 MB limit on message size.
-            // Limit is based on the largest object that we can receive which is the block.
-            // Max size of a block on segwit-enabled network in 4mb.
+            // Limit is based on the largest valid object that we can receive which is the block.
+            // Max size of a block on segwit-enabled network is 4mb.
             if (length > 0x00400000)
                 throw new ProtocolViolationException("Message payload too big (over 0x00400000 bytes)");
 
