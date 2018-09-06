@@ -82,7 +82,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.transactionFee = this.nodes[NodeOne].GetFee(this.transactionBuildContext);
 
             this.nodes[NodeOne].FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
-            //TestHelper.AreNodesSynced(this.nodes[NodeOne], this.nodes[NodeTwo]);
         }
 
         private void node2_receives_the_funds()
