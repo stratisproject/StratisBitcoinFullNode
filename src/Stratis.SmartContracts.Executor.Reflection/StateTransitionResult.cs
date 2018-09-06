@@ -79,6 +79,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.Success = success;
         }
 
+        public Gas GasConsumed => this.IsSuccess ? this.Success.GasConsumed : this.Error.GasConsumed;
+
         public bool IsSuccess { get; }
 
         public bool IsFailure => !this.IsSuccess;

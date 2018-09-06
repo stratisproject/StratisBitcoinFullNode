@@ -89,10 +89,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             bool revert = !result.IsSuccess;
 
-            Gas gasConsumed = result.IsSuccess 
-                ? result.Success.GasConsumed 
-                : result.Error.GasConsumed;
-
             Transaction internalTransaction = this.transferProcessor.Process(
                 this.stateRoot,
                 result.Success?.ContractAddress,
@@ -106,7 +102,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 callData,
                 transactionContext.MempoolFee,
                 transactionContext.Sender,
-                gasConsumed,
+                result.GasConsumed,
                 outOfGas);
 
             var executionResult = new SmartContractExecutionResult
@@ -114,7 +110,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 To = !callData.IsCreateContract ? callData.ContractAddress : null,
                 NewContractAddress = !revert && creation ? result.Success?.ContractAddress : null,
                 Exception = result.Error?.VmException,
-                GasConsumed = gasConsumed,
+                GasConsumed = result.GasConsumed,
                 Return = result.Success?.ExecutionResult,
                 InternalTransaction = internalTransaction,
                 Fee = fee,
