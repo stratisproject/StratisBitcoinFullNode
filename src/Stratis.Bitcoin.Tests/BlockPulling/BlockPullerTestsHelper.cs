@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             this.CallbacksCalled = new Dictionary<uint256, Block>();
             this.ChainState = new ChainState() {ConsensusTip = ChainedHeadersHelper.CreateGenesisChainedHeader()};
 
-            this.Puller = new ExtendedBlockPuller(this.ChainState, new NodeSettings(new StratisMain()), new DateTimeProvider(), this.loggerFactory);
+            this.Puller = new ExtendedBlockPuller(this.ChainState, new NodeSettings(new StratisMain()), new DateTimeProvider(), new NodeStats(new DateTimeProvider()), this.loggerFactory);
         }
 
         /// <summary>Creates a peer with extended puller behavior.</summary>
@@ -123,9 +123,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
     {
         private readonly BlockPuller puller;
 
-        public ExtendedBlockPuller(IChainState chainState, NodeSettings nodeSettings, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public ExtendedBlockPuller(IChainState chainState, NodeSettings nodeSettings, IDateTimeProvider dateTimeProvider, INodeStats nodeStats, ILoggerFactory loggerFactory)
         {
-            this.puller = new BlockPuller(chainState, nodeSettings, dateTimeProvider, loggerFactory);
+            this.puller = new BlockPuller(chainState, nodeSettings, dateTimeProvider, nodeStats, loggerFactory);
         }
 
         public Dictionary<int, IBlockPullerBehavior> PullerBehaviorsByPeerId => (Dictionary<int, IBlockPullerBehavior>)this.puller.GetMemberValue("pullerBehaviorsByPeerId");
@@ -202,8 +202,6 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
         public void PushBlock(uint256 blockHash, Block block, int peerId) { this.puller.PushBlock(blockHash, block, peerId); }
 
         public void RequestPeerServices(NetworkPeerServices services) { this.puller.RequestPeerServices(services); }
-
-        public void ShowStats(StringBuilder statsBuilder) { this.puller.ShowStats(statsBuilder); }
 
         public void Dispose() { this.puller.Dispose(); }
     }

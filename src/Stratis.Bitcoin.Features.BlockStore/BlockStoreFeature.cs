@@ -18,7 +18,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public class BlockStoreFeature : FullNodeFeature, INodeStats, IFeatureStats
+    public class BlockStoreFeature : FullNodeFeature
     {
         private readonly ConcurrentChain chain;
 
@@ -48,7 +48,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ILoggerFactory loggerFactory,
             StoreSettings storeSettings,
             IChainState chainState,
-            IBlockStoreQueue blockStoreQueue)
+            IBlockStoreQueue blockStoreQueue,
+            INodeStats nodeStats)
         {
             this.chain = chain;
             this.blockStoreQueue = blockStoreQueue;
@@ -59,26 +60,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.loggerFactory = loggerFactory;
             this.storeSettings = storeSettings;
             this.chainState = chainState;
+
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 900);
         }
 
-        /// <inheritdoc />
-        public void AddNodeStats(StringBuilder benchLogs)
+        private void AddInlineStats(StringBuilder benchLogs)
         {
             ChainedHeader highestBlock = this.chainState.BlockStoreTip;
 
             if (highestBlock != null)
             {
-                benchLogs.AppendLine($"BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                                     highestBlock.Height.ToString().PadRight(8) +
-                                     $" BlockStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
-                                     highestBlock.HashBlock);
-            }
-        }
+                string log = $"BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + highestBlock.Height.ToString().PadRight(8) +
+                             $" BlockStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + highestBlock.HashBlock;
 
-        /// <inheritdoc />
-        public void AddFeatureStats(StringBuilder benchLog)
-        {
-            this.blockStoreQueue.ShowStats(benchLog);
+                benchLogs.AppendLine(log);
+            }
         }
 
         public override void Initialize()
