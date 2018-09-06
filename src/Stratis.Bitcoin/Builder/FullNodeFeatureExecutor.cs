@@ -51,30 +51,14 @@ namespace Stratis.Bitcoin.Builder
         /// <inheritdoc />
         public void Initialize()
         {
-            try
-            {
-                this.Execute(service => service.ValidateDependencies(this.node.Services));
-                this.Execute(service => service.Initialize());
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError("An error occurred starting the application: {0}", ex);
-                throw;
-            }
+            this.Execute(service => service.ValidateDependencies(this.node.Services));
+            this.Execute(service => service.Initialize());
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            try
-            {
-                this.Execute(feature => feature.Dispose(), true);
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError("An error occurred stopping the application", ex);
-                throw;
-            }
+            this.Execute(feature => feature.Dispose(), true);
         }
 
         /// <summary>
@@ -82,11 +66,10 @@ namespace Stratis.Bitcoin.Builder
         /// </summary>
         /// <param name="callback">Delegate to run start or stop method of the feature.</param>
         /// <param name="reverseOrder">Reverse the order of which the features are executed.</param>
-        /// <remarks>This method catches exception of start/stop methods and then, after all start/stop methods were called
-        /// for all features, it throws AggregateException if there were any exceptions.</remarks>
+        /// <remarks>This method catches exception of start/stop methods and then, after all start/stop methods were called for all features.</remarks>
         private void Execute(Action<IFullNodeFeature> callback, bool reverseOrder = false)
         {
-            List<Exception> exceptions = null;
+            this.logger.LogTrace("({0}:{1})", nameof(reverseOrder), reverseOrder);
 
             if (this.node.Services != null)
             {
@@ -103,21 +86,13 @@ namespace Stratis.Bitcoin.Builder
                     }
                     catch (Exception ex)
                     {
-                        if (exceptions == null)
-                        {
-                            exceptions = new List<Exception>();
-                        }
-
-                        exceptions.Add(ex);
+                        this.logger.LogError("Exception occurred: {0}", ex.ToString());
+                        throw;
                     }
                 }
-
-                // Throw an aggregate exception if there were any exceptions
-                if (exceptions != null)
-                {
-                    throw new AggregateException(exceptions);
-                }
             }
+
+            this.logger.LogTrace("(-)");
         }
     }
 }
