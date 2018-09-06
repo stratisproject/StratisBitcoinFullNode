@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         private const string coldWalletAddress1 = "SNiAnXM2WmbMhUij9cbit62sR8U9FjFJr3";
         private const string hotWalletAddress1 = "SaVUwmJSvRiofghrePxrBQGoke1pLfmfXN";
         private const string coldWalletAddress2 = "Sagbh9LuzNAV7y2FHyUQJcgmjcuogSssef";
-        private const string hotWalletAddress2 = "Sagbh9LuzNAV7y2FHyUQJcgmjcuogSssef";
+        private const string hotWalletAddress2 = "SVoMim67CMF1St6j6toAWnnQ2mCvb8V4mT";
 
         private WalletManager walletManager;
         private ColdStakingManager coldStakingManager;
@@ -71,23 +71,19 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         /// Adds a spendable transaction to a wallet.
         /// </summary>
         /// <param name="wallet">Wallet to add the transaction to.</param>
+        /// <returns>The spendable transaction that was added to the wallet.</returns>
         private Transaction AddSpendableTransactionToWallet(Wallet.Wallet wallet)
         {
             HdAddress address = wallet.GetAllAddressesByCoinType(CoinType.Stratis).FirstOrDefault();
 
             var transaction = this.Network.CreateTransaction();
 
-            var amount = Money.Coins(101);
-
-            transaction.Outputs.Add(
-                new TxOut(
-                    amount,
-                    address.ScriptPubKey));
+            transaction.Outputs.Add(new TxOut(Money.Coins(101), address.ScriptPubKey));
 
             address.Transactions.Add(new TransactionData()
             {
                 Hex = transaction.ToHex(this.Network),
-                Amount = amount,
+                Amount = transaction.Outputs[0].Value,
                 Id = transaction.GetHash(),
                 BlockHeight = 0,
                 Index = 0,
@@ -124,7 +120,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal(coldWalletAddress1, coldAccount1.ExternalAddresses.First().Address.ToString());
             Assert.Equal(hotWalletAddress1, hotAccount1.ExternalAddresses.First().Address.ToString());
             Assert.Equal(coldWalletAddress2, coldAccount2.ExternalAddresses.First().Address.ToString());
-            Assert.Equal(hotWalletAddress2, coldAccount2.ExternalAddresses.First().Address.ToString());
+            Assert.Equal(hotWalletAddress2, hotAccount2.ExternalAddresses.First().Address.ToString());
         }
 
         /// <summary>
