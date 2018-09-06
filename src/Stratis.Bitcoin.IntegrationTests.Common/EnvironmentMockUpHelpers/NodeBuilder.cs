@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Tests.Common;
@@ -67,7 +68,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private CoreNode CreateNode(NodeRunner runner, bool start, string configFile = "bitcoin.conf", bool useCookieAuth = false)
         {
-            var node = new CoreNode(runner, this, configFile, useCookieAuth);
+            var node = new CoreNode(runner, this.ConfigParameters, configFile, useCookieAuth);
             this.Nodes.Add(node);
             if (start) node.Start();
             return node;
@@ -115,17 +116,19 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public CoreNode CreateSmartContractPowNode()
         {
-            return CreateNode(new StratisSmartContractNode(this.GetNextDataFolderName()), false, "stratis.conf");
+            Network network = new SmartContractsRegTest();
+            return CreateNode(new StratisSmartContractNode(this.GetNextDataFolderName(), network), false, "stratis.conf");
         }
 
         public CoreNode CreateSmartContractPosNode()
         {
-            return CreateNode(new StratisSmartContractPosNode(this.GetNextDataFolderName()), false, "stratis.conf");
+            Network network = new SmartContractPosRegTest();
+            return CreateNode(new StratisSmartContractPosNode(this.GetNextDataFolderName(), network), false, "stratis.conf");
         }
 
         public CoreNode CloneStratisNode(CoreNode cloneNode)
         {
-            var node = new CoreNode(new StratisBitcoinPowRunner(cloneNode.FullNode.Settings.DataFolder.RootPath, cloneNode.FullNode.Network), this, "bitcoin.conf");
+            var node = new CoreNode(new StratisBitcoinPowRunner(cloneNode.FullNode.Settings.DataFolder.RootPath, cloneNode.FullNode.Network), this.ConfigParameters, "bitcoin.conf");
             this.Nodes.Add(node);
             this.Nodes.Remove(cloneNode);
             return node;

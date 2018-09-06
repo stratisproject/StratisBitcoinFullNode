@@ -47,7 +47,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public bool CookieAuth { get; set; }
 
-        public CoreNode(NodeRunner runner, NodeBuilder builder, string configfile, bool useCookieAuth = false)
+        public Mnemonic Mnemonic { get; set; }
+
+        public CoreNode(NodeRunner runner, NodeConfigParameters configParameters, string configfile, bool useCookieAuth = false)
         {
             this.runner = runner;
 
@@ -56,7 +58,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.creds = new NetworkCredential(pass, pass);
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.CookieAuth = useCookieAuth;
-            this.ConfigParameters.Import(builder.ConfigParameters);
+            this.ConfigParameters.Import(configParameters);
             var randomFoundPorts = new int[3];
             IpHelper.FindPorts(randomFoundPorts);
             this.ConfigParameters.SetDefaultValueIfUndefined("port", randomFoundPorts[0].ToString());
@@ -124,6 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
+                this.runner.BuildNode();
                 this.runner.Start();
                 this.State = CoreNodeState.Starting;
             }
@@ -251,7 +254,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
-                this.runner.Kill();
+                this.runner.Stop();
 
                 if (!this.runner.IsDisposed)
                 {
