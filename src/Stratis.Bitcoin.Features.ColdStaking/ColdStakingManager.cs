@@ -242,8 +242,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 AccountReference = new WalletAccountReference(walletName, walletAccount),
                 TransactionFee = feeAmount,
                 MinConfirmations = 0,
-                Shuffle = true,
-                OpReturnData = (thisIsHotWallet ? hotPubKey : coldPubKey).ToString(),
+                Shuffle = false,
                 WalletPassword = walletPassword,
                 Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = destination } }.ToList()
             };
