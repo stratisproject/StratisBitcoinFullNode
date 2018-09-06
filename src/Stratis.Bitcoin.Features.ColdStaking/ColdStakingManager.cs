@@ -248,6 +248,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = destination } }.ToList()
             };
 
+            // Avoid errors being raised due to the special script that we are using.
+            context.TransactionBuilder.StandardTransactionPolicy.CheckScriptPubKey = false;
+
             this.logger.LogTrace("(-)");
             return context;
         }
