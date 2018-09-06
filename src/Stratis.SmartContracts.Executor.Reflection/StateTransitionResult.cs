@@ -1,28 +1,34 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
-    /// <summary>
-    /// The result of a state transition operation.
-    /// </summary>
-    public class StateTransitionResult
+    public enum StateTransitionErrorKind
     {
-        public StateTransitionResult(
-            Gas gasConsumed, 
-            uint160 contractAddress, 
-            bool success,
-            VmExecutionResult vmExecutionResult = null)
+        OutOfGas,
+        InsufficientBalance,
+        InsufficientGas,
+        NoMethodName,
+        NoCode,
+        VmError
+    }
+
+    public class StateTransitionSuccess
+    {
+        public StateTransitionSuccess(
+            Gas gasConsumed,
+            uint160 contractAddress,
+            object result = null)
         {
             this.GasConsumed = gasConsumed;
             this.ContractAddress = contractAddress;
-            this.Success = success;
-            this.VmExecutionResult = vmExecutionResult;
+            this.ExecutionResult = result;
         }
 
         /// <summary>
-        /// The execution result of the VM, or null if the VM was not invoked.
+        /// The result returned by the method being executed on the VM.
         /// </summary>
-        public VmExecutionResult VmExecutionResult { get; }
+        public object ExecutionResult { get; }
 
         /// <summary>
         /// Gas consumed during execution.
@@ -34,9 +40,60 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public uint160 ContractAddress { get; }
 
-        /// <summary>
-        /// Whether the operation was successful.
-        /// </summary>
-        public bool Success { get; }
+    }
+
+    public class StateTransitionError
+    {
+        public StateTransitionError(Gas gasConsumed, StateTransitionErrorKind kind)
+        {
+            this.Kind = kind;
+            this.GasConsumed = gasConsumed;
+        }
+
+        public StateTransitionErrorKind Kind { get; }
+        public Gas GasConsumed { get; }
+    }
+
+    /// <summary>
+    /// The result of a state transition operation. A successful or failed operation can still have gas consumed.
+    ///
+    /// A successful operation will have the contract's address.
+    ///
+    /// A failed operation will have the error. Even if an error is produced, the operation is still included in a block.
+    /// </summary>
+    public class StateTransitionResult
+    {
+        private StateTransitionResult(StateTransitionError error)
+        {
+            this.IsSuccess = false;
+            this.Error = error;
+        }
+
+        private StateTransitionResult(StateTransitionSuccess success)
+        {
+            this.IsSuccess = true;
+            this.Success = success;
+        }
+
+        public bool IsSuccess { get; }
+
+        public bool IsFailure => !this.IsSuccess;
+
+        public StateTransitionSuccess Success { get; }
+
+        public StateTransitionError Error { get; }
+
+        public static StateTransitionResult Ok(Gas gasConsumed,
+            uint160 contractAddress,
+            object result = null)
+        {
+            return new StateTransitionResult(
+                new StateTransitionSuccess(gasConsumed, contractAddress, result));
+        }
+
+        public static StateTransitionResult Fail(Gas gasConsumed, StateTransitionErrorKind kind)
+        {
+            return new StateTransitionResult(new StateTransitionError(gasConsumed, kind));
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using CSharpFunctionalExtensions;
+﻿using System;
+using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
@@ -86,29 +87,35 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 result = state.Apply(message);
             }
 
-            bool revert = !result.Success;
+            bool revert = !result.IsSuccess;
+
+            Gas gasConsumed = result.IsSuccess 
+                ? result.Success.GasConsumed 
+                : result.Error.GasConsumed;
 
             Transaction internalTransaction = this.transferProcessor.Process(
                 this.stateRoot,
-                result.ContractAddress,
+                result.Success?.ContractAddress,
                 transactionContext,
                 state.InternalTransfers,
                 revert);
+
+            bool outOfGas = result.IsFailure && result.Error.Kind == StateTransitionErrorKind.OutOfGas;
 
             (Money fee, TxOut refundTxOut) = this.refundProcessor.Process(
                 callData,
                 transactionContext.MempoolFee,
                 transactionContext.Sender,
-                result.GasConsumed,
-                result.VmExecutionResult.ExecutionException);
+                gasConsumed,
+                outOfGas);
 
             var executionResult = new SmartContractExecutionResult
             {
                 To = !callData.IsCreateContract ? callData.ContractAddress : null,
-                NewContractAddress = !revert && creation ? result.ContractAddress : null,
-                Exception = result.VmExecutionResult.ExecutionException,
-                GasConsumed = result.GasConsumed,
-                Return = result.VmExecutionResult.Result,
+                NewContractAddress = !revert && creation ? result.Success?.ContractAddress : null,
+                Exception = result.IsFailure ? new Exception() : null, // TODO remove the Exception field
+                GasConsumed = gasConsumed,
+                Return = result.Success?.ExecutionResult,
                 InternalTransaction = internalTransaction,
                 Fee = fee,
                 Refund = refundTxOut,
