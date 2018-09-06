@@ -14,18 +14,18 @@ namespace Stratis.SmartContracts.Core.State
         public ISource<byte[], AccountState> accountStateCache;
         public ISource<byte[], ContractUnspentOutput> vinCache;
         protected ISource<byte[], byte[]> codeCache;
-        protected MultiCache<ICachedSource<byte[], byte[]>> storageCache;
+        protected MultiCacheBase<ICachedSource<byte[], byte[]>> storageCache;
         
         protected ContractState() { }
 
         public ContractState(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-                      MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], ContractUnspentOutput> vinCache)
+                      MultiCacheBase<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], ContractUnspentOutput> vinCache)
         {
             this.Init(accountStateCache, codeCache, storageCache, vinCache);
         }
 
         protected void Init(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-                    MultiCache<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], ContractUnspentOutput> vinCache)
+                    MultiCacheBase<ICachedSource<byte[], byte[]>> storageCache, ISource<byte[], ContractUnspentOutput> vinCache)
         {
             this.accountStateCache = accountStateCache;
             this.codeCache = codeCache;
@@ -118,7 +118,7 @@ namespace Stratis.SmartContracts.Core.State
             ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(this.accountStateCache, WriteCache<AccountState>.CacheType.SIMPLE);
             ISource<byte[], ContractUnspentOutput> trackVinCache = new WriteCache<ContractUnspentOutput>(this.vinCache, WriteCache<ContractUnspentOutput>.CacheType.SIMPLE);
             ISource<byte[], byte[]> trackCodeCache = new WriteCache<byte[]>(this.codeCache, WriteCache<byte[]>.CacheType.SIMPLE);
-            MultiCache<ICachedSource<byte[], byte[]>> trackStorageCache = new RealMultiCache(this.storageCache);
+            MultiCacheBase<ICachedSource<byte[], byte[]>> trackStorageCache = new MultiCache(this.storageCache);
 
             var stateRepository = new ContractState(trackAccountStateCache, trackCodeCache, trackStorageCache, trackVinCache)
             {

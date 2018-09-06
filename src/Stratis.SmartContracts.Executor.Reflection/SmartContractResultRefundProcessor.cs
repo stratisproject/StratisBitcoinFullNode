@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -20,7 +18,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }
 
-        public (Money, List<TxOut>) Process(ContractTxData contractTxData,
+        public (Money, TxOut) Process(ContractTxData contractTxData,
             ulong mempoolFee, uint160 sender,
             Gas gasConsumed,
             Exception exception)
@@ -29,26 +27,26 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             Money fee = mempoolFee;
 
-            var refunds = new List<TxOut>();
-
             if (exception is OutOfGasException)
             {
                 this.logger.LogTrace("(-)[OUTOFGAS_EXCEPTION]");
-                return (fee, refunds);
+                return (fee, null);
             }
 
             var refund = new Money(contractTxData.GasCostBudget - (gasConsumed * contractTxData.GasPrice));
             this.logger.LogTrace("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(contractTxData.GasCostBudget), contractTxData.GasCostBudget, nameof(gasConsumed), gasConsumed, nameof(contractTxData.GasPrice), contractTxData.GasPrice, nameof(refund), refund);
 
+            TxOut ret = null;
+
             if (refund > 0)
             {
                 fee -= refund;
-                refunds.Add(CreateRefund(sender, refund));
+                ret = CreateRefund(sender, refund);
             }
 
             this.logger.LogTrace("(-)");
 
-            return (fee, refunds);
+            return (fee, ret);
         }
 
         /// <summary>

@@ -5,8 +5,9 @@ namespace Stratis.SmartContracts.Core.State
 {
     /// <summary>
     /// Adapted from EthereumJ.
+    /// 
+    /// Caches values in memory and flushes to another source.
     /// </summary>
-    /// <typeparam name="Value"></typeparam>
     public class WriteCache<Value> : AbstractCachedSource<byte[], Value>
     {
         public enum CacheType
@@ -148,11 +149,6 @@ namespace Stratis.SmartContracts.Core.State
                     if (this.cache.ContainsKey(key))
                         oldVal = this.cache[key];
                     this.cache[key] = curVal;
-                    if (oldVal != null)
-                    {
-                        this.CacheRemoved(key, oldVal.Value());
-                    }
-                    this.CacheAdded(key, curVal.Value());
                 }
                 // assigning for non-counting cache only
                 // for counting cache the value should be immutable (see HashedKeySource)
@@ -170,14 +166,14 @@ namespace Stratis.SmartContracts.Core.State
                     curVal = this.cache[key];
                 if (curVal == null)
                 {
-                    return this.GetSource() == null ? default(Value) : this.GetSource().Get(key);
+                    return this.Source == null ? default(Value) : this.Source.Get(key);
                 }
                 else
                 {
                     Value value = curVal.GetValue();
                     if (value == null) // no idea
                     {
-                        return this.GetSource() == null ? default(Value) : this.GetSource().Get(key);
+                        return this.Source == null ? default(Value) : this.Source.Get(key);
                     }
                     else
                     {
@@ -202,11 +198,6 @@ namespace Stratis.SmartContracts.Core.State
                     if (this.cache.ContainsKey(key))
                         oldVal = this.cache[key];
                     this.cache[key] = curVal;
-                    if (oldVal != null)
-                    {
-                        this.CacheRemoved(key, oldVal.value);
-                    }
-                    this.CacheAdded(key, curVal.value);
                 }
                 curVal.Deleted();
             }
@@ -223,7 +214,7 @@ namespace Stratis.SmartContracts.Core.State
                     {
                         for (int i = 0; i < entry.Value.counter; i++)
                         {
-                            this.GetSource().Put(entry.Key, entry.Value.value);
+                            this.Source.Put(entry.Key, entry.Value.value);
                         }
                         ret = true;
                     }
@@ -231,19 +222,18 @@ namespace Stratis.SmartContracts.Core.State
                     {
                         for (int i = 0; i > entry.Value.counter; i--)
                         {
-                            this.GetSource().Delete(entry.Key);
+                            this.Source.Delete(entry.Key);
                         }
                         ret = true;
                     }
                 }
                 if (this.flushSource)
                 {
-                    this.GetSource().Flush();
+                    this.Source.Flush();
                 }
                 lock (this.writeLock)
                 {
                     this.cache.Clear();
-                    this.CacheCleared();
                 }
                 return ret;
             }
@@ -270,17 +260,6 @@ namespace Stratis.SmartContracts.Core.State
                     return entry;
                 }
             }
-        }
-
-        public long DebugCacheSize()
-        {
-            long ret = 0;
-            foreach (KeyValuePair<byte[], CacheEntry<Value>> entry in this.cache)
-            {
-                ret += this.keySizeEstimator.EstimateSize(entry.Key);
-                ret += this.valueSizeEstimator.EstimateSize(entry.Value.value);
-            }
-            return ret;
         }
     }
 }
