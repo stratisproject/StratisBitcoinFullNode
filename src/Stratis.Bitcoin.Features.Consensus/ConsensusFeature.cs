@@ -108,8 +108,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>();
-                    services.AddSingleton<IGetUnspentTransaction, ConsensusQuery>();
-
+                    services.AddSingleton<IChainState, ChainState>();
+                    services.AddSingleton<ConsensusQuery>()
+                        .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
+                        .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
                     new PowConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                 });
             });
@@ -135,8 +137,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<IConsensusRuleEngine, PosConsensusRuleEngine>();
-                        services.AddSingleton<IGetUnspentTransaction, ConsensusQuery>();
-
+                        services.AddSingleton<IChainState, ChainState>();
+                        services.AddSingleton<ConsensusQuery>()
+                            .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
+                            .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
                         new PosConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                     });
             });
