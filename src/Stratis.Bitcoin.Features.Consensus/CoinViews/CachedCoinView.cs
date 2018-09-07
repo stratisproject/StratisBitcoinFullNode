@@ -274,12 +274,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 return;
             }
 
-            // Before flushing the coinview persist the stake store
-            // the stake store depends on the last block hash
-            // to be stored after the stake store is persisted.
-            if (this.stakeChainStore != null)
-                await this.stakeChainStore.FlushAsync(true);
-
             if (this.innerBlockHash == null)
                 this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
 
@@ -290,6 +284,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.logger.LogTrace("(-)[NULL_INNER_TIP]");
                     return;
                 }
+
+                // Before flushing the coinview persist the stake store
+                // the stake store depends on the last block hash
+                // to be stored after the stake store is persisted.
+                if (this.stakeChainStore != null)
+                    await this.stakeChainStore.FlushAsync(true);
 
                 KeyValuePair<uint256, CacheItem>[] unspent = this.unspents.Where(u => u.Value.IsDirty).ToArray();
 
