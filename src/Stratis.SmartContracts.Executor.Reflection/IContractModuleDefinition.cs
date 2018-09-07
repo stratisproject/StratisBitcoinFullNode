@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Mono.Cecil;
 using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.Executor.Reflection.ILRewrite;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -24,8 +25,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         ModuleDefinition ModuleDefinition { get; }
 
-        void InjectConstructorGas();
-
         /// <summary>
         /// Serializes the <see cref="ContractModuleDefinition.ModuleDefinition"/> to contract bytecode.
         /// </summary>
@@ -36,6 +35,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         SmartContractValidationResult Validate(ISmartContractValidator validator);
 
-        void InjectMethodGas(string typeName, MethodCall methodCall);
+        /// <summary>
+        /// Rewrite the ModuleDefintion using an ILRewriter.
+        /// </summary>
+        void Rewrite(IILRewriter rewriter);
     }
 }
