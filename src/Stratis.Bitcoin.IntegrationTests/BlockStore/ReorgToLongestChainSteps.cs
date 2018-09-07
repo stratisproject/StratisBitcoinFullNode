@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
@@ -28,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string WalletZero = "wallet 0";
         private const string WalletPassword = "123456";
         private const string WalletPassphrase = "phrase";
-       
+
         public ReorgToLongestChainSpecification(ITestOutputHelper output) : base(output)
         {
         }
@@ -140,7 +139,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void jings_connection_comes_back()
         {
             this.jingNode.CreateRPCClient().AddNode(this.bobNode.Endpoint);
-            this.sharedSteps.WaitForNodeToSync(this.jingNode, this.bobNode, this.charlieNode, this.daveNode);
+            this.sharedSteps.WaitForNodeToSyncIgnoreMempool(this.jingNode, this.bobNode, this.charlieNode, this.daveNode);
         }
 
         private void bob_charlie_and_dave_reorg_to_jings_longest_chain()
