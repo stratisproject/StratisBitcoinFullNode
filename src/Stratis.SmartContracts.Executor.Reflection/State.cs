@@ -186,13 +186,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             {
                 this.Rollback(stateSnapshot);
 
-                StateTransitionErrorKind errorKind = result.ExecutionException is OutOfGasException
-                    ? StateTransitionErrorKind.OutOfGas
-                    : StateTransitionErrorKind.VmError;
-
                 return StateTransitionResult.Fail(
                     gasMeter.GasConsumed,
-                    errorKind,
                     result.ExecutionException);
             }
             else
@@ -276,13 +271,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             {
                 this.Rollback(stateSnapshot);
 
-                StateTransitionErrorKind errorKind = result.ExecutionException is OutOfGasException
-                    ? StateTransitionErrorKind.OutOfGas
-                    : StateTransitionErrorKind.VmError;
-
                 return StateTransitionResult.Fail(
                     gasMeter.GasConsumed,
-                    errorKind,
                     result.ExecutionException);
             }
             else

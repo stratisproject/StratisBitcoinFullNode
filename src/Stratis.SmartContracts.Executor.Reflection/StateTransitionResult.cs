@@ -1,5 +1,6 @@
 ﻿using System;
 using NBitcoin;
+using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -97,9 +98,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 new StateTransitionSuccess(gasConsumed, contractAddress, result));
         }
 
-        public static StateTransitionResult Fail(Gas gasConsumed, StateTransitionErrorKind kind, Exception vmException)
+        public static StateTransitionResult Fail(Gas gasConsumed, Exception vmException)
         {
-            return new StateTransitionResult(new StateTransitionError(gasConsumed, kind, vmException));
+            StateTransitionErrorKind errorKind = vmException is OutOfGasException
+                ? StateTransitionErrorKind.OutOfGas
+                : StateTransitionErrorKind.VmError;
+
+            return new StateTransitionResult(new StateTransitionError(gasConsumed, errorKind, vmException));
         }
 
         public static StateTransitionResult Fail(Gas gasConsumed, StateTransitionErrorKind kind)
