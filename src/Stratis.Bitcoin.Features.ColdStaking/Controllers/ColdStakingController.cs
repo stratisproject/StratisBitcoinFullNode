@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <remarks>This method is used to generate cold staking addresses on each machine/wallet
         /// which will then be used with <see cref="SetupColdStaking(SetupColdStakingRequest)"/>.</remarks>
         /// <param name="request">A <see cref="GetColdStakingAddressRequest"/> object containing the parameters
-        /// required for generating the cold-staking-address.</param>
+        /// required for generating the cold staking address.</param>
         /// <returns>A <see cref="GetColdStakingAddressResponse>"/> object containing the cold staking address.</returns>
         [Route("get-cold-staking-address")]
         [HttpPost]
@@ -44,9 +44,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         {
             Guard.NotNull(request, nameof(request));
 
+            this.logger.LogTrace("({0}:'{1}')", nameof(request), request);
+
             // Checks that the request is valid.
             if (!this.ModelState.IsValid)
             {
+                this.logger.LogTrace("(-)[MODEL_STATE_INVALID]");
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
@@ -62,6 +65,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 if (model.Address == null)
                     throw new WalletException("The address or associated account does not exist.");
 
+                this.logger.LogTrace("(-):'{0}'", model);
+
                 return this.Json(model);
             }
             catch (Exception e)
@@ -72,7 +77,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         }
 
         /// <summary>
-        /// This method spends funds from a normal wallet addresses to the cold staking script. It is expected that this
+        /// Spends funds from a normal wallet addresses to the cold staking script. It is expected that this
         /// spend will be detected by both the hot wallet and cold wallet and allow cold staking to occur using this
         /// transaction as input.
         /// </summary>
@@ -85,16 +90,19 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         {
             Guard.NotNull(request, nameof(request));
 
+            this.logger.LogTrace("({0}:'{1}')", nameof(request), request);
+
             // Checks the request is valid.
             if (!this.ModelState.IsValid)
             {
+                this.logger.LogTrace("(-)[MODEL_STATE_INVALID]");
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
             try
             {
-                Money amount = string.IsNullOrEmpty(request.Amount) ? null : Money.Parse(request.Amount);
-                Money feeAmount = string.IsNullOrEmpty(request.Fees) ? null : Money.Parse(request.Fees);
+                Money amount = Money.Parse(request.Amount);
+                Money feeAmount = Money.Parse(request.Fees);
 
                 TransactionBuildContext context = this.ColdStakingManager.GetSetupBuildContext(request.ColdWalletAddress,
                     request.HotWalletAddress, request.WalletName, request.WalletAccount, request.WalletPassword,
@@ -106,6 +114,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 {
                     TransactionHex = transaction.ToHex()
                 };
+
+                this.logger.LogTrace("(-):'{0}'", model);
 
                 return this.Json(model);
             }

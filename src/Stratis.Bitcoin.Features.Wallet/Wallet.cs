@@ -382,6 +382,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (hdAccounts.Any())
             {
+                // Hide account indexes used for cold staking from the "Max" calculation.
                 newAccountIndex = hdAccounts.Where(a => a.Index < Wallet.ColdStakingAccountIndex).Max(a => a.Index) + 1;
             }
 

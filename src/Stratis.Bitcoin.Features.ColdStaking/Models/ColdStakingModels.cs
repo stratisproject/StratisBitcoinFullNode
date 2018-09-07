@@ -23,6 +23,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         [Required]
         [JsonProperty(PropertyName = "isColdWalletAddress")]
         public bool IsColdWalletAddress { get; set; }
+
+        /// <summary>Convert this object to a JSON string.</summary>
+        /// <returns>The object as a JSON string.</returns>
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this).ToString();
+        }
     }
 
     /// <summary>
@@ -34,6 +41,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         /// <summary>A Base58 cold staking address from the hot or cold wallet accounts.</summary>
         [JsonProperty(PropertyName = "address")]
         public string Address { get; set; }
+
+        /// <summary>Convert this object to a JSON string.</summary>
+        /// <returns>The object as a JSON string.</returns>
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this).ToString();
+        }
     }
 
     /// <summary>
@@ -78,6 +92,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         [MoneyFormat(ErrorMessage = "The fees are not in the correct format.")]
         [JsonProperty(PropertyName = "fees")]
         public string Fees { get; set; }
+
+        /// <summary>Convert this object to a JSON string.</summary>
+        /// <returns>The object as a JSON string.</returns>
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this).ToString();
+        }
     }
 
     /// <summary>
@@ -89,5 +110,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         /// <summary>The transaction bytes as a hexadecimal string.</summary>
         [JsonProperty(PropertyName = "transactionHex")]
         public string TransactionHex { get; set; }
+
+        /// <summary>Convert this object to a JSON string.</summary>
+        /// <returns>The object as a JSON string.</returns>
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this).ToString();
+        }
     }
 }
