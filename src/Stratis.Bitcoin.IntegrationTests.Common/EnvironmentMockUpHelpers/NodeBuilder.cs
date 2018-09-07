@@ -99,19 +99,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateCustomNode(start, callback, network, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
         }
 
-        public CoreNode CreateStratisPowApiNode(Network network, bool start = false)
-        {
-            return CreateNode(new StratisBitcoinPowApiRunner(this.GetNextDataFolderName(), network), start);
-        }
-
         public CoreNode CreateStratisPosNode(Network network)
         {
             return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), network), false, "stratis.conf");
-        }
-
-        public CoreNode CreateStratisPosApiNode(Network network)
-        {
-            return CreateNode(new StratisPosApiRunner(this.GetNextDataFolderName(), network), false, "stratis.conf");
         }
 
         public CoreNode CreateSmartContractPowNode()
