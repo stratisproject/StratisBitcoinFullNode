@@ -1,21 +1,21 @@
-﻿namespace RuntimeObserver
+﻿using Stratis.SmartContracts;
+
+namespace RuntimeObserver
 {
     public class Observer
     {
-        private long operationCount;
+        public IGasMeter GasMeter { get; }
 
         private long operationCountLimit;
 
-        public Observer()
+        public Observer(IGasMeter gasMeter)
         {
-            this.operationCountLimit = 100;
+            this.GasMeter = gasMeter;
         }
 
         public void OperationUp()
         {
-            this.operationCount += 1;
-            if (this.operationCount > this.operationCountLimit)
-                throw new System.Exception("too many ops");
+            this.GasMeter.Spend((Gas) 1);
         }
 
 
