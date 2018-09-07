@@ -214,10 +214,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
+            var wallet1 = this.walletManager.GetWalletByName(walletName1);
+
             IActionResult result = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
             {
-                HotWalletAddress = hotWalletAddress1,
-                ColdWalletAddress = coldWalletAddress1,
+                HotWalletAddress = this.coldStakingManager.GetColdStakingAddress(wallet1, false, walletPassword).Address.ToString(),
+                ColdWalletAddress = this.coldStakingManager.GetColdStakingAddress(wallet1, true, walletPassword).Address.ToString(),
                 WalletName = walletName1,
                 WalletAccount = walletAccount,
                 WalletPassword = walletPassword,
@@ -248,8 +250,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             IActionResult result = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
             {
-                HotWalletAddress = "1XgtnEn92fCcJY6UXECmsqnbvWq7RkJiaM",
-                ColdWalletAddress = "1X9rtnQHqZV7FZz2icuQpWCUAj5AdyW2ym",
+                HotWalletAddress = "SXgbh9LuzNAV7y2FHyUQJcgmjcuogSssef",
+                ColdWalletAddress = "SYgbh9LuzNAV7y2FHyUQJcgmjcuogSssef",
                 WalletName = walletName1,
                 WalletAccount = walletAccount,
                 WalletPassword = walletPassword,
@@ -278,9 +280,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
+            var wallet1 = this.walletManager.GetWalletByName(walletName1);
+
             IActionResult result = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
             {
-                HotWalletAddress = hotWalletAddress1,
+                HotWalletAddress = this.coldStakingManager.GetColdStakingAddress(wallet1, false, walletPassword).Address.ToString(),
                 ColdWalletAddress = coldWalletAddress2,
                 WalletName = walletName1,
                 WalletAccount = $"account { Wallet.Wallet.ColdStakingAccountIndex }",
@@ -309,11 +313,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
-            Transaction prevTran = this.AddSpendableTransactionToWallet(this.walletManager.GetWalletByName(walletName1));
+            var wallet1 = this.walletManager.GetWalletByName(walletName1);
+
+            Transaction prevTran = this.AddSpendableTransactionToWallet(wallet1);
 
             IActionResult result = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
             {
-                HotWalletAddress = hotWalletAddress1,
+                HotWalletAddress = this.coldStakingManager.GetColdStakingAddress(wallet1, false, walletPassword).Address.ToString(),
                 ColdWalletAddress = coldWalletAddress2,
                 WalletName = walletName1,
                 WalletAccount = $"account 0",
@@ -346,12 +352,14 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.walletManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
 
-            Transaction prevTran = this.AddSpendableTransactionToWallet(this.walletManager.GetWalletByName(walletName2));
+            var wallet2 = this.walletManager.GetWalletByName(walletName2);
+
+            Transaction prevTran = this.AddSpendableTransactionToWallet(wallet2);
 
             IActionResult result = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
             {
                 HotWalletAddress = hotWalletAddress1,
-                ColdWalletAddress = coldWalletAddress2,
+                ColdWalletAddress = this.coldStakingManager.GetColdStakingAddress(wallet2, true, walletPassword).Address.ToString(),
                 WalletName = walletName2,
                 WalletAccount = $"account 0",
                 WalletPassword = walletPassword,
