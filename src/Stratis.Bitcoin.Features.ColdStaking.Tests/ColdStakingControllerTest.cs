@@ -313,7 +313,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
-            var wallet1 = this.walletManager.GetWalletByName(walletName1);
+            Wallet.Wallet wallet1 = this.walletManager.GetWalletByName(walletName1);
 
             Transaction prevTran = this.AddSpendableTransactionToWallet(wallet1);
 
@@ -322,7 +322,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 HotWalletAddress = this.coldStakingManager.GetColdStakingAddress(wallet1, false, walletPassword).Address.ToString(),
                 ColdWalletAddress = coldWalletAddress2,
                 WalletName = walletName1,
-                WalletAccount = $"account 0",
+                WalletAccount = "account 0",
                 WalletPassword = walletPassword,
                 Amount = "100",
                 Fees = "0.01"
@@ -352,7 +352,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.walletManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
 
-            var wallet2 = this.walletManager.GetWalletByName(walletName2);
+            Wallet.Wallet wallet2 = this.walletManager.GetWalletByName(walletName2);
 
             Transaction prevTran = this.AddSpendableTransactionToWallet(wallet2);
 
@@ -361,7 +361,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 HotWalletAddress = hotWalletAddress1,
                 ColdWalletAddress = this.coldStakingManager.GetColdStakingAddress(wallet2, true, walletPassword).Address.ToString(),
                 WalletName = walletName2,
-                WalletAccount = $"account 0",
+                WalletAccount = "account 0",
                 WalletPassword = walletPassword,
                 Amount = "100",
                 Fees = "0.01"
