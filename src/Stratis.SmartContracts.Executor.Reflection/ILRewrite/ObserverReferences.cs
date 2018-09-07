@@ -10,16 +10,16 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
 
         private static class MethodInfos
         {
-            public static readonly MethodInfo OperationUp = typeof(Observer).GetMethod(nameof(Observer.OperationUp));
+            public static readonly MethodInfo SpendGas = typeof(Observer).GetMethod(nameof(Observer.SpendGas));
         }
 
         public ObserverReferences(FieldDefinition instanceField, ModuleDefinition module)
         {
             this.InstanceField = instanceField;
-            this.OperationUpMethod = module.ImportReference(MethodInfos.OperationUp);
+            this.SpendGasMethod = module.ImportReference(MethodInfos.SpendGas);
         }
 
         public FieldDefinition InstanceField { get; }
-        public MethodReference OperationUpMethod { get; }
+        public MethodReference SpendGasMethod { get; }
     }
 }

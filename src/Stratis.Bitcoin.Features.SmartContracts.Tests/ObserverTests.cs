@@ -21,6 +21,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private const ulong GasLimit = 10000;
         private const ulong Value = 0;
 
+        private readonly ObserverRewriter rewriter;
+
         public ObserverTests()
         {
             var block = new TestBlock
@@ -50,6 +52,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 null,
                 null
             );
+
+            this.rewriter = new ObserverRewriter();
         }
 
         [Fact]
@@ -57,7 +61,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             SmartContractCompilationResult assembly = SmartContractCompiler.CompileFile("SmartContracts/Auction.cs");
             ModuleDefinition module = ModuleDefinition.ReadModule(new MemoryStream(assembly.Compilation));
-            Guid observerId = AssemblyRewriter.RewriteModule(module);
+            this.rewriter.Rewrite(module);
+            Guid observerId = this.rewriter.LastRewritten;
             var moduleMem = new MemoryStream();
             module.Write(moduleMem);
 
@@ -70,7 +75,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             object auction = Activator.CreateInstance(type, new object[] { this.smartContractState, (ulong) 20 });
 
-            var observer = ObserverInstances.Get(observerId.ToString());
+            Observer observer = ObserverInstances.Get(observerId.ToString());
         }
 
     }

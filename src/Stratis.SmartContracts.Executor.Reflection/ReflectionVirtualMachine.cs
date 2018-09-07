@@ -3,6 +3,7 @@ using System.Text;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using RuntimeObserver;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
@@ -62,8 +63,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
 
-                var rewriter = new ConstructorGasInjector(typeToInstantiate);
+                var rewriter = new ObserverRewriter(); 
                 moduleDefinition.Rewrite(rewriter);
+                ObserverInstances.Set(rewriter.LastRewritten, new Observer(contractState.GasMeter));
 
                 code = moduleDefinition.ToByteCode();
             }
@@ -121,8 +123,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode))
             {
-                var rewriter = new MethodGasInjector(typeName, methodCall);
+                //var rewriter = new MethodGasInjector(typeName, methodCall);
+                var rewriter = new ObserverRewriter();
                 moduleDefinition.Rewrite(rewriter);
+                ObserverInstances.Set(rewriter.LastRewritten, new Observer(contractState.GasMeter));
                 code = moduleDefinition.ToByteCode();
             }
 

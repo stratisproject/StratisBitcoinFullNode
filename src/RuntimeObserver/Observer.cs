@@ -13,11 +13,9 @@ namespace RuntimeObserver
             this.GasMeter = gasMeter;
         }
 
-        public void OperationUp()
+        public void SpendGas(ulong gas)
         {
-            this.GasMeter.Spend((Gas) 1);
+            this.GasMeter.Spend((Gas) gas);
         }
-
-
     }
 }
