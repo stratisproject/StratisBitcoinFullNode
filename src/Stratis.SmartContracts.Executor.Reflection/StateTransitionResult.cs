@@ -4,16 +4,45 @@ using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
+    /// <summary>
+    /// Represents the kinds of error that can occur during a state transition.
+    /// </summary>
     public enum StateTransitionErrorKind
     {
+        /// <summary>
+        /// The execution ran out of gas.
+        /// </summary>
         OutOfGas,
+
+        /// <summary>
+        /// The sender did not have enough funds.
+        /// </summary>
         InsufficientBalance,
+
+        /// <summary>
+        /// The sender did not supply enough gas.
+        /// </summary>
         InsufficientGas,
+
+        /// <summary>
+        /// The supplied method name was null.
+        /// </summary>
         NoMethodName,
+
+        /// <summary>
+        /// No contract code was present.
+        /// </summary>
         NoCode,
+
+        /// <summary>
+        /// An exception was thrown during VM execution.
+        /// </summary>
         VmError
     }
 
+    /// <summary>
+    /// Represents the result of a successful state transition.
+    /// </summary>
     public class StateTransitionSuccess
     {
         public StateTransitionSuccess(
@@ -43,6 +72,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
     }
 
+    /// <summary>
+    /// Represents the result of a failed state transition.
+    /// </summary>
     public class StateTransitionError
     {
         public StateTransitionError(Gas gasConsumed, StateTransitionErrorKind kind, Exception vmException)
@@ -52,19 +84,25 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.VmException = vmException;
         }
 
+        /// <summary>
+        /// An exception thrown by the VM. This value is null unless <see cref="Kind"/>
+        /// equals <see cref="StateTransitionErrorKind.VmError"/>.
+        /// </summary>
         public Exception VmException { get; }
 
+        /// <summary>
+        /// The kind of error that occurred during the state transition.
+        /// </summary>
         public StateTransitionErrorKind Kind { get; }
 
+        /// <summary>
+        /// The gas consumed during execution.
+        /// </summary>
         public Gas GasConsumed { get; }
     }
 
     /// <summary>
-    /// The result of a state transition operation. A successful or failed operation can still have gas consumed.
-    ///
-    /// A successful operation will have the contract's address.
-    ///
-    /// A failed operation will have the error. Even if an error is produced, the operation is still included in a block.
+    /// The result of a state transition operation.
     /// </summary>
     public class StateTransitionResult
     {
@@ -80,16 +118,30 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.Success = success;
         }
 
+        /// <summary>
+        /// The gas consumed during the state transition.
+        /// </summary>
         public Gas GasConsumed => this.IsSuccess ? this.Success.GasConsumed : this.Error.GasConsumed;
 
         public bool IsSuccess { get; }
 
         public bool IsFailure => !this.IsSuccess;
 
+        /// <summary>
+        /// The successful result of the state transition. This value is null unless
+        /// <see cref="IsSuccess"/> equals true.
+        /// </summary>
         public StateTransitionSuccess Success { get; }
 
+        /// <summary>
+        /// The error result of the state transition. This value is null unless
+        /// <see cref="IsFailure"/> equals true.
+        /// </summary>
         public StateTransitionError Error { get; }
 
+        /// <summary>
+        /// Creates a new result for a successful state transition.
+        /// </summary>
         public static StateTransitionResult Ok(Gas gasConsumed,
             uint160 contractAddress,
             object result = null)
@@ -98,6 +150,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 new StateTransitionSuccess(gasConsumed, contractAddress, result));
         }
 
+        /// <summary>
+        /// Creates a new result for a failed state transition due to a VM exception.
+        /// </summary>
         public static StateTransitionResult Fail(Gas gasConsumed, Exception vmException)
         {
             StateTransitionErrorKind errorKind = vmException is OutOfGasException
@@ -107,6 +162,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return new StateTransitionResult(new StateTransitionError(gasConsumed, errorKind, vmException));
         }
 
+        /// <summary>
+        /// Creates a new result for a failed state transition.
+        /// </summary>
         public static StateTransitionResult Fail(Gas gasConsumed, StateTransitionErrorKind kind)
         {
             return new StateTransitionResult(new StateTransitionError(gasConsumed, kind, null));
