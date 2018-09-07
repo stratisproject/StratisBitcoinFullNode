@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// completely empty.</para>
     /// </remarks>
     /// <seealso cref="ColdStakingManager.GetColdStakingScript(NBitcoin.ScriptId, NBitcoin.ScriptId)"/>
-    /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature"/>
+    /// <seealso cref="FullNodeFeature"/>
     public class ColdStakingFeature : FullNodeFeature
     {
         /// <summary>The logger factory used to create instance loggers.</summary>

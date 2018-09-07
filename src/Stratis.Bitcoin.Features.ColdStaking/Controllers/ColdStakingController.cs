@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <summary>
         /// Spends funds from a normal wallet addresses to the cold staking script. It is expected that this
         /// spend will be detected by both the hot wallet and cold wallet and allow cold staking to occur using this
-        /// transaction as input.
+        /// transaction's output as input.
         /// </summary>
         /// <param name="request">A <see cref="SetupColdStakingRequest"/> object containing the cold staking setup parameters.</param>
         /// <returns>A <see cref="SetupColdStakingResponse"/> object containing the hex representation of the transaction.</returns>

@@ -21,10 +21,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// <remarks>
     /// The following functionality is implemented in this class:
     /// <list type="bullet">
-    /// <item>Generating cold staking address via the <see cref="GetColdStakingAddress"/> method. These
-    /// adresses are used for generating the cold staking setup.</item>
-    /// <item>Creating a build context for generating the cold staking setup via the <see
-    /// cref="GetSetupBuildContext"/> method.</item>
+    /// <item><description>Generating cold staking address via the <see cref="GetColdStakingAddress"/> method. These
+    /// adresses are used for generating the cold staking setup.</description></item>
+    /// <item><description>Creating a build context for generating the cold staking setup via the <see
+    /// cref="GetSetupBuildContext"/> method.</description></item>
     /// </list>
     /// </remarks>
     public class ColdStakingManager
@@ -113,7 +113,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
                 // Maintain at least one unused address at all times. This will ensure that wallet recovery will also work.
                 account.CreateAddresses(wallet.Network, 1, false);
-                account.CreateAddresses(wallet.Network, 1, true);
 
                 ICollection<HdAccount> hdAccounts = accountRoot.Accounts.ToList();
                 hdAccounts.Add(account);
@@ -148,7 +147,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             if (address == null)
             {
                 address = account.CreateAddresses(wallet.Network, 1).First();
-                this.logger.LogTrace("Added a new receiving address ('{0}') to the wallet", address.Address.ToString());
+                this.logger.LogTrace("Added a new receiving address ('{0}') to the wallet", address.Address);
             }
 
             this.logger.LogTrace("(-):'{0}'", address.Address);
@@ -164,12 +163,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// staking using the hot wallet key so that even if the key becomes compromised it can't be used
         /// to reduce the balance. Only the person with the cold wallet key can retrieve the coins and move
         /// them elsewhere. This behavior is enforced by the <see cref="OpcodeType.OP_CHECKCOLDSTAKEVERIFY"/>
-        /// opcode within the script flow when the hot wallet key is used. It sets the <see cref="PosTransaction.IsColdCoinStake"/>
+        /// opcode within the script flow related to hot wallet key usage. It sets the <see cref="PosTransaction.IsColdCoinStake"/>
         /// flag if the transaction spending an output, which contains this instruction, is a coinstake
         /// transaction. If this flag is set then further rules are enforced by <see cref="Consensus.Rules.CommonRules.PosColdStakingRule"/>.
         /// </remarks>
-        /// <param name="hotPubKey">The "hotPubKey" to use.</param>
-        /// <param name="coldPubKey">The "coldPubKey" to use.</param>
+        /// <param name="hotPubKey">The hot wallet public key to use.</param>
+        /// <param name="coldPubKey">The cold wallet public key to use.</param>
         /// <returns>The cold staking script.</returns>
         /// <seealso cref="Consensus.Rules.CommonRules.PosColdStakingRule"/>
         private Script GetColdStakingScript(TxDestination hotPubKey, TxDestination coldPubKey)
@@ -190,15 +189,15 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 // <scriptSig> <coldPubKey/hotPubKey> <coldPubKeyHash/hotPubKeyHash>.
                 OpcodeType.OP_IF,
                 // Reaching this point means that the value was 1 - i.e. the hotPubKey is being used.
-                // Executes the opcode as describer in the remarks section. Stack remains unchanged.
+                // Executes the opcode as described in the remarks section. Stack remains unchanged.
                 OpcodeType.OP_CHECKCOLDSTAKEVERIFY,
                 // Pushes the expected hotPubKey value onto the stack for later comparison purposes. Results in:
-                // <scriptSig> <hotPubKey> <hotPubKeyHash> <hotPubKeyHash for comparison>
+                // <scriptSig> <hotPubKey> <hotPubKeyHash> <hotPubKeyHash for comparison>.
                 Op.GetPushOp(hotPubKey.ToBytes()),
                 // The code contained in the OP_ELSE is executed when the value was 0 - i.e. the coldPubKey is used.
                 OpcodeType.OP_ELSE,
                 // Pushes the expected coldPubKey value onto the stack for later comparison purposes. Results in:
-                // <scriptSig> <coldPubKey> <coldPubKeyHash> <coldPubKeyHash for comparison>
+                // <scriptSig> <coldPubKey> <coldPubKeyHash> <coldPubKeyHash for comparison>.
                 Op.GetPushOp(coldPubKey.ToBytes()),
                 OpcodeType.OP_ENDIF,
                 // Checks that the <coldPubKeyHash/hotPubKeyHash> matches the comparison value and removes both values
@@ -218,10 +217,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// from different wallets and typically also different physical machines under normal circumstances. The following
         /// rules are enforced by this method and would lead to a <see cref="WalletException"/> otherwise:
         /// <list type="bullet">
-        /// <item>The cold and hot wallet addresses are expected to belong to different wallets.</item>
-        /// <item>Either the cold or hot wallet address must belong to a cold staking account in the wallet identified
-        /// by <paramref name="walletName"/></item>
-        /// <item>The account specified in <paramref name="walletAccount"/> can't be a cold staking account.</item>
+        /// <item><description>The cold and hot wallet addresses are expected to belong to different wallets.</description></item>
+        /// <item><description>Either the cold or hot wallet address must belong to a cold staking account in the wallet identified
+        /// by <paramref name="walletName"/></description></item>
+        /// <item><description>The account specified in <paramref name="walletAccount"/> can't be a cold staking account.</description></item>
         /// </list>
         /// </remarks>
         /// <param name="coldWalletAddress">The cold wallet address generated by <see cref="GetColdStakingAddress"/>.</param>
