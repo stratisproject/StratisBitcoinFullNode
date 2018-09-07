@@ -190,10 +190,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     gasMeter.GasConsumed,
                     result.ExecutionException);
             }
-            else
-            {
-                state.Commit();
-            }
+
+            state.Commit();
 
             return StateTransitionResult.Ok(
                 gasMeter.GasConsumed,
@@ -275,11 +273,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     gasMeter.GasConsumed,
                     result.ExecutionException);
             }
-            else
-            {
-                state.Commit();
-                this.GasRemaining -= gasMeter.GasConsumed;
-            }
+
+            state.Commit();
+            this.GasRemaining -= gasMeter.GasConsumed;            
 
             return StateTransitionResult.Ok(
                 gasMeter.GasConsumed,
