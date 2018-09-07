@@ -112,15 +112,15 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             var wallet1 = this.walletManager.GetWalletByName(walletName1);
             var wallet2 = this.walletManager.GetWalletByName(walletName2);
 
-            var coldAccount1 = this.coldStakingManager.GetColdStakingAccount(wallet1, true, walletPassword);
-            var hotAccount1 = this.coldStakingManager.GetColdStakingAccount(wallet1, false, walletPassword);
-            var coldAccount2 = this.coldStakingManager.GetColdStakingAccount(wallet2, true, walletPassword);
-            var hotAccount2 = this.coldStakingManager.GetColdStakingAccount(wallet2, false, walletPassword);
+            var coldAddress1 = this.coldStakingManager.GetColdStakingAddress(wallet1, true, walletPassword);
+            var hotAddress1 = this.coldStakingManager.GetColdStakingAddress(wallet1, false, walletPassword);
+            var coldAddress2 = this.coldStakingManager.GetColdStakingAddress(wallet2, true, walletPassword);
+            var hotAddress2 = this.coldStakingManager.GetColdStakingAddress(wallet2, false, walletPassword);
 
-            Assert.Equal(coldWalletAddress1, coldAccount1.ExternalAddresses.First().Address.ToString());
-            Assert.Equal(hotWalletAddress1, hotAccount1.ExternalAddresses.First().Address.ToString());
-            Assert.Equal(coldWalletAddress2, coldAccount2.ExternalAddresses.First().Address.ToString());
-            Assert.Equal(hotWalletAddress2, hotAccount2.ExternalAddresses.First().Address.ToString());
+            Assert.Equal(coldWalletAddress1, coldAddress1.Address.ToString());
+            Assert.Equal(hotWalletAddress1, hotAddress1.Address.ToString());
+            Assert.Equal(coldWalletAddress2, coldAddress2.Address.ToString());
+            Assert.Equal(hotWalletAddress2, hotAddress2.Address.ToString());
         }
 
         /// <summary>
@@ -332,7 +332,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal(Money.Coins(0.99m), transaction.Outputs[0].Value);
             Assert.Equal("OP_DUP OP_HASH160 970e19fc2f6565b0b1c65fd88ef1512cb3da4d7b OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[0].ScriptPubKey.ToString());
             Assert.Equal(Money.Coins(100), transaction.Outputs[1].Value);
-            Assert.Equal("OP_DUP OP_HASH160 OP_ROT OP_IF OP_CHECKCOLDSTAKEVERIFY ba11d4970e64351c88bf00f10b6280d658785a94 OP_ELSE 6032478c6ac8caa056668ea7d065c32ae7e6da55 OP_ENDIF OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[1].ScriptPubKey.ToString());
+            Assert.Equal("OP_DUP OP_HASH160 OP_ROT OP_IF OP_CHECKCOLDSTAKEVERIFY 90c582cb91d6b6d777c31c891d4943fed4edac3a OP_ELSE 92dfb829d31cefe6a0731f3432dea41596a278d9 OP_ENDIF OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[1].ScriptPubKey.ToString());
             Assert.False(transaction.IsCoinBase || transaction.IsCoinStake || transaction.IsColdCoinStake);
         }
 
@@ -369,7 +369,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal(Money.Coins(0.99m), transaction.Outputs[0].Value);
             Assert.Equal("OP_DUP OP_HASH160 3d36028dc0fd3d3e433c801d9ebfff05ea663816 OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[0].ScriptPubKey.ToString());
             Assert.Equal(Money.Coins(100), transaction.Outputs[1].Value);
-            Assert.Equal("OP_DUP OP_HASH160 OP_ROT OP_IF OP_CHECKCOLDSTAKEVERIFY ba11d4970e64351c88bf00f10b6280d658785a94 OP_ELSE 6032478c6ac8caa056668ea7d065c32ae7e6da55 OP_ENDIF OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[1].ScriptPubKey.ToString());
+            Assert.Equal("OP_DUP OP_HASH160 OP_ROT OP_IF OP_CHECKCOLDSTAKEVERIFY 90c582cb91d6b6d777c31c891d4943fed4edac3a OP_ELSE 92dfb829d31cefe6a0731f3432dea41596a278d9 OP_ENDIF OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[1].ScriptPubKey.ToString());
             Assert.False(transaction.IsCoinBase || transaction.IsCoinStake || transaction.IsColdCoinStake);
         }
     }
