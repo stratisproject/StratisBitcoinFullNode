@@ -86,7 +86,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         /// <summary>
         /// An exception thrown by the VM. This value is null unless <see cref="Kind"/>
-        /// equals <see cref="StateTransitionErrorKind.VmError"/>.
+        /// equals <see cref="StateTransitionErrorKind.VmError"/> or <see cref="StateTransitionErrorKind.OutOfGas"/>.
         /// </summary>
         public Exception VmException { get; }
 
