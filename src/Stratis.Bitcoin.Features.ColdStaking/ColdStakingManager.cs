@@ -141,6 +141,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             }
 
             HdAddress address = account.GetFirstUnusedReceivingAddress();
+            if (address == null)
+            {
+                account.CreateAddresses(wallet.Network, 1);
+                address = account.GetFirstUnusedReceivingAddress();
+                this.logger.LogTrace("Added a new receiving address ('{0}') to the wallet", address.Address.ToString());
+            }
 
             this.logger.LogTrace("(-):'{0}'", address.Address);
             return address;
