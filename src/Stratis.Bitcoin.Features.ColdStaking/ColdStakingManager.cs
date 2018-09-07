@@ -111,6 +111,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 account = accountRoot.CreateAccount(walletPassword, wallet.EncryptedSeed,
                     wallet.ChainCode, wallet.Network, this.dateTimeProvider.GetTimeOffset(), accountIndex);
 
+                // Maintain at least one unused address at all times. This will ensure that wallet recovery will also work.
+                account.CreateAddresses(wallet.Network, 1, false);
+                account.CreateAddresses(wallet.Network, 1, true);
+
                 ICollection<HdAccount> hdAccounts = accountRoot.Accounts.ToList();
                 hdAccounts.Add(account);
                 accountRoot.Accounts = hdAccounts;
