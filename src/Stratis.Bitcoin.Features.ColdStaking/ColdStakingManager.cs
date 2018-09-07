@@ -100,11 +100,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
                 if (!createIfNotExists)
                 {
-                    this.logger.LogTrace("(-)[ACCOUNT_DOES_NOT_EXIST]");
+                    this.logger.LogTrace("(-)[ACCOUNT_DOES_NOT_EXIST]:null");
                     return null;
                 }
 
-                this.logger.LogTrace("The {0} wallet account for '{0}' does not exist and will now be created.", isColdWalletAccount ? "cold" : "hot", wallet.Name);
+                this.logger.LogTrace("The {0} wallet account for '{1}' does not exist and will now be created.", isColdWalletAccount ? "cold" : "hot", wallet.Name);
 
                 AccountRoot accountRoot = wallet.AccountsRoot.Single(a => a.CoinType == coinType);
 
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="wallet">The wallet providing the cold staking address.</param>
         /// <param name="isColdWalletAddress">Indicates whether we need the cold wallet address (versus the hot wallet address).</param>
         /// <param name="walletPassword">The (optional) wallet password. If not <c>null</c> the account will be created if it does not exist.</param>
-        /// <returns>The cold staking address or <c>null</c> if the required account does not exist.</returns>
+        /// <returns>The cold staking address or <c>null</c> if the required account does not exist and the wallet password was not provided.</returns>
         internal HdAddress GetColdStakingAddress(Wallet.Wallet wallet, bool isColdWalletAddress, string walletPassword = null)
         {
             Guard.NotNull(wallet, nameof(wallet));
@@ -139,15 +139,15 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             HdAccount account = this.GetColdStakingAccount(wallet, isColdWalletAddress, walletPassword);
             if (account == null)
             {
-                this.logger.LogTrace("(-)[ACCOUNT_DOES_NOT_EXIST]");
+                this.logger.LogTrace("(-)[ACCOUNT_DOES_NOT_EXIST]:null");
                 return null;
             }
 
             HdAddress address = account.GetFirstUnusedReceivingAddress();
             if (address == null)
             {
+                this.logger.LogTrace("No unused address exists on account '{0}'. Adding new address.", account.Name);
                 address = account.CreateAddresses(wallet.Network, 1).First();
-                this.logger.LogTrace("Added a new receiving address ('{0}') to the wallet", address.Address);
             }
 
             this.logger.LogTrace("(-):'{0}'", address.Address);
