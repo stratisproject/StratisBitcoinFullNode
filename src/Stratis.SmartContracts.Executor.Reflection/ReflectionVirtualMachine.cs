@@ -8,6 +8,7 @@ using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
+using Stratis.SmartContracts.Executor.Reflection.ILRewrite;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -61,7 +62,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
 
-                moduleDefinition.InjectConstructorGas();
+                var rewriter = new ConstructorGasInjector(typeToInstantiate);
+                moduleDefinition.Rewrite(rewriter);
 
                 code = moduleDefinition.ToByteCode();
             }
@@ -119,8 +121,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode))
             {
-                moduleDefinition.InjectMethodGas(typeName, methodCall);
-
+                var rewriter = new MethodGasInjector(typeName, methodCall);
+                moduleDefinition.Rewrite(rewriter);
                 code = moduleDefinition.ToByteCode();
             }
 
