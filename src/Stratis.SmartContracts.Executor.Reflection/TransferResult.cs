@@ -19,7 +19,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// Constructs a an empty result i.e. a transfer from a contract was not defined/executed.
+        /// Constructs a result when the transfer is a funds transfer only and no return value is expected.
         /// </summary>
         public static TransferResult Empty()
         {
@@ -35,7 +35,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// Constructs a result when a transfer from a contract succeeded.
+        /// Constructs a result when a transfer from a contract succeeded and a return value is expected.
         /// </summary>
         /// <param name="returnValue">The object that was returned from the executor.</param>
         public static TransferResult Transferred(object returnValue)
