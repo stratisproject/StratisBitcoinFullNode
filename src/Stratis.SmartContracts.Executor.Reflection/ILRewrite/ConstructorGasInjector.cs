@@ -2,6 +2,9 @@
 
 namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
 {
+    /// <summary>
+    /// Injects the gas spending functionality for a constructor for a particular type.
+    /// </summary>
     public class ConstructorGasInjector : IILRewriter
     {
         private readonly string typeName;
