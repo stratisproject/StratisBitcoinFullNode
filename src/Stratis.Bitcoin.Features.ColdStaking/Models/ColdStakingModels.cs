@@ -24,11 +24,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         [JsonProperty(PropertyName = "isColdWalletAddress")]
         public bool IsColdWalletAddress { get; set; }
 
-        /// <summary>Convert this object to a JSON string.</summary>
-        /// <returns>The object as a JSON string.</returns>
+        /// <summary>Convert this a string.</summary>
+        /// <returns>The object as a string.</returns>
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this).ToString();
+            return string.Format("walletName={0},walletPassword={1},isColdWalletAddress={2}",
+                this.WalletName, this.WalletPassword, this.IsColdWalletAddress);
         }
     }
 
@@ -42,11 +43,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         [JsonProperty(PropertyName = "address")]
         public string Address { get; set; }
 
-        /// <summary>Convert this object to a JSON string.</summary>
-        /// <returns>The object as a JSON string.</returns>
+        /// <summary>Convert this a string.</summary>
+        /// <returns>The object as a string.</returns>
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this).ToString();
+            return string.Format("address={0}", this.Address);
         }
     }
 
@@ -93,11 +94,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         [JsonProperty(PropertyName = "fees")]
         public string Fees { get; set; }
 
-        /// <summary>Convert this object to a JSON string.</summary>
-        /// <returns>The object as a JSON string.</returns>
+        /// <summary>Convert this a string.</summary>
+        /// <returns>The object as a string.</returns>
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this).ToString();
+            return string.Format("coldWalletAddress={0},hotWalletAddress={1},walletName={2},walletAccount={3},amount={4},fees={5}",
+                this.ColdWalletAddress, this.HotWalletAddress, this.WalletName, this.WalletAccount, this.Amount, this.Fees);
         }
     }
 
@@ -111,11 +113,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         [JsonProperty(PropertyName = "transactionHex")]
         public string TransactionHex { get; set; }
 
-        /// <summary>Convert this object to a JSON string.</summary>
-        /// <returns>The object as a JSON string.</returns>
+        /// <summary>Convert this a string.</summary>
+        /// <returns>The object as a string.</returns>
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this).ToString();
+            return string.Format("transactionHex={0}", this.TransactionHex);
         }
     }
 }

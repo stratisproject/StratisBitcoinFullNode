@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="wallet">The wallet where we wish to create the account.</param>
         /// <param name="isColdWalletAccount">Indicates whether we need the cold wallet account (versus the hot wallet account).</param>
         /// <param name="walletPassword">The (optional) wallet password which, if provided, will be used to create the account on demand if neccessary.</param>
-        /// <returns>The cold staking account or <c>null</c> if the account does not exist.</returns>
+        /// <returns>The cold staking account or <c>null</c> if the account does not exist and the wallet password was not provided.</returns>
         internal HdAccount GetColdStakingAccount(Wallet.Wallet wallet, bool isColdWalletAccount, string walletPassword = null)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(wallet), wallet.Name, nameof(isColdWalletAccount), isColdWalletAccount);
