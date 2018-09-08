@@ -84,15 +84,20 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <returns>A <see cref="Models.GetColdStakingInfoResponse"/> object containing the information.</returns>
         internal Models.GetColdStakingInfoResponse GetColdStakingInfo(string walletName)
         {
+            this.logger.LogTrace("({0}:'{1}')", nameof(walletName), walletName);
+
             Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
             var coinType = (CoinType)wallet.Network.Consensus.CoinType;
             List<HdAccount> accounts = wallet.GetAccountsByCoinType(coinType).ToList();
 
-            return new Models.GetColdStakingInfoResponse()
+            var response = new Models.GetColdStakingInfoResponse()
             {
                 ColdWalletAccountExists = accounts.Any(a => a.Index == ColdWalletAccountIndex),
                 HotWalletAccountExists = accounts.Any(a => a.Index == HotWalletAccountIndex)
             };
+
+            this.logger.LogTrace("(-):'{0}'", response);
+            return response;
         }
 
         /// <summary>
