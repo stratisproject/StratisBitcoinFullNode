@@ -20,8 +20,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         [JsonProperty(PropertyName = "isColdWalletAddress")]
         public bool IsColdWalletAddress { get; set; }
 
-        /// <summary>Convert this a string.</summary>
-        /// <returns>The object as a string.</returns>
+        /// <summary>Creates a string containing the properties of this object.</summary>
+        /// <returns>A string containing the properties of the object.</returns>
         public override string ToString()
         {
             return $"{nameof(this.WalletName)}={this.WalletName},{nameof(this.IsColdWalletAddress)}={this.IsColdWalletAddress}";
@@ -38,8 +38,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         [JsonProperty(PropertyName = "address")]
         public string Address { get; set; }
 
-        /// <summary>Convert this a string.</summary>
-        /// <returns>The object as a string.</returns>
+        /// <summary>Creates a string containing the properties of this object.</summary>
+        /// <returns>A string containing the properties of the object.</returns>
         public override string ToString()
         {
             return $"{nameof(this.Address)}={this.Address}";
@@ -89,8 +89,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         [JsonProperty(PropertyName = "fees")]
         public string Fees { get; set; }
 
-        /// <summary>Convert this a string.</summary>
-        /// <returns>The object as a string.</returns>
+        /// <summary>Creates a string containing the properties of this object.</summary>
+        /// <returns>A string containing the properties of the object.</returns>
         public override string ToString()
         {
             return $"{nameof(this.ColdWalletAddress)}={this.ColdWalletAddress},{nameof(this.HotWalletAddress)}={this.HotWalletAddress},{nameof(this.WalletName)}={this.WalletName},{nameof(this.WalletAccount)}={this.WalletAccount},{nameof(this.Amount)}={this.Amount},{nameof(this.Fees)}={this.Fees}";
@@ -107,8 +107,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         [JsonProperty(PropertyName = "transactionHex")]
         public string TransactionHex { get; set; }
 
-        /// <summary>Convert this a string.</summary>
-        /// <returns>The object as a string.</returns>
+        /// <summary>Creates a string containing the properties of this object.</summary>
+        /// <returns>A string containing the properties of the object.</returns>
         public override string ToString()
         {
             return $"{nameof(this.TransactionHex)}={this.TransactionHex}";
