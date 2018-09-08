@@ -358,5 +358,50 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal("OP_DUP OP_HASH160 OP_ROT OP_IF OP_CHECKCOLDSTAKEVERIFY 90c582cb91d6b6d777c31c891d4943fed4edac3a OP_ELSE 92dfb829d31cefe6a0731f3432dea41596a278d9 OP_ENDIF OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[1].ScriptPubKey.ToString());
             Assert.False(transaction.IsCoinBase || transaction.IsCoinStake || transaction.IsColdCoinStake);
         }
+
+        /// <summary>
+        /// Cold staking info only confirms that a cold staking account exists once it has been created.
+        /// </summary>
+        [Fact]
+        public void GetColdStakingInfoOnlyConfirmAccountExistenceOnceCreated()
+        {
+            this.Initialize(this);
+
+            this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
+
+            IActionResult result1 = this.coldStakingController.GetColdStakingInfo(new GetColdStakingInfoRequest
+            {
+                WalletName = walletName1
+            });
+
+            var jsonResult1 = Assert.IsType<JsonResult>(result1);
+            var response1 = Assert.IsType<GetColdStakingInfoResponse>(jsonResult1.Value);
+
+            Assert.False(response1.ColdWalletAccountExists);
+            Assert.False(response1.HotWalletAccountExists);
+
+            IActionResult result2 = this.coldStakingController.CreateColdStakingAccount(new CreateColdStakingAccountRequest
+            {
+                WalletName = walletName1,
+                WalletPassword = walletPassword,
+                IsColdWalletAccount = true
+            });
+
+            var jsonResult2 = Assert.IsType<JsonResult>(result2);
+            var response2 = Assert.IsType<CreateColdStakingAccountResponse>(jsonResult2.Value);
+
+            Assert.NotEmpty(response2.AccountName);
+
+            IActionResult result3 = this.coldStakingController.GetColdStakingInfo(new GetColdStakingInfoRequest
+            {
+                WalletName = walletName1
+            });
+
+            var jsonResult3 = Assert.IsType<JsonResult>(result3);
+            var response3 = Assert.IsType<GetColdStakingInfoResponse>(jsonResult3.Value);
+
+            Assert.True(response3.ColdWalletAccountExists);
+            Assert.False(response3.HotWalletAccountExists);
+        }
     }
 }
