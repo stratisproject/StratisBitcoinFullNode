@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
@@ -8,7 +7,6 @@ using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
-using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -180,7 +178,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.GasRemaining -= gasMeter.GasConsumed;
 
-            bool revert = result.ExecutionException != null;
+            bool revert = result.ErrorMessage != null;
 
             if (revert)
             {
@@ -188,7 +186,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 return StateTransitionResult.Fail(
                     gasMeter.GasConsumed,
-                    result.ExecutionException);
+                    result.ErrorMessage);
             }
 
             state.Commit();
@@ -263,7 +261,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             this.GasRemaining -= gasMeter.GasConsumed;
 
-            bool revert = result.ExecutionException != null;
+            bool revert = result.ErrorMessage != null;
 
             if (revert)
             {
@@ -271,7 +269,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 return StateTransitionResult.Fail(
                     gasMeter.GasConsumed,
-                    result.ExecutionException);
+                    result.ErrorMessage);
             }
 
             state.Commit();

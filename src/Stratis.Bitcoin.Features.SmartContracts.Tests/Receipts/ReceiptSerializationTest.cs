@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Receipts
             Assert.Equal(receipt1.To, receipt2.To);
             Assert.Equal(receipt1.NewContractAddress, receipt2.NewContractAddress);
             Assert.Equal(receipt1.Success, receipt2.Success);
-            Assert.Equal(receipt1.Exception, receipt2.Exception);
+            Assert.Equal(receipt1.ErrorMessage, receipt2.ErrorMessage);
         }
 
         private static void TestLogsEqual(Log log1, Log log2)

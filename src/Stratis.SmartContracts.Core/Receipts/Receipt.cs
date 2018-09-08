@@ -70,9 +70,10 @@ namespace Stratis.SmartContracts.Core.Receipts
         public bool Success { get; }
 
         /// <summary>
-        /// If execution didn't complete successfully, the exception that caused why will be stored here.
+        /// If execution didn't complete successfully, the error will be stored here. 
+        /// Could be an exception that occurred inside a contract or a message (e.g. method not found.)
         /// </summary>
-        public string Exception { get; }
+        public string ErrorMessage { get; }
 
         #endregion
 
@@ -88,7 +89,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             uint160 to, 
             uint160 newContractAddress,
             bool success,
-            string exception) 
+            string errorMessage) 
             : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, from, to, newContractAddress, success, null)
         { }
 
@@ -124,7 +125,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             uint160 to,
             uint160 newContractAddress,
             bool success,
-            string exception)
+            string errorMessage)
         {
             this.PostState = postState;
             this.GasUsed = gasUsed;
@@ -136,7 +137,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             this.To = to;
             this.NewContractAddress = newContractAddress;
             this.Success = success;
-            this.Exception = exception;
+            this.ErrorMessage = errorMessage;
         }
 
         /// <summary>
@@ -248,7 +249,7 @@ namespace Stratis.SmartContracts.Core.Receipts
                 RLP.EncodeElement(this.To?.ToBytes()),
                 RLP.EncodeElement(this.NewContractAddress?.ToBytes()),
                 RLP.EncodeElement(BitConverter.GetBytes(this.Success)),
-                RLP.EncodeElement(Encoding.UTF8.GetBytes(this.Exception ?? ""))
+                RLP.EncodeElement(Encoding.UTF8.GetBytes(this.ErrorMessage ?? ""))
             );
         }
 
