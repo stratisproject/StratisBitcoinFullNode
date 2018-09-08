@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// <item><description>Generating cold staking address via the <see cref="GetColdStakingAddress"/> method. These
     /// adresses are used for generating the cold staking setup.</description></item>
     /// <item><description>Creating a build context for generating the cold staking setup via the <see
-    /// cref="GetSetupBuildContext"/> method.</description></item>
+    /// cref="GetColdStakingSetupTransaction"/> method.</description></item>
     /// </list>
     /// </remarks>
     public class ColdStakingManager
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         }
 
         /// <summary>
-        /// Gets a cold staking account. Creates the account if it does not exist and ensures that it has at least one address.
+        /// Gets a cold staking account.
         /// </summary>
         /// <remarks>
         /// <para>In order to keep track of cold staking addresses and balances we are using <see cref="HdAccount"/>'s
@@ -84,9 +84,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// </para></remarks>
         /// <param name="wallet">The wallet where we wish to create the account.</param>
         /// <param name="isColdWalletAccount">Indicates whether we need the cold wallet account (versus the hot wallet account).</param>
-        /// <param name="walletPassword">The (optional) wallet password which, if provided, will be used to create the account on demand if neccessary.</param>
-        /// <returns>The cold staking account or <c>null</c> if the account does not exist and the wallet password was not provided.</returns>
-        internal HdAccount GetColdStakingAccount(Wallet.Wallet wallet, bool isColdWalletAccount, string walletPassword = null)
+        /// <returns>The cold staking account or <c>null</c> if the account does not exist.</returns>
+        internal HdAccount GetColdStakingAccount(Wallet.Wallet wallet, bool isColdWalletAccount)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(wallet), wallet.Name, nameof(isColdWalletAccount), isColdWalletAccount);
 
@@ -96,28 +95,60 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             if (account == null)
             {
-                bool createIfNotExists = !string.IsNullOrEmpty(walletPassword);
-
-                if (!createIfNotExists)
-                {
-                    this.logger.LogTrace("(-)[ACCOUNT_DOES_NOT_EXIST]:null");
-                    return null;
-                }
-
-                this.logger.LogTrace("The {0} wallet account for '{1}' does not exist and will now be created.", isColdWalletAccount ? "cold" : "hot", wallet.Name);
-
-                AccountRoot accountRoot = wallet.AccountsRoot.Single(a => a.CoinType == coinType);
-
-                account = accountRoot.CreateAccount(walletPassword, wallet.EncryptedSeed,
-                    wallet.ChainCode, wallet.Network, this.dateTimeProvider.GetTimeOffset(), accountIndex);
-
-                // Maintain at least one unused address at all times. This will ensure that wallet recovery will also work.
-                account.CreateAddresses(wallet.Network, 1, false);
-
-                ICollection<HdAccount> hdAccounts = accountRoot.Accounts.ToList();
-                hdAccounts.Add(account);
-                accountRoot.Accounts = hdAccounts;
+                this.logger.LogTrace("(-)[ACCOUNT_DOES_NOT_EXIST]:null");
+                return null;
             }
+
+            this.logger.LogTrace("(-):'{0}'", account.Name);
+            return account;
+        }
+
+        /// <summary>
+        /// Creates a cold staking account and ensures that it has at least one address.
+        /// If the account already exists then the existing account is returned.
+        /// </summary>
+        /// <remarks>
+        /// <para>In order to keep track of cold staking addresses and balances we are using <see cref="HdAccount"/>'s
+        /// with indexes starting from the value defined in <see cref="Wallet.Wallet.ColdStakingAccountIndex"/>.
+        /// </para><para>
+        /// We are using two such accounts, one when the wallet is in the role of cold wallet, and another one when
+        /// the wallet is in the role of hot wallet. For this reason we specify the required account when calling this
+        /// method.
+        /// </para></remarks>
+        /// <param name="walletName">The name of the wallet where we wish to create the account.</param>
+        /// <param name="isColdWalletAccount">Indicates whether we need the cold wallet account (versus the hot wallet account).</param>
+        /// <param name="walletPassword">The wallet password which will be used to create the account.</param>
+        /// <returns>The new or existing cold staking account.</returns>
+        internal HdAccount CreateColdStakingAccount(string walletName, bool isColdWalletAccount, string walletPassword)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletName), walletName, nameof(isColdWalletAccount), isColdWalletAccount);
+
+            Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
+
+            HdAccount account = this.GetColdStakingAccount(wallet, isColdWalletAccount);
+            if (account != null)
+            {
+                this.logger.LogTrace("(-)[ACCOUNT_ALREADY_EXIST]:null");
+                return account;
+            }
+
+            int accountIndex = isColdWalletAccount ? ColdWalletAccountIndex : HotWalletAccountIndex;
+            var coinType = (CoinType)wallet.Network.Consensus.CoinType;
+
+            this.logger.LogTrace("The {0} wallet account for '{1}' does not exist and will now be created.", isColdWalletAccount ? "cold" : "hot", wallet.Name);
+
+            AccountRoot accountRoot = wallet.AccountsRoot.Single(a => a.CoinType == coinType);
+
+            account = accountRoot.CreateAccount(walletPassword, wallet.EncryptedSeed,
+                wallet.ChainCode, wallet.Network, this.dateTimeProvider.GetTimeOffset(), accountIndex,
+                isColdWalletAccount?"coldStakingColdAddresses":"coldStakingHotAddresses");
+
+            // Maintain at least one unused address at all times. This will ensure that wallet recovery will also work.
+            account.CreateAddresses(wallet.Network, 1, false);
+
+            ICollection<HdAccount> hdAccounts = accountRoot.Accounts.ToList();
+            hdAccounts.Add(account);
+            accountRoot.Accounts = hdAccounts;
 
             this.logger.LogTrace("(-):'{0}'", account.Name);
             return account;
@@ -126,17 +157,17 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <summary>
         /// Gets a cold staking address.
         /// </summary>
-        /// <param name="wallet">The wallet providing the cold staking address.</param>
+        /// <param name="walletName">The name of the wallet providing the cold staking address.</param>
         /// <param name="isColdWalletAddress">Indicates whether we need the cold wallet address (versus the hot wallet address).</param>
-        /// <param name="walletPassword">The (optional) wallet password. If not <c>null</c> the account will be created if it does not exist.</param>
-        /// <returns>The cold staking address or <c>null</c> if the required account does not exist and the wallet password was not provided.</returns>
-        internal HdAddress GetColdStakingAddress(Wallet.Wallet wallet, bool isColdWalletAddress, string walletPassword = null)
+        /// <returns>The cold staking address or <c>null</c> if the required account does not exist.</returns>
+        internal HdAddress GetColdStakingAddress(string walletName, bool isColdWalletAddress)
         {
-            Guard.NotNull(wallet, nameof(wallet));
+            Guard.NotNull(walletName, nameof(walletName));
 
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(wallet), wallet.Name, nameof(isColdWalletAddress), isColdWalletAddress);
+            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletName), walletName, nameof(isColdWalletAddress), isColdWalletAddress);
 
-            HdAccount account = this.GetColdStakingAccount(wallet, isColdWalletAddress, walletPassword);
+            Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
+            HdAccount account = this.GetColdStakingAccount(wallet, isColdWalletAddress);
             if (account == null)
             {
                 this.logger.LogTrace("(-)[ACCOUNT_DOES_NOT_EXIST]:null");
@@ -210,7 +241,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         }
 
         /// <summary>
-        /// Creates a <see cref="TransactionBuildContext"/> for creating a cold staking setup transaction.
+        /// Creates cold staking setup <see cref="Transaction"/>.
         /// </summary>
         /// <remarks>
         /// The <paramref name="coldWalletAddress"/> and <paramref name="hotWalletAddress"/> would be expected to be
@@ -230,9 +261,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="walletPassword">The wallet password.</param>
         /// <param name="amount">The amount to cold stake.</param>
         /// <param name="feeAmount">The fee to pay for the cold staking setup transaction.</param>
-        /// <returns>The <see cref="TransactionBuildContext"/> for creating the cold staking setup transaction.</returns>
+        /// <returns>The <see cref="Transaction"/> for setting up cold staking.</returns>
         /// <exception cref="WalletException">Thrown if any of the rules listed in the remarks section of this method are broken.</exception>
-        internal TransactionBuildContext GetSetupBuildContext(
+        internal Transaction GetColdStakingSetupTransaction(
             string coldWalletAddress, string hotWalletAddress, string walletName, string walletAccount,
             string walletPassword, Money amount, Money feeAmount)
         {
@@ -253,8 +284,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 );
 
             Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
-            HdAccount coldAccount = this.GetColdStakingAccount(wallet, true, walletPassword);
-            HdAccount hotAccount = this.GetColdStakingAccount(wallet, false, walletPassword);
+
+            // Get/create the cold staking accounts.
+            HdAccount coldAccount = this.CreateColdStakingAccount(walletName, true, walletPassword);
+            HdAccount hotAccount = this.CreateColdStakingAccount(walletName, false, walletPassword);
 
             bool thisIsColdWallet = coldAccount?.ExternalAddresses.Select(a => a.Address).Contains(coldWalletAddress) ?? false;
             bool thisIsHotWallet = hotAccount?.ExternalAddresses.Select(a => a.Address).Contains(hotWalletAddress) ?? false;
@@ -295,8 +328,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             // Avoid errors being raised due to the special script that we are using.
             context.TransactionBuilder.StandardTransactionPolicy.CheckScriptPubKey = false;
 
+            Transaction transaction = this.WalletTransactionHandler.BuildTransaction(context);
+
             this.logger.LogTrace("(-)");
-            return context;
+            return transaction;
         }
     }
 }

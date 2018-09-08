@@ -15,10 +15,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         [JsonProperty(PropertyName = "walletName")]
         public string WalletName { get; set; }
 
-        /// <summary>The (optional) wallet password. Required for generating cold staking accounts on demand.</summary>
-        [JsonProperty(PropertyName = "walletPassword")]
-        public string WalletPassword { get; set; }
-
         /// <summary>Determines from which of the cold staking accounts the address will be taken.</summary>
         [Required]
         [JsonProperty(PropertyName = "isColdWalletAddress")]
@@ -28,8 +24,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         /// <returns>The object as a string.</returns>
         public override string ToString()
         {
-            return string.Format("walletName={0},walletPassword={1},isColdWalletAddress={2}",
-                this.WalletName, this.WalletPassword, this.IsColdWalletAddress);
+            return $"{nameof(this.WalletName)}={this.WalletName},{nameof(this.IsColdWalletAddress)}={this.IsColdWalletAddress}";
         }
     }
 
@@ -47,7 +42,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         /// <returns>The object as a string.</returns>
         public override string ToString()
         {
-            return string.Format("address={0}", this.Address);
+            return $"{nameof(this.Address)}={this.Address}";
         }
     }
 
@@ -98,8 +93,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         /// <returns>The object as a string.</returns>
         public override string ToString()
         {
-            return string.Format("coldWalletAddress={0},hotWalletAddress={1},walletName={2},walletAccount={3},amount={4},fees={5}",
-                this.ColdWalletAddress, this.HotWalletAddress, this.WalletName, this.WalletAccount, this.Amount, this.Fees);
+            return $"{nameof(this.ColdWalletAddress)}={this.ColdWalletAddress},{nameof(this.HotWalletAddress)}={this.HotWalletAddress},{nameof(this.WalletName)}={this.WalletName},{nameof(this.WalletAccount)}={this.WalletAccount},{nameof(this.Amount)}={this.Amount},{nameof(this.Fees)}={this.Fees}";
         }
     }
 
@@ -117,7 +111,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         /// <returns>The object as a string.</returns>
         public override string ToString()
         {
-            return string.Format("transactionHex={0}", this.TransactionHex);
+            return $"{nameof(this.TransactionHex)}={this.TransactionHex}";
         }
     }
 }

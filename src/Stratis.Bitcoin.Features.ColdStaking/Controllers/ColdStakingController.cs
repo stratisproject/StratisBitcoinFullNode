@@ -26,12 +26,15 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             ILoggerFactory loggerFactory,
             ColdStakingManager coldStakingManager)
         {
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(coldStakingManager, nameof(coldStakingManager));
+
             this.ColdStakingManager = coldStakingManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <summary>
-        /// Gets a cold staking address.
+        /// Gets a cold staking address. Assumes that the cold staking account exists.
         /// </summary>
         /// <remarks>This method is used to generate cold staking addresses on each machine/wallet
         /// which will then be used with <see cref="SetupColdStaking(SetupColdStakingRequest)"/>.</remarks>
@@ -55,15 +58,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
 
             try
             {
-                Wallet.Wallet wallet = this.ColdStakingManager.WalletManager.GetWalletByName(request.WalletName);
-
                 var model = new GetColdStakingAddressResponse
                 {
-                    Address = this.ColdStakingManager.GetColdStakingAddress(wallet, request.IsColdWalletAddress, request.WalletPassword)?.Address
+                    Address = this.ColdStakingManager.GetColdStakingAddress(request.WalletName, request.IsColdWalletAddress)?.Address
                 };
 
                 if (model.Address == null)
-                    throw new WalletException("The address or associated account does not exist.");
+                    throw new WalletException("The cold staking account does not exist.");
 
                 this.logger.LogTrace("(-):'{0}'", model);
 
@@ -105,11 +106,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 Money amount = Money.Parse(request.Amount);
                 Money feeAmount = Money.Parse(request.Fees);
 
-                TransactionBuildContext context = this.ColdStakingManager.GetSetupBuildContext(request.ColdWalletAddress,
+                Transaction transaction = this.ColdStakingManager.GetColdStakingSetupTransaction(request.ColdWalletAddress,
                     request.HotWalletAddress, request.WalletName, request.WalletAccount, request.WalletPassword,
                     amount, feeAmount);
-
-                Transaction transaction = this.ColdStakingManager.WalletTransactionHandler.BuildTransaction(context);
 
                 var model = new SetupColdStakingResponse
                 {
