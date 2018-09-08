@@ -34,6 +34,43 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         }
 
         /// <summary>
+        /// Gets general information related to cold staking.
+        /// </summary>
+        /// <param name="request">A <see cref="GetColdStakingInfoRequest"/> object containing the
+        /// parameters  required to obtain cold staking information.</param>
+        /// <returns>A <see cref="GetColdStakingInfoResponse"/> object containing the cold staking information.</returns>
+        [Route("get-cold-staking-info")]
+        [HttpGet]
+        public IActionResult GetColdStakingInfo([FromQuery]GetColdStakingInfoRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            this.logger.LogTrace("({0}:'{1}')", nameof(request), request);
+
+            // Checks that the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                this.logger.LogTrace("(-)[MODEL_STATE_INVALID]");
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                GetColdStakingInfoResponse model = this.ColdStakingManager.GetColdStakingInfo(request.WalletName);
+
+                this.logger.LogTrace("(-):'{0}'", model);
+
+                return this.Json(model);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.logger.LogTrace("(-)[ERROR]");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Creates a cold staking account.
         /// </summary>
         /// <remarks>This method is used to create cold staking accounts on each machine/wallet, if required,

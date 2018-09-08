@@ -5,6 +5,47 @@ using Stratis.Bitcoin.Utilities.ValidationAttributes;
 namespace Stratis.Bitcoin.Features.ColdStaking.Models
 {
     /// <summary>
+    /// The data structure used by a client to obtain information related to cold staking.
+    /// Refer to <see cref="Controllers.ColdStakingController.GetColdStakingInfo"/>.
+    /// </summary>
+    public class GetColdStakingInfoRequest
+    {
+        /// <summary>The wallet name.</summary>
+        [Required]
+        [JsonProperty(PropertyName = "walletName")]
+        public string WalletName { get; set; }
+
+        /// <summary>Creates a string containing the properties of this object.</summary>
+        /// <returns>A string containing the properties of the object.</returns>
+        public override string ToString()
+        {
+            return $"{nameof(this.WalletName)}={this.WalletName}";
+        }
+    }
+
+    /// <summary>
+    /// The data structure received by a client obtaining information relating to cold staking.
+    /// Refer to <see cref="GetColdStakingInfoRequest"/>.
+    /// </summary>
+    public class GetColdStakingInfoResponse
+    {
+        /// <summary>Set if the cold wallet account exists.</summary>
+        [JsonProperty(PropertyName = "coldWalletAccountExists")]
+        public bool ColdWalletAccountExists { get; set; }
+
+        /// <summary>Set if the hot wallet account exists.</summary>
+        [JsonProperty(PropertyName = "hotWalletAccountExists")]
+        public bool HotWalletAccountExists { get; set; }
+
+        /// <summary>Creates a string containing the properties of this object.</summary>
+        /// <returns>A string containing the properties of the object.</returns>
+        public override string ToString()
+        {
+            return $"{nameof(this.ColdWalletAccountExists)}={this.ColdWalletAccountExists},{nameof(this.HotWalletAccountExists)}={this.HotWalletAccountExists}";
+        }
+    }
+
+    /// <summary>
     /// The data structure used by a client creating a cold staking account.
     /// Refer to <see cref="Controllers.ColdStakingController.CreateColdStakingAccount"/>.
     /// </summary>
