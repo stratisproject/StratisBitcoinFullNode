@@ -32,8 +32,14 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <summary>The account index of the cold wallet account.</summary>
         private const int ColdWalletAccountIndex = Wallet.Wallet.ColdStakingAccountIndex + 0;
 
+        /// <summary>The account name of the cold wallet account.</summary>
+        private const string ColdWalletAccountName = "coldStakingColdAddresses";
+
         /// <summary>The account index of the hot wallet account.</summary>
         private const int HotWalletAccountIndex = Wallet.Wallet.ColdStakingAccountIndex + 1;
+
+        /// <summary>The account name of the hot wallet account.</summary>
+        private const string HotWalletAccountName = "coldStakingHotAddresses";
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -128,7 +134,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             HdAccount account = this.GetColdStakingAccount(wallet, isColdWalletAccount);
             if (account != null)
             {
-                this.logger.LogTrace("(-)[ACCOUNT_ALREADY_EXIST]:null");
+                this.logger.LogTrace("(-)[ACCOUNT_ALREADY_EXIST]:'{0}'", account.Name);
                 return account;
             }
 
@@ -141,7 +147,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             account = accountRoot.CreateAccount(walletPassword, wallet.EncryptedSeed,
                 wallet.ChainCode, wallet.Network, this.dateTimeProvider.GetTimeOffset(), accountIndex,
-                isColdWalletAccount?"coldStakingColdAddresses":"coldStakingHotAddresses");
+                isColdWalletAccount ? ColdWalletAccountName: HotWalletAccountName);
 
             // Maintain at least one unused address at all times. This will ensure that wallet recovery will also work.
             account.CreateAddresses(wallet.Network, 1, false);
