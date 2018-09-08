@@ -19,7 +19,7 @@ using Xunit;
 namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 {
     /// <summary>
-    /// This class tests the functionality provided by the <see cref="coldStakingController"/>.
+    /// This class tests the functionality provided by the <see cref="ColdStakingController"/>.
     /// </summary>
     public class ColdStakingControllerTest : TestBase
     {
@@ -46,14 +46,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         /// <summary>
         /// Initializes each test case.
         /// </summary>
-        /// <param name="caller">An instance of the test class.</param>
         /// <param name="callingMethod">The test method being executed.</param>
-        private void Initialize(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
+        private void Initialize([System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
         {
-            var dataFolder = CreateDataFolder(caller);
+            var dataFolder = CreateDataFolder(this, callingMethod);
             var nodeSettings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION);
             var walletSettings = new WalletSettings(nodeSettings);
-            var loggerFactory = new Mock<LoggerFactory>();
+            var loggerFactory = new Mock<ILoggerFactory>();
 
             this.walletManager = new WalletManager(loggerFactory.Object, this.Network, new ConcurrentChain(this.Network),
                 nodeSettings, walletSettings, dataFolder, new Mock<IWalletFeePolicy>().Object,
@@ -104,7 +103,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         [Fact]
         public void ColdStakingVerifyWalletAddresses()
         {
-            this.Initialize(this);
+            this.Initialize();
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
             this.walletManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
@@ -135,7 +134,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         [Fact]
         public void GetColdStakingAddressForMissingAccountThrowsWalletException()
         {
-            this.Initialize(this);
+            this.Initialize();
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
@@ -162,7 +161,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         [Fact]
         public void GetColdStakingAddressForExistingAccountReturnsAddress()
         {
-            this.Initialize(this);
+            this.Initialize();
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
@@ -189,7 +188,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         [Fact]
         public void SetupColdStakingWithSameWalletThrowsWalletException()
         {
-            this.Initialize(this);
+            this.Initialize();
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
@@ -223,7 +222,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         [Fact]
         public void SetupColdStakingWithBothAddressesUnknownThrowsWalletException()
         {
-            this.Initialize(this);
+            this.Initialize();
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
@@ -254,7 +253,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         [Fact]
         public void SetupColdStakingWithInvalidAccountThrowsWalletException()
         {
-            this.Initialize(this);
+            this.Initialize();
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
@@ -287,7 +286,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         [Fact]
         public void SetupColdStakingWithHotWalletSucceeds()
         {
-            this.Initialize(this);
+            this.Initialize();
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
@@ -326,7 +325,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         [Fact]
         public void SetupColdStakingWithColdWalletSucceeds()
         {
-            this.Initialize(this);
+            this.Initialize();
 
             this.walletManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
 
@@ -365,7 +364,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         [Fact]
         public void GetColdStakingInfoOnlyConfirmAccountExistenceOnceCreated()
         {
-            this.Initialize(this);
+            this.Initialize();
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
