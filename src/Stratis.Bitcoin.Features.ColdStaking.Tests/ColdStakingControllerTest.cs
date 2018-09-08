@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             var dataFolder = CreateDataFolder(this, callingMethod);
             var nodeSettings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION);
             var walletSettings = new WalletSettings(nodeSettings);
-            var loggerFactory = new Mock<ILoggerFactory>();
+            var loggerFactory = new Mock<LoggerFactory>();
 
             this.walletManager = new WalletManager(loggerFactory.Object, this.Network, new ConcurrentChain(this.Network),
                 nodeSettings, walletSettings, dataFolder, new Mock<IWalletFeePolicy>().Object,
