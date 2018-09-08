@@ -34,6 +34,48 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         }
 
         /// <summary>
+        /// Creates a cold staking account.
+        /// </summary>
+        /// <remarks>This method is used to create cold staking accounts on each machine/wallet, if required,
+        /// prior to calling <see cref="GetColdStakingAddress"/>.</remarks>
+        /// <param name="request">A <see cref="CreateColdStakingAccountRequest"/> object containing the parameters
+        /// required for creating the cold staking account.</param>
+        /// <returns>A <see cref="CreateColdStakingAccountResponse>"/> object containing the account name.</returns>
+        [Route("create-cold-staking-account")]
+        [HttpPost]
+        public IActionResult CreateColdStakingAccount([FromBody]CreateColdStakingAccountRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            this.logger.LogTrace("({0}:'{1}')", nameof(request), request);
+
+            // Checks that the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                this.logger.LogTrace("(-)[MODEL_STATE_INVALID]");
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var model = new CreateColdStakingAccountResponse
+                {
+                    AccountName = this.ColdStakingManager.CreateColdStakingAccount(request.WalletName, request.IsColdWalletAccount, request.WalletPassword).Name
+                };
+
+                this.logger.LogTrace("(-):'{0}'", model);
+
+                return this.Json(model);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.logger.LogTrace("(-)[ERROR]");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Gets a cold staking address. Assumes that the cold staking account exists.
         /// </summary>
         /// <remarks>This method is used to generate cold staking addresses on each machine/wallet

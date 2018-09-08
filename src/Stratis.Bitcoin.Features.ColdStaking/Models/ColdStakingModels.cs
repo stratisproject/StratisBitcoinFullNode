@@ -5,6 +5,53 @@ using Stratis.Bitcoin.Utilities.ValidationAttributes;
 namespace Stratis.Bitcoin.Features.ColdStaking.Models
 {
     /// <summary>
+    /// The data structure used by a client creating a cold staking account.
+    /// Refer to <see cref="Controllers.ColdStakingController.CreateColdStakingAccount"/>.
+    /// </summary>
+    public class CreateColdStakingAccountRequest
+    {
+        /// <summary>The wallet name.</summary>
+        [Required]
+        [JsonProperty(PropertyName = "walletName")]
+        public string WalletName { get; set; }
+
+        /// <summary>The wallet password.</summary>
+        [Required]
+        [JsonProperty(PropertyName = "walletPassword")]
+        public string WalletPassword { get; set; }
+
+        /// <summary>Determines from which of the cold staking accounts the address will be taken.</summary>
+        [Required]
+        [JsonProperty(PropertyName = "isColdWalletAccount")]
+        public bool IsColdWalletAccount { get; set; }
+
+        /// <summary>Creates a string containing the properties of this object.</summary>
+        /// <returns>A string containing the properties of the object.</returns>
+        public override string ToString()
+        {
+            return $"{nameof(this.WalletName)}={this.WalletName},{nameof(this.IsColdWalletAccount)}={this.IsColdWalletAccount}";
+        }
+    }
+
+    /// <summary>
+    /// The response data structure received by a client creating a cold staking account.
+    /// Refer to <see cref="CreateColdStakingAccountRequest"/>.
+    /// </summary>
+    public class CreateColdStakingAccountResponse
+    {
+        /// <summary>The name of the account that was created or perhaps already existed.</summary>
+        [JsonProperty(PropertyName = "accountName")]
+        public string AccountName { get; set; }
+
+        /// <summary>Creates a string containing the properties of this object.</summary>
+        /// <returns>A string containing the properties of the object.</returns>
+        public override string ToString()
+        {
+            return $"{nameof(this.AccountName)}={this.AccountName}";
+        }
+    }
+
+    /// <summary>
     /// The data structure used by a client requesting a cold staking address.
     /// Refer to <see cref="Controllers.ColdStakingController.GetColdStakingAddress"/>.
     /// </summary>
