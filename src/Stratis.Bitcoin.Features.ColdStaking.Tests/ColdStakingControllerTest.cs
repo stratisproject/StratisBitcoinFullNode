@@ -52,17 +52,22 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             var dataFolder = CreateDataFolder(this, callingMethod);
             var nodeSettings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION);
             var walletSettings = new WalletSettings(nodeSettings);
-            var loggerFactory = new Mock<LoggerFactory>();
+            var loggerFactory = new Mock<ILoggerFactory>();
 
+            loggerFactory.Setup(x => x.CreateLogger(typeof(WalletManager).FullName)).Returns(new Mock<ILogger>().Object);
             this.walletManager = new WalletManager(loggerFactory.Object, this.Network, new ConcurrentChain(this.Network),
                 nodeSettings, walletSettings, dataFolder, new Mock<IWalletFeePolicy>().Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 
+            loggerFactory.Setup(x => x.CreateLogger(typeof(WalletTransactionHandler).FullName)).Returns(new Mock<ILogger>().Object);
             var walletTransactionHandler = new WalletTransactionHandler(loggerFactory.Object, this.walletManager,
                 new Mock<IWalletFeePolicy>().Object, this.Network, new StandardTransactionPolicy(this.Network));
+
+            loggerFactory.Setup(x => x.CreateLogger(typeof(ColdStakingManager).FullName)).Returns(new Mock<ILogger>().Object);
             this.coldStakingManager = new ColdStakingManager(loggerFactory.Object, this.walletManager, walletTransactionHandler,
                 new Mock<IDateTimeProvider>().Object);
 
+            loggerFactory.Setup(x => x.CreateLogger(typeof(ColdStakingController).FullName)).Returns(new Mock<ILogger>().Object);
             this.coldStakingController = new ColdStakingController(loggerFactory.Object, this.coldStakingManager);
         }
 
