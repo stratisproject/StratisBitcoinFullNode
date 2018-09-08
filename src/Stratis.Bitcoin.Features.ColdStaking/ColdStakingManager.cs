@@ -321,7 +321,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             bool thisIsColdWallet = coldAccount?.ExternalAddresses.Select(a => a.Address).Contains(coldWalletAddress) ?? false;
             bool thisIsHotWallet = hotAccount?.ExternalAddresses.Select(a => a.Address).Contains(hotWalletAddress) ?? false;
 
-            this.logger.LogTrace($"{nameof(thisIsColdWallet)}={thisIsColdWallet},{nameof(thisIsHotWallet)}={thisIsHotWallet}");
+            this.logger.LogTrace("Local wallet '{0}' does{1} contain cold wallet address '{2}' and does{3} contain hot wallet address '{4}'.", walletName, thisIsColdWallet ? "" : " NOT", coldWalletAddress, thisIsHotWallet ? "" : " NOT", hotWalletAddress);
 
             if (thisIsColdWallet && thisIsHotWallet)
             {
