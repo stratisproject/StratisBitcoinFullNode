@@ -7,6 +7,9 @@ using RuntimeObserver;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
 {
+    /// <summary>
+    /// Rewrites a module to include an <see cref="Observer"/> that tracks gas usage. 
+    /// </summary>
     public class ObserverRewriter : IILRewriter
     {
         private static readonly HashSet<OpCode> BranchingOps = new HashSet<OpCode>
@@ -40,6 +43,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             OpCodes.Callvirt
         };
 
+        /// <summary>
+        /// Holds the key to retrieve the last Observer instance created from <see cref="ObserverInstances"/>. 
+        /// 
+        /// TODO: There should be a better pattern here to implement the Rewriter interface and still be able to retrieve this.
+        /// </summary>
         public Guid LastRewritten { get; private set; }
 
         public ModuleDefinition Rewrite(ModuleDefinition module)
@@ -59,13 +67,20 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             return module;
         }
 
+        /// <summary>
+        /// Inserts a static type into the module which gives access to an instance of <see cref="Observer"/>.
+        /// Because this is injected per module, it counts as a separate type and will not be a shared static.
+        /// </summary>
         private FieldDefinition GetObserverInstance(ModuleDefinition module, Guid id)
         {
+            // Add new type that can't be instantiated
             var instanceType = new TypeDefinition(
                 "<Stratis>", "<RuntimeObserverInstance>",
                 TypeAttributes.Class | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.NotPublic,
                 module.ImportReference(typeof(object))
             );
+
+            // Add a field - an instance of our Observer!
             var instanceField = new FieldDefinition(
                 "Instance",
                 FieldAttributes.Assembly | FieldAttributes.Static | FieldAttributes.InitOnly,
@@ -73,6 +88,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             );
             instanceType.Fields.Add(instanceField);
 
+            // When this type is created, retrieve the Observer from our global static dictionary so it can be used.
             var constructor = new MethodDefinition(
                 ".cctor", MethodAttributes.Private | MethodAttributes.RTSpecialName | MethodAttributes.SpecialName | MethodAttributes.Static,
                 module.ImportReference(typeof(void))
@@ -101,7 +117,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
         private void RewriteMethod(MethodDefinition methodDefinition, ObserverReferences observer)
         {
             if (methodDefinition.DeclaringType == observer.InstanceField.DeclaringType)
-                return; // don't inject on our special instance.
+                return; // don't inject on our injected type.
 
             if (!methodDefinition.HasBody || methodDefinition.Body.Instructions.Count == 0)
                 return; // don't inject on method without a Body 
