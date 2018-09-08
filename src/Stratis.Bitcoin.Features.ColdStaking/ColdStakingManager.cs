@@ -321,6 +321,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             bool thisIsColdWallet = coldAccount?.ExternalAddresses.Select(a => a.Address).Contains(coldWalletAddress) ?? false;
             bool thisIsHotWallet = hotAccount?.ExternalAddresses.Select(a => a.Address).Contains(hotWalletAddress) ?? false;
 
+            this.logger.LogTrace($"{nameof(thisIsColdWallet)}={thisIsColdWallet},{nameof(thisIsHotWallet)}={thisIsHotWallet}");
+
             if (thisIsColdWallet && thisIsHotWallet)
             {
                 this.logger.LogTrace("(-)[COLDSTAKE_BOTH_HOT_AND_COLD]");
