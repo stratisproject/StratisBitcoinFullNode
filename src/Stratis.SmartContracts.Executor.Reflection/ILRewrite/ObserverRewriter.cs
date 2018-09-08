@@ -214,62 +214,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             il.InsertBefore(instruction, il.Create(OpCodes.Ldc_I8, (long)opcodeCount.Value)); // load gas amount
             il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.SpendGasMethod)); // trigger method
         }
-
-        //private void RewriteMethod(MethodDefinition method, ObserverReferences observer)
-        //{
-        //    if (method.DeclaringType == observer.InstanceField.DeclaringType)
-        //        return;
-
-        //    if (!method.HasBody)
-        //        return;
-
-        //    if (method.Body.Instructions.Count == 0)
-        //        return; // weird, but happens with 'extern'
-
-        //    ILProcessor il = method.Body.GetILProcessor();
-        //    var guardVariable = new VariableDefinition(observer.InstanceField.FieldType);
-        //    il.Body.Variables.Add(guardVariable);
-
-        //    Mono.Collections.Generic.Collection<Instruction> instructions = il.Body.Instructions;
-        //    Instruction start = instructions[0];
-        //    var skipFirst = 2;
-        //    il.InsertBefore(start, il.Create(OpCodes.Ldsfld, observer.InstanceField));
-        //    il.InsertBefore(start, il.CreateStlocBest(guardVariable));
-
-        //    for (var i = skipFirst; i < instructions.Count; i++)
-        //    {
-        //        Instruction instruction = instructions[i];
-
-        //        if (!ShouldInsertJumpGuardBefore(instruction))
-        //            continue;
-
-        //        il.InsertBefore(instruction, il.CreateLdlocBest(guardVariable));
-        //        il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.OperationUpMethod));
-        //        i += 2;
-        //    }
-
-        //    il.CorrectAllAfterChanges();
-        //}
-
-        //private bool ShouldInsertJumpGuardBefore(Instruction instruction, bool ignorePrefix = false)
-        //{
-        //    var opCode = instruction.OpCode;
-        //    if (opCode.OpCodeType == OpCodeType.Prefix)
-        //        return ShouldInsertJumpGuardBefore(instruction.Next, ignorePrefix: true);
-
-        //    if (!ignorePrefix && instruction.Previous?.OpCode.OpCodeType == OpCodeType.Prefix)
-        //        return false;
-
-        //    var flowControl = opCode.FlowControl;
-        //    if (flowControl == FlowControl.Next || flowControl == FlowControl.Return)
-        //        return false;
-
-        //    if (instruction.Operand is Instruction target && target.Offset > instruction.Offset)
-        //        return false;
-
-        //    return true;
-        //}
-
     }
 
     public static class CecilExtensions
@@ -304,60 +248,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             }
         }
 
-        public static void CorrectAllAfterChanges(this ILProcessor il)
-        {
-            CorrectBranchSizes(il);
-        }
-
         private static bool IsSByte(int value)
         {
             return value >= sbyte.MinValue && value <= sbyte.MaxValue;
-        }
-
-        private static void CorrectBranchSizes(ILProcessor il)
-        {
-            var offset = 0;
-            foreach (var instruction in il.Body.Instructions)
-            {
-                offset += instruction.GetSize();
-                instruction.Offset = offset;
-            }
-
-            foreach (var instruction in il.Body.Instructions)
-            {
-                var opCode = instruction.OpCode;
-                if (opCode.OperandType != OperandType.ShortInlineBrTarget)
-                    continue;
-
-                var operandValue = ((Instruction)instruction.Operand).Offset - (instruction.Offset + instruction.GetSize());
-                if (operandValue >= sbyte.MinValue && operandValue <= sbyte.MaxValue)
-                    continue;
-
-                instruction.OpCode = ConvertFromShortBranchOpCode(opCode);
-            }
-        }
-
-        private static OpCode ConvertFromShortBranchOpCode(OpCode opCode)
-        {
-            switch (opCode.Code)
-            {
-                case Code.Br_S: return OpCodes.Br;
-                case Code.Brfalse_S: return OpCodes.Brfalse;
-                case Code.Brtrue_S: return OpCodes.Brtrue;
-                case Code.Beq_S: return OpCodes.Beq;
-                case Code.Bge_S: return OpCodes.Bge;
-                case Code.Bge_Un_S: return OpCodes.Bge_Un;
-                case Code.Bgt_S: return OpCodes.Bgt;
-                case Code.Bgt_Un_S: return OpCodes.Bgt_Un;
-                case Code.Ble_S: return OpCodes.Ble;
-                case Code.Ble_Un_S: return OpCodes.Ble_Un;
-                case Code.Blt_S: return OpCodes.Blt;
-                case Code.Blt_Un_S: return OpCodes.Blt_Un;
-                case Code.Bne_Un_S: return OpCodes.Bne_Un;
-                case Code.Leave_S: return OpCodes.Leave;
-                default:
-                    throw new ArgumentOutOfRangeException("Unknown branch opcode: " + opCode);
-            }
         }
     }
 }

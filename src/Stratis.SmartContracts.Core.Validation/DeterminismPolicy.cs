@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using Mono.Cecil;
 using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Policy;
@@ -50,8 +48,7 @@ namespace Stratis.SmartContracts.Core.Validation
         private static void SmartContractsPolicy(NamespacePolicy policy)
         {
             policy
-                .Type(typeof(SmartContract), AccessPolicy.Allowed,
-                    type => type.Member(nameof(SmartContract.SpendGas), AccessPolicy.Denied));
+                .Type(typeof(SmartContract), AccessPolicy.Allowed);
         }
     }
 }

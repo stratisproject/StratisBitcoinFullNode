@@ -6,8 +6,6 @@ namespace RuntimeObserver
     {
         public IGasMeter GasMeter { get; }
 
-        private long operationCountLimit;
-
         public Observer(IGasMeter gasMeter)
         {
             this.GasMeter = gasMeter;
