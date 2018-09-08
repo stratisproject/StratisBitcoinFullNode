@@ -4,20 +4,22 @@ using System.Linq;
 using Mono.Cecil;
 using Moq;
 using NBitcoin;
+using RuntimeObserver;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
+using Stratis.SmartContracts.Executor.Reflection.ILRewrite;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
-using Block = Stratis.SmartContracts.Core.Block;
-using InternalHashHelper = Stratis.SmartContracts.Core.Hashing.InternalHashHelper;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public class GasInjectorTests
+    public class ObserverTests
     {
         private const string TestSource = @"using System;
                                             using Stratis.SmartContracts;   
@@ -83,29 +85,47 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private const string ContractName = "Test";
         private const string MethodName = "TestMethod";
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
+        private ISmartContractState state;
+        private const ulong Balance = 0;
+        private const ulong GasLimit = 10000;
+        private const ulong Value = 0;
 
+        private readonly ObserverRewriter rewriter;
+        private readonly IContractState repository;
         private readonly Network network;
-        private readonly IContractStateRoot repository;
-        private readonly ReflectionVirtualMachine vm;
-        private readonly SmartContractState state;
-        private readonly GasMeter gasMeter;
+        private readonly IContractModuleDefinitionReader moduleReader;
         private readonly ContractAssemblyLoader assemblyLoader;
-        private readonly ContractModuleDefinitionReader moduleReader;
+        private readonly IGasMeter gasMeter;
 
-        public GasInjectorTests()
+        public ObserverTests()
         {
-            // Only take from context what these tests require.
             var context = new ContractExecutorTestContext();
-            this.vm = context.Vm;
             this.repository = context.State;
             this.network = context.Network;
             this.moduleReader = new ContractModuleDefinitionReader();
             this.assemblyLoader = new ContractAssemblyLoader();
-            this.gasMeter = new GasMeter((Gas) 5000000);
+            this.gasMeter = new GasMeter((Gas)5000000);
+
+            var block = new TestBlock
+            {
+                Coinbase = TestAddress,
+                Number = 1
+            };
+            var message = new TestMessage
+            {
+                ContractAddress = TestAddress,
+                GasLimit = (Gas)GasLimit,
+                Sender = TestAddress,
+                Value = Value
+            };
+            var getBalance = new Func<ulong>(() => Balance);
+            var persistentState = new TestPersistentState();
+            var network = new SmartContractsRegTest();
+            var serializer = new ContractPrimitiveSerializer(network);
             this.state = new SmartContractState(
-                new Block(1, TestAddress),
+                new Stratis.SmartContracts.Core.Block(1, TestAddress),
                 new Message(TestAddress, TestAddress, 0),
-                new PersistentState(new MeteredPersistenceStrategy(this.repository, this.gasMeter, new BasicKeyEncodingStrategy()), 
+                new PersistentState(new MeteredPersistenceStrategy(this.repository, this.gasMeter, new BasicKeyEncodingStrategy()),
                     context.ContractPrimitiveSerializer, TestAddress.ToUint160(this.network)),
                 context.ContractPrimitiveSerializer,
                 this.gasMeter,
@@ -113,7 +133,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Mock.Of<IInternalTransactionExecutor>(),
                 new InternalHashHelper(),
                 () => 1000);
+
+            this.rewriter = new ObserverRewriter();
         }
+
+        // These tests are almost identical to the GasInjectorTests, just with the new injector.
 
         [Fact]
         public void TestGasInjector()
@@ -139,15 +163,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             }
 
             var callData = new MethodCall("TestMethod", new object[] { 1 });
-           
-            var module = this.moduleReader.Read(originalAssemblyBytes);
-            module.InjectMethodGas("Test", callData);
 
-            var assembly = this.assemblyLoader.Load(module.ToByteCode());
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            
+            module.Rewrite(this.rewriter);
+            ObserverInstances.Set(this.rewriter.LastRewritten, new Observer(this.gasMeter));
 
-            var contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
+            CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            var result = contract.Invoke(callData);
+            IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
+
+            IContractInvocationResult result = contract.Invoke(callData);
 
             Assert.Equal((ulong)aimGasAmount, this.state.GasMeter.GasConsumed);
         }
@@ -162,14 +188,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var callData = new MethodCall("UseAllGas");
 
-            var module = this.moduleReader.Read(originalAssemblyBytes);
-            module.InjectMethodGas("OutOfGasTest", callData);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
 
-            var assembly = this.assemblyLoader.Load(module.ToByteCode());
+            module.Rewrite(this.rewriter);
+            ObserverInstances.Set(this.rewriter.LastRewritten, new Observer(this.gasMeter));
 
-            var contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
+            CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            var result = contract.Invoke(callData);
+            IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
+
+            IContractInvocationResult result = contract.Invoke(callData);
 
             Assert.False(result.IsSuccess);
             Assert.Equal((Gas)0, this.gasMeter.GasAvailable);
@@ -186,14 +214,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            var module = this.moduleReader.Read(originalAssemblyBytes);
-            module.InjectConstructorGas();
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
 
-            var assembly = this.assemblyLoader.Load(module.ToByteCode());
+            module.Rewrite(this.rewriter);
+            ObserverInstances.Set(this.rewriter.LastRewritten, new Observer(this.gasMeter));
 
-            var contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
+            CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            var result = contract.InvokeConstructor(null);
+            IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
+
+            IContractInvocationResult result = contract.InvokeConstructor(null);
 
             // TODO: Un-hard-code this. 
             // Constructor: 15
@@ -211,14 +241,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            var module = this.moduleReader.Read(originalAssemblyBytes);
-            module.InjectConstructorGas();
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
 
-            var assembly = this.assemblyLoader.Load(module.ToByteCode());
+            module.Rewrite(this.rewriter);
+            ObserverInstances.Set(this.rewriter.LastRewritten, new Observer(this.gasMeter));
 
-            var contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
+            CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            var result = contract.InvokeConstructor(new[] { "Test Owner" });
+            IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
+
+            IContractInvocationResult result = contract.InvokeConstructor(new[] { "Test Owner" });
 
             // Constructor: 15
             // Property setter: 12
@@ -236,18 +268,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var callData = new MethodCall(nameof(Recursion.DoRecursion));
 
-            var module = this.moduleReader.Read(originalAssemblyBytes);
-            module.InjectMethodGas("Recursion", callData);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
 
-            var assembly = this.assemblyLoader.Load(module.ToByteCode());
+            module.Rewrite(this.rewriter);
+            ObserverInstances.Set(this.rewriter.LastRewritten, new Observer(this.gasMeter));
 
-            var contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
+            CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
+            IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
-            var result = contract.Invoke(callData);
+            IContractInvocationResult result = contract.Invoke(callData);
 
             Assert.True(result.IsSuccess);
             Assert.True(this.gasMeter.GasConsumed > 0);
         }
+
     }
 }
