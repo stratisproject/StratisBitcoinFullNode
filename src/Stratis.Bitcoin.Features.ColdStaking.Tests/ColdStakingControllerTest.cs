@@ -265,7 +265,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 HotWalletAddress = hotWalletAddress1,
                 ColdWalletAddress = coldWalletAddress2,
                 WalletName = walletName1,
-                WalletAccount = $"account { Wallet.Wallet.ColdStakingAccountIndex }",
+                WalletAccount = $"coldStakingColdAddresses",
                 WalletPassword = walletPassword,
                 Amount = "100",
                 Fees = "0.01"
@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(400, error.Status);
             Assert.StartsWith("Stratis.Bitcoin.Features.Wallet.WalletException", error.Description);
-            Assert.StartsWith("You can't perform this operation with wallet account 'account 100000000'.", error.Message);
+            Assert.StartsWith("You can't perform this operation with wallet account 'coldStakingColdAddresses'.", error.Message);
         }
 
         /// <summary>
