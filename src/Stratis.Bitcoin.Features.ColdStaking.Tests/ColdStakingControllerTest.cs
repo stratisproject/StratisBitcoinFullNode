@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -134,7 +135,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
         /// <summary>
         /// Confirms that <see cref="ColdStakingController.GetColdStakingAddress(GetColdStakingAddressRequest)"/>
-        /// wil fail if the wallet does not contain the relevant account.
+        /// will fail if the wallet does not contain the relevant account.
         /// </summary>
         [Fact]
         public void GetColdStakingAddressForMissingAccountThrowsWalletException()
@@ -143,20 +144,35 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
-            IActionResult result = this.coldStakingController.GetColdStakingAddress(new GetColdStakingAddressRequest
+            IActionResult result1 = this.coldStakingController.GetColdStakingAddress(new GetColdStakingAddressRequest
             {
                 WalletName = walletName1,
                 IsColdWalletAddress = true
             });
 
-            var errorResult = Assert.IsType<ErrorResult>(result);
-            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Single(errorResponse.Errors);
+            var errorResult1 = Assert.IsType<ErrorResult>(result1);
+            var errorResponse1 = Assert.IsType<ErrorResponse>(errorResult1.Value);
+            Assert.Single(errorResponse1.Errors);
+            ErrorModel error1 = errorResponse1.Errors[0];
 
-            ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(400, error.Status);
-            Assert.StartsWith("Stratis.Bitcoin.Features.Wallet.WalletException", error.Description);
-            Assert.StartsWith("The cold staking account does not exist.", error.Message);
+            IActionResult result2 = this.coldStakingController.GetColdStakingAddress(new GetColdStakingAddressRequest
+            {
+                WalletName = walletName1,
+                IsColdWalletAddress = false
+            });
+
+            var errorResult2 = Assert.IsType<ErrorResult>(result2);
+            var errorResponse2 = Assert.IsType<ErrorResponse>(errorResult2.Value);
+            Assert.Single(errorResponse2.Errors);
+            ErrorModel error2 = errorResponse1.Errors[0];
+
+            Assert.Equal((int)HttpStatusCode.BadRequest, error1.Status);
+            Assert.StartsWith($"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Features)}.{nameof(Wallet)}.{nameof(WalletException)}", error1.Description);
+            Assert.StartsWith("The cold staking account does not exist.", error1.Message);
+
+            Assert.Equal((int)HttpStatusCode.BadRequest, error2.Status);
+            Assert.StartsWith($"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Features)}.{nameof(Wallet)}.{nameof(WalletException)}", error2.Description);
+            Assert.StartsWith("The cold staking account does not exist.", error2.Message);
         }
 
         /// <summary>
@@ -170,20 +186,32 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
-            // Create existing account.
+            // Create existing accounts.
             this.coldStakingManager.CreateColdStakingAccount(walletName1, true, walletPassword);
+            this.coldStakingManager.CreateColdStakingAccount(walletName1, false, walletPassword);
 
-            // Try to get address on existing account without supplying the wallet password.
-            IActionResult result = this.coldStakingController.GetColdStakingAddress(new GetColdStakingAddressRequest
+            // Try to get cold wallet address on existing account without supplying the wallet password.
+            IActionResult result1 = this.coldStakingController.GetColdStakingAddress(new GetColdStakingAddressRequest
             {
                 WalletName = walletName1,
                 IsColdWalletAddress = true
             });
 
-            var jsonResult = Assert.IsType<JsonResult>(result);
-            var response = Assert.IsType<GetColdStakingAddressResponse>(jsonResult.Value);
+            var jsonResult1 = Assert.IsType<JsonResult>(result1);
+            var response1 = Assert.IsType<GetColdStakingAddressResponse>(jsonResult1.Value);
 
-            Assert.Equal(coldWalletAddress1, response.Address);
+            // Try to get hot wallet address on existing account without supplying the wallet password.
+            IActionResult result2 = this.coldStakingController.GetColdStakingAddress(new GetColdStakingAddressRequest
+            {
+                WalletName = walletName1,
+                IsColdWalletAddress = false
+            });
+
+            var jsonResult2 = Assert.IsType<JsonResult>(result2);
+            var response2 = Assert.IsType<GetColdStakingAddressResponse>(jsonResult2.Value);
+
+            Assert.Equal(coldWalletAddress1, response1.Address);
+            Assert.Equal(hotWalletAddress1, response2.Address);
         }
 
         /// <summary>
@@ -215,8 +243,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(400, error.Status);
-            Assert.StartsWith("Stratis.Bitcoin.Features.Wallet.WalletException", error.Description);
+            Assert.Equal((int)HttpStatusCode.BadRequest, error.Status);
+            Assert.StartsWith($"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Features)}.{nameof(Wallet)}.{nameof(WalletException)}", error.Description);
             Assert.StartsWith("You can't use this wallet as both hot wallet and cold wallet.", error.Message);
         }
 
@@ -233,8 +261,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             IActionResult result = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
             {
-                HotWalletAddress = "SXgbh9LuzNAV7y2FHyUQJcgmjcuogSssef",
-                ColdWalletAddress = "SYgbh9LuzNAV7y2FHyUQJcgmjcuogSssef",
+                HotWalletAddress = new Key().PubKey.GetAddress(this.Network).ToString(),
+                ColdWalletAddress = new Key().PubKey.GetAddress(this.Network).ToString(),
                 WalletName = walletName1,
                 WalletAccount = walletAccount,
                 WalletPassword = walletPassword,
@@ -247,13 +275,14 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Single(errorResponse.Errors);
 
             ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(400, error.Status);
-            Assert.StartsWith("Stratis.Bitcoin.Features.Wallet.WalletException", error.Description);
+            Assert.Equal((int)HttpStatusCode.BadRequest, error.Status);
+            Assert.StartsWith($"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Features)}.{nameof(Wallet)}.{nameof(WalletException)}", error.Description);
             Assert.StartsWith("The hot and cold wallet addresses could not be found in the corresponding accounts.", error.Message);
         }
 
         /// <summary>
-        /// Confirms that a wallet exception will result from attempting to set up cold staking from a cold staking account.
+        /// Confirms that a wallet exception will result from attempting to use coins from a cold
+        /// staking account to act as inputs to a cold staking setup transaction.
         /// </summary>
         [Fact]
         public void SetupColdStakingWithInvalidAccountThrowsWalletException()
@@ -264,25 +293,50 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             var wallet1 = this.walletManager.GetWalletByName(walletName1);
 
-            IActionResult result = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
+            string coldWalletAccountName = typeof(ColdStakingManager).GetPrivateConstantValue<string>("ColdWalletAccountName");
+            string hotWalletAccountName = typeof(ColdStakingManager).GetPrivateConstantValue<string>("HotWalletAccountName");
+
+            // Attempt to set up cold staking with a cold wallet account name.
+            IActionResult result1 = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
             {
                 HotWalletAddress = hotWalletAddress1,
                 ColdWalletAddress = coldWalletAddress2,
                 WalletName = walletName1,
-                WalletAccount = $"coldStakingColdAddresses",
+                WalletAccount = coldWalletAccountName,
                 WalletPassword = walletPassword,
                 Amount = "100",
                 Fees = "0.01"
             });
 
-            var errorResult = Assert.IsType<ErrorResult>(result);
-            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Single(errorResponse.Errors);
+            var errorResult1 = Assert.IsType<ErrorResult>(result1);
+            var errorResponse1 = Assert.IsType<ErrorResponse>(errorResult1.Value);
+            Assert.Single(errorResponse1.Errors);
+            ErrorModel error1 = errorResponse1.Errors[0];
 
-            ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(400, error.Status);
-            Assert.StartsWith("Stratis.Bitcoin.Features.Wallet.WalletException", error.Description);
-            Assert.StartsWith("You can't perform this operation with wallet account 'coldStakingColdAddresses'.", error.Message);
+            // Attempt to set up cold staking with a hot wallet account name.
+            IActionResult result2 = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
+            {
+                HotWalletAddress = hotWalletAddress1,
+                ColdWalletAddress = coldWalletAddress2,
+                WalletName = walletName1,
+                WalletAccount = hotWalletAccountName,
+                WalletPassword = walletPassword,
+                Amount = "100",
+                Fees = "0.01"
+            });
+
+            var errorResult2 = Assert.IsType<ErrorResult>(result2);
+            var errorResponse2 = Assert.IsType<ErrorResponse>(errorResult2.Value);
+            Assert.Single(errorResponse2.Errors);
+            ErrorModel error2 = errorResponse2.Errors[0];
+
+            Assert.Equal((int)HttpStatusCode.BadRequest, error1.Status);
+            Assert.StartsWith($"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Features)}.{nameof(Wallet)}.{nameof(WalletException)}", error1.Description);
+            Assert.StartsWith($"You can't perform this operation with wallet account '{coldWalletAccountName}'.", error1.Message);
+
+            Assert.Equal((int)HttpStatusCode.BadRequest, error2.Status);
+            Assert.StartsWith($"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Features)}.{nameof(Wallet)}.{nameof(WalletException)}", error2.Description);
+            Assert.StartsWith($"You can't perform this operation with wallet account '{hotWalletAccountName}'.", error2.Message);
         }
 
         /// <summary>
@@ -304,7 +358,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 HotWalletAddress = hotWalletAddress1,
                 ColdWalletAddress = coldWalletAddress2,
                 WalletName = walletName1,
-                WalletAccount = $"account 0",
+                WalletAccount = walletAccount,
                 WalletPassword = walletPassword,
                 Amount = "100",
                 Fees = "0.01"
@@ -343,7 +397,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 HotWalletAddress = hotWalletAddress1,
                 ColdWalletAddress = coldWalletAddress2,
                 WalletName = walletName2,
-                WalletAccount = $"account 0",
+                WalletAccount = walletAccount,
                 WalletPassword = walletPassword,
                 Amount = "100",
                 Fees = "0.01"
