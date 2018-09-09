@@ -631,6 +631,11 @@ namespace NBitcoin
             ret.FromBytes(Encoders.Hex.DecodeData(hex));
             return ret;
         }
+
+        public override string ToString()
+        {
+            return $"value: {this.Value} scriptPubKey: {this.ScriptPubKey}";
+        }
     }
 
     public class IndexedTxIn
@@ -1673,7 +1678,7 @@ namespace NBitcoin
                 throw new ArgumentNullException("formatter");
             return formatter.ToString(this);
         }
-      
+
         /// <summary>
         /// Calculate the fee of the transaction
         /// </summary>
@@ -1752,7 +1757,7 @@ namespace NBitcoin
         /// in order to be considered final in the context of BIP 68.  It also removes
         /// from the vector of input heights any entries which did not correspond to sequence
         /// locked inputs as they do not affect the calculation.
-        /// </summary>        
+        /// </summary>
         /// <param name="prevHeights">Previous Height</param>
         /// <param name="block">The block being evaluated</param>
         /// <param name="flags">If VerifySequence is not set, returns always true SequenceLock</param>
@@ -1767,7 +1772,7 @@ namespace NBitcoin
         /// in order to be considered final in the context of BIP 68.  It also removes
         /// from the vector of input heights any entries which did not correspond to sequence
         /// locked inputs as they do not affect the calculation.
-        /// </summary>        
+        /// </summary>
         /// <param name="prevHeights">Previous Height</param>
         /// <param name="chainedHeader">The Chained block header being evaluated</param>
         /// <param name="flags">If VerifySequence is not set, returns always true SequenceLock</param>

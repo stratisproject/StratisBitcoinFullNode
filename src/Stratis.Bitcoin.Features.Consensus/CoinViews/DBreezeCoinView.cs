@@ -160,6 +160,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         {
                             Row<byte[], Coins> row = transaction.Select<byte[], Coins>("Coins", input.ToBytes(false));
                             UnspentOutputs outputs = row.Exists ? new UnspentOutputs(input, row.Value) : null;
+
+                            this.logger.LogTrace("Outputs for '{0}' were {1}", input, outputs == null ? "NOT loaded" : "loaded");
+
                             result[i++] = outputs;
                         }
 
@@ -249,6 +252,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                             foreach (RewindData rewindData in rewindDataList)
                             {
                                 this.logger.LogTrace("Rewind state #{0} created.", nextRewindIndex);
+                                this.logger.LogTrace("RewindData saved: \n{0}", rewindData);
+
                                 transaction.Insert("Rewind", nextRewindIndex, rewindData);
                                 nextRewindIndex++;
                             }
@@ -310,6 +315,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         Row<int, RewindData> firstRow = transaction.SelectBackward<int, RewindData>("Rewind").FirstOrDefault();
                         transaction.RemoveKey("Rewind", firstRow.Key);
                         this.SetBlockHash(transaction, firstRow.Value.PreviousBlockHash);
+
+                        this.logger.LogTrace("RewindData data loaded: \n{0}", firstRow.Value);
 
                         foreach (uint256 txId in firstRow.Value.TransactionsToRemove)
                         {

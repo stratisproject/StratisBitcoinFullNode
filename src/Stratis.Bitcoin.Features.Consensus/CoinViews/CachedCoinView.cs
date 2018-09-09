@@ -114,6 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Time of the last cache flush.</summary>
         private DateTime lastCacheFlushTime;
+
         /// <summary>
         /// Initializes instance of the object based on DBreeze based coinview.
         /// </summary>
@@ -407,6 +408,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         this.unspents.Remove(unspent.TransactionId);
                     }
                 }
+
+                this.logger.LogTrace("RewindData added: \n{0}", rewindData);
 
                 this.cachedRewindDataList.Add(rewindData);
             }

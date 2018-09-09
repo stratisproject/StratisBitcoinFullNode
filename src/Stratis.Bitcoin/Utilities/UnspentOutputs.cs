@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Text;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 
@@ -165,6 +166,26 @@ namespace Stratis.Bitcoin.Utilities
                 stream.ReadWrite(ref c);
                 this.SetCoins(c);
             }
+        }
+
+        public override string ToString()
+        {
+            var builder = new StringBuilder();
+
+            builder.AppendLine("transactionId: " + transactionId.ToString());
+            builder.AppendLine("Height: " + Height.ToString());
+            builder.AppendLine("Version: " + Version.ToString());
+            builder.AppendLine("IsCoinbase: " + IsCoinbase.ToString());
+            builder.AppendLine("IsCoinstake: " + IsCoinstake.ToString());
+            builder.AppendLine("Time: " + Time.ToString());
+            builder.AppendLine("OutputsCount: " + this.Outputs.Length);
+
+            foreach (TxOut output in this.Outputs)
+            {
+                builder.AppendLine("==" + (output == null? "null" : output.ToString()));
+            }
+
+            return builder.ToString();
         }
 
         public UnspentOutputs Clone()

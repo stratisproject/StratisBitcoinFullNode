@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Utilities
@@ -74,6 +75,28 @@ namespace Stratis.Bitcoin.Utilities
         public RewindData(uint256 previousBlockHash)
         {
             this.previousBlockHash = previousBlockHash;
+        }
+
+        public override string ToString()
+        {
+            var data = new StringBuilder();
+
+            data.AppendLine("PrevBlockHash: " + this.previousBlockHash);
+            data.AppendLine($"transactionsToRemove({this.transactionsToRemove.Count}):");
+
+            foreach (uint256 txToRemove in this.transactionsToRemove)
+            {
+                data.AppendLine(" " + txToRemove);
+            }
+
+            data.AppendLine($"outputsToRestore({this.outputsToRestore.Count}):");
+
+            foreach (UnspentOutputs output in this.outputsToRestore)
+            {
+                data.Append("--" + output);
+            }
+
+            return data.ToString();
         }
 
         /// <inheritdoc />
