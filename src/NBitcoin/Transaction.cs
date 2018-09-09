@@ -291,6 +291,11 @@ namespace NBitcoin
             txin.ScriptSig = new Script(Op.GetPushOp(height)) + OpcodeType.OP_0;
             return txin;
         }
+
+        public override string ToString()
+        {
+            return this.PrevOut.ToString();
+        }
     }
 
     public class TxOutCompressor : IBitcoinSerializable
