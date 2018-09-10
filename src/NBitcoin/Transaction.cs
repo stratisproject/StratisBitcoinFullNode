@@ -1654,6 +1654,11 @@ namespace NBitcoin
             return Encoders.Hex.EncodeData(this.ToBytes());
         }
 
+        public override string ToString()
+        {
+            return $"TrxHash={this.GetHash()}";
+        }
+
         public string ToString(Network network, RawFormat rawFormat = RawFormat.BlockExplorer)
         {
             RawFormatter formatter = GetFormatter(rawFormat, network);

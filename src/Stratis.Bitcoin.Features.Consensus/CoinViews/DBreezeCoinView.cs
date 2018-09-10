@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
         {
             List<UnspentOutputs> all = unspentOutputs.ToList();
-            this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:'{5}',{6}:'{7}')", nameof(unspentOutputs), all.Count, nameof(originalOutputs), originalOutputs?.Count(), nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
+            this.logger.LogTrace("({0}.Count():{1},{2}:'{3}',{4}:'{5}')", nameof(unspentOutputs), all.Count, nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
 
             int insertedEntities = 0;
 

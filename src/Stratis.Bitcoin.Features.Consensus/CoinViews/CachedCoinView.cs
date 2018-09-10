@@ -29,9 +29,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             /// <summary><c>true</c> if the information in the cache is different than the information in the underlying storage.</summary>
             public bool IsDirty;
-
-            /// <summary>Original state of the transaction outputs before the change. This is used for rewinding to previous state.</summary>
-            public TxOut[] OriginalOutputs;
         }
 
         /// <summary>
@@ -238,8 +235,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     var cache = new CacheItem();
                     cache.ExistInInner = unspent != null;
                     cache.IsDirty = false;
-                    cache.UnspentOutputs = unspent?.Clone();
-                    cache.OriginalOutputs = unspent?.Outputs.ToArray();
+                    cache.UnspentOutputs = unspent;
                     this.unspents.TryAdd(txIds[index], cache);
                 }
                 result = new FetchCoinsResponse(outputs, this.blockHash);
@@ -294,15 +290,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 KeyValuePair<uint256, CacheItem>[] unspent = this.unspents.Where(u => u.Value.IsDirty).ToArray();
 
-                List<TxOut[]> originalOutputs = unspent.Select(u => u.Value.OriginalOutputs).ToList();
                 foreach (KeyValuePair<uint256, CacheItem> u in unspent)
                 {
                     u.Value.IsDirty = false;
                     u.Value.ExistInInner = true;
-                    u.Value.OriginalOutputs = u.Value.UnspentOutputs?.Outputs.ToArray();
                 }
 
-                await this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), originalOutputs, this.innerBlockHash, this.blockHash, this.cachedRewindDataList).ConfigureAwait(false);
+                await this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), null, this.innerBlockHash, this.blockHash, this.cachedRewindDataList).ConfigureAwait(false);
 
                 // Remove prunable entries from cache as they were flushed down.
                 IEnumerable<KeyValuePair<uint256, CacheItem>> prunableEntries = unspent.Where(c => (c.Value.UnspentOutputs != null) && c.Value.UnspentOutputs.IsPrunable);
@@ -368,7 +362,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
                     if (!this.unspents.TryGetValue(unspent.TransactionId, out CacheItem cacheItem))
-                    {
+                    {                            
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are not found in cache, creating them.", unspent.TransactionId);
 
                         FetchCoinsResponse result = await this.inner.FetchCoinsAsync(new[] {unspent.TransactionId}).ConfigureAwait(false);
@@ -379,34 +373,35 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         cacheItem.ExistInInner = unspentOutput != null;
                         cacheItem.IsDirty = false;
 
-                        cacheItem.UnspentOutputs = unspentOutput?.Clone();
-                        cacheItem.OriginalOutputs = unspentOutput?.Outputs.ToArray();
+                        cacheItem.UnspentOutputs = unspentOutput;
 
                         this.unspents.TryAdd(unspent.TransactionId, cacheItem);
                     }
                     else
+                    {
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
+                    }
 
                     // We'll need to restore the original outputs, so we clone it
                     // and save it in rewind data.
                     UnspentOutputs clone = unspent.Clone();
 
-                    if (cacheItem.OriginalOutputs != null)
-                    {
-                        clone.Outputs = cacheItem.OriginalOutputs.ToArray();
-                        rewindData.OutputsToRestore.Add(clone);
-                    }
-                    else
-                        rewindData.TransactionsToRemove.Add(unspent.TransactionId);
-
                     if (cacheItem.UnspentOutputs != null)
                     {
+                        // We take the original items that are in cache and put them in rewind data
+                        clone.Outputs = cacheItem.UnspentOutputs.Outputs.ToArray();
+                        rewindData.OutputsToRestore.Add(clone);
+
+                        // Now modify the cached items with the mutated data.
                         cacheItem.UnspentOutputs.Spend(unspent);
                     }
                     else
                     {
+                        // New trx so it needs to be deleted if a rewind happens.
+                        rewindData.TransactionsToRemove.Add(unspent.TransactionId);
+
+                        // Put in the cache the new UTXOs
                         cacheItem.UnspentOutputs = unspent;
-                        cacheItem.OriginalOutputs = unspent.Outputs.ToArray();
                     }
 
                     cacheItem.IsDirty = true;
