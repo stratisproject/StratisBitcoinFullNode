@@ -17,17 +17,20 @@ namespace RuntimeObserver
         /// Standard allocations for primitives aren't counted as memory units as they are trivially small
         /// and the instructions that cause them will run the contract out of gas eventually.
         /// 
-        /// Likewise, string primitives and method 
+        /// String primitives and method parameters are always limited by the size of transactions and will be costly.
+        /// 
+        /// So 'memory units' are spent when allocating arrays or performing string concatenations.
         /// </summary>
         private readonly ulong memoryLimit;
 
         public IGasMeter GasMeter { get; }
 
-        public ulong MemoryConsumed { get; }
+        public ulong MemoryConsumed { get; private set; }
 
         public Observer(IGasMeter gasMeter, ulong memoryLimit)
         {
             this.GasMeter = gasMeter;
+            this.memoryLimit = memoryLimit;
         }
 
         /// <summary>
@@ -37,5 +40,17 @@ namespace RuntimeObserver
         {
             this.GasMeter.Spend((Gas) gas);
         }
+
+        /// <summary>
+        /// Register that some amount of memory has been reserved. If it goes over the allowed limit, throw an exception.
+        /// </summary>
+        public void SpendMemory(ulong memory)
+        {
+            this.MemoryConsumed += memory;
+
+            if (this.MemoryConsumed > this.memoryLimit)
+                throw new MemoryConsumptionException($"Smart contract has allocated too much memory. Spent more than {this.memoryLimit} memory units when allocating strings or arrays.");
+        }
+
     }
 }

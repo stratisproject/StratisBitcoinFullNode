@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new InternalHashHelper(),
                 () => 1000);
 
-            this.rewriter = new ObserverRewriter(new Observer(this.gasMeter));
+            this.rewriter = new ObserverRewriter(new Observer(this.gasMeter, ReflectionVirtualMachine.MemoryUnitLimit));
         }
 
         // These tests are almost identical to the GasInjectorTests, just with the new injector.

@@ -25,6 +25,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ILoader assemblyLoader;
         private readonly IContractModuleDefinitionReader moduleDefinitionReader;
         public static int VmVersion = 1;
+        public const uint MemoryUnitLimit = 1_000;
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             ILoggerFactory loggerFactory,
@@ -63,7 +64,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
 
-                var observer = new Observer(contractState.GasMeter);
+                var observer = new Observer(contractState.GasMeter, MemoryUnitLimit);
                 var rewriter = new ObserverRewriter(observer); 
                 moduleDefinition.Rewrite(rewriter);
 
@@ -123,7 +124,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode))
             {
-                var observer = new Observer(contractState.GasMeter);
+                var observer = new Observer(contractState.GasMeter, MemoryUnitLimit);
                 var rewriter = new ObserverRewriter(observer);
                 moduleDefinition.Rewrite(rewriter);
                 code = moduleDefinition.ToByteCode();
