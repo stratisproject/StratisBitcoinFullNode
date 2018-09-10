@@ -5,7 +5,6 @@ using Moq;
 using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
@@ -46,10 +45,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var headerValidator = new HeaderValidator(consensusRuleEngine, this.loggerFactory.Object);
             var integrityValidator = new IntegrityValidator(consensusRuleEngine, this.loggerFactory.Object);
             var partialValidator = new PartialValidator(consensusRuleEngine, this.loggerFactory.Object);
+            var fullValidator = new FullValidator(consensusRuleEngine, this.loggerFactory.Object);
 
             // Create consensus manager.
             var consensus = new ConsensusManager(this.network, this.loggerFactory.Object, this.chainState.Object, headerValidator, integrityValidator,
-                partialValidator, this.checkpoints.Object, this.consensusSettings, consensusRuleEngine, new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(),
+                partialValidator, fullValidator, this.checkpoints.Object, this.consensusSettings, consensusRuleEngine, new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(),
                 new Mock<IPeerBanning>().Object, initialBlockDownloadState, this.concurrentChain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
                 new InvalidBlockHashStore(new DateTimeProvider()), new Mock<IConnectionManager>().Object);
 
