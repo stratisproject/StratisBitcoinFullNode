@@ -163,6 +163,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                             this.logger.LogTrace("Outputs for '{0}' were {1}", input, outputs == null ? "NOT loaded" : "loaded");
 
+                            if (outputs != null)
+                                this.logger.LogTrace("Loaded coin:\n{0}", outputs.ToString());
+
                             result[i++] = outputs;
                         }
 
@@ -225,7 +228,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
                     transaction.SynchronizeTables("BlockHash", "Coins", "Rewind");
-                    transaction.Technical_SetTable_OverwriteIsNotAllowed("Coins");
+                    //transaction.Technical_SetTable_OverwriteIsNotAllowed("Coins");
 
                     using (new StopwatchDisposable(o => this.PerformanceCounter.AddInsertTime(o)))
                     {
@@ -242,8 +245,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         foreach (UnspentOutputs coin in all)
                         {
                             this.logger.LogTrace("Outputs of transaction ID '{0}' are {1} and will be {2} to the database.", coin.TransactionId, coin.IsPrunable ? "PRUNABLE" : "NOT PRUNABLE", coin.IsPrunable ? "removed" : "inserted");
-                            if (coin.IsPrunable) transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
-                            else transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
+
+                            this.logger.LogTrace("COIN:\n{0}", coin.ToString());
+
+                            if (coin.IsPrunable)
+                                transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
+                            else
+                                transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
                         }
 
                         if (rewindDataList != null)

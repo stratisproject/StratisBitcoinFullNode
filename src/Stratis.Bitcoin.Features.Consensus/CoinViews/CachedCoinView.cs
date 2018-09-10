@@ -377,17 +377,28 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         {
                             clone.Outputs = cacheItem.OriginalOutputs.ToArray();
                             rewindData.OutputsToRestore.Add(clone);
+
+                            this.logger.LogTrace("OriginalOutputs were NOT null for tx id '{1}' \n{0}", clone, unspent.TransactionId);
                         }
                         else
                         {
                             rewindData.TransactionsToRemove.Add(unspent.TransactionId);
+
+                            this.logger.LogTrace("OriginalOutputs were null for tx id '{0}'", unspent.TransactionId);
                         }
 
                         this.logger.LogTrace("BEFORE_RewindData added: \n{0}", rewindData);
 
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
-                        if (cacheItem.UnspentOutputs != null) cacheItem.UnspentOutputs.Spend(unspent);
-                        else cacheItem.UnspentOutputs = unspent;
+                        if (cacheItem.UnspentOutputs != null)
+                        {
+                            cacheItem.UnspentOutputs.Spend(unspent);
+                        }
+                        else
+                        {
+                            cacheItem.UnspentOutputs = unspent;
+                            cacheItem.OriginalOutputs = unspent.Outputs.ToArray();
+                        }
                     }
                     else
                     {
@@ -396,7 +407,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         cacheItem.ExistInInner = !unspent.IsFull; // Seems to be a new created coin (careful, untrue if rewinding).
                         cacheItem.ExistInInner |= duplicateTransactions.Any(t => unspent.TransactionId == t);
                         cacheItem.IsDirty = true;
-                        cacheItem.UnspentOutputs = unspent;
+
+                        cacheItem.UnspentOutputs = unspent.Clone();
+                        cacheItem.OriginalOutputs = unspent.Outputs.ToArray();
+
                         this.unspents.Add(unspent.TransactionId, cacheItem);
                         rewindData.TransactionsToRemove.Add(unspent.TransactionId);
                     }
