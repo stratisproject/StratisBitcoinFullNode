@@ -7,18 +7,13 @@ public class StorageTest : SmartContract
     {
     }
 
-    public void StoreData()
+    public bool NoParamsTest()
     {
-        this.PersistentState.SetString("TestKey", "TestValue");
+        return true;
     }
 
-    public void GasTest()
+    public int OneParamTest(int orders)
     {
-        ulong test = 1;
-        while (true)
-        {
-            test++;
-            test--;
-        }
+        return orders;
     }
 }

@@ -4,10 +4,9 @@ namespace Stratis.SmartContracts.Core.State
 {
     /// <summary>
     /// Adapted from EthereumJ.
+    /// 
     /// Should be used in cases where you don't want to get rid of previous states. I.e. all contract storage changes.
     /// </summary>
-    /// <typeparam name="Key"></typeparam>
-    /// <typeparam name="Value"></typeparam>
     public class NoDeleteSource<Key, Value> : AbstractChainedSource<Key, Value, Key, Value>
     {
         public NoDeleteSource(ISource<Key, Value> src) : base(src)
@@ -21,12 +20,13 @@ namespace Stratis.SmartContracts.Core.State
 
         public override void Put(Key key, Value val)
         {
-            if (val != null) this.GetSource().Put(key, val);
+            if (val != null)
+                this.Source.Put(key, val);
         }
 
         public override Value Get(Key key)
         {
-            return this.GetSource().Get(key);
+            return this.Source.Get(key);
         }
 
         protected override bool FlushImpl()

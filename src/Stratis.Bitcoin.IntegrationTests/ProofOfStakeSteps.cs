@@ -8,7 +8,6 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.Bitcoin.IntegrationTests.Common.Builders;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
 
@@ -16,8 +15,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class ProofOfStakeSteps
     {
-        private IDictionary<string, CoreNode> nodes;
-        public readonly NodeGroupBuilder NodeGroupBuilder;
+
+        public readonly NodeBuilder nodeBuilder;
+        public CoreNode PremineNodeWithCoins;
 
         public readonly string PremineNode = "PremineNode";
         public readonly string PremineWallet = "preminewallet";
@@ -29,7 +29,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public ProofOfStakeSteps(string displayName)
         {
-            this.NodeGroupBuilder = new NodeGroupBuilder(Path.Combine(this.GetType().Name, displayName), KnownNetworks.StratisRegTest);
+
+            this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, displayName));
         }
 
         public void GenerateCoins()
@@ -42,56 +43,43 @@ namespace Stratis.Bitcoin.IntegrationTests
             PremineNodeWalletHasEarnedCoinsThroughStaking();
         }
 
-        public CoreNode PremineNodeWithCoins => this.nodes?[this.PremineNode];
-
         public void PremineNodeWithWallet()
         {
-            this.nodes = this.NodeGroupBuilder
-                    .CreateStratisPosNode(this.PremineNode)
-                    .Start()
-                    .NotInIBD()
-                    .WithWallet(this.PremineWallet, this.PremineWalletPassword, this.PremineWalletPassphrase)
-                    .Build();
+            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(KnownNetworks.StratisRegTest);
+            this.PremineNodeWithCoins.Start();
+            this.PremineNodeWithCoins.NotInIBD();
+            this.PremineNodeWithCoins.FullNode.WalletManager().CreateWallet(this.PremineWalletPassword, this.PremineWallet, this.PremineWalletPassphrase);
         }
 
         public void MineGenesisAndPremineBlocks()
         {
-            int premineBlockCount = 2;
-            
-            var addressUsed = TestHelper.MineBlocks(this.nodes[this.PremineNode], this.PremineWallet, this.PremineWalletPassword, this.PremineWalletAccount, (uint)premineBlockCount).AddressUsed;
-
-            // Since the pre-mine will not be immediately spendable, the transactions have to be counted directly from the address.
-            addressUsed.Transactions.Count().Should().Be(premineBlockCount);
-
-            IConsensus consensus = this.nodes[this.PremineNode].FullNode.Network.Consensus;
-
-            addressUsed.Transactions.Sum(s => s.Amount).Should().Be(consensus.PremineReward + consensus.ProofOfWorkReward);
+            this.sharedSteps.MinePremineBlocks(this.PremineNodeWithCoins, this.PremineWallet, this.PremineWalletAccount, this.PremineWalletPassword);
         }
 
         public void MineCoinsToMaturity()
         {
-            this.nodes[this.PremineNode].GenerateStratisWithMiner(Convert.ToInt32(this.nodes[this.PremineNode].FullNode.Network.Consensus.CoinbaseMaturity));
-            TestHelper.WaitForNodeToSync(this.nodes[this.PremineNode]);
+            this.PremineNodeWithCoins.GenerateStratisWithMiner(Convert.ToInt32(this.PremineNodeWithCoins.FullNode.Network.Consensus.CoinbaseMaturity));
+            this.sharedSteps.WaitForNodeToSync(this.PremineNodeWithCoins);
         }
 
         public void PremineNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked()
         {
-            this.nodes[this.PremineNode].GenerateStratisWithMiner(10);
+            this.PremineNodeWithCoins.GenerateStratisWithMiner(10);
         }
 
         public void PremineNodeStartsStaking()
         {
             // Get set of transaction IDs present in wallet before staking is started.
             this.transactionsBeforeStaking.Clear();
-            foreach (TransactionData transactionData in this.nodes[this.PremineNode].FullNode.WalletManager().Wallets
+            foreach (TransactionData transactionData in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets
                 .First()
-                .GetAllTransactionsByCoinType((CoinType)this.nodes[this.PremineNode].FullNode.Network.Consensus
+                .GetAllTransactionsByCoinType((CoinType)this.PremineNodeWithCoins.FullNode.Network.Consensus
                     .CoinType))
             {
                 this.transactionsBeforeStaking.Add(transactionData.Id);
             }
 
-            var minter = this.nodes[this.PremineNode].FullNode.NodeService<IPosMinting>();
+            var minter = this.PremineNodeWithCoins.FullNode.NodeService<IPosMinting>();
             minter.Stake(new WalletSecret() { WalletName = PremineWallet, WalletPassword = PremineWalletPassword });
         }
 
@@ -102,9 +90,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             // determine whether staking occurred.
             TestHelper.WaitLoop(() =>
             {
-                foreach (TransactionData transactionData in this.nodes[this.PremineNode].FullNode.WalletManager().Wallets
+                foreach (TransactionData transactionData in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets
                     .First()
-                    .GetAllTransactionsByCoinType((CoinType)this.nodes[this.PremineNode].FullNode.Network.Consensus
+                    .GetAllTransactionsByCoinType((CoinType)this.PremineNodeWithCoins.FullNode.Network.Consensus
                         .CoinType))
                 {
                     if (!this.transactionsBeforeStaking.Contains(transactionData.Id) && (transactionData.IsCoinStake ?? false))

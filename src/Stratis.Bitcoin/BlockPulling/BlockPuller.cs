@@ -80,9 +80,6 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <param name="block">The block.</param>
         /// <param name="peerId">ID of a peer that delivered a block.</param>
         void PushBlock(uint256 blockHash, Block block, int peerId);
-
-        /// <summary>Logs statistics to the console.</summary>
-        void ShowStats(StringBuilder statsBuilder);
     }
 
     public class BlockPuller : IBlockPuller
@@ -208,7 +205,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Loop that checks if peers failed to deliver important blocks in given time and penalizes them if they did.</summary>
         private Task stallingLoop;
 
-        public BlockPuller(IChainState chainState, NodeSettings nodeSettings, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public BlockPuller(IChainState chainState, NodeSettings nodeSettings, IDateTimeProvider dateTimeProvider, INodeStats nodeStats, ILoggerFactory loggerFactory)
         {
             this.reassignedJobsQueue = new Queue<DownloadJob>();
             this.downloadJobsQueue = new Queue<DownloadJob>();
@@ -243,6 +240,8 @@ namespace Stratis.Bitcoin.BlockPulling
             this.chainState = chainState;
             this.dateTimeProvider = dateTimeProvider;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
 
         /// <inheritdoc/>
@@ -1032,23 +1031,21 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("(-)");
         }
 
-        private bool DoubleEqual(double a, double b)
-        {
-            return Math.Abs(a - b) < 0.00001;
-        }
-
-        /// <inheritdoc/>
-        public void ShowStats(StringBuilder statsBuilder)
+        private void AddComponentStats(StringBuilder statsBuilder)
         {
             this.logger.LogTrace("()");
 
+            statsBuilder.AppendLine();
             statsBuilder.AppendLine("======Block Puller======");
 
             lock (this.assignedLock)
             {
                 int pendingBlocks = this.assignedDownloadsByHash.Count;
                 statsBuilder.AppendLine($"Blocks being downloaded: {pendingBlocks}");
+            }
 
+            lock (this.queueLock)
+            {
                 int unassignedDownloads = 0;
 
                 foreach (DownloadJob downloadJob in this.downloadJobsQueue)
@@ -1063,24 +1060,17 @@ namespace Stratis.Bitcoin.BlockPulling
             double totalSpeedKB = (this.GetTotalSpeedOfAllPeersBytesPerSec() / 1024.0);
             statsBuilder.AppendLine($"Total download speed: {Math.Round(totalSpeedKB, 2)} KB/sec");
 
+            // TODO: do that when component is activated.
+            // TODO move to nodestats and not bench
+            // just for logging
+	        // show it as a part of nodestats, not separated spammer:
+		    // avg download speed
+		    // peer quality score (sort by quality score)
+		    // number of assigned blocks
+		    // MaxBlocksBeingDownloaded
+		    // amount of blocks being downloaded
+		    // show actual speed (no 1mb limit)
 
-
-            //TODO: do that when component is activated.
-            //TODO move to nodestats and not bench
-
-            /*
-            just for logging
-	        show it as a part of nodestats, not separated spammer:
-		        avg download speed
-		        peer quality score (sort by quality score)
-		        number of assigned blocks
-		        MaxBlocksBeingDownloaded
-		        amount of blocks being downloaded
-		        show actual speed (no 1mb limit)
-            */
-
-            statsBuilder.AppendLine("TODO");
-            statsBuilder.AppendLine("=========================");
             this.logger.LogTrace("(-)");
         }
 

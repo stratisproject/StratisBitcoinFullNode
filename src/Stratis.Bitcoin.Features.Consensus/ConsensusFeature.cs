@@ -18,13 +18,14 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusFeature : FullNodeFeature, INodeStats
+    public class ConsensusFeature : FullNodeFeature
     {
         private readonly IChainState chainState;
 
@@ -46,7 +47,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             Signals.Signals signals,
             IConsensusManager consensusManager,
             NodeDeployments nodeDeployments,
-            ConsensusStats consensusStats)
+            ConsensusStats consensusStats,
+            INodeStats nodeStats)
         {
             this.chainState = chainState;
             this.connectionManager = connectionManager;
@@ -56,17 +58,19 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusStats = consensusStats;
 
             this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
+
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
         }
 
-        /// <inheritdoc />
-        public void AddNodeStats(StringBuilder benchLogs)
+        private void AddInlineStats(StringBuilder benchLogs)
         {
             if (this.chainState?.ConsensusTip != null)
             {
-                benchLogs.AppendLine("Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                                     this.chainState.ConsensusTip.Height.ToString().PadRight(8) +
-                                     " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
-                                     this.chainState.ConsensusTip.HashBlock);
+                string log = "Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                    this.chainState.ConsensusTip.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
+                    this.chainState.ConsensusTip.HashBlock;
+
+                benchLogs.AppendLine(log);
             }
         }
 
@@ -108,8 +112,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                     services.AddSingleton<ConsensusController>();
                     services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>();
-                    services.AddSingleton<IGetUnspentTransaction, ConsensusQuery>();
-
+                    services.AddSingleton<IChainState, ChainState>();
+                    services.AddSingleton<ConsensusQuery>()
+                        .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
+                        .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
                     new PowConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                 });
             });
@@ -135,8 +141,10 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<IConsensusRuleEngine, PosConsensusRuleEngine>();
-                        services.AddSingleton<IGetUnspentTransaction, ConsensusQuery>();
-
+                        services.AddSingleton<IChainState, ChainState>();
+                        services.AddSingleton<ConsensusQuery>()
+                            .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
+                            .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
                         new PosConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                     });
             });

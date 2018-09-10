@@ -6,13 +6,10 @@ namespace Stratis.SmartContracts.Core.State
     /// <summary>
     /// Adapted from EthereumJ.
     /// </summary>
-    /// <typeparam name="Key"></typeparam>
-    /// <typeparam name="Value"></typeparam>
     public interface ICachedSource<Key, Value>  : ISource<Key, Value>
     {
-        ISource<Key, Value> GetSource();
+        ISource<Key, Value> Source { get; }
         ICollection<Key> GetModified();
         bool HasModified();
-        long EstimateCacheSize();
     }
 }
