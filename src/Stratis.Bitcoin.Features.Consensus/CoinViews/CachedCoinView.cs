@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     var cache = new CacheItem();
                     cache.ExistInInner = unspent != null;
                     cache.IsDirty = false;
-                    cache.UnspentOutputs = unspent;
+                    cache.UnspentOutputs = unspent?.Clone();
                     this.unspents.TryAdd(txIds[index], cache);
                 }
                 result = new FetchCoinsResponse(outputs, this.blockHash);
@@ -362,7 +362,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
                     if (!this.unspents.TryGetValue(unspent.TransactionId, out CacheItem cacheItem))
-                    {                            
+                    {
+                        // This can happen very rarely in case we fetch items form
+                        // disk and immedietly after the Evict method is called.
+
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are not found in cache, creating them.", unspent.TransactionId);
 
                         FetchCoinsResponse result = await this.inner.FetchCoinsAsync(new[] {unspent.TransactionId}).ConfigureAwait(false);
@@ -373,7 +376,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         cacheItem.ExistInInner = unspentOutput != null;
                         cacheItem.IsDirty = false;
 
-                        cacheItem.UnspentOutputs = unspentOutput;
+                        cacheItem.UnspentOutputs = unspentOutput?.Clone();
 
                         this.unspents.TryAdd(unspent.TransactionId, cacheItem);
                     }
@@ -382,13 +385,17 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
                     }
 
-                    // We'll need to restore the original outputs, so we clone it
-                    // and save it in rewind data.
-                    UnspentOutputs clone = unspent.Clone();
+                    // If cacheItem.UnspentOutputs is null this means the trx was not stored in the disk,
+                    // that means the trx (and UTXO) is new and all the UTXO need to be stored in cache
+                    // otherwise we store to cache only the UTXO that have been spent.
 
                     if (cacheItem.UnspentOutputs != null)
                     {
-                        // We take the original items that are in cache and put them in rewind data
+                        // To handle rewind we'll need to restore the original outputs,
+                        // so we clone it and save it in rewind data.
+                        UnspentOutputs clone = unspent.Clone();
+
+                        // We take the original items that are in cache and put them in rewind data.
                         clone.Outputs = cacheItem.UnspentOutputs.Outputs.ToArray();
                         rewindData.OutputsToRestore.Add(clone);
 
@@ -400,7 +407,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         // New trx so it needs to be deleted if a rewind happens.
                         rewindData.TransactionsToRemove.Add(unspent.TransactionId);
 
-                        // Put in the cache the new UTXOs
+                        // Put in the cache the new UTXOs.
                         cacheItem.UnspentOutputs = unspent;
                     }
 

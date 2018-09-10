@@ -1656,7 +1656,7 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            return $"TrxHash={this.GetHash()}";
+            return this.GetHash().ToString();
         }
 
         public string ToString(Network network, RawFormat rawFormat = RawFormat.BlockExplorer)

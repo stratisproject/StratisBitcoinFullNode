@@ -61,8 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 if (coin != null)
                 {
-                    // We clone every UnspentOutputs as those will get mutated.
-                    this.unspents.Add(coin.TransactionId, coin.Clone());
+                    this.unspents.Add(coin.TransactionId, coin);
                 }
             }
         }
