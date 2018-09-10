@@ -80,7 +80,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StoreSettings storeSettings,
             INodeLifetime nodeLifetime,
             IBlockRepository blockRepository,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            INodeStats nodeStats)
         {
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(chainState, nameof(chainState));
@@ -98,6 +99,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
 
         /// <summary>
@@ -249,8 +252,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        /// <inheritdoc />
-        public void ShowStats(StringBuilder benchLog)
+        private void AddComponentStats(StringBuilder benchLog)
         {
             this.logger.LogTrace("()");
 
@@ -258,8 +260,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 benchLog.AppendLine();
                 benchLog.AppendLine("======BlockStore======");
-                benchLog.AppendLine($"Pending Blocks: {this.batch.Count}");
-                benchLog.AppendLine($"Batch Size: {this.currentBatchSizeBytes / 1000} kb / {BatchThresholdSizeBytes / 1000} kb");
+                benchLog.AppendLine($"Batch Size: {this.currentBatchSizeBytes / 1000} kb / {BatchThresholdSizeBytes / 1000} kb  ({this.batch.Count} blocks)");
             }
 
             this.logger.LogTrace("(-)");

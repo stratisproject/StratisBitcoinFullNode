@@ -78,6 +78,9 @@ namespace Stratis.Bitcoin
         /// <summary>Application life cycle control - triggers when application shuts down.</summary>
         private NodeLifetime nodeLifetime;
 
+        /// <see cref="INodeStats"/>
+        private INodeStats nodeStats { get; set; }
+
         /// <inheritdoc />
         public INodeLifetime NodeLifetime
         {
@@ -169,6 +172,7 @@ namespace Stratis.Bitcoin
             this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
             this.Signals = this.Services.ServiceProvider.GetService<Signals.Signals>();
             this.InitialBlockDownloadState = this.Services.ServiceProvider.GetService<IInitialBlockDownloadState>();
+            this.nodeStats = this.Services.ServiceProvider.GetService<INodeStats>();
 
             this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
             this.loggerFactory = this.Services.ServiceProvider.GetService<NodeSettings>().LoggerFactory;
@@ -231,25 +235,11 @@ namespace Stratis.Bitcoin
         {
             IAsyncLoop periodicLogLoop = this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
             {
-                var benchLogs = new StringBuilder();
+                string stats = this.nodeStats.GetStats();
 
-                benchLogs.AppendLine("======Node stats====== " + this.DateTimeProvider.GetUtcNow().ToString(CultureInfo.InvariantCulture) + " agent " +
-                                     this.ConnectionManager.Parameters.UserAgent);
+                this.logger.LogInformation(stats);
+                this.LastLogOutput = stats;
 
-                // Display node stats grouped together.
-                foreach (INodeStats feature in this.Services.Features.OfType<INodeStats>())
-                    feature.AddNodeStats(benchLogs);
-
-                // Now display the other stats.
-                foreach (IFeatureStats feature in this.Services.Features.OfType<IFeatureStats>())
-                    feature.AddFeatureStats(benchLogs);
-
-                benchLogs.AppendLine();
-                benchLogs.AppendLine("======Connection======");
-                benchLogs.AppendLine(this.ConnectionManager.GetNodeStats());
-                this.LastLogOutput = benchLogs.ToString();
-
-                this.logger.LogInformation(this.LastLogOutput);
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,

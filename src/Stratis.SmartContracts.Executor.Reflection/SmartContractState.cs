@@ -14,6 +14,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IBlock block,
             IMessage message,
             IPersistentState persistentState,
+            ISerializer serializer,
             IGasMeter gasMeter,
             IContractLogger contractLogger,
             IInternalTransactionExecutor internalTransactionExecutor,
@@ -23,6 +24,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.Block = block;
             this.Message = message;
             this.PersistentState = persistentState;
+            this.Serializer = serializer;
             this.GasMeter = gasMeter;
             this.ContractLogger = contractLogger;
             this.InternalTransactionExecutor = internalTransactionExecutor;
@@ -35,6 +37,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public IMessage Message { get; }
 
         public IPersistentState PersistentState { get; }
+
+        public ISerializer Serializer { get; }
 
         public IGasMeter GasMeter { get; }
 

@@ -22,63 +22,8 @@ namespace Stratis.SmartContracts.Core.State
     /// -If unsuccessful, just rollback() the particular changes that didn't work.
     /// 
     /// </summary>
-    public class ContractStateRepositoryRoot : ContractStateRepository
+    public class ContractStateRoot : ContractState, IContractStateRoot
     {
-        private class StorageCache : ReadWriteCache<byte[]>
-        {
-            public IPatriciaTrie trie;
-
-            public StorageCache(IPatriciaTrie trie) : base(new SourceCodec<byte[], byte[], byte[], byte[]>(trie, new Serializers.NoSerializer<byte[]>(), new Serializers.NoSerializer<byte[]>()), WriteCache<byte[]>.CacheType.SIMPLE)
-            {
-                this.trie = trie;
-            }
-        }
-
-        private class MultiStorageCache : MultiCache<ICachedSource<byte[], byte[]>>
-        {
-            ContractStateRepositoryRoot parentRepo;
-
-            public MultiStorageCache(ContractStateRepositoryRoot parentRepo) : base(null)
-            {
-                this.parentRepo = parentRepo;
-            }
-
-            protected override ICachedSource<byte[], byte[]> Create(byte[] key, ICachedSource<byte[], byte[]> srcCache)
-            {
-                AccountState accountState = this.parentRepo.accountStateCache.Get(key);
-                IPatriciaTrie storageTrie = this.parentRepo.CreateTrie(this.parentRepo.trieCache, accountState?.StateRoot);
-                return new StorageCache(storageTrie);
-            }
-
-            protected override bool FlushChild(byte[] key, ICachedSource<byte[], byte[]> childCache)
-            {
-                if (base.FlushChild(key, childCache))
-                {
-                    if (childCache != null)
-                    {
-                        StorageCache storageChildCache = (StorageCache)childCache; // praying to the lord this works
-                        AccountState storageOwnerAcct = this.parentRepo.accountStateCache.Get(key);
-                        // need to update account storage root
-                        storageChildCache.trie.Flush();
-                        byte[] rootHash = storageChildCache.trie.GetRootHash();
-                        storageOwnerAcct.StateRoot = rootHash;
-                        this.parentRepo.accountStateCache.Put(key, storageOwnerAcct);
-                        return true;
-                    }
-                    else
-                    {
-                        // account was deleted
-                        return true;
-                    }
-                }
-                else
-                {
-                    // no storage changes
-                    return false;
-                }
-            }
-        }
-
         public byte[] Root
         {
             get
@@ -92,13 +37,13 @@ namespace Stratis.SmartContracts.Core.State
         private ICachedSource<byte[], byte[]> trieCache;
         private IPatriciaTrie stateTrie;
 
-        public ContractStateRepositoryRoot() { }
+        public ContractStateRoot() { }
 
-        public ContractStateRepositoryRoot(NoDeleteContractStateSource stateDS) : this(stateDS, null) { }
+        public ContractStateRoot(NoDeleteContractStateSource stateDS) : this(stateDS, null) { }
 
-        public ContractStateRepositoryRoot(ISource<byte[], byte[]> stateDS) : this(stateDS, null) { }
+        public ContractStateRoot(ISource<byte[], byte[]> stateDS) : this(stateDS, null) { }
 
-        public ContractStateRepositoryRoot(ISource<byte[], byte[]> stateDS, byte[] stateRoot)
+        public ContractStateRoot(ISource<byte[], byte[]> stateDS, byte[] stateRoot)
         {
             this.stateDS = stateDS;
             this.trieCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
@@ -107,7 +52,7 @@ namespace Stratis.SmartContracts.Core.State
             SourceCodec<byte[], AccountState, byte[], byte[]> accountStateCodec = new SourceCodec<byte[], AccountState, byte[], byte[]>(this.stateTrie, new Serializers.NoSerializer<byte[]>(), Serializers.AccountSerializer);
             ReadWriteCache<AccountState> accountStateCache = new ReadWriteCache<AccountState>(accountStateCodec, WriteCache<AccountState>.CacheType.SIMPLE);
 
-            MultiCache<ICachedSource<byte[], byte[]>> storageCache = new MultiStorageCache(this);
+            MultiCacheBase<ICachedSource<byte[], byte[]>> storageCache = new MultiStorageCache(this);
             ISource<byte[], byte[]> codeCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
             ISource<byte[], byte[]> unspentCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.SIMPLE);
             SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]> unspentCacheCodec = new SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]>(unspentCache, new Serializers.NoSerializer<byte[]>(), Serializers.VinSerializer);
@@ -134,9 +79,9 @@ namespace Stratis.SmartContracts.Core.State
             this.Commit();
         }
 
-        public override ContractStateRepositoryRoot GetSnapshotTo(byte[] stateRoot)
+        public override IContractStateRoot GetSnapshotTo(byte[] stateRoot)
         {
-            return new ContractStateRepositoryRoot(this.stateDS, stateRoot);
+            return new ContractStateRoot(this.stateDS, stateRoot);
         }
 
         public void SyncToRoot(byte[] root)
@@ -144,9 +89,9 @@ namespace Stratis.SmartContracts.Core.State
             this.stateTrie.SetRootHash(root);
         }
 
-        protected PatriciaTrie CreateTrie(ICachedSource<byte[], byte[]> trieCache, byte[] root)
+        public IPatriciaTrie GetTrieWithSameCache(byte[] root)
         {
-            return new PatriciaTrie(root, trieCache);
+            return new PatriciaTrie(root, this.trieCache);
         }
     }
 }

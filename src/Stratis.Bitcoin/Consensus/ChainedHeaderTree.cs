@@ -7,7 +7,6 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Primitives;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -1087,7 +1086,7 @@ namespace Stratis.Bitcoin.Consensus
             if (this.invalidHashesStore.IsInvalid(newHeaderHash))
             {
                 this.logger.LogTrace("(-)[HEADER_HASH_MARKED_INVALID]");
-                ConsensusErrors.BannedHash.Throw();
+                throw new HeaderInvalidException();
             }
 
             var newChainedHeader = new ChainedHeader(currentBlockHeader, newHeaderHash, previousChainedHeader);
@@ -1097,7 +1096,7 @@ namespace Stratis.Bitcoin.Consensus
             if (result.Error != null)
             {
                 this.logger.LogTrace("(-)[INVALID_HEADER]");
-                result.Error.Throw();
+                throw new ConsensusRuleException(result.Error);
             }
 
             newChainedHeader.BlockValidationState = ValidationState.HeaderValidated;

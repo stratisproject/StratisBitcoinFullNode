@@ -83,5 +83,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             return node.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.IsConnected);
         }
+
+        public static void Connect(CoreNode from, CoreNode to)
+        {
+            from.CreateRPCClient().AddNode(to.Endpoint, true);
+        }
+
+        public static void ConnectAndSync(CoreNode from, CoreNode to)
+        {
+            Connect(from, to);
+            WaitLoop(() => AreNodesSynced(from, to));
+        }
     }
 }

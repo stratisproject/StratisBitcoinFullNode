@@ -56,8 +56,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
             // Start state from previous block's root
-            this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Header).HashStateRoot.ToBytes());
-            IContractStateRepository trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
+            this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes());
+            IContractState trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
 
             this.receipts = new List<Receipt>();
 
@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             this.receipts.Add(receipt);
 
-            ValidateRefunds(result.Refunds, context.ValidationContext.BlockToValidate.Transactions[0]);
+            ValidateRefunds(result.Refund, context.ValidationContext.BlockToValidate.Transactions[0]);
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;
@@ -291,13 +291,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainedHeaderToValidate.Height);
 
-            GetSenderUtil.GetSenderResult getSenderResult = GetSenderUtil.GetSender(transaction, ((PowConsensusRuleEngine)this.Parent).UtxoSet, this.blockTxsProcessed);
+            GetSenderResult getSenderResult = this.ContractCoinviewRule.SenderRetriever.GetSender(transaction, ((PowConsensusRuleEngine)this.Parent).UtxoSet, this.blockTxsProcessed);
 
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-sender", getSenderResult.Error));
 
             Script coinbaseScriptPubKey = context.ValidationContext.BlockToValidate.Transactions[0].Outputs[0].ScriptPubKey;
-            GetSenderUtil.GetSenderResult getCoinbaseResult = GetSenderUtil.GetAddressFromScript(coinbaseScriptPubKey);
+            GetSenderResult getCoinbaseResult = this.ContractCoinviewRule.SenderRetriever.GetAddressFromScript(coinbaseScriptPubKey);
             if (!getCoinbaseResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-coinbase", getCoinbaseResult.Error));
 
@@ -327,23 +327,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// Throws a consensus exception if the gas refund inside the block is different to what this node calculated during execution.
         /// </summary>
-        private void ValidateRefunds(List<TxOut> refunds, Transaction coinbaseTransaction)
+        private void ValidateRefunds(TxOut refund, Transaction coinbaseTransaction)
         {
-            this.Logger.LogTrace("({0}:{1})", nameof(refunds), refunds.Count);
+            this.Logger.LogTrace("({0}:{1})", nameof(refund), refund);
 
-            foreach (TxOut refund in refunds)
+            TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
+            if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
             {
-                TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
-                if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
-                {
-                    this.Logger.LogTrace("{0}:{1}, {2}:{3}", nameof(refund.Value), refund.Value, nameof(refundToMatch.Value), refundToMatch.Value);
-                    this.Logger.LogTrace("{0}:{1}, {2}:{3}", nameof(refund.ScriptPubKey), refund.ScriptPubKey, nameof(refundToMatch.ScriptPubKey), refundToMatch.ScriptPubKey);
+                this.Logger.LogTrace("{0}:{1}, {2}:{3}", nameof(refund.Value), refund.Value, nameof(refundToMatch.Value), refundToMatch.Value);
+                this.Logger.LogTrace("{0}:{1}, {2}:{3}", nameof(refund.ScriptPubKey), refund.ScriptPubKey, nameof(refundToMatch.ScriptPubKey), refundToMatch.ScriptPubKey);
 
-                    SmartContractConsensusErrors.UnequalRefundAmounts.Throw();
-                }
-
-                this.refundCounter++;
+                SmartContractConsensusErrors.UnequalRefundAmounts.Throw();
             }
+
+            this.refundCounter++;
 
             this.Logger.LogTrace("(-){0}:{1}", nameof(this.refundCounter), this.refundCounter);
         }

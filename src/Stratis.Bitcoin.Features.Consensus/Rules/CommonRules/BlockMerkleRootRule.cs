@@ -31,9 +31,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadTransactionDuplicate">One of the leaf nodes on the merkle tree has a duplicate hash within the subtree.</exception>
         public override void Run(RuleContext context)
         {
-            if (context.MinedBlock)
-                return;
-
             Block block = context.ValidationContext.BlockToValidate;
 
             uint256 hashMerkleRoot2 = BlockMerkleRoot(block, out bool mutated);

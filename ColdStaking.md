@@ -77,11 +77,11 @@ Having the instruction behaviour defined as above, when a hot wallet wants to cr
 
 the corresponding ScriptSig to spend such an output in order to produce another coinstake using hot wallet is going to be:
 
-`<sig> <hotPubKey> 1`
+`<sig> 1 <hotPubKey>`
 
 In the corresponding ScriptSig to spend such an output in order to cancel the setup using the cold storage private key is going to be: 
 
-`<sig> <coldPubKey> 0`
+`<sig> 0 <coldPubKey>`
 
 It follows that the private key for hotPubKey is stored inside the hot wallet and the private key for coldPubKey is stored in the cold storage. Therefore the new instruction protects the branch of the script that uses the hot wallet key in the way that it cannot be used for anything as except for creating another coinstake  transaction. Moreover, due to the limitation on the values of outputs, the attacker cannot even burn the coins in the cold storage if they gain access to the hot wallet keys.
 

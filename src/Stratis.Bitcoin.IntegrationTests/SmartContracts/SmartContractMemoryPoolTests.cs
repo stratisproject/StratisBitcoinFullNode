@@ -5,6 +5,7 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Xunit;
 
@@ -79,6 +80,17 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 smartContractCarrier = SmartContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(100_000));
                 tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
                 tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
+                tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
+                stratisNodeSync.Broadcast(tx);
+
+                // Send to contract
+                uint160 contractAddress = new uint160(123);
+                var state = stratisNodeSync.FullNode.NodeService<IContractStateRoot>();
+                state.CreateAccount(contractAddress);
+                state.Commit();
+                tx = new Transaction();
+                tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
+                tx.AddOutput(new TxOut(100, PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId(contractAddress))));
                 tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                 stratisNodeSync.Broadcast(tx);
 
