@@ -367,49 +367,51 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
-                    if (this.unspents.TryGetValue(unspent.TransactionId, out CacheItem cacheItem))
+                    this.logger.LogTrace("PROCESSING_XX: txID: '{0}'", unspent.TransactionId);
+
+                    if (!this.unspents.TryGetValue(unspent.TransactionId, out CacheItem cacheItem))
                     {
-                        // We'll need to restore the original outputs, so we clone it
-                        // and save it in rewind data.
-                        UnspentOutputs clone = unspent.Clone();
+                        FetchCoinsResponse result = await this.inner.FetchCoinsAsync(new[] {unspent.TransactionId}).ConfigureAwait(false);
 
-                        if (cacheItem.OriginalOutputs != null)
-                        {
-                            clone.Outputs = cacheItem.OriginalOutputs.ToArray();
-                            rewindData.OutputsToRestore.Add(clone);
+                        UnspentOutputs unspentOutput = result.UnspentOutputs[0];
 
-                            this.logger.LogTrace("OriginalOutputs were NOT null for tx id '{1}' \n{0}", clone, unspent.TransactionId);
-                        }
-                        else
-                        {
-                            rewindData.TransactionsToRemove.Add(unspent.TransactionId);
+                        cacheItem = new CacheItem();
+                        cacheItem.ExistInInner = unspentOutput != null;
+                        cacheItem.IsDirty = false;
 
-                            this.logger.LogTrace("OriginalOutputs were null for tx id '{0}'", unspent.TransactionId);
-                        }
+                        cacheItem.UnspentOutputs = unspentOutput?.Clone();
+                        cacheItem.OriginalOutputs = unspentOutput?.Outputs.ToArray();
 
-                        this.logger.LogTrace("BEFORE_RewindData added: \n{0}", rewindData);
+                        this.unspents.TryAdd(unspent.TransactionId, cacheItem);
+                    }
 
-                        this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
-                        if (cacheItem.UnspentOutputs != null)
-                        {
-                            cacheItem.UnspentOutputs.Spend(unspent);
-                        }
-                        else
-                        {
-                            cacheItem.UnspentOutputs = unspent;
-                        }
+                    // We'll need to restore the original outputs, so we clone it
+                    // and save it in rewind data.
+                    UnspentOutputs clone = unspent.Clone();
+
+                    if (cacheItem.OriginalOutputs != null)
+                    {
+                        clone.Outputs = cacheItem.OriginalOutputs.ToArray();
+                        rewindData.OutputsToRestore.Add(clone);
+
+                        this.logger.LogTrace("OriginalOutputs were NOT null for tx id '{1}' \n{0}", clone, unspent.TransactionId);
                     }
                     else
                     {
-                        this.logger.LogTrace("Outputs of transaction ID '{0}' not found in cache, inserting them.", unspent.TransactionId);
-                        cacheItem = new CacheItem();
-                        cacheItem.ExistInInner = !unspent.IsFull; // Seems to be a new created coin (careful, untrue if rewinding).
-                        cacheItem.ExistInInner |= duplicateTransactions.Any(t => unspent.TransactionId == t);
-                        cacheItem.IsDirty = true;
-                        cacheItem.UnspentOutputs = unspent;
-
-                        this.unspents.Add(unspent.TransactionId, cacheItem);
                         rewindData.TransactionsToRemove.Add(unspent.TransactionId);
+
+                        this.logger.LogTrace("OriginalOutputs were null for tx id '{0}'", unspent.TransactionId);
+                    }
+
+                    this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
+                    if (cacheItem.UnspentOutputs != null)
+                    {
+                        cacheItem.UnspentOutputs.Spend(unspent);
+                    }
+                    else
+                    {
+                        cacheItem.UnspentOutputs = unspent;
+                        cacheItem.OriginalOutputs = unspent.Outputs.ToArray();
                     }
 
                     cacheItem.IsDirty = true;
