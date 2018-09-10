@@ -1,42 +1,41 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
     /// <summary>
-    /// Deserializes raw contract transaction data, dispatches a call to the VM and commits the result to the state repository
+    /// Deserializes raw contract transaction data, creates an external create/call message, and applies the message to the state.
     /// </summary>
     public class Executor : ISmartContractExecutor
     {
         private readonly ILogger logger;
-        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
-        private readonly IContractState stateSnapshot;
+        private readonly IContractStateRoot stateRoot;
         private readonly ISmartContractResultRefundProcessor refundProcessor;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
-        private readonly ISmartContractVirtualMachine vm;
         private readonly ICallDataSerializer serializer;
+        private readonly Network network;
+        private readonly IStateFactory stateFactory;
 
         public Executor(ILoggerFactory loggerFactory,
-            IContractPrimitiveSerializer contractPrimitiveSerializer,
             ICallDataSerializer serializer,
-            IContractState stateSnapshot,
+            IContractStateRoot stateRoot,
             ISmartContractResultRefundProcessor refundProcessor,
             ISmartContractResultTransferProcessor transferProcessor,
-            ISmartContractVirtualMachine vm)
+            Network network,
+            IStateFactory stateFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
-            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
-            this.stateSnapshot = stateSnapshot;
+            this.stateRoot = stateRoot;
             this.refundProcessor = refundProcessor;
             this.transferProcessor = transferProcessor;
-            this.vm = vm;
             this.serializer = serializer;
+            this.network = network;
+            this.stateFactory = stateFactory;
         }
 
         public ISmartContractExecutionResult Execute(ISmartContractTransactionContext transactionContext)
@@ -47,70 +46,80 @@ namespace Stratis.SmartContracts.Executor.Reflection
             Result<ContractTxData> callDataDeserializationResult = this.serializer.Deserialize(transactionContext.Data);
             ContractTxData callData = callDataDeserializationResult.Value;
 
-            var gasMeter = new GasMeter(callData.GasLimit);
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
+            bool creation = callData.IsCreateContract;
 
-            var context = new TransactionContext(
-                transactionContext.TransactionHash,
+            var block = new Block(
                 transactionContext.BlockHeight,
-                transactionContext.CoinbaseAddress,
-                transactionContext.Sender,
-                transactionContext.TxOutValue);
+                transactionContext.CoinbaseAddress.ToAddress(this.network)
+            );
 
-            var creation = IsCreateContract(callData);
+            IState state = this.stateFactory.Create(
+                this.stateRoot,
+                block,
+                transactionContext.TxOutValue,
+                transactionContext.TransactionHash,
+                callData.GasLimit);
 
-            VmExecutionResult result = creation
-                ? this.vm.Create(gasMeter, this.stateSnapshot, callData, context)
-                : this.vm.ExecuteMethod(gasMeter, this.stateSnapshot, callData, context);
+            StateTransitionResult result;
 
-            var revert = result.ExecutionException != null;
+            if (creation)
+            {
+                var message = new ExternalCreateMessage(
+                    transactionContext.Sender,
+                    transactionContext.TxOutValue,
+                    callData.GasLimit,
+                    callData.ContractExecutionCode,
+                    callData.MethodParameters
+                );
+
+                result = state.Apply(message);
+            }
+            else
+            {
+                var message = new ExternalCallMessage(
+                        callData.ContractAddress,
+                        transactionContext.Sender,
+                        transactionContext.TxOutValue,
+                        callData.GasLimit,
+                        new MethodCall(callData.MethodName, callData.MethodParameters)
+                );
+
+                result = state.Apply(message);
+            }
+
+            bool revert = !result.IsSuccess;
 
             Transaction internalTransaction = this.transferProcessor.Process(
-                this.stateSnapshot,
-                creation ? result.NewContractAddress : callData.ContractAddress,
+                this.stateRoot,
+                result.Success?.ContractAddress,
                 transactionContext,
-                result.InternalTransfers,
+                state.InternalTransfers,
                 revert);
 
-            (Money fee, List<TxOut> refundTxOuts) = this.refundProcessor.Process(
+            bool outOfGas = result.IsFailure && result.Error.Kind == StateTransitionErrorKind.OutOfGas;
+
+            (Money fee, TxOut refundTxOut) = this.refundProcessor.Process(
                 callData,
                 transactionContext.MempoolFee,
                 transactionContext.Sender,
                 result.GasConsumed,
-                result.ExecutionException);
+                outOfGas);
 
             var executionResult = new SmartContractExecutionResult
             {
-                NewContractAddress = !revert && creation ? result.NewContractAddress : null,
-                To = !IsCreateContract(callData) ? callData.ContractAddress : null,
-                Exception = result.ExecutionException,
+                To = !callData.IsCreateContract ? callData.ContractAddress : null,
+                NewContractAddress = !revert && creation ? result.Success?.ContractAddress : null,
+                Exception = result.Error?.VmException,
+                Revert = revert,
                 GasConsumed = result.GasConsumed,
-                Return = result.Result,
+                Return = result.Success?.ExecutionResult,
                 InternalTransaction = internalTransaction,
                 Fee = fee,
-                Refunds = refundTxOuts,
-                Logs = result.RawLogs.ToLogs(this.contractPrimitiveSerializer)
+                Refund = refundTxOut,
+                Logs = state.GetLogs()
             };
 
-            if (revert)
-            {
-                this.logger.LogTrace("(-)[CONTRACT_EXECUTION_FAILED]");
-
-                this.stateSnapshot.Rollback();
-            }
-            else
-            {
-                this.logger.LogTrace("(-)[CONTRACT_EXECUTION_SUCCEEDED]");
-
-                this.stateSnapshot.Commit();
-            }
-
             return executionResult;
-        }
-
-        private static bool IsCreateContract(ContractTxData contractTxData)
-        {
-            return contractTxData.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT;
         }
     }
 }

@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 // Create a token contract.
                 ulong gasPrice = 1;
                 int vmVersion = 1;
-                Gas gasLimit = (Gas)2000;
+                Gas gasLimit = (Gas)5000;
                 SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
                 Assert.True(compilationResult.Success);
 
@@ -459,7 +459,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.True(scBlockHeader.LogsBloom.Test(new Address(response.NewContractAddress).ToUint160(network).ToBytes()));
                 Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("Created")));
                 Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes((ulong) 20)));
-                // And sanity test that a random value is not available in bloom.
+                // And sanity test that a non-indexed field and random value is not available in bloom.
+                Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes(sender.MinerAddress.Address)));
                 Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
 
                 // Test that the event can be searched for...

@@ -6,10 +6,6 @@ namespace Stratis.SmartContracts.Core.State
     /// <summary>
     /// Adapted from EthereumJ. 
     /// </summary>
-    /// <typeparam name="Key"></typeparam>
-    /// <typeparam name="Value"></typeparam>
-    /// <typeparam name="SourceKey"></typeparam>
-    /// <typeparam name="SourceValue"></typeparam>
     public class SourceChainBox<Key, Value, SourceKey, SourceValue> : AbstractChainedSource<Key, Value, SourceKey, SourceValue>
     {
         private List<ISource<Key, Value>> chain = new List<ISource<Key, Value>>();

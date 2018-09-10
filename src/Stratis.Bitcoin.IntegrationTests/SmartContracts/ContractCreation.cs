@@ -73,6 +73,7 @@ public class Cat : SmartContract
 
     public struct CatCreated
     {
+        [Index]
         public int CatNumber;
     }
 }

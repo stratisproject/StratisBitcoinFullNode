@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             this.receipts.Add(receipt);
 
-            ValidateRefunds(result.Refunds, context.ValidationContext.Block.Transactions[0]);
+            ValidateRefunds(result.Refund, context.ValidationContext.Block.Transactions[0]);
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;
@@ -328,23 +328,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// Throws a consensus exception if the gas refund inside the block is different to what this node calculated during execution.
         /// </summary>
-        private void ValidateRefunds(List<TxOut> refunds, Transaction coinbaseTransaction)
+        private void ValidateRefunds(TxOut refund, Transaction coinbaseTransaction)
         {
-            this.Logger.LogTrace("({0}:{1})", nameof(refunds), refunds.Count);
+            this.Logger.LogTrace("({0}:{1})", nameof(refund), refund);
 
-            foreach (TxOut refund in refunds)
+            TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
+            if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
             {
-                TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
-                if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
-                {
-                    this.Logger.LogTrace("{0}:{1}, {2}:{3}", nameof(refund.Value), refund.Value, nameof(refundToMatch.Value), refundToMatch.Value);
-                    this.Logger.LogTrace("{0}:{1}, {2}:{3}", nameof(refund.ScriptPubKey), refund.ScriptPubKey, nameof(refundToMatch.ScriptPubKey), refundToMatch.ScriptPubKey);
+                this.Logger.LogTrace("{0}:{1}, {2}:{3}", nameof(refund.Value), refund.Value, nameof(refundToMatch.Value), refundToMatch.Value);
+                this.Logger.LogTrace("{0}:{1}, {2}:{3}", nameof(refund.ScriptPubKey), refund.ScriptPubKey, nameof(refundToMatch.ScriptPubKey), refundToMatch.ScriptPubKey);
 
-                    SmartContractConsensusErrors.UnequalRefundAmounts.Throw();
-                }
-
-                this.refundCounter++;
+                SmartContractConsensusErrors.UnequalRefundAmounts.Throw();
             }
+
+            this.refundCounter++;
 
             this.Logger.LogTrace("(-){0}:{1}", nameof(this.refundCounter), this.refundCounter);
         }

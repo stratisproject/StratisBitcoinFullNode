@@ -3,12 +3,12 @@ using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Create_Contract_Success()
         {
+            var network = new SmartContractsRegTest();
             uint160 newContractAddress = uint160.One;
             var gasConsumed = (Gas) 100;
             var code = new byte[] {0xAA, 0xBB, 0xCC};
@@ -27,78 +28,83 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             ISmartContractTransactionContext context = Mock.Of<ISmartContractTransactionContext>(c => 
                 c.Data == code &&
                 c.MempoolFee == mempoolFee &&
-                c.Sender == uint160.One);
+                c.Sender == uint160.One &&
+                c.CoinbaseAddress == uint160.Zero);
 
             var logger = new Mock<ILogger>();
             ILoggerFactory loggerFactory = Mock.Of<ILoggerFactory>
                     (l => l.CreateLogger(It.IsAny<string>()) == logger.Object);
 
-            var serializer = new Mock<ICallDataSerializer>();            
-            serializer
+            var callDataSerializer = new Mock<ICallDataSerializer>();            
+            callDataSerializer
                 .Setup(s => s.Deserialize(It.IsAny<byte[]>()))
                 .Returns(Result.Ok(contractTxData));
 
-            var contractPrimitiveSerializer = new Mock<IContractPrimitiveSerializer>();
+            var vmExecutionResult = VmExecutionResult.Success(null, null);
 
-            var vmExecutionResult =
-                VmExecutionResult.CreationSuccess(
-                    newContractAddress, 
-                    new List<TransferInfo>(),
-                    gasConsumed,
-                    null,
-                    null);
-
-            var state = new Mock<IContractState>();
+            var contractStateRoot = new Mock<IContractStateRoot>();
             var transferProcessor = new Mock<ISmartContractResultTransferProcessor>();
 
-            (Money refund, List<TxOut>) refundResult = (refund, new List<TxOut>());
+            (Money refund, TxOut) refundResult = (refund, null);
             var refundProcessor = new Mock<ISmartContractResultRefundProcessor>();
+
             refundProcessor
                 .Setup(r => r.Process(
                     contractTxData,
                     mempoolFee,
                     context.Sender,
-                    vmExecutionResult.GasConsumed,
-                    vmExecutionResult.ExecutionException))
+                    It.IsAny<Gas>(),
+                    false))
                 .Returns(refundResult);
 
-            var vm = new Mock<ISmartContractVirtualMachine>();
-            vm.Setup(v => v.Create(It.Is<IGasMeter>(x => x.GasConsumed == GasPriceList.BaseCost),
-                It.IsAny<IContractState>(),
-                It.IsAny<ICreateData>(),
-                It.IsAny<ITransactionContext>(),
-                It.IsAny<string>()))
-                .Returns(vmExecutionResult);
+            var stateTransitionResult = StateTransitionResult.Ok(gasConsumed, newContractAddress, vmExecutionResult.Result);
+
+            var internalTransfers = new List<TransferInfo>().AsReadOnly();
+            var stateMock = new Mock<IState>();
+            stateMock.Setup(s => s.Apply(It.IsAny<ExternalCreateMessage>()))                
+                .Returns(stateTransitionResult);
+            stateMock.SetupGet(p => p.InternalTransfers).Returns(internalTransfers);
+
+            var stateFactory = new Mock<IStateFactory>();
+            stateFactory.Setup(sf => sf.Create(
+                contractStateRoot.Object,
+                It.IsAny<IBlock>(),
+                context.TxOutValue,
+                context.TransactionHash,
+                contractTxData.GasLimit))
+            .Returns(stateMock.Object);
 
             var sut = new Executor(
                 loggerFactory,
-                contractPrimitiveSerializer.Object,
-                serializer.Object,
-                state.Object,
+                callDataSerializer.Object,
+                contractStateRoot.Object,
                 refundProcessor.Object,
                 transferProcessor.Object,
-                vm.Object
-            );
+                network,
+                stateFactory.Object);
 
             sut.Execute(context);
 
-            serializer.Verify(s => s.Deserialize(code), Times.Once);
+            callDataSerializer.Verify(s => s.Deserialize(code), Times.Once);
             
-            vm.Verify(v => 
-                v.Create(
-                    It.IsAny<IGasMeter>(), 
-                    state.Object, 
-                    contractTxData, 
-                    It.IsAny<TransactionContext>(),
-                    It.IsAny<string>()), 
+            stateFactory.Verify(sf => sf
+                .Create(
+                    contractStateRoot.Object,
+                    It.IsAny<IBlock>(),
+                    context.TxOutValue,
+                    context.TransactionHash,
+                    contractTxData.GasLimit),
                 Times.Once);
+
+            stateMock.Verify(sm => sm
+                .Apply(It.IsAny<ExternalCreateMessage>()), Times.Once);
 
             transferProcessor.Verify(t => t
                 .Process(
-                    state.Object, 
-                    vmExecutionResult.NewContractAddress, 
-                    It.IsAny<ISmartContractTransactionContext>(),
-                    vmExecutionResult.InternalTransfers,
+                    contractStateRoot.Object, 
+                    newContractAddress, 
+                    context,
+                    internalTransfers,
                     false), 
                 Times.Once);
 
@@ -107,12 +113,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         contractTxData,
                         mempoolFee,
                         context.Sender,
-                        vmExecutionResult.GasConsumed,
-                        vmExecutionResult.ExecutionException),
+                        It.IsAny<Gas>(),
+                        false),
                 Times.Once);
-
-            state.Verify(s => s.Commit(), Times.Once);
-            state.Verify(s => s.Rollback(), Times.Never);
         }
     }
 }

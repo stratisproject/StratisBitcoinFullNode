@@ -103,10 +103,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 this.UpdateTotalFees(result.Fee);
 
                 // If there are refunds, add them to the block.
-                if (result.Refunds.Any())
+                if (result.Refund != null)
                 {
-                    this.refundOutputs.AddRange(result.Refunds);
-                    this.logger.LogTrace("{0} refunds were added.", result.Refunds.Count);
+                    this.refundOutputs.Add(result.Refund);
+                    this.logger.LogTrace("refund was added with value {0}.", result.Refund.Value);
                 }
 
                 // Add internal transactions made during execution.
