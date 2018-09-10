@@ -79,5 +79,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 }
             }
         }
+
+        /// <summary>Whether this data represents a contract creation.</summary>
+        public bool IsCreateContract => this.OpCodeType == (byte) ScOpcodeType.OP_CREATECONTRACT;
     }
 }

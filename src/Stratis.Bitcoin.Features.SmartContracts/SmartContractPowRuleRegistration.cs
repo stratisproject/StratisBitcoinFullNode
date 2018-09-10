@@ -37,6 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new EnsureCoinbaseRule(),
                 new CheckPowTransactionRule(),
                 new CheckSigOpsRule(),
+                new P2PKHNotContractRule()
             };
 
             consensus.FullValidationRules = new List<IFullValidationConsensusRule>()

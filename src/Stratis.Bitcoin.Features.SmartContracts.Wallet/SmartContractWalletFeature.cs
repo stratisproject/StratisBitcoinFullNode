@@ -14,10 +14,11 @@ using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
-    public sealed class SmartContractWalletFeature : FullNodeFeature, INodeStats, IFeatureStats
+    public sealed class SmartContractWalletFeature : FullNodeFeature
     {
         private IDisposable blockSubscriberDisposable;
         private readonly BroadcasterBehavior broadcasterBehavior;
@@ -45,7 +46,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             ILoggerFactory loggerFactory,
             Signals.Signals signals,
             IWalletManager walletManager,
-            IWalletSyncManager walletSyncManager)
+            IWalletSyncManager walletSyncManager,
+            INodeStats nodeStats)
         {
             this.broadcasterBehavior = broadcasterBehavior;
             this.chain = chain;
@@ -54,10 +56,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.logger = loggerFactory.CreateLogger(this.GetType().Name);
             this.walletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
+
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline);
         }
 
-        /// <inheritdoc />
-        public void AddFeatureStats(StringBuilder benchLog)
+        private void AddComponentStats(StringBuilder benchLog)
         {
             IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
 
@@ -74,8 +78,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
         }
 
-        /// <inheritdoc />
-        public void AddNodeStats(StringBuilder benchLogs)
+        private void AddInlineStats(StringBuilder benchLogs)
         {
             if (this.walletManager is WalletManager walletManager)
             {

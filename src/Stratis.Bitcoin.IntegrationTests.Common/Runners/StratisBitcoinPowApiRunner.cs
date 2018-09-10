@@ -35,10 +35,5 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 .MockIBD()
                 .Build();
         }
-
-        public override void OnStart()
-        {
-            this.FullNode.Start();
-        }
     }
 }

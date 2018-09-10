@@ -7,6 +7,11 @@ namespace NBitcoin
     /// </summary>
     public class BlockLocator : IBitcoinSerializable
     {
+        /// <summary>Maximum number of block hashes in the locator that we will accept in a message from a peer.</summary>
+        /// <seealso cref="https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2018-August/016285.html"/>
+        /// <seealso cref="https://github.com/bitcoin/bitcoin/pull/13907"/>
+        public const int MaxLocatorSize = 101;
+
         public BlockLocator()
         {
         }

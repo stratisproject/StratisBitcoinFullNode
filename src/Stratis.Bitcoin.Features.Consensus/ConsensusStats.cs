@@ -80,9 +80,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public void BenchStats()
         {
+            // TODO use NodeStats instead.
             var benchLogs = new StringBuilder();
-
-            this.blockPuller.ShowStats(benchLogs);
 
             if (this.cache != null)
                 benchLogs.AppendLine("Cache entries".PadRight(LoggingConfiguration.ColumnLength) + this.cache.CacheEntryCount);

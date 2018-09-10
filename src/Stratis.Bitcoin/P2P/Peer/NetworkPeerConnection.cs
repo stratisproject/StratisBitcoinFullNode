@@ -356,9 +356,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             int lengthOffset = Message.CommandSize;
             uint length = BitConverter.ToUInt32(messageHeader, lengthOffset);
 
-            // 32 MB limit on message size from Bitcoin Core.
-            if (length > 0x02000000)
-                throw new ProtocolViolationException("Message payload too big (over 0x02000000 bytes)");
+            // 4 MB limit on message size.
+            // Limit is based on the largest valid object that we can receive which is the block.
+            // Max size of a block on segwit-enabled network is 4mb.
+            if (length > 0x00400000)
+                throw new ProtocolViolationException("Message payload too big (over 0x00400000 bytes)");
 
             // Read the payload.
             int magicLength = this.network.MagicBytes.Length;
