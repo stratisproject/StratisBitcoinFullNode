@@ -769,8 +769,8 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
             this.puller.RequestBlocksDownload(headers.Skip(this.puller.ImportantHeightMargin).ToList());
 
-            behavior1.AddSample(0.1);
-            behavior2.AddSample(0.1);
+            behavior1.AddSample(100, 0.1);
+            behavior2.AddSample(100, 0.1);
 
             behavior1.RecalculateQualityScore(10);
             behavior2.RecalculateQualityScore(10);
@@ -874,11 +874,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
             INetworkPeer peer1 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior1);
             this.puller.NewPeerTipClaimed(peer1, headers.Last());
-            behavior1.AddSample(0.1);
+            behavior1.AddSample(100, 0.1);
 
             INetworkPeer peer2 = this.helper.CreatePeer(out ExtendedBlockPullerBehavior behavior2);
             this.puller.NewPeerTipClaimed(peer2, ChainedHeadersHelper.CreateConsecutiveHeaders(10).Last());
-            behavior2.AddSample(0.5);
+            behavior2.AddSample(100, 0.5);
 
             this.puller.SetMaxBlocksBeingDownloaded(int.MaxValue);
 

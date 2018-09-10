@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 {
@@ -39,7 +38,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// <summary>
         /// All of the transfers that happened internally inside of the contract execution.
         /// </summary>
-        private readonly IList<TransferInfo> transfers;
+        private readonly IReadOnlyList<TransferInfo> transfers;
 
         /// <summary>
         /// New balances for each address involved through all transfers made.
@@ -53,10 +52,10 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
         private readonly Network network;
 
-        public TransactionCondenser(uint160 contractAddress, ILoggerFactory loggerFactory, IList<TransferInfo> transfers, IContractState stateRepository, Network network, ISmartContractTransactionContext transactionContext)
+        public TransactionCondenser(uint160 contractAddress, ILoggerFactory loggerFactory, IReadOnlyList<TransferInfo> transfers, IContractState stateRepository, Network network, ISmartContractTransactionContext transactionContext)
         {
             this.contractAddress = contractAddress;
-            this.logger = loggerFactory.CreateLogger(this.GetType());
+            this.logger = loggerFactory.CreateLogger(this.GetType().Name);
             this.network = network;
             this.transactionContext = transactionContext;
             this.stateRepository = stateRepository;

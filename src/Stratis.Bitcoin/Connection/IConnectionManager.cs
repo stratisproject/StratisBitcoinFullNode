@@ -48,8 +48,6 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Notifies other components about peer being disconnected.</summary>
         void PeerDisconnected(int networkPeerId);
 
-        string GetNodeStats();
-
         /// <summary>Initializes and starts each peer connection as well as peer discovery.</summary>
         void Initialize(IConsensusManager consensusManager);
 

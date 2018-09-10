@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Base
     /// </list>
     /// </para>
     /// </summary>
-    public sealed class BaseFeature : FullNodeFeature, INodeStats
+    public sealed class BaseFeature : FullNodeFeature
     {
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -171,11 +171,6 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
-        public void AddNodeStats(StringBuilder benchLogs)
-        {
-        }
-
-        /// <inheritdoc />
         public override void Initialize()
         {
             this.logger.LogTrace("()");
@@ -188,9 +183,9 @@ namespace Stratis.Bitcoin.Base
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
 
             connectionParameters.TemplateBehaviors.Add(new PingPongBehavior());
-            connectionParameters.TemplateBehaviors.Add(new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.connectionManager, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
-            connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.initialBlockDownloadState, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.initialBlockDownloadState, this.dateTimeProvider, this.loggerFactory));
 
             this.StartAddressManager(connectionParameters);
 
@@ -369,6 +364,9 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IIntegrityValidator, IntegrityValidator>();
                     services.AddSingleton<IPartialValidator, PartialValidator>();
                     services.AddSingleton<IFullValidator, FullValidator>();
+
+                    // Console
+                    services.AddSingleton<INodeStats, NodeStats>();
                 });
             });
 

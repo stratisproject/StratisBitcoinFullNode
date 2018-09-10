@@ -160,6 +160,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             private InternalTransactionExecutorFactory internalTxExecutorFactory;
             private IKeyEncodingStrategy keyEncodingStrategy;
             private IContractModuleDefinitionReader moduleDefinitionReader;
+            private StateFactory stateFactory;
             private IContractPrimitiveSerializer primitiveSerializer;
             internal Key PrivateKey { get; private set; }
             private ReflectionVirtualMachine reflectionVirtualMachine;
@@ -168,7 +169,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             private ISmartContractResultTransferProcessor transferProcessor;
             private SmartContractValidator validator;
 
-            #endregion  
+            #endregion
 
             public async Task InitializeAsync([CallerMemberName] string callingMethod = "")
             {
@@ -202,7 +203,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.loggerFactory), this.loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), this.NodeSettings, peerAddressManager);
                 var connectionSettings = new ConnectionManagerSettings(this.NodeSettings);
                 var selfEndpointTracker = new SelfEndpointTracker(this.loggerFactory);
-                var connectionManager = new ConnectionManager(DateTimeProvider.Default, this.loggerFactory, this.network, networkPeerFactory, this.NodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider());
+                var connectionManager = new ConnectionManager(DateTimeProvider.Default, this.loggerFactory, this.network, networkPeerFactory,
+                    this.NodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { },
+                    peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider(), new Mock<INodeStats>().Object);
                 var peerBanning = new PeerBanning(connectionManager, this.loggerFactory, DateTimeProvider.Default, peerAddressManager);
                 var senderRetriever = new SenderRetriever();
 
@@ -329,11 +332,12 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.AddressGenerator = new AddressGenerator();
                 this.assemblyLoader = new ContractAssemblyLoader();
                 this.callDataSerializer = CallDataSerializer.Default;
-                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.keyEncodingStrategy, this.loggerFactory, this.network);
+                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.loggerFactory, this.network);
                 this.moduleDefinitionReader = new ContractModuleDefinitionReader();
                 this.primitiveSerializer = new ContractPrimitiveSerializer(this.network);
-                this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.internalTxExecutorFactory, this.loggerFactory, this.network, this.AddressGenerator, this.assemblyLoader, this.moduleDefinitionReader, this.primitiveSerializer);
-                this.ExecutorFactory = new ReflectionSmartContractExecutorFactory(this.loggerFactory, this.primitiveSerializer, this.callDataSerializer, this.refundProcessor, this.transferProcessor, this.reflectionVirtualMachine);
+                this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.network, this.assemblyLoader, this.moduleDefinitionReader);
+                this.stateFactory = new StateFactory(this.network, this.primitiveSerializer, this.reflectionVirtualMachine, this.AddressGenerator, this.internalTxExecutorFactory);
+                this.ExecutorFactory = new ReflectionSmartContractExecutorFactory(this.loggerFactory, this.callDataSerializer, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory);
             }
         }
 

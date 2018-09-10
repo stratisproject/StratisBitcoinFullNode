@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 .Returns(target)
                 .Verifiable();
 
-            await this.consensusRules.RegisterRule<CheckDifficultykHybridRule>().RunAsync(this.ruleContext);
+            await this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().RunAsync(this.ruleContext);
 
             this.stakeValidator.Verify();
             Assert.NotNull(this.ruleContext as PosRuleContext);
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 .Returns(target)
                 .Verifiable();
 
-            await this.consensusRules.RegisterRule<CheckDifficultykHybridRule>().RunAsync(this.ruleContext);
+            await this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().RunAsync(this.ruleContext);
 
             this.stakeValidator.Verify();
             Assert.NotNull((this.ruleContext as PosRuleContext));
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
             };
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultykHybridRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.HighHash, exception.ConsensusError);
         }

@@ -137,7 +137,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.FullValidator = new FullValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
 
             var blockRepository = new BlockRepository(testChainContext.Network, dataFolder, testChainContext.DateTimeProvider, testChainContext.LoggerFactory);
-            var blockStore = new BlockStoreQueue(testChainContext.Chain, testChainContext.ChainState, new Mock<StoreSettings>().Object, new Mock<INodeLifetime>().Object, blockRepository, testChainContext.LoggerFactory);
+            var blockStore = new BlockStoreQueue(testChainContext.Chain, testChainContext.ChainState, new Mock<StoreSettings>().Object,
+                new Mock<INodeLifetime>().Object, blockRepository, testChainContext.LoggerFactory, new Mock<INodeStats>().Object);
 
             await blockStore.InitializeAsync();
 

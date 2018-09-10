@@ -2,13 +2,18 @@
 using System.IO;
 using System.Linq;
 using Mono.Cecil;
+using Moq;
 using NBitcoin;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
+using Stratis.SmartContracts.Executor.Reflection.Loader;
 using Xunit;
+using Block = Stratis.SmartContracts.Core.Block;
+using InternalHashHelper = Stratis.SmartContracts.Core.Hashing.InternalHashHelper;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
@@ -54,7 +59,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private const string TestMultipleConstructorSource = @"using System;
                                             using Stratis.SmartContracts;   
-                                            
+
                                             public class Test : SmartContract
                                             {
                                                 public Test(ISmartContractState state, string ownerName) : base(state) 
@@ -80,8 +85,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
 
         private readonly Network network;
-        private readonly ContractStateRoot repository;
+        private readonly IContractStateRoot repository;
         private readonly ReflectionVirtualMachine vm;
+        private readonly SmartContractState state;
+        private readonly GasMeter gasMeter;
+        private readonly ContractAssemblyLoader assemblyLoader;
+        private readonly ContractModuleDefinitionReader moduleReader;
 
         public GasInjectorTests()
         {
@@ -90,6 +99,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.vm = context.Vm;
             this.repository = context.State;
             this.network = context.Network;
+            this.moduleReader = new ContractModuleDefinitionReader();
+            this.assemblyLoader = new ContractAssemblyLoader();
+            this.gasMeter = new GasMeter((Gas) 5000000);
+            this.state = new SmartContractState(
+                new Block(1, TestAddress),
+                new Message(TestAddress, TestAddress, 0),
+                new PersistentState(new MeteredPersistenceStrategy(this.repository, this.gasMeter, new BasicKeyEncodingStrategy()), 
+                    context.ContractPrimitiveSerializer, TestAddress.ToUint160(this.network)),
+                context.ContractPrimitiveSerializer,
+                this.gasMeter,
+                new ContractLogHolder(this.network),
+                Mock.Of<IInternalTransactionExecutor>(),
+                new InternalHashHelper(),
+                () => 1000);
         }
 
         [Fact]
@@ -115,24 +138,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         .Count ?? 10000000;
             }
 
-            var gasLimit = (Gas)500000;
-            var gasMeter = new GasMeter(gasLimit);
+            var callData = new MethodCall("TestMethod", new object[] { 1 });
+           
+            var module = this.moduleReader.Read(originalAssemblyBytes);
+            module.InjectMethodGas("Test", callData);
 
-            uint160 address = TestAddress.ToUint160(this.network);
+            var assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            var callData = new CallData(gasLimit, address, "TestMethod", new object[] { 1 });
+            var contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
-            var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
+            var result = contract.Invoke(callData);
 
-            this.repository.SetCode(callData.ContractAddress, originalAssemblyBytes);
-            this.repository.SetContractType(callData.ContractAddress, "Test");
-
-            VmExecutionResult result = this.vm.ExecuteMethod(gasMeter,
-                this.repository,
-                callData,
-                transactionContext);
-
-            Assert.Equal((ulong)aimGasAmount, result.GasConsumed);
+            Assert.Equal((ulong)aimGasAmount, this.state.GasMeter.GasConsumed);
         }
 
         [Fact]
@@ -143,24 +160,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            var gasLimit = (Gas)500000;
-            var gasMeter = new GasMeter(gasLimit);
+            var callData = new MethodCall("UseAllGas");
 
-            uint160 address = TestAddress.ToUint160(this.network);
+            var module = this.moduleReader.Read(originalAssemblyBytes);
+            module.InjectMethodGas("OutOfGasTest", callData);
 
-            var callData = new CallData(gasLimit, address, "UseAllGas");
+            var assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
+            var contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
-            this.repository.SetCode(callData.ContractAddress, originalAssemblyBytes);
-            this.repository.SetContractType(callData.ContractAddress, "OutOfGasTest");
+            var result = contract.Invoke(callData);
 
-            VmExecutionResult result = this.vm.ExecuteMethod(gasMeter, this.repository, callData, transactionContext);
-
-            Assert.NotNull(result.ExecutionException);
-            Assert.Equal((Gas)0, gasMeter.GasAvailable);
-            Assert.Equal(gasLimit, result.GasConsumed);
-            Assert.Equal(gasLimit, gasMeter.GasConsumed);
+            Assert.False(result.IsSuccess);
+            Assert.Equal((Gas)0, this.gasMeter.GasAvailable);
+            Assert.Equal(this.gasMeter.GasLimit, this.gasMeter.GasConsumed);
+            Assert.Equal(this.gasMeter.GasLimit, this.gasMeter.GasConsumed);
         }
 
         [Fact]
@@ -172,29 +186,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            var gasLimit = (Gas)500000;
-            var gasMeter = new GasMeter(gasLimit);
+            var module = this.moduleReader.Read(originalAssemblyBytes);
+            module.InjectConstructorGas();
 
-            var callData = new CreateData(gasLimit, originalAssemblyBytes);
+            var assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            var transactionContext = new TransactionContext(
-                txHash: uint256.One,
-                blockHeight: 0,
-                coinbase: TestAddress.ToUint160(this.network),
-                sender: TestAddress.ToUint160(this.network),
-                amount: 0
-            );
+            var contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
-            VmExecutionResult result = this.vm.Create(gasMeter,
-                this.repository,
-                callData,
-                transactionContext);
+            var result = contract.InvokeConstructor(null);
 
             // TODO: Un-hard-code this. 
             // Constructor: 15
             // Property setter: 12
             // Storage: 150
-            Assert.Equal((Gas)177, result.GasConsumed);
+            Assert.Equal((Gas)177, this.gasMeter.GasConsumed);
         }
 
         [Fact]
@@ -206,27 +211,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            var gasLimit = (Gas)500000;
-            var gasMeter = new GasMeter(gasLimit);
+            var module = this.moduleReader.Read(originalAssemblyBytes);
+            module.InjectConstructorGas();
 
-            var callData = new CreateData(gasLimit, originalAssemblyBytes, new[] { "Test Owner" });
+            var assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            var transactionContext = new TransactionContext(
-                txHash: uint256.One,
-                blockHeight: 0,
-                coinbase: TestAddress.ToUint160(this.network),
-                sender: TestAddress.ToUint160(this.network),
-                amount: 0
-            );
+            var contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
-            VmExecutionResult result = this.vm.Create(gasMeter,
-                this.repository,
-                callData, transactionContext);
+            var result = contract.InvokeConstructor(new[] { "Test Owner" });
 
             // Constructor: 15
             // Property setter: 12
             // Storage: 150
-            Assert.Equal((Gas)177, result.GasConsumed);
+            Assert.Equal((Gas)177, this.gasMeter.GasConsumed);
         }
 
         [Fact]
@@ -237,22 +234,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            var gasLimit = (Gas)500000;
-            var gasMeter = new GasMeter(gasLimit);
+            var callData = new MethodCall(nameof(Recursion.DoRecursion));
 
-            uint160 address = TestAddress.ToUint160(this.network);
+            var module = this.moduleReader.Read(originalAssemblyBytes);
+            module.InjectMethodGas("Recursion", callData);
 
-            var callData = new CallData(gasLimit, address, nameof(Recursion.DoRecursion));
+            var assembly = this.assemblyLoader.Load(module.ToByteCode());
 
-            var transactionContext = new TransactionContext(uint256.One, 0, address, address, 0);
+            var contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
-            this.repository.SetCode(callData.ContractAddress, originalAssemblyBytes);
-            this.repository.SetContractType(callData.ContractAddress, nameof(Recursion));
 
-            VmExecutionResult result = this.vm.ExecuteMethod(gasMeter, this.repository, callData, transactionContext);
+            var result = contract.Invoke(callData);
 
-            Assert.Null(result.ExecutionException);
-            Assert.True(result.GasConsumed > 0);
+            Assert.True(result.IsSuccess);
+            Assert.True(this.gasMeter.GasConsumed > 0);
         }
     }
 }

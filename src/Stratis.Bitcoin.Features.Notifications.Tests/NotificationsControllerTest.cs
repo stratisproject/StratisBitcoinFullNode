@@ -46,7 +46,9 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var selfEndpointTracker = new SelfEndpointTracker(this.LoggerFactory.Object);
 
             ConsensusRuleEngine emptyConsensusRules = new Mock<ConsensusRuleEngine>(this.network, this.LoggerFactory.Object, dateTimeProvider, chain, new NodeDeployments(this.network, chain), new ConsensusSettings(new NodeSettings(this.network)), new Checkpoints(), new Mock<IChainState>().Object, new Mock<IInvalidBlockHashStore>().Object).Object;
-            var connectionManager = new ConnectionManager(dateTimeProvider, this.LoggerFactory.Object, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider());
+            var connectionManager = new ConnectionManager(dateTimeProvider, this.LoggerFactory.Object, this.network, networkPeerFactory,
+                nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { },
+                peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider(), new Mock<INodeStats>().Object);
             var peerBanning = new PeerBanning(connectionManager, this.LoggerFactory.Object, dateTimeProvider, peerAddressManager);
 
             ConsensusManager consensusManager = new ConsensusManager(this.network, this.LoggerFactory.Object, chainState, new HeaderValidator(emptyConsensusRules, this.LoggerFactory.Object),
