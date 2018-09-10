@@ -387,7 +387,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     else
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
 
-
                     // We'll need to restore the original outputs, so we clone it
                     // and save it in rewind data.
                     UnspentOutputs clone = unspent.Clone();
