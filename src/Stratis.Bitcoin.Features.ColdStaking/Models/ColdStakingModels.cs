@@ -135,6 +135,70 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
     }
 
     /// <summary>
+    /// The data structure used by a client requesting that a cold staking cancellation be performed.
+    /// Refer to <see cref="Controllers.ColdStakingController.CancelColdStaking"/>.
+    /// </summary>
+    public class CancelColdStakingRequest
+    {
+        /// <summary>The Base58 cold wallet address.</summary>
+        [Required]
+        [JsonProperty(PropertyName = "coldWalletAddress")]
+        public string ColdWalletAddress { get; set; }
+
+        /// <summary>The Base58 hot wallet address.</summary>
+        [Required]
+        [JsonProperty(PropertyName = "hotWalletAddress")]
+        public string HotWalletAddress { get; set; }
+
+        /// <summary>The name of the wallet from which we select coins for cold staking cancellation.</summary>
+        [Required]
+        [JsonProperty(PropertyName = "walletName")]
+        public string WalletName { get; set; }
+
+        /// <summary>The password of the wallet from which we select coins for cold staking cancellation.</summary>
+        [Required]
+        [JsonProperty(PropertyName = "walletPassword")]
+        public string WalletPassword { get; set; }
+
+        /// <summary>The amount of coins selected for cold staking cancellation.</summary>
+        [Required]
+        [MoneyFormat(ErrorMessage = "The amount is not in the correct format.")]
+        [JsonProperty(PropertyName = "amount")]
+        public string Amount { get; set; }
+
+        /// <summary>The fees for the cold staking cancellation transaction.</summary>
+        [Required]
+        [MoneyFormat(ErrorMessage = "The fees are not in the correct format.")]
+        [JsonProperty(PropertyName = "fees")]
+        public string Fees { get; set; }
+
+        /// <summary>Creates a string containing the properties of this object.</summary>
+        /// <returns>A string containing the properties of the object.</returns>
+        public override string ToString()
+        {
+            return $"{nameof(this.ColdWalletAddress)}={this.ColdWalletAddress},{nameof(this.HotWalletAddress)}={this.HotWalletAddress},{nameof(this.WalletName)}={this.WalletName},{nameof(this.Amount)}={this.Amount},{nameof(this.Fees)}={this.Fees}";
+        }
+    }
+
+    /// <summary>
+    /// The response data structure received by a client after requesting that a cold staking cancellation be performed.
+    /// Refer to <see cref="CancelColdStakingRequest"/>.
+    /// </summary>
+    public class CancelColdStakingResponse
+    {
+        /// <summary>The transaction bytes as a hexadecimal string.</summary>
+        [JsonProperty(PropertyName = "transactionHex")]
+        public string TransactionHex { get; set; }
+
+        /// <summary>Creates a string containing the properties of this object.</summary>
+        /// <returns>A string containing the properties of the object.</returns>
+        public override string ToString()
+        {
+            return $"{nameof(this.TransactionHex)}={this.TransactionHex}";
+        }
+    }
+
+    /// <summary>
     /// The data structure used by a client requesting that a cold staking setup be performed.
     /// Refer to <see cref="Controllers.ColdStakingController.SetupColdStaking"/>.
     /// </summary>
