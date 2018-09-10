@@ -68,7 +68,11 @@ namespace Stratis.Bitcoin.Builder
         {
             try
             {
-                this.Execute(feature => feature.Dispose(), true);
+                this.Execute(feature =>
+                {
+                    this.logger.LogInformation($"{feature.GetType().Name}...");
+                    feature.Dispose();
+                }, true);
             }
             catch (Exception ex)
             {

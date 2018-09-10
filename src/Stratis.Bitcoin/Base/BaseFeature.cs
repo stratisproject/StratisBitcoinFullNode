@@ -278,25 +278,37 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogInformation("Flushing peers...");
             this.flushAddressManagerLoop.Dispose();
 
+            this.logger.LogInformation("peerAddressManager...");
             this.peerAddressManager.Dispose();
 
+            this.logger.LogInformation("partialValidator...");
             this.partialValidator.Dispose();
 
-            this.logger.LogInformation("Flushing headers chain...");
-            this.flushChainLoop?.Dispose();
+            if (this.flushChainLoop != null)
+            {
+                this.logger.LogInformation("Flushing headers chain...");
+                this.flushChainLoop.Dispose();
+            }
 
+            this.logger.LogInformation("Saving chainRepository...");
             this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
 
             foreach (IDisposable disposable in this.disposableResources)
             {
+                this.logger.LogInformation($"{disposable.GetType().Name}...");
                 disposable.Dispose();
             }
 
+            this.logger.LogInformation("blockPuller...");
             this.blockPuller.Dispose();
 
+            this.logger.LogInformation("consensusManager...");
             this.consensusManager.Dispose();
+
+            this.logger.LogInformation("consensusRules...");
             this.consensusRules.Dispose();
 
+            this.logger.LogInformation("blockStore...");
             this.blockStore.Dispose();
         }
     }
