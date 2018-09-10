@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new InternalHashHelper(),
                 () => 1000);
 
-            this.rewriter = new ObserverRewriter();
+            this.rewriter = new ObserverRewriter(new Observer(this.gasMeter));
         }
 
         // These tests are almost identical to the GasInjectorTests, just with the new injector.
@@ -167,7 +167,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
             
             module.Rewrite(this.rewriter);
-            ObserverInstances.Set(this.rewriter.LastRewritten, new Observer(this.gasMeter));
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
@@ -191,7 +190,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
 
             module.Rewrite(this.rewriter);
-            ObserverInstances.Set(this.rewriter.LastRewritten, new Observer(this.gasMeter));
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
@@ -217,7 +215,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
 
             module.Rewrite(this.rewriter);
-            ObserverInstances.Set(this.rewriter.LastRewritten, new Observer(this.gasMeter));
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
@@ -244,7 +241,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
 
             module.Rewrite(this.rewriter);
-            ObserverInstances.Set(this.rewriter.LastRewritten, new Observer(this.gasMeter));
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
@@ -271,7 +267,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
 
             module.Rewrite(this.rewriter);
-            ObserverInstances.Set(this.rewriter.LastRewritten, new Observer(this.gasMeter));
 
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 

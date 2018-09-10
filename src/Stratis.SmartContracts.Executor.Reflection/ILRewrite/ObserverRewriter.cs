@@ -44,11 +44,14 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
         };
 
         /// <summary>
-        /// Holds the key to retrieve the last Observer instance created from <see cref="ObserverInstances"/>. 
-        /// 
-        /// TODO: There should be a better pattern here to implement the Rewriter interface and still be able to retrieve this.
+        /// The Observer instance that will be used to track resource usage inside the rewritten modules.
         /// </summary>
-        public Guid LastRewritten { get; private set; }
+        private readonly Observer observerToInject; 
+
+        public ObserverRewriter(Observer observer)
+        {
+            this.observerToInject = observer;
+        }
 
         public ModuleDefinition Rewrite(ModuleDefinition module)
         {
@@ -62,7 +65,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                 RewriteType(type, observer);
             }
 
-            this.LastRewritten = id;
+            ObserverInstances.Set(id, this.observerToInject);
 
             return module;
         }

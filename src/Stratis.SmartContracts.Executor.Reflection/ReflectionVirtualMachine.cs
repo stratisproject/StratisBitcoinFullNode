@@ -63,9 +63,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
 
-                var rewriter = new ObserverRewriter(); 
+                var observer = new Observer(contractState.GasMeter);
+                var rewriter = new ObserverRewriter(observer); 
                 moduleDefinition.Rewrite(rewriter);
-                ObserverInstances.Set(rewriter.LastRewritten, new Observer(contractState.GasMeter));
 
                 code = moduleDefinition.ToByteCode();
             }
@@ -123,10 +123,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode))
             {
-                //var rewriter = new MethodGasInjector(typeName, methodCall);
-                var rewriter = new ObserverRewriter();
+                var observer = new Observer(contractState.GasMeter);
+                var rewriter = new ObserverRewriter(observer);
                 moduleDefinition.Rewrite(rewriter);
-                ObserverInstances.Set(rewriter.LastRewritten, new Observer(contractState.GasMeter));
                 code = moduleDefinition.ToByteCode();
             }
 
