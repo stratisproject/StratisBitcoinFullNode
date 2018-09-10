@@ -366,9 +366,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.ConnectAndSync(firstNode, secondNode);
 
                 List<CoreNode> nodes = new List<CoreNode> { minerNode, connectorNode, firstNode, secondNode };
-                sharedSteps.WaitForNodeToSync(nodes.ToArray());
+                TestHelper.WaitForNodeToSync(nodes.ToArray());
 
-                nodes.Values.ToList().ForEach(n =>
+                nodes.ForEach(n =>
                     {
                         TestHelper.MineBlocks(n, walletName, walletPassword, accountName, 1);
                         TestHelper.WaitForNodeToSync(nodes.ToArray());

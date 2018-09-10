@@ -94,6 +94,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             nodes.Skip(1).ToList().ForEach(n => WaitLoop(() => AreNodesSynced(nodes.First(), n)));
         }
 
+        public static void WaitForNodeToSyncIgnoreMempool(params CoreNode[] nodes)
+        {
+            nodes.ToList().ForEach(node => WaitLoop(() => IsNodeSynced(node)));
+            nodes.Skip(1).ToList().ForEach(node => WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
+        }
+
         public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, string walletName, string walletPassword, string accountName, uint numberOfBlocks)
         {
             Guard.NotNull(node, nameof(node));

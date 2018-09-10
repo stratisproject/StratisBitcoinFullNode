@@ -178,12 +178,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         protected void a_block_is_mined_creating_spendable_coins()
         {
-            TestHelper.MineBlocks(this.nodes[FirstPowNode], PrimaryWalletName, WalletPassword, WalletAccountName, 1);
+            TestHelper.MineBlocks(this.firstStratisPowApiNode, PrimaryWalletName, WalletPassword, WalletAccountName, 1);
         }
 
         private void more_blocks_mined_past_maturity_of_original_block()
         {
-            TestHelper.MineBlocks(this.nodes[FirstPowNode], PrimaryWalletName, WalletPassword, WalletAccountName, this.maturity);
+            TestHelper.MineBlocks(this.firstStratisPowApiNode, PrimaryWalletName, WalletPassword, WalletAccountName, this.maturity);
         }
 
         private void a_real_transaction()

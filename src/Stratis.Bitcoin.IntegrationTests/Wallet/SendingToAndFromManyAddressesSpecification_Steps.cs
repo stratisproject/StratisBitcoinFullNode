@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void node1_sends_funds_to_node2_TO_fifty_addresses()
         {
-            TestHelper.MineBlocks(this.nodes[NodeOne], WalletName, WalletPassword, WalletAccountName, (uint)this.CoinBaseMaturity + 2);
+            TestHelper.MineBlocks(this.firstNode, WalletName, WalletPassword, WalletAccountName, (uint)this.CoinBaseMaturity + 2);
 
             IEnumerable<HdAddress> nodeTwoAddresses = this.secondNode.FullNode.WalletManager().GetUnusedAddresses(new WalletAccountReference(WalletName, WalletAccountName), 50);
 
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Amount = Money.COIN
             }).ToList();
 
-            this.transactionBuildContext = TestHelper.CreateTransactionBuildContext(this.nodes[NodeOne].FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, this.CoinBaseMaturity + 1);
+            this.transactionBuildContext = TestHelper.CreateTransactionBuildContext(this.firstNode.FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, this.CoinBaseMaturity + 1);
 
             Transaction transaction = this.firstNode.FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
 
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             this.secondNode.WalletSpendableTransactionCount(WalletName).Should().Be(UnspentTransactionOutputs);
 
-            TestHelper.MineBlocks(this.nodes[NodeTwo], WalletName, WalletPassword, WalletAccountName, 1);
+            TestHelper.MineBlocks(this.secondNode, WalletName, WalletPassword, WalletAccountName, 1);
 
             this.secondNode.WalletHeight(WalletName).Should().Be(this.CoinBaseMaturity + 3);
         }
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             transaction.Inputs.Count.Should().Be(50);
 
             this.secondNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
-            TestHelper.AreNodesSynced(this.fistNode, this.secondNode);
+            TestHelper.AreNodesSynced(this.firstNode, this.secondNode);
         }
 
         private void node1_receives_the_funds()
