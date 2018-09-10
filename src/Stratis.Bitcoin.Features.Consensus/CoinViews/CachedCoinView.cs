@@ -397,7 +397,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         else
                         {
                             cacheItem.UnspentOutputs = unspent;
-                            cacheItem.OriginalOutputs = unspent.Outputs.ToArray();
                         }
                     }
                     else
@@ -407,9 +406,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         cacheItem.ExistInInner = !unspent.IsFull; // Seems to be a new created coin (careful, untrue if rewinding).
                         cacheItem.ExistInInner |= duplicateTransactions.Any(t => unspent.TransactionId == t);
                         cacheItem.IsDirty = true;
-
-                        cacheItem.UnspentOutputs = unspent.Clone();
-                        cacheItem.OriginalOutputs = unspent.Outputs.ToArray();
+                        cacheItem.UnspentOutputs = unspent;
 
                         this.unspents.Add(unspent.TransactionId, cacheItem);
                         rewindData.TransactionsToRemove.Add(unspent.TransactionId);
