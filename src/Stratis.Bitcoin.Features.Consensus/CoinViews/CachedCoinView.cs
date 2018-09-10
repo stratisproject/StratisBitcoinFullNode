@@ -332,7 +332,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 var rand = new Random();
                 foreach (KeyValuePair<uint256, CacheItem> entry in this.unspents.ToList())
                 {
-                    if (!entry.Value.IsDirty)
+                    if (!entry.Value.IsDirty && entry.Value.ExistInInner)
                     {
                         if (rand.Next() % 3 == 0)
                         {
