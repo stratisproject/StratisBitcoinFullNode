@@ -425,8 +425,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             HdAddress coldAddress = coldAccount.ExternalAddresses.Where(a => a.Address == coldWalletAddress).FirstOrDefault();
             if (coldAddress == null)
             {
-                this.logger.LogTrace("(-)[COLDSTAKE_ADRESS_DOES_NOT_EXIST]");
-                throw new WalletException("You cold wallet address does not exist.");
+                this.logger.LogTrace("(-)[COLDSTAKE_ADDRESS_DOES_NOT_EXIST]");
+                throw new WalletException("The cold wallet address does not exist.");
             }
 
             Script destination = BitcoinAddress.Create(coldWalletAddress, wallet.Network).ScriptPubKey.PaymentScript;
