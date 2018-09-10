@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     var cache = new CacheItem();
                     cache.ExistInInner = unspent != null;
                     cache.IsDirty = false;
-                    cache.UnspentOutputs = unspent;
+                    cache.UnspentOutputs = unspent?.Clone();
                     cache.OriginalOutputs = unspent?.Outputs.ToArray();
                     this.unspents.TryAdd(txIds[index], cache);
                 }
