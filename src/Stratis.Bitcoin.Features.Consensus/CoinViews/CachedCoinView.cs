@@ -364,7 +364,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     if (!this.unspents.TryGetValue(unspent.TransactionId, out CacheItem cacheItem))
                     {
                         // This can happen very rarely in case we fetch items form
-                        // disk and immedietly after the Evict method is called.
+                        // disk and immedietly after the Evict method is called and removes the cached items.
 
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are not found in cache, creating them.", unspent.TransactionId);
 
