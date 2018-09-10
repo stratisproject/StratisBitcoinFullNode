@@ -367,8 +367,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
-                    this.logger.LogTrace("PROCESSING_XX: txID: '{0}'", unspent.TransactionId);
-
                     if (!this.unspents.TryGetValue(unspent.TransactionId, out CacheItem cacheItem))
                     {
                         FetchCoinsResponse result = await this.inner.FetchCoinsAsync(new[] {unspent.TransactionId}).ConfigureAwait(false);
@@ -393,15 +391,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     {
                         clone.Outputs = cacheItem.OriginalOutputs.ToArray();
                         rewindData.OutputsToRestore.Add(clone);
-
-                        this.logger.LogTrace("OriginalOutputs were NOT null for tx id '{1}' \n{0}", clone, unspent.TransactionId);
                     }
                     else
-                    {
                         rewindData.TransactionsToRemove.Add(unspent.TransactionId);
-
-                        this.logger.LogTrace("OriginalOutputs were null for tx id '{0}'", unspent.TransactionId);
-                    }
 
                     this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
                     if (cacheItem.UnspentOutputs != null)
@@ -423,8 +415,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         this.unspents.Remove(unspent.TransactionId);
                     }
                 }
-
-                this.logger.LogTrace("RewindData added: \n{0}", rewindData);
 
                 this.cachedRewindDataList.Add(rewindData);
             }

@@ -56,13 +56,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Parent.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
 
-                this.Logger.LogTrace("Tx index: {0}, txId: '{1}'", txIndex, tx.GetHash());
-
-                foreach (TxIn txInput in tx.Inputs)
-                {
-                    this.Logger.LogTrace("txIn: " + txInput);
-                }
-
                 if (!context.SkipValidation)
                 {
                     if (!this.IsProtocolTransaction(tx))

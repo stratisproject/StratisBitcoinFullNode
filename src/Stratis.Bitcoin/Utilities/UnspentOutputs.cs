@@ -172,18 +172,17 @@ namespace Stratis.Bitcoin.Utilities
         {
             var builder = new StringBuilder();
 
-            builder.AppendLine("transactionId: " + transactionId.ToString());
-            builder.AppendLine("Height: " + Height.ToString());
-            builder.AppendLine("Version: " + Version.ToString());
-            builder.AppendLine("IsCoinbase: " + IsCoinbase.ToString());
-            builder.AppendLine("IsCoinstake: " + IsCoinstake.ToString());
-            builder.AppendLine("Time: " + Time.ToString());
-            builder.AppendLine("OutputsCount: " + this.Outputs.Length);
+            builder.AppendLine($"{nameof(this.transactionId)}={this.transactionId}");
+
+            builder.AppendLine($"{nameof(this.Height)}={this.Height}");
+            builder.AppendLine($"{nameof(this.Version)}={this.Version}");
+            builder.AppendLine($"{nameof(this.IsCoinbase)}={this.IsCoinbase}");
+            builder.AppendLine($"{nameof(this.IsCoinstake)}={this.IsCoinstake}");
+            builder.AppendLine($"{nameof(this.Time)}={this.Time}");
+            builder.AppendLine($"{nameof(this.Outputs)}.{nameof(this.Outputs.Length)}={this.Outputs.Length}");
 
             foreach (TxOut output in this.Outputs)
-            {
-                builder.AppendLine("==" + (output == null? "null" : output.ToString()));
-            }
+                builder.AppendLine(output == null ? "null" : output.ToString());
 
             return builder.ToString();
         }

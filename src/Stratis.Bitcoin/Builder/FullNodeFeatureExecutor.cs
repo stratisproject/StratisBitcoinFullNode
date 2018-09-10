@@ -90,7 +90,6 @@ namespace Stratis.Bitcoin.Builder
 
             if (this.node.Services != null)
             {
-                var f = this.node.Services.Features.ToList();
                 IEnumerable<IFullNodeFeature> iterator = this.node.Services.Features;
 
                 if (reverseOrder)

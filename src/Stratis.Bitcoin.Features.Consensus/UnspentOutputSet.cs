@@ -31,23 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public Money GetValueIn(Transaction tx)
         {
-            Money sum = Money.Zero;
-
-            foreach (TxIn txInput in tx.Inputs)
-            {
-                TxOut output = this.GetOutputFor(txInput);
-
-                if (output == null)
-                {
-
-                }
-
-                sum += output.Value;
-            }
-
-            return sum;
-
-            //return tx.Inputs.Select(txin => this.GetOutputFor(txin).Value).Sum();
+            return tx.Inputs.Select(txin => this.GetOutputFor(txin).Value).Sum();
         }
 
         /// <summary>
@@ -62,11 +46,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 foreach (TxIn input in transaction.Inputs)
                 {
                     UnspentOutputs c = this.AccessCoins(input.PrevOut.Hash);
-
-                    if (c == null)
-                    {
-
-                    }
 
                     c.Spend(input.PrevOut.N);
                 }

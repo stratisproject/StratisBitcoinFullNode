@@ -81,20 +81,16 @@ namespace Stratis.Bitcoin.Utilities
         {
             var data = new StringBuilder();
 
-            data.AppendLine("PrevBlockHash: " + this.previousBlockHash);
-            data.AppendLine($"transactionsToRemove({this.transactionsToRemove.Count}):");
+            data.AppendLine($"{nameof(this.previousBlockHash)}={this.previousBlockHash}");
+            data.AppendLine($"{nameof(this.transactionsToRemove)}.{nameof(this.transactionsToRemove.Count)}={this.transactionsToRemove.Count}:");
 
             foreach (uint256 txToRemove in this.transactionsToRemove)
-            {
-                data.AppendLine(" " + txToRemove);
-            }
+                data.AppendLine(txToRemove.ToString());
 
-            data.AppendLine($"outputsToRestore({this.outputsToRestore.Count}):");
+            data.AppendLine($"{nameof(this.outputsToRestore)}.{nameof(this.outputsToRestore.Count)}={this.outputsToRestore.Count}:");
 
             foreach (UnspentOutputs output in this.outputsToRestore)
-            {
-                data.Append("--" + output);
-            }
+                data.AppendLine(output.ToString());
 
             return data.ToString();
         }

@@ -639,7 +639,7 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            return $"value: {this.Value} scriptPubKey: {this.ScriptPubKey}";
+            return $"{nameof(this.Value)}={this.Value},{nameof(this.ScriptPubKey)}={this.ScriptPubKey}";
         }
     }
 
