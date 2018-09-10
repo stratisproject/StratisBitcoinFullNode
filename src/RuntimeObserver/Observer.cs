@@ -3,14 +3,29 @@
 namespace RuntimeObserver
 {
     /// <summary>
-    /// Is able to hold metrics about the current runtime..
-    /// For now only tracking gas but in the future could be used to track memory or other metrics too. 
+    /// Is able to hold metrics about the current runtime.
+    /// Currently tracking gas and some unit of memory.
     /// </summary>
     public class Observer
     {
+
+        /// <summary>
+        /// The limit for 'memory units'.
+        /// 
+        /// A 'memory unit' is spent for any operation that reserves a significant chunk of memory. 
+        /// 
+        /// Standard allocations for primitives aren't counted as memory units as they are trivially small
+        /// and the instructions that cause them will run the contract out of gas eventually.
+        /// 
+        /// Likewise, string primitives and method 
+        /// </summary>
+        private readonly ulong memoryLimit;
+
         public IGasMeter GasMeter { get; }
 
-        public Observer(IGasMeter gasMeter)
+        public ulong MemoryConsumed { get; }
+
+        public Observer(IGasMeter gasMeter, ulong memoryLimit)
         {
             this.GasMeter = gasMeter;
         }
