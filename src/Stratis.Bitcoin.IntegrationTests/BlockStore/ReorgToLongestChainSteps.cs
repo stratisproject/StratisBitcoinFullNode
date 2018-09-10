@@ -71,10 +71,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void each_mine_a_block()
         {
-            TestHelper.MineBlocks(this.jingNode, AccountZero, WalletZero, WalletPassword, 1);
-            TestHelper.MineBlocks(this.bobNode, AccountZero, WalletZero, WalletPassword, 1);
-            TestHelper.MineBlocks(this.charlieNode, AccountZero, WalletZero, WalletPassword, 1);
-            TestHelper.MineBlocks(this.daveNode, AccountZero, WalletZero, WalletPassword, 1);
+            TestHelper.MineBlocks(this.jingNode, WalletZero, WalletPassword, AccountZero, 1);
+            TestHelper.MineBlocks(this.bobNode, WalletZero, WalletPassword, AccountZero, 1);
+            TestHelper.MineBlocks(this.charlieNode, WalletZero, WalletPassword, AccountZero, 1);
+            TestHelper.MineBlocks(this.daveNode, WalletZero, WalletPassword, AccountZero, 1);
         }
 
         private void jing_loses_connection_to_others_but_carries_on_mining()
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(this.jingNode));
 
-            TestHelper.MineBlocks(this.jingNode, AccountZero, WalletZero, WalletPassword, 1);
+            TestHelper.MineBlocks(this.jingNode, WalletZero, WalletPassword, AccountZero, 1);
 
             this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
         }
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void charlie_mines_this_block()
         {
-            TestHelper.MineBlocks(this.charlieNode, AccountZero, WalletZero, WalletPassword, 1);
+            TestHelper.MineBlocks(this.charlieNode, WalletZero, WalletPassword, AccountZero, 1);
             TestHelper.WaitForNodeToSync(this.bobNode, this.charlieNode, this.daveNode);
         }
 
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             int coinbaseMaturity = (int)this.bobNode.FullNode.Network.Consensus.CoinbaseMaturity;
 
-            TestHelper.MineBlocks(this.bobNode, AccountZero, WalletZero, WalletPassword, (uint)coinbaseMaturity);
+            TestHelper.MineBlocks(this.bobNode, WalletZero, WalletPassword, AccountZero, (uint)coinbaseMaturity);
 
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.jingNode));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.bobNode));
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void meanwhile_jings_chain_advanced_ahead_of_the_others()
         {
-            TestHelper.MineBlocks(this.jingNode, AccountZero, WalletZero, WalletPassword, 5);
+            TestHelper.MineBlocks(this.jingNode, WalletZero, WalletPassword, AccountZero, 5);
 
             this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
         }
