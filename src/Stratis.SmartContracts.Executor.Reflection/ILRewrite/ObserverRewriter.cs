@@ -12,6 +12,10 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
     /// </summary>
     public class ObserverRewriter : IILRewriter
     {
+        public const string InjectedNamespace = "<Stratis>";
+        public const string InjectedTypeName = "<RuntimeObserverInstance>";
+        public const string InjectedPropertyName = "Instance";
+
         private static readonly HashSet<OpCode> BranchingOps = new HashSet<OpCode>
         {
             OpCodes.Beq,
@@ -78,14 +82,14 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
         {
             // Add new type that can't be instantiated
             var instanceType = new TypeDefinition(
-                "<Stratis>", "<RuntimeObserverInstance>",
+                InjectedNamespace, InjectedTypeName,
                 TypeAttributes.Class | TypeAttributes.Abstract | TypeAttributes.Sealed | TypeAttributes.NotPublic,
                 module.ImportReference(typeof(object))
             );
 
             // Add a field - an instance of our Observer!
             var instanceField = new FieldDefinition(
-                "Instance",
+                InjectedPropertyName,
                 FieldAttributes.Assembly | FieldAttributes.Static | FieldAttributes.InitOnly,
                 module.ImportReference(typeof(Observer))
             );
