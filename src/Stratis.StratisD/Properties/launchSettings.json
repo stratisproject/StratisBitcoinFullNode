@@ -5,7 +5,7 @@
     },
     "Stratis.StratisD Test": {
       "commandName": "Project",
-      "commandLineArgs": "-testnet"
+      "commandLineArgs": "-testnet -datadir=D:\\\\Stratis\\\\ShutDownCore -agentprefix=ferdeen"
     },
     "Stratis.StratisD Test with RPC": {
       "commandName": "Project",
