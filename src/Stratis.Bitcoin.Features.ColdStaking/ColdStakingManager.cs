@@ -482,8 +482,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// </summary>
         /// <param name="walletName">The name of the wallet.</param>
         /// <param name="confirmations">The number of confirmations.</param>
+        /// <param name="isColdWalletAccount">The cold staking account to get the transactions for.</param>
         /// <returns>An enumeration of <see cref="UnspentOutputReference"/> items.</returns>
-        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInColdWallet(string walletName, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInColdWallet(string walletName, bool isColdWalletAccount, int confirmations = 0)
         {
             Guard.NotEmpty(walletName, nameof(walletName));
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletName), walletName, nameof(confirmations), confirmations);
@@ -493,7 +494,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             lock (this.lockObject)
             {
                 res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations,
-                    a => a.Index == ColdWalletAccountIndex).ToArray();
+                    a => a.Index == (isColdWalletAccount?ColdWalletAccountIndex:HotWalletAccountIndex)).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", res.Count());
