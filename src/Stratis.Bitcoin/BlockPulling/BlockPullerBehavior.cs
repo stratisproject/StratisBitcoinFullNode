@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.BlockPulling
         double QualityScore { get; }
 
         /// <summary>Upload speed of a peer in bytes per second.</summary>
-        int SpeedBytesPerSecond { get; }
+        long SpeedBytesPerSecond { get; }
 
         /// <summary>Tip claimed by peer.</summary>
         ChainedHeader Tip { get; set; }
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Recalculates the quality score for this peer.</summary>
         /// <param name="bestSpeedBytesPerSecond">Speed in bytes per second that is considered to be the maximum speed.</param>
-        void RecalculateQualityScore(int bestSpeedBytesPerSecond);
+        void RecalculateQualityScore(long bestSpeedBytesPerSecond);
 
         /// <summary>Requests blocks from this peer.</summary>
         /// <param name="hashes">Hashes of blocks that should be asked to be delivered.</param>
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.BlockPulling
         public double QualityScore { get; private set; }
 
         /// <inheritdoc />
-        public int SpeedBytesPerSecond { get; private set; }
+        public long SpeedBytesPerSecond { get; private set; }
 
         /// <inheritdoc />
         public ChainedHeader Tip { get; set; }
@@ -141,7 +141,11 @@ namespace Stratis.Bitcoin.BlockPulling
             this.averageSizeBytes.AddSample(blockSizeBytes);
             this.averageDelaySeconds.AddSample(adjustedDelay);
 
-            this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
+            // Don't calculate speed in case peer stalled several times in a row and there are no good samples.
+            if (this.averageSizeBytes.Average > 0.01)
+                this.SpeedBytesPerSecond = (long)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
+            else
+                this.SpeedBytesPerSecond = 0;
 
             this.logger.LogTrace("(-):{0}={1}", nameof(this.SpeedBytesPerSecond), this.SpeedBytesPerSecond);
         }
@@ -178,7 +182,7 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc/>
-        public void RecalculateQualityScore(int bestSpeedBytesPerSecond)
+        public void RecalculateQualityScore(long bestSpeedBytesPerSecond)
         {
             this.logger.LogTrace("({0}:{1})", nameof(bestSpeedBytesPerSecond), bestSpeedBytesPerSecond);
 

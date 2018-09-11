@@ -250,11 +250,11 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
 
         public ChainedHeader Tip { get => this.underlyingBehavior.Tip; set => this.underlyingBehavior.Tip = value; }
 
-        public int SpeedBytesPerSecond { get => this.underlyingBehavior.SpeedBytesPerSecond; }
+        public long SpeedBytesPerSecond { get => this.underlyingBehavior.SpeedBytesPerSecond; }
 
         public void AddSample(long blockSizeBytes, double delaySinceRequestedSeconds) { this.underlyingBehavior.AddSample(blockSizeBytes, delaySinceRequestedSeconds); }
 
-        public void RecalculateQualityScore(int bestSpeedBytesPerSecond)
+        public void RecalculateQualityScore(long bestSpeedBytesPerSecond)
         {
             this.underlyingBehavior.RecalculateQualityScore(bestSpeedBytesPerSecond);
             this.RecalculateQualityScoreWasCalled = true;
