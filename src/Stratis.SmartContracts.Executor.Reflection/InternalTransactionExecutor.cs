@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Exceptions;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -39,7 +38,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 typeof(T).Name
             );
 
-            var result = this.state.Apply(message);
+            // Create a snapshot of the current state
+            var newState = this.state.Snapshot(message.GasLimit);
+
+            // Apply the message to the snapshot
+            var result = newState.Apply(message);
+
+            // Transition the current state to the new state
+            this.state.TransitionTo(newState, result);
 
             return result.IsSuccess
                 ? CreateResult.Succeeded(result.Success.ContractAddress.ToAddress(this.network))
@@ -66,7 +72,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 new MethodCall(methodName, parameters)
             );
 
-            var result = this.state.Apply(message);
+            // Create a snapshot of the current state
+            var newState = this.state.Snapshot(message.GasLimit);
+
+            // Apply the message to the snapshot
+            var result = newState.Apply(message);
+
+            // Transition the current state to the new state
+            this.state.TransitionTo(newState, result);
 
             return result.IsSuccess
                 ? TransferResult.Transferred(result.Success.ExecutionResult)
@@ -86,8 +99,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 amountToTransfer,
                 (Gas) gasBudget
             );
-            
-            var result = this.state.Apply(message);
+
+            // Create a snapshot of the current state
+            var newState = this.state.Snapshot(message.GasLimit);
+
+            // Apply the message to the snapshot
+            var result = newState.Apply(message);
+
+            // Transition the current state to the new state
+            this.state.TransitionTo(newState, result);
 
             return result.IsSuccess 
                 ? TransferResult.Empty() 

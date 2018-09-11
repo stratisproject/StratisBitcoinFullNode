@@ -33,7 +33,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         
         private State(State state, Gas gasLimit)
         {
-            this.intermediateState = state.intermediateState;
+            this.intermediateState = state.intermediateState.StartTracking();
             
             // We create a new log holder but use references to the original raw logs
             this.LogHolder = new ContractLogHolder(state.Network);
@@ -133,7 +133,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.GasRemaining -= result.GasConsumed;
 
-            this.intermediateState = state.ContractState;
+            //this.intermediateState = state.ContractState;
 
             // Update internal transfers
             this.internalTransfers.Clear();
@@ -142,6 +142,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // Update logs
             this.LogHolder.Clear();
             this.LogHolder.AddRawLogs(state.LogHolder.GetRawLogs());
+
+            // Update nonce
+            this.Nonce = state.Nonce;
 
             // Commit the state to update the parent state (which should be this...)
             state.ContractState.Commit();
@@ -198,7 +201,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             bool enoughBalance = this.EnsureContractHasEnoughBalance(message.From, message.Amount);
 
             if (!enoughBalance)
-                throw new InsufficientBalanceException();
+                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance);
 
             byte[] contractCode = this.intermediateState.GetCode(message.From);
 
@@ -223,6 +226,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             if (this.GasRemaining < message.GasLimit || this.GasRemaining < GasPriceList.BaseCost)
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientGas);
+
 
             var gasMeter = new GasMeter(message.GasLimit);
 

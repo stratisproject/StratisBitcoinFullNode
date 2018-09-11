@@ -18,5 +18,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         StateTransitionResult Apply(InternalCallMessage message);
         StateTransitionResult Apply(ContractTransferMessage message);
         IState Snapshot(Gas gasLimit);
+        ulong Nonce { get; }
+        void TransitionTo(IState state, StateTransitionResult result);
     }
 }
