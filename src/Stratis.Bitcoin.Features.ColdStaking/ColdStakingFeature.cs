@@ -178,10 +178,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
                 foreach (string walletName in walletNames)
                 {
-                    IEnumerable<UnspentOutputReference> items1 = this.coldStakingManager.GetSpendableTransactionsInWallet(walletName, 1);
-                    IEnumerable<UnspentOutputReference> items2 = this.coldStakingManager.GetSpendableTransactionsInColdWallet(walletName, false, 1);
-                    IEnumerable<UnspentOutputReference> items3 = this.coldStakingManager.GetSpendableTransactionsInColdWallet(walletName, true, 1);
-                    benchLog.AppendLine("Wallet     : " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items1.Sum(s => s.Transaction.Amount)).ToString() + " Cold stake hot balance: " + new Money(items2.Sum(s => s.Transaction.Amount)).ToString() + " Cold stake cold balance: " + new Money(items3.Sum(s => s.Transaction.Amount)).ToString());
+                    IEnumerable<UnspentOutputReference> normalTransactions = this.coldStakingManager.GetSpendableTransactionsInWallet(walletName, 1);
+                    IEnumerable<UnspentOutputReference> hotWalletTransactions = this.coldStakingManager.GetSpendableTransactionsInColdWallet(walletName, false, 1);
+                    IEnumerable<UnspentOutputReference> coldWalletTransactons = this.coldStakingManager.GetSpendableTransactionsInColdWallet(walletName, true, 1);
+                    benchLog.AppendLine("Wallet     : " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(normalTransactions.Sum(s => s.Transaction.Amount)).ToString() + " Cold stake hot balance: " + new Money(hotWalletTransactions.Sum(s => s.Transaction.Amount)).ToString() + " Cold stake cold balance: " + new Money(coldWalletTransactons.Sum(s => s.Transaction.Amount)).ToString());
                 }
             }
         }
