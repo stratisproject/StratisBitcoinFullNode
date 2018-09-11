@@ -61,6 +61,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 callData.GasLimit);
 
             StateTransitionResult result;
+            var newState = state.Snapshot();
 
             if (creation)
             {
@@ -72,7 +73,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     callData.MethodParameters
                 );
 
-                result = state.Apply(message);
+
+                result = newState.Apply(message);
             }
             else
             {
@@ -86,6 +88,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 result = state.Apply(message);
             }
+
+            state.TransitionTo(newState);
 
             bool revert = !result.IsSuccess;
 
