@@ -16,6 +16,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Account numbers greater or equal to this number are reserved for cold staking.</summary>
         public const int ColdStakingAccountIndex = 100_000_000;
 
+        /// <summary>Filter for identifying normal wallet accounts.</summary>
+        public static Func<HdAccount, bool> NormalAccounts = a => a.Index < ColdStakingAccountIndex;
+
         /// <summary>
         /// Initializes a new instance of the wallet.
         /// </summary>
@@ -82,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>The accounts in the wallet corresponding to this type of coin.</returns>
         public IEnumerable<HdAccount> GetAccountsByCoinType(CoinType coinType)
         {
-            return this.AccountsRoot.Where(a => a.CoinType == coinType).SelectMany(a => a.Accounts);
+            return this.AccountsRoot.Where(a => a.CoinType == coinType).SelectMany(a => a.Accounts).Where(NormalAccounts);
         }
 
         /// <summary>
@@ -237,7 +240,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A value indicating whether the wallet contains the specified address.</returns>
         public bool ContainsAddress(HdAddress address)
         {
-            if (!this.AccountsRoot.Any(r => r.Accounts.Any(
+            if (!this.AccountsRoot.Any(r => r.Accounts.Where(NormalAccounts).Any(
                 a => a.ExternalAddresses.Any(i => i.Address == address.Address) ||
                      a.InternalAddresses.Any(i => i.Address == address.Address))))
             {
@@ -331,7 +334,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.Accounts == null)
                 return null;
 
-            List<HdAccount> unusedAccounts = this.Accounts.Where(acc => !acc.ExternalAddresses.Any() && !acc.InternalAddresses.Any()).ToList();
+            List<HdAccount> unusedAccounts = this.Accounts.Where(Wallet.NormalAccounts).Where(acc => !acc.ExternalAddresses.Any() && !acc.InternalAddresses.Any()).ToList();
             if (!unusedAccounts.Any())
                 return null;
 
@@ -383,7 +386,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (hdAccounts.Any())
             {
                 // Hide account indexes used for cold staking from the "Max" calculation.
-                newAccountIndex = hdAccounts.Where(a => a.Index < Wallet.ColdStakingAccountIndex).Max(a => a.Index) + 1;
+                newAccountIndex = hdAccounts.Where(Wallet.NormalAccounts).Max(a => a.Index) + 1;
             }
 
             HdAccount newAccount = this.CreateAccount(password, encryptedSeed, chainCode, network, accountCreationTime, newAccountIndex);

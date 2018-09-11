@@ -29,6 +29,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// </remarks>
     public class ColdStakingManager
     {
+        private static Func<HdAccount, bool> coldStakingAccounts = a => a.Index >= Wallet.Wallet.ColdStakingAccountIndex;
+
         /// <summary>The account index of the cold wallet account.</summary>
         private const int ColdWalletAccountIndex = Wallet.Wallet.ColdStakingAccountIndex + 0;
 
@@ -87,13 +89,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             this.logger.LogTrace("({0}:'{1}')", nameof(walletName), walletName);
 
             Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
-            var coinType = (CoinType)wallet.Network.Consensus.CoinType;
-            List<HdAccount> accounts = wallet.GetAccountsByCoinType(coinType).ToList();
 
             var response = new Models.GetColdStakingInfoResponse()
             {
-                ColdWalletAccountExists = accounts.Any(a => a.Index == ColdWalletAccountIndex),
-                HotWalletAccountExists = accounts.Any(a => a.Index == HotWalletAccountIndex)
+                ColdWalletAccountExists = this.GetColdStakingAccount(wallet, true) != null,
+                HotWalletAccountExists = this.GetColdStakingAccount(wallet, false) != null
             };
 
             this.logger.LogTrace("(-):'{0}'", response);
@@ -118,9 +118,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(wallet), wallet.Name, nameof(isColdWalletAccount), isColdWalletAccount);
 
-            int accountIndex = isColdWalletAccount ? ColdWalletAccountIndex : HotWalletAccountIndex;
             var coinType = (CoinType)wallet.Network.Consensus.CoinType;
-            HdAccount account = wallet.GetAccountsByCoinType(coinType).FirstOrDefault(a => a.Index == accountIndex);
+            HdAccount account = null;
+            try
+            {
+                account = wallet.GetAccountByCoinType(isColdWalletAccount ? ColdWalletAccountName : HotWalletAccountName, coinType);
+            }
+            catch (Exception) { }
 
             if (account == null)
             {
