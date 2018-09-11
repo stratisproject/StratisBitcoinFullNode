@@ -1,9 +1,16 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.ColdStaking.Controllers;
@@ -13,6 +20,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -41,6 +49,33 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// <seealso cref="FullNodeFeature"/>
     public class ColdStakingFeature : FullNodeFeature
     {
+        /// <summary>The synchronization manager for the wallet, tasked with keeping the wallet synced with the network.</summary>
+        private readonly IWalletSyncManager walletSyncManager;
+
+        /// <summary>The signals responsible for receiving blocks and transactions from the network.</summary>
+        private readonly Signals.Signals signals;
+
+        /// <summary>Records disposable returned by <see cref="Signals.Signals.SubscribeForBlocksConnected"/> for <see cref="BlockObserver"/>.</summary>
+        private IDisposable blockSubscriberDisposable;
+
+        /// <summary>Records disposable returned by <see cref="Signals.Signals.SubscribeForBlocksConnected"/> for <see cref="TransactionObserver"/>.</summary>
+        private IDisposable transactionSubscriberDisposable;
+
+        /// <summary>The chain of blocks.</summary>
+        private ConcurrentChain chain;
+
+        /// <summary>The connection manager.</summary>
+        private readonly IConnectionManager connectionManager;
+
+        /// <summary>The broadcaster behavior.</summary>
+        private readonly BroadcasterBehavior broadcasterBehavior;
+
+        /// <summary>The settings for the node.</summary>
+        private readonly NodeSettings nodeSettings;
+
+        /// <summary>The settings for the wallet.</summary>
+        private readonly WalletSettings walletSettings;
+
         /// <summary>The logger factory used to create instance loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
@@ -56,11 +91,28 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <summary>
         /// Initializes a new instance of the <see cref="ColdStakingFeature"/> class.
         /// </summary>
+        /// <param name="walletSyncManager">The synchronization manager for the wallet, tasked with keeping the wallet synced with the network.</param>
+        /// <param name="walletManager">The wallet manager.</param>
+        /// <param name="signals">The signals responsible for receiving blocks and transactions from the network.</param>
+        /// <param name="chain">The chain of blocks.</param>
+        /// <param name="connectionManager">The connection manager.</param>
+        /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
+        /// <param name="nodeSettings">The settings for the node.</param>
+        /// <param name="walletSettings">The settings for the wallet.</param>
         /// <param name="walletManager">The cold staking manager.</param>
         /// <param name="loggerFactory">The factory used to create instance loggers.</param>
+        /// <param name="nodeStats">The node stats object used to register node stats.</param>
         public ColdStakingFeature(
+            IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
-            ILoggerFactory loggerFactory)
+            Signals.Signals signals,
+            ConcurrentChain chain,
+            IConnectionManager connectionManager,
+            BroadcasterBehavior broadcasterBehavior,
+            NodeSettings nodeSettings,
+            WalletSettings walletSettings,
+            ILoggerFactory loggerFactory,
+            INodeStats nodeStats)
         {
             Guard.NotNull(walletManager, nameof(walletManager));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -70,17 +122,97 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
+
+            this.walletSyncManager = walletSyncManager;
+            this.walletManager = walletManager;
+            this.signals = signals;
+            this.chain = chain;
+            this.connectionManager = connectionManager;
+            this.broadcasterBehavior = broadcasterBehavior;
+            this.nodeSettings = nodeSettings;
+            this.walletSettings = walletSettings;
+
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 800);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Prints command-line help.
+        /// </summary>
+        /// <param name="network">The network to extract values from.</param>
+        public static void PrintHelp(Network network)
+        {
+            WalletSettings.PrintHelp(network);
+        }
+
+        /// <summary>
+        /// Get the default configuration.
+        /// </summary>
+        /// <param name="builder">The string builder to add the settings to.</param>
+        /// <param name="network">The network to base the defaults off.</param>
+        public static void BuildDefaultConfigurationFile(StringBuilder builder, Network network)
+        {
+            WalletSettings.BuildDefaultConfigurationFile(builder, network);
+        }
+
+        private void AddInlineStats(StringBuilder benchLogs)
+        {
+            var walletManager = this.walletManager as WalletManager;
+
+            if (walletManager != null)
+            {
+                int height = walletManager.LastBlockHeight();
+                ChainedHeader block = this.chain.GetBlock(height);
+                uint256 hashBlock = block == null ? 0 : block.HashBlock;
+
+                benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                                        (walletManager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                                        (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
+            }
+        }
+
+        private void AddComponentStats(StringBuilder benchLog)
+        {
+            IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
+
+            if (walletNames.Any())
+            {
+                benchLog.AppendLine();
+                benchLog.AppendLine("======Wallets======");
+
+                foreach (string walletName in walletNames)
+                {
+                    IEnumerable<UnspentOutputReference> items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
+                    benchLog.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
+                }
+            }
+        }
+
+        /// <inheritdoc />
         public override void Initialize()
         {
             this.logger.LogTrace("()");
 
-            // The FullNodeFeature base class requires us to override this method for any feature-specific
-            // initialization. If initialization is required it will be added here.
+            // subscribe to receiving blocks and transactions
+            this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
+            this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
+
+            this.walletManager.Start();
+            this.walletSyncManager.Start();
+
+            this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public override void Dispose()
+        {
+            this.blockSubscriberDisposable.Dispose();
+            this.transactionSubscriberDisposable.Dispose();
+
+            this.walletManager.Stop();
+            this.walletSyncManager.Stop();
         }
     }
 
