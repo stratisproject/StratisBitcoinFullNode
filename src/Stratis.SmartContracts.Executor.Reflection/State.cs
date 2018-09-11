@@ -214,6 +214,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
+            // This needs to happen after the base fee is charged, which is why it's in here.
             if (message.Method.Name == null)
             {
                 return StateTransitionResult.Fail(gasMeter.GasConsumed, StateTransitionErrorKind.NoMethodName);
