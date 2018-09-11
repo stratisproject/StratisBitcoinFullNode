@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             return false;
         }
     }
-    
+
     public class LoadCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />
@@ -74,6 +74,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // The UTXO set is stored in the context.
             this.Logger.LogTrace("Loading UTXO set of the new block.");
             utxoRuleContext.UnspentOutputSet = new UnspentOutputSet();
+
             using (new StopwatchDisposable(o => this.Parent.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
                 uint256[] ids = this.GetIdsToFetch(context.ValidationContext.BlockToValidate, context.Flags.EnforceBIP30);

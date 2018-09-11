@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
-            this.Logger.LogTrace("()");
+            this.Logger.LogTrace("({0}:'{1}')", nameof(transaction), transaction.GetHash());
 
             var posRuleContext = context as PosRuleContext;
 
