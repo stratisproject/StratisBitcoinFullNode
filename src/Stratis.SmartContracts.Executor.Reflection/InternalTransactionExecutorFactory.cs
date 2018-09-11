@@ -6,7 +6,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Factory for creating internal transaction executors
     /// </summary>
-    public sealed class InternalTransactionExecutorFactory
+    public sealed class InternalTransactionExecutorFactory : IInternalTransactionExecutorFactory
     {
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;

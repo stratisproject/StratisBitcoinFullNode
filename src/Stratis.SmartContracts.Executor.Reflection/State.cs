@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public State(
             IContractPrimitiveSerializer serializer,
-            InternalTransactionExecutorFactory internalTransactionExecutorFactory,
+            IInternalTransactionExecutorFactory internalTransactionExecutorFactory,
             ISmartContractVirtualMachine vm,
             IContractStateRoot repository,
             IBlock block,
@@ -65,7 +65,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IAddressGenerator addressGenerator,
             Gas gasLimit)
         {
-            this.intermediateState = repository;
+            this.intermediateState = repository.StartTracking();
             this.LogHolder = new ContractLogHolder(network);
             this.internalTransfers = new List<TransferInfo>();
             this.BalanceState = new BalanceState(this.intermediateState, txAmount, this.InternalTransfers);
@@ -102,7 +102,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IReadOnlyList<TransferInfo> InternalTransfers => this.internalTransfers;
 
-        public InternalTransactionExecutorFactory InternalTransactionExecutorFactory { get; }
+        public IInternalTransactionExecutorFactory InternalTransactionExecutorFactory { get; }
 
         public ISmartContractVirtualMachine Vm { get; }
 
@@ -226,7 +226,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             if (this.GasRemaining < message.GasLimit || this.GasRemaining < GasPriceList.BaseCost)
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientGas);
-
 
             var gasMeter = new GasMeter(message.GasLimit);
 

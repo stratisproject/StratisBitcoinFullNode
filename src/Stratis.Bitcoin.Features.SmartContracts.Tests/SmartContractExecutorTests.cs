@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly IContractStateRoot state;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
         private readonly SmartContractValidator validator;
-        private InternalTransactionExecutorFactory internalTxExecutorFactory;
+        private IInternalTransactionExecutorFactory internalTxExecutorFactory;
         private ReflectionVirtualMachine vm;
         private ICallDataSerializer serializer;
         private readonly StateFactory stateFactory;

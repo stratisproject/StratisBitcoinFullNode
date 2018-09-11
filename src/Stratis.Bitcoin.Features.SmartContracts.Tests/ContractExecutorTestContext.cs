@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public ContractAssemblyLoader AssemblyLoader { get; }
         public IContractModuleDefinitionReader ModuleDefinitionReader { get; }
         public IContractPrimitiveSerializer ContractPrimitiveSerializer { get; }
-        public InternalTransactionExecutorFactory InternalTxExecutorFactory { get; }
+        public IInternalTransactionExecutorFactory InternalTxExecutorFactory { get; }
         public ReflectionVirtualMachine Vm { get; }
 
         public ContractExecutorTestContext()

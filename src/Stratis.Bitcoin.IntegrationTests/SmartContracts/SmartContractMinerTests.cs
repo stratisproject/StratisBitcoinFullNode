@@ -157,7 +157,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
             private bool useCheckpoints = true;
             public Key privateKey;
-            private InternalTransactionExecutorFactory internalTxExecutorFactory;
+            private IInternalTransactionExecutorFactory internalTxExecutorFactory;
             private ReflectionVirtualMachine vm;
             private ICallDataSerializer serializer;
             private ContractAssemblyLoader assemblyLoader;

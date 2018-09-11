@@ -13,14 +13,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
         private readonly ISmartContractVirtualMachine vm;
         private readonly IAddressGenerator addressGenerator;
-        private readonly InternalTransactionExecutorFactory internalTransactionExecutorFactory;
+        private readonly IInternalTransactionExecutorFactory internalTransactionExecutorFactory;
 
         public StateFactory(
             Network network,
             IContractPrimitiveSerializer contractPrimitiveSerializer,
             ISmartContractVirtualMachine vm,
             IAddressGenerator addressGenerator,
-            InternalTransactionExecutorFactory internalTransactionExecutorFactory
+            IInternalTransactionExecutorFactory internalTransactionExecutorFactory
         )
         {
             this.network = network;
