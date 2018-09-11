@@ -33,7 +33,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         
         private State(State state, Gas gasLimit)
         {
-            this.intermediateState = state.intermediateState.StartTracking();
+            this.ContractState = state.ContractState.StartTracking();
             
             // We create a new log holder but use references to the original raw logs
             this.LogHolder = new ContractLogHolder(state.Network);
@@ -65,10 +65,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IAddressGenerator addressGenerator,
             Gas gasLimit)
         {
-            this.intermediateState = repository.StartTracking();
+            this.ContractState = repository.StartTracking();
             this.LogHolder = new ContractLogHolder(network);
             this.internalTransfers = new List<TransferInfo>();
-            this.BalanceState = new BalanceState(this.intermediateState, txAmount, this.InternalTransfers);
+            this.BalanceState = new BalanceState(this.ContractState, txAmount, this.InternalTransfers);
             this.Network = network;
             this.Nonce = 0;
             this.Block = block;
@@ -94,8 +94,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public Network Network { get; }
 
-        private IContractState intermediateState;
-
         public IContractLogHolder LogHolder { get; }
 
         public BalanceState BalanceState { get; }
@@ -111,7 +109,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.Nonce++;
         }
 
-        public IContractState ContractState => this.intermediateState;
+        public IContractState ContractState { get; private set; }    
 
         /// <summary>
         /// Returns contract logs in the log type used by consensus.
@@ -133,8 +131,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             this.GasRemaining -= result.GasConsumed;
 
-            //this.intermediateState = state.ContractState;
-
             // Update internal transfers
             this.internalTransfers.Clear();
             this.internalTransfers.AddRange(state.InternalTransfers);
@@ -146,8 +142,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // Update nonce
             this.Nonce = state.Nonce;
 
-            // Commit the state to update the parent state (which should be this...)
+            // Commit the state to update the parent state
             state.ContractState.Commit();
+
+            // Update our reference to the current state repo
+            this.ContractState = state.ContractState;
         }
 
         private StateTransitionResult ApplyCreate(object[] parameters, byte[] code, BaseMessage message, string type = null)
@@ -203,7 +202,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (!enoughBalance)
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance);
 
-            byte[] contractCode = this.intermediateState.GetCode(message.From);
+            byte[] contractCode = this.ContractState.GetCode(message.From);
 
             StateTransitionResult result = this.ApplyCreate(message.Parameters, contractCode, message, message.Type);
 
@@ -270,7 +269,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (!enoughBalance)
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance);
 
-            byte[] contractCode = this.intermediateState.GetCode(message.To);
+            byte[] contractCode = this.ContractState.GetCode(message.To);
 
             if (contractCode == null || contractCode.Length == 0)
             {
@@ -299,7 +298,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public StateTransitionResult Apply(ExternalCallMessage message)
         {
-            byte[] contractCode = this.intermediateState.GetCode(message.To);
+            byte[] contractCode = this.ContractState.GetCode(message.To);
 
             if (contractCode == null || contractCode.Length == 0)
             {
@@ -321,7 +320,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // If it's not a contract, create a regular P2PKH tx
             // If it is a contract, do a regular contract call
-            byte[] contractCode = this.intermediateState.GetCode(message.To);
+            byte[] contractCode = this.ContractState.GetCode(message.To);
 
             if (contractCode == null || contractCode.Length == 0)
             {
