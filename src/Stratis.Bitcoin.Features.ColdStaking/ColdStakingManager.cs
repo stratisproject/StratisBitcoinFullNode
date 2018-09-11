@@ -340,7 +340,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             Script destination = this.GetColdStakingScript(hotPubKey, coldPubKey);
 
             // Only normal accounts should be allowed.
-            if (!(this.WalletManager.GetAccounts(walletName).Any(a => a.Name == walletAccount)))
+            if (!this.WalletManager.GetAccounts(walletName).Any(a => a.Name == walletAccount))
             {
                 this.logger.LogTrace("(-)[COLDSTAKE_ACCOUNT_NOT_FOUND]");
                 throw new WalletException($"Can't find wallet account '{walletAccount}'.");
