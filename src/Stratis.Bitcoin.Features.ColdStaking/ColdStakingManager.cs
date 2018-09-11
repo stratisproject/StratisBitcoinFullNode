@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// cref="GetColdStakingSetupTransaction"/> method.</description></item>
     /// </list>
     /// </remarks>
-    public class ColdStakingManager
+    public class ColdStakingManager : WalletManager, IWalletManager
     {
         private static Func<HdAccount, bool> coldStakingAccounts = a => a.Index >= Wallet.Wallet.ColdStakingAccountIndex;
 
@@ -49,12 +49,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        /// <summary>The wallet manager to use for accessing wallets and their accounts.</summary>
-        public IWalletManager WalletManager { get; private set; }
-
-        /// <summary>The wallet transaction handler to use for building transactions.</summary>
-        public IWalletTransactionHandler WalletTransactionHandler { get; private set; }
-
         /// <summary>
         /// Constructs the cold staking manager which is used by the cold staking controller.
         /// </summary>
@@ -63,19 +57,34 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="walletTransactionHandler">The wallet transaction handler to use for building transactions.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         public ColdStakingManager(
+            Configuration.NodeSettings nodeSettings,
+            ConcurrentChain chain,
+            WalletSettings walletSettings,
+            IWalletFeePolicy walletFeePolicy,
+            IAsyncLoopFactory asyncLoopFactory,
+            INodeLifetime nodeLifeTime,
+            Interfaces.IScriptAddressReader scriptAddressReader,
             ILoggerFactory loggerFactory,
-            IWalletManager walletManager,
-            IWalletTransactionHandler walletTransactionHandler,
-            IDateTimeProvider dateTimeProvider)
+            IDateTimeProvider dateTimeProvider,
+            IBroadcasterManager broadcasterManager = null) : base(
+                loggerFactory,
+                nodeSettings.Network,
+                chain,
+                nodeSettings,
+                walletSettings,
+                nodeSettings.DataFolder,
+                walletFeePolicy,
+                asyncLoopFactory,
+                nodeLifeTime,
+                dateTimeProvider,
+                scriptAddressReader,
+                broadcasterManager
+                )
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(walletManager, nameof(walletManager));
-            Guard.NotNull(walletTransactionHandler, nameof(walletTransactionHandler));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.WalletManager = walletManager;
-            this.WalletTransactionHandler = walletTransactionHandler;
             this.dateTimeProvider = dateTimeProvider;
         }
 
@@ -88,7 +97,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(walletName), walletName);
 
-            Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
+            Wallet.Wallet wallet = this.GetWalletByName(walletName);
 
             var response = new Models.GetColdStakingInfoResponse()
             {
@@ -156,7 +165,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletName), walletName, nameof(isColdWalletAccount), isColdWalletAccount);
 
-            Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
+            Wallet.Wallet wallet = this.GetWalletByName(walletName);
 
             HdAccount account = this.GetColdStakingAccount(wallet, isColdWalletAccount);
             if (account != null)
@@ -199,7 +208,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletName), walletName, nameof(isColdWalletAddress), isColdWalletAddress);
 
-            Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
+            Wallet.Wallet wallet = this.GetWalletByName(walletName);
             HdAccount account = this.GetColdStakingAccount(wallet, isColdWalletAddress);
             if (account == null)
             {
@@ -296,7 +305,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="feeAmount">The fee to pay for the cold staking setup transaction.</param>
         /// <returns>The <see cref="Transaction"/> for setting up cold staking.</returns>
         /// <exception cref="WalletException">Thrown if any of the rules listed in the remarks section of this method are broken.</exception>
-        internal Transaction GetColdStakingSetupTransaction(
+        internal Transaction GetColdStakingSetupTransaction(IWalletTransactionHandler walletTransactionHandler,
             string coldWalletAddress, string hotWalletAddress, string walletName, string walletAccount,
             string walletPassword, Money amount, Money feeAmount)
         {
@@ -316,7 +325,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 nameof(feeAmount), feeAmount
                 );
 
-            Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
+            Wallet.Wallet wallet = this.GetWalletByName(walletName);
 
             // Get/create the cold staking accounts.
             HdAccount coldAccount = this.CreateColdStakingAccount(walletName, true, walletPassword);
@@ -344,7 +353,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             Script destination = this.GetColdStakingScript(hotPubKey, coldPubKey);
 
             // Only normal accounts should be allowed.
-            if (!(this.WalletManager.GetAccounts(walletName).Any(a => a.Name == walletAccount)))
+            if (!(this.GetAccounts(walletName).Any(a => a.Name == walletAccount)))
             {
                 this.logger.LogTrace("(-)[COLDSTAKE_ACCOUNT_NOT_FOUND]");
                 throw new WalletException($"Can't find wallet account '{walletAccount}'.");
@@ -363,7 +372,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             // Avoid errors being raised due to the special script that we are using.
             context.TransactionBuilder.StandardTransactionPolicy.CheckScriptPubKey = false;
 
-            Transaction transaction = this.WalletTransactionHandler.BuildTransaction(context);
+            Transaction transaction = walletTransactionHandler.BuildTransaction(context);
 
             this.logger.LogTrace("(-)");
             return transaction;
@@ -392,7 +401,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="feeAmount">The fee to pay for cold staking transaction cancellation.</param>
         /// <returns>The <see cref="Transaction"/> for cold staking cancellation.</returns>
         /// <exception cref="WalletException">Thrown if any of the rules listed in the remarks section of this method are broken.</exception>
-        internal Transaction GetColdStakingCancellationTransaction(
+        internal Transaction GetColdStakingCancellationTransaction(IWalletTransactionHandler walletTransactionHandler,
             string coldWalletAddress, string hotWalletAddress, string walletName,
             string walletPassword, Money amount, Money feeAmount)
         {
@@ -410,7 +419,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 nameof(feeAmount), feeAmount
                 );
 
-            Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
+            Wallet.Wallet wallet = this.GetWalletByName(walletName);
 
             // Get/create the cold staking account.
             HdAccount coldAccount = this.CreateColdStakingAccount(walletName, true, walletPassword);
@@ -448,7 +457,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             // Avoid errors being raised due to the special script that we are using.
             context.TransactionBuilder.StandardTransactionPolicy.CheckScriptPubKey = false;
 
-            Transaction transaction = this.WalletTransactionHandler.BuildTransaction(context);
+            Transaction transaction = walletTransactionHandler.BuildTransaction(context);
 
             this.logger.LogTrace("(-)");
             return transaction;

@@ -1,10 +1,19 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NBitcoin.Policy;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.ColdStaking.Controllers;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.ColdStaking
@@ -47,20 +56,18 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <summary>
         /// Initializes a new instance of the <see cref="ColdStakingFeature"/> class.
         /// </summary>
-        /// <param name="coldStakingManager">The cold staking manager.</param>
-        /// <param name="walletManager">The wallet manager.</param>
+        /// <param name="walletManager">The cold staking manager.</param>
         /// <param name="loggerFactory">The factory used to create instance loggers.</param>
         public ColdStakingFeature(
-            ColdStakingManager coldStakingManager,
             IWalletManager walletManager,
             ILoggerFactory loggerFactory)
         {
-            Guard.NotNull(coldStakingManager, nameof(coldStakingManager));
             Guard.NotNull(walletManager, nameof(walletManager));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
-            this.coldStakingManager = coldStakingManager;
-            this.walletManager = walletManager;
+            this.coldStakingManager = walletManager as ColdStakingManager;
+            Guard.NotNull(this.coldStakingManager, nameof(this.coldStakingManager));
+
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
         }
@@ -82,18 +89,32 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// </summary>
     public static class FullNodeBuilderColdStakingExtension
     {
-        public static IFullNodeBuilder UseColdStaking(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UseColdStakingWallet(this IFullNodeBuilder fullNodeBuilder)
         {
+            LoggingConfiguration.RegisterFeatureNamespace<ColdStakingFeature>("wallet");
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
-                    .AddFeature<ColdStakingFeature>()
-                    .DependOn<WalletFeature>()
-                    .FeatureServices(services =>
-                    {
-                        services.AddSingleton<ColdStakingManager>();
-                        services.AddSingleton<ColdStakingController>();
-                    });
+                .AddFeature<ColdStakingFeature>()
+                .DependOn<MempoolFeature>()
+                .DependOn<BlockStoreFeature>()
+                .DependOn<RPCFeature>()
+                .FeatureServices(services =>
+                {
+                    services.AddSingleton<IWalletSyncManager, WalletSyncManager>();
+                    services.AddSingleton<IWalletTransactionHandler, WalletTransactionHandler>();
+                    services.AddSingleton<IWalletManager, ColdStakingManager>();
+                    services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
+                    services.AddSingleton<ColdStakingController>();
+                    services.AddSingleton<WalletController>();
+                    services.AddSingleton<WalletRPCController>();
+                    services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
+                    services.AddSingleton<BroadcasterBehavior>();
+                    services.AddSingleton<WalletSettings>();
+                    services.AddSingleton<IScriptAddressReader>(new ScriptAddressReader());
+                    services.AddSingleton<StandardTransactionPolicy>();
+                });
             });
 
             return fullNodeBuilder;

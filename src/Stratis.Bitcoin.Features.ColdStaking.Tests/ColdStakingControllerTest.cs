@@ -35,7 +35,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         private const string coldWalletAddress2 = "Sagbh9LuzNAV7y2FHyUQJcgmjcuogSssef";
         private const string hotWalletAddress2 = "SVoMim67CMF1St6j6toAWnnQ2mCvb8V4mT";
 
-        private WalletManager walletManager;
         private ColdStakingManager coldStakingManager;
         private ColdStakingController coldStakingController;
 
@@ -54,17 +53,14 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             var walletSettings = new WalletSettings(nodeSettings);
             var loggerFactory = nodeSettings.LoggerFactory;
 
-            this.walletManager = new WalletManager(loggerFactory, this.Network, new ConcurrentChain(this.Network),
-                nodeSettings, walletSettings, dataFolder, new Mock<IWalletFeePolicy>().Object,
-                new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
+            this.coldStakingManager = new ColdStakingManager(nodeSettings, new ConcurrentChain(this.Network), walletSettings,
+                new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(),
+                loggerFactory, DateTimeProvider.Default);
 
-            var walletTransactionHandler = new WalletTransactionHandler(loggerFactory, this.walletManager,
+            var walletTransactionHandler = new WalletTransactionHandler(loggerFactory, this.coldStakingManager,
                 new Mock<IWalletFeePolicy>().Object, this.Network, new StandardTransactionPolicy(this.Network));
 
-            this.coldStakingManager = new ColdStakingManager(loggerFactory, this.walletManager, walletTransactionHandler,
-                new Mock<IDateTimeProvider>().Object);
-
-            this.coldStakingController = new ColdStakingController(loggerFactory, this.coldStakingManager);
+            this.coldStakingController = new ColdStakingController(loggerFactory, this.coldStakingManager, walletTransactionHandler);
         }
 
         /// <summary>
@@ -106,16 +102,16 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         {
             this.Initialize();
 
-            this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
-            this.walletManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
+            this.coldStakingManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
+            this.coldStakingManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
 
             this.coldStakingManager.CreateColdStakingAccount(walletName1, true, walletPassword);
             this.coldStakingManager.CreateColdStakingAccount(walletName1, false, walletPassword);
             this.coldStakingManager.CreateColdStakingAccount(walletName2, true, walletPassword);
             this.coldStakingManager.CreateColdStakingAccount(walletName2, false, walletPassword);
 
-            var wallet1 = this.walletManager.GetWalletByName(walletName1);
-            var wallet2 = this.walletManager.GetWalletByName(walletName2);
+            var wallet1 = this.coldStakingManager.GetWalletByName(walletName1);
+            var wallet2 = this.coldStakingManager.GetWalletByName(walletName2);
 
             var coldAddress1 = this.coldStakingManager.GetColdStakingAddress(walletName1, true);
             var hotAddress1 = this.coldStakingManager.GetColdStakingAddress(walletName1, false);
@@ -137,7 +133,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         {
             this.Initialize();
 
-            this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
+            this.coldStakingManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
             IActionResult result1 = this.coldStakingController.GetColdStakingAddress(new GetColdStakingAddressRequest
             {
@@ -179,7 +175,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         {
             this.Initialize();
 
-            this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
+            this.coldStakingManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
             // Create existing accounts.
             this.coldStakingManager.CreateColdStakingAccount(walletName1, true, walletPassword);
@@ -218,9 +214,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         {
             this.Initialize();
 
-            this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
+            this.coldStakingManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
-            var wallet1 = this.walletManager.GetWalletByName(walletName1);
+            var wallet1 = this.coldStakingManager.GetWalletByName(walletName1);
 
             IActionResult result = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
             {
@@ -252,7 +248,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         {
             this.Initialize();
 
-            this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
+            this.coldStakingManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
             IActionResult result = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
             {
@@ -284,9 +280,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         {
             this.Initialize();
 
-            this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
+            this.coldStakingManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
-            var wallet1 = this.walletManager.GetWalletByName(walletName1);
+            var wallet1 = this.coldStakingManager.GetWalletByName(walletName1);
 
             string coldWalletAccountName = typeof(ColdStakingManager).GetPrivateConstantValue<string>("ColdWalletAccountName");
             string hotWalletAccountName = typeof(ColdStakingManager).GetPrivateConstantValue<string>("HotWalletAccountName");
@@ -342,9 +338,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         {
             this.Initialize();
 
-            this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
+            this.coldStakingManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
-            var wallet1 = this.walletManager.GetWalletByName(walletName1);
+            var wallet1 = this.coldStakingManager.GetWalletByName(walletName1);
 
             Transaction prevTran = this.AddSpendableTransactionToWallet(wallet1);
 
@@ -381,9 +377,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         {
             this.Initialize();
 
-            this.walletManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
+            this.coldStakingManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
 
-            var wallet2 = this.walletManager.GetWalletByName(walletName2);
+            var wallet2 = this.coldStakingManager.GetWalletByName(walletName2);
 
             Transaction prevTran = this.AddSpendableTransactionToWallet(wallet2);
 
@@ -420,7 +416,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         {
             this.Initialize();
 
-            this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
+            this.coldStakingManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
             IActionResult result1 = this.coldStakingController.GetColdStakingInfo(new GetColdStakingInfoRequest
             {

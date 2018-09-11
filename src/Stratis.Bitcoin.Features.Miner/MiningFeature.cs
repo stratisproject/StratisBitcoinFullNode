@@ -181,7 +181,9 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             if (services.ServiceProvider.GetService<IPosMinting>() != null)
             {
-                services.Features.EnsureFeature<WalletFeature>();
+                // TODO: Need a better way to check dependencies. This is really just dependent on IWalletManager...
+                // Alternatively "EnsureFeature" should take a list of features that will satisfy the dependency.
+                //services.Features.EnsureFeature<WalletFeature>();
             }
 
             // Mining and staking require block store feature.
@@ -216,7 +218,9 @@ namespace Stratis.Bitcoin.Features.Miner
                     .AddFeature<MiningFeature>()
                     .DependOn<MempoolFeature>()
                     .DependOn<RPCFeature>()
-                    .DependOn<WalletFeature>()
+                    // TODO: Need a better way to check dependencies. This is really just dependent on IWalletManager...
+                    // Alternatively "DependsOn" should take a list of features that will satisfy the dependency.
+                    //.DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
@@ -230,7 +234,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             return fullNodeBuilder;
         }
-        
+
         /// <summary>
         /// Adds POW and POS miner components to the node, so that it can mine or stake.
         /// </summary>
@@ -247,7 +251,9 @@ namespace Stratis.Bitcoin.Features.Miner
                     .AddFeature<MiningFeature>()
                     .DependOn<MempoolFeature>()
                     .DependOn<RPCFeature>()
-                    .DependOn<WalletFeature>()
+                    // TODO: Need a better way to check dependencies. This is really just dependent on IWalletManager...
+                    // Alternatively "DependsOn" should take a list of features that will satisfy the dependency.
+                    //.DependOn<WalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();
