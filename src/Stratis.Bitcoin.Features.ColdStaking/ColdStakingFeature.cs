@@ -82,9 +82,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <summary>The instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>The wallet manager.</summary>
-        private readonly IWalletManager walletManager;
-
         /// <summary>The cold staking manager.</summary>
         private readonly ColdStakingManager coldStakingManager;
 
@@ -124,7 +121,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             this.loggerFactory = loggerFactory;
 
             this.walletSyncManager = walletSyncManager;
-            this.walletManager = walletManager;
             this.signals = signals;
             this.chain = chain;
             this.connectionManager = connectionManager;
@@ -157,7 +153,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
         private void AddInlineStats(StringBuilder benchLogs)
         {
-            var walletManager = this.walletManager as WalletManager;
+            var walletManager = this.coldStakingManager;
 
             if (walletManager != null)
             {
@@ -173,7 +169,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
         private void AddComponentStats(StringBuilder benchLog)
         {
-            IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
+            IEnumerable<string> walletNames = this.coldStakingManager.GetWalletsNames();
 
             if (walletNames.Any())
             {
@@ -182,8 +178,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
                 foreach (string walletName in walletNames)
                 {
-                    IEnumerable<UnspentOutputReference> items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
-                    benchLog.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
+                    IEnumerable<UnspentOutputReference> items1 = this.coldStakingManager.GetSpendableTransactionsInWallet(walletName, 1);
+                    IEnumerable<UnspentOutputReference> items2 = this.coldStakingManager.GetSpendableTransactionsInColdWallet(walletName, 1);
+                    benchLog.AppendLine("Wallet     : " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items1.Sum(s => s.Transaction.Amount)).ToString() + " Cold stake balance: " + new Money(items2.Sum(s => s.Transaction.Amount)).ToString());
                 }
             }
         }
@@ -197,7 +194,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
 
-            this.walletManager.Start();
+            this.coldStakingManager.Start();
             this.walletSyncManager.Start();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
@@ -211,7 +208,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             this.blockSubscriberDisposable.Dispose();
             this.transactionSubscriberDisposable.Dispose();
 
-            this.walletManager.Stop();
+            this.coldStakingManager.Stop();
             this.walletSyncManager.Stop();
         }
     }

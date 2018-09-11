@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// A lock object that protects access to the <see cref="Wallet"/>.
         /// Any of the collections inside Wallet must be synchronized using this lock.
         /// </summary>
-        private readonly object lockObject;
+        protected readonly object lockObject;
 
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -50,13 +50,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         public ConcurrentBag<Wallet> Wallets { get; }
 
         /// <summary>The type of coin used in this manager.</summary>
-        private readonly CoinType coinType;
+        protected readonly CoinType coinType;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
         /// <summary>The chain of headers.</summary>
-        private readonly ConcurrentChain chain;
+        protected readonly ConcurrentChain chain;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -358,7 +358,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(name, nameof(name));
             Guard.NotNull(extPubKey, nameof(extPubKey));
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(name), name, nameof(extPubKey), extPubKey, nameof(accountIndex), accountIndex);
-            
+
             // Create a wallet file.
             Wallet wallet = this.GenerateExtPubKeyOnlyWalletFile(name, creationTime);
 
@@ -601,7 +601,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
                 }
-                
+
                 foreach (HdAccount account in accounts)
                 {
                     (Money amountConfirmed, Money amountUnconfirmed) result = account.GetSpendableAmount();
@@ -841,7 +841,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     throw new WalletException("Reorg");
                 }
 
-                // The block coming in to the wallet should never be ahead of the wallet. 
+                // The block coming in to the wallet should never be ahead of the wallet.
                 // If the block is behind, let it pass.
                 if (chainedHeader.Height > current.Height)
                 {
@@ -921,7 +921,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                             return true;
 
                         // Include the keys that are in the wallet but that are for receiving
-                        // addresses (which would mean the user paid itself). 
+                        // addresses (which would mean the user paid itself).
                         // We also exclude the keys involved in a staking transaction.
                         return !addr.IsChangeAddress() && !transaction.IsCoinStake;
                     });
@@ -934,7 +934,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Figure out what to do when this transaction is found to affect the wallet.
             if (foundSendingTrx || foundReceivingTrx)
             {
-                // Save the wallet when the transaction was not included in a block. 
+                // Save the wallet when the transaction was not included in a block.
                 if (blockHeight == null)
                 {
                     this.SaveWallets();
