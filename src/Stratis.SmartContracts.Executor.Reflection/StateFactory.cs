@@ -41,8 +41,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 this.network,
                 txOutValue,
                 transactionHash,
-                this.addressGenerator,
-                gasLimit);
+                this.addressGenerator);
         }
     }
 }

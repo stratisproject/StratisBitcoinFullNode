@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         private readonly List<TransferInfo> internalTransfers;
         
-        private State(State state, Gas gasLimit)
+        private State(State state)
         {
             this.ContractState = state.ContractState.StartTracking();
             
@@ -52,7 +52,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.InternalTransactionExecutorFactory = state.InternalTransactionExecutorFactory;
             this.Vm = state.Vm;
             this.Serializer = state.Serializer;
-            this.GasRemaining = gasLimit;
         }
 
         public State(
@@ -64,8 +63,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             Network network,
             ulong txAmount,
             uint256 transactionHash,
-            IAddressGenerator addressGenerator,
-            Gas gasLimit)
+            IAddressGenerator addressGenerator)
         {
             this.ContractState = repository.StartTracking();
             this.LogHolder = new ContractLogHolder(network);
@@ -78,13 +76,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.AddressGenerator = addressGenerator;
             this.InternalTransactionExecutorFactory = internalTransactionExecutorFactory;
             this.Vm = vm;
-            this.GasRemaining = gasLimit;
             this.Serializer = serializer;
         }
 
         public IContractPrimitiveSerializer Serializer { get; }
-
-        public Gas GasRemaining { get; private set; }
 
         public IAddressGenerator AddressGenerator { get; }
 
@@ -129,10 +124,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.AddressGenerator.GenerateAddress(this.TransactionHash, this.GetNonceAndIncrement());
         }
 
-        public void TransitionTo(IState state, StateTransitionResult result)
+        public void TransitionTo(IState state)
         {
-            this.GasRemaining -= result.GasConsumed;
-
             // Update internal transfers
             this.internalTransfers.Clear();
             this.internalTransfers.AddRange(state.InternalTransfers);
@@ -153,9 +146,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         private StateTransitionResult ApplyCreate(object[] parameters, byte[] code, BaseMessage message, string type = null)
         {
-            if (this.GasRemaining < message.GasLimit || this.GasRemaining < GasPriceList.BaseCost)
-                return StateTransitionResult.Fail((Gas) 0, StateTransitionErrorKind.InsufficientGas);
-
             var gasMeter = new GasMeter(message.GasLimit);
 
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
@@ -167,8 +157,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ISmartContractState smartContractState = this.CreateSmartContractState(gasMeter, address, message, this.ContractState);
 
             VmExecutionResult result = this.Vm.Create(this.ContractState, smartContractState, code, parameters, type);
-
-            this.GasRemaining -= gasMeter.GasConsumed;
 
             bool revert = result.ExecutionException != null;
 
@@ -225,9 +213,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         private StateTransitionResult ApplyCall(CallMessage message, byte[] contractCode)
         {
-            if (this.GasRemaining < message.GasLimit || this.GasRemaining < GasPriceList.BaseCost)
-                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientGas);
-
             var gasMeter = new GasMeter(message.GasLimit);
 
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
@@ -242,8 +227,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ISmartContractState smartContractState = this.CreateSmartContractState(gasMeter, message.To, message, this.ContractState);
 
             VmExecutionResult result = this.Vm.ExecuteMethod(smartContractState, message.Method, contractCode, type);
-
-            this.GasRemaining -= gasMeter.GasConsumed;
 
             bool revert = result.ExecutionException != null;
 
@@ -340,9 +323,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.ApplyCall(message, contractCode);
         }
 
-        public IState Snapshot(Gas gasLimit)
+        public IState Snapshot()
         {
-            return new State(this, gasLimit);
+            return new State(this);
         }
 
         /// <summary>

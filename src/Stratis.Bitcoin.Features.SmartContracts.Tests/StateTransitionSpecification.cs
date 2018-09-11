@@ -83,8 +83,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.network,
                 0,
                 transactionHash,
-                this.addressGenerator.Object,
-                gasLimit
+                this.addressGenerator.Object
             );
 
             StateTransitionResult result = state.Apply(externalCreateMessage);
@@ -104,7 +103,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(this.trackedState.Object, state.GetPrivateFieldValue("intermediateState"));
             Assert.Equal(newContractAddress, result.Success.ContractAddress);
             Assert.Equal(vmExecutionResult.Result, result.Success.ExecutionResult);
-            Assert.Equal(gasLimit - result.GasConsumed, state.GasRemaining);
             // In this test we only ever spend the base fee.
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
@@ -152,8 +150,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.network,
                 0,
                 transactionHash,
-                this.addressGenerator.Object,
-                gasLimit
+                this.addressGenerator.Object
             );
 
             // Setup the VM to invoke the state with a nested internal create
@@ -196,7 +193,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(this.trackedState2.Object, state.GetPrivateFieldValue("intermediateState"));
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Success);
-            Assert.Equal(gasLimit - result.GasConsumed, state.GasRemaining);
 
             // Two nested operations
             Assert.Equal(GasPriceList.BaseCost * 2, result.GasConsumed);
@@ -252,8 +248,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 network,
                 0,
                 transactionHash,
-                this.addressGenerator.Object,
-                gasLimit
+                this.addressGenerator.Object
             );
 
             // Setup the VM to invoke the state with a nested internal create
@@ -297,7 +292,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Even though the internal creation failed, the operation was still successful
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Success);
-            Assert.Equal(gasLimit - result.GasConsumed, state.GasRemaining);
 
             // Two nested operations
             Assert.Equal(GasPriceList.BaseCost * 2, result.GasConsumed);
@@ -338,8 +332,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 network,
                 0,
                 transactionHash,
-                this.addressGenerator.Object,
-                gasLimit
+                this.addressGenerator.Object
             );
 
             StateTransitionResult result = state.Apply(externalCreateMessage);
@@ -361,7 +354,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.NotNull(result.Error);
             Assert.Equal(vmExecutionResult.ExecutionException, result.Error.VmException);
             Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
-            Assert.Equal(gasLimit - result.GasConsumed, state.GasRemaining);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
@@ -405,8 +397,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.network,
                 0,
                 transactionHash,
-                this.addressGenerator.Object,
-                gasLimit
+                this.addressGenerator.Object
             );
 
             StateTransitionResult result = state.Apply(externalCallMessage);
@@ -430,7 +421,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(this.trackedState.Object, state.GetPrivateFieldValue("intermediateState"));
             Assert.Equal(externalCallMessage.To, result.Success.ContractAddress);
             Assert.Equal(vmExecutionResult.Result, result.Success.ExecutionResult);
-            Assert.Equal(gasLimit - result.GasConsumed, state.GasRemaining);
             // In this test we only ever spend the base fee.
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
@@ -476,8 +466,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.network,
                 0,
                 transactionHash,
-                this.addressGenerator.Object,
-                gasLimit
+                this.addressGenerator.Object
             );
 
             StateTransitionResult result = state.Apply(externalCallMessage);
@@ -506,7 +495,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(this.contractStateRoot.Object, state.GetPrivateFieldValue("intermediateState"));
             Assert.Equal(result.Error.VmException, vmExecutionResult.ExecutionException);
             Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
-            Assert.Equal(gasLimit - result.GasConsumed, state.GasRemaining);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
     }
