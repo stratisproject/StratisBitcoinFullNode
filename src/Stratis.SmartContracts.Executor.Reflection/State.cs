@@ -139,9 +139,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // Commit the state to update the parent state
             state.ContractState.Commit();
-
-            // Update our reference to the current state repo
-            this.ContractState = state.ContractState;
         }
 
         private StateTransitionResult ApplyCreate(object[] parameters, byte[] code, BaseMessage message, string type = null)
