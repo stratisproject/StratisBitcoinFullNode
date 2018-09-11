@@ -1,5 +1,4 @@
-﻿
-using Stratis.SmartContracts;
+﻿using Stratis.SmartContracts;
 
 public class MemoryLimit : SmartContract
 {
@@ -24,6 +23,7 @@ public class MemoryLimit : SmartContract
 
     public void NotAllowedMultiArray()
     {
+
         var arr = new int[100, 100];
     }
 }
