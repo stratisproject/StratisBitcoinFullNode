@@ -8,7 +8,6 @@ using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
-using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -30,29 +29,29 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </summary>
     public class State : IState
     {
-        /// <summary>
-        /// A snapshot of the world state during a contract execution.
-        /// </summary>
-        private class StateSnapshot
-        {
-            public StateSnapshot(IContractLogHolder logHolder, IReadOnlyList<TransferInfo> internalTransfers, ulong nonce, IContractState contractState)
-            {
-                this.Logs = logHolder.GetRawLogs().ToImmutableList();
-                this.InternalTransfers = internalTransfers.ToImmutableList();
-                this.Nonce = nonce;
-                this.ContractState = contractState;
-            }
-
-            public IContractState ContractState { get; }
-
-            public ImmutableList<RawLog> Logs { get; }
-
-            public ImmutableList<TransferInfo> InternalTransfers { get; }
-
-            public ulong Nonce { get; }
-        }
-
         private readonly List<TransferInfo> internalTransfers;
+        
+        private State(State state, Gas gasLimit)
+        {
+            this.intermediateState = state.intermediateState;
+            
+            // We create a new log holder but use references to the original raw logs
+            this.LogHolder = new ContractLogHolder(state.Network);
+            this.LogHolder.AddRawLogs(state.LogHolder.GetRawLogs());
+
+            // We create a new list but use references to the original transfers.
+            this.internalTransfers = new List<TransferInfo>(state.InternalTransfers);
+            this.BalanceState = state.BalanceState;
+            this.Network = state.Network;
+            this.Nonce = state.Nonce;
+            this.Block = state.Block;
+            this.TransactionHash = state.TransactionHash;
+            this.AddressGenerator = state.AddressGenerator;
+            this.InternalTransactionExecutorFactory = state.InternalTransactionExecutorFactory;
+            this.Vm = state.Vm;
+            this.Serializer = state.Serializer;
+            this.GasRemaining = gasLimit;
+        }
 
         public State(
             IContractPrimitiveSerializer serializer,
@@ -112,6 +111,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.Nonce++;
         }
 
+        public IContractState ContractState => this.intermediateState;
+
         /// <summary>
         /// Returns contract logs in the log type used by consensus.
         /// </summary>
@@ -128,31 +129,22 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.AddressGenerator.GenerateAddress(this.TransactionHash, this.GetNonceAndIncrement());
         }
 
-        /// <summary>
-        /// Reverts the state to a previous snapshot.
-        /// </summary>
-        private void Rollback(StateSnapshot snapshot)
+        public void TransitionTo(IState state, StateTransitionResult result)
         {
-            this.intermediateState = snapshot.ContractState;
+            this.GasRemaining -= result.GasConsumed;
 
-            // Reset the nonce
-            this.Nonce = snapshot.Nonce;
+            this.intermediateState = state.ContractState;
 
-            // Rollback internal transfers
+            // Update internal transfers
             this.internalTransfers.Clear();
-            this.internalTransfers.AddRange(snapshot.InternalTransfers);
-            
-            // Rollback logs
-            this.LogHolder.Clear();
-            this.LogHolder.AddRawLogs(snapshot.Logs);
-        }
+            this.internalTransfers.AddRange(state.InternalTransfers);
 
-        /// <summary>
-        /// Snapshots the existing state.
-        /// </summary>
-        private StateSnapshot TakeSnapshot()
-        {
-            return new StateSnapshot(this.LogHolder, this.InternalTransfers, this.Nonce, this.intermediateState);
+            // Update logs
+            this.LogHolder.Clear();
+            this.LogHolder.AddRawLogs(state.LogHolder.GetRawLogs());
+
+            // Commit the state to update the parent state (which should be this...)
+            state.ContractState.Commit();
         }
 
         private StateTransitionResult ApplyCreate(object[] parameters, byte[] code, BaseMessage message, string type = null)
@@ -160,23 +152,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (this.GasRemaining < message.GasLimit || this.GasRemaining < GasPriceList.BaseCost)
                 return StateTransitionResult.Fail((Gas) 0, StateTransitionErrorKind.InsufficientGas);
 
-            StateSnapshot stateSnapshot = this.TakeSnapshot();
-
             var gasMeter = new GasMeter(message.GasLimit);
 
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
             uint160 address = this.GetNewAddress();
             
-            // Begin tracking the new intermediate state. We need to keep this reference around
-            // for the scope of the transaction, so we can commit it later.
-            IContractState state = this.CreateIntermediateState();
+            this.ContractState.CreateAccount(address);
 
-            state.CreateAccount(address);
+            ISmartContractState smartContractState = this.CreateSmartContractState(gasMeter, address, message, this.ContractState);
 
-            ISmartContractState smartContractState = this.CreateSmartContractState(gasMeter, address, message, state);
-
-            VmExecutionResult result = this.Vm.Create(state, smartContractState, code, parameters, type);
+            VmExecutionResult result = this.Vm.Create(this.ContractState, smartContractState, code, parameters, type);
 
             this.GasRemaining -= gasMeter.GasConsumed;
 
@@ -184,14 +170,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             if (revert)
             {
-                this.Rollback(stateSnapshot);
-
                 return StateTransitionResult.Fail(
                     gasMeter.GasConsumed,
                     result.ExecutionException);
             }
-
-            state.Commit();
 
             return StateTransitionResult.Ok(
                 gasMeter.GasConsumed,
@@ -251,13 +233,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return StateTransitionResult.Fail(gasMeter.GasConsumed, StateTransitionErrorKind.NoMethodName);
             }
 
-            StateSnapshot stateSnapshot = this.TakeSnapshot();
+            string type = this.ContractState.GetContractType(message.To);
 
-            IContractState state = this.CreateIntermediateState();
-
-            string type = state.GetContractType(message.To);
-
-            ISmartContractState smartContractState = this.CreateSmartContractState(gasMeter, message.To, message, state);
+            ISmartContractState smartContractState = this.CreateSmartContractState(gasMeter, message.To, message, this.ContractState);
 
             VmExecutionResult result = this.Vm.ExecuteMethod(smartContractState, message.Method, contractCode, type);
 
@@ -267,15 +245,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             if (revert)
             {
-                this.Rollback(stateSnapshot);
-
                 return StateTransitionResult.Fail(
                     gasMeter.GasConsumed,
                     result.ExecutionException);
             }
-
-            state.Commit();
-            this.GasRemaining -= gasMeter.GasConsumed;            
 
             return StateTransitionResult.Ok(
                 gasMeter.GasConsumed,
@@ -363,14 +336,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.ApplyCall(message, contractCode);
         }
 
-        /// <summary>
-        /// Create a new intermediate <see cref="IContractState"/> based on the previous intermediate state.
-        /// Updates the intermediate state reference to point to the new state.
-        /// </summary>
-        private IContractState CreateIntermediateState()
+        public IState Snapshot(Gas gasLimit)
         {
-            this.intermediateState = this.intermediateState.StartTracking();
-            return this.intermediateState;
+            return new State(this, gasLimit);
         }
 
         /// <summary>
