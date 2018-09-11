@@ -481,8 +481,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// Gets the spendable transactions associated with cold wallet addresses.
         /// </summary>
         /// <param name="walletName">The name of the wallet.</param>
-        /// <param name="confirmations">The number of confirmations.</param>
         /// <param name="isColdWalletAccount">The cold staking account to get the transactions for.</param>
+        /// <param name="confirmations">The number of confirmations.</param>
         /// <returns>An enumeration of <see cref="UnspentOutputReference"/> items.</returns>
         public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInColdWallet(string walletName, bool isColdWalletAccount, int confirmations = 0)
         {
