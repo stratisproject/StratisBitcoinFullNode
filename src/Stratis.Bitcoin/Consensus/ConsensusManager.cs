@@ -143,12 +143,9 @@ namespace Stratis.Bitcoin.Consensus
 
             uint256 consensusTipHash = await this.consensusRules.GetBlockHashAsync().ConfigureAwait(false);
 
-            // If we are on a network with a maximum reorg setting, don't bother searching further back than the limit.
-            int searchHeight = (int)((this.network.Consensus.MaxReorgLength != 0) ? (chainTip.Height - this.network.Consensus.MaxReorgLength) : 0);
-
             while (true)
             {
-                this.Tip = chainTip.FindAncestorOrSelf(consensusTipHash, searchHeight);
+                this.Tip = chainTip.FindAncestorOrSelf(consensusTipHash);
 
                 if (this.Tip?.HashBlock == consensusTipHash)
                     break;
