@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                     IEnumerable<UnspentOutputReference> items1 = this.coldStakingManager.GetSpendableTransactionsInWallet(walletName, 1);
                     IEnumerable<UnspentOutputReference> items2 = this.coldStakingManager.GetSpendableTransactionsInColdWallet(walletName, false, 1);
                     IEnumerable<UnspentOutputReference> items3 = this.coldStakingManager.GetSpendableTransactionsInColdWallet(walletName, true, 1);
-                    benchLog.AppendLine("Wallet     : " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items1.Sum(s => s.Transaction.Amount)).ToString() + " Cold stake balance: " + new Money(items2.Sum(s => s.Transaction.Amount)).ToString() + " Withdrawable cold staking balance: " + new Money(items3.Sum(s => s.Transaction.Amount)).ToString());
+                    benchLog.AppendLine("Wallet     : " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items1.Sum(s => s.Transaction.Amount)).ToString() + " Cold stake hot balance: " + new Money(items2.Sum(s => s.Transaction.Amount)).ToString() + " Cold stake cold balance: " + new Money(items3.Sum(s => s.Transaction.Amount)).ToString());
                 }
             }
         }
