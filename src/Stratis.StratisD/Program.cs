@@ -41,7 +41,7 @@ namespace Stratis.StratisD
             }
             catch (Exception ex)
             {
-                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message.ToString());
+                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.ToString());
             }
         }
     }
