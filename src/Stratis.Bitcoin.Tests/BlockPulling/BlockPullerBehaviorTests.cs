@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Moq;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -60,6 +62,32 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             this.behavior.RecalculateQualityScore(100 * 2);
 
             Assert.True(this.DoubleEqual(0.5, this.behavior.QualityScore));
+        }
+
+        [Fact]
+        public void SpeedCalculatedCorrectlyWhenSeveralBehaviorsStall()
+        {
+            var behaviors = new List<BlockPullerBehavior>();
+
+            for (int i = 0; i < 125; i++)
+            {
+                var puller = new Mock<IBlockPuller>();
+
+                var ibdState = new Mock<IInitialBlockDownloadState>();
+                ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
+
+                var loggerFactory = new ExtendedLoggerFactory();
+                loggerFactory.AddConsoleWithFilters();
+
+                behaviors.Add(new BlockPullerBehavior(puller.Object, ibdState.Object, DateTimeProvider.Default, loggerFactory));
+            }
+
+            foreach (BlockPullerBehavior behavior in behaviors)
+                behavior.AddSample(0, 30);
+
+            long sum = behaviors.Sum(x => x.SpeedBytesPerSecond);
+
+            Assert.Equal(0, sum);
         }
 
         private bool DoubleEqual(double a, double b)
