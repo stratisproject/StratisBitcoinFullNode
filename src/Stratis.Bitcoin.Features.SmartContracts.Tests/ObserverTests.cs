@@ -283,27 +283,42 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Test_MemoryLimitRewriter()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(TestSource);
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/MemoryLimit.cs");
             Assert.True(compilationResult.Success);
 
             byte[] originalAssemblyBytes = compilationResult.Compilation;
-
-            var callData = new MethodCall(nameof(Recursion.DoRecursion));
 
             IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
 
             module.Rewrite(this.observerRewriter);
             module.Rewrite(this.memoryLimitRewriter);
 
-
             CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
+            // Small array passes
+            var callData = new MethodCall(nameof(MemoryLimit.AllowedArray));
             IContractInvocationResult result = contract.Invoke(callData);
-
             Assert.True(result.IsSuccess);
             Assert.True(this.gasMeter.GasConsumed > 0);
+
+            // Big array fails
+            var callData2 = new MethodCall(nameof(MemoryLimit.NotAllowedArray));
+            result = contract.Invoke(callData2);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ContractInvocationErrorType.MethodThrewException, result.InvocationErrorType);
+
+            // Small multi-dimensional array passes
+            var callData3 = new MethodCall(nameof(MemoryLimit.AllowedMultiArray));
+            result = contract.Invoke(callData3);
+            Assert.True(result.IsSuccess);
+
+            // Big multi-dimensional array fails
+            var callData4 = new MethodCall(nameof(MemoryLimit.NotAllowedMultiArray));
+            result = contract.Invoke(callData4);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ContractInvocationErrorType.MethodThrewException, result.InvocationErrorType);
         }
 
 

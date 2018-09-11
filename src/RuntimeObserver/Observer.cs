@@ -1,4 +1,5 @@
-﻿using Stratis.SmartContracts;
+﻿using System;
+using Stratis.SmartContracts;
 
 namespace RuntimeObserver
 {
@@ -21,13 +22,13 @@ namespace RuntimeObserver
         /// 
         /// So 'memory units' are spent when allocating arrays or performing string concatenations.
         /// </summary>
-        private readonly ulong memoryLimit;
+        private readonly long memoryLimit;
 
         public IGasMeter GasMeter { get; }
 
-        public ulong MemoryConsumed { get; private set; }
+        public long MemoryConsumed { get; private set; }
 
-        public Observer(IGasMeter gasMeter, ulong memoryLimit)
+        public Observer(IGasMeter gasMeter, long memoryLimit)
         {
             this.GasMeter = gasMeter;
             this.memoryLimit = memoryLimit;
@@ -36,7 +37,7 @@ namespace RuntimeObserver
         /// <summary>
         /// Forwards the spending of gas to the GasMeter reference.
         /// </summary>
-        public void SpendGas(ulong gas)
+        public void SpendGas(long gas)
         {
             this.GasMeter.Spend((Gas) gas);
         }
@@ -44,7 +45,7 @@ namespace RuntimeObserver
         /// <summary>
         /// Register that some amount of memory has been reserved. If it goes over the allowed limit, throw an exception.
         /// </summary>
-        public void SpendMemory(ulong memory)
+        public void SpendMemory(long memory)
         {
             this.MemoryConsumed += memory;
 
@@ -52,5 +53,16 @@ namespace RuntimeObserver
                 throw new MemoryConsumptionException($"Smart contract has allocated too much memory. Spent more than {this.memoryLimit} memory units when allocating strings or arrays.");
         }
 
+        /// <summary>
+        /// Allows parameters to come in and be silently checked, and then returned onto the stack.
+        /// </summary>
+        public static class FlowThrough
+        {
+            public static IntPtr SpendMemoryIntPtr(IntPtr count, Observer observer)
+            {
+                observer.SpendMemory(count.ToInt64());
+                return count;
+            }
+        }
     }
 }
