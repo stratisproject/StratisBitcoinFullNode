@@ -110,7 +110,6 @@ namespace Stratis.Bitcoin.Base
 
         private readonly IConsensusManager consensusManager;
         private readonly IConsensusRuleEngine consensusRules;
-        private readonly IPartialValidator partialValidator;
         private readonly IBlockPuller blockPuller;
         private readonly IBlockStore blockStore;
 
@@ -151,7 +150,6 @@ namespace Stratis.Bitcoin.Base
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
             this.consensusManager = consensusManager;
             this.consensusRules = consensusRules;
-            this.partialValidator = partialValidator;
             this.blockPuller = blockPuller;
             this.blockStore = blockStore;
             this.network = network;
@@ -278,11 +276,8 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogInformation("Flushing peers...");
             this.flushAddressManagerLoop.Dispose();
 
-            this.logger.LogInformation("peerAddressManager...");
+            this.logger.LogInformation("Disposing peer address manager...");
             this.peerAddressManager.Dispose();
-
-            this.logger.LogInformation("partialValidator...");
-            this.partialValidator.Dispose();
 
             if (this.flushChainLoop != null)
             {
@@ -290,7 +285,7 @@ namespace Stratis.Bitcoin.Base
                 this.flushChainLoop.Dispose();
             }
 
-            this.logger.LogInformation("Saving chainRepository...");
+            this.logger.LogInformation("Saving chain repository...");
             this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
 
             foreach (IDisposable disposable in this.disposableResources)
@@ -299,16 +294,16 @@ namespace Stratis.Bitcoin.Base
                 disposable.Dispose();
             }
 
-            this.logger.LogInformation("blockPuller...");
+            this.logger.LogInformation("Disposing block puller...");
             this.blockPuller.Dispose();
 
-            this.logger.LogInformation("consensusManager...");
+            this.logger.LogInformation("Disposing consensus manager...");
             this.consensusManager.Dispose();
 
-            this.logger.LogInformation("consensusRules...");
+            this.logger.LogInformation("Disposing consensus rules...");
             this.consensusRules.Dispose();
 
-            this.logger.LogInformation("blockStore...");
+            this.logger.LogInformation("Disposing block store...");
             this.blockStore.Dispose();
         }
     }

@@ -70,7 +70,6 @@ namespace Stratis.Bitcoin.Builder
             {
                 this.Execute(feature =>
                 {
-                    this.logger.LogInformation($"{feature.GetType().Name}...");
                     feature.Dispose();
                 }, true);
             }

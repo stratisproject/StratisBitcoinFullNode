@@ -264,7 +264,7 @@ namespace Stratis.Bitcoin
             // Fire INodeLifetime.Stopping.
             this.nodeLifetime.StopApplication();
 
-            this.logger.LogInformation("ConnectionManager...");
+            this.logger.LogInformation("Disposing connection manager...");
             this.ConnectionManager.Dispose();
 
             foreach (IDisposable disposable in this.Resources)
@@ -274,14 +274,14 @@ namespace Stratis.Bitcoin
             }
 
             // Fire the NodeFeatureExecutor.Stop.
-            this.logger.LogInformation("fullNodeFeatureExecutor...");
+            this.logger.LogInformation("Disposing the full node feature executor...");
             this.fullNodeFeatureExecutor.Dispose();
 
-            this.logger.LogInformation("Settings...");
+            this.logger.LogInformation("Disposing settings...");
             this.Settings.Dispose();
 
             // Fire INodeLifetime.Stopped.
-            this.logger.LogInformation("Signals ApplicationStopped...");
+            this.logger.LogInformation("Notify application has stopped...");
             this.nodeLifetime.NotifyStopped();
 
             this.State = FullNodeState.Disposed;
