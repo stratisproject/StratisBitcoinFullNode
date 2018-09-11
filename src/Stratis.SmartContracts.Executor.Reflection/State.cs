@@ -58,14 +58,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IContractPrimitiveSerializer serializer,
             IInternalTransactionExecutorFactory internalTransactionExecutorFactory,
             ISmartContractVirtualMachine vm,
-            IContractStateRoot repository,
+            IContractState repository,
             IBlock block,
             Network network,
             ulong txAmount,
             uint256 transactionHash,
             IAddressGenerator addressGenerator)
         {
-            this.ContractState = repository.StartTracking();
+            this.ContractState = repository;
             this.LogHolder = new ContractLogHolder(network);
             this.internalTransfers = new List<TransferInfo>();
             this.BalanceState = new BalanceState(this.ContractState, txAmount, this.InternalTransfers);

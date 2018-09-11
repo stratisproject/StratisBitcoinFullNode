@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var vmExecutionResult = VmExecutionResult.Success(null, null);
 
-            var contractStateRoot = new Mock<IContractStateRoot>();
+            var contractStateRoot = new Mock<IContractState>();
             var transferProcessor = new Mock<ISmartContractResultTransferProcessor>();
 
             (Money refund, TxOut) refundResult = (refund, null);
@@ -61,6 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalTransfers = new List<TransferInfo>().AsReadOnly();
             var stateMock = new Mock<IState>();
+            stateMock.Setup(s => s.ContractState).Returns(contractStateRoot.Object);
             stateMock.Setup(s => s.Apply(It.IsAny<ExternalCreateMessage>()))                
                 .Returns(stateTransitionResult);
             stateMock.SetupGet(p => p.InternalTransfers).Returns(internalTransfers);

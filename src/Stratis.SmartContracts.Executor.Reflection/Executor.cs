@@ -14,7 +14,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class Executor : ISmartContractExecutor
     {
         private readonly ILogger logger;
-        private readonly IContractStateRoot stateRoot;
+        private readonly IContractState stateRoot;
         private readonly ISmartContractResultRefundProcessor refundProcessor;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
         private readonly ICallDataSerializer serializer;
@@ -23,7 +23,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public Executor(ILoggerFactory loggerFactory,
             ICallDataSerializer serializer,
-            IContractStateRoot stateRoot,
+            IContractState stateRoot,
             ISmartContractResultRefundProcessor refundProcessor,
             ISmartContractResultTransferProcessor transferProcessor,
             Network network,
