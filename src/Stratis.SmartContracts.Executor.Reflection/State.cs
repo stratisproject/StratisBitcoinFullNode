@@ -41,7 +41,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // We create a new list but use references to the original transfers.
             this.internalTransfers = new List<TransferInfo>(state.InternalTransfers);
-            this.BalanceState = state.BalanceState;
+
+            // Create a new balance state based off the old one but with the repository and internal transfers list reference
+            this.BalanceState = new BalanceState(this.ContractState, state.BalanceState.TxAmount, this.internalTransfers);
             this.Network = state.Network;
             this.Nonce = state.Nonce;
             this.Block = state.Block;
