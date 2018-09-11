@@ -73,6 +73,9 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <remarks><c>1</c> is 100%, <c>0</c> is 0%.</remarks>
         internal const double MaxSamplesPercentageToPenalize = 0.1;
 
+        /// <summary>Limitation on the peer speed estimation.</summary>
+        private const int MaxSpeedBytesPerSecond = 1024 * 1024 * 1024;
+
         /// <inheritdoc />
         public double QualityScore { get; private set; }
 
@@ -141,11 +144,12 @@ namespace Stratis.Bitcoin.BlockPulling
             this.averageSizeBytes.AddSample(blockSizeBytes);
             this.averageDelaySeconds.AddSample(adjustedDelay);
 
-            // Don't calculate speed in case peer stalled several times in a row and there are no good samples.
-            if (this.averageSizeBytes.Average > 0.01)
-                this.SpeedBytesPerSecond = (long)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
-            else
-                this.SpeedBytesPerSecond = 0;
+            long speedPerSeconds = (long)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
+
+            if (speedPerSeconds > MaxSpeedBytesPerSecond)
+                speedPerSeconds = MaxSpeedBytesPerSecond;
+
+            this.SpeedBytesPerSecond = speedPerSeconds;
 
             this.logger.LogTrace("(-):{0}={1}", nameof(this.SpeedBytesPerSecond), this.SpeedBytesPerSecond);
         }
