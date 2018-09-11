@@ -68,6 +68,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                     i += 2;
                 }
 
+                if (instruction.OpCode.Code == Code.Newobj)
+                {
+
+                }
+
             }
 
         }
