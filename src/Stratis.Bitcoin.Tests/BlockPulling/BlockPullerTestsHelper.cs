@@ -155,9 +155,9 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             this.puller.InvokeMethod("RecalculateQualityScoreLocked", pullerBehavior, peerId);
         }
 
-        public int GetTotalSpeedOfAllPeersBytesPerSec()
+        public long GetTotalSpeedOfAllPeersBytesPerSec()
         {
-            return (int)this.puller.InvokeMethod("GetTotalSpeedOfAllPeersBytesPerSec");
+            return (long)this.puller.InvokeMethod("GetTotalSpeedOfAllPeersBytesPerSec");
         }
 
         public Task AssignDownloadJobsAsync()
