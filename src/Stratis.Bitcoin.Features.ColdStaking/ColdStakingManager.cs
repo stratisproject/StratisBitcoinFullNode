@@ -406,6 +406,22 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 throw new WalletException("The cold wallet account does not exist.");
             }
 
+            // The receivingAddress can't be a cold staking account.
+            bool isColdStakingAddress = coldAccount.ExternalAddresses.Concat(coldAccount.InternalAddresses).Select(a => a.Address.ToString()).Contains(receivingAddress);
+            if (!isColdStakingAddress)
+            {
+                HdAccount hotAccount = this.GetColdStakingAccount(wallet, false);
+                if (hotAccount != null)
+                    isColdStakingAddress = hotAccount.ExternalAddresses.Concat(hotAccount.InternalAddresses).Select(a => a.Address.ToString()).Contains(receivingAddress);
+            }
+
+            if (isColdStakingAddress)
+            {
+                this.logger.LogTrace("(-)[COLDSTAKE_INVALID_RECEIVING_ADDRESS]");
+                throw new WalletException("You can't send the money to a cold staking account.");
+            }
+
+            // Send the money to the receiving address.
             Script destination = BitcoinAddress.Create(receivingAddress, wallet.Network).ScriptPubKey.PaymentScript;
 
             // Take the largest unspent outputs from the specified cold staking or setup transaction.
