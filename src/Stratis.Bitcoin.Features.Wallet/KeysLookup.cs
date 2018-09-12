@@ -5,11 +5,12 @@ using NBitcoin;
 namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
-    /// This class encapsulates the keysLookup dictionary for use in the <see cref="WalletManager"/>.
+    /// This class encapsulates the <see cref="keysLookup"/> dictionary for use in the <see cref="WalletManager"/>.
     /// The methods are virtual so that the functionality can be overridden as required.
     /// </summary>
     public class KeysLookup
     {
+        /// <summary>A collection of <see cref="HdAddress"/> objects eached keyed by a <see cref="Script"/> object.</summary>
         protected Dictionary<Script, HdAddress> keysLookup;
 
         /// <summary>
