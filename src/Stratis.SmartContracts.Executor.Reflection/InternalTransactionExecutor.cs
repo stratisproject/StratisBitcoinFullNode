@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             object[] parameters,
             ulong gasLimit = 0)
         {
-            var gasRemaining = smartContractState.GasMeter.GasAvailable;
+            Gas gasRemaining = smartContractState.GasMeter.GasAvailable;
 
             // For a method call, send all the gas unless an amount was selected.Should only call trusted methods so re - entrance is less problematic.
             ulong gasBudget = (gasLimit != 0) ? gasLimit : gasRemaining;
@@ -45,10 +45,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             );
 
             // Create a snapshot of the current state
-            var newState = this.state.Snapshot();
+            IState newState = this.state.Snapshot();
 
             // Apply the message to the snapshot
-            var result = newState.Apply(message);
+            StateTransitionResult result = newState.Apply(message);
 
             // Transition the current state to the new state
             if (result.IsSuccess)
@@ -70,7 +70,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             object[] parameters,
             ulong gasLimit = 0)
         {
-            var gasRemaining = smartContractState.GasMeter.GasAvailable;
+            Gas gasRemaining = smartContractState.GasMeter.GasAvailable;
 
             // For a method call, send all the gas unless an amount was selected.Should only call trusted methods so re - entrance is less problematic.
             ulong gasBudget = (gasLimit != 0) ? gasLimit : gasRemaining;
@@ -87,10 +87,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             );
 
             // Create a snapshot of the current state
-            var newState = this.state.Snapshot();
+            IState newState = this.state.Snapshot();
 
             // Apply the message to the snapshot
-            var result = newState.Apply(message);
+            StateTransitionResult result = newState.Apply(message);
 
             // Transition the current state to the new state
             if (result.IsSuccess)
@@ -110,7 +110,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             ulong gasBudget = DefaultGasLimit; // for Transfer always send limited gas to prevent re-entrance.
 
-            var gasRemaining = smartContractState.GasMeter.GasAvailable;
+            Gas gasRemaining = smartContractState.GasMeter.GasAvailable;
 
             if (gasRemaining < gasBudget || gasRemaining < GasPriceList.BaseCost)
                 return TransferResult.Failed();
@@ -123,10 +123,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             );
 
             // Create a snapshot of the current state
-            var newState = this.state.Snapshot();
+            IState newState = this.state.Snapshot();
 
             // Apply the message to the snapshot
-            var result = newState.Apply(message);
+            StateTransitionResult result = newState.Apply(message);
 
             // Transition the current state to the new state
             if (result.IsSuccess)
