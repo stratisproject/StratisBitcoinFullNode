@@ -156,7 +156,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
                 var connectionSettings = new ConnectionManagerSettings(nodeSettings);
                 var selfEndpointTracker = new SelfEndpointTracker(loggerFactory);
-                var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory, nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { }, peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider());
+                var connectionManager = new ConnectionManager(dateTimeProvider, loggerFactory, this.network, networkPeerFactory,
+                    nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { },
+                    peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider(), new Mock<INodeStats>().Object);
 
                 var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
                 var deployments = new NodeDeployments(this.network, this.chain);
@@ -172,9 +174,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                     new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider)).Register();
 
                 this.consensus = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(this.ConsensusRules, loggerFactory),
-                    new IntegrityValidator(this.ConsensusRules, loggerFactory), new PartialValidator(this.ConsensusRules, loggerFactory), new Checkpoints(),
+                    new IntegrityValidator(this.ConsensusRules, loggerFactory), new PartialValidator(this.ConsensusRules, loggerFactory), new FullValidator(this.ConsensusRules, loggerFactory), new Checkpoints(),
                     consensusSettings, this.ConsensusRules, new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning,
-                    new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, null, new InvalidBlockHashStore(dateTimeProvider), new Mock<ConnectionManager>().Object);
+                    new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, null, new InvalidBlockHashStore(dateTimeProvider), new Mock<IConnectionManager>().Object);
 
                 await this.consensus.InitializeAsync(chainState.BlockStoreTip);
 

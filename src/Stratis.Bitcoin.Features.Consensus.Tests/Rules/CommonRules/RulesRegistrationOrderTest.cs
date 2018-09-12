@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             partialValidationRules.Count.Should().Be(13);
 
             partialValidationRules[0].Should().BeOfType<SetActivationDeploymentsPartialValidationRule>();
-            partialValidationRules[1].Should().BeOfType<CheckDifficultykHybridRule>();
+            partialValidationRules[1].Should().BeOfType<CheckDifficultyHybridRule>();
             partialValidationRules[2].Should().BeOfType<PosTimeMaskRule>();
             partialValidationRules[3].Should().BeOfType<TransactionLocktimeActivationRule>();
             partialValidationRules[4].Should().BeOfType<CoinbaseHeightActivationRule>();
@@ -95,13 +95,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             List<IFullValidationConsensusRule> fullValidationRules = network.Consensus.FullValidationRules;
 
-            fullValidationRules.Count.Should().Be(5);
+            fullValidationRules.Count.Should().Be(6);
 
             fullValidationRules[0].Should().BeOfType<SetActivationDeploymentsFullValidationRule>();
             fullValidationRules[1].Should().BeOfType<LoadCoinviewRule>();
             fullValidationRules[2].Should().BeOfType<TransactionDuplicationActivationRule>();
             fullValidationRules[3].Should().BeOfType<PosCoinviewRule>();
-            fullValidationRules[4].Should().BeOfType<SaveCoinviewRule>();
+            fullValidationRules[4].Should().BeOfType<PosColdStakingRule>();
+            fullValidationRules[5].Should().BeOfType<SaveCoinviewRule>();
         }
     }
 }

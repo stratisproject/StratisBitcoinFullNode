@@ -94,7 +94,8 @@ namespace Stratis.Bitcoin.Connection
             IPeerDiscovery peerDiscovery,
             ISelfEndpointTracker selfEndpointTracker,
             ConnectionManagerSettings connectionSettings,
-            IVersionProvider versionProvider)
+            IVersionProvider versionProvider,
+            INodeStats nodeStats)
         {
             this.connectedPeers = new NetworkPeerCollection();
             this.dateTimeProvider = dateTimeProvider;
@@ -119,6 +120,8 @@ namespace Stratis.Bitcoin.Connection
             this.Parameters.UserAgent = $"{this.ConnectionSettings.Agent}:{versionProvider.GetVersion()}";
 
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
+
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
 
         /// <inheritdoc />
@@ -228,9 +231,10 @@ namespace Stratis.Bitcoin.Connection
             this.logger.LogTrace("(-)");
         }
 
-        public string GetNodeStats()
+        private void AddComponentStats(StringBuilder builder)
         {
-            var builder = new StringBuilder();
+            builder.AppendLine();
+            builder.AppendLine($"======Connection====== agent {this.Parameters.UserAgent}");
 
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
@@ -240,11 +244,10 @@ namespace Stratis.Bitcoin.Connection
                 builder.AppendLine(
                     "Peer:" + (peer.RemoteSocketEndpoint + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
                     (" connected:" + (peer.Inbound ? "inbound" : "outbound") + ",").PadRight(LoggingConfiguration.ColumnLength + 7) +
-                    (" height:" + (chainHeadersBehavior.ExpectedPeerTip != null ? chainHeadersBehavior.ExpectedPeerTip.Height.ToString() : peer.PeerVersion?.StartHeight.ToString() ?? "unknown") + ",").PadRight(LoggingConfiguration.ColumnLength + 2) +
+                    (" height:" + (chainHeadersBehavior.ExpectedPeerTip != null ? chainHeadersBehavior.ExpectedPeerTip.Height.ToString() :
+                         peer.PeerVersion?.StartHeight.ToString() ?? "unknown") + ",").PadRight(LoggingConfiguration.ColumnLength + 2) +
                     " agent:" + agent);
             }
-
-            return builder.ToString();
         }
 
         private string ToKBSec(ulong bytesPerSec)

@@ -23,19 +23,30 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <remarks>It's a value from <see cref="BlockPullerBehavior.MinQualityScore"/> to <see cref="BlockPullerBehavior.MaxQualityScore"/>.</remarks>
         double QualityScore { get; }
 
-        /// <summary>How many blocks peer can deliver in one second.</summary>
-        double BlockDeliveryRate { get; }
+        /// <summary>Upload speed of a peer in bytes per second.</summary>
+        int SpeedBytesPerSecond { get; }
 
         /// <summary>Tip claimed by peer.</summary>
         ChainedHeader Tip { get; set; }
 
-        /// <summary>Adds peer performance sample that is used to estimate peer's qualities.</summary>
-        /// <param name="delaySeconds">Time in seconds it took peer to deliver a block.</param>
-        void AddSample(double delaySeconds);
+        /// <summary>
+        /// Adds peer performance sample that is used to estimate peer's qualities.
+        /// </summary>
+        /// <param name="blockSizeBytes">Block size in bytes.</param>
+        /// <param name="delaySinceRequestedSeconds">Time in seconds it took peer to deliver a block since it was requested.</param>
+        void AddSample(long blockSizeBytes, double delaySinceRequestedSeconds);
+
+        /// <summary>Applies a penalty to a peer for not delivering a block.</summary>
+        /// <param name="delaySeconds">Time in which peer didn't deliver assigned blocks.</param>
+        /// <param name="notDeliveredBlocksCount">Number of blocks peer failed to deliver.</param>
+        void Penalize(double delaySeconds, int notDeliveredBlocksCount);
+
+        /// <summary>Called when IBD state changed.</summary>
+        void OnIbdStateChanged(bool isIbd);
 
         /// <summary>Recalculates the quality score for this peer.</summary>
-        /// <param name="bestBlockDeliveryRate">Highest <see cref="BlockDeliveryRate"/> between all peers.</param>
-        void RecalculateQualityScore(double bestBlockDeliveryRate);
+        /// <param name="bestSpeedBytesPerSecond">Speed in bytes per second that is considered to be the maximum speed.</param>
+        void RecalculateQualityScore(int bestSpeedBytesPerSecond);
 
         /// <summary>Requests blocks from this peer.</summary>
         /// <param name="hashes">Hashes of blocks that should be asked to be delivered.</param>
@@ -52,26 +63,33 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Default quality score used when there are no samples to calculate the quality score.</summary>
         public const double SamplelessQualityScore = 0.3;
 
-        /// <summary>Maximum number of samples that can be used for quality score calculation.</summary>
-        internal const int SamplesCount = 100;
+        /// <summary>Maximum number of samples that can be used for quality score calculation when node is in IBD.</summary>
+        internal const int IbdSamplesCount = 200;
 
-        /// <summary>By how much times <see cref="BlockDeliveryRate"/> can increase per recalculation.</summary>
-        private const double MaxBlockDeliveryRateIncrease = 2;
+        /// <summary>Maximum number of samples that can be used for quality score calculation when node is not in IBD.</summary>
+        internal const int NormalSamplesCount = 10;
 
-        /// <summary>By how much times <see cref="BlockDeliveryRate"/> can decrease per recalculation.</summary>
-        private const double MaxBlockDeliveryRateDecrease = 0.5;
+        /// <summary>The maximum percentage of samples that can be used when peer is being penalized for not delivering blocks.</summary>
+        /// <remarks><c>1</c> is 100%, <c>0</c> is 0%.</remarks>
+        internal const double MaxSamplesPercentageToPenalize = 0.1;
 
         /// <inheritdoc />
         public double QualityScore { get; private set; }
 
         /// <inheritdoc />
-        public double BlockDeliveryRate { get; private set; }
+        public int SpeedBytesPerSecond { get; private set; }
 
         /// <inheritdoc />
         public ChainedHeader Tip { get; set; }
 
+        /// <summary>The average size in bytes of blocks delivered by that peer.</summary>
+        internal readonly AverageCalculator averageSizeBytes;
+
         /// <summary>The average delay in seconds between asking this peer for a block and it being downloaded.</summary>
         internal readonly AverageCalculator averageDelaySeconds;
+
+        /// <summary>Time when the last block was delivered.</summary>
+        private DateTime? lastDeliveryTime;
 
         /// <inheritdoc cref="ILoggerFactory"/>
         private readonly ILoggerFactory loggerFactory;
@@ -85,13 +103,20 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc cref="IInitialBlockDownloadState"/>
         private readonly IInitialBlockDownloadState ibdState;
 
-        public BlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, ILoggerFactory loggerFactory)
+        /// <inheritdoc cref="IDateTimeProvider"/>
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        public BlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             this.ibdState = ibdState;
+            this.dateTimeProvider = dateTimeProvider;
             this.QualityScore = SamplelessQualityScore;
 
-            this.averageDelaySeconds = new AverageCalculator(SamplesCount);
-            this.BlockDeliveryRate = 1.0;
+            int samplesCount = ibdState.IsInitialBlockDownload() ? IbdSamplesCount : NormalSamplesCount;
+            this.averageSizeBytes = new AverageCalculator(samplesCount);
+            this.averageDelaySeconds = new AverageCalculator(samplesCount);
+            this.SpeedBytesPerSecond = 0;
+            this.lastDeliveryTime = null;
 
             this.blockPuller = blockPuller;
 
@@ -100,31 +125,67 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc/>
-        public void AddSample(double delaySeconds)
+        public void AddSample(long blockSizeBytes, double delaySinceRequestedSeconds)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(delaySeconds), delaySeconds);
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(blockSizeBytes), blockSizeBytes, nameof(delaySinceRequestedSeconds), delaySinceRequestedSeconds);
 
-            this.averageDelaySeconds.AddSample(delaySeconds);
+            double adjustedDelay = delaySinceRequestedSeconds;
 
-            double multiplyer = 1.0 / this.averageDelaySeconds.Average;
+            if (this.lastDeliveryTime != null)
+            {
+                double deliveryDiff = (this.dateTimeProvider.GetUtcNow() - this.lastDeliveryTime).Value.TotalSeconds;
 
-            if (multiplyer > MaxBlockDeliveryRateIncrease)
-                multiplyer = MaxBlockDeliveryRateIncrease;
+                adjustedDelay = Math.Min(delaySinceRequestedSeconds, deliveryDiff);
+            }
 
-            if (multiplyer < MaxBlockDeliveryRateDecrease)
-                multiplyer = MaxBlockDeliveryRateDecrease;
+            this.averageSizeBytes.AddSample(blockSizeBytes);
+            this.averageDelaySeconds.AddSample(adjustedDelay);
 
-            this.BlockDeliveryRate *= multiplyer;
+            this.SpeedBytesPerSecond = (int)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
+
+            this.logger.LogTrace("(-):{0}={1}", nameof(this.SpeedBytesPerSecond), this.SpeedBytesPerSecond);
+        }
+
+        /// <inheritdoc/>
+        public void Penalize(double delaySeconds, int notDeliveredBlocksCount)
+        {
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(delaySeconds), delaySeconds, nameof(notDeliveredBlocksCount), notDeliveredBlocksCount);
+
+            int maxSamplesToPenalize = (int)(this.averageDelaySeconds.GetMaxSamples() * MaxSamplesPercentageToPenalize);
+            int penalizeTimes = notDeliveredBlocksCount < maxSamplesToPenalize ? notDeliveredBlocksCount : maxSamplesToPenalize;
+            if (penalizeTimes < 1)
+                penalizeTimes = 1;
+
+            this.logger.LogDebug("Peer will be penalized {0} times.", penalizeTimes);
+
+            for (int i = 0; i < penalizeTimes; i++)
+                this.AddSample(0, delaySeconds);
 
             this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
-        public void RecalculateQualityScore(double bestBlockDeliveryRate)
+        public void OnIbdStateChanged(bool isIbd)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(bestBlockDeliveryRate), bestBlockDeliveryRate);
+            this.logger.LogTrace("({0}:{1})", nameof(isIbd), isIbd);
 
-            this.QualityScore = this.BlockDeliveryRate / bestBlockDeliveryRate;
+            // Recalculates the max samples count that can be used for quality score calculation.
+            int samplesCount = isIbd ? IbdSamplesCount : NormalSamplesCount;
+            this.averageSizeBytes.SetMaxSamples(samplesCount);
+            this.averageDelaySeconds.SetMaxSamples(samplesCount);
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc/>
+        public void RecalculateQualityScore(int bestSpeedBytesPerSecond)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(bestSpeedBytesPerSecond), bestSpeedBytesPerSecond);
+
+            if (bestSpeedBytesPerSecond == 0)
+                this.QualityScore = MaxQualityScore;
+            else
+                this.QualityScore = (double)this.SpeedBytesPerSecond / bestSpeedBytesPerSecond;
 
             if (this.QualityScore < MinQualityScore)
                 this.QualityScore = MinQualityScore;
@@ -145,7 +206,9 @@ namespace Stratis.Bitcoin.BlockPulling
                 uint256 blockHash = block.Obj.GetHash();
 
                 this.logger.LogTrace("Block '{0}' delivered.", blockHash);
+
                 this.blockPuller.PushBlock(blockHash, block.Obj, peer.Connection.Id);
+                this.lastDeliveryTime = this.dateTimeProvider.GetUtcNow();
             }
 
             this.logger.LogTrace("(-)");
@@ -189,7 +252,7 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc />
         public override object Clone()
         {
-            return new BlockPullerBehavior(this.blockPuller, this.ibdState, this.loggerFactory);
+            return new BlockPullerBehavior(this.blockPuller, this.ibdState, this.dateTimeProvider, this.loggerFactory);
         }
 
         /// <inheritdoc />

@@ -36,10 +36,5 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             this.callback(builder);
             this.FullNode = (FullNode)builder.Build();
         }
-
-        public override void OnStart()
-        {
-            this.FullNode.Start();
-        }
     }
 }

@@ -7,6 +7,7 @@ using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Message = Stratis.SmartContracts.Core.Message;
 
 namespace Stratis.SmartContracts.Tools.Sct
 {
@@ -124,6 +125,8 @@ namespace Stratis.SmartContracts.Tools.Sct
         public Func<ulong> GetBalance => null;
 
         public IContractLogger ContractLogger => null;
+
+        public ISerializer Serializer => null;
     }
 
     public sealed class ValidatorPersistentState : IPersistentState

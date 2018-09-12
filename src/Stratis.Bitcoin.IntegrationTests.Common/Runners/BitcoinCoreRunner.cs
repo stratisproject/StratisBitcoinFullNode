@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             }
         }
 
-        public override void Kill()
+        public override void Stop()
         {
             TimeSpan duration = TimeSpan.FromSeconds(30);
             TestHelper.WaitLoop(() =>
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 failureReason: $"Failed to kill {this.GetType()} process number:{this.process.Id} within {duration} seconds");
         }
 
-        public override void OnStart()
+        public override void Start()
         {
             string logMode = Debugger.IsAttached ? "-debug=net" : string.Empty;
             TimeSpan duration = TimeSpan.FromSeconds(15);

@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.chainState = new ChainState();
 
             this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(),
-                this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory());
+                this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
         }
 
         private ConcurrentChain CreateChain(int blocksCount)
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.repositoryTipHashAndHeight = new HashHeightPair(longChain.Genesis.HashBlock, 0);
 
             this.blockStoreQueue = new BlockStoreQueue(longChain, this.chainState, new StoreSettings(),
-                this.nodeLifetime,  this.blockRepositoryMock.Object, new LoggerFactory());
+                this.nodeLifetime,  this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.chainState.ConsensusTip = longChain.Tip;
@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
 
             this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(),
-                this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory());
+                this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.chainState.ConsensusTip = this.chain.Tip;
@@ -365,7 +365,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
 
             // Make sure chain is saved.
-            Assert.Equal(2, this.repositorySavesCount);
             Assert.Equal(this.chain.Tip.Height + alternativeBlocks.Count, this.repositoryTotalBlocksSaved);
             Assert.Equal(alternativeBlocks.Count, this.repositoryTotalBlocksDeleted);
 

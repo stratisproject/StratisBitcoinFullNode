@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>Calculate the difficulty of a POS network for both Pow/POS blocks.</summary>
-    public class CheckDifficultykHybridRule : PartialValidationConsensusRule
+    public class CheckDifficultyHybridRule : PartialValidationConsensusRule
     {
         /// <summary>Allow access to the POS parent.</summary>
         protected PosConsensusRuleEngine PosParent;
@@ -35,14 +35,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             if (posRuleContext.BlockStake.IsProofOfWork())
             {
-                if (!context.MinedBlock && !context.ValidationContext.BlockToValidate.Header.CheckProofOfWork())
+                if (!context.ValidationContext.BlockToValidate.Header.CheckProofOfWork())
                 {
                     this.Logger.LogTrace("(-)[HIGH_HASH]");
                     ConsensusErrors.HighHash.Throw();
                 }
             }
 
-            Target nextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain, 
+            Target nextWorkRequired = this.PosParent.StakeValidator.GetNextTargetRequired(this.PosParent.StakeChain,
                 context.ValidationContext.ChainedHeaderToValidate.Previous, this.Parent.Network.Consensus, posRuleContext.BlockStake.IsProofOfStake());
 
             BlockHeader header = context.ValidationContext.BlockToValidate.Header;

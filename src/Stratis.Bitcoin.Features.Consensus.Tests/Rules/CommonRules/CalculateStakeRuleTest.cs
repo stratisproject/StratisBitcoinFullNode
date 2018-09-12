@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 .Returns(target)
                 .Verifiable();
 
-            await this.consensusRules.RegisterRule<CheckDifficultykHybridRule>().RunAsync(this.ruleContext);
+            await this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().RunAsync(this.ruleContext);
 
             this.stakeValidator.Verify();
             Assert.NotNull(this.ruleContext as PosRuleContext);
@@ -48,41 +48,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.Equal(uint256.Zero, (this.ruleContext as PosRuleContext).BlockStake.HashProof);
             Assert.Equal((uint)18276127, (this.ruleContext as PosRuleContext).BlockStake.StakeTime);
             Assert.Equal(this.concurrentChain.GetBlock(5).HashBlock, (this.ruleContext as PosRuleContext).BlockStake.PrevoutStake.Hash);
-        }
-
-        [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_DoNotCheckPow_SetsStake_SetsNextWorkRequiredAsync()
-        {
-            Block block = this.network.CreateBlock();
-            Transaction transaction = this.network.CreateTransaction();
-            block.AddTransaction(transaction);
-
-            this.ruleContext.ValidationContext = new ValidationContext()
-            {
-                BlockToValidate = block,
-                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
-            };
-            this.ruleContext.MinedBlock = true;
-            var target = new Target(0x1f111115);
-            this.ruleContext.ValidationContext.BlockToValidate.Header.Bits = target;
-
-            this.stakeValidator.Setup(s => s.GetNextTargetRequired(
-                this.stakeChain.Object,
-                this.concurrentChain.GetBlock(3),
-                this.network.Consensus,
-                false))
-                .Returns(target)
-                .Verifiable();
-
-            await this.consensusRules.RegisterRule<CheckDifficultykHybridRule>().RunAsync(this.ruleContext);
-
-            this.stakeValidator.Verify();
-            Assert.NotNull(this.ruleContext as PosRuleContext);
-            Assert.Equal(0, (int)(this.ruleContext as PosRuleContext).BlockStake.Flags);
-            Assert.Equal(uint256.Zero, (this.ruleContext as PosRuleContext).BlockStake.StakeModifierV2);
-            Assert.Equal(uint256.Zero, (this.ruleContext as PosRuleContext).BlockStake.HashProof);
-            Assert.Equal((uint)0, (this.ruleContext as PosRuleContext).BlockStake.StakeTime);
-            Assert.Null((this.ruleContext as PosRuleContext).BlockStake.PrevoutStake);
         }
 
         [Fact]
@@ -97,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 BlockToValidate = TestRulesContextFactory.MineBlock(this.network, this.concurrentChain),
                 ChainedHeaderToValidate = this.concurrentChain.Tip
             };
-            this.ruleContext.MinedBlock = false;
+
             var target = this.ruleContext.ValidationContext.BlockToValidate.Header.Bits;
 
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(
@@ -108,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 .Returns(target)
                 .Verifiable();
 
-            await this.consensusRules.RegisterRule<CheckDifficultykHybridRule>().RunAsync(this.ruleContext);
+            await this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().RunAsync(this.ruleContext);
 
             this.stakeValidator.Verify();
             Assert.NotNull((this.ruleContext as PosRuleContext));
@@ -131,9 +96,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 BlockToValidate = block,
                 ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
             };
-            this.ruleContext.MinedBlock = false;
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultykHybridRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyHybridRule>().RunAsync(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.HighHash, exception.ConsensusError);
         }
