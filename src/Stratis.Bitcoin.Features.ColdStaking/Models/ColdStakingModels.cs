@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
     /// The data structure used by a client requesting that a cold staking cancellation be performed.
     /// Refer to <see cref="Controllers.ColdStakingController.CancelColdStaking"/>.
     /// </summary>
-    public class CancelColdStakingRequest
+    public class ColdStakingWithdrawalRequest
     {
         /// <summary>The transaction id of the cold staking setup to cancel.</summary>
         [Required]
@@ -182,9 +182,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
 
     /// <summary>
     /// The response data structure received by a client after requesting that a cold staking cancellation be performed.
-    /// Refer to <see cref="CancelColdStakingRequest"/>.
+    /// Refer to <see cref="ColdStakingWithdrawalRequest"/>.
     /// </summary>
-    public class CancelColdStakingResponse
+    public class ColdStakingWithdrawalResponse
     {
         /// <summary>The transaction bytes as a hexadecimal string.</summary>
         [JsonProperty(PropertyName = "transactionHex")]

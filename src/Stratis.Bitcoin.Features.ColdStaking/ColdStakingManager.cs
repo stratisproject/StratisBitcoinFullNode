@@ -366,20 +366,20 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         }
 
         /// <summary>
-        /// Creates cold staking cancellation <see cref="Transaction"/>.
+        /// Creates a cold staking withdrawal <see cref="Transaction"/>.
         /// </summary>
         /// <remarks>
-        /// Cold staking cancellation can only be performed on the wallet that is in the role of the cold staking cold wallet.
+        /// Cold staking withdrawal can only be performed on the wallet that is in the role of the cold staking cold wallet.
         /// </remarks>
-        /// <param name="transactionId">The id of the cold staking setup transaction to cancel the cold staking setup for.</param>
-        /// <param name="receivingAddress">The address that will receive the funds.</param>
+        /// <param name="transactionId">The id of the cold staking setup transaction to withdraw the cold staking setup for.</param>
+        /// <param name="receivingAddress">The address that will receive the withdrawal.</param>
         /// <param name="walletName">The name of the wallet in the role of cold wallet.</param>
         /// <param name="walletPassword">The wallet password.</param>
         /// <param name="amount">The amount to remove from cold staking.</param>
-        /// <param name="feeAmount">The fee to pay for cold staking transaction cancellation.</param>
-        /// <returns>The <see cref="Transaction"/> for cold staking cancellation.</returns>
+        /// <param name="feeAmount">The fee to pay for cold staking transaction withdrawal.</param>
+        /// <returns>The <see cref="Transaction"/> for cold staking withdrawal.</returns>
         /// <exception cref="WalletException">Thrown if any of the rules listed in the remarks section of this method are broken.</exception>
-        internal Transaction GetColdStakingCancellationTransaction(uint256 transactionId, string receivingAddress,
+        internal Transaction GetColdStakingWithdrawalTransaction(uint256 transactionId, string receivingAddress,
             string walletName, string walletPassword, Money amount, Money feeAmount)
         {
             Guard.NotNull(transactionId, nameof(transactionId));
@@ -442,7 +442,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             var context = new TransactionBuildContext(wallet.Network)
             {
                 AccountReference = new WalletAccountReference(walletName, coldAccount.Name),
-                SelectedInputs =  unspents.Select(a => a.ToOutPoint()).ToList(),
+                //SelectedInputs =  unspents.Select(a => a.ToOutPoint()).ToList(),
                 ChangeAddress = unspents[0].Address,
                 TransactionFee = feeAmount,
                 MinConfirmations = 0,

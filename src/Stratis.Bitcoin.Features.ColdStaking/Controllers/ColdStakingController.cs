@@ -210,12 +210,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// Spends funds from the cold staking wallet account back to a normal wallet addresses. It is expected that this
         /// spend will be detected by both the hot wallet and cold wallet and reduce the amount available for cold staking.
         /// </summary>
-        /// <param name="request">A <see cref="CancelColdStakingRequest"/> object containing the cold staking cancellation parameters.</param>
-        /// <returns>A <see cref="CancelColdStakingResponse"/> object containing the hex representation of the transaction.</returns>
+        /// <param name="request">A <see cref="ColdStakingWithdrawalRequest"/> object containing the cold staking withdrawal parameters.</param>
+        /// <returns>A <see cref="ColdStakingWithdrawalResponse"/> object containing the hex representation of the transaction.</returns>
         /// <seealso cref="ColdStakingManager.GetColdStakingScript(ScriptId, ScriptId)"/>
-        [Route("cancel-cold-staking")]
+        [Route("cold-staking-withdrawal")]
         [HttpPost]
-        public IActionResult CancelColdStaking([FromBody]CancelColdStakingRequest request)
+        public IActionResult CancelColdStaking([FromBody]ColdStakingWithdrawalRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -234,11 +234,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 Money feeAmount = Money.Parse(request.Fees);
                 uint256 transactionId = uint256.Parse(request.TransactionId);
 
-                Transaction transaction = this.ColdStakingManager.GetColdStakingCancellationTransaction(transactionId,
+                Transaction transaction = this.ColdStakingManager.GetColdStakingWithdrawalTransaction(transactionId,
                     request.ReceivingAddress, request.WalletName, request.WalletPassword,
                     amount, feeAmount);
 
-                var model = new CancelColdStakingResponse
+                var model = new ColdStakingWithdrawalResponse
                 {
                     TransactionHex = transaction.ToHex()
                 };
