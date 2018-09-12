@@ -309,13 +309,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.IsSuccess);
             Assert.Equal(ContractInvocationErrorType.MethodThrewException, result.InvocationErrorType);
 
-            // Small multi-dimensional array passes
-            var callData3 = new MethodCall(nameof(MemoryLimit.AllowedMultiArray));
+            // Small array resize passes
+            var callData3 = new MethodCall(nameof(MemoryLimit.AllowedArrayResize));
             result = contract.Invoke(callData3);
             Assert.True(result.IsSuccess);
 
-            // Big multi-dimensional array fails
-            var callData4 = new MethodCall(nameof(MemoryLimit.NotAllowedMultiArray));
+            // Big array resize fails
+            var callData4 = new MethodCall(nameof(MemoryLimit.NotAllowedArrayResize));
             result = contract.Invoke(callData4);
             Assert.False(result.IsSuccess);
             Assert.Equal(ContractInvocationErrorType.MethodThrewException, result.InvocationErrorType);

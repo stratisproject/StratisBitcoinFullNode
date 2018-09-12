@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ILoader assemblyLoader;
         private readonly IContractModuleDefinitionReader moduleDefinitionReader;
         public static int VmVersion = 1;
-        public const long MemoryUnitLimit = 1_000;
+        public const long MemoryUnitLimit = 100_000;
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             ILoggerFactory loggerFactory,

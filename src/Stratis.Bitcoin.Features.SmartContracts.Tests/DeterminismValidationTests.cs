@@ -194,7 +194,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Validate_Determinism_Passes_ArrayConstruction_MoreThan2()
         {
-            string adjustedSource = TestString.Replace(ReplaceCodeString, @"var test = new int[]{2,2,3};").Replace(ReplaceReferencesString, "");
+            //new int[] {1,2,3}.Clone()
+
+            string adjustedSource = TestString.Replace(ReplaceCodeString, @"var test = new int[]{2,2,3}; var test2 = test.Clone();").Replace(ReplaceReferencesString, "");
 
             byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
             IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
