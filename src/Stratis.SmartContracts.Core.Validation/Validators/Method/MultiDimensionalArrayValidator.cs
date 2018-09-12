@@ -7,7 +7,7 @@ using Stratis.ModuleValidation.Net;
 namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
-    /// Validates that methods don't contain any 
+    /// Validates that methods don't contain any multi-dimensional array initializers.
     /// </summary>
     public class MultiDimensionalArrayValidator : IMethodDefinitionValidator
     {
