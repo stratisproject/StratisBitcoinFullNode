@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Returns the number of elements in the collection.
         /// </summary>
-        public int Count => this.keysLookup.Count;
+        public int Count { get { return this.keysLookup.Count; } }
 
         /// <summary>
         /// The 'get' method returns the address that has been mapped to the script.
@@ -57,4 +57,3 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
     }
 }
-
