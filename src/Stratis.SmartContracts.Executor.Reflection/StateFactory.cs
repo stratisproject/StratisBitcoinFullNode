@@ -30,7 +30,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
         }
 
-        public IState Create(IContractState stateRoot, IBlock block, ulong txOutValue, uint256 transactionHash, Gas gasLimit)
+        public IState Create(IContractState stateRoot, IBlock block, ulong txOutValue, uint256 transactionHash)
         {
             return new State(
                 this.contractPrimitiveSerializer,

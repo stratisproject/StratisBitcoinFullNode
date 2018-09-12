@@ -57,8 +57,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 this.stateRoot,
                 block,
                 transactionContext.TxOutValue,
-                transactionContext.TransactionHash,
-                callData.GasLimit);
+                transactionContext.TransactionHash);
 
             StateTransitionResult result;
             IState newState = state.Snapshot();

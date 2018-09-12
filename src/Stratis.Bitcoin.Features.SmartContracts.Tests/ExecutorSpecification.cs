@@ -74,8 +74,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 contractStateRoot.Object,
                 It.IsAny<IBlock>(),
                 context.TxOutValue,
-                context.TransactionHash,
-                contractTxData.GasLimit))
+                context.TransactionHash))
             .Returns(stateMock.Object);
 
             var sut = new Executor(
@@ -96,8 +95,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     contractStateRoot.Object,
                     It.IsAny<IBlock>(),
                     context.TxOutValue,
-                    context.TransactionHash,
-                    contractTxData.GasLimit),
+                    context.TransactionHash),
                 Times.Once);
 
             // We only apply the message to the snapshot.
