@@ -1,15 +1,16 @@
-﻿using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>
-    /// A rule that will verify the block time drift is according to the PoS consensus rules for the <see cref="NBitcoin.Networks.StratisMain"/> network (and its test networks).
+    /// A rule that will verify the block time drift is according to the PoS consensus rules for the <see cref="StratisMain"/> network (and its test networks).
     /// New networks must use the <see cref="PosFutureDriftRule"/>.
     /// </summary>
-    [HeaderValidationRule(CanSkipValidation = true)]
     public class StratisBigFixPosFutureDriftRule : PosFutureDriftRule
     {
         /// <summary>Drifting Bug Fix, hardfork on Sat, 19 Nov 2016 00:00:00 GMT.</summary>
@@ -48,17 +49,27 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that will verify the block time drift is according to the PoS consensus rules.
     /// </summary>
-    [HeaderValidationRule(CanSkipValidation = true)]
-    public class PosFutureDriftRule : StakeStoreConsensusRule
+    public class PosFutureDriftRule : HeaderValidationConsensusRule
     {
         /// <summary>The future drift in seconds.</summary>
         protected const int FutureDriftSeconds = 15;
 
+        /// <summary>Allow access to the POS parent.</summary>
+        protected PosConsensusRuleEngine PosParent;
+
+        /// <inheritdoc />
+        public override void Initialize()
+        {
+            this.PosParent = this.Parent as PosConsensusRuleEngine;
+
+            Guard.NotNull(this.PosParent, nameof(this.PosParent));
+        }
+
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BlockTimestampTooFar">The block timestamp is too far into the future.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
-            BlockHeader header = context.ValidationContext.ChainedHeader.Header;
+            BlockHeader header = context.ValidationContext.ChainedHeaderToValidate.Header;
 
             long adjustedTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
 
@@ -70,8 +81,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("(-)[TIME_TOO_FAR]");
                 ConsensusErrors.BlockTimestampTooFar.Throw();
             }
-
-            return Task.CompletedTask;
         }
 
         /// <summary>

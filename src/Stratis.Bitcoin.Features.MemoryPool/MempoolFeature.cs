@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.MemoryPool.Tests")]
 
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// Transaction memory pool feature for the Full Node.
     /// </summary>
     /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/6dbcc74a0e0a7d45d20b03bb4eb41a027397a21d/src/txmempool.cpp"/>
-    public class MempoolFeature : FullNodeFeature, IFeatureStats
+    public class MempoolFeature : FullNodeFeature
     {
         /// <summary>Node notifications available to subscribe to.</summary>
         private readonly Signals.Signals signals;
@@ -71,7 +72,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolManager mempoolManager,
             NodeSettings nodeSettings,
             ILoggerFactory loggerFactory,
-            MempoolSettings mempoolSettings)
+            MempoolSettings mempoolSettings,
+            INodeStats nodeStats)
         {
             this.signals = signals;
             this.connectionManager = connectionManager;
@@ -82,9 +84,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolLogger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.mempoolSettings = mempoolSettings;
             this.nodeSettings = nodeSettings;
+
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
 
-        public void AddFeatureStats(StringBuilder benchLogs)
+        private void AddComponentStats(StringBuilder benchLogs)
         {
             if (this.mempoolManager != null)
             {
@@ -171,9 +175,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<BlockPolicyEstimator>();
                         services.AddSingleton<IMempoolValidator, MempoolValidator>();
                         services.AddSingleton<MempoolOrphans>();
-                        services.AddSingleton<MempoolManager>();
-                        services.AddSingleton<IPooledTransaction, MempoolManager>();
-                        services.AddSingleton<IPooledGetUnspentTransaction, MempoolManager>();
+                        services.AddSingleton<MempoolManager>()
+                            .AddSingleton<IPooledTransaction, MempoolManager>(provider => provider.GetService<MempoolManager>())
+                            .AddSingleton<IPooledGetUnspentTransaction, MempoolManager>(provider => provider.GetService<MempoolManager>());
                         services.AddSingleton<MempoolBehavior>();
                         services.AddSingleton<MempoolSignaled>();
                         services.AddSingleton<BlocksDisconnectedSignaled>();

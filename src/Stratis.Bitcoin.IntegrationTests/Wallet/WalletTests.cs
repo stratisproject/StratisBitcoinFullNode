@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisSender.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
                 // Wait for the chains to catch up
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisSender));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisReceiver, stratisReorg, true));
                 Assert.Equal(currentBestHeight, stratisReceiver.FullNode.Chain.Tip.Height);
 
                 // Ensure wallet reorg completes

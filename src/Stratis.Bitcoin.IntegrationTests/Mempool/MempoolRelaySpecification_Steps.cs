@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected void nodeA_creates_a_transaction_and_propagates_to_nodeB()
         {
-            Block block = this.nodeA.FullNode.BlockStoreManager().BlockRepository.GetAsync(this.nodeA.FullNode.Chain.GetBlock(1).HashBlock).Result;
+            Block block = this.nodeA.FullNode.BlockStore().GetBlockAsync(this.nodeA.FullNode.Chain.GetBlock(1).HashBlock).Result;
             Transaction prevTrx = block.Transactions.First();
             var dest = new BitcoinSecret(new Key(), this.nodeA.FullNode.Network);
 

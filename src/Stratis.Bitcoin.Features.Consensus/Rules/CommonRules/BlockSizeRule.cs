@@ -2,6 +2,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -9,8 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// This rule will validate the block size and weight.
     /// </summary>
-    [PartialValidationRule(CanSkipValidation = true)]
-    public class BlockSizeRule : ConsensusRule
+    public class BlockSizeRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadBlockWeight">The block weight is higher than the max block weight.</exception>
@@ -19,7 +19,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadBlockLength">The block does not contain any transactions.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            var options = context.Consensus.Options;
+            if (context.SkipValidation)
+                return Task.CompletedTask;
+
+            var options = this.Parent.Network.Consensus.Options;
 
             // After the coinbase witness nonce and commitment are verified,
             // we can check if the block weight passes (before we've checked the
@@ -27,16 +30,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // large by filling up the coinbase witness, which doesn't change
             // the block hash, so we couldn't mark the block as permanently
             // failed).
-            if (this.GetBlockWeight(context.ValidationContext.Block, options) > options.MaxBlockWeight)
+            if (this.GetBlockWeight(context.ValidationContext.BlockToValidate, options) > options.MaxBlockWeight)
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_WEIGHT]");
                 ConsensusErrors.BadBlockWeight.Throw();
             }
 
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             // Size limits.
-            if ((block.Transactions.Count == 0) || (block.Transactions.Count > options.MaxBlockBaseSize) || 
+            if ((block.Transactions.Count == 0) || (block.Transactions.Count > options.MaxBlockBaseSize) ||
                 (GetSize(this.Parent.Network, block, TransactionOptions.None) > options.MaxBlockBaseSize))
             {
                 this.Logger.LogTrace("(-)[BAD_BLOCK_LEN]");

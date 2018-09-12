@@ -160,6 +160,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         {
                             Row<byte[], Coins> row = transaction.Select<byte[], Coins>("Coins", input.ToBytes(false));
                             UnspentOutputs outputs = row.Exists ? new UnspentOutputs(input, row.Value) : null;
+
+                            this.logger.LogTrace("Outputs for '{0}' were {1}.", input, outputs == null ? "NOT loaded" : "loaded");
+
                             result[i++] = outputs;
                         }
 
@@ -207,27 +210,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash)
+        public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
         {
-            this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:'{5}',{6}:'{7}')", nameof(unspentOutputs), unspentOutputs?.Count(), nameof(originalOutputs), originalOutputs?.Count(), nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
-
-            RewindData rewindData = originalOutputs != null ? new RewindData(oldBlockHash) : null;
-            int insertedEntities = 0;
-
             List<UnspentOutputs> all = unspentOutputs.ToList();
-            var unspentToOriginal = new Dictionary<uint256, TxOut[]>(all.Count);
-            using (new StopwatchDisposable(o => this.PerformanceCounter.AddInsertTime(o)))
-            {
-                if (originalOutputs != null)
-                {
-                    IEnumerator<TxOut[]> originalEnumerator = originalOutputs.GetEnumerator();
-                    foreach (UnspentOutputs output in all)
-                    {
-                        originalEnumerator.MoveNext();
-                        unspentToOriginal.Add(output.TransactionId, originalEnumerator.Current);
-                    }
-                }
-            }
+            this.logger.LogTrace("({0}.Count():{1},{2}:'{3}',{4}:'{5}')", nameof(unspentOutputs), all.Count, nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
+
+            int insertedEntities = 0;
 
             Task task = Task.Run(() =>
             {
@@ -237,7 +225,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
                     transaction.SynchronizeTables("BlockHash", "Coins", "Rewind");
-                    transaction.Technical_SetTable_OverwriteIsNotAllowed("Coins");
+                    //transaction.Technical_SetTable_OverwriteIsNotAllowed("Coins"); // Why it was there and what is it for? No one knows.
 
                     using (new StopwatchDisposable(o => this.PerformanceCounter.AddInsertTime(o)))
                     {
@@ -254,33 +242,23 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         foreach (UnspentOutputs coin in all)
                         {
                             this.logger.LogTrace("Outputs of transaction ID '{0}' are {1} and will be {2} to the database.", coin.TransactionId, coin.IsPrunable ? "PRUNABLE" : "NOT PRUNABLE", coin.IsPrunable ? "removed" : "inserted");
-                            if (coin.IsPrunable) transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
-                            else transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
 
-                            if (originalOutputs != null)
-                            {
-                                TxOut[] original = null;
-                                unspentToOriginal.TryGetValue(coin.TransactionId, out original);
-                                if (original == null)
-                                {
-                                    // This one haven't existed before, if we rewind, delete it.
-                                    rewindData.TransactionsToRemove.Add(coin.TransactionId);
-                                }
-                                else
-                                {
-                                    // We'll need to restore the original outputs.
-                                    UnspentOutputs clone = coin.Clone();
-                                    clone.Outputs = original.ToArray();
-                                    rewindData.OutputsToRestore.Add(clone);
-                                }
-                            }
+                            if (coin.IsPrunable)
+                                transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
+                            else
+                                transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
                         }
 
-                        if (rewindData != null)
+                        if (rewindDataList != null)
                         {
                             int nextRewindIndex = this.GetRewindIndex(transaction) + 1;
-                            this.logger.LogTrace("Rewind state #{0} created.", nextRewindIndex);
-                            transaction.Insert("Rewind", nextRewindIndex, rewindData);
+                            foreach (RewindData rewindData in rewindDataList)
+                            {
+                                this.logger.LogTrace("Rewind state #{0} created.", nextRewindIndex);
+
+                                transaction.Insert("Rewind", nextRewindIndex, rewindData);
+                                nextRewindIndex++;
+                            }
                         }
 
                         insertedEntities += all.Count;

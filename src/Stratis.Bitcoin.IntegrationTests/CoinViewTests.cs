@@ -102,70 +102,92 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanRewind()
         {
-            using (NodeContext ctx = NodeContext.Create(this))
+            using (NodeContext nodeContext = NodeContext.Create(this))
             {
-                var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
+                var cacheCoinView = new CachedCoinView(nodeContext.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
                 var tester = new CoinViewTester(cacheCoinView);
 
-                Coin[] coins = tester.CreateCoins(5);
-                Coin[] coin = tester.CreateCoins(1);
-
-                // 1
-                uint256 h1 = tester.NewBlock();
+                Coin[] coinsA = tester.CreateCoins(5);
+                Coin[] coinsB = tester.CreateCoins(1);
+                tester.NewBlock();
                 cacheCoinView.FlushAsync().Wait();
-                Assert.True(tester.Exists(coins[2]));
-                Assert.True(tester.Exists(coin[0]));
+                Assert.True(tester.Exists(coinsA[2]));
+                Assert.True(tester.Exists(coinsB[0]));
 
-                tester.Spend(coins[2]);
-                tester.Spend(coin[0]);
-                //2
+                // Spend some coins.
+                tester.Spend(coinsA[2]);
+                tester.Spend(coinsB[0]);
+
                 tester.NewBlock();
-                //3
+
+                // This will save an empty RewindData instance/
                 tester.NewBlock();
-                //4
-                Coin[] coin2 = tester.CreateCoins(1);
+
+                // Create a new coin set/
+                Coin[] coinsC = tester.CreateCoins(1);
                 tester.NewBlock();
-                Assert.True(tester.Exists(coins[0]));
-                Assert.True(tester.Exists(coin2[0]));
-                Assert.False(tester.Exists(coins[2]));
-                Assert.False(tester.Exists(coin[0]));
-                //1
+                Assert.True(tester.Exists(coinsA[0]));
+                Assert.True(tester.Exists(coinsC[0]));
+                Assert.False(tester.Exists(coinsA[2]));
+                Assert.False(tester.Exists(coinsB[0]));
+
+                // We need to rewind 3 times as we are now rewinding one block at a time.
+                tester.Rewind(); // coinsC[0] should not exist any more. 
+                tester.Rewind(); // coinsA[2] should be spendable again. 
+                tester.Rewind(); // coinsB[2] should be spendable again. 
+                Assert.False(tester.Exists(coinsC[0]));
+                Assert.True(tester.Exists(coinsA[2]));
+                Assert.True(tester.Exists(coinsB[0]));
+
+                // Spend some coins and esnure they are not spendable.
+                tester.Spend(coinsA[2]);
+                tester.Spend(coinsB[0]);
+                tester.NewBlock();
+                cacheCoinView.FlushAsync().Wait();
+                Assert.False(tester.Exists(coinsA[2]));
+                Assert.False(tester.Exists(coinsB[0]));
+
+                // Rewind so that coinsA[2] and coinsB[0] become spendable again.
                 tester.Rewind();
-                Assert.False(tester.Exists(coin2[0]));
-                Assert.True(tester.Exists(coins[2]));
-                Assert.True(tester.Exists(coin[0]));
+                Assert.True(tester.Exists(coinsA[2]));
+                Assert.True(tester.Exists(coinsB[0]));
 
-                tester.Spend(coins[2]);
-                tester.Spend(coin[0]);
-                //2
-                uint256 h2 = tester.NewBlock();
-                cacheCoinView.FlushAsync().Wait();
-                Assert.False(tester.Exists(coins[2]));
-                Assert.False(tester.Exists(coin[0]));
-
-                //1
-                Assert.True(h1 == tester.Rewind());
-                Assert.True(tester.Exists(coins[2]));
-                Assert.True(tester.Exists(coin[0]));
-
-                Coin[] coins2 = tester.CreateCoins(7);
-                tester.Spend(coins2[0]);
-                coin2 = tester.CreateCoins(1);
-                tester.Spend(coin2[0]);
-                //2
+                // Create 7 coins in a new coin set and spend the first coin.
+                Coin[] coinsD = tester.CreateCoins(7);
+                tester.Spend(coinsD[0]);
+                // Create a coin in a new coin set and spend it.
+                Coin[] coinsE = tester.CreateCoins(1);
+                tester.Spend(coinsE[0]);
                 tester.NewBlock();
-                Assert.True(tester.Exists(coins2[1]));
-                Assert.False(tester.Exists(coins2[0]));
+
+                Assert.True(tester.Exists(coinsD[1]));
+                Assert.False(tester.Exists(coinsD[0]));
                 cacheCoinView.FlushAsync().Wait();
-                //3
+
+                // Creates another empty RewindData instance.
                 tester.NewBlock();
-                //2
+
+                // Rewind one block.
                 tester.Rewind();
-                Assert.True(tester.Exists(coins2[1]));
-                Assert.False(tester.Exists(coins2[0]));
-                Assert.False(tester.Exists(coin2[0]));
-                Assert.True(tester.Exists(coins[2]));
-                Assert.True(tester.Exists(coin[0]));
+
+                // coinsD[1] was never touched, so should remain unchanged. 
+                // coinsD[0] was spent but the block in which the changes happened was not yet rewound to, so it remains unchanged. 
+                // coinsE[0] was spent but the block in which the changes happened was not yet rewound to, so it remains unchanged. 
+                // coinsA[1] was not touched, so should remain unchanged. 
+                // coinsB[1] was not touched, so should remain unchanged. 
+                Assert.True(tester.Exists(coinsD[1]));
+                Assert.False(tester.Exists(coinsD[0]));
+                Assert.False(tester.Exists(coinsE[0]));
+                Assert.True(tester.Exists(coinsA[2]));
+                Assert.True(tester.Exists(coinsB[0]));
+
+                // Rewind one block.
+                tester.Rewind();
+
+                // coinsD[0] should now not exist in CoinView anymore. 
+                // coinsE[0] should now not exist in CoinView anymore. 
+                Assert.False(tester.Exists(coinsD[0]));
+                Assert.False(tester.Exists(coinsE[0]));
             }
         }
 
@@ -265,18 +287,19 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory))
             {
                 var chain = new ConcurrentChain(this.regTest);
-                repo.LoadAsync(chain).GetAwaiter().GetResult();
+
+                chain.SetTip(repo.LoadAsync(chain.Genesis).GetAwaiter().GetResult());
                 Assert.True(chain.Tip == chain.Genesis);
                 chain = new ConcurrentChain(this.regTest);
                 ChainedHeader tip = this.AppendBlock(chain);
                 repo.SaveAsync(chain).GetAwaiter().GetResult();
                 var newChain = new ConcurrentChain(this.regTest);
-                repo.LoadAsync(newChain).GetAwaiter().GetResult();
+                newChain.SetTip(repo.LoadAsync(chain.Genesis).GetAwaiter().GetResult());
                 Assert.Equal(tip, newChain.Tip);
                 tip = this.AppendBlock(chain);
                 repo.SaveAsync(chain).GetAwaiter().GetResult();
                 newChain = new ConcurrentChain(this.regTest);
-                repo.LoadAsync(newChain).GetAwaiter().GetResult();
+                newChain.SetTip(repo.LoadAsync(chain.Genesis).GetAwaiter().GetResult());
                 Assert.Equal(tip, newChain.Tip);
             }
         }
@@ -318,14 +341,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             var context = new RuleContext
             {
-                ConsensusTipHeight = 10111,
                 Time = DateTimeOffset.UtcNow,
-                ValidationContext = new ValidationContext { Block = block },
+                ValidationContext = new ValidationContext { BlockToValidate = block },
                 Flags = consensusFlags,
             };
 
             this.network.Consensus.Options = new ConsensusOptions();
-            context.Consensus = this.network.Consensus;
             new WitnessCommitmentsRule().RunAsync(context).GetAwaiter().GetResult();
 
             var rule = new CheckPowTransactionRule();

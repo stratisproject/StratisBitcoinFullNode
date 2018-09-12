@@ -15,7 +15,7 @@ namespace NBitcoin
         HeaderOnly,
 
         /// <summary>
-        /// We are interested in downloading the <see cref="Block"/> that is being represented by the current <see cref="BlockHeader"/>. 
+        /// We are interested in downloading the <see cref="Block"/> that is being represented by the current <see cref="BlockHeader"/>.
         /// This happens when we don't have block which is represented by this header and the header is a part of a chain that
         /// can potentially replace our consensus tip because its chain work is greater than our consensus tip's chain work.
         /// </summary>
@@ -33,31 +33,19 @@ namespace NBitcoin
     public enum ValidationState
     {
         /// <summary>
-        /// No validation was performed.
-        /// </summary>
-        Unknown,
-
-        /// <summary>
         /// We have a valid block header.
         /// </summary>
         HeaderValidated,
 
         /// <summary>
-        /// Blocks represented by headers with this state are assumed to be valid and only minimal validation is required for them when they are downloaded.
-        /// This state is used for blocks before the last checkpoint or for blocks that are on the chain of assume valid block.
-        /// Once a block is fully validated this state will change to <see cref="PartiallyValidated"/>.
-        /// </summary>
-        AssumedValid,
-
-        /// <summary>
         /// Validated using all rules that don't require change of state.
-        /// Some rules validation may be skipped for blocks previously marked as <see cref="AssumedValid"/>.
+        /// Some validation rules may be skipped for blocks previously marked as assumed valid.
         /// </summary>
         PartiallyValidated,
 
         /// <summary>
         /// Validated using all the rules.
-        /// Some rules validation may be skipped for blocks previously marked as <see cref="AssumedValid"/>. 
+        /// Some validation rules may be skipped for blocks previously marked as assumed valid.
         /// </summary>
         FullyValidated
     }
@@ -100,6 +88,12 @@ namespace NBitcoin
         /// <inheritdoc cref="ValidationState" />
         public ValidationState BlockValidationState { get; set; }
 
+        /// <summary>
+        /// Block represented by this header is assumed to be valid and only subset of validation rules should be applied to it.
+        /// This state is used for blocks before the last checkpoint or for blocks that are on the chain of assume valid block.
+        /// </summary>
+        public bool IsAssumedValid { get; set; }
+
         /// <summary>A pointer to the block data if available (this can be <c>null</c>), its availability will be represented by <see cref="BlockDataAvailability"/>.</summary>
         public Block Block { get; set; }
 
@@ -119,6 +113,12 @@ namespace NBitcoin
             if (previous != null)
                 this.Height = previous.Height + 1;
 
+            if (this.Height == 0)
+            {
+                this.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
+                this.BlockValidationState = ValidationState.FullyValidated;
+            }
+
             this.Previous = previous;
 
             if (previous == null)
@@ -132,10 +132,10 @@ namespace NBitcoin
                     throw new ArgumentException("The previous block does not have the expected hash");
 
                 // Calculates the location of the skip block for this block.
-                this.Skip = this.Previous.GetAncestor(GetSkipHeight(this.Height));
+                this.Skip = this.Previous.GetAncestor(this.GetSkipHeight(this.Height));
             }
 
-            CalculateChainWork();
+            this.CalculateChainWork();
         }
 
         /// <summary>
@@ -147,7 +147,7 @@ namespace NBitcoin
         public ChainedHeader(BlockHeader header, uint256 headerHash, int height) : this(header, headerHash)
         {
             this.Height = height;
-            CalculateChainWork();
+            this.CalculateChainWork();
 
             if (height == 0)
             {
@@ -274,7 +274,7 @@ namespace NBitcoin
         /// </summary>
         /// <param name="chainedHeader">The chained header to search for.</param>
         /// <returns>The chained block header or <c>null</c> if can't be found.</returns>
-        /// <remarks>This method compares the hash of the block header at the same height in the current chain 
+        /// <remarks>This method compares the hash of the block header at the same height in the current chain
         /// to verify the correct chained block header has been found.</remarks>
         public ChainedHeader FindAncestorOrSelf(ChainedHeader chainedHeader)
         {
@@ -386,7 +386,7 @@ namespace NBitcoin
                     // then allow mining of a min-difficulty block.
                     if (this.Header.BlockTime > (lastBlock.Header.BlockTime + TimeSpan.FromTicks(consensus.PowTargetSpacing.Ticks * 2)))
                         return proofOfWorkLimit;
-                 
+
                     // Return the last non-special-min-difficulty-rules-block.
                     ChainedHeader chainedHeader = lastBlock;
                     while ((chainedHeader.Previous != null) && ((chainedHeader.Height % difficultyAdjustmentInterval) != 0) && (chainedHeader.Header.Bits == proofOfWorkLimit))

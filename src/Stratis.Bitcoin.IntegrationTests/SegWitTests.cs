@@ -2,7 +2,7 @@
 using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     // - LockedIn 287 (as segwit should already be signaled in blocks).
                     // - Active at block 431.
 
-                    var consensusLoop = stratisNode.FullNode.NodeService<IConsensusLoop>();
+                    var consensusLoop = stratisNode.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
                     ThresholdState[] segwitDefinedState = consensusLoop.NodeDeployments.BIP9.GetStates(stratisNode.FullNode.Chain.GetBlock(142));
                     ThresholdState[] segwitStartedState = consensusLoop.NodeDeployments.BIP9.GetStates(stratisNode.FullNode.Chain.GetBlock(143));
                     ThresholdState[] segwitLockedInState = consensusLoop.NodeDeployments.BIP9.GetStates(stratisNode.FullNode.Chain.GetBlock(287));

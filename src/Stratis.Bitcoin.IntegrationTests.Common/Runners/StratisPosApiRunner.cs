@@ -33,12 +33,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                             .UseWallet()
                             .UseApi()
                             .AddRPC()
+                            .MockIBD()
                             .Build();
-        }
-
-        public override void OnStart()
-        {
-            this.FullNode.Start();
         }
     }
 }
