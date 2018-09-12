@@ -89,7 +89,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 result = newState.Apply(message);
             }
 
-            state.TransitionTo(newState);
+            if (result.IsSuccess)
+                state.TransitionTo(newState);
 
             bool revert = !result.IsSuccess;
 

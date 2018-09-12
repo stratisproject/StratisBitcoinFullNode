@@ -50,10 +50,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // Apply the message to the snapshot
             var result = newState.Apply(message);
 
-            smartContractState.GasMeter.Spend(result.GasConsumed);
-
             // Transition the current state to the new state
-            this.state.TransitionTo(newState);
+            if (result.IsSuccess)
+                this.state.TransitionTo(newState);
+
+            smartContractState.GasMeter.Spend(result.GasConsumed);
 
             return result.IsSuccess
                 ? CreateResult.Succeeded(result.Success.ContractAddress.ToAddress(this.network))
@@ -91,10 +92,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // Apply the message to the snapshot
             var result = newState.Apply(message);
 
-            smartContractState.GasMeter.Spend(result.GasConsumed);
-
             // Transition the current state to the new state
-            this.state.TransitionTo(newState);
+            if (result.IsSuccess)
+                this.state.TransitionTo(newState);
+
+            smartContractState.GasMeter.Spend(result.GasConsumed);
 
             return result.IsSuccess
                 ? TransferResult.Transferred(result.Success.ExecutionResult)
@@ -126,10 +128,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // Apply the message to the snapshot
             var result = newState.Apply(message);
 
-            smartContractState.GasMeter.Spend(result.GasConsumed);
-
             // Transition the current state to the new state
-            this.state.TransitionTo(newState);
+            if (result.IsSuccess)
+                this.state.TransitionTo(newState);
+
+            smartContractState.GasMeter.Spend(result.GasConsumed);
 
             return result.IsSuccess 
                 ? TransferResult.Empty() 
