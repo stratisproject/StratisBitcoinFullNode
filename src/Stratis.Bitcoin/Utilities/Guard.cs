@@ -21,6 +21,12 @@ namespace Stratis.Bitcoin.Utilities
                 throw new Exception("Assertion failed");
         }
 
+        public static void Assert(bool condition, string message)
+        {
+            if (!condition)
+                throw new Exception(message);
+        }
+
         /// <summary>
         /// Checks an object is not null.
         /// </summary>
