@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             account = accountRoot.CreateAccount(walletPassword, wallet.EncryptedSeed,
                 wallet.ChainCode, wallet.Network, this.dateTimeProvider.GetTimeOffset(), accountIndex,
-                isColdWalletAccount ? ColdWalletAccountName: HotWalletAccountName);
+                isColdWalletAccount ? ColdWalletAccountName : HotWalletAccountName);
 
             // Maintain at least one unused address at all times. This will ensure that wallet recovery will also work.
             account.CreateAddresses(wallet.Network, 1, false);
@@ -371,7 +371,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <remarks>
         /// Cold staking withdrawal can only be performed on the wallet that is in the role of the cold staking cold wallet.
         /// </remarks>
-        /// <param name="transactionId">The id of the cold staking setup transaction to withdraw the cold staking setup for.</param>
         /// <param name="receivingAddress">The address that will receive the withdrawal.</param>
         /// <param name="walletName">The name of the wallet in the role of cold wallet.</param>
         /// <param name="walletPassword">The wallet password.</param>
@@ -379,17 +378,15 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="feeAmount">The fee to pay for cold staking transaction withdrawal.</param>
         /// <returns>The <see cref="Transaction"/> for cold staking withdrawal.</returns>
         /// <exception cref="WalletException">Thrown if any of the rules listed in the remarks section of this method are broken.</exception>
-        internal Transaction GetColdStakingWithdrawalTransaction(uint256 transactionId, string receivingAddress,
+        internal Transaction GetColdStakingWithdrawalTransaction(string receivingAddress,
             string walletName, string walletPassword, Money amount, Money feeAmount)
         {
-            Guard.NotNull(transactionId, nameof(transactionId));
             Guard.NotEmpty(receivingAddress, nameof(receivingAddress));
             Guard.NotEmpty(walletName, nameof(walletName));
             Guard.NotNull(amount, nameof(amount));
             Guard.NotNull(feeAmount, nameof(feeAmount));
 
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}',{8}:'{9}'",
-                nameof(transactionId), transactionId,
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}',{6}:'{7}'",
                 nameof(receivingAddress), receivingAddress,
                 nameof(walletName), walletName,
                 nameof(amount), amount,
@@ -428,7 +425,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             Money availAmt = 0;
             List<UnspentOutputReference> unspents = this.WalletManager
                 .GetSpendableTransactionsInAccount(new WalletAccountReference(walletName, coldAccount.Name))
-                .Where(a => a.Transaction.Id == transactionId)
                 .OrderByDescending(a => a.Transaction.Amount)
                 .TakeWhile(a => (availAmt += a.Transaction.Amount) < amount).ToList();
 
@@ -442,7 +438,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             var context = new TransactionBuildContext(wallet.Network)
             {
                 AccountReference = new WalletAccountReference(walletName, coldAccount.Name),
-                //SelectedInputs =  unspents.Select(a => a.ToOutPoint()).ToList(),
+                SelectedInputs = unspents.Select(a => a.ToOutPoint()).ToList(),
                 ChangeAddress = unspents[0].Address,
                 TransactionFee = feeAmount,
                 MinConfirmations = 0,

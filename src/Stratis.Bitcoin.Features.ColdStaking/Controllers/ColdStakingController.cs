@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 Money feeAmount = Money.Parse(request.Fees);
                 uint256 transactionId = uint256.Parse(request.TransactionId);
 
-                Transaction transaction = this.ColdStakingManager.GetColdStakingWithdrawalTransaction(transactionId,
+                Transaction transaction = this.ColdStakingManager.GetColdStakingWithdrawalTransaction(
                     request.ReceivingAddress, request.WalletName, request.WalletPassword,
                     amount, feeAmount);
 
