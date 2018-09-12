@@ -54,11 +54,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     mempoolFee,
                     context.Sender,
                     It.IsAny<Gas>(),
-                    vmExecutionResult.ExecutionException))
+                    false))
                 .Returns(refundResult);
 
-            var stateTransitionResult =
-                new StateTransitionResult(gasConsumed, newContractAddress, true, vmExecutionResult);
+            var stateTransitionResult = StateTransitionResult.Ok(gasConsumed, newContractAddress, vmExecutionResult.Result);
 
             var internalTransfers = new List<TransferInfo>().AsReadOnly();
             var stateMock = new Mock<IState>();
@@ -115,7 +114,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         mempoolFee,
                         context.Sender,
                         It.IsAny<Gas>(),
-                        vmExecutionResult.ExecutionException),
+                        false),
                 Times.Once);
         }
     }

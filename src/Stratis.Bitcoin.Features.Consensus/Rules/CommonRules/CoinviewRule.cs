@@ -55,6 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 this.Parent.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
+
                 if (!context.SkipValidation)
                 {
                     if (!tx.IsCoinBase)
