@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.Base
             ChainedHeader chainTip = await this.chainRepository.LoadAsync(this.chain.Genesis).ConfigureAwait(false);
             this.chain.SetTip(chainTip);
 
-            this.logger.LogInformation("Chain loaded at height " + this.chain.Height);
+            this.logger.LogInformation("Chain loaded at height {0}", this.chain.Height);
 
             this.flushChainLoop = this.asyncLoopFactory.Run("FlushChain", async token =>
             {
@@ -260,7 +260,8 @@ namespace Stratis.Bitcoin.Base
                 this.peerAddressManager.LoadPeers();
             }
 
-            this.flushAddressManagerLoop = this.asyncLoopFactory.Run("Periodic peer flush...", token =>
+            this.logger.LogInformation("Starting periodic peer flushing loop");
+            this.flushAddressManagerLoop = this.asyncLoopFactory.Run("Periodic peer flush", token =>
             {
                 this.peerAddressManager.SavePeers();
                 return Task.CompletedTask;

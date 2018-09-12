@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.WalletTipHash = this.LastReceivedBlockHash();
 
             // Save the wallets file every 5 minutes to help against crashes.
-            this.asyncLoop = this.asyncLoopFactory.Run("wallet persist job", token =>
+            this.asyncLoop = this.asyncLoopFactory.Run("Wallet persist job", token =>
             {
                 this.logger.LogTrace("()");
 
