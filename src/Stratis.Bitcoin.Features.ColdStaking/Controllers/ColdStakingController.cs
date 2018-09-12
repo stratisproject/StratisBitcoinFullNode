@@ -232,9 +232,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             {
                 Money amount = Money.Parse(request.Amount);
                 Money feeAmount = Money.Parse(request.Fees);
+                uint256 transactionId = uint256.Parse(request.TransactionId);
 
-                Transaction transaction = this.ColdStakingManager.GetColdStakingCancellationTransaction(request.ColdWalletAddress,
-                    request.HotWalletAddress, request.WalletName, request.WalletPassword,
+                Transaction transaction = this.ColdStakingManager.GetColdStakingCancellationTransaction(transactionId,
+                    request.ReceivingAddress, request.WalletName, request.WalletPassword,
                     amount, feeAmount);
 
                 var model = new CancelColdStakingResponse

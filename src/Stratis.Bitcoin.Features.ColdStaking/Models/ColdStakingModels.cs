@@ -140,15 +140,15 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
     /// </summary>
     public class CancelColdStakingRequest
     {
-        /// <summary>The Base58 cold wallet address.</summary>
+        /// <summary>The transaction id of the cold staking setup to cancel.</summary>
         [Required]
-        [JsonProperty(PropertyName = "coldWalletAddress")]
-        public string ColdWalletAddress { get; set; }
+        [JsonProperty(PropertyName = "transactionId")]
+        public string TransactionId { get; set; }
 
-        /// <summary>The Base58 hot wallet address.</summary>
+        /// <summary>The Base58 receiving address.</summary>
         [Required]
-        [JsonProperty(PropertyName = "hotWalletAddress")]
-        public string HotWalletAddress { get; set; }
+        [JsonProperty(PropertyName = "receivingAddress")]
+        public string ReceivingAddress { get; set; }
 
         /// <summary>The name of the wallet from which we select coins for cold staking cancellation.</summary>
         [Required]
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         /// <returns>A string containing the properties of the object.</returns>
         public override string ToString()
         {
-            return $"{nameof(this.ColdWalletAddress)}={this.ColdWalletAddress},{nameof(this.HotWalletAddress)}={this.HotWalletAddress},{nameof(this.WalletName)}={this.WalletName},{nameof(this.Amount)}={this.Amount},{nameof(this.Fees)}={this.Fees}";
+            return $"{nameof(this.TransactionId)}={this.TransactionId},{nameof(this.ReceivingAddress)}={this.ReceivingAddress},{nameof(this.WalletName)}={this.WalletName},{nameof(this.Amount)}={this.Amount},{nameof(this.Fees)}={this.Fees}";
         }
     }
 
