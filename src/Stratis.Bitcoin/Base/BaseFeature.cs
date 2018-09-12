@@ -260,7 +260,6 @@ namespace Stratis.Bitcoin.Base
                 this.peerAddressManager.LoadPeers();
             }
 
-            this.logger.LogInformation("Starting periodic peer flushing loop");
             this.flushAddressManagerLoop = this.asyncLoopFactory.Run("Periodic peer flush", token =>
             {
                 this.peerAddressManager.SavePeers();

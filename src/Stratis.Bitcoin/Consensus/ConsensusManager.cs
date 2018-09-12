@@ -133,6 +133,7 @@ namespace Stratis.Bitcoin.Consensus
             this.reorgLock = new AsyncLock();
             this.blockRequestedLock = new object();
             this.expectedBlockDataBytes = 0;
+            this.expectedBlockSizes = new Dictionary<uint256, long>();
 
             this.callbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
             this.peersByPeerId = new Dictionary<int, INetworkPeer>();
@@ -1198,26 +1199,23 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("()");
 
-            if (this.chainState?.ConsensusTip != null)
+            lock (this.peerLock)
             {
-                lock (this.peerLock)
-                {
-                    ChainedHeader bestTip = this.chainedHeaderTree.GetBestPeerTip();
+                ChainedHeader bestTip = this.chainedHeaderTree.GetBestPeerTip();
 
-                    if (bestTip == null || bestTip.Height < this.Tip.Height)
-                        bestTip = this.Tip;
+                if (bestTip == null || bestTip.Height < this.Tip.Height)
+                    bestTip = this.Tip;
 
-                    string headersLog = "Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + bestTip.Height.ToString().PadRight(8) +
-                                        " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + bestTip.HashBlock;
+                string headersLog = "Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + bestTip.Height.ToString().PadRight(8) +
+                                    " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + bestTip.HashBlock;
 
-                    benchLog.AppendLine(headersLog);
-                }
-
-                string consensusLog = "Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + this.Tip.Height.ToString().PadRight(8) +
-                                      " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.Tip.HashBlock;
-
-                benchLog.AppendLine(consensusLog);
+                benchLog.AppendLine(headersLog);
             }
+
+            string consensusLog = "Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + this.Tip.Height.ToString().PadRight(8) +
+                                  " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.Tip.HashBlock;
+
+            benchLog.AppendLine(consensusLog);
 
             this.logger.LogTrace("(-)");
         }
