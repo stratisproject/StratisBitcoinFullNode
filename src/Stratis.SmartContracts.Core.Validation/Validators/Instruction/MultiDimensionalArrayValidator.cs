@@ -9,31 +9,24 @@ namespace Stratis.SmartContracts.Core.Validation
     /// <summary>
     /// Validates that methods don't contain any multi-dimensional array initializers.
     /// </summary>
-    public class MultiDimensionalArrayValidator : IMethodDefinitionValidator
+    public class MultiDimensionalArrayValidator : IInstructionValidator
     {
         public static readonly string ErrorType = "Multi-Dimensional Arrays Not Supported";
 
-        public IEnumerable<ValidationResult> Validate(MethodDefinition method)
+        public IEnumerable<ValidationResult> Validate(Instruction instruction, MethodDefinition method)
         {
-            if (!method.HasBody || method.Body.Instructions.Count == 0)
-                return Enumerable.Empty<MethodDefinitionValidationResult>();
-
-            foreach (Instruction instruction in method.Body.Instructions)
+            if (instruction.OpCode.Code == Code.Newobj)
             {
-                if (instruction.OpCode.Code == Code.Newobj)
-                {
-                    var methodRef = (MethodReference)instruction.Operand;
+                var methodRef = (MethodReference)instruction.Operand;
 
-                    if (methodRef.DeclaringType.IsArray && ((ArrayType)methodRef.DeclaringType).Dimensions.Count >= 2)
-                    {
-                        return new List<ValidationResult>
+                if (methodRef.DeclaringType.IsArray && ((ArrayType)methodRef.DeclaringType).Dimensions.Count >= 2)
+                {
+                    return new List<ValidationResult>
                         {
                             new MethodParamValidationResult(method)
                         };
-                    }
                 }
             }
-
             return Enumerable.Empty<MethodDefinitionValidationResult>();
         }
 
