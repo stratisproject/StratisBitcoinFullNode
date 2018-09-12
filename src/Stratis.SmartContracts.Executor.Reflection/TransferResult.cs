@@ -10,50 +10,41 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>The return value of the method called.</summary>
         public object ReturnValue { get; private set; }
 
-        /// <summary>
-        /// If there was an error during execution of the selected method it will be stored here.
-        /// </summary>
-        public Exception ThrownException { get; private set; }
-
         /// <summary>Whether execution of the contract method was successful.</summary>
-        public bool Success
+        public bool Success { get; }
+
+        private TransferResult(bool success)
         {
-            get { return this.ThrownException == null; }
+            this.Success = success;
         }
 
-        private TransferResult() { }
-
         /// <summary>
-        /// Constructs a an empty result i.e. a transfer from a contract was not defined/executed.
+        /// Constructs a result when the transfer is a funds transfer only and no return value is expected.
         /// </summary>
         public static TransferResult Empty()
         {
-            return new TransferResult();
+            return new TransferResult(true);
         }
 
         /// <summary>
         /// Constructs a result when a transfer from a contract failed.
         /// </summary>
-        /// <param name="thrownException">The exception that was thrown by the executor.</param>
-        public static TransferResult Failed(Exception thrownException)
+        public static TransferResult Failed()
         {
-            var result = new TransferResult
-            {
-                ThrownException = thrownException
-            };
-            return result;
+            return new TransferResult(false);
         }
 
         /// <summary>
-        /// Constructs a result when a transfer from a contract succeeded.
+        /// Constructs a result when a transfer from a contract succeeded and a return value is expected.
         /// </summary>
         /// <param name="returnValue">The object that was returned from the executor.</param>
         public static TransferResult Transferred(object returnValue)
         {
-            var result = new TransferResult
+            var result = new TransferResult(true)
             {
                 ReturnValue = returnValue
             };
+
             return result;
         }
     }

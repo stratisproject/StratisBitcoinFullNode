@@ -938,7 +938,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             int oldMaxBlocksBeingDownloaded = 100;
             this.puller.SetMaxBlocksBeingDownloaded(oldMaxBlocksBeingDownloaded);
 
-            int oldTotalSpeed = this.puller.GetTotalSpeedOfAllPeersBytesPerSec();
+            long oldTotalSpeed = this.puller.GetTotalSpeedOfAllPeersBytesPerSec();
 
             this.puller.PushBlock(headers.First().HashBlock, blockToPush, peer.Connection.Id);
 
