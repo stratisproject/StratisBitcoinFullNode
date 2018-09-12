@@ -2853,7 +2853,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             walletManager.LoadKeysLookupLock();
 
             Assert.NotNull(walletManager.keysLookup);
-            Assert.Empty(walletManager.keysLookup);
+            Assert.Empty(walletManager.keysLookup.Values);
         }
 
         [Fact]
@@ -3188,7 +3188,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             const string stratisAccount0ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
             var walletManager = this.CreateWalletManager(dataFolder, this.Network);
             walletManager.RecoverWallet("testWallet", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTime.Now.AddHours(-2));
-            
+
             var wallet = walletManager.LoadWallet("password", "testWallet");
 
             wallet.IsExtPubKeyWallet.Should().BeTrue();

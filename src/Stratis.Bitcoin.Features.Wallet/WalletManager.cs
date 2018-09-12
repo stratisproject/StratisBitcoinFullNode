@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
         // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
         private Dictionary<OutPoint, TransactionData> outpointLookup;
-        internal Dictionary<Script, HdAddress> keysLookup;
+        internal KeysLookup keysLookup;
 
         public WalletManager(
             ILoggerFactory loggerFactory,
@@ -135,8 +135,20 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.broadcasterManager.TransactionStateChanged += this.BroadcasterManager_TransactionStateChanged;
             }
 
-            this.keysLookup = new Dictionary<Script, HdAddress>();
+            this.keysLookup = this.CreateKeysLookup();
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
+        }
+
+        /// <summary>
+        /// Creates the <see cref="KeysLookup"/> object to use.
+        /// </summary>
+        /// <remarks>
+        /// Override this method and the <see cref="KeysLookup"/> object to provide a custom keys lookup.
+        /// </remarks>
+        /// <returns>A new <see cref="KeysLookup"/> object for use by this class.</returns>
+        protected virtual KeysLookup CreateKeysLookup()
+        {
+            return new KeysLookup();
         }
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
@@ -358,7 +370,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(name, nameof(name));
             Guard.NotNull(extPubKey, nameof(extPubKey));
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(name), name, nameof(extPubKey), extPubKey, nameof(accountIndex), accountIndex);
-            
+
             // Create a wallet file.
             Wallet wallet = this.GenerateExtPubKeyOnlyWalletFile(name, creationTime);
 
@@ -601,7 +613,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
                 }
-                
+
                 foreach (HdAccount account in accounts)
                 {
                     (Money amountConfirmed, Money amountUnconfirmed) result = account.GetSpendableAmount();
@@ -841,7 +853,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     throw new WalletException("Reorg");
                 }
 
-                // The block coming in to the wallet should never be ahead of the wallet. 
+                // The block coming in to the wallet should never be ahead of the wallet.
                 // If the block is behind, let it pass.
                 if (chainedHeader.Height > current.Height)
                 {
@@ -921,7 +933,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                             return true;
 
                         // Include the keys that are in the wallet but that are for receiving
-                        // addresses (which would mean the user paid itself). 
+                        // addresses (which would mean the user paid itself).
                         // We also exclude the keys involved in a staking transaction.
                         return !addr.IsChangeAddress() && !transaction.IsCoinStake;
                     });
@@ -934,7 +946,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Figure out what to do when this transaction is found to affect the wallet.
             if (foundSendingTrx || foundReceivingTrx)
             {
-                // Save the wallet when the transaction was not included in a block. 
+                // Save the wallet when the transaction was not included in a block.
                 if (blockHeight == null)
                 {
                     this.SaveWallets();
