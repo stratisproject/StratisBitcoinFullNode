@@ -1203,7 +1203,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ChainedHeader bestTip = this.chainedHeaderTree.GetBestPeerTip();
 
-                if (bestTip == null || bestTip.Height < this.Tip.Height)
+                if ((bestTip == null) || (bestTip.Height < this.Tip.Height))
                     bestTip = this.Tip;
 
                 string headersLog = "Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + bestTip.Height.ToString().PadRight(8) +
