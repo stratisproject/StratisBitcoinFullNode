@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.Consensus
             }
             catch (Exception ex)
             {
-                ruleContext.ValidationContext.Error = new ConsensusError("unhandled-exception", ex.Message);
+                ruleContext.ValidationContext.Error = new ConsensusError("unhandled-exception", ex.Message.ToString());
             }
         }
 
