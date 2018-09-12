@@ -86,7 +86,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                         new MethodCall(callData.MethodName, callData.MethodParameters)
                 );
 
-                result = state.Apply(message);
+                result = newState.Apply(message);
             }
 
             state.TransitionTo(newState);
