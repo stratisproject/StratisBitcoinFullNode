@@ -51,30 +51,40 @@ namespace Stratis.Bitcoin.Builder
         /// <inheritdoc />
         public void Initialize()
         {
+            this.logger.LogTrace("()");
+
             try
             {
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
                 this.Execute(service => service.Initialize());
             }
-            catch (Exception ex)
+            catch (AggregateException)
             {
-                this.logger.LogError("An error occurred starting the application: {0}", ex);
+                this.logger.LogError("An error occurred starting the application.");
+                this.logger.LogTrace("(-)[INITIALIZE_EXCEPTION]");
                 throw;
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
+            this.logger.LogTrace("()");
+
             try
             {
                 this.Execute(feature => feature.Dispose(), true);
             }
-            catch (Exception ex)
+            catch (AggregateException)
             {
-                this.logger.LogError("An error occurred stopping the application", ex);
+                this.logger.LogError("An error occurred stopping the application.");
+                this.logger.LogTrace("(-)[DISPOSE_EXCEPTION]");
                 throw;
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -82,42 +92,48 @@ namespace Stratis.Bitcoin.Builder
         /// </summary>
         /// <param name="callback">Delegate to run start or stop method of the feature.</param>
         /// <param name="reverseOrder">Reverse the order of which the features are executed.</param>
-        /// <remarks>This method catches exception of start/stop methods and then, after all start/stop methods were called
-        /// for all features, it throws AggregateException if there were any exceptions.</remarks>
+        /// <exception cref="AggregateException">Thrown in case one or more callbacks threw an exception.</exception>
         private void Execute(Action<IFullNodeFeature> callback, bool reverseOrder = false)
         {
+            this.logger.LogTrace("({0}:{1})", nameof(reverseOrder), reverseOrder);
+
             List<Exception> exceptions = null;
 
-            if (this.node.Services != null)
+            if (this.node.Services == null)
             {
-                IEnumerable<IFullNodeFeature> iterator = this.node.Services.Features;
+                this.logger.LogTrace("(-)[NO_SERVICES]");
+                return;
+            }
 
-                if (reverseOrder)
-                    iterator = iterator.Reverse();
+            IEnumerable<IFullNodeFeature> features = this.node.Services.Features;
 
-                foreach (IFullNodeFeature service in iterator)
+            if (reverseOrder)
+                features = features.Reverse();
+
+            foreach (IFullNodeFeature feature in features)
+            {
+                try
                 {
-                    try
-                    {
-                        callback(service);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (exceptions == null)
-                        {
-                            exceptions = new List<Exception>();
-                        }
-
-                        exceptions.Add(ex);
-                    }
+                    callback(feature);
                 }
-
-                // Throw an aggregate exception if there were any exceptions
-                if (exceptions != null)
+                catch (Exception ex)
                 {
-                    throw new AggregateException(exceptions);
+                    if (exceptions == null)
+                        exceptions = new List<Exception>();
+
+                    exceptions.Add(ex);
+                    this.logger.LogError("An error occurred: '{0}'", ex.ToString());
                 }
             }
+
+            // Throw an aggregate exception if there were any exceptions.
+            if (exceptions != null)
+            {
+                this.logger.LogTrace("(-)[EXECUTION_FAILED]");
+                throw new AggregateException(exceptions);
+            }
+
+            this.logger.LogTrace("(-)");
         }
     }
 }
