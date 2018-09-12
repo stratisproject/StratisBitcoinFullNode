@@ -45,11 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Mnemonic mnemonic2 = stratisReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
                 Assert.Equal(12, mnemonic1.Words.Length);
                 Assert.Equal(12, mnemonic2.Words.Length);
-                HdAddress addr = stratisSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, Account));
-                Features.Wallet.Wallet wallet = stratisSender.FullNode.WalletManager().GetWalletByName(WalletName);
-                Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
 
-                stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 TestHelper.MineBlocks(stratisSender, WalletName, Password, Account, (uint)maturity + 5);
 
@@ -141,13 +137,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 stratisReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
                 stratisReorg.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);                
-
-                HdAddress addr = stratisSender.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, Account));
-                Features.Wallet.Wallet wallet = stratisSender.FullNode.WalletManager().GetWalletByName(WalletName);
-                Key key = wallet.GetExtendedPrivateKeyForAddress(Password, addr).PrivateKey;
-
-                stratisSender.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
-                stratisReorg.SetDummyMinerSecret(new BitcoinSecret(key, stratisSender.FullNode.Network));
 
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 TestHelper.MineBlocks(stratisSender, WalletName, Password, Account, (uint)maturity + 15);
@@ -290,9 +279,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisReceiver.NotInIBD().WithWallet(walletPassword: Password, walletName: WalletName);
                 stratisReorg.NotInIBD().WithWallet(walletPassword: Password, walletName: WalletName);
 
-                stratisSender.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisSender.FullNode.Network));
-                stratisReorg.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisReorg.FullNode.Network));
-
                 TestHelper.MineBlocks(stratisSender, WalletName, Password, Account, 10);
 
                 // Wait for node to be fully synced.
@@ -350,9 +336,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 stratisSender.NotInIBD().WithWallet(walletPassword:Password, walletName: WalletName);
                 stratisReceiver.NotInIBD().WithWallet(walletPassword: Password, walletName: WalletName);
                 stratisReorg.NotInIBD().WithWallet(walletPassword: Password, walletName: WalletName);
-
-                stratisSender.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisSender.FullNode.Network));
-                stratisReorg.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisReorg.FullNode.Network));
 
                 TestHelper.MineBlocks(stratisSender, WalletName, Password, Account, 10);
 
