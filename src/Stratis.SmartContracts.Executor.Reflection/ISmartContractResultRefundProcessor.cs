@@ -14,6 +14,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         (Money, TxOut) Process(ContractTxData contractTxData,
             ulong mempoolFee, uint160 sender,
             Gas gasConsumed,
-            Exception exception);
+            bool outOfGas);
     }
 }
