@@ -30,7 +30,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class State : IState
     {
         private readonly List<TransferInfo> internalTransfers;
-        
+
+        private IState child;
+
         private State(State state)
         {
             this.ContractState = state.ContractState.StartTracking();
@@ -126,6 +128,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public void TransitionTo(IState state)
         {
+            if (this.child != state)
+            {
+                throw new ArgumentException("New state must be a child of this state.");
+            }
+
             // Update internal transfers
             this.internalTransfers.Clear();
             this.internalTransfers.AddRange(state.InternalTransfers);
@@ -139,6 +146,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // Commit the state to update the parent state
             state.ContractState.Commit();
+
+            this.child = null;
         }
 
         private StateTransitionResult ApplyCreate(object[] parameters, byte[] code, BaseMessage message, string type = null)
@@ -321,9 +330,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.ApplyCall(message, contractCode);
         }
 
+        /// <summary>
+        /// Returns a mutable snapshot of the current state. Changes can be made to the snapshot, then discarded or applied to the parent state.
+        /// To update this state with changes made to the snapshot, call <see cref="TransitionTo"/>. Only one valid snapshot can exist. If a new
+        /// snapshot is created, the parent state will reject any transitions from older snapshots.
+        /// </summary>
         public IState Snapshot()
         {
-            return new State(this);
+            this.child = new State(this);
+
+            return this.child;
         }
 
         /// <summary>

@@ -61,7 +61,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 callData.GasLimit);
 
             StateTransitionResult result;
-            var newState = state.Snapshot();
+            IState newState = state.Snapshot();
 
             if (creation)
             {
