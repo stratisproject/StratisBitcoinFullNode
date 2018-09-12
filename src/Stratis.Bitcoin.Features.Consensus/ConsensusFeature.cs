@@ -47,8 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Signals.Signals signals,
             IConsensusManager consensusManager,
             NodeDeployments nodeDeployments,
-            ConsensusStats consensusStats,
-            INodeStats nodeStats)
+            ConsensusStats consensusStats)
         {
             this.chainState = chainState;
             this.connectionManager = connectionManager;
@@ -58,20 +57,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusStats = consensusStats;
 
             this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
-
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
-        }
-
-        private void AddInlineStats(StringBuilder benchLogs)
-        {
-            if (this.chainState?.ConsensusTip != null)
-            {
-                string log = "Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                    this.chainState.ConsensusTip.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
-                    this.chainState.ConsensusTip.HashBlock;
-
-                benchLogs.AppendLine(log);
-            }
         }
 
         /// <inheritdoc />

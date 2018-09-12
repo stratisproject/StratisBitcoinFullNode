@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.ValidationResults;
@@ -108,7 +110,8 @@ namespace Stratis.Bitcoin.Consensus
             IBlockPuller blockPuller,
             IBlockStore blockStore,
             IInvalidBlockHashStore invalidHashesStore,
-            IConnectionManager connectionManager)
+            IConnectionManager connectionManager,
+            INodeStats nodeStats)
         {
             this.network = network;
             this.chainState = chainState;
@@ -130,7 +133,6 @@ namespace Stratis.Bitcoin.Consensus
             this.reorgLock = new AsyncLock();
             this.blockRequestedLock = new object();
             this.expectedBlockDataBytes = 0;
-            this.expectedBlockSizes = new Dictionary<uint256, long>();
 
             this.callbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
             this.peersByPeerId = new Dictionary<int, INetworkPeer>();
@@ -138,6 +140,8 @@ namespace Stratis.Bitcoin.Consensus
             this.ibdState = ibdState;
 
             this.blockPuller = blockPuller;
+
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
         }
 
         /// <inheritdoc />
@@ -1188,6 +1192,34 @@ namespace Stratis.Bitcoin.Consensus
 
             this.logger.LogTrace("(-):{0}", isConsideredSynced);
             return isConsideredSynced;
+        }
+
+        private void AddInlineStats(StringBuilder benchLog)
+        {
+            this.logger.LogTrace("()");
+
+            if (this.chainState?.ConsensusTip != null)
+            {
+                lock (this.peerLock)
+                {
+                    ChainedHeader bestTip = this.chainedHeaderTree.GetBestPeerTip();
+
+                    if (bestTip == null || bestTip.Height < this.Tip.Height)
+                        bestTip = this.Tip;
+
+                    string headersLog = "Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + bestTip.Height.ToString().PadRight(8) +
+                                        " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + bestTip.HashBlock;
+
+                    benchLog.AppendLine(headersLog);
+                }
+
+                string consensusLog = "Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + this.Tip.Height.ToString().PadRight(8) +
+                                      " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.Tip.HashBlock;
+
+                benchLog.AppendLine(consensusLog);
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
