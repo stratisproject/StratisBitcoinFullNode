@@ -109,18 +109,18 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
             this.walletManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
 
-            this.coldStakingManager.CreateColdStakingAccount(walletName1, true, walletPassword);
-            this.coldStakingManager.CreateColdStakingAccount(walletName1, false, walletPassword);
-            this.coldStakingManager.CreateColdStakingAccount(walletName2, true, walletPassword);
-            this.coldStakingManager.CreateColdStakingAccount(walletName2, false, walletPassword);
+            this.coldStakingManager.GetOrCreateColdStakingAccount(walletName1, true, walletPassword);
+            this.coldStakingManager.GetOrCreateColdStakingAccount(walletName1, false, walletPassword);
+            this.coldStakingManager.GetOrCreateColdStakingAccount(walletName2, true, walletPassword);
+            this.coldStakingManager.GetOrCreateColdStakingAccount(walletName2, false, walletPassword);
 
             var wallet1 = this.walletManager.GetWalletByName(walletName1);
             var wallet2 = this.walletManager.GetWalletByName(walletName2);
 
-            var coldAddress1 = this.coldStakingManager.GetColdStakingAddress(walletName1, true);
-            var hotAddress1 = this.coldStakingManager.GetColdStakingAddress(walletName1, false);
-            var coldAddress2 = this.coldStakingManager.GetColdStakingAddress(walletName2, true);
-            var hotAddress2 = this.coldStakingManager.GetColdStakingAddress(walletName2, false);
+            var coldAddress1 = this.coldStakingManager.GetFirstUnusedColdStakingAddress(walletName1, true);
+            var hotAddress1 = this.coldStakingManager.GetFirstUnusedColdStakingAddress(walletName1, false);
+            var coldAddress2 = this.coldStakingManager.GetFirstUnusedColdStakingAddress(walletName2, true);
+            var hotAddress2 = this.coldStakingManager.GetFirstUnusedColdStakingAddress(walletName2, false);
 
             Assert.Equal(coldWalletAddress1, coldAddress1.Address.ToString());
             Assert.Equal(hotWalletAddress1, hotAddress1.Address.ToString());
@@ -182,8 +182,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
             // Create existing accounts.
-            this.coldStakingManager.CreateColdStakingAccount(walletName1, true, walletPassword);
-            this.coldStakingManager.CreateColdStakingAccount(walletName1, false, walletPassword);
+            this.coldStakingManager.GetOrCreateColdStakingAccount(walletName1, true, walletPassword);
+            this.coldStakingManager.GetOrCreateColdStakingAccount(walletName1, false, walletPassword);
 
             // Try to get cold wallet address on existing account without supplying the wallet password.
             IActionResult result1 = this.coldStakingController.GetColdStakingAddress(new GetColdStakingAddressRequest
