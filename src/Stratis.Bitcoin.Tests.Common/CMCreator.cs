@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Tests.Common
 {
     public static class CMCreator
     {
-        public static ConsensusManager CreateConsensusManager(Network network, string dataDir = null, ChainState chainState = null)
+        public static ConsensusManager CreateConsensusManager(Network network, string dataDir = null, ChainState chainState = null, InMemoryCoinView inMemoryCoinView = null)
         {
             string[] param = dataDir == null ? new string[]{} : new string[] { $"-datadir={dataDir}" };
 
@@ -43,7 +43,9 @@ namespace Stratis.Bitcoin.Tests.Common
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chain = new ConcurrentChain(network);
-            InMemoryCoinView inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
+
+            if (inMemoryCoinView == null)
+                inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
 
             var networkPeerFactory = new NetworkPeerFactory(network,
                 dateTimeProvider,
