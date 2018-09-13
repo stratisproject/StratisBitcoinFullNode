@@ -110,6 +110,7 @@ namespace Stratis.Bitcoin.Base
 
         private readonly IConsensusManager consensusManager;
         private readonly IConsensusRuleEngine consensusRules;
+        private readonly IPartialValidator partialValidator;
         private readonly IBlockPuller blockPuller;
         private readonly IBlockStore blockStore;
 
@@ -150,6 +151,7 @@ namespace Stratis.Bitcoin.Base
             this.connectionManager = Guard.NotNull(connectionManager, nameof(connectionManager));
             this.consensusManager = consensusManager;
             this.consensusRules = consensusRules;
+            this.partialValidator = partialValidator;
             this.blockPuller = blockPuller;
             this.blockStore = blockStore;
             this.network = network;
@@ -278,6 +280,9 @@ namespace Stratis.Bitcoin.Base
 
             this.logger.LogInformation("Disposing peer address manager...");
             this.peerAddressManager.Dispose();
+
+            this.logger.LogInformation("Disposing partial validator...");
+            this.partialValidator.Dispose();
 
             if (this.flushChainLoop != null)
             {
