@@ -81,17 +81,21 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.Serializer = serializer;
         }
 
-        public IContractPrimitiveSerializer Serializer { get; }
+        private IInternalTransactionExecutorFactory InternalTransactionExecutorFactory { get; }
 
-        public IAddressGenerator AddressGenerator { get; }
+        private ISmartContractVirtualMachine Vm { get; }
 
-        public uint256 TransactionHash { get; }
+        private IContractPrimitiveSerializer Serializer { get; }
 
-        public IBlock Block { get; }
+        private IAddressGenerator AddressGenerator { get; }
+
+        private uint256 TransactionHash { get; }
+
+        private IBlock Block { get; }
+
+        private Network Network { get; }
 
         public ulong Nonce { get; private set; }
-
-        public Network Network { get; }
 
         public IContractLogHolder LogHolder { get; }
 
@@ -99,16 +103,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IReadOnlyList<TransferInfo> InternalTransfers => this.internalTransfers;
 
-        public IInternalTransactionExecutorFactory InternalTransactionExecutorFactory { get; }
-
-        public ISmartContractVirtualMachine Vm { get; }
-
         private ulong GetNonceAndIncrement()
         {
             return this.Nonce++;
         }
 
-        public IContractState ContractState { get; private set; }    
+        public IContractState ContractState { get; }    
 
         /// <summary>
         /// Returns contract logs in the log type used by consensus.
