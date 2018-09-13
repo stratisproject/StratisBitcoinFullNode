@@ -314,10 +314,11 @@ namespace Stratis.Bitcoin.Consensus
 
             if (removed)
             {
-                // TODO NODE LIFETIME - dont call those if shutting down
-                this.chainedHeaderTree.PeerDisconnected(peerId); //don't call
-                this.blockPuller.PeerDisconnected(peerId); // call
-                this.ProcessDownloadQueueLocked(); // dont call
+                // TODO Use node lifetime here and don't call ProcessDownloadQueueLocked and chainedHeaderTree.PeerDisconnected
+                // on node shutdown. Otherwise we have big shutdown perf hit.
+                this.chainedHeaderTree.PeerDisconnected(peerId);
+                this.blockPuller.PeerDisconnected(peerId);
+                this.ProcessDownloadQueueLocked();
             }
             else
                 this.logger.LogTrace("Peer {0} was already removed.", peerId);
