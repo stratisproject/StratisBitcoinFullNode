@@ -36,9 +36,7 @@ namespace NBitcoin.Tests
                 // Attempt to deserialize it
                 provenHeaderToDeserialize.ReadWrite(bytes, this.factory);
                 provenHeaderToDeserialize.GetHash().Should().Be(provenHeaderToSerialize.GetHash());
-                provenHeaderToDeserialize.Coinstake.Should().BeEquivalentTo(provenHeaderToSerialize.Coinstake);
-                provenHeaderToDeserialize.Signature.Should().BeEquivalentTo(provenHeaderToSerialize.Signature);
-                provenHeaderToDeserialize.MerkleProof.Should().BeEquivalentTo(provenHeaderToSerialize.MerkleProof);
+                provenHeaderToDeserialize.Coinstake.GetHash().Should().Be(provenHeaderToSerialize.Coinstake.GetHash());
             }
         }
 
