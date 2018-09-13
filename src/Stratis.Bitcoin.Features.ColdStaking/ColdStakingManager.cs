@@ -423,36 +423,67 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             Script destination = BitcoinAddress.Create(receivingAddress, wallet.Network).ScriptPubKey.PaymentScript;
 
             // Take the largest unspent outputs from the specified cold staking or setup transaction.
-            Money availAmt = 0;
-            List<UnspentOutputReference> unspents = this.walletManager
+            IOrderedEnumerable<UnspentOutputReference> orderedUnspents = this.walletManager
                 .GetSpendableTransactionsInAccount(new WalletAccountReference(walletName, coldAccount.Name))
-                .OrderByDescending(a => a.Transaction.Amount)
-                .TakeWhile(a => (availAmt += a.Transaction.Amount) < amount).ToList();
+                .OrderByDescending(a => a.Transaction.Amount);
+
+            // TODO: See if this can be replaced by a call.
+            var selectedInputs = new List<UnspentOutputReference>();
+            Money availAmount = 0;
+            foreach (UnspentOutputReference unspent in orderedUnspents)
+            {
+                if (availAmount >= amount)
+                    break;
+
+                selectedInputs.Add(unspent);
+
+                availAmount += unspent.Transaction.Amount;
+            }
 
             // Check the amount requested against the amount available.
-            if (availAmt < amount)
+            if (availAmount < amount)
             {
                 this.logger.LogTrace("(-)[COLDSTAKE_AMOUNT_TOO_LARGE]");
                 throw new WalletException("Insufficient balance amount.");
             }
 
+            // Create the transaction build context (used in BuildTransaction).
             var context = new TransactionBuildContext(wallet.Network)
             {
                 AccountReference = new WalletAccountReference(walletName, coldAccount.Name),
-                SelectedInputs = unspents.Select(a => a.ToOutPoint()).ToList(),
-                ChangeAddress = unspents[0].Address,
+                SelectedInputs = selectedInputs.Select(a => a.ToOutPoint()).ToList(),
+                // Specify a change address to prevent a change (internal) address from being created.
+                ChangeAddress = selectedInputs[0].Address,
                 TransactionFee = feeAmount,
                 MinConfirmations = 0,
                 Shuffle = false,
-                WalletPassword = walletPassword,
                 Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = destination } }.ToList()
             };
 
             // Avoid errors being raised due to the special script that we are using.
             context.TransactionBuilder.StandardTransactionPolicy.CheckScriptPubKey = false;
 
-            // Build the transaction.
+            // Can't verify script due to empty scriptSig. Avoid stack error.
+            context.TransactionBuilder.StandardTransactionPolicy.ScriptVerify = null;
+
+            // Build the transaction according to the settings recorded in the context.
             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
+
+            // Set the cold staking scriptPubKey on the change output.
+            // TODO: Ensure it is output 0.
+            transaction.Outputs[0].ScriptPubKey = selectedInputs[0].Transaction.ScriptPubKey;
+
+            // Sign the inputs.
+            var builder = new TransactionBuilder(wallet.Network);
+            List<Script> keysRequiredScripts = selectedInputs.Select(i => i.Transaction.ScriptPubKey).Distinct().ToList();
+            // TODO: Parse the coldPubKeys from the cold staking scripts and generate addresses to use in AddKeys below.
+
+            foreach (UnspentOutputReference unspent in selectedInputs)
+                builder
+                    .AddKeys(wallet.GetExtendedPrivateKeyForAddress(walletPassword, /* TODO (see above) */ null))
+                    .AddCoins(new Coin(unspent.ToOutPoint(), new TxOut(unspent.Transaction.Amount, unspent.Transaction.ScriptPubKey)));
+
+            builder.SignTransactionInPlace(transaction);
 
             this.logger.LogTrace("(-)");
             return transaction;
