@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.SmartContracts.Core.Validation;
@@ -243,6 +242,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             string adjustedSource = TestString.Replace(ReplaceCodeString, code).Replace(ReplaceReferencesString, "");
 
+            byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.False(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_Determinism_Fails_MultiDimensional_Arrays()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, @"var test = new int[50,50];").Replace(ReplaceReferencesString, "");
             byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
             IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
