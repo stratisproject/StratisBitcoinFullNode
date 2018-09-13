@@ -5,10 +5,14 @@ using NBitcoin;
 namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
-    /// This class encapsulates the <see cref="keysLookup"/> dictionary for use in the <see cref="WalletManager"/>.
-    /// The methods are virtual so that the functionality can be overridden as required.
+    /// This class is used to identify a <see cref="HdAddress" /> given a <see cref="Script" /> (scriptPubKey).
     /// </summary>
-    public class KeysLookup
+    /// <remarks>
+    /// Being able to map scripts to addresses allows the wallet to identify the corresponding transactions (see
+    /// <see cref="HdAddress.Transactions" />) that pay to those addresses regardless of the type of script being used.
+    /// The methods are virtual so that the functionality can be overridden as required to support additional script types.
+    /// </remarks>
+    public class AddressFromScriptLookup
     {
         /// <summary>A collection of <see cref="HdAddress"/> objects eached keyed by a <see cref="Script"/> object.</summary>
         protected Dictionary<Script, HdAddress> keysLookup;
@@ -16,13 +20,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Constructs this object.
         /// </summary>
-        public KeysLookup()
+        public AddressFromScriptLookup()
         {
             this.keysLookup = new Dictionary<Script, HdAddress>();
         }
 
         /// <summary>
-        /// Returns the <see cref="HdAddress"/> values from the <see cref="KeysLookup.keysLookup"/> collection.
+        /// Returns the <see cref="HdAddress"/> values from the <see cref="AddressFromScriptLookup.keysLookup"/> collection.
         /// </summary>
         public virtual IEnumerable<HdAddress> Values
         {

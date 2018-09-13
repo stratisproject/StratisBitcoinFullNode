@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
         // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
         private Dictionary<OutPoint, TransactionData> outpointLookup;
-        internal KeysLookup keysLookup;
+        internal AddressFromScriptLookup addressFromScriptLookup;
 
         public WalletManager(
             ILoggerFactory loggerFactory,
@@ -135,20 +135,20 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.broadcasterManager.TransactionStateChanged += this.BroadcasterManager_TransactionStateChanged;
             }
 
-            this.keysLookup = this.CreateKeysLookup();
+            this.addressFromScriptLookup = this.CreateAddressFromScriptLookup();
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
         }
 
         /// <summary>
-        /// Creates the <see cref="KeysLookup"/> object to use.
+        /// Creates the <see cref="AddressFromScriptLookup"/> object to use.
         /// </summary>
         /// <remarks>
-        /// Override this method and the <see cref="KeysLookup"/> object to provide a custom keys lookup.
+        /// Override this method and the <see cref="AddressFromScriptLookup"/> object to provide a custom keys lookup.
         /// </remarks>
-        /// <returns>A new <see cref="KeysLookup"/> object for use by this class.</returns>
-        protected virtual KeysLookup CreateKeysLookup()
+        /// <returns>A new <see cref="AddressFromScriptLookup"/> object for use by this class.</returns>
+        protected virtual AddressFromScriptLookup CreateAddressFromScriptLookup()
         {
-            return new KeysLookup();
+            return new AddressFromScriptLookup();
         }
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
@@ -805,7 +805,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                IEnumerable<HdAddress> allAddresses = this.keysLookup.Values;
+                IEnumerable<HdAddress> allAddresses = this.addressFromScriptLookup.Values;
                 foreach (HdAddress address in allAddresses)
                 {
                     // Remove all the UTXO that have been reorged.
@@ -903,7 +903,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 foreach (TxOut utxo in transaction.Outputs)
                 {
                     // Check if the outputs contain one of our addresses.
-                    if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress _))
+                    if (this.addressFromScriptLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress _))
                     {
                         this.AddTransactionToWallet(transaction, utxo, blockHeight, block, isPropagated);
                         foundReceivingTrx = true;
@@ -926,7 +926,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                             return false;
 
                         // Check if the destination script is one of the wallet's.
-                        bool found = this.keysLookup.TryGetValue(o.ScriptPubKey, out HdAddress addr);
+                        bool found = this.addressFromScriptLookup.TryGetValue(o.ScriptPubKey, out HdAddress addr);
 
                         // Include the keys not included in our wallets (external payees).
                         if (!found)
@@ -977,7 +977,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Get the collection of transactions to add to.
             Script script = utxo.ScriptPubKey;
-            this.keysLookup.TryGetValue(script, out HdAddress address);
+            this.addressFromScriptLookup.TryGetValue(script, out HdAddress address);
             ICollection<TransactionData> addressTransactions = address.Transactions;
 
             // Check if a similar UTXO exists or not (same transaction ID and same index).
@@ -1063,7 +1063,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 nameof(spendingTransactionId), spendingTransactionId, nameof(spendingTransactionIndex), spendingTransactionIndex, nameof(blockHeight), blockHeight);
 
             // Get the transaction being spent.
-            TransactionData spentTransaction = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
+            TransactionData spentTransaction = this.addressFromScriptLookup.Values.Distinct().SelectMany(v => v.Transactions)
                 .SingleOrDefault(t => (t.Id == spendingTransactionId) && (t.Index == spendingTransactionIndex));
             if (spentTransaction == null)
             {
@@ -1352,9 +1352,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     IEnumerable<HdAddress> addresses = wallet.GetAllAddressesByCoinType(this.coinType);
                     foreach (HdAddress address in addresses)
                     {
-                        this.keysLookup[address.ScriptPubKey] = address;
+                        this.addressFromScriptLookup[address.ScriptPubKey] = address;
                         if (address.Pubkey != null)
-                            this.keysLookup[address.Pubkey] = address;
+                            this.addressFromScriptLookup[address.Pubkey] = address;
 
                         foreach (TransactionData transaction in address.Transactions)
                         {
@@ -1379,9 +1379,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 foreach (HdAddress address in addresses)
                 {
-                    this.keysLookup[address.ScriptPubKey] = address;
+                    this.addressFromScriptLookup[address.ScriptPubKey] = address;
                     if (address.Pubkey != null)
-                        this.keysLookup[address.Pubkey] = address;
+                        this.addressFromScriptLookup[address.Pubkey] = address;
                 }
             }
         }

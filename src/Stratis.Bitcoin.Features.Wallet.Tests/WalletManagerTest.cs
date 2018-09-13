@@ -564,7 +564,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 walletManager.LoadKeysLookupLock();
             });
 
-            Assert.Equal(240, walletManager.keysLookup.Count);
+            Assert.Equal(240, walletManager.addressFromScriptLookup.Count);
         }
 
         [Fact]
@@ -2830,18 +2830,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             walletManager.LoadKeysLookupLock();
 
-            Assert.NotNull(walletManager.keysLookup);
-            Assert.Equal(6, walletManager.keysLookup.Count);
+            Assert.NotNull(walletManager.addressFromScriptLookup);
+            Assert.Equal(6, walletManager.addressFromScriptLookup.Count);
 
             ICollection<HdAddress> externalAddresses = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses;
-            Assert.Equal(externalAddresses.ElementAt(0).Address, walletManager.keysLookup[externalAddresses.ElementAt(0).ScriptPubKey].Address);
-            Assert.Equal(externalAddresses.ElementAt(1).Address, walletManager.keysLookup[externalAddresses.ElementAt(1).ScriptPubKey].Address);
-            Assert.Equal(externalAddresses.ElementAt(2).Address, walletManager.keysLookup[externalAddresses.ElementAt(2).ScriptPubKey].Address);
+            Assert.Equal(externalAddresses.ElementAt(0).Address, walletManager.addressFromScriptLookup[externalAddresses.ElementAt(0).ScriptPubKey].Address);
+            Assert.Equal(externalAddresses.ElementAt(1).Address, walletManager.addressFromScriptLookup[externalAddresses.ElementAt(1).ScriptPubKey].Address);
+            Assert.Equal(externalAddresses.ElementAt(2).Address, walletManager.addressFromScriptLookup[externalAddresses.ElementAt(2).ScriptPubKey].Address);
 
             ICollection<HdAddress> internalAddresses = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).InternalAddresses;
-            Assert.Equal(internalAddresses.ElementAt(0).Address, walletManager.keysLookup[internalAddresses.ElementAt(0).ScriptPubKey].Address);
-            Assert.Equal(internalAddresses.ElementAt(1).Address, walletManager.keysLookup[internalAddresses.ElementAt(1).ScriptPubKey].Address);
-            Assert.Equal(internalAddresses.ElementAt(2).Address, walletManager.keysLookup[internalAddresses.ElementAt(2).ScriptPubKey].Address);
+            Assert.Equal(internalAddresses.ElementAt(0).Address, walletManager.addressFromScriptLookup[internalAddresses.ElementAt(0).ScriptPubKey].Address);
+            Assert.Equal(internalAddresses.ElementAt(1).Address, walletManager.addressFromScriptLookup[internalAddresses.ElementAt(1).ScriptPubKey].Address);
+            Assert.Equal(internalAddresses.ElementAt(2).Address, walletManager.addressFromScriptLookup[internalAddresses.ElementAt(2).ScriptPubKey].Address);
         }
 
         [Fact]
@@ -2852,8 +2852,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             walletManager.LoadKeysLookupLock();
 
-            Assert.NotNull(walletManager.keysLookup);
-            Assert.Empty(walletManager.keysLookup.Values);
+            Assert.NotNull(walletManager.addressFromScriptLookup);
+            Assert.Empty(walletManager.addressFromScriptLookup.Values);
         }
 
         [Fact]
