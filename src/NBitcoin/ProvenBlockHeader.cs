@@ -22,6 +22,14 @@ namespace NBitcoin
     {
         public ProvenBlockHeader(PosBlock block)
         {
+            // Copy block header properties
+            this.HashPrevBlock = block.Header.HashPrevBlock;
+            this.HashMerkleRoot = block.Header.HashMerkleRoot;
+            this.Time = block.Header.Time;
+            this.Bits = block.Header.Time;
+            this.Nonce = block.Header.Nonce;
+            
+            // Set additional properties
             this.signature = block.BlockSignature;
 
             uint256[] txIds = block.Transactions.Select(t => t.GetHash()).ToArray();
