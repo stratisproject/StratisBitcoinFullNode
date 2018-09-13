@@ -24,8 +24,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ISmartContractValidator validator;
         private readonly ILoader assemblyLoader;
         private readonly IContractModuleDefinitionReader moduleDefinitionReader;
-        public static int VmVersion = 1;
-        public const long MemoryUnitLimit = 100_000;
+        public const int VmVersion = 1;
+        public const long MemoryUnitLimit = 100_000; 
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             ILoggerFactory loggerFactory,
@@ -49,7 +49,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             string typeToInstantiate;
             ContractByteCode code;
-            
+
             // Decompile the contract execution code and validate it.
             using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode))
             {
@@ -59,13 +59,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 if (!validation.IsValid)
                 {
                     this.logger.LogTrace("(-)[CONTRACT_VALIDATION_FAILED]");
-                    return VmExecutionResult.Error(new SmartContractValidationException(validation.Errors));
+                    // TODO: List errors by string.
+                    return VmExecutionResult.Error(new ContractErrorMessage(new SmartContractValidationException(validation.Errors).ToString()));
                 }
 
                 typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
 
                 var observer = new Observer(contractState.GasMeter, MemoryUnitLimit);
-                var rewriter = new ObserverRewriter(observer); 
+                var rewriter = new ObserverRewriter(observer);
                 moduleDefinition.Rewrite(rewriter);
 
                 code = moduleDefinition.ToByteCode();
@@ -79,14 +80,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             if (!contractLoadResult.IsSuccess)
             {
-                // TODO this is temporary until we improve error handling overloads
-                var exception = new Exception(contractLoadResult.Error);
-
-                LogException(exception);
+                LogErrorMessage(contractLoadResult.Error);
 
                 this.logger.LogTrace("(-)[LOAD_CONTRACT_FAILED]");
 
-                return VmExecutionResult.Error(exception);
+                return VmExecutionResult.Error(new ContractErrorMessage(contractLoadResult.Error));
             }
 
             IContract contract = contractLoadResult.Value;
@@ -103,13 +101,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (!invocationResult.IsSuccess)
             {
                 this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_FAILED]");
-                return VmExecutionResult.Error(new Exception("Constructor invocation failed!"));
+                return VmExecutionResult.Error(invocationResult.ErrorMessage);
             }
 
             this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_SUCCEEDED]");
-            
+
             this.logger.LogTrace("(-):{0}={1}", nameof(contract.Address), contract.Address);
-            
+
             return VmExecutionResult.Success(invocationResult.Return, typeToInstantiate);
         }
 
@@ -138,14 +136,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             if (!contractLoadResult.IsSuccess)
             {
-                // TODO this is temporary until we improve error handling overloads
-                var exception = new Exception(contractLoadResult.Error);
-
-                LogException(exception);
+                LogErrorMessage(contractLoadResult.Error);
 
                 this.logger.LogTrace("(-)[LOAD_CONTRACT_FAILED]");
 
-                return VmExecutionResult.Error(exception);
+                return VmExecutionResult.Error(new ContractErrorMessage(contractLoadResult.Error));
             }
 
             IContract contract = contractLoadResult.Value;
@@ -157,7 +152,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (!invocationResult.IsSuccess)
             {
                 this.logger.LogTrace("(-)[CALLCONTRACT_INSTANTIATION_FAILED]");
-                return VmExecutionResult.Error(new Exception("Method invocation failed!"));
+                return VmExecutionResult.Error(invocationResult.ErrorMessage);
             }
 
             this.logger.LogTrace("[CALL_CONTRACT_INSTANTIATION_SUCCEEDED]");
@@ -172,7 +167,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         private Result<IContract> Load(
             ContractByteCode byteCode,
-            string typeName, 
+            string typeName,
             uint160 address,
             ISmartContractState contractState)
         {
@@ -197,11 +192,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return Result.Ok(contract);
         }
 
-        private void LogException(Exception exception)
+        private void LogErrorMessage(string error)
         {
-            this.logger.LogTrace("{0}", exception.Message);
-            if (exception.InnerException != null)
-                this.logger.LogTrace("{0}", exception.InnerException.Message);
+            this.logger.LogTrace("{0}", error);
         }
 
         internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress)
