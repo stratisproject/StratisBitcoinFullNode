@@ -4,43 +4,32 @@ using System.Linq;
 namespace NBitcoin
 {
     /// <summary>
+    /// <para>
     /// Extension to an existing <see cref="BlockHeader"/> which is used in PoS to prevent attacker from constructing
     /// a fake chain of headers that has more work than the valid chain and attacking a node.
-    ///
+    /// </para>
+    /// <para>
     /// Proven header prevents such an attack by including additional information that can be validated and confirmed whether
     /// the header is fake or real.
-    ///
+    /// </para>
+    /// <remarks>
+    /// <para>
     /// Additional information included into proven header:
-    ///
+    /// </para>
+    /// <para>
     /// Block header signature (<see cref="Signature"/>), which is signed with the private key which corresponds to
     /// coinstake's Second output's public key.
-    ///
+    /// </para>
+    /// <para>
     /// Coinstake transaction (<see cref="Coinstake"/>).
-    ///
+    /// </para>
+    /// <para>
     /// Merkle proof (<see cref="MerkleProof"/>) that proves the coinstake tx is included in a block that is being represented by the provided header.
+    /// </para>
+    /// </remarks>
     /// </summary>
     public class ProvenBlockHeader : PosBlockHeader
     {
-        public ProvenBlockHeader(PosBlock block)
-        {
-            if (block == null) throw new ArgumentNullException(nameof(block));
-
-            // Copy block header properties
-            this.HashPrevBlock = block.Header.HashPrevBlock;
-            this.HashMerkleRoot = block.Header.HashMerkleRoot;
-            this.Time = block.Header.Time;
-            this.Bits = block.Header.Time;
-            this.Nonce = block.Header.Nonce;
-            
-            // Set additional properties
-            this.signature = block.BlockSignature;
-
-            uint256[] txIds = block.Transactions.Select(t => t.GetHash()).ToArray();
-            this.merkleProof = block.Filter(txIds).PartialMerkleTree;
-
-            this.coinstake = block.Transactions[1];
-        }
-
         /// <summary>
         /// Coinstake transaction.
         /// </summary>
@@ -72,6 +61,26 @@ namespace NBitcoin
         /// coinstake's Second output's public key.
         /// </summary>
         public BlockSignature Signature => this.signature;
+
+        public ProvenBlockHeader(PosBlock block)
+        {
+            if (block == null) throw new ArgumentNullException(nameof(block));
+
+            // Copy block header properties
+            this.HashPrevBlock = block.Header.HashPrevBlock;
+            this.HashMerkleRoot = block.Header.HashMerkleRoot;
+            this.Time = block.Header.Time;
+            this.Bits = block.Header.Time;
+            this.Nonce = block.Header.Nonce;
+
+            // Set additional properties
+            this.signature = block.BlockSignature;
+
+            uint256[] txIds = block.Transactions.Select(t => t.GetHash()).ToArray();
+            this.merkleProof = block.Filter(txIds).PartialMerkleTree;
+
+            this.coinstake = block.Transactions[1];
+        }
 
         /// <inheritdoc />
         public override void ReadWrite(BitcoinStream stream)

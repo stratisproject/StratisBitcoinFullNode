@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using FluentAssertions;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace NBitcoin.Tests
@@ -8,6 +9,7 @@ namespace NBitcoin.Tests
     public class ProvenBlockHeaderTests
     {
         private readonly PosConsensusFactory factory = new PosConsensusFactory();
+        private readonly Network network = KnownNetworks.StratisTest;
 
         [Fact]
         public void ProvenBlockHeaderShouldSerializeAndDeserializeCorrectly()
@@ -34,6 +36,9 @@ namespace NBitcoin.Tests
                 // Attempt to deserialize it
                 provenHeaderToDeserialize.ReadWrite(bytes, this.factory);
                 provenHeaderToDeserialize.GetHash().Should().Be(provenHeaderToSerialize.GetHash());
+                provenHeaderToDeserialize.Coinstake.Should().BeEquivalentTo(provenHeaderToSerialize.Coinstake);
+                provenHeaderToDeserialize.Signature.Should().BeEquivalentTo(provenHeaderToSerialize.Signature);
+                provenHeaderToDeserialize.MerkleProof.Should().BeEquivalentTo(provenHeaderToSerialize.MerkleProof);
             }
         }
 
@@ -46,7 +51,7 @@ namespace NBitcoin.Tests
 
         private ProvenBlockHeader CreateNewProvenBlockHeaderMock()
         {
-            var block = new PosBlock(this.factory.CreateBlockHeader());
+            var block = (PosBlock)this.network.CreateBlock();
             block.Transactions.Add(new Transaction()); // coinbase
             block.Transactions.Add(new Transaction()); // coinstake
 
