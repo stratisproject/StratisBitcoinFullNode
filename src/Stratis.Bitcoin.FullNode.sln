@@ -128,7 +128,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Sm
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Core.Validation.Tests", "Stratis.SmartContracts.Core.Validation.Tests\Stratis.SmartContracts.Core.Validation.Tests.csproj", "{247C062D-8A16-4DD8-93B4-1D1C3D49B498}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeObserver", "RuntimeObserver\RuntimeObserver.csproj", "{38F49E88-545A-437B-9225-0BC8815B0281}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RuntimeObserver", "RuntimeObserver\RuntimeObserver.csproj", "{38F49E88-545A-437B-9225-0BC8815B0281}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
