@@ -9,8 +9,7 @@ public class MemoryLimit : SmartContract
 
     public void AllowedArray()
     {
-        var arr = Array.CreateInstance(typeof(int), 500);
-        //var arr = new int[100];
+        var arr = new int[100];
     }
 
     public void NotAllowedArray()
@@ -68,9 +67,31 @@ public class MemoryLimit : SmartContract
 
     public void AllowedJoin()
     {
-        //Array.C
+        var test = new char[500];
+        string result = string.Join(",", test);
     }
-                          //.Member(nameof(string.Join), Allowed, CollectedEnumerableArgumentRewriter.Default)
-                          //.Member(nameof(string.Concat), Allowed, CollectedEnumerableArgumentRewriter.Default)
 
+    public void NotAllowedJoin()
+    {
+        var test = new char[60_000];
+        string result = string.Join(",", test);
+    }
+    
+    public void AllowedConcat()
+    {
+        string test = "1234567890";
+        for(int i=0; i< 100; i++)
+        {
+            test += test;
+        }
+    }
+
+    public void NotAllowedConcat()
+    {
+        string test = "1234567890";
+        for (int i = 0; i < 100_000; i++)
+        {
+            test += test;
+        }
+    }
 }

@@ -298,29 +298,62 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
             // Small array passes
-            var callData = new MethodCall(nameof(MemoryLimit.AllowedArray));
-            IContractInvocationResult result = contract.Invoke(callData);
-            Assert.True(result.IsSuccess);
-            Assert.True(this.gasMeter.GasConsumed > 0);
+            AssertPasses(contract, nameof(MemoryLimit.AllowedArray));
 
             // Big array fails
-            var callData2 = new MethodCall(nameof(MemoryLimit.NotAllowedArray));
-            result = contract.Invoke(callData2);
-            Assert.False(result.IsSuccess);
-            Assert.Equal(ContractInvocationErrorType.MethodThrewException, result.InvocationErrorType);
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedArray));
 
             // Small array resize passes
-            var callData3 = new MethodCall(nameof(MemoryLimit.AllowedArrayResize));
-            result = contract.Invoke(callData3);
-            Assert.True(result.IsSuccess);
+            AssertPasses(contract, nameof(MemoryLimit.AllowedArrayResize));
 
             // Big array resize fails
-            var callData4 = new MethodCall(nameof(MemoryLimit.NotAllowedArrayResize));
-            result = contract.Invoke(callData4);
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedArrayResize));
+
+            // Small string constructor passes
+            AssertPasses(contract, nameof(MemoryLimit.AllowedStringConstructor));
+
+            // Big string constructor fails
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedStringConstructor));
+
+            // Small ToCharArray passes
+            AssertPasses(contract, nameof(MemoryLimit.AllowedToCharArray));
+
+            // Large ToCharArray fails
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedToCharArray));
+
+            // Small Split passes
+            AssertPasses(contract, nameof(MemoryLimit.AllowedSplit));
+
+            // Large Split fails
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedSplit));
+
+            // Small Join passes
+            AssertPasses(contract, nameof(MemoryLimit.AllowedJoin));
+
+            // Large Join fails
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedJoin));
+
+            // Small Concat passes
+            AssertPasses(contract, nameof(MemoryLimit.AllowedConcat));
+
+            // Large Concat fails
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedConcat));
+        }
+
+        private void AssertFailsDueToMemory(IContract contract, string methodName)
+        {
+            var callData = new MethodCall(methodName);
+            IContractInvocationResult result = contract.Invoke(callData);
             Assert.False(result.IsSuccess);
             Assert.Equal(ContractInvocationErrorType.MethodThrewException, result.InvocationErrorType);
         }
 
+        private void AssertPasses(IContract contract, string methodName)
+        {
+            var callData = new MethodCall(methodName);
+            IContractInvocationResult result = contract.Invoke(callData);
+            Assert.True(result.IsSuccess);
+        }
 
     }
 }
