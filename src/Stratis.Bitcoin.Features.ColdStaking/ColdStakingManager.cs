@@ -394,10 +394,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 nameof(feeAmount), feeAmount
                 );
 
-            Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
+            Wallet.Wallet wallet = this.walletManager.GetWalletByName(walletName);
 
             // Get/create the cold staking account.
-            HdAccount coldAccount = this.CreateColdStakingAccount(walletName, true, walletPassword);
+            HdAccount coldAccount = this.GetOrCreateColdStakingAccount(walletName, true, walletPassword);
             if (coldAccount == null)
             {
                 this.logger.LogTrace("(-)[COLDSTAKE_ACCOUNT_DOES_NOT_EXIST]");
@@ -424,7 +424,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             // Take the largest unspent outputs from the specified cold staking or setup transaction.
             Money availAmt = 0;
-            List<UnspentOutputReference> unspents = this.WalletManager
+            List<UnspentOutputReference> unspents = this.walletManager
                 .GetSpendableTransactionsInAccount(new WalletAccountReference(walletName, coldAccount.Name))
                 .OrderByDescending(a => a.Transaction.Amount)
                 .TakeWhile(a => (availAmt += a.Transaction.Amount) < amount).ToList();
@@ -452,7 +452,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             context.TransactionBuilder.StandardTransactionPolicy.CheckScriptPubKey = false;
 
             // Build the transaction.
-            Transaction transaction = this.WalletTransactionHandler.BuildTransaction(context);
+            Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
 
             this.logger.LogTrace("(-)");
             return transaction;
