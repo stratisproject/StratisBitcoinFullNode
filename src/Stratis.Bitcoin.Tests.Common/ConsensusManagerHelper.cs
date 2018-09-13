@@ -24,7 +24,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Tests.Common
 {
-    public static class CMCreator
+    public static class ConsensusManagerHelper
     {
         public static ConsensusManager CreateConsensusManager(Network network, string dataDir = null, ChainState chainState = null, InMemoryCoinView inMemoryCoinView = null)
         {

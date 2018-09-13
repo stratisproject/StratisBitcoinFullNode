@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         private IConsensusManager CreateConsensusManager()
         {
-            this.ConsensusManager = CMCreator.CreateConsensusManager(this.Network);
+            this.ConsensusManager = ConsensusManagerHelper.CreateConsensusManager(this.Network);
 
             return this.ConsensusManager;
         }

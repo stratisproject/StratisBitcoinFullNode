@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     new InvalidBlockHashStore(DateTimeProvider.Default))
                     .Register();
 
-                this.consensusManager = CMCreator.CreateConsensusManager(this.network);
+                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network);
 
                 await this.consensusManager.InitializeAsync(chainState.BlockStoreTip);
 

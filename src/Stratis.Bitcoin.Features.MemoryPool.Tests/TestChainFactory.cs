@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(),
                 inMemoryCoinView, chainState, new InvalidBlockHashStore(new DateTimeProvider())).Register();
 
-            ConsensusManager consensus = CMCreator.CreateConsensusManager(network, dataDir, chainState);
+            ConsensusManager consensus = ConsensusManagerHelper.CreateConsensusManager(network, dataDir, chainState);
 
             var genesis = new ChainedHeader(network.GetGenesis().Header, network.GenesisHash, 0);
             chainState.BlockStoreTip = genesis;

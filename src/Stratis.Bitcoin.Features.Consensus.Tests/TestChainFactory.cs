@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             await blockStore.InitializeAsync();
 
-            testChainContext.Consensus = CMCreator.CreateConsensusManager(network, dataDir);
+            testChainContext.Consensus = ConsensusManagerHelper.CreateConsensusManager(network, dataDir);
 
             await testChainContext.Consensus.InitializeAsync(testChainContext.Chain.Tip);
 
