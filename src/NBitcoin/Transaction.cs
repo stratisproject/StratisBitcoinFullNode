@@ -291,6 +291,11 @@ namespace NBitcoin
             txin.ScriptSig = new Script(Op.GetPushOp(height)) + OpcodeType.OP_0;
             return txin;
         }
+
+        public override string ToString()
+        {
+            return this.PrevOut.ToString();
+        }
     }
 
     public class TxOutCompressor : IBitcoinSerializable
@@ -630,6 +635,11 @@ namespace NBitcoin
             var ret = new TxOut();
             ret.FromBytes(Encoders.Hex.DecodeData(hex));
             return ret;
+        }
+
+        public override string ToString()
+        {
+            return $"{nameof(this.Value)}={this.Value},{nameof(this.ScriptPubKey)}={this.ScriptPubKey}";
         }
     }
 
@@ -1644,6 +1654,11 @@ namespace NBitcoin
             return Encoders.Hex.EncodeData(this.ToBytes());
         }
 
+        public override string ToString()
+        {
+            return this.GetHash().ToString();
+        }
+
         public string ToString(Network network, RawFormat rawFormat = RawFormat.BlockExplorer)
         {
             RawFormatter formatter = GetFormatter(rawFormat, network);
@@ -1673,7 +1688,7 @@ namespace NBitcoin
                 throw new ArgumentNullException("formatter");
             return formatter.ToString(this);
         }
-      
+
         /// <summary>
         /// Calculate the fee of the transaction
         /// </summary>
@@ -1752,7 +1767,7 @@ namespace NBitcoin
         /// in order to be considered final in the context of BIP 68.  It also removes
         /// from the vector of input heights any entries which did not correspond to sequence
         /// locked inputs as they do not affect the calculation.
-        /// </summary>        
+        /// </summary>
         /// <param name="prevHeights">Previous Height</param>
         /// <param name="block">The block being evaluated</param>
         /// <param name="flags">If VerifySequence is not set, returns always true SequenceLock</param>
@@ -1767,7 +1782,7 @@ namespace NBitcoin
         /// in order to be considered final in the context of BIP 68.  It also removes
         /// from the vector of input heights any entries which did not correspond to sequence
         /// locked inputs as they do not affect the calculation.
-        /// </summary>        
+        /// </summary>
         /// <param name="prevHeights">Previous Height</param>
         /// <param name="chainedHeader">The Chained block header being evaluated</param>
         /// <param name="flags">If VerifySequence is not set, returns always true SequenceLock</param>
