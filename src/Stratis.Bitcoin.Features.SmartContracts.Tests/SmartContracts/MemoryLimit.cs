@@ -80,7 +80,7 @@ public class MemoryLimit : SmartContract
     public void AllowedConcat()
     {
         string test = "1234567890";
-        for(int i=0; i< 100; i++)
+        for(int i=0; i< 10; i++)
         {
             test += test;
         }

@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Coinbase = TestAddress,
                 Number = 1
             };
-            var message = new TestMessage
+            var message = new TestMessage  
             {
                 ContractAddress = TestAddress,
                 GasLimit = (Gas)GasLimit,
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void TestGasInjector_ContractMethodWithRecursion_GasInjectionSucceeds()
+        public void TestGasInjector_ContractMe3thodWithRecursion_GasInjectionSucceeds()
         {
             SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/Recursion.cs");
             Assert.True(compilationResult.Success);
@@ -280,63 +280,84 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(this.gasMeter.GasConsumed > 0);
         }
 
+
         [Fact]
-        public void Test_MemoryLimitRewriter()
+        public void Test_MemoryLimit_Small_Allocations_Pass()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/MemoryLimit.cs");
-            Assert.True(compilationResult.Success);
-
-            byte[] originalAssemblyBytes = compilationResult.Compilation;
-
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
-
-            module.Rewrite(this.observerRewriter);
-            module.Rewrite(this.memoryLimitRewriter);
-
-            CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
-
-            IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
 
             // Small array passes
             AssertPasses(contract, nameof(MemoryLimit.AllowedArray));
 
-            // Big array fails
-            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedArray));
-
             // Small array resize passes
             AssertPasses(contract, nameof(MemoryLimit.AllowedArrayResize));
-
-            // Big array resize fails
-            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedArrayResize));
 
             // Small string constructor passes
             AssertPasses(contract, nameof(MemoryLimit.AllowedStringConstructor));
 
-            // Big string constructor fails
-            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedStringConstructor));
-
             // Small ToCharArray passes
             AssertPasses(contract, nameof(MemoryLimit.AllowedToCharArray));
-
-            // Large ToCharArray fails
-            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedToCharArray));
 
             // Small Split passes
             AssertPasses(contract, nameof(MemoryLimit.AllowedSplit));
 
-            // Large Split fails
-            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedSplit));
-
             // Small Join passes
             AssertPasses(contract, nameof(MemoryLimit.AllowedJoin));
 
-            // Large Join fails
-            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedJoin));
-
             // Small Concat passes
             AssertPasses(contract, nameof(MemoryLimit.AllowedConcat));
+        }
 
-            // Large Concat fails
+        // These are all split up because if they all use the same one
+        // they will have the same 'Observer' and it will overflow.
+        // TODO: Future improvement: Use Theory?
+
+        [Fact]
+        public void Test_MemoryLimit_BigArray_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedArray));
+        }
+
+        [Fact]
+        public void Test_MemoryLimit_BigArrayResize_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedArrayResize));
+        }
+
+        [Fact]
+        public void Test_MemoryLimit_BigStringConstructor_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedStringConstructor));
+        }
+
+        [Fact]
+        public void Test_MemoryLimit_BigCharArray_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedToCharArray));
+        }
+
+        [Fact]
+        public void Test_MemoryLimit_BigStringSplit_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedSplit));
+        }
+
+        [Fact]
+        public void Test_MemoryLimit_BigStringJoin_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedJoin));
+        }
+
+        [Fact]
+        public void Test_MemoryLimit_BigStringConcat_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
             AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedConcat));
         }
 
@@ -353,6 +374,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var callData = new MethodCall(methodName);
             IContractInvocationResult result = contract.Invoke(callData);
             Assert.True(result.IsSuccess);
+        }
+
+        private IContract GetContractAfterRewrite(string filename)
+        {
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile(filename);
+            Assert.True(compilationResult.Success);
+
+            byte[] originalAssemblyBytes = compilationResult.Compilation;
+
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+
+            module.Rewrite(this.observerRewriter);
+            module.Rewrite(this.memoryLimitRewriter);
+
+            CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
+
+            return Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
         }
 
     }
