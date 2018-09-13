@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 
 namespace NBitcoin
 {
@@ -22,6 +23,8 @@ namespace NBitcoin
     {
         public ProvenBlockHeader(PosBlock block)
         {
+            if (block == null) throw new ArgumentNullException(nameof(block));
+
             // Copy block header properties
             this.HashPrevBlock = block.Header.HashPrevBlock;
             this.HashMerkleRoot = block.Header.HashMerkleRoot;
