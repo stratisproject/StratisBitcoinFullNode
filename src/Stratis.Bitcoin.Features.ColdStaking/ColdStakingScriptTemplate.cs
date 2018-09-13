@@ -1,5 +1,5 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.ColdStaking
 {
@@ -8,16 +8,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// </summary>
     public class ColdStakingScriptTemplate : ScriptTemplate
     {
-        private static readonly ColdStakingScriptTemplate _Instance = new ColdStakingScriptTemplate();
-
         /// <summary>Returns a static instance of this class.</summary>
-        public static ColdStakingScriptTemplate Instance
-        {
-            get
-            {
-                return _Instance;
-            }
-        }
+        public static ColdStakingScriptTemplate Instance { get; } = new ColdStakingScriptTemplate();
 
         /// <summary>
         /// Generates the scriptSig.
@@ -28,8 +20,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <returns>The scriptSig.</returns>
         public Script GenerateScriptSig(TransactionSignature signature, bool coldPubKey, PubKey publicKey)
         {
-            if (publicKey == null)
-                throw new ArgumentNullException("publicKey");
+            Guard.NotNull(publicKey, nameof(publicKey));
 
             return new Script(
                 signature == null ? OpcodeType.OP_0 : Op.GetPushOp(signature.ToBytes()),
@@ -103,19 +94,18 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         {
             byte[] bytes = scriptPubKey.ToBytes(true);
             needMoreCheck = false;
-            return
-                   bytes.Length == 51 &&
-                   bytes[0] == (byte)OpcodeType.OP_DUP &&
-                   bytes[1] == (byte)OpcodeType.OP_HASH160 &&
-                   bytes[2] == (byte)OpcodeType.OP_ROT &&
-                   bytes[3] == (byte)OpcodeType.OP_IF &&
-                   bytes[4] == (byte)OpcodeType.OP_CHECKCOLDSTAKEVERIFY &&
-                   bytes[5] == 0x14 &&
-                   bytes[26] == (byte)OpcodeType.OP_ELSE &&
-                   bytes[27] == 0x14 &&
-                   bytes[48] == (byte)OpcodeType.OP_ENDIF &&
-                   bytes[49] == (byte)OpcodeType.OP_EQUALVERIFY &&
-                   bytes[50] == (byte)OpcodeType.OP_ENDIF;
+            return (bytes.Length == 51) &&
+                   (bytes[0] == (byte)OpcodeType.OP_DUP) &&
+                   (bytes[1] == (byte)OpcodeType.OP_HASH160) &&
+                   (bytes[2] == (byte)OpcodeType.OP_ROT) &&
+                   (bytes[3] == (byte)OpcodeType.OP_IF) &&
+                   (bytes[4] == (byte)OpcodeType.OP_CHECKCOLDSTAKEVERIFY) &&
+                   (bytes[5] == 0x14) &&
+                   (bytes[26] == (byte)OpcodeType.OP_ELSE) &&
+                   (bytes[27] == 0x14) &&
+                   (bytes[48] == (byte)OpcodeType.OP_ENDIF) &&
+                   (bytes[49] == (byte)OpcodeType.OP_EQUALVERIFY) &&
+                   (bytes[50] == (byte)OpcodeType.OP_ENDIF);
         }
 
         /// <inheritdoc />
@@ -156,27 +146,25 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="scriptSigOps">The scriptSig opcodes.</param>
         /// <param name="scriptPubKey">The scriptPubKey to check (not used).</param>
         /// <param name="scriptPubKeyOps">The scriptPubKey opcodes (not used).</param>
-        /// <returns>Returns <c>true</c> if the scriptSig is valid and <c>false</c> otherwise.</returns>
+        /// <returns>Returns <c>true</c> if the format of the scriptSig is valid and <c>false</c> otherwise.</returns>
         protected override bool CheckScriptSigCore(Network network, Script scriptSig, Op[] scriptSigOps, Script scriptPubKey, Op[] scriptPubKeyOps)
         {
             Op[] ops = scriptSigOps;
             if (ops.Length != 3)
                 return false;
-            return ops[0].PushData != null &&
+
+            return (ops[0].PushData != null) &&
                    ((ops[0].Code == OpcodeType.OP_0) || TransactionSignature.IsValid(network, ops[0].PushData, ScriptVerify.None)) &&
                    (ops[1].Code == OpcodeType.OP_0 || ops[1].Code == OpcodeType.OP_1) &&
-                   ops[2].PushData != null && PubKey.Check(ops[2].PushData, false);
+                   (ops[2].PushData != null) && PubKey.Check(ops[2].PushData, false);
         }
 
         /// <summary>
-        /// Returns the TxOutType of the cold staking script.
+        /// Returns the transaction type of the cold staking script.
         /// </summary>
         public override TxOutType Type
         {
-            get
-            {
-                return TxOutType.TX_NONSTANDARD;
-            }
+            get { return TxOutType.TX_COLDSTAKE; }
         }
     }
 }
