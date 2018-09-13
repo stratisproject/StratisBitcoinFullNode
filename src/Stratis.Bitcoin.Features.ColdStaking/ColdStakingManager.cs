@@ -362,7 +362,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
 
-            this.logger.LogTrace("(-):'{0}'", transaction.GetHash().ToString());
+            this.logger.LogTrace("(-):'{0}'", transaction.GetHash());
             return transaction;
         }
     }
