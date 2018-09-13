@@ -66,7 +66,7 @@ namespace NBitcoin
         private Transaction coinstake;
 
         /// <summary>
-        /// Gets coinstake transaction
+        /// Gets coinstake transaction.
         /// </summary>
         public Transaction Coinstake => this.coinstake;
 
