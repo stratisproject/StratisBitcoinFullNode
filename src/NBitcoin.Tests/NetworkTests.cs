@@ -574,5 +574,35 @@ namespace NBitcoin.Tests
             string coinbaseText100Long = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
             Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(), coinbaseText100Long, new Target(new uint256()), Money.Zero));
         }
+
+
+        // Tests not working but this sort of check and usage.
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void StratisProtocolVersionCheck()
+        {
+            var version = new StratisProtocolVersion();
+
+            Assert.True(version.ProvenHeaders.Id  == 70000);
+            Assert.True(version.AltProtocalVersion.Id == 70013);
+
+            // this will be in another test to check the list of items come back
+            IEnumerable<ProtocolVersionBase> list = version.List();
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void BitcoinProtocolVersionCheck()
+        {
+            var version = new BitcoinProtocolVersion();
+
+            Assert.True(version.ProtocolVersion.Id == 70012);
+            Assert.True(version.InitProtoVersion.Id == 209);
+            Assert.True(version.MinPeerProtoVersion.Id == 209);
+            Assert.True(version.CAddressTimeVersion.Id == 31402);
+
+            // and so on
+        }
     }
 }

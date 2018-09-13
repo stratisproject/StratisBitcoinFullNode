@@ -21,8 +21,14 @@ namespace Stratis.Bitcoin.Networks
         /// <summary> The default name used for the Stratis configuration file. </summary>
         public const string StratisDefaultConfigFilename = "stratis.conf";
 
+        private readonly StratisProtocolVersion stratisProtocolVersion;
+
+        /// <summary> Stratis Protocol Version. </summary>
+        public StratisProtocolVersion StratisProtocolVersion => this.stratisProtocolVersion;
+
         public StratisMain()
         {
+            this.stratisProtocolVersion = new StratisProtocolVersion();
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
             // a large 4-byte int at any alignment.
