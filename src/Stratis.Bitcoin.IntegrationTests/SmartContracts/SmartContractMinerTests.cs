@@ -254,7 +254,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                     new Mock<IBlockPuller>().Object,
                     null,
                     new InvalidBlockHashStore(DateTimeProvider.Default),
-                    connectionManager);
+                    connectionManager,
+                    new Mock<INodeStats>().Object);
 
                 await this.consensusManager.InitializeAsync(chainState.BlockStoreTip);
 

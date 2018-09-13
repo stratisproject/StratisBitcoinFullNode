@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.ValidationResults;
@@ -37,6 +39,9 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>The default number of blocks to ask when there is no historic data to estimate average block size.</summary>
         private const int DefaultNumberOfBlocksToAsk = 10;
+
+        /// <summary>The amount of blocks from consensus the node is considered to be synced.</summary>
+        private const int ConsensusIsConsideredToBeSyncedMargin = 5;
 
         private readonly Network network;
         private readonly ILogger logger;
@@ -105,7 +110,8 @@ namespace Stratis.Bitcoin.Consensus
             IBlockPuller blockPuller,
             IBlockStore blockStore,
             IInvalidBlockHashStore invalidHashesStore,
-            IConnectionManager connectionManager)
+            IConnectionManager connectionManager,
+            INodeStats nodeStats)
         {
             this.network = network;
             this.chainState = chainState;
@@ -135,6 +141,8 @@ namespace Stratis.Bitcoin.Consensus
             this.ibdState = ibdState;
 
             this.blockPuller = blockPuller;
+
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
         }
 
         /// <inheritdoc />
@@ -194,7 +202,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
 
-                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsConsensusConsideredToBeSynced();
+                this.chainState.IsAtBestChainTip = this.IsConsensusConsideredToBeSyncedLocked();
 
                 this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
 
@@ -775,7 +783,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.chainedHeaderTree.FullValidationSucceeded(blockToConnect.ChainedHeader);
 
-                this.chainState.IsAtBestChainTip = this.chainedHeaderTree.IsConsensusConsideredToBeSynced();
+                this.chainState.IsAtBestChainTip = this.IsConsensusConsideredToBeSyncedLocked();
             }
 
             var result = new ConnectBlocksResult(true) { ConsensusTipChanged = true };
@@ -1160,6 +1168,54 @@ namespace Stratis.Bitcoin.Consensus
 
                 this.logger.LogTrace("Expected block data bytes was set to {0} and we are expecting {1} blocks to be delivered.", this.expectedBlockDataBytes, this.expectedBlockSizes.Count);
             }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if consensus' height is within <see cref="ConsensusIsConsideredToBeSyncedMargin"/>
+        /// blocks from the best tip's height.
+        /// </summary>
+        /// <remarks>Should be locked by <see cref="peerLock"/></remarks>
+        private bool IsConsensusConsideredToBeSyncedLocked()
+        {
+            this.logger.LogTrace("()");
+
+            ChainedHeader bestTip = this.chainedHeaderTree.GetBestPeerTip();
+
+            if (bestTip == null)
+            {
+                this.logger.LogTrace("(-)[NO_PEERS]:false");
+                return false;
+            }
+
+            bool isConsideredSynced = this.Tip.Height + ConsensusIsConsideredToBeSyncedMargin > bestTip.Height;
+
+            this.logger.LogTrace("(-):{0}", isConsideredSynced);
+            return isConsideredSynced;
+        }
+
+        private void AddInlineStats(StringBuilder benchLog)
+        {
+            this.logger.LogTrace("()");
+
+            lock (this.peerLock)
+            {
+                ChainedHeader bestTip = this.chainedHeaderTree.GetBestPeerTip();
+
+                if ((bestTip == null) || (bestTip.Height < this.Tip.Height))
+                    bestTip = this.Tip;
+
+                string headersLog = "Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + bestTip.Height.ToString().PadRight(8) +
+                                    " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + bestTip.HashBlock;
+
+                benchLog.AppendLine(headersLog);
+            }
+
+            string consensusLog = "Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + this.Tip.Height.ToString().PadRight(8) +
+                                  " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.Tip.HashBlock;
+
+            benchLog.AppendLine(consensusLog);
 
             this.logger.LogTrace("(-)");
         }
