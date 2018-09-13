@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class Wallet
     {
-        /// <summary>Account numbers greater or equal to this number are reserved for cold staking.</summary>
+        /// <summary>Account numbers greater or equal to this number are reserved for special purpose account indexes.</summary>
         public const int SpecialPurposeAccountIndexesStart = 100_000_000;
 
         /// <summary>
