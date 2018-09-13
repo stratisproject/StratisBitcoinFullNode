@@ -41,8 +41,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var result = this.state.Apply(message);
 
-            return result.Success
-                ? CreateResult.Succeeded(result.ContractAddress.ToAddress(this.network))
+            return result.IsSuccess
+                ? CreateResult.Succeeded(result.Success.ContractAddress.ToAddress(this.network))
                 : CreateResult.Failed();
         }
 
@@ -68,9 +68,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var result = this.state.Apply(message);
 
-            return result.Success
-                ? TransferResult.Transferred(result.VmExecutionResult.Result)
-                : TransferResult.Failed(result.VmExecutionResult.ExecutionException);
+            return result.IsSuccess
+                ? TransferResult.Transferred(result.Success.ExecutionResult)
+                : TransferResult.Failed();
         }
 
         ///<inheritdoc />
@@ -89,9 +89,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             
             var result = this.state.Apply(message);
 
-            return result.Success 
+            return result.IsSuccess 
                 ? TransferResult.Empty() 
-                : TransferResult.Failed(result.VmExecutionResult?.ExecutionException);
+                : TransferResult.Failed();
         }
     }
 }
