@@ -14,6 +14,14 @@ docker build .
 docker run -it <containerId>
 ```
 
+# Full wipe of local docker
+
+It can be useful to perform a full clean on local docker environment, to ensure caching of git repo, etc. is cleared:
+
+```
+docker system prune -a
+```
+
 # Optional
 
 You can optionally use volumes external to the Docker container so that the blockchain does not have to sync between tests. 

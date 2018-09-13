@@ -16,8 +16,8 @@ Blockchain for the Smart City Platform
 
 [![VSTS build status][1]][2]
 
-[1]: https://citychain.visualstudio.com/city-chain/_apis/build/status/3?branch=master
-[2]: https://citychain.visualstudio.com/city-chain/_build/latest?definitionId=3&branch=master
+[1]: https://dev.azure.com/citychain/city-chain/_apis/build/status/CityChainFoundation.city-chain
+[2]: https://dev.azure.com/citychain/city-chain/_build/latest?definitionId=7
 
 [![Documentation build status][3]][4]
 

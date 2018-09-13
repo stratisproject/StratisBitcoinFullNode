@@ -1,13 +1,13 @@
 # City Chain - Continuous Integration Setup for VSTS
 
-trigger:
-  branches:
-    include:
-    - master
-    - feature/*
-    - bug/*
-    exclude:
-    - v* #Exclude verions tags
+#trigger:
+#  branches:
+#    include:
+#    - master
+#    - feature/*
+#    - bug/*
+#    exclude:
+#    - v* #Exclude verions tags
 
 phases:
 - template: build.yml
