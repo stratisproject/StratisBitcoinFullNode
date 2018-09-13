@@ -13,13 +13,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
         private readonly IState state;
+        private readonly IStateProcessor stateProcessor;
 
-        public InternalTransactionExecutor(ILoggerFactory loggerFactory, Network network, IState state)
+        public InternalTransactionExecutor(ILoggerFactory loggerFactory, Network network, IState state,
+            IStateProcessor stateProcessor)
         {
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.network = network;
             this.state = state;
+            this.stateProcessor = stateProcessor;
         }
 
         ///<inheritdoc />
@@ -48,7 +51,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IState newState = this.state.Snapshot();
 
             // Apply the message to the snapshot
-            StateTransitionResult result = newState.Apply(message);
+            StateTransitionResult result = this.stateProcessor.Apply(newState, message);
 
             // Transition the current state to the new state
             if (result.IsSuccess)
@@ -90,7 +93,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IState newState = this.state.Snapshot();
 
             // Apply the message to the snapshot
-            StateTransitionResult result = newState.Apply(message);
+            StateTransitionResult result = this.stateProcessor.Apply(newState, message);
 
             // Transition the current state to the new state
             if (result.IsSuccess)
@@ -126,7 +129,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IState newState = this.state.Snapshot();
 
             // Apply the message to the snapshot
-            StateTransitionResult result = newState.Apply(message);
+            StateTransitionResult result = this.stateProcessor.Apply(newState, message);
 
             // Transition the current state to the new state
             if (result.IsSuccess)

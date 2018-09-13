@@ -44,6 +44,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var contractStateRoot = new Mock<IContractState>();
             var transferProcessor = new Mock<ISmartContractResultTransferProcessor>();
+            var stateProcessor = new Mock<IStateProcessor>();
 
             (Money refund, TxOut) refundResult = (refund, null);
             var refundProcessor = new Mock<ISmartContractResultRefundProcessor>();
@@ -62,12 +63,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var internalTransfers = new List<TransferInfo>().AsReadOnly();
 
             var snapshot = new Mock<IState>();
-            snapshot.Setup(s => s.Apply(It.IsAny<ExternalCreateMessage>())).Returns(stateTransitionResult);
 
             var stateMock = new Mock<IState>();
             stateMock.Setup(s => s.ContractState).Returns(contractStateRoot.Object);
             stateMock.SetupGet(p => p.InternalTransfers).Returns(internalTransfers);
             stateMock.Setup(s => s.Snapshot()).Returns(snapshot.Object);
+            
+            stateProcessor.Setup(s => s.Apply(stateMock.Object, It.IsAny<ExternalCreateMessage>())).Returns(stateTransitionResult);
 
             var stateFactory = new Mock<IStateFactory>();
             stateFactory.Setup(sf => sf.Create(
@@ -84,7 +86,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 refundProcessor.Object,
                 transferProcessor.Object,
                 network,
-                stateFactory.Object);
+                stateFactory.Object,
+                stateProcessor.Object);
 
             sut.Execute(context);
 
@@ -99,7 +102,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Times.Once);
 
             // We only apply the message to the snapshot.
-            snapshot.Verify(sm => sm.Apply(It.IsAny<ExternalCreateMessage>()), Times.Once);
+            stateProcessor.Verify(sm => sm.Apply(stateMock.Object, It.IsAny<ExternalCreateMessage>()), Times.Once);
 
             // Must transition to the snapshot.
             stateMock.Verify(sm => sm.TransitionTo(snapshot.Object), Times.Once);

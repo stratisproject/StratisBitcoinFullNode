@@ -11,37 +11,27 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         private readonly Network network;
         private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
-        private readonly ISmartContractVirtualMachine vm;
-        private readonly IAddressGenerator addressGenerator;
         private readonly IInternalTransactionExecutorFactory internalTransactionExecutorFactory;
+        private readonly ISmartContractStateFactory smartContractStateFactory;
 
-        public StateFactory(
-            Network network,
+        public StateFactory(Network network,
             IContractPrimitiveSerializer contractPrimitiveSerializer,
-            ISmartContractVirtualMachine vm,
-            IAddressGenerator addressGenerator,
-            IInternalTransactionExecutorFactory internalTransactionExecutorFactory
-        )
+            ISmartContractStateFactory smartContractStateFactory)
         {
             this.network = network;
             this.contractPrimitiveSerializer = contractPrimitiveSerializer;
-            this.vm = vm;
-            this.addressGenerator = addressGenerator;
-            this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
+            this.smartContractStateFactory = smartContractStateFactory;
         }
 
         public IState Create(IContractState stateRoot, IBlock block, ulong txOutValue, uint256 transactionHash)
         {
-            return new State(
-                this.contractPrimitiveSerializer,
-                this.internalTransactionExecutorFactory,
-                this.vm,
-                stateRoot,
+            return new State(stateRoot,
                 block,
                 this.network,
                 txOutValue,
                 transactionHash,
-                this.addressGenerator);
+                this.contractPrimitiveSerializer,
+                this.smartContractStateFactory);
         }
     }
 }

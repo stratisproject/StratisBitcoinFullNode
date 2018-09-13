@@ -96,6 +96,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IContractModuleDefinitionReader, ContractModuleDefinitionReader>();
                         services.AddSingleton<IStateFactory, StateFactory>();
                         services.AddSingleton<SmartContractTransactionPolicy>();
+                        services.AddSingleton<IStateProcessor, StateProcessor>();
+                        services.AddSingleton<ISmartContractStateFactory, SmartContractStateFactory>();
 
                         // RECEIPTS -------------------------------------------------------------------------
                         services.AddSingleton<IReceiptRepository, PersistentReceiptRepository>();

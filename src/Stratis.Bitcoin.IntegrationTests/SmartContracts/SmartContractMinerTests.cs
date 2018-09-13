@@ -164,6 +164,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
             private IContractModuleDefinitionReader moduleDefinitionReader;
             private IContractPrimitiveSerializer contractPrimitiveSerializer;
             private StateFactory stateFactory;
+            private StateProcessor stateProcessor;
+            private SmartContractStateFactory smartContractStateFactory;
             public AddressGenerator AddressGenerator { get; set; }
 
             public TestContext()
@@ -220,9 +222,12 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.moduleDefinitionReader = new ContractModuleDefinitionReader();
                 this.contractPrimitiveSerializer = new ContractPrimitiveSerializer(this.network);
                 this.vm = new ReflectionVirtualMachine(this.validator, loggerFactory, this.network, this.assemblyLoader, this.moduleDefinitionReader);
-                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(loggerFactory, this.network);
-                this.stateFactory = new StateFactory(this.network, this.contractPrimitiveSerializer, this.vm, this.AddressGenerator, this.internalTxExecutorFactory);
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(loggerFactory, this.serializer, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory);
+
+                this.stateProcessor = new StateProcessor(this.vm, this.AddressGenerator);
+                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(loggerFactory, this.network, this.stateProcessor);
+                this.smartContractStateFactory = new SmartContractStateFactory(this.contractPrimitiveSerializer, this.network, this.internalTxExecutorFactory);
+                this.stateFactory = new StateFactory(this.network, this.contractPrimitiveSerializer, this.smartContractStateFactory);
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(loggerFactory, this.serializer, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker(loggerFactory), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings());
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));

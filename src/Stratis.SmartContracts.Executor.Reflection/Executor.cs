@@ -20,6 +20,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ICallDataSerializer serializer;
         private readonly Network network;
         private readonly IStateFactory stateFactory;
+        private readonly IStateProcessor stateProcessor;
 
         public Executor(ILoggerFactory loggerFactory,
             ICallDataSerializer serializer,
@@ -27,7 +28,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ISmartContractResultRefundProcessor refundProcessor,
             ISmartContractResultTransferProcessor transferProcessor,
             Network network,
-            IStateFactory stateFactory)
+            IStateFactory stateFactory,
+            IStateProcessor stateProcessor)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.stateRoot = stateRoot;
@@ -36,6 +38,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.serializer = serializer;
             this.network = network;
             this.stateFactory = stateFactory;
+            this.stateProcessor = stateProcessor;
         }
 
         public ISmartContractExecutionResult Execute(ISmartContractTransactionContext transactionContext)
@@ -73,7 +76,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 );
 
 
-                result = newState.Apply(message);
+                result = this.stateProcessor.Apply(newState, message);
             }
             else
             {
@@ -85,7 +88,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                         new MethodCall(callData.MethodName, callData.MethodParameters)
                 );
 
-                result = newState.Apply(message);
+                result = this.stateProcessor.Apply(newState, message);
             }
 
             if (result.IsSuccess)

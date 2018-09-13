@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using NBitcoin;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
@@ -8,18 +9,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public interface IState
     {
+        IBlock Block { get; }
         BalanceState BalanceState { get; }
         IContractState ContractState { get; }
         IList<Log> GetLogs();
         IReadOnlyList<TransferInfo> InternalTransfers { get; }
         IContractLogHolder LogHolder { get; }
-        StateTransitionResult Apply(ExternalCreateMessage message);
-        StateTransitionResult Apply(InternalCreateMessage message);
-        StateTransitionResult Apply(ExternalCallMessage message);
-        StateTransitionResult Apply(InternalCallMessage message);
-        StateTransitionResult Apply(ContractTransferMessage message);
         IState Snapshot();
         ulong Nonce { get; }
         void TransitionTo(IState state);
+        void AddInternalTransfer(TransferInfo transferInfo);
+        ulong GetBalance(uint160 address);
+        uint160 GenerateAddress(IAddressGenerator addressGenerator);
+        ISmartContractState CreateSmartContractState(IState state, GasMeter gasMeter, uint160 address, BaseMessage message, IContractState repository);
     }
 }
