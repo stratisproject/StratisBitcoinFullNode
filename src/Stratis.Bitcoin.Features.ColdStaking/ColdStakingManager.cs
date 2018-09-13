@@ -21,8 +21,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// <remarks>
     /// The following functionality is implemented in this class:
     /// <list type="bullet">
-    /// <item><description>Generating cold staking address via the <see cref="GetColdStakingAddress"/> method. These
-    /// adresses are used for generating the cold staking setup.</description></item>
+    /// <item><description>Generating cold staking address via the <see cref="GetFirstUnusedColdStakingAddress"/> method. These
+    /// addresses are used for generating the cold staking setup.</description></item>
     /// <item><description>Creating a build context for generating the cold staking setup via the <see
     /// cref="GetColdStakingSetupTransaction"/> method.</description></item>
     /// </list>
@@ -30,13 +30,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     public class ColdStakingManager
     {
         /// <summary>The account index of the cold wallet account.</summary>
-        private const int ColdWalletAccountIndex = Wallet.Wallet.ColdStakingAccountIndex + 0;
+        private const int ColdWalletAccountIndex = Wallet.Wallet.SpecialPurposeAccountIndexesStart + 0;
 
         /// <summary>The account name of the cold wallet account.</summary>
         private const string ColdWalletAccountName = "coldStakingColdAddresses";
 
         /// <summary>The account index of the hot wallet account.</summary>
-        private const int HotWalletAccountIndex = Wallet.Wallet.ColdStakingAccountIndex + 1;
+        private const int HotWalletAccountIndex = Wallet.Wallet.SpecialPurposeAccountIndexesStart + 1;
 
         /// <summary>The account name of the hot wallet account.</summary>
         private const string HotWalletAccountName = "coldStakingHotAddresses";
@@ -48,10 +48,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         private readonly IDateTimeProvider dateTimeProvider;
 
         /// <summary>The wallet manager to use for accessing wallets and their accounts.</summary>
-        public IWalletManager WalletManager { get; private set; }
+        private readonly IWalletManager walletManager;
 
         /// <summary>The wallet transaction handler to use for building transactions.</summary>
-        public IWalletTransactionHandler WalletTransactionHandler { get; private set; }
+        private readonly IWalletTransactionHandler walletTransactionHandler;
 
         /// <summary>
         /// Constructs the cold staking manager which is used by the cold staking controller.
@@ -72,8 +72,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.WalletManager = walletManager;
-            this.WalletTransactionHandler = walletTransactionHandler;
+            this.walletManager = walletManager;
+            this.walletTransactionHandler = walletTransactionHandler;
             this.dateTimeProvider = dateTimeProvider;
         }
 
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(walletName), walletName);
 
-            Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
+            Wallet.Wallet wallet = this.walletManager.GetWalletByName(walletName);
             var coinType = (CoinType)wallet.Network.Consensus.CoinType;
             List<HdAccount> accounts = wallet.GetAccountsByCoinType(coinType).ToList();
 
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// </summary>
         /// <remarks>
         /// <para>In order to keep track of cold staking addresses and balances we are using <see cref="HdAccount"/>'s
-        /// with indexes starting from the value defined in <see cref="Wallet.Wallet.ColdStakingAccountIndex"/>.
+        /// with indexes starting from the value defined in <see cref="Wallet.Wallet.SpecialPurposeAccountIndexesStart"/>.
         /// </para><para>
         /// We are using two such accounts, one when the wallet is in the role of cold wallet, and another one when
         /// the wallet is in the role of hot wallet. For this reason we specify the required account when calling this
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// </summary>
         /// <remarks>
         /// <para>In order to keep track of cold staking addresses and balances we are using <see cref="HdAccount"/>'s
-        /// with indexes starting from the value defined in <see cref="Wallet.Wallet.ColdStakingAccountIndex"/>.
+        /// with indexes starting from the value defined in <see cref="Wallet.Wallet.SpecialPurposeAccountIndexesStart"/>.
         /// </para><para>
         /// We are using two such accounts, one when the wallet is in the role of cold wallet, and another one when
         /// the wallet is in the role of hot wallet. For this reason we specify the required account when calling this
@@ -148,11 +148,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="isColdWalletAccount">Indicates whether we need the cold wallet account (versus the hot wallet account).</param>
         /// <param name="walletPassword">The wallet password which will be used to create the account.</param>
         /// <returns>The new or existing cold staking account.</returns>
-        internal HdAccount CreateColdStakingAccount(string walletName, bool isColdWalletAccount, string walletPassword)
+        internal HdAccount GetOrCreateColdStakingAccount(string walletName, bool isColdWalletAccount, string walletPassword)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletName), walletName, nameof(isColdWalletAccount), isColdWalletAccount);
 
-            Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
+            Wallet.Wallet wallet = this.walletManager.GetWalletByName(walletName);
 
             HdAccount account = this.GetColdStakingAccount(wallet, isColdWalletAccount);
             if (account != null)
@@ -184,18 +184,18 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         }
 
         /// <summary>
-        /// Gets a cold staking address.
+        /// Gets the first unused cold staking address. Creates a new address if required.
         /// </summary>
         /// <param name="walletName">The name of the wallet providing the cold staking address.</param>
         /// <param name="isColdWalletAddress">Indicates whether we need the cold wallet address (versus the hot wallet address).</param>
         /// <returns>The cold staking address or <c>null</c> if the required account does not exist.</returns>
-        internal HdAddress GetColdStakingAddress(string walletName, bool isColdWalletAddress)
+        internal HdAddress GetFirstUnusedColdStakingAddress(string walletName, bool isColdWalletAddress)
         {
             Guard.NotNull(walletName, nameof(walletName));
 
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletName), walletName, nameof(isColdWalletAddress), isColdWalletAddress);
 
-            Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
+            Wallet.Wallet wallet = this.walletManager.GetWalletByName(walletName);
             HdAccount account = this.GetColdStakingAccount(wallet, isColdWalletAddress);
             if (account == null)
             {
@@ -283,8 +283,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <item><description>The account specified in <paramref name="walletAccount"/> can't be a cold staking account.</description></item>
         /// </list>
         /// </remarks>
-        /// <param name="coldWalletAddress">The cold wallet address generated by <see cref="GetColdStakingAddress"/>.</param>
-        /// <param name="hotWalletAddress">The hot wallet address generated by <see cref="GetColdStakingAddress"/>.</param>
+        /// <param name="coldWalletAddress">The cold wallet address generated by <see cref="GetFirstUnusedColdStakingAddress"/>.</param>
+        /// <param name="hotWalletAddress">The hot wallet address generated by <see cref="GetFirstUnusedColdStakingAddress"/>.</param>
         /// <param name="walletName">The name of the wallet.</param>
         /// <param name="walletAccount">The wallet account.</param>
         /// <param name="walletPassword">The wallet password.</param>
@@ -312,16 +312,17 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 nameof(feeAmount), feeAmount
                 );
 
-            Wallet.Wallet wallet = this.WalletManager.GetWalletByName(walletName);
+            Wallet.Wallet wallet = this.walletManager.GetWalletByName(walletName);
 
             // Get/create the cold staking accounts.
-            HdAccount coldAccount = this.CreateColdStakingAccount(walletName, true, walletPassword);
-            HdAccount hotAccount = this.CreateColdStakingAccount(walletName, false, walletPassword);
+            HdAccount coldAccount = this.GetOrCreateColdStakingAccount(walletName, true, walletPassword);
+            HdAccount hotAccount = this.GetOrCreateColdStakingAccount(walletName, false, walletPassword);
 
             bool thisIsColdWallet = coldAccount?.ExternalAddresses.Select(a => a.Address).Contains(coldWalletAddress) ?? false;
             bool thisIsHotWallet = hotAccount?.ExternalAddresses.Select(a => a.Address).Contains(hotWalletAddress) ?? false;
 
-            this.logger.LogTrace("Local wallet '{0}' does{1} contain cold wallet address '{2}' and does{3} contain hot wallet address '{4}'.", walletName, thisIsColdWallet ? "" : " NOT", coldWalletAddress, thisIsHotWallet ? "" : " NOT", hotWalletAddress);
+            this.logger.LogTrace("Local wallet '{0}' does{1} contain cold wallet address '{2}' and does{3} contain hot wallet address '{4}'.",
+                walletName, thisIsColdWallet ? "" : " NOT", coldWalletAddress, thisIsHotWallet ? "" : " NOT", hotWalletAddress);
 
             if (thisIsColdWallet && thisIsHotWallet)
             {
@@ -340,7 +341,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             Script destination = this.GetColdStakingScript(hotPubKey, coldPubKey);
 
             // Only normal accounts should be allowed.
-            if (!this.WalletManager.GetAccounts(walletName).Any(a => a.Name == walletAccount))
+            if (!this.walletManager.GetAccounts(walletName).Any(a => a.Name == walletAccount))
             {
                 this.logger.LogTrace("(-)[COLDSTAKE_ACCOUNT_NOT_FOUND]");
                 throw new WalletException($"Can't find wallet account '{walletAccount}'.");
@@ -353,13 +354,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 MinConfirmations = 0,
                 Shuffle = false,
                 WalletPassword = walletPassword,
-                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = destination } }.ToList()
+                Recipients = new List<Recipient>() { new Recipient { Amount = amount, ScriptPubKey = destination } }
             };
 
             // Avoid errors being raised due to the special script that we are using.
             context.TransactionBuilder.StandardTransactionPolicy.CheckScriptPubKey = false;
 
-            Transaction transaction = this.WalletTransactionHandler.BuildTransaction(context);
+            Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
 
             this.logger.LogTrace("(-)");
             return transaction;
