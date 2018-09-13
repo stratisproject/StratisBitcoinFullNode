@@ -24,6 +24,7 @@ using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
@@ -102,15 +103,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider(), new Mock<INodeStats>().Object);
 
             var chainState = new ChainState();
-            var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
             var deployments = new NodeDeployments(network, chain);
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(),
                 inMemoryCoinView, chainState, new InvalidBlockHashStore(new DateTimeProvider())).Register();
 
-            var consensus = new ConsensusManager(network, loggerFactory, chainState, new HeaderValidator(consensusRules, loggerFactory),
-                new IntegrityValidator(consensusRules, loggerFactory), new PartialValidator(consensusRules, loggerFactory), new FullValidator(consensusRules, loggerFactory), new Checkpoints(), consensusSettings, consensusRules,
-                new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chain, new Mock<IBlockPuller>().Object,
-                new Mock<IBlockStore>().Object, new InvalidBlockHashStore(new DateTimeProvider()), new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object);
+            ConsensusManager consensus = CMCreator.CreateConsensusManager(network, dataDir);
 
             var genesis = new ChainedHeader(network.GetGenesis().Header, network.GenesisHash, 0);
             chainState.BlockStoreTip = genesis;

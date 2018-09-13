@@ -173,11 +173,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings,
                     new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider)).Register();
 
-                this.consensus = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(this.ConsensusRules, loggerFactory),
-                    new IntegrityValidator(this.ConsensusRules, loggerFactory), new PartialValidator(this.ConsensusRules, loggerFactory), new FullValidator(this.ConsensusRules, loggerFactory), new Checkpoints(),
-                    consensusSettings, this.ConsensusRules, new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning,
-                    new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, null, new InvalidBlockHashStore(dateTimeProvider), new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object);
-
+                this.consensus = CMCreator.CreateConsensusManager(this.network);
                 await this.consensus.InitializeAsync(chainState.BlockStoreTip);
 
                 this.entry.Fee(11);

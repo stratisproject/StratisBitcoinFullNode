@@ -49,13 +49,13 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IChainState chainState;
         private readonly IPartialValidator partialValidator;
         private readonly IFullValidator fullValidator;
-        private readonly IConsensusRuleEngine consensusRules;
         private readonly Signals.Signals signals;
         private readonly IPeerBanning peerBanning;
         private readonly IBlockStore blockStore;
         private readonly IFinalizedBlockInfo finalizedBlockInfo;
         private readonly IBlockPuller blockPuller;
         private readonly IIntegrityValidator integrityValidator;
+        private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Connection manager of all the currently connected peers.</summary>
         private readonly IConnectionManager connectionManager;
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Consensus
         public ChainedHeader Tip { get; private set; }
 
         /// <inheritdoc />
-        public IConsensusRuleEngine ConsensusRules => this.consensusRules;
+        public IConsensusRuleEngine ConsensusRules { get; private set; }
 
         private readonly Dictionary<uint256, List<OnBlockDownloadedCallback>> callbacksByBlocksRequestedHash;
 
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects access to the <see cref="blockPuller"/>, <see cref="chainedHeaderTree"/>, <see cref="expectedBlockSizes"/> and <see cref="expectedBlockDataBytes"/>.</summary>
         private readonly object peerLock;
 
-        private IInitialBlockDownloadState ibdState;
+        private readonly IInitialBlockDownloadState ibdState;
 
         private readonly object blockRequestedLock;
 
@@ -92,15 +92,13 @@ namespace Stratis.Bitcoin.Consensus
         private bool isIbd;
 
         public ConsensusManager(
+            ChainedHeaderTree chainedHeaderTree,
             Network network,
             ILoggerFactory loggerFactory,
             IChainState chainState,
-            IHeaderValidator headerValidator,
             IIntegrityValidator integrityValidator,
             IPartialValidator partialValidator,
             IFullValidator fullValidator,
-            ICheckpoints checkpoints,
-            ConsensusSettings consensusSettings,
             IConsensusRuleEngine consensusRules,
             IFinalizedBlockInfo finalizedBlockInfo,
             Signals.Signals signals,
@@ -109,25 +107,26 @@ namespace Stratis.Bitcoin.Consensus
             ConcurrentChain chain,
             IBlockPuller blockPuller,
             IBlockStore blockStore,
-            IInvalidBlockHashStore invalidHashesStore,
             IConnectionManager connectionManager,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            INodeLifetime nodeLifetime)
         {
             this.network = network;
             this.chainState = chainState;
             this.integrityValidator = integrityValidator;
             this.partialValidator = partialValidator;
             this.fullValidator = fullValidator;
-            this.consensusRules = consensusRules;
+            this.ConsensusRules = consensusRules;
             this.signals = signals;
             this.peerBanning = peerBanning;
             this.blockStore = blockStore;
             this.finalizedBlockInfo = finalizedBlockInfo;
             this.chain = chain;
             this.connectionManager = connectionManager;
+            this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, invalidHashesStore);
+            this.chainedHeaderTree = chainedHeaderTree;
 
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
@@ -160,7 +159,7 @@ namespace Stratis.Bitcoin.Consensus
             // We should consider creating a consensus store class that will internally contain
             // coinview and it will abstract the methods `RewindAsync()` `GetBlockHashAsync()`
 
-            uint256 consensusTipHash = await this.consensusRules.GetBlockHashAsync().ConfigureAwait(false);
+            uint256 consensusTipHash = await this.ConsensusRules.GetBlockHashAsync().ConfigureAwait(false);
 
             ChainedHeader pendingTip;
 
@@ -173,7 +172,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
-                RewindState transitionState = await this.consensusRules.RewindAsync().ConfigureAwait(false);
+                RewindState transitionState = await this.ConsensusRules.RewindAsync().ConfigureAwait(false);
                 consensusTipHash = transitionState.BlockHash;
             }
 
@@ -315,9 +314,10 @@ namespace Stratis.Bitcoin.Consensus
 
             if (removed)
             {
-                this.chainedHeaderTree.PeerDisconnected(peerId);
-                this.blockPuller.PeerDisconnected(peerId);
-                this.ProcessDownloadQueueLocked();
+                // TODO NODE LIFETIME - dont call those if shutting down
+                this.chainedHeaderTree.PeerDisconnected(peerId); //don't call
+                this.blockPuller.PeerDisconnected(peerId); // call
+                this.ProcessDownloadQueueLocked(); // dont call
             }
             else
                 this.logger.LogTrace("Peer {0} was already removed.", peerId);
@@ -606,7 +606,7 @@ namespace Stratis.Bitcoin.Consensus
 
             while (current != fork)
             {
-                await this.consensusRules.RewindAsync().ConfigureAwait(false);
+                await this.ConsensusRules.RewindAsync().ConfigureAwait(false);
 
                 lock (this.peerLock)
                 {

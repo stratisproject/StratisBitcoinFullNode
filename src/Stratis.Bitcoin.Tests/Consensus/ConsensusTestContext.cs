@@ -90,26 +90,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         private IConsensusManager CreateConsensusManager()
         {
-            this.ConsensusManager = new ConsensusManager(this.Network,
-                new ExtendedLoggerFactory(),
-                this.ChainState.Object,
-                this.HeaderValidator.Object,
-                this.IntegrityValidator.Object,
-                this.PartialValidation,
-                this.FullValidation,
-                this.Checkpoints.Object,
-                this.ConsensusSettings,
-                this.ConsensusRulesEngine.Object,
-                this.FinalizedBlockMock.Object,
-                new Bitcoin.Signals.Signals(),
-                this.PeerBanning.Object,
-                this.ibdState.Object,
-                new ConcurrentChain(this.Network),
-                new Mock<IBlockPuller>().Object,
-                null,
-                new InvalidBlockHashStore(new DateTimeProvider()),
-                new Mock<IConnectionManager>().Object,
-                new Mock<INodeStats>().Object);
+            this.ConsensusManager = CMCreator.CreateConsensusManager(this.Network);
 
             return this.ConsensusManager;
         }
