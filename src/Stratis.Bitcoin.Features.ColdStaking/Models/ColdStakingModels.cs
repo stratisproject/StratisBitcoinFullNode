@@ -136,15 +136,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
 
     /// <summary>
     /// The data structure used by a client requesting that a cold staking cancellation be performed.
-    /// Refer to <see cref="Controllers.ColdStakingController.CancelColdStaking"/>.
+    /// Refer to <see cref="Controllers.ColdStakingController.ColdStakingWithdrawal"/>.
     /// </summary>
     public class ColdStakingWithdrawalRequest
     {
-        /// <summary>The transaction id of the cold staking setup to cancel.</summary>
-        [Required]
-        [JsonProperty(PropertyName = "transactionId")]
-        public string TransactionId { get; set; }
-
         /// <summary>The Base58 receiving address.</summary>
         [Required]
         [JsonProperty(PropertyName = "receivingAddress")]
@@ -176,7 +171,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         /// <returns>A string containing the properties of the object.</returns>
         public override string ToString()
         {
-            return $"{nameof(this.TransactionId)}={this.TransactionId},{nameof(this.ReceivingAddress)}={this.ReceivingAddress},{nameof(this.WalletName)}={this.WalletName},{nameof(this.Amount)}={this.Amount},{nameof(this.Fees)}={this.Fees}";
+            return $"{nameof(this.ReceivingAddress)}={this.ReceivingAddress},{nameof(this.WalletName)}={this.WalletName},{nameof(this.Amount)}={this.Amount},{nameof(this.Fees)}={this.Fees}";
         }
     }
 

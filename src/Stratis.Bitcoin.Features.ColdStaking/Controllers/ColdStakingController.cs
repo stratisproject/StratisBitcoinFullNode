@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <seealso cref="ColdStakingManager.GetColdStakingScript(ScriptId, ScriptId)"/>
         [Route("cold-staking-withdrawal")]
         [HttpPost]
-        public IActionResult CancelColdStaking([FromBody]ColdStakingWithdrawalRequest request)
+        public IActionResult ColdStakingWithdrawal([FromBody]ColdStakingWithdrawalRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -232,7 +232,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             {
                 Money amount = Money.Parse(request.Amount);
                 Money feeAmount = Money.Parse(request.Fees);
-                uint256 transactionId = uint256.Parse(request.TransactionId);
 
                 Transaction transaction = this.ColdStakingManager.GetColdStakingWithdrawalTransaction(
                     request.ReceivingAddress, request.WalletName, request.WalletPassword,
