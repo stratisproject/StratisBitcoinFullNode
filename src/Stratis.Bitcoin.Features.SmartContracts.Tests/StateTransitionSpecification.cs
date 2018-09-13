@@ -43,10 +43,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void ExternalCreate_Success()
         {
             // Preconditions checked:
-            // - Has enough gas
+            // - Has code
             // Execution checked:
             // - Address generator is called with correct txhash and nonce
-            // - Start tracking called on ContractStateRepo
             // - Create account is called on ContractStateRepo
             // - ITE factory is called
             // - Create is called on VM with correct args
@@ -67,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 null
             );
             
-            this.vm.Setup(v => v.Create(this.trackedState.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null))
+            this.vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null))
                 .Returns(vmExecutionResult);
 
             this.addressGenerator
@@ -90,17 +89,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.addressGenerator.Verify(a => a.GenerateAddress(transactionHash, expectedAddressGenerationNonce), Times.Once);
 
-            this.contractStateRoot.Verify(sr => sr.StartTracking(), Times.Once);
+            this.iteFactory.Verify(i => i.Create(state), Times.Once);
 
-            this.trackedState.Verify(ts => ts.CreateAccount(newContractAddress), Times.Once);
+            this.contractStateRoot.Verify(s => s.CreateAccount(newContractAddress), Times.Once);
 
-            this.vm.Verify(v => v.Create(this.trackedState.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null), Times.Once);
-
-            this.trackedState.Verify(ts => ts.Commit(), Times.Once);
+            this.vm.Verify(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null), Times.Once);
 
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Success);
-            Assert.Equal(this.trackedState.Object, state.GetPrivateFieldValue("intermediateState"));
             Assert.Equal(newContractAddress, result.Success.ContractAddress);
             Assert.Equal(vmExecutionResult.Result, result.Success.ExecutionResult);
             // In this test we only ever spend the base fee.
@@ -144,7 +140,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var vmExecutionResult2 = VmExecutionResult.Success(true, "NestedTest");
 
             var state = new State(this.serializer,
-                this.iteFactory.Object, this.vm.Object,
+                this.iteFactory.Object,
+                this.vm.Object,
                 this.contractStateRoot.Object,
                 this.block,
                 this.network,
@@ -154,13 +151,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             );
 
             // Setup the VM to invoke the state with a nested internal create
-            // ReSharper disable once ArrangeThisQualifier
-            this.vm.Setup(v => v.Create(this.trackedState.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null))
-                .Callback(() => state.Apply(internalCreateMessage))
+            this.vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null))
+                .Callback(() =>
+                {
+                    // This section mocks the behaviour of the ITE
+                    IState newState = state.Snapshot();
+                    StateTransitionResult nestedResult = newState.Apply(internalCreateMessage);
+
+                    Assert.Equal(GasPriceList.BaseCost, nestedResult.GasConsumed);
+
+                    if (nestedResult.IsSuccess)
+                        state.TransitionTo(newState);
+                })
                 .Returns(vmExecutionResult);
 
             // Setup the nested VM create result
-            this.vm.Setup(v => v.Create(this.trackedState2.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code,
+            this.vm.Setup(v => v.Create(this.trackedState.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code,
                     internalCreateMessage.Parameters, internalCreateMessage.Type))
                 .Returns(vmExecutionResult2);
 
@@ -168,34 +174,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.addressGenerator.Verify(a => a.GenerateAddress(transactionHash, expectedAddressGenerationNonce), Times.Once);
 
-            this.contractStateRoot.Verify(sr => sr.StartTracking(), Times.Once);
+            this.contractStateRoot.Verify(ts => ts.CreateAccount(newContractAddress), Times.Once);
 
-            this.trackedState.Verify(ts => ts.CreateAccount(newContractAddress), Times.Once);
-
-            this.vm.Verify(v => v.Create(this.trackedState.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null), Times.Once);
+            this.vm.Verify(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null), Times.Once);
 
             // Nesting begins here
             // The nested executor starts tracking on the parent state
-            this.trackedState.Verify(ts => ts.StartTracking(), Times.Once);
+            this.contractStateRoot.Verify(ts => ts.StartTracking(), Times.Once);
 
             // Nested state transition generates a new address with the next nonce
             this.addressGenerator.Verify(a => a.GenerateAddress(transactionHash, expectedAddressGenerationNonce + 1), Times.Once);
 
             // VM is called with all nested state params and the original code
-            this.vm.Verify(v => v.Create(this.trackedState2.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, internalCreateMessage.Parameters, internalCreateMessage.Type), Times.Once);
+            this.vm.Verify(v => v.Create(this.trackedState.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, internalCreateMessage.Parameters, internalCreateMessage.Type), Times.Once);
 
             // The nested executor calls commit on the nested tracked state
-            this.trackedState2.Verify(ts => ts.Commit(), Times.Once);
+            this.trackedState.Verify(ts => ts.Commit(), Times.Once);
 
             Assert.Equal(1, state.InternalTransfers.Count);
-            // TODO - It's a hack to need to test the internal state of the object like this.
-            // We expect the intermediateState to be the last "committed to" state
-            Assert.Equal(this.trackedState2.Object, state.GetPrivateFieldValue("intermediateState"));
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Success);
-
-            // Two nested operations
-            Assert.Equal(GasPriceList.BaseCost * 2, result.GasConsumed);
+            Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
         [Fact]
@@ -252,13 +251,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             );
 
             // Setup the VM to invoke the state with a nested internal create
-            vm.Setup(v => v.Create(this.trackedState.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code,
+            vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code,
                     externalCreateMessage.Parameters, null))
-                .Callback(() => state.Apply(internalCreateMessage))
+                .Callback(() =>
+                {
+                    // This section mocks the behaviour of the ITE
+                    IState newState = state.Snapshot();
+                    StateTransitionResult nestedResult = newState.Apply(internalCreateMessage);
+
+                    Assert.Equal(GasPriceList.BaseCost, nestedResult.GasConsumed);
+
+                    if (nestedResult.IsSuccess)
+                        state.TransitionTo(newState);
+                })
                 .Returns(vmExecutionResult);
 
             // Setup the nested VM create result
-            vm.Setup(v => v.Create(this.trackedState2.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code,
+            vm.Setup(v => v.Create(this.trackedState.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code,
                     internalCreateMessage.Parameters, internalCreateMessage.Type))
                 .Returns(vmExecutionResult2);
 
@@ -266,35 +275,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.addressGenerator.Verify(a => a.GenerateAddress(transactionHash, expectedAddressGenerationNonce), Times.Once);
 
-            this.contractStateRoot.Verify(sr => sr.StartTracking(), Times.Once);
+            this.contractStateRoot.Verify(ts => ts.CreateAccount(newContractAddress), Times.Once);
 
-            this.trackedState.Verify(ts => ts.CreateAccount(newContractAddress), Times.Once);
-
-            vm.Verify(v => v.Create(this.trackedState.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null), Times.Once);
+            vm.Verify(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null), Times.Once);
 
             // Nesting begins here
-            // The nested executor starts tracking on the parent state
-            this.trackedState.Verify(ts => ts.StartTracking(), Times.Once);
+            // The nested state starts tracking the parent state
+            this.contractStateRoot.Verify(ts => ts.StartTracking(), Times.Once);
 
             // Nested state transition generates a new address with the next nonce
             this.addressGenerator.Verify(a => a.GenerateAddress(transactionHash, expectedAddressGenerationNonce + 1), Times.Once);
 
             // VM is called with all nested state params and the original code
-            vm.Verify(v => v.Create(this.trackedState2.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, internalCreateMessage.Parameters, internalCreateMessage.Type), Times.Once);
-
-            // The nested executor never calls commit on the nested tracked state due to the error
-            this.trackedState2.Verify(ts => ts.Commit(), Times.Never);
+            vm.Verify(v => v.Create(this.trackedState.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, internalCreateMessage.Parameters, internalCreateMessage.Type), Times.Once);
 
             Assert.Equal(0, state.InternalTransfers.Count);
-            // We expect the intermediateState to be the last "committed to" state
-            Assert.Equal(this.trackedState.Object, state.GetPrivateFieldValue("intermediateState"));
 
             // Even though the internal creation failed, the operation was still successful
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Success);
 
-            // Two nested operations
-            Assert.Equal(GasPriceList.BaseCost * 2, result.GasConsumed);
+            Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
         [Fact]
@@ -320,7 +321,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Setup(a => a.GenerateAddress(transactionHash, expectedAddressGenerationNonce))
                 .Returns(newContractAddress);
 
-            this.vm.Setup(v => v.Create(this.trackedState.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code,
+            this.vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code,
                     externalCreateMessage.Parameters, null))
                 .Returns(vmExecutionResult);
 
@@ -339,16 +340,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.addressGenerator.Verify(a => a.GenerateAddress(transactionHash, expectedAddressGenerationNonce), Times.Once);
 
-            this.contractStateRoot.Verify(sr => sr.StartTracking(), Times.Once);
+            this.contractStateRoot.Verify(ts => ts.CreateAccount(newContractAddress), Times.Once);
 
-            this.trackedState.Verify(ts => ts.CreateAccount(newContractAddress), Times.Once);
+            this.vm.Verify(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null), Times.Once);
 
-            this.vm.Verify(v => v.Create(this.trackedState.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null), Times.Once);
-
-            this.trackedState.Verify(ts => ts.Commit(), Times.Never);
-
-            // TODO - It's a hack to need to test the internal state of the object like this.
-            Assert.Equal(this.contractStateRoot.Object, state.GetPrivateFieldValue("intermediateState"));
             Assert.False(result.IsSuccess);
             Assert.True(result.IsFailure);
             Assert.NotNull(result.Error);
@@ -376,11 +371,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new MethodCall("Test", null)
             );
 
-            this.trackedState
+            this.contractStateRoot
                 .Setup(sr => sr.GetCode(externalCallMessage.To))
                 .Returns(code);
 
-            this.trackedState
+            this.contractStateRoot
                 .Setup(sr => sr.GetContractType(externalCallMessage.To))
                 .Returns(typeName);
 
@@ -402,11 +397,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             StateTransitionResult result = state.Apply(externalCallMessage);
 
-            this.contractStateRoot.Verify(sr => sr.StartTracking(), Times.Once);
+            this.contractStateRoot.Verify(sr => sr.GetCode(externalCallMessage.To), Times.Once);
 
-            this.trackedState.Verify(sr => sr.GetCode(externalCallMessage.To), Times.Once);
-
-            this.trackedState.Verify(sr => sr.GetContractType(externalCallMessage.To), Times.Once);
+            this.contractStateRoot.Verify(sr => sr.GetContractType(externalCallMessage.To), Times.Once);
 
             this.addressGenerator.Verify(a => a.GenerateAddress(It.IsAny<uint256>(), It.IsAny<ulong>()), Times.Never);
 
@@ -418,7 +411,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Success);
-            Assert.Equal(this.trackedState.Object, state.GetPrivateFieldValue("intermediateState"));
             Assert.Equal(externalCallMessage.To, result.Success.ContractAddress);
             Assert.Equal(vmExecutionResult.Result, result.Success.ExecutionResult);
             // In this test we only ever spend the base fee.
@@ -449,7 +441,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Setup(sr => sr.GetCode(externalCallMessage.To))
                 .Returns(code);
 
-            this.trackedState
+            this.contractStateRoot
                 .Setup(sr => sr.GetContractType(externalCallMessage.To))
                 .Returns(typeName);
 
@@ -473,26 +465,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.contractStateRoot.Verify(sr => sr.GetCode(externalCallMessage.To), Times.Once);
 
-            this.contractStateRoot.Verify(sr => sr.StartTracking(), Times.Once);
-
-            // Getting Type is called on the tracked state as it's possible
-            // this also occurs on a nested call and the Type only exists
-            // in the nested repository
-            this.trackedState.Verify(sr => sr.GetContractType(externalCallMessage.To), Times.Once);
+            this.contractStateRoot.Verify(sr => sr.GetContractType(externalCallMessage.To), Times.Once);
 
             this.addressGenerator.Verify(a => a.GenerateAddress(It.IsAny<uint256>(), It.IsAny<ulong>()), Times.Never);
 
-            this.trackedState.Verify(ts => ts.CreateAccount(newContractAddress), Times.Never);
+            this.contractStateRoot.Verify(ts => ts.CreateAccount(newContractAddress), Times.Never);
 
             this.vm.Verify(
                 v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), externalCallMessage.Method, code, typeName),
                 Times.Once);
 
-            this.trackedState.Verify(ts => ts.Commit(), Times.Never);
-
             Assert.True(result.IsFailure);
             Assert.NotNull(result.Error);
-            Assert.Equal(this.contractStateRoot.Object, state.GetPrivateFieldValue("intermediateState"));
             Assert.Equal(result.Error.VmException, vmExecutionResult.ExecutionException);
             Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
