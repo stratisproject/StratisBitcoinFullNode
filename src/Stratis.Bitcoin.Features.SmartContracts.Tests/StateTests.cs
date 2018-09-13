@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Moq;
+using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -25,17 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void State_Snapshot_Uses_Tracked_ContractState()
         {
-            var state = new State(
-                null,
-                null,
-                null,
-                this.contractStateRoot.Object,
-                null,
-                null,
-                0,
-                null,
-                null
-            );
+            var state = new State(null, null, null, this.contractStateRoot.Object, null, null, 0, null, null);
 
             IState newState = state.Snapshot();
 
@@ -45,19 +36,68 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void State_Snapshot_Has_New_LogHolder_With_Original_Logs()
+        {
+            var state = new State(null, null, null, this.contractStateRoot.Object, null, null, 0, null, null);
+
+            IState newState = state.Snapshot();
+
+            Assert.NotSame(newState.LogHolder, state.LogHolder);
+
+            var newLogs = newState.LogHolder.GetRawLogs();
+
+            foreach (RawLog log in state.LogHolder.GetRawLogs())
+            {
+                Assert.Contains(log, newLogs);
+            }
+        }
+
+        [Fact]
+        public void State_Snapshot_Has_New_InternalTransfers_With_Original_Transfers()
+        {
+            var state = new State(null, null, null, this.contractStateRoot.Object, null, null, 0, null, null);
+
+            state.Apply(new ContractTransferMessage(null, null, 1000, (Gas) 1000));
+            state.Apply(new ContractTransferMessage(null, null, 1000, (Gas)1000));
+            state.Apply(new ContractTransferMessage(null, null, 1000, (Gas)1000));
+
+            IState newState = state.Snapshot();
+
+            Assert.NotSame(newState.InternalTransfers, state.InternalTransfers);
+
+            var newInternalTransfers = newState.InternalTransfers;
+
+            foreach (var transfer in state.InternalTransfers)
+            {
+                Assert.Contains(transfer, newInternalTransfers);
+            }
+        }
+
+        [Fact]
+        public void State_Snapshot_Has_New_BalanceState()
+        {
+            var state = new State(null, null, null, this.contractStateRoot.Object, null, null, 0, null, null);
+
+            IState newState = state.Snapshot();
+
+            Assert.NotSame(state.BalanceState, newState.BalanceState);
+        }
+
+        [Fact]
+        public void State_Snapshot_BalanceState_Has_Original_TxOut()
+        {
+            ulong initialTxOut = 100_000;
+            var state = new State(null, null, null, this.contractStateRoot.Object, null, null, initialTxOut, null, null);
+
+            IState newState = state.Snapshot();
+
+            Assert.Equal(initialTxOut, newState.BalanceState.TxAmount);
+        }
+
+        [Fact]
         public void TransitionTo_Fails_If_New_State_Is_Not_Child()
         {
-            var state = new State(
-                null,
-                null,
-                null,
-                this.contractStateRoot.Object,
-                null,
-                null,
-                0,
-                null,
-                null
-            );
+            var state = new State(null, null, null, this.contractStateRoot.Object, null, null, 0, null, null);
 
             IState newState = state.Snapshot();
 
@@ -69,17 +109,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void TransitionTo_Updates_State_Correctly()
         {
-            var state = new State(
-                null,
-                null,
-                null,
-                this.contractStateRoot.Object,
-                null,
-                null,
-                0,
-                null,
-                null
-            );
+            var state = new State(null, null, null, this.contractStateRoot.Object, null, null, 0, null, null);
 
             // TODO pass in initial internal transfers list
             // TODO pass in initial contract log holder

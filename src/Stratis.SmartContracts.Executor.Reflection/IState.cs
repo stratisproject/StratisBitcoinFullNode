@@ -8,6 +8,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public interface IState
     {
+        BalanceState BalanceState { get; }
         IContractState ContractState { get; }
         IList<Log> GetLogs();
         IReadOnlyList<TransferInfo> InternalTransfers { get; }
