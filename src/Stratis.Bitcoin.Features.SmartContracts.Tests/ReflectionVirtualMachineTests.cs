@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 callData,
                 contractExecutionCode, "StorageTest");
 
-            Assert.Null(result.ExecutionException);
+            Assert.Null(result.ErrorMessage);
             Assert.True((bool)result.Result);
         }
 
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 callData,
                 contractExecutionCode, "StorageTest");
 
-            Assert.Null(result.ExecutionException);
+            Assert.Null(result.ErrorMessage);
             Assert.Equal(methodParameters[0], result.Result);
         }
 
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             VmExecutionResult result = this.vm.Create(this.state, this.contractState, contractExecutionCode, methodParameters);
 
-            Assert.Null(result.ExecutionException);
+            Assert.Null(result.ErrorMessage);
         }
     }
 }

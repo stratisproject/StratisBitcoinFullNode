@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], null, this.headers[10]);
 
-            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
             Assert.Null(result);
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Tests.Base
                     return new ConnectNewHeadersResult() {Consumed = this.headers[12]};
                 });
 
-            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
             Assert.Equal(this.headers[12], behavior.ExpectedPeerTip);
             Assert.Equal(this.headers[12], behavior.BestSentHeader);
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Tests.Base
                     return new ConnectNewHeadersResult() {Consumed = this.headers[40]};
                 });
 
-            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
             Assert.Equal(this.headers[40], behavior.ExpectedPeerTip);
             Assert.Equal(this.headers[40], behavior.BestSentHeader);
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Tests.Base
                     throw new ConnectHeaderException();
                 });
 
-            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
             Assert.Equal(this.headers[10], behavior.ExpectedPeerTip);
             Assert.Equal(this.headers[10], behavior.BestSentHeader);
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Tests.Base
             // That will set peer to null.
             behavior.Dispose();
 
-            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync(this.headers[6]);
+            ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
             Assert.Equal(0, this.helper.HeadersPresentedCalledTimes);
@@ -414,7 +414,23 @@ namespace Stratis.Bitcoin.Tests.Base
         public async Task ProcessHeadersAsync_PeerThatSentInvalidHeaderIsBannedAsync()
         {
             this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
-                (presentedHeaders, triggerDownload) => { throw new ConsensusException(""); });
+                (presentedHeaders, triggerDownload) => { throw new HeaderInvalidException(); });
+
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header).ToArray()));
+
+            Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
+            Assert.True(this.helper.PeerWasBanned);
+        }
+
+        /// <summary>
+        /// Consensus tip is at 10. We are not in IBD. Present headers 11-15, where one header is invalid.
+        /// Make sure <see cref="GetHeadersPayload"/> wasn't sent and peer was banned.
+        /// </summary>
+        [Fact]
+        public async Task ProcessHeadersAsync_PeerThatSentInvalidHeaderThatThrowFromRuleEngineIsBannedAsync()
+        {
+            this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
+                (presentedHeaders, triggerDownload) => { throw new ConsensusRuleException(ConsensusErrors.BadVersion); });
 
             await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header).ToArray()));
 

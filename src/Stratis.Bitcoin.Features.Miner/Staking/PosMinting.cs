@@ -20,6 +20,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Miner.Staking
@@ -98,8 +99,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// but high enough to compensate for tasks' overhead.</remarks>
         private const int UtxoStakeDescriptionsPerCoinstakeWorker = 25;
 
-        /// <summary>Consumes incoming blocks, validates and executes them.</summary>
-        private readonly IConsensusLoop consensusLoop;
+        /// <summary>Consumes manager class.</summary>
+        private readonly IConsensusManager consensusManager;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
         private readonly ConcurrentChain chain;
@@ -213,8 +214,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <summary>
         /// Initializes a new instance of the <see cref="PosMinting"/> class.
         /// </summary>
-        /// <param name="blockProvider">Block provider.</param>
-        /// <param name="consensusLoop">Consumes incoming blocks, validates and executes them.</param>
+        /// <param name="consensusManager">Consumes incoming blocks, validates and executes them.</param>
         /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="dateTimeProvider">Provides date time functionality.</param>
@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
             IBlockProvider blockProvider,
-            IConsensusLoop consensusLoop,
+            IConsensusManager consensusManager,
             ConcurrentChain chain,
             Network network,
             IDateTimeProvider dateTimeProvider,
@@ -249,7 +249,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             MinerSettings minerSettings)
         {
             this.blockProvider = blockProvider;
-            this.consensusLoop = consensusLoop;
+            this.consensusManager = consensusManager;
             this.chain = chain;
             this.network = network;
             this.dateTimeProvider = dateTimeProvider;
@@ -386,7 +386,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
                 // Prevent mining if not fully synced.
                 if (this.initialBlockDownloadState.IsInitialBlockDownload() ||
-                    this.consensusLoop.Tip != this.chain.Tip)
+                    this.consensusManager.Tip != this.chain.Tip)
                 {
                     this.logger.LogTrace("Waiting for synchronization before mining can be started...");
 
@@ -395,7 +395,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 }
 
                 ChainedHeader chainTip = this.chain.Tip;
-                if (chainTip != this.consensusLoop.Tip)
+                if (chainTip != this.consensusManager.Tip)
                 {
                     this.logger.LogTrace("(-)[SYNC_OR_REORG]");
                     return;
@@ -521,23 +521,16 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             }
 
             // Validate the block.
-            var blockValidationContext = new ValidationContext { Block = block };
-            this.consensusLoop.AcceptBlockAsync(blockValidationContext).GetAwaiter().GetResult();
+            ChainedHeader chainedHeader = this.consensusManager.BlockMinedAsync(block).GetAwaiter().GetResult();
 
-            if (blockValidationContext.ChainedHeader == null)
+            if (chainedHeader == null)
             {
                 this.logger.LogTrace("(-)[REORG-2]");
                 return;
             }
 
-            if (blockValidationContext.Error != null)
-            {
-                this.logger.LogTrace("(-)[ACCEPT_BLOCK_ERROR]");
-                return;
-            }
-
             this.logger.LogInformation("==================================================================");
-            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", blockValidationContext.ChainedHeader.HashBlock, blockValidationContext.ChainedHeader.Height);
+            this.logger.LogInformation("Found new POS block hash '{0}' at height {1}.", chainedHeader.HashBlock, chainedHeader.Height);
             this.logger.LogInformation("==================================================================");
         }
 
@@ -708,7 +701,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.logger.LogTrace("Worker #{0} found the kernel.", workersResult.KernelFoundIndex);
 
             // Get reward for newly created block.
-            long reward = fees + this.consensusLoop.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
+            long reward = fees + this.consensusManager.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
             if (reward <= 0)
             {
                 // TODO: This can't happen unless we remove reward for mined block.
@@ -1053,7 +1046,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             {
                 // Use consensus loop's tip rather than concurrent chain's tip
                 // because consensus loop's tip is guaranteed to have block stake in the database.
-                ChainedHeader tip = this.consensusLoop.Tip;
+                ChainedHeader tip = this.consensusManager.Tip;
                 if (tip == null)
                 {
                     this.logger.LogTrace("(-)[DEFAULT]:{0}", res);
@@ -1097,7 +1090,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
             // Use consensus loop's tip rather than concurrent chain's tip
             // because consensus loop's tip is guaranteed to have block stake in the database.
-            ChainedHeader block = this.consensusLoop.Tip;
+            ChainedHeader block = this.consensusManager.Tip;
             ChainedHeader prevStakeBlock = null;
 
             double res = 0.0;
@@ -1148,10 +1141,10 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// </para>
         /// </remarks>
         /// <seealso cref="CoinstakeSplitLimitMultiplier" />
-        /// <seealso cref="SplitFactor" />                                                                                                                                              
+        /// <seealso cref="SplitFactor" />
         internal bool ShouldSplitStake(int stakedUtxosCount, long amountStaked, long coinValue, int chainHeight)
         {
-            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5},{6}:{7})", nameof(stakedUtxosCount), stakedUtxosCount, nameof(amountStaked), amountStaked, 
+            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5},{6}:{7})", nameof(stakedUtxosCount), stakedUtxosCount, nameof(amountStaked), amountStaked,
                 nameof(coinValue), coinValue, nameof(chainHeight), chainHeight);
 
             if (!this.CoinstakeSplitEnabled)

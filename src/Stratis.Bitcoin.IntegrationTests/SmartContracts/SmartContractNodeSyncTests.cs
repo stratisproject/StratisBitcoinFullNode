@@ -24,11 +24,11 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 Assert.Single(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Single(node2.FullNode.ConnectionManager.ConnectedPeers);
 
-                var behavior = node1.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<IConnectionManagerBehavior>();
-                Assert.False(behavior.Inbound);
+                var behavior = node1.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.OfType<IConnectionManagerBehavior>().FirstOrDefault();
+                Assert.False(behavior.AttachedPeer.Inbound);
                 Assert.True(behavior.OneTry);
-                behavior = node2.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.Find<IConnectionManagerBehavior>();
-                Assert.True(behavior.Inbound);
+                behavior = node2.FullNode.ConnectionManager.ConnectedPeers.First().Behaviors.OfType<IConnectionManagerBehavior>().FirstOrDefault();
+                Assert.True(behavior.AttachedPeer.Inbound);
                 Assert.False(behavior.OneTry);
             }
         }

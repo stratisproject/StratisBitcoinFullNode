@@ -54,8 +54,7 @@ namespace Stratis.SmartContracts.Core.Validation
         private static void SmartContractsPolicy(NamespacePolicy policy)
         {
             policy
-                .Type(typeof(SmartContract), AccessPolicy.Allowed,
-                    type => type.Member(nameof(SmartContract.SpendGas), AccessPolicy.Denied));
+                .Type(typeof(SmartContract), AccessPolicy.Allowed);
         }
     }
 }

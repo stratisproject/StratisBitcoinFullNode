@@ -3,7 +3,6 @@ using System.Linq;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
@@ -11,6 +10,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         private readonly SmartContractsController smartContractsController;
         private readonly SmartContractWalletController smartContractWalletController;
         private readonly IContractStateRoot stateRoot;
-        private readonly IBlockStoreCache blockStore;
+        private readonly IBlockStore blockStore;
 
         /// <summary>
         /// Reference to the complex underlying node object.
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
             this.smartContractWalletController = this.CoreNode.FullNode.NodeService<SmartContractWalletController>();
             this.smartContractsController = this.CoreNode.FullNode.NodeService<SmartContractsController>();
             this.stateRoot = this.CoreNode.FullNode.NodeService<IContractStateRoot>();
-            this.blockStore = this.CoreNode.FullNode.NodeService<IBlockStoreCache>();
+            this.blockStore = this.CoreNode.FullNode.NodeService<IBlockStore>();
         }
 
         /// <summary>
@@ -131,8 +131,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
             Transaction trx = (this.CoreNode.FullNode.NodeService<IWalletTransactionHandler>() as SmartContractWalletTransactionHandler).BuildTransaction(txBuildContext);
 
             // Broadcast to the other node.
-            JsonResult response = (JsonResult) this.smartContractWalletController.SendTransaction(new SendTransactionRequest(trx.ToHex()));
-            return (WalletSendTransactionModel) response.Value;
+            JsonResult response = (JsonResult)this.smartContractWalletController.SendTransaction(new SendTransactionRequest(trx.ToHex()));
+            return (WalletSendTransactionModel)response.Value;
         }
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         public IList<ReceiptResponse> GetReceipts(string contractAddress, string eventName)
         {
             JsonResult response = (JsonResult)this.smartContractsController.ReceiptSearch(contractAddress, eventName).Result;
-            return (IList<ReceiptResponse>) response.Value;
+            return (IList<ReceiptResponse>)response.Value;
         }
 
         /// <summary>

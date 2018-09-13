@@ -89,18 +89,6 @@ namespace Stratis.SmartContracts
         }
 
         /// <summary>
-        /// Expends the given amount of gas.
-        /// <para>
-        /// If this takes the spent gas over the entered limit, throw an OutOfGasException
-        /// </para>
-        /// </summary>
-        /// <param name="gasToSpend">TODO: This is currently a ulong instead of a Gas because it needs to receive values from injected IL and it's difficult to create non-primitive types</param>
-        public void SpendGas(ulong gasToSpend)
-        {
-            this.gasMeter.Spend((Gas)gasToSpend);
-        }
-
-        /// <summary>
         /// Sends funds to an address.
         /// 
         /// If address belongs to a contract, will invoke the receive function on this contract. 
