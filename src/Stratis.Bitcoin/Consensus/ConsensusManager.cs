@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Consensus
         private bool isIbd;
 
         public ConsensusManager(
-            ChainedHeaderTree chainedHeaderTree,
+            IChainedHeaderTree chainedHeaderTree,
             Network network,
             ILoggerFactory loggerFactory,
             IChainState chainState,

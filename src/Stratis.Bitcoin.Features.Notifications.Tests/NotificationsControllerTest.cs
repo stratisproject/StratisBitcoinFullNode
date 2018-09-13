@@ -3,14 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Notifications.Controllers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
@@ -33,25 +29,6 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             this.network = KnownNetworks.StratisMain;
         }
 
-        private ConsensusManager InstantiateMockedConsensusManager(ConcurrentChain chain)
-        {
-            NodeSettings nodeSettings = NodeSettings.Default();
-            IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object));
-            var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, this.LoggerFactory.Object, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(this.LoggerFactory.Object), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings());
-            var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.LoggerFactory.Object), this.LoggerFactory.Object, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
-            var connectionSettings = new ConnectionManagerSettings(nodeSettings);
-            var selfEndpointTracker = new SelfEndpointTracker(this.LoggerFactory.Object);
-
-            var connectionManager = new ConnectionManager(dateTimeProvider, this.LoggerFactory.Object, this.network, networkPeerFactory,
-                nodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { },
-                peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider(), new Mock<INodeStats>().Object);
-
-            ConsensusManager consensusManager = CMCreator.CreateConsensusManager(this.network);
-
-            return consensusManager;
-        }
-
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -59,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
         public void Given_SyncActionIsCalled_When_QueryParameterIsNullOrEmpty_Then_ReturnBadRequest(string from)
         {
             var chain = new Mock<ConcurrentChain>();
-            ConsensusManager consensusManager = this.InstantiateMockedConsensusManager(chain.Object);
+            ConsensusManager consensusManager = CMCreator.CreateConsensusManager(this.network);
 
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
@@ -86,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var chain = new Mock<ConcurrentChain>();
             chain.Setup(c => c.GetBlock(heightLocation)).Returns(chainedHeader);
 
-            ConsensusManager consensusManager = this.InstantiateMockedConsensusManager(chain.Object);
+            ConsensusManager consensusManager = CMCreator.CreateConsensusManager(this.network);
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
             // Act
@@ -109,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             var chainedHeader = new ChainedHeader(this.network.Consensus.ConsensusFactory.CreateBlockHeader(), hash, null);
             var chain = new Mock<ConcurrentChain>();
             chain.Setup(c => c.GetBlock(uint256.Parse(hashLocation))).Returns(chainedHeader);
-            ConsensusManager consensusManager = this.InstantiateMockedConsensusManager(chain.Object);
+            ConsensusManager consensusManager = CMCreator.CreateConsensusManager(this.network);
 
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
@@ -130,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             var chain = new Mock<ConcurrentChain>();
             chain.Setup(c => c.GetBlock(uint256.Parse(hashLocation))).Returns((ChainedHeader)null);
-            ConsensusManager consensusManager = this.InstantiateMockedConsensusManager(chain.Object);
+            ConsensusManager consensusManager = CMCreator.CreateConsensusManager(this.network);
 
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
@@ -154,7 +131,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             // Set up
             string hashLocation = "notAValidHash";
             var chain = new Mock<ConcurrentChain>();
-            ConsensusManager consensusManager = this.InstantiateMockedConsensusManager(chain.Object);
+            ConsensusManager consensusManager = CMCreator.CreateConsensusManager(this.network);
 
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 
@@ -171,7 +148,7 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
             // Set up
             var chain = new Mock<ConcurrentChain>();
             chain.Setup(c => c.GetBlock(15)).Returns((ChainedHeader)null);
-            ConsensusManager consensusManager = this.InstantiateMockedConsensusManager(chain.Object);
+            ConsensusManager consensusManager = CMCreator.CreateConsensusManager(this.network);
 
             var blockNotification = new Mock<BlockNotification>(this.LoggerFactory.Object, chain.Object, consensusManager, new Signals.Signals(), new AsyncLoopFactory(new LoggerFactory()), new NodeLifetime());
 

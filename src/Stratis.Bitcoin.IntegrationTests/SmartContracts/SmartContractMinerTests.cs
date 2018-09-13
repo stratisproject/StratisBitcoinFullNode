@@ -197,16 +197,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.NodeSettings = new NodeSettings(args: new string[] { "-checkpoints" });
                 var consensusSettings = new ConsensusSettings(this.NodeSettings);
 
-                var networkPeerFactory = new NetworkPeerFactory(this.network, DateTimeProvider.Default, this.loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(this.loggerFactory), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings());
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
-                var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.NodeSettings.DataFolder, this.loggerFactory, new SelfEndpointTracker(this.loggerFactory));
-                var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.loggerFactory), this.loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), this.NodeSettings, peerAddressManager);
-                var connectionSettings = new ConnectionManagerSettings(this.NodeSettings);
-                var selfEndpointTracker = new SelfEndpointTracker(this.loggerFactory);
-                var connectionManager = new ConnectionManager(DateTimeProvider.Default, this.loggerFactory, this.network, networkPeerFactory,
-                    this.NodeSettings, new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { },
-                    peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider(), new Mock<INodeStats>().Object);
-                var peerBanning = new PeerBanning(connectionManager, this.loggerFactory, DateTimeProvider.Default, peerAddressManager);
+
                 var senderRetriever = new SenderRetriever();
 
                 var genesis = this.network.GetGenesis();

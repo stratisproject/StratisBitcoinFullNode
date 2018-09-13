@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Tests.Common
 {
     public static class CMCreator
     {
-        public static ConsensusManager CreateConsensusManager(Network network, string dataDir = null)
+        public static ConsensusManager CreateConsensusManager(Network network, string dataDir = null, ChainState chainState = null)
         {
             string[] param = dataDir == null ? new string[]{} : new string[] { $"-datadir={dataDir}" };
 
@@ -45,7 +45,6 @@ namespace Stratis.Bitcoin.Tests.Common
             var chain = new ConcurrentChain(network);
             InMemoryCoinView inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
 
-            var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, loggerFactory);
             var networkPeerFactory = new NetworkPeerFactory(network,
                 dateTimeProvider,
                 loggerFactory, new PayloadProvider().DiscoverPayloads(),
@@ -61,13 +60,14 @@ namespace Stratis.Bitcoin.Tests.Common
                 new NodeLifetime(), new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { },
                 peerDiscovery, selfEndpointTracker, connectionSettings, new VersionProvider(), new Mock<INodeStats>().Object);
 
-            var chainState = new ChainState();
+            if (chainState == null)
+                chainState = new ChainState();
             var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
             var deployments = new NodeDeployments(network, chain);
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(),
                 inMemoryCoinView, chainState, new InvalidBlockHashStore(new DateTimeProvider())).Register();
 
-            var tree = new ChainedHeaderTree(network, new Mock<ILoggerFactory>().Object, new HeaderValidator(consensusRules, loggerFactory), new Checkpoints(),
+            var tree = new ChainedHeaderTree(network, loggerFactory, new HeaderValidator(consensusRules, loggerFactory), new Checkpoints(),
                 new ChainState(), new Mock<IFinalizedBlockInfo>().Object, consensusSettings, new InvalidBlockHashStore(new DateTimeProvider()));
 
             var consensus = new ConsensusManager(tree, network, loggerFactory, chainState, new IntegrityValidator(consensusRules, loggerFactory),
