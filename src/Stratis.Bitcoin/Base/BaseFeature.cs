@@ -222,18 +222,18 @@ namespace Stratis.Bitcoin.Base
         {
             if (!Directory.Exists(this.dataFolder.ChainPath))
             {
-                this.logger.LogInformation("Creating " + this.dataFolder.ChainPath);
+                this.logger.LogInformation("Creating {0}.", this.dataFolder.ChainPath);
                 Directory.CreateDirectory(this.dataFolder.ChainPath);
             }
 
-            this.logger.LogInformation("Loading finalized block height");
+            this.logger.LogInformation("Loading finalized block height.");
             await this.finalizedBlockInfo.LoadFinalizedBlockInfoAsync(this.network).ConfigureAwait(false);
 
-            this.logger.LogInformation("Loading chain");
+            this.logger.LogInformation("Loading chain.");
             ChainedHeader chainTip = await this.chainRepository.LoadAsync(this.chain.Genesis).ConfigureAwait(false);
             this.chain.SetTip(chainTip);
 
-            this.logger.LogInformation("Chain loaded at height {0}", this.chain.Height);
+            this.logger.LogInformation("Chain loaded at height {0}.", this.chain.Height);
 
             this.flushChainLoop = this.asyncLoopFactory.Run("FlushChain", async token =>
             {
@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Base
 
             if (File.Exists(Path.Combine(this.dataFolder.AddressManagerFilePath, PeerAddressManager.PeerFileName)))
             {
-                this.logger.LogInformation($"Loading peers from : {this.dataFolder.AddressManagerFilePath}...");
+                this.logger.LogInformation($"Loading peers from : {this.dataFolder.AddressManagerFilePath}.");
                 this.peerAddressManager.LoadPeers();
             }
 
@@ -273,19 +273,19 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.logger.LogInformation("Flushing peers...");
+            this.logger.LogInformation("Flushing peers.");
             this.flushAddressManagerLoop.Dispose();
 
-            this.logger.LogInformation("Disposing peer address manager...");
+            this.logger.LogInformation("Disposing peer address manager.");
             this.peerAddressManager.Dispose();
 
             if (this.flushChainLoop != null)
             {
-                this.logger.LogInformation("Flushing headers chain...");
+                this.logger.LogInformation("Flushing headers chain.");
                 this.flushChainLoop.Dispose();
             }
 
-            this.logger.LogInformation("Saving chain repository...");
+            this.logger.LogInformation("Saving chain repository.");
             this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
 
             foreach (IDisposable disposable in this.disposableResources)
@@ -294,16 +294,16 @@ namespace Stratis.Bitcoin.Base
                 disposable.Dispose();
             }
 
-            this.logger.LogInformation("Disposing block puller...");
+            this.logger.LogInformation("Disposing block puller.");
             this.blockPuller.Dispose();
 
-            this.logger.LogInformation("Disposing consensus manager...");
+            this.logger.LogInformation("Disposing consensus manager.");
             this.consensusManager.Dispose();
 
-            this.logger.LogInformation("Disposing consensus rules...");
+            this.logger.LogInformation("Disposing consensus rules.");
             this.consensusRules.Dispose();
 
-            this.logger.LogInformation("Disposing block store...");
+            this.logger.LogInformation("Disposing block store.");
             this.blockStore.Dispose();
         }
     }

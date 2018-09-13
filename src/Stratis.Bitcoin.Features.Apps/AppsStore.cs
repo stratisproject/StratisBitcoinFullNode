@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Apps
                 this.applications.AddRange(apps.Where(x => x != null));
 
                 if (this.applications.IsEmpty())
-                    this.logger.LogWarning("No Stratis applications found at or below '{0}'", this.dataFolder.ApplicationsPath);
+                    this.logger.LogWarning("No Stratis applications found at or below '{0}'.", this.dataFolder.ApplicationsPath);
             }
             catch (Exception e)
             {
