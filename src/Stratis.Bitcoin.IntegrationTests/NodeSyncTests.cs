@@ -23,6 +23,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         private readonly Network posNetwork;
         private readonly Network powNetwork;
 
+        const string walletName = "myWallet";
+        const string walletPassword = "123456";
+        const string walletPassphrase = "123456";
+        const string walletAccount = "account 0";
+
         public NodeSyncTests()
         {
             this.posNetwork = NetworkRegistration.Register(new StratisRegTestMaxReorg());
@@ -200,11 +205,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 CoreNode stratisSyncer = builder.CreateStratisPosNode(this.posNetwork);
                 CoreNode stratisReorg = builder.CreateStratisPosNode(this.posNetwork);
 
-                const string walletName = "myWallet";
-                const string walletPassword = "123456";
-                const string walletPassphrase = "123456";
-                const string walletAccount = "account 0";
-
                 builder.StartAll();
                 stratisMiner.NotInIBD().WithWallet(walletPassword, walletName, walletPassphrase);
                 stratisSyncer.NotInIBD().WithWallet(walletPassword, walletName, walletPassphrase);
@@ -283,14 +283,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 CoreNode stratisMinerRemote = builder.CreateStratisPosNode(this.posNetwork);
 
                 builder.StartAll();
-                stratisMinerLocal.NotInIBD().WithWallet();
-                stratisMinerRemote.NotInIBD().WithWallet();
-
-                stratisMinerLocal.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMinerLocal.FullNode.Network));
-                stratisMinerRemote.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMinerRemote.FullNode.Network));
+                stratisMinerLocal.NotInIBD().WithWallet(walletPassword, walletName, walletPassphrase);
+                stratisMinerRemote.NotInIBD().WithWallet(walletPassword, walletName, walletPassphrase);
 
                 // Let's mine block Ap and Bp.
-                stratisMinerRemote.GenerateStratisWithMiner(2);
+                TestHelper.MineBlocks(stratisMinerRemote, walletName, walletPassword, walletAccount, 2);
 
                 // Wait for block repository for block sync to work.
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMinerRemote));
@@ -308,10 +305,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Now reconnect nodes and mine block C1s before C2p arrives.
                 stratisMinerLocal.CreateRPCClient().AddNode(stratisMinerRemote.Endpoint, true);
-                stratisMinerLocal.GenerateStratisWithMiner(1);
+                TestHelper.MineBlocks(stratisMinerLocal, walletName, walletPassword, walletAccount, 1);
 
                 // Mine block Dp.
-                uint256 dpHash = stratisMinerRemote.GenerateStratisWithMiner(1)[0];
+                uint256 dpHash = TestHelper.MineBlocks(stratisMinerRemote, walletName, walletPassword, walletAccount, 1).BlockHashes[0];
 
                 // Now we wait until the local node's chain tip has correct hash of Dp.
                 TestHelper.WaitLoop(() => stratisMinerLocal.FullNode.Chain.Tip.HashBlock.Equals(dpHash));
