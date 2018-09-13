@@ -44,7 +44,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             }
         }
 
-
         private void RewriteMethod(MethodDefinition methodDefinition, ObserverReferences observer)
         {
             if (methodDefinition.DeclaringType == observer.InstanceField.DeclaringType)
@@ -68,9 +67,17 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                     i += 2;
                 }
 
-                if (instruction.OpCode.Code == Code.Newobj)
+                if (instruction.OpCode.Code == Code.Call)
                 {
-
+                    var called = (MethodReference) instruction.Operand;
+                    
+                    if (called.DeclaringType.FullName == typeof(Array).FullName && called.Name == nameof(Array.Resize))
+                    {
+                        MethodDefinition method = ((MethodReference)instruction.Operand).Resolve();
+                        il.InsertBefore(instruction, il.CreateLdlocBest(observerVariable));
+                        il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.FlowThroughMemoryInt32Method));
+                        i += 2;
+                    }
                 }
 
             }

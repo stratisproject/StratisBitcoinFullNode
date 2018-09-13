@@ -63,6 +63,12 @@ namespace RuntimeObserver
                 observer.SpendMemory(count.ToInt64());
                 return count;
             }
+
+            public static int SpendMemoryInt32(int count, Observer observer)
+            {
+                observer.SpendMemory(count);
+                return count;
+            }
         }
     }
 }

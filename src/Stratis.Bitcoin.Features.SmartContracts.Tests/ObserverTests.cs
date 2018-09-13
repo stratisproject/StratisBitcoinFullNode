@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void TestGasInjector_ContractMe3thodWithRecursion_GasInjectionSucceeds()
+        public void TestGasInjector_ContractMethodWithRecursion_GasInjectionSucceeds()
         {
             SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/Recursion.cs");
             Assert.True(compilationResult.Success);
@@ -310,7 +310,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         // These are all split up because if they all use the same one
         // they will have the same 'Observer' and it will overflow.
-        // TODO: Future improvement: Use Theory?
+        // TODO: Future improvement: Use Theory, and don't compile from scratch
+        // every time to save performance.
 
         [Fact]
         public void Test_MemoryLimit_BigArray_Fails()
