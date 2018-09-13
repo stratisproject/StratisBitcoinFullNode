@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Builder
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
                 this.Execute(service => service.Initialize());
             }
-            catch (Exception)
+            catch
             {
                 this.logger.LogError("An error occurred starting the application.");
                 this.logger.LogTrace("(-)[INITIALIZE_EXCEPTION]");
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Builder
             {
                 this.Execute(feature => feature.Dispose(), true);
             }
-            catch (Exception)
+            catch
             {
                 this.logger.LogError("An error occurred stopping the application.");
                 this.logger.LogTrace("(-)[DISPOSE_EXCEPTION]");
