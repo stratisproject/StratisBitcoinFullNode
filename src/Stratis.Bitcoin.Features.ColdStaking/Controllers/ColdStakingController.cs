@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
     [Route("api/[controller]")]
     public class ColdStakingController : Controller
     {
-        public ColdStakingManager ColdStakingManager { get; private set; }
+        private readonly ColdStakingManager coldStakingManager;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(coldStakingManager, nameof(coldStakingManager));
 
-            this.ColdStakingManager = coldStakingManager;
+            this.coldStakingManager = coldStakingManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -56,10 +56,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
 
             try
             {
-                GetColdStakingInfoResponse model = this.ColdStakingManager.GetColdStakingInfo(request.WalletName);
+                GetColdStakingInfoResponse model = this.coldStakingManager.GetColdStakingInfo(request.WalletName);
 
                 this.logger.LogTrace("(-):'{0}'", model);
-
                 return this.Json(model);
             }
             catch (Exception e)
@@ -97,11 +96,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             {
                 var model = new CreateColdStakingAccountResponse
                 {
-                    AccountName = this.ColdStakingManager.CreateColdStakingAccount(request.WalletName, request.IsColdWalletAccount, request.WalletPassword).Name
+                    AccountName = this.coldStakingManager.GetOrCreateColdStakingAccount(request.WalletName, request.IsColdWalletAccount, request.WalletPassword).Name
                 };
 
                 this.logger.LogTrace("(-):'{0}'", model);
-
                 return this.Json(model);
             }
             catch (Exception e)
@@ -139,14 +137,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             {
                 var model = new GetColdStakingAddressResponse
                 {
-                    Address = this.ColdStakingManager.GetColdStakingAddress(request.WalletName, request.IsColdWalletAddress)?.Address
+                    Address = this.coldStakingManager.GetFirstUnusedColdStakingAddress(request.WalletName, request.IsColdWalletAddress)?.Address
                 };
 
                 if (model.Address == null)
                     throw new WalletException("The cold staking account does not exist.");
 
                 this.logger.LogTrace("(-):'{0}'", model);
-
                 return this.Json(model);
             }
             catch (Exception e)
@@ -185,7 +182,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 Money amount = Money.Parse(request.Amount);
                 Money feeAmount = Money.Parse(request.Fees);
 
-                Transaction transaction = this.ColdStakingManager.GetColdStakingSetupTransaction(request.ColdWalletAddress,
+                Transaction transaction = this.coldStakingManager.GetColdStakingSetupTransaction(request.ColdWalletAddress,
                     request.HotWalletAddress, request.WalletName, request.WalletAccount, request.WalletPassword,
                     amount, feeAmount);
 
@@ -195,7 +192,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 };
 
                 this.logger.LogTrace("(-):'{0}'", model);
-
                 return this.Json(model);
             }
             catch (Exception e)

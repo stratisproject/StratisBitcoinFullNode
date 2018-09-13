@@ -158,7 +158,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private StateTransitionResult ApplyCreate(object[] parameters, byte[] code, BaseMessage message, string type = null)
         {
             if (this.GasRemaining < message.GasLimit || this.GasRemaining < GasPriceList.BaseCost)
-                throw new InsufficientGasException();
+                return StateTransitionResult.Fail((Gas) 0, StateTransitionErrorKind.InsufficientGas);
 
             StateSnapshot stateSnapshot = this.TakeSnapshot();
 
@@ -185,17 +185,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (revert)
             {
                 this.Rollback(stateSnapshot);
-            }
-            else
-            {
-                state.Commit();
+
+                return StateTransitionResult.Fail(
+                    gasMeter.GasConsumed,
+                    result.ExecutionException);
             }
 
-            return new StateTransitionResult(
+            state.Commit();
+
+            return StateTransitionResult.Ok(
                 gasMeter.GasConsumed,
                 address,
-                !revert,
-                result
+                result.Result
             );            
         }
 
@@ -223,12 +224,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // For successful internal creates we need to add the transfer to the internal transfer list.
             // For external creates we do not need to do this.
-            if (result.Success)
+            if (result.IsSuccess)
             {
                 this.internalTransfers.Add(new TransferInfo
                 {
                     From = message.From,
-                    To = result.ContractAddress,
+                    To = result.Success.ContractAddress,
                     Value = message.Amount
                 });
             }
@@ -239,7 +240,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private StateTransitionResult ApplyCall(CallMessage message, byte[] contractCode)
         {
             if (this.GasRemaining < message.GasLimit || this.GasRemaining < GasPriceList.BaseCost)
-                throw new InsufficientGasException();
+                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientGas);
 
             var gasMeter = new GasMeter(message.GasLimit);
 
@@ -247,12 +248,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             if (message.Method.Name == null)
             {
-                return new StateTransitionResult(
-                    gasMeter.GasConsumed,
-                    message.To,
-                    false,
-                    VmExecutionResult.Error(new Exception("No method name provided")) // TODO don't use exceptions to handle these
-                );
+                return StateTransitionResult.Fail(gasMeter.GasConsumed, StateTransitionErrorKind.NoMethodName);
             }
 
             StateSnapshot stateSnapshot = this.TakeSnapshot();
@@ -272,18 +268,19 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (revert)
             {
                 this.Rollback(stateSnapshot);
-            }
-            else
-            {
-                state.Commit();
-                this.GasRemaining -= gasMeter.GasConsumed;
+
+                return StateTransitionResult.Fail(
+                    gasMeter.GasConsumed,
+                    result.ExecutionException);
             }
 
-            return new StateTransitionResult(
+            state.Commit();
+            this.GasRemaining -= gasMeter.GasConsumed;            
+
+            return StateTransitionResult.Ok(
                 gasMeter.GasConsumed,
                 message.To,
-                !revert,
-                result
+                result.Result
             );            
         }
 
@@ -295,25 +292,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
             bool enoughBalance = this.EnsureContractHasEnoughBalance(message.From, message.Amount);
 
             if (!enoughBalance)
-                throw new InsufficientBalanceException();
+                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance);
 
             byte[] contractCode = this.intermediateState.GetCode(message.To);
 
             if (contractCode == null || contractCode.Length == 0)
             {
-                return new StateTransitionResult(
-                    (Gas)0,
-                    message.To,
-                    false,
-                    VmExecutionResult.Error(new SmartContractDoesNotExistException("No code"))
-                );
+                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.NoCode);
             }
 
             StateTransitionResult result = this.ApplyCall(message, contractCode);
 
             // For successful internal calls we need to add the transfer to the internal transfer list.
             // For external calls we do not need to do this.
-            if (result.Success)
+            if (result.IsSuccess)
             {
                 this.internalTransfers.Add(new TransferInfo
                 {
@@ -335,12 +327,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             if (contractCode == null || contractCode.Length == 0)
             {
-                return new StateTransitionResult(
-                    (Gas)0,
-                    message.To,
-                    false,
-                    VmExecutionResult.Error(new SmartContractDoesNotExistException("No code"))
-                );
+                return StateTransitionResult.Fail((Gas) 0, StateTransitionErrorKind.NoCode);
             }
 
             return this.ApplyCall(message, contractCode);
@@ -354,7 +341,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             bool enoughBalance = this.EnsureContractHasEnoughBalance(message.From, message.Amount);
 
             if (!enoughBalance)
-                throw new InsufficientBalanceException();
+                return StateTransitionResult.Fail((Gas) 0, StateTransitionErrorKind.InsufficientBalance);
 
             // If it's not a contract, create a regular P2PKH tx
             // If it is a contract, do a regular contract call
@@ -370,11 +357,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     Value = message.Amount
                 });
 
-                return new StateTransitionResult(
-                    (Gas) 0,
-                    message.To,
-                    true
-                );
+                return StateTransitionResult.Ok((Gas) 0, message.To);
             }
 
             return this.ApplyCall(message, contractCode);

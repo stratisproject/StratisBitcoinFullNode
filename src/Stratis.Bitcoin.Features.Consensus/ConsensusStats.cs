@@ -48,6 +48,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly IBlockPuller blockPuller;
 
+        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
+        private readonly INodeLifetime nodeLifetime;
+
         public ConsensusStats(
             ICoinView coinView,
             IConsensusManager consensusManager,
@@ -57,7 +60,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             IConnectionManager connectionManager,
             IDateTimeProvider dateTimeProvider,
             IBlockPuller blockPuller,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            INodeLifetime nodeLifetime)
         {
             var stack = new CoinViewStack(coinView);
             this.cache = stack.Find<CachedCoinView>();
@@ -76,6 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.dateTimeProvider = dateTimeProvider;
             this.blockPuller = blockPuller;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.nodeLifetime = nodeLifetime;
         }
 
         public void BenchStats()
@@ -109,6 +114,9 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
         {
+            if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+                return;
+
             if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
             {
                 if (this.initialBlockDownloadState.IsInitialBlockDownload())

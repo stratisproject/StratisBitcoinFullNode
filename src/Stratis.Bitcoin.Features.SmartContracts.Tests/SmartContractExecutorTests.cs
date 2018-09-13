@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.stateFactory);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
-            Assert.IsType<SmartContractDoesNotExistException>(result.Exception);
+            Assert.True(result.Revert);
         }
 
         [Fact]

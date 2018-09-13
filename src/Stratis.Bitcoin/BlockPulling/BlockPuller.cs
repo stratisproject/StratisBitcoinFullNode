@@ -292,7 +292,7 @@ namespace Stratis.Bitcoin.BlockPulling
             return this.averageBlockSizeBytes.Average;
         }
 
-        private int GetTotalSpeedOfAllPeersBytesPerSec()
+        private long GetTotalSpeedOfAllPeersBytesPerSec()
         {
             lock (this.peerLock)
             {
@@ -902,9 +902,9 @@ namespace Stratis.Bitcoin.BlockPulling
             this.logger.LogTrace("({0}:{1})", nameof(peerId), peerId);
 
             // Now decide if we need to recalculate quality score for all peers or just for this one.
-            int bestSpeed = this.pullerBehaviorsByPeerId.Max(x => x.Value.SpeedBytesPerSecond);
+            long bestSpeed = this.pullerBehaviorsByPeerId.Max(x => x.Value.SpeedBytesPerSecond);
 
-            int adjustedBestSpeed = bestSpeed;
+            long adjustedBestSpeed = bestSpeed;
             if (!this.isIbd && (adjustedBestSpeed > PeerSpeedLimitWhenNotInIbdBytesPerSec))
                 adjustedBestSpeed = PeerSpeedLimitWhenNotInIbdBytesPerSec;
 
