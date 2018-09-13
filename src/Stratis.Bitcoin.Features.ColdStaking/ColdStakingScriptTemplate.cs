@@ -94,18 +94,18 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         {
             byte[] bytes = scriptPubKey.ToBytes(true);
             needMoreCheck = false;
-            return (bytes.Length == 51) &&
-                   (bytes[0] == (byte)OpcodeType.OP_DUP) &&
-                   (bytes[1] == (byte)OpcodeType.OP_HASH160) &&
-                   (bytes[2] == (byte)OpcodeType.OP_ROT) &&
-                   (bytes[3] == (byte)OpcodeType.OP_IF) &&
-                   (bytes[4] == (byte)OpcodeType.OP_CHECKCOLDSTAKEVERIFY) &&
-                   (bytes[5] == 0x14) &&
-                   (bytes[26] == (byte)OpcodeType.OP_ELSE) &&
-                   (bytes[27] == 0x14) &&
-                   (bytes[48] == (byte)OpcodeType.OP_ENDIF) &&
-                   (bytes[49] == (byte)OpcodeType.OP_EQUALVERIFY) &&
-                   (bytes[50] == (byte)OpcodeType.OP_ENDIF);
+            return (bytes.Length == 51)
+                && (bytes[0] == (byte)OpcodeType.OP_DUP)
+                && (bytes[1] == (byte)OpcodeType.OP_HASH160)
+                && (bytes[2] == (byte)OpcodeType.OP_ROT)
+                && (bytes[3] == (byte)OpcodeType.OP_IF)
+                && (bytes[4] == (byte)OpcodeType.OP_CHECKCOLDSTAKEVERIFY)
+                && (bytes[5] == 0x14)
+                && (bytes[26] == (byte)OpcodeType.OP_ELSE)
+                && (bytes[27] == 0x14)
+                && (bytes[48] == (byte)OpcodeType.OP_ENDIF)
+                && (bytes[49] == (byte)OpcodeType.OP_EQUALVERIFY)
+                && (bytes[50] == (byte)OpcodeType.OP_ENDIF);
         }
 
         /// <inheritdoc />
@@ -153,10 +153,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             if (ops.Length != 3)
                 return false;
 
-            return (ops[0].PushData != null) &&
-                   ((ops[0].Code == OpcodeType.OP_0) || TransactionSignature.IsValid(network, ops[0].PushData, ScriptVerify.None)) &&
-                   (ops[1].Code == OpcodeType.OP_0 || ops[1].Code == OpcodeType.OP_1) &&
-                   (ops[2].PushData != null) && PubKey.Check(ops[2].PushData, false);
+            return (ops[0].PushData != null)
+                && ((ops[0].Code == OpcodeType.OP_0) || TransactionSignature.IsValid(network, ops[0].PushData, ScriptVerify.None))
+                && ((ops[1].Code == OpcodeType.OP_0) || (ops[1].Code == OpcodeType.OP_1))
+                && (ops[2].PushData != null) && PubKey.Check(ops[2].PushData, false);
         }
 
         /// <summary>
