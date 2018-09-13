@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.logger.LogInformation("Stopping BlockStore...");
+            this.logger.LogInformation("Stopping BlockStore.");
 
             this.blockStoreSignaled.Dispose();
         }

@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             int cacheEntryCount = this.CacheEntryCount;
             if (cacheEntryCount > this.MaxItems)
             {
-                this.logger.LogTrace("Cache is full now with {0} entries, evicting ...", cacheEntryCount);
+                this.logger.LogTrace("Cache is full now with {0} entries, evicting.", cacheEntryCount);
                 await this.EvictAsync().ConfigureAwait(false);
             }
 

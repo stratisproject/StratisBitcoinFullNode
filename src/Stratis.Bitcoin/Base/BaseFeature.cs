@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.Base
 
             foreach (IDisposable disposable in this.disposableResources)
             {
-                this.logger.LogInformation($"{disposable.GetType().Name}...");
+                this.logger.LogInformation($"{disposable.GetType().Name}.");
                 disposable.Dispose();
             }
 
