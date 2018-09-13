@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (stakeItem.BlockStake != null) this.logger.LogTrace("(-):*.{0}='{1}'", nameof(stakeItem.BlockStake.HashProof), stakeItem.BlockStake.HashProof);
             else this.logger.LogTrace("(-):null");
 
-            Guard.Assert(stakeItem.BlockStake != null); // if we ask for it then we expect its in store
+            Guard.Assert(stakeItem.BlockStake != null, string.Format("{0}:{1} does not exist in the stake store.", nameof(blockid), blockid));
             return stakeItem.BlockStake;
         }
 

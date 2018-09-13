@@ -8,7 +8,6 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -233,6 +232,10 @@ namespace Stratis.Bitcoin.Consensus
             catch (ConsensusErrorException ex)
             {
                 ruleContext.ValidationContext.Error = ex.ConsensusError;
+            }
+            catch (Exception ex)
+            {
+                ruleContext.ValidationContext.Error = new ConsensusError("unhandled-exception", ex.Message.ToString());
             }
         }
 
