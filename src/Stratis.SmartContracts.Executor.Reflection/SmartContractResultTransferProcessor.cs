@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             // If contract received no funds and made no transfers, do nothing.
-            if (transactionContext.TxOutValue == 0 && !internalTransfers.Any())
+            if (transactionContext.TxOutValue == 0 && !internalTransfers.Any(x => x.Value > 0))
             {
                 return null;
             }
@@ -66,6 +66,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private Transaction CreateRefundTransaction(ISmartContractTransactionContext transactionContext)
         {
             Transaction tx = this.network.CreateTransaction();
+            tx.Time = transactionContext.Time;
 
             // Input from contract call
             var outpoint = new OutPoint(transactionContext.TransactionHash, transactionContext.Nvout);
