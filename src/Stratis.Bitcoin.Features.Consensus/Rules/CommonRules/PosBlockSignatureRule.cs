@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -12,18 +12,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// A rule that will validate the signature of a PoS block.
     /// </summary>
-    [PartialValidationRule(CanSkipValidation = false)]
-    [IntegrityValidationRule]
-    public class PosBlockSignatureRule : StakeStoreConsensusRule
+    public class PosBlockSignatureRule : IntegrityValidationConsensusRule
     {
         /// <summary>When checking the POS block signature this determines the maximum push data (public key) size following the OP_RETURN in the nonspendable output.</summary>
         private const int MaxPushDataSize = 40;
 
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadBlockSignature">The block signature is invalid.</exception>
-        public override Task RunAsync(RuleContext context)
+        public override void Run(RuleContext context)
         {
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             if (!(block is PosBlock posBlock))
             {
@@ -37,8 +35,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();
             }
-
-            return Task.CompletedTask;
         }
 
         /// <summary>

@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -11,8 +13,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
     public class BlockStoreBehaviorTest
     {
         private BlockStoreBehavior behavior;
-        private Mock<IBlockStoreCache> blockCache;
-        private Mock<IBlockRepository> blockRepository;
+        private Mock<IBlockStore> blockStore;
+        private Mock<IChainState> chainState;
         private ConcurrentChain chain;
         private readonly ILoggerFactory loggerFactory;
 
@@ -20,10 +22,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             this.loggerFactory = new LoggerFactory();
             this.chain = new ConcurrentChain(KnownNetworks.StratisMain);
-            this.blockRepository = new Mock<IBlockRepository>();
-            this.blockCache = new Mock<IBlockStoreCache>();
+            this.chainState = new Mock<IChainState>();
+            this.blockStore = new Mock<IBlockStore>();
 
-            this.behavior = new BlockStoreBehavior(this.chain, this.blockRepository.Object, this.blockCache.Object, this.loggerFactory);
+            this.behavior = new BlockStoreBehavior(this.chain, this.blockStore.Object, this.chainState.Object, this.loggerFactory);
         }
 
         [Fact]

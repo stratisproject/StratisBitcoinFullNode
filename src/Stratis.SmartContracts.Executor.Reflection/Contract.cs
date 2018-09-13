@@ -169,28 +169,28 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 return ContractInvocationResult.Success(result);
             }
-            catch (ArgumentException argumentException)
-            {
-                // Parameters do not match
-                // This should not happen
-                return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterTypesDontMatch, argumentException);
-            }
-            catch (TargetInvocationException targetException) when (!(targetException.InnerException is OutOfGasException))
-            {
-                // Method threw an exception that was not an OutOfGasException
-                return ContractInvocationResult.Failure(ContractInvocationErrorType.MethodThrewException, targetException);
-            }
-            catch (TargetInvocationException targetException) when (targetException.InnerException is OutOfGasException)
-            {
-                // Method threw an exception that was an OutOfGasException
-                return ContractInvocationResult.Failure(ContractInvocationErrorType.OutOfGas);
-            }
             catch (TargetParameterCountException parameterException)
             {
                 // Parameter count incorrect
                 // This should not happen
-                return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterCountIncorrect, parameterException);
-            }            
+                return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterCountIncorrect);
+            }
+            catch (ArgumentException argumentException)
+            {
+                // Parameters do not match
+                // This should not happen
+                return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterTypesDontMatch);
+            }
+            catch (TargetInvocationException targetException) when (!(targetException.InnerException is OutOfGasException))
+            {
+                // Method threw an exception that was not an OutOfGasException
+                return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.MethodThrewException, targetException.InnerException);
+            }
+            catch (TargetInvocationException targetException) when (targetException.InnerException is OutOfGasException)
+            {
+                // Method threw an exception that was an OutOfGasException.
+                return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.OutOfGas, targetException.InnerException);
+            }           
         }
 
         /// <summary>

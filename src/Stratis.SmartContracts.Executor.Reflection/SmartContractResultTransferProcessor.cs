@@ -66,6 +66,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private Transaction CreateRefundTransaction(ISmartContractTransactionContext transactionContext)
         {
             Transaction tx = this.network.CreateTransaction();
+            tx.Time = transactionContext.Time;
 
             // Input from contract call
             var outpoint = new OutPoint(transactionContext.TransactionHash, transactionContext.Nvout);

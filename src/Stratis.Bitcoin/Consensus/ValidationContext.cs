@@ -3,6 +3,7 @@ using System.Net;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -18,16 +19,11 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>A value indicating the peer ban time should be <see cref="ConnectionManagerSettings.BanTimeSeconds"/>.</summary>
         public const int BanDurationDefaultBan = 0;
 
-        /// <summary>The chain of headers associated with the block.</summary>
-        public ChainedHeader ChainedHeader { get; set; }
+        /// <summary>Chained header of the block being validated.</summary>
+        public ChainedHeader ChainedHeaderToValidate { get; set; }
 
         /// <summary>Downloaded or mined block to be validated.</summary>
-        public Block Block { get; set; }
-
-        /// <summary>
-        /// The peer this block came from, <c>null</c> if the block was mined.
-        /// </summary>
-        public IPEndPoint Peer { get; set; }
+        public Block BlockToValidate { get; set; }
 
         /// <summary>If the block validation failed this will be set with the reason of failure.</summary>
         public ConsensusError Error { get; set; }
@@ -48,7 +44,11 @@ namespace Stratis.Bitcoin.Consensus
         /// </remarks>
         public int BanDurationSeconds { get; set; }
 
-        /// <summary>The context of the validation processes.</summary>
-        public RuleContext RuleContext { get; set; }
+        /// <summary>Services that are missing from the peers.</summary>
+        /// <remarks>
+        /// Set in case some information is missing from the block which leads
+        /// to inability to validate the block properly. Set to <c>null</c> otherwise.
+        /// </remarks>
+        public NetworkPeerServices? MissingServices { get; set; }
     }
 }

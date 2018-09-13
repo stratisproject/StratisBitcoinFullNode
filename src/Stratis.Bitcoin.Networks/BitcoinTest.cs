@@ -95,7 +95,17 @@ namespace Stratis.Bitcoin.Networks
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
                 { 546, new CheckpointInfo(new uint256("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")) },
-                { 1210000, new CheckpointInfo(new uint256("00000000461201277cf8c635fc10d042d6f0a7eaa57f6c9e8c099b9e0dbc46dc")) }
+                { 3_000, new CheckpointInfo(new uint256("000000007f0eaec313e119f8ba4ad2df1d9a617771058f25d65c1263bec75589")) },
+                { 10_000, new CheckpointInfo(new uint256("000000000058b74204bb9d59128e7975b683ac73910660b6531e59523fb4a102")) },
+                { 20_000, new CheckpointInfo(new uint256("0000000008ca11392fa91c4786e59823a002f4868bdb0c1385b12a2844cbc11f")) },
+                { 50_000, new CheckpointInfo(new uint256("00000000077eacdd2c803a742195ba430a6d9545e43128ba55ec3c80beea6c0c")) },
+                { 100_000, new CheckpointInfo(new uint256("00000000009e2958c15ff9290d571bf9459e93b19765c6801ddeccadbb160a1e")) },
+                { 200_000, new CheckpointInfo(new uint256("0000000000287bffd321963ef05feab753ebe274e1d78b2fd4e2bfe9ad3aa6f2")) },
+                { 300_000, new CheckpointInfo(new uint256("000000000000226f7618566e70a2b5e020e29579b46743f05348427239bf41a1")) },
+                { 500_000, new CheckpointInfo(new uint256("000000000001a7c0aaa2630fbb2c0e476aafffc60f82177375b2aaa22209f606")) },
+                { 800_000, new CheckpointInfo(new uint256("0000000000209b091d6519187be7c2ee205293f25f9f503f90027e25abf8b503")) },
+                { 1_000_000, new CheckpointInfo(new uint256("0000000000478e259a3eda2fafbeeb0106626f946347955e99278fe6cc848414")) },
+                { 1_210_000, new CheckpointInfo(new uint256("00000000461201277cf8c635fc10d042d6f0a7eaa57f6c9e8c099b9e0dbc46dc")) }
             };
 
             this.DNSSeeds = new List<DNSSeedData>

@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <inheritdoc />
         public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash,
-            uint256 nextBlockHash)
+            uint256 nextBlockHash, List<RewindData> rewindDataList = null)
         {
             throw new NotImplementedException();
         }

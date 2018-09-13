@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.SmartContracts.Core.Validation;

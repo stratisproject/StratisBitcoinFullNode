@@ -231,18 +231,9 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             base.Dispose();
         }
 
-        #region ICloneable Members
-
         public override object Clone()
         {
-            return new PingPongBehavior()
-            {
-                Mode = this.Mode,
-                PingInterval = this.PingInterval,
-                TimeoutInterval = this.TimeoutInterval
-            };
+            return new PingPongBehavior();
         }
-
-        #endregion
     }
 }

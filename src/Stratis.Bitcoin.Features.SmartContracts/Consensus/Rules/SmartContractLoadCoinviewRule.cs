@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -12,24 +12,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 {
-    [FullValidationRule]
-    public class SmartContractSaveCoinviewRule : UtxoStoreConsensusRule
-    {
-        /// <inheritdoc />
-        public override async Task RunAsync(RuleContext context)
-        {
-            uint256 oldBlockHash = context.ConsensusTip.HashBlock;
-            uint256 nextBlockHash = context.ValidationContext.ChainedHeader.HashBlock;
-
-            // Persist the changes to the coinview. This will likely only be stored in memory,
-            // unless the coinview treashold is reached.
-            this.Logger.LogTrace("Saving coinview changes.");
-            var utxoRuleContext = context as UtxoRuleContext;
-            await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash).ConfigureAwait(false);
-        }
-    }
-
-    [PartialValidationRule]
     public sealed class SmartContractLoadCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />
@@ -39,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
             // Check that the current block has not been reorged.
             // Catching a reorg at this point will not require a rewind.
-            if (context.ValidationContext.Block.Header.HashPrevBlock != context.ConsensusTip.HashBlock)
+            if (context.ValidationContext.BlockToValidate.Header.HashPrevBlock != this.Parent.ChainState.ConsensusTip.HashBlock)
             {
                 this.Logger.LogTrace("Reorganization detected.");
                 ConsensusErrors.InvalidPrevTip.Throw();
@@ -51,36 +33,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             utxoRuleContext.UnspentOutputSet = new UnspentOutputSet();
             using (new StopwatchDisposable(o => this.Parent.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
-                uint256[] ids = this.GetIdsToFetch(context.ValidationContext.Block, context.Flags.EnforceBIP30);
+                uint256[] ids = this.GetIdsToFetch(context.ValidationContext.BlockToValidate, context.Flags.EnforceBIP30);
                 FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
                 utxoRuleContext.UnspentOutputSet.SetCoins(coins.UnspentOutputs);
             }
-
-            // Attempt to load into the cache the next set of UTXO to be validated.
-            // The task is not awaited so will not stall main validation process.
-            this.TryPrefetchAsync(context.Flags);
         }
 
         /// <summary>
-        /// This method tries to load from cache the UTXO of the next block in a background task.
-        /// </summary>
-        /// <param name="flags">Information about activated features.</param>
-        private async void TryPrefetchAsync(DeploymentFlags flags)
-        {
-            this.Logger.LogTrace("({0}:{1})", nameof(flags), flags);
-
-            if (this.PowParent.UtxoSet is CachedCoinView)
-            {
-                Block nextBlock = this.PowParent.Puller.TryGetLookahead(0);
-                if (nextBlock != null)
-                    await this.PowParent.UtxoSet.FetchCoinsAsync(this.GetIdsToFetch(nextBlock, flags.EnforceBIP30)).ConfigureAwait(false);
-            }
-
-            this.Logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// The transactions identifiers that need to be fetched from store. 
+        /// The transactions identifiers that need to be fetched from store.
         /// </summary>
         /// <param name="block">The block with the transactions.</param>
         /// <param name="enforceBIP30">Whether to enforce look up of the transaction id itself and not only the reference to previous transaction id.</param>

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NBitcoin;
 using Stratis.SmartContracts.Core.Receipts;
 
@@ -8,9 +7,9 @@ namespace Stratis.SmartContracts.Core
     public interface ISmartContractExecutionResult
     {
         /// <summary>
-        /// If there is an exception during execution, it will be stored here.
+        /// If there is an error during execution it will be stored here.
         /// </summary>
-        Exception Exception { get; set; }
+        ContractErrorMessage ErrorMessage { get; set; }
 
         /// <summary>
         /// The amount of gas units used through execution of the smart contract.
