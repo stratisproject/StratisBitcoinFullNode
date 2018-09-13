@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Stratis.StratisSmartContractsD": {
-      "commandName": "Project",
-      "commandLineArgs": "-addnode=\"13.64.119.220\" -addnode=\"40.68.165.12\" -addnode=\"51.140.200.141\" -agentprefix=\"codingPC\" -mine=1 -mineaddress=SVsSoq5PoL2ypc3E2TB7EaYoXqUJhrDapy"
+      "commandName": "Project"
     }
   }
 }
