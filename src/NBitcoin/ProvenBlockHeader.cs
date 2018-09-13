@@ -39,6 +39,16 @@ namespace NBitcoin
         }
 
         /// <summary>
+        /// Coinstake transaction.
+        /// </summary>
+        private Transaction coinstake;
+
+        /// <summary>
+        /// Gets coinstake transaction.
+        /// </summary>
+        public Transaction Coinstake => this.coinstake;
+
+        /// <summary>
         /// Merkle proof that proves the coinstake tx is included in a block that is being represented by the provided header.
         /// </summary>
         private PartialMerkleTree merkleProof;
@@ -59,16 +69,6 @@ namespace NBitcoin
         /// coinstake's Second output's public key.
         /// </summary>
         public BlockSignature Signature => this.signature;
-
-        /// <summary>
-        /// Coinstake transaction.
-        /// </summary>
-        private Transaction coinstake;
-
-        /// <summary>
-        /// Gets coinstake transaction.
-        /// </summary>
-        public Transaction Coinstake => this.coinstake;
 
         /// <inheritdoc />
         public override void ReadWrite(BitcoinStream stream)
