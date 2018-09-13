@@ -86,8 +86,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var chain = new ConcurrentChain(network);
             var inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
 
-            var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, loggerFactory);
-
             var chainState = new ChainState();
             var deployments = new NodeDeployments(network, chain);
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(),
@@ -113,8 +111,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             List<BlockInfo> blockinfo = CreateBlockInfoList();
 
-            // We can't make transactions until we have inputs
-            // Therefore, load 100 blocks :)
+            // We can't make transactions until we have inputs therefore, load 100 blocks.
             var blocks = new List<Block>();
             var srcTxs = new List<Transaction>();
             for (int i = 0; i < blockinfo.Count; ++i)
@@ -140,15 +137,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 currentBlock.Header.Nonce = blockinfo[i].nonce;
 
                 chain.SetTip(currentBlock.Header);
-                await consensus.BlockMinedAsync(currentBlock);
-                blocks.Add(currentBlock);
             }
 
             // Just to make sure we can still make simple blocks
             blockDefinition = new PowBlockDefinition(consensus, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network, consensusRules);
             blockDefinition.Build(chain.Tip, scriptPubKey);
 
-            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, cachedCoinView, loggerFactory, nodeSettings, consensusRules);
+            var mempoolValidator = new MempoolValidator(mempool, mempoolLock, dateTimeProvider, new MempoolSettings(nodeSettings), chain, inMemoryCoinView, loggerFactory, nodeSettings, consensusRules);
 
             var outputs = new List<UnspentOutputs>();
 
