@@ -14,13 +14,13 @@ namespace NBitcoin.Tests
         [Fact]
         public void ProvenBlockHeaderShouldSerializeAndDeserializeCorrectly()
         {
-            // Setup new header to serialize with some fake properties
+            // Setup new header to serialize with some fake properties.
             ProvenBlockHeader provenHeaderToSerialize = this.CreateNewProvenBlockHeaderMock();
             provenHeaderToSerialize.BlockTime = new DateTimeOffset(new DateTime(2018, 1, 1));
             provenHeaderToSerialize.Bits = 1;
             provenHeaderToSerialize.Nonce = 2;
 
-            // Attempt to serialize it
+            // Attempt to serialize it.
             using (var ms = new MemoryStream())
             {
                 provenHeaderToSerialize.ReadWrite(new BitcoinStream(ms, true));
@@ -29,11 +29,11 @@ namespace NBitcoin.Tests
                 bytes.Should().HaveCountGreaterThan(0);
 
                 // Setup another slightly different header and try to load it from
-                // serialized data from original header
+                // serialized data from original header.
                 ProvenBlockHeader provenHeaderToDeserialize = this.CreateNewProvenBlockHeaderMock();
                 provenHeaderToDeserialize.GetHash().Should().NotBe(provenHeaderToSerialize.GetHash());
 
-                // Attempt to deserialize it
+                // Attempt to deserialize it.
                 provenHeaderToDeserialize.ReadWrite(bytes, this.factory);
                 provenHeaderToDeserialize.GetHash().Should().Be(provenHeaderToSerialize.GetHash());
                 provenHeaderToDeserialize.Coinstake.GetHash().Should().Be(provenHeaderToSerialize.Coinstake.GetHash());
@@ -50,8 +50,8 @@ namespace NBitcoin.Tests
         private ProvenBlockHeader CreateNewProvenBlockHeaderMock()
         {
             var block = (PosBlock)this.network.CreateBlock();
-            block.Transactions.Add(new Transaction()); // coinbase
-            block.Transactions.Add(new Transaction()); // coinstake
+            block.Transactions.Add(new Transaction()); // Coinbase.
+            block.Transactions.Add(new Transaction()); // Coinstake.
 
             ProvenBlockHeader provenBlockHeader = this.factory.CreateProvenBlockHeader(block);
 
