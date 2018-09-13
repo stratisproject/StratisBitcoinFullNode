@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             nodes.Skip(1).ToList().ForEach(node => WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
         }
 
-        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, string walletName, string walletPassword, string accountName, uint numberOfBlocks)
+        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, string walletName, string walletPassword, string accountName, int numberOfBlocks)
         {
             Guard.NotNull(node, nameof(node));
             Guard.NotEmpty(walletName, nameof(walletName));
@@ -108,8 +108,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             Guard.NotEmpty(accountName, nameof(accountName));
 
             if (numberOfBlocks == 0) throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
-
-            WaitForNodeToSync(node);
 
             HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
             

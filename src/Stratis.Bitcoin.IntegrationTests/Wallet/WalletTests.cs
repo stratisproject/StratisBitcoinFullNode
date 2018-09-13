@@ -37,17 +37,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network);
 
                 builder.StartAll();
-                stratisSender.NotInIBD();
-                stratisReceiver.NotInIBD();
-
-                // Get a private key from the wallet
-                Mnemonic mnemonic1 = stratisSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
-                Mnemonic mnemonic2 = stratisReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
-                Assert.Equal(12, mnemonic1.Words.Length);
-                Assert.Equal(12, mnemonic2.Words.Length);
+                stratisSender.NotInIBD().WithWallet(Password, WalletName, Passphrase);
+                stratisReceiver.NotInIBD().WithWallet(Password, WalletName, Passphrase);
 
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                TestHelper.MineBlocks(stratisSender, WalletName, Password, Account, (uint)maturity + 5);
+                TestHelper.MineBlocks(stratisSender, WalletName, Password, Account, maturity + 5);
 
                 // Wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
@@ -127,19 +121,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network);
 
                 builder.StartAll();
-                stratisSender.NotInIBD().WithWallet();
-                stratisReceiver.NotInIBD().WithWallet();
-                stratisReorg.NotInIBD().WithWallet();
-
-                // Get a private key from the wallet
-                Mnemonic mnemonic1 = stratisSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
-                Assert.Equal(12, mnemonic1.Words.Length);
-
-                stratisReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
-                stratisReorg.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);                
+                stratisSender.NotInIBD().WithWallet(Password, WalletName, Passphrase);
+                stratisReceiver.NotInIBD().WithWallet(Password, WalletName, Passphrase);
+                stratisReorg.NotInIBD().WithWallet(Password, WalletName, Passphrase);
 
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                TestHelper.MineBlocks(stratisSender, WalletName, Password, Account, (uint)maturity + 15);
+                TestHelper.MineBlocks(stratisSender, WalletName, Password, Account, maturity + 15);
 
                 int currentBestHeight = maturity + 15;
 

@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             int coinbaseMaturity = (int)this.bobNode.FullNode.Network.Consensus.CoinbaseMaturity;
 
-            TestHelper.MineBlocks(this.bobNode, WalletZero, WalletPassword, AccountZero, (uint)coinbaseMaturity);
+            TestHelper.MineBlocks(this.bobNode, WalletZero, WalletPassword, AccountZero, coinbaseMaturity);
 
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.jingNode));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.bobNode));

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FluentAssertions;
@@ -15,7 +14,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class ProofOfStakeSteps
     {
-
         public readonly NodeBuilder nodeBuilder;
         public CoreNode PremineNodeWithCoins;
 
@@ -55,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             int premineBlockCount = 2;
 
-            var addressUsed = TestHelper.MineBlocks(this.PremineNodeWithCoins, this.PremineWallet, this.PremineWalletPassword, this.PremineWalletAccount, (uint)premineBlockCount).AddressUsed;
+            var addressUsed = TestHelper.MineBlocks(this.PremineNodeWithCoins, this.PremineWallet, this.PremineWalletPassword, this.PremineWalletAccount, premineBlockCount).AddressUsed;
 
             // Since the pre-mine will not be immediately spendable, the transactions have to be counted directly from the address.
             addressUsed.Transactions.Count().Should().Be(premineBlockCount);
@@ -67,7 +65,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void MineCoinsToMaturity()
         {
-            TestHelper.MineBlocks(this.PremineNodeWithCoins, this.PremineWallet, this.PremineWalletPassword, this.PremineWalletAccount, (uint)this.PremineNodeWithCoins.FullNode.Network.Consensus.CoinbaseMaturity);
+            TestHelper.MineBlocks(this.PremineNodeWithCoins, this.PremineWallet, this.PremineWalletPassword, this.PremineWalletAccount, (int)this.PremineNodeWithCoins.FullNode.Network.Consensus.CoinbaseMaturity);
             TestHelper.WaitForNodeToSync(this.PremineNodeWithCoins);
         }
 

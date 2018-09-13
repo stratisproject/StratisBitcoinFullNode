@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void MineBlocks(CoreNode node)
         {
-            TestHelper.MineBlocks(this.firstNode, WalletName, WalletPassword, WalletAccountName, (uint)this.CoinBaseMaturity * 2);
+            TestHelper.MineBlocks(this.firstNode, WalletName, WalletPassword, WalletAccountName, this.CoinBaseMaturity * 2);
         }
     }
 }

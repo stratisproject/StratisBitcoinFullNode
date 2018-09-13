@@ -200,15 +200,17 @@ namespace Stratis.Bitcoin.IntegrationTests
                 CoreNode stratisSyncer = builder.CreateStratisPosNode(this.posNetwork);
                 CoreNode stratisReorg = builder.CreateStratisPosNode(this.posNetwork);
 
+                const string walletName = "myWallet";
+                const string walletPassword = "123456";
+                const string walletPassphrase = "123456";
+                const string walletAccount = "account 0";
+
                 builder.StartAll();
-                stratisMiner.NotInIBD().WithWallet();
-                stratisSyncer.NotInIBD().WithWallet();
-                stratisReorg.NotInIBD().WithWallet();
+                stratisMiner.NotInIBD().WithWallet(walletPassword, walletName, walletPassphrase);
+                stratisSyncer.NotInIBD().WithWallet(walletPassword, walletName, walletPassphrase);
+                stratisReorg.NotInIBD().WithWallet(walletPassword, walletName, walletPassphrase);
 
-                stratisMiner.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisMiner.FullNode.Network));
-                stratisReorg.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisReorg.FullNode.Network));
-
-                stratisMiner.GenerateStratisWithMiner(1);
+                TestHelper.MineBlocks(stratisMiner, walletName, walletPassword, walletAccount, 1);
 
                 // wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
@@ -225,8 +227,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisSyncer.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
 
-                stratisMiner.GenerateStratisWithMiner(11);
-                stratisReorg.GenerateStratisWithMiner(12);
+                TestHelper.MineBlocks(stratisMiner, walletName, walletPassword, walletAccount, 11);
+                TestHelper.MineBlocks(stratisReorg, walletName, walletPassword, walletAccount, 12);
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));

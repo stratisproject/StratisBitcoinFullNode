@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void node1_sends_funds_to_node2_TO_fifty_addresses()
         {
-            TestHelper.MineBlocks(this.firstNode, WalletName, WalletPassword, WalletAccountName, (uint)this.CoinBaseMaturity + 2);
+            TestHelper.MineBlocks(this.firstNode, WalletName, WalletPassword, WalletAccountName, this.CoinBaseMaturity + 2);
 
             IEnumerable<HdAddress> nodeTwoAddresses = this.secondNode.FullNode.WalletManager().GetUnusedAddresses(new WalletAccountReference(WalletName, WalletAccountName), 50);
 

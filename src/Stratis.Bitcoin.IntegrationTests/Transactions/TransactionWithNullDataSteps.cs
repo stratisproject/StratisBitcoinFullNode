@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private void some_funds_in_the_sending_wallet()
         {
             int maturity = (int)this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
-            TestHelper.MineBlocks(this.senderNode, this.senderWallet, this.password, this.account, (uint)maturity + 5);
+            TestHelper.MineBlocks(this.senderNode, this.senderWallet, this.password, this.account, maturity + 5);
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.senderNode));
 
             this.senderNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(this.senderWallet)

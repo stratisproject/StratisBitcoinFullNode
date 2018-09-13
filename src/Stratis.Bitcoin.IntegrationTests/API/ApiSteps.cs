@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private HttpResponseMessage response;
         private string responseText;
 
-        private uint maturity = 1;
+        private int maturity = 1;
         private HdAddress receiverAddress;
         private readonly Money transferAmount = Money.COIN * 1;
         private NodeBuilder powNodeBuilder;

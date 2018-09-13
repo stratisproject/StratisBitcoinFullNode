@@ -69,12 +69,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void more_blocks_mined_to_just_BEFORE_maturity_of_original_block()
         {
-            TestHelper.MineBlocks(this.sendingStratisBitcoinNode, SendingWalletName, WalletPassword, AccountName, (uint)this.coinbaseMaturity - 1);
+            TestHelper.MineBlocks(this.sendingStratisBitcoinNode, SendingWalletName, WalletPassword, AccountName, this.coinbaseMaturity - 1);
         }
 
         protected void more_blocks_mined_to_just_AFTER_maturity_of_original_block()
         {
-            TestHelper.MineBlocks(this.sendingStratisBitcoinNode, SendingWalletName, WalletPassword, AccountName, (uint)this.coinbaseMaturity);
+            TestHelper.MineBlocks(this.sendingStratisBitcoinNode, SendingWalletName, WalletPassword, AccountName, this.coinbaseMaturity);
         }
 
         private void spending_the_coins_from_original_block()

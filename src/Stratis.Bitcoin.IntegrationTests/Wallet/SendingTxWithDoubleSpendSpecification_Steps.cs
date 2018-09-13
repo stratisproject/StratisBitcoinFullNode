@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             mnemonic2.Words.Length.Should().Equals(12);
 
             var maturity = (int)this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
-            TestHelper.MineBlocks(this.stratisSender, Name, Password, AccountName, (uint)maturity + 5);
+            TestHelper.MineBlocks(this.stratisSender, Name, Password, AccountName, maturity + 5);
 
             var total = this.stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Sum(s => s.Transaction.Amount);
             total.Should().Equals(Money.COIN * 6 * 50);

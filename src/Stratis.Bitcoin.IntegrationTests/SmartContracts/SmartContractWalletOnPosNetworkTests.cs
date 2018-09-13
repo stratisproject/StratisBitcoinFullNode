@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
 
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                HdAddress senderAddress = TestHelper.MineBlocks(scSender, WalletName, Password, AccountName, (uint)maturity + 5).AddressUsed;
+                HdAddress senderAddress = TestHelper.MineBlocks(scSender, WalletName, Password, AccountName, maturity + 5).AddressUsed;
 
                 // Wait for block repo for block sync to work.
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));

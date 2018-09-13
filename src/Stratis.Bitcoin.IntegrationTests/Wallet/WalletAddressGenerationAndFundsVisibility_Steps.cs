@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = coinbaseMaturity;
             this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = coinbaseMaturity;
 
-            TestHelper.MineBlocks(this.sendingStratisBitcoinNode, SendingWalletName, WalletPassword, AccountZero, (uint)coinbaseMaturity + 1);
+            TestHelper.MineBlocks(this.sendingStratisBitcoinNode, SendingWalletName, WalletPassword, AccountZero, coinbaseMaturity + 1);
         }
 
         private void a_default_gap_limit_of_20()
