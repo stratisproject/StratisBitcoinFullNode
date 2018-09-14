@@ -1,6 +1,5 @@
-﻿using System;
-using NBitcoin;
-using Stratis.SmartContracts.Executor.Reflection.Exceptions;
+﻿using NBitcoin;
+using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -77,18 +76,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </summary>
     public class StateTransitionError
     {
-        public StateTransitionError(Gas gasConsumed, StateTransitionErrorKind kind, Exception vmException)
+        public StateTransitionError(Gas gasConsumed, StateTransitionErrorKind kind, ContractErrorMessage vmError)
         {
             this.Kind = kind;
             this.GasConsumed = gasConsumed;
-            this.VmException = vmException;
+            this.VmError = vmError;
         }
 
         /// <summary>
         /// An exception thrown by the VM. This value is null unless <see cref="Kind"/>
         /// equals <see cref="StateTransitionErrorKind.VmError"/> or <see cref="StateTransitionErrorKind.OutOfGas"/>.
         /// </summary>
-        public Exception VmException { get; }
+        public ContractErrorMessage VmError { get; }
 
         /// <summary>
         /// The kind of error that occurred during the state transition.
@@ -153,13 +152,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a new result for a failed state transition due to a VM exception.
         /// </summary>
-        public static StateTransitionResult Fail(Gas gasConsumed, Exception vmException)
+        public static StateTransitionResult Fail(Gas gasConsumed, ContractErrorMessage vmError)
         {
-            StateTransitionErrorKind errorKind = vmException is OutOfGasException
-                ? StateTransitionErrorKind.OutOfGas
-                : StateTransitionErrorKind.VmError;
-
-            return new StateTransitionResult(new StateTransitionError(gasConsumed, errorKind, vmException));
+            return new StateTransitionResult(new StateTransitionError(gasConsumed, StateTransitionErrorKind.VmError, vmError));
         }
 
         /// <summary>

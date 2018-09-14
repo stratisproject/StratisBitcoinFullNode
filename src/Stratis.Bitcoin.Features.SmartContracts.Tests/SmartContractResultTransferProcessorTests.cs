@@ -164,6 +164,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
             txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
             txContextMock.SetupGet(p => p.Nvout).Returns(1);
+            txContextMock.SetupGet(p => p.Time).Returns(12345);
 
             // transfer 75
             var transferInfos = new List<TransferInfo>
@@ -181,6 +182,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Condensing tx generated. 1 input from tx and 2 outputs - 1 for each contract and receiver
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
             Assert.NotNull(internalTransaction);
+            Assert.Equal(txContextMock.Object.Time, internalTransaction.Time);
             Assert.Single(internalTransaction.Inputs);
             Assert.Equal(2, internalTransaction.Outputs.Count);
             Assert.Equal(txContextMock.Object.TransactionHash, internalTransaction.Inputs[0].PrevOut.Hash);
@@ -212,6 +214,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // No tx value
             var txContextMock = new Mock<ISmartContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
+            txContextMock.SetupGet(p => p.Time).Returns(12345);
 
             // No transfers
             var transfers = new List<TransferInfo>();
@@ -251,6 +254,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
             txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
             txContextMock.SetupGet(p => p.Nvout).Returns(1);
+            txContextMock.SetupGet(p => p.Time).Returns(12345);
 
             // no transfers
             var transferInfos = new List<TransferInfo>();
@@ -260,6 +264,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Condensing tx generated. 2 inputs. Current tx and stored spendable output. 1 output. 
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
             Assert.NotNull(internalTransaction);
+            Assert.Equal(txContextMock.Object.Time, internalTransaction.Time);
             Assert.Equal(2, internalTransaction.Inputs.Count);
             Assert.Single(internalTransaction.Outputs);
             Assert.Equal(txContextMock.Object.TransactionHash, internalTransaction.Inputs[0].PrevOut.Hash);
@@ -298,6 +303,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // no tx value
             var txContextMock = new Mock<ISmartContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
+            txContextMock.SetupGet(p => p.Time).Returns(12345);
 
             // transfer 75
             var transferInfos = new List<TransferInfo>
@@ -315,6 +321,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Condensing tx generated. 1 input. 2 outputs for each receiver and contract.
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
             Assert.NotNull(internalTransaction);
+            Assert.Equal(txContextMock.Object.Time, internalTransaction.Time);
             Assert.Single(internalTransaction.Inputs);
             Assert.Equal(2, internalTransaction.Outputs.Count);
             Assert.Equal(new uint256(1), internalTransaction.Inputs[0].PrevOut.Hash);
@@ -356,6 +363,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
             txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
             txContextMock.SetupGet(p => p.Nvout).Returns(1);
+            txContextMock.SetupGet(p => p.Time).Returns(12345);
 
             // transfer 75
             var transferInfos = new List<TransferInfo>
@@ -373,6 +381,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Condensing tx generated. 2 inputs from currently stored utxo and current tx. 2 outputs for each receiver and contract.
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
             Assert.NotNull(internalTransaction);
+            Assert.Equal(txContextMock.Object.Time, internalTransaction.Time);
             Assert.Equal(2, internalTransaction.Inputs.Count);
             Assert.Equal(2, internalTransaction.Outputs.Count);
             Assert.Equal(new uint256(123), internalTransaction.Inputs[0].PrevOut.Hash);
@@ -443,6 +452,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // no tx value
             var txContextMock = new Mock<ISmartContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
+            txContextMock.SetupGet(p => p.Time).Returns(12345);
 
             // several transfers
             var transferInfos = new List<TransferInfo>
@@ -474,6 +484,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Condensing tx generated. 1 input. 3 outputs with consolidated balances.
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
             Assert.NotNull(internalTransaction);
+            Assert.Equal(txContextMock.Object.Time, internalTransaction.Time);
             Assert.Single(internalTransaction.Inputs);
             Assert.Equal(3, internalTransaction.Outputs.Count);
             Assert.Equal(new uint256(1), internalTransaction.Inputs[0].PrevOut.Hash);
@@ -499,6 +510,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
             txContextMock.SetupGet(p => p.Nvout).Returns(1);
             txContextMock.SetupGet(p => p.Sender).Returns(new uint160(2));
+            txContextMock.SetupGet(p => p.Time).Returns(12345);
 
             Transaction refundTransaction = this.transferProcessor.Process(null, null, txContextMock.Object, null, true);
 
@@ -510,6 +522,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             string outputAddress = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(refundTransaction.Outputs[0].ScriptPubKey).GetAddress(this.network).ToString();
 
             Assert.Equal(txContextMock.Object.Sender.ToAddress(this.network).Value, outputAddress);
+            Assert.Equal(txContextMock.Object.Time, refundTransaction.Time);
         }
     }
 }

@@ -143,8 +143,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Chained header for specified block hash if it exists, <c>null</c> otherwise.</returns>
         ChainedHeader GetChainedHeader(uint256 blockHash);
 
-        /// <summary>Returns <c>true</c> if consensus' height is within <see cref="ChainedHeaderTree.ConsensusIsConsideredToBeSyncedMargin"/> blocks from the best tip's height.</summary>
-        bool IsConsensusConsideredToBeSynced();
+        /// <summary>Gets tip of the best peer.</summary>
+        /// <returns>Tip of the best peer or <c>null</c> if there are no peers.</returns>
+        ChainedHeader GetBestPeerTip();
     }
 
     /// <inheritdoc />
@@ -158,11 +159,6 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ConsensusSettings consensusSettings;
         private readonly IFinalizedBlockInfo finalizedBlockInfo;
         private readonly IInvalidBlockHashStore invalidHashesStore;
-
-        /// <summary>
-        /// The amount of blocks from consensus the node is considered to be synced.
-        /// </summary>
-        private const int ConsensusIsConsideredToBeSyncedMargin = 5;
 
         /// <inheritdoc />
         public long UnconsumedBlocksDataBytes { get; private set; }
@@ -1173,26 +1169,25 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public bool IsConsensusConsideredToBeSynced()
+        public ChainedHeader GetBestPeerTip()
         {
             this.logger.LogTrace("()");
 
             ChainedHeader bestTip = null;
 
-            foreach (uint256 tipHash in this.peerTipsByPeerId.Values)
+            foreach (KeyValuePair<int, uint256> idTipHashPair in this.peerTipsByPeerId)
             {
-                ChainedHeader tip = this.chainedHeadersByHash[tipHash];
+                if (idTipHashPair.Key == LocalPeerId)
+                    continue;
+
+                ChainedHeader tip = this.chainedHeadersByHash[idTipHashPair.Value];
 
                 if ((bestTip == null) || (tip.ChainWork > bestTip.ChainWork))
                     bestTip = tip;
             }
 
-            var consensusTip = this.GetConsensusTip();
-
-            bool isConsideredSynced = consensusTip.Height + ConsensusIsConsideredToBeSyncedMargin > bestTip.Height;
-
-            this.logger.LogTrace("(-):{0}", isConsideredSynced);
-            return isConsideredSynced;
+            this.logger.LogTrace("(-):'{0}'", nameof(bestTip), bestTip);
+            return bestTip;
         }
     }
 

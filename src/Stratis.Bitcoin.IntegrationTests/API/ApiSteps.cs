@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_proof_of_stake_node_with_api_enabled()
         {
-            this.stratisPosApiNode = this.posNodeBuilder.CreateStratisPosApiNode(this.posNetwork);
+            this.stratisPosApiNode = this.posNodeBuilder.CreateStratisPosNode(this.posNetwork);
             this.stratisPosApiNode.Start();
 
             this.stratisPosApiNode.FullNode.NodeService<IPosMinting>(true).Should().NotBeNull();
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_proof_of_work_node_with_api_enabled()
         {
-            this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowApiNode(this.powNetwork);
+            this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork);
             this.firstStratisPowApiNode.Start();
             this.firstStratisPowApiNode.NotInIBD();
             this.firstStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName, WalletPassphrase);
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_second_proof_of_work_node_with_api_enabled()
         {
-            this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowApiNode(this.powNetwork);
+            this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork);
             this.secondStratisPowApiNode.Start();
             this.secondStratisPowApiNode.NotInIBD();
             this.secondStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, SecondaryWalletName, WalletPassphrase);

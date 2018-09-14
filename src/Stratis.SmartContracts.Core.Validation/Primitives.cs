@@ -15,8 +15,7 @@ namespace Stratis.SmartContracts.Core.Validation
             typeof(uint),
             typeof(long),
             typeof(ulong),
-            typeof(string),
-            typeof(byte[])
+            typeof(string)
         };
     }
 }
