@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Networks
         /// <summary>
         /// "mempool" command, enhanced "getdata" behaviour starts with this version.
         /// </summary>
-        public static ProtocolVersion MempollGetData = new ProtocolVersion(60002, nameof(MempollGetData).ToLowerInvariant());
+        public static ProtocolVersion MempoolGetData = new ProtocolVersion(60002, nameof(MempoolGetData).ToLowerInvariant());
 
         /// <summary>
         /// "reject" command.
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Networks
                 NoBlocksStart,
                 NoBlocksEnd,
                 Bip31,
-                MempollGetData,
+                MempoolGetData,
                 Reject,
                 NoBloom,
                 SendHeaders,

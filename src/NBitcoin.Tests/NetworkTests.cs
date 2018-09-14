@@ -607,7 +607,7 @@ namespace NBitcoin.Tests
             Assert.True(ProtocolVersion.NoBlocksStart.Id == 32000);
             Assert.True(ProtocolVersion.NoBlocksEnd.Id == 32400);
             Assert.True(ProtocolVersion.Bip31.Id == 60000);
-            Assert.True(ProtocolVersion.MempollGetData.Id == 60002);
+            Assert.True(ProtocolVersion.MempoolGetData.Id == 60002);
             Assert.True(ProtocolVersion.Reject.Id == 70002);
             Assert.True(ProtocolVersion.NoBloom.Id == 70011);
             Assert.True(ProtocolVersion.SendHeaders.Id == 70012);
