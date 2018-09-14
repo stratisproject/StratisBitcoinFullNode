@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using FluentAssertions;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -35,8 +36,28 @@ namespace NBitcoin.Tests
 
                 // Attempt to deserialize it.
                 provenHeaderToDeserialize.ReadWrite(bytes, this.factory);
+
                 provenHeaderToDeserialize.GetHash().Should().Be(provenHeaderToSerialize.GetHash());
-                provenHeaderToDeserialize.Coinstake.GetHash().Should().Be(provenHeaderToSerialize.Coinstake.GetHash());
+
+                // Check if merke proofs are identical.
+                provenHeaderToDeserialize.MerkleProof.Hashes.Should().BeEquivalentTo(provenHeaderToSerialize.MerkleProof.Hashes);
+                provenHeaderToDeserialize.MerkleProof.TransactionCount.Should().Be(provenHeaderToSerialize.MerkleProof.TransactionCount);
+                for (int i = 0; i < provenHeaderToSerialize.MerkleProof.Flags.Length; i++)
+                {
+                    provenHeaderToDeserialize.MerkleProof.Flags[i].Should().Be(provenHeaderToSerialize.MerkleProof.Flags[i]);
+                }
+
+                // Check if coinstake properties match
+                provenHeaderToDeserialize.Coinstake.Should().BeEquivalentTo(provenHeaderToSerialize.Coinstake);
+
+                // Check if signature properties match
+                provenHeaderToDeserialize.Signature.Signature.Should().BeEquivalentTo(provenHeaderToSerialize.Signature.Signature);
+
+                // Check base properties
+                provenHeaderToDeserialize.BlockTime.Should().Be(provenHeaderToSerialize.BlockTime);
+                provenHeaderToDeserialize.CurrentVersion.Should().Be(provenHeaderToSerialize.CurrentVersion);
+                provenHeaderToDeserialize.Nonce.Should().Be(provenHeaderToSerialize.Nonce);
+                provenHeaderToDeserialize.Time.Should().Be(provenHeaderToSerialize.Time);
             }
         }
 
@@ -47,21 +68,21 @@ namespace NBitcoin.Tests
             createProvenHeader.Should().Throw<ArgumentNullException>();
         }
 
-        private ProvenBlockHeader CreateNewProvenBlockHeaderMock()
+        [Fact]
+        public void ShouldNotBeAbleToCreateProvenBlockHeaderFromABlockContainingInvalidCoinstake()
         {
-            // Create coinstake Tx
+            // Create invalid coinstake Tx
             Transaction previousTx = this.network.CreateTransaction();
             previousTx.AddOutput(new TxOut());
             Transaction coinstakeTx = this.network.CreateTransaction();
             coinstakeTx.AddOutput(new TxOut(0, Script.Empty));
-            coinstakeTx.AddOutput(new TxOut());
             coinstakeTx.AddInput(previousTx, 0);
-            coinstakeTx.IsCoinStake.Should().BeTrue();
+            coinstakeTx.IsCoinStake.Should().BeFalse();
             coinstakeTx.IsCoinBase.Should().BeFalse();
 
             // Create coinbase Tx
             Transaction coinBaseTx = this.network.CreateTransaction();
-            coinBaseTx.AddOutput(50, new Script());
+            coinBaseTx.AddOutput(100, new Script());
             coinBaseTx.AddInput(new TxIn());
             coinBaseTx.IsCoinBase.Should().BeTrue();
             coinBaseTx.IsCoinStake.Should().BeFalse();
@@ -69,6 +90,74 @@ namespace NBitcoin.Tests
             var block = (PosBlock)this.network.CreateBlock();
             block.AddTransaction(coinBaseTx);
             block.AddTransaction(coinstakeTx);
+
+            Action createProvenHeader = () => this.factory.CreateProvenBlockHeader(block);
+            createProvenHeader.Should().Throw<ArgumentException>();
+        }
+
+        [Fact]
+        public void WhenCreatingNewProvenHeaderMerkleProofIsCorrectlyCreated()
+        {
+            // Create coinstake Tx
+            Transaction previousTx = this.network.CreateTransaction();
+            previousTx.AddOutput(new TxOut());
+            Transaction coinstakeTx = this.network.CreateTransaction();
+            coinstakeTx.AddOutput(new TxOut(0, Script.Empty));
+            coinstakeTx.AddOutput(new TxOut(50, new Script()));
+            coinstakeTx.AddInput(previousTx, 0);
+            coinstakeTx.IsCoinStake.Should().BeTrue();
+            coinstakeTx.IsCoinBase.Should().BeFalse();
+
+            // Create coinbase Tx
+            Transaction coinBaseTx = this.network.CreateTransaction();
+            coinBaseTx.AddOutput(100, new Script());
+            coinBaseTx.AddInput(new TxIn());
+            coinBaseTx.IsCoinBase.Should().BeTrue();
+            coinBaseTx.IsCoinStake.Should().BeFalse();
+
+            var block = (PosBlock)this.network.CreateBlock();
+            block.AddTransaction(coinBaseTx);
+            block.AddTransaction(coinstakeTx);
+
+            // Add 20 more transactions
+            for (int i = 0; i < 20; i++)
+            {
+                Transaction tx = this.network.CreateTransaction();
+
+                tx.AddInput(new TxIn(Script.Empty));
+                tx.AddOutput(Money.COIN + i, new Script(Enumerable.Range(1, 5).SelectMany(index => Guid.NewGuid().ToByteArray())));
+
+                block.AddTransaction(tx);
+            }
+
+            ProvenBlockHeader provenBlockHeader = this.factory.CreateProvenBlockHeader(block);
+            provenBlockHeader.MerkleProof.Hashes.Count.Should().Be(6);
+            // TODO: Add validation of the merkle proof
+        }
+
+        private ProvenBlockHeader CreateNewProvenBlockHeaderMock()
+        {
+            // Create coinstake Tx
+            Transaction previousTx = this.network.CreateTransaction();
+            previousTx.AddOutput(new TxOut());
+            Transaction coinstakeTx = this.network.CreateTransaction();
+            coinstakeTx.AddOutput(new TxOut(0, Script.Empty));
+            coinstakeTx.AddOutput(new TxOut(50, new Script()));
+            coinstakeTx.AddInput(previousTx, 0);
+            coinstakeTx.IsCoinStake.Should().BeTrue();
+            coinstakeTx.IsCoinBase.Should().BeFalse();
+
+            // Create coinbase Tx
+            Transaction coinBaseTx = this.network.CreateTransaction();
+            coinBaseTx.AddOutput(100, new Script());
+            coinBaseTx.AddInput(new TxIn());
+            coinBaseTx.IsCoinBase.Should().BeTrue();
+            coinBaseTx.IsCoinStake.Should().BeFalse();
+
+            var block = (PosBlock)this.network.CreateBlock();
+            block.AddTransaction(coinBaseTx);
+            block.AddTransaction(coinstakeTx);
+            block.BlockSignature = new BlockSignature { Signature = new byte[] { 0x2, 0x3 } };
 
             ProvenBlockHeader provenBlockHeader = this.factory.CreateProvenBlockHeader(block);
 
