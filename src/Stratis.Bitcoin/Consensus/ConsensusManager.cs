@@ -315,6 +315,9 @@ namespace Stratis.Bitcoin.Consensus
             {
                 bool shuttingDown = this.nodeLifetime.ApplicationStopping.IsCancellationRequested;
 
+                if (shuttingDown)
+                    this.logger.LogDebug("Node is shutting down. Not updating CHT and not processing download queue.");
+
                 // Update the components only in case we are not shutting down. In case we update CHT during
                 // shutdown there will be a huge performance hit when we have a lot of headers in front of our
                 // consensus and then disconnect last peer claiming such a chain. CHT will disconnect headers
@@ -1233,8 +1236,6 @@ namespace Stratis.Bitcoin.Consensus
         public void Dispose()
         {
             this.logger.LogTrace("()");
-
-            this.partialValidator.Dispose();
 
             this.reorgLock.Dispose();
 
