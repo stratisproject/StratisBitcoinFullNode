@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -21,6 +23,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly Network network;
         private readonly IStateFactory stateFactory;
         private readonly IStateProcessor stateProcessor;
+        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
 
         public Executor(ILoggerFactory loggerFactory,
             ICallDataSerializer serializer,
@@ -29,7 +32,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ISmartContractResultTransferProcessor transferProcessor,
             Network network,
             IStateFactory stateFactory,
-            IStateProcessor stateProcessor)
+            IStateProcessor stateProcessor,
+            IContractPrimitiveSerializer contractPrimitiveSerializer)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.stateRoot = stateRoot;
@@ -39,6 +43,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.network = network;
             this.stateFactory = stateFactory;
             this.stateProcessor = stateProcessor;
+            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
         }
 
         public ISmartContractExecutionResult Execute(ISmartContractTransactionContext transactionContext)
@@ -123,7 +128,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 InternalTransaction = internalTransaction,
                 Fee = fee,
                 Refund = refundTxOut,
-                Logs = state.GetLogs()
+                Logs = state.GetLogs(this.contractPrimitiveSerializer)
             };
 
             return executionResult;

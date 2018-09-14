@@ -4,6 +4,7 @@ using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -12,7 +13,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         IBlock Block { get; }
         BalanceState BalanceState { get; }
         IContractState ContractState { get; }
-        IList<Log> GetLogs();
+        IList<Log> GetLogs(IContractPrimitiveSerializer serializer);
         IReadOnlyList<TransferInfo> InternalTransfers { get; }
         IContractLogHolder LogHolder { get; }
         IState Snapshot();

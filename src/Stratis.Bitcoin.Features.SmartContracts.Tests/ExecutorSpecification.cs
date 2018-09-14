@@ -9,6 +9,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -40,6 +41,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Setup(s => s.Deserialize(It.IsAny<byte[]>()))
                 .Returns(Result.Ok(contractTxData));
 
+            var contractPrimitiveSerializer = new Mock<IContractPrimitiveSerializer>();
             var vmExecutionResult = VmExecutionResult.Success(null, null);
 
             var contractStateRoot = new Mock<IContractState>();
@@ -69,7 +71,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             stateMock.SetupGet(p => p.InternalTransfers).Returns(internalTransfers);
             stateMock.Setup(s => s.Snapshot()).Returns(snapshot.Object);
             
-            stateProcessor.Setup(s => s.Apply(stateMock.Object, It.IsAny<ExternalCreateMessage>())).Returns(stateTransitionResult);
+            stateProcessor.Setup(s => s.Apply(snapshot.Object, It.IsAny<ExternalCreateMessage>())).Returns(stateTransitionResult);
 
             var stateFactory = new Mock<IStateFactory>();
             stateFactory.Setup(sf => sf.Create(
@@ -87,7 +89,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 transferProcessor.Object,
                 network,
                 stateFactory.Object,
-                stateProcessor.Object);
+                stateProcessor.Object,
+                contractPrimitiveSerializer.Object);
 
             sut.Execute(context);
 
@@ -102,7 +105,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Times.Once);
 
             // We only apply the message to the snapshot.
-            stateProcessor.Verify(sm => sm.Apply(stateMock.Object, It.IsAny<ExternalCreateMessage>()), Times.Once);
+            stateProcessor.Verify(sm => sm.Apply(snapshot.Object, It.IsAny<ExternalCreateMessage>()), Times.Once);
 
             // Must transition to the snapshot.
             stateMock.Verify(sm => sm.TransitionTo(snapshot.Object), Times.Once);

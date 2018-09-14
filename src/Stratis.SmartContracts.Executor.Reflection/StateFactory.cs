@@ -10,16 +10,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class StateFactory : IStateFactory
     {
         private readonly Network network;
-        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
         private readonly IInternalTransactionExecutorFactory internalTransactionExecutorFactory;
         private readonly ISmartContractStateFactory smartContractStateFactory;
 
         public StateFactory(Network network,
-            IContractPrimitiveSerializer contractPrimitiveSerializer,
             ISmartContractStateFactory smartContractStateFactory)
         {
             this.network = network;
-            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
             this.smartContractStateFactory = smartContractStateFactory;
         }
 
@@ -30,7 +27,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 this.network,
                 txOutValue,
                 transactionHash,
-                this.contractPrimitiveSerializer,
                 this.smartContractStateFactory);
         }
     }

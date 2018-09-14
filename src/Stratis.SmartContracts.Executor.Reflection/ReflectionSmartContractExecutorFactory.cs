@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -17,6 +18,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly Network network;
         private readonly IStateFactory stateFactory;
         private readonly IStateProcessor stateProcessor;
+        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
 
         public ReflectionSmartContractExecutorFactory(ILoggerFactory loggerFactory,
             ICallDataSerializer serializer,
@@ -24,7 +26,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ISmartContractResultTransferProcessor transferProcessor,
             Network network,
             IStateFactory stateFactory,
-            IStateProcessor stateProcessor)
+            IStateProcessor stateProcessor,
+            IContractPrimitiveSerializer contractPrimitiveSerializer)
         {
             this.loggerFactory = loggerFactory;
             this.refundProcessor = refundProcessor;
@@ -33,6 +36,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.network = network;
             this.stateFactory = stateFactory;
             this.stateProcessor = stateProcessor;
+            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
         }
 
         /// <summary>
@@ -46,7 +50,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ISmartContractTransactionContext transactionContext)
         {
             return new Executor(this.loggerFactory, this.serializer, 
-                    stateRepository, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor);
+                    stateRepository, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor, this.contractPrimitiveSerializer);
         }
     }
 }

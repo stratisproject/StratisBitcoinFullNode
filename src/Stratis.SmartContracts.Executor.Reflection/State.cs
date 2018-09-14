@@ -314,12 +314,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly List<TransferInfo> internalTransfers;
 
         private IState child;
-        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
         private readonly ISmartContractStateFactory smartContractStateFactory;
 
         private State(State state)
         {
-            this.contractPrimitiveSerializer = state.contractPrimitiveSerializer;
             this.ContractState = state.ContractState.StartTracking();
             
             // We create a new log holder but use references to the original raw logs
@@ -343,7 +341,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             Network network,
             ulong txAmount,
             uint256 transactionHash,
-            IContractPrimitiveSerializer contractPrimitiveSerializer,
             ISmartContractStateFactory smartContractStateFactory)
         {
             this.ContractState = repository;
@@ -354,7 +351,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.Nonce = 0;
             this.Block = block;
             this.TransactionHash = transactionHash;
-            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
             this.smartContractStateFactory = smartContractStateFactory;
         }
         
@@ -390,9 +386,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Returns contract logs in the log type used by consensus.
         /// </summary>
-        public IList<Log> GetLogs()
+        public IList<Log> GetLogs(IContractPrimitiveSerializer serializer)
         {
-            return this.LogHolder.GetRawLogs().ToLogs(this.contractPrimitiveSerializer);
+            return this.LogHolder.GetRawLogs().ToLogs(serializer);
         }       
 
         public void TransitionTo(IState state)

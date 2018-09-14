@@ -226,8 +226,8 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.stateProcessor = new StateProcessor(this.vm, this.AddressGenerator);
                 this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(loggerFactory, this.network, this.stateProcessor);
                 this.smartContractStateFactory = new SmartContractStateFactory(this.contractPrimitiveSerializer, this.network, this.internalTxExecutorFactory);
-                this.stateFactory = new StateFactory(this.network, this.contractPrimitiveSerializer, this.smartContractStateFactory);
-                this.executorFactory = new ReflectionSmartContractExecutorFactory(loggerFactory, this.serializer, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor);
+                this.stateFactory = new StateFactory(this.network, this.smartContractStateFactory);
+                this.executorFactory = new ReflectionSmartContractExecutorFactory(loggerFactory, this.serializer, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor, this.contractPrimitiveSerializer);
 
                 var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider(), new SelfEndpointTracker(loggerFactory), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings());
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
