@@ -1,4 +1,6 @@
-﻿using NBitcoin;
+﻿using System;
+using System.Linq;
+using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.ColdStaking
@@ -10,6 +12,43 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     {
         /// <summary>Returns a static instance of this class.</summary>
         public static ColdStakingScriptTemplate Instance { get; } = new ColdStakingScriptTemplate();
+
+        /// <summary>
+        /// Extracts the scriptSig parameters from the supplied scriptSig.
+        /// </summary>
+        /// <param name="network">The network that the scriptSig is for.</param>
+        /// <param name="scriptSig">The scriptSig to extract parameters from.</param>
+        /// <returns>The extracted scriptSig paramers as a <see cref="ColdStakingScriptSigParameters"/> object.</returns>
+        public ColdStakingScriptSigParameters ExtractScriptSigParameters(Network network, Script scriptSig)
+        {
+            Op[] ops = scriptSig.ToOps().ToArray();
+            if (!CheckScriptSigCore(network, scriptSig, ops, null, null))
+                return null;
+
+            try
+            {
+                return new ColdStakingScriptSigParameters()
+                {
+                    TransactionSignature = (ops[0].Code == OpcodeType.OP_0) ? null : new TransactionSignature(ops[0].PushData),
+                    ColdPublicKey = (ops[0].Code == OpcodeType.OP_0),
+                    PublicKey = new PubKey(ops[2].PushData, true),
+                };
+            }
+            catch (FormatException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Generates the scriptSig.
+        /// </summary>
+        /// <param name="parameters">The scriptSig parameters.</param>
+        /// <returns>The scriptSig.</returns>
+        public Script GenerateScriptSig(ColdStakingScriptSigParameters parameters)
+        {
+            return GenerateScriptSig(parameters.TransactionSignature, parameters.ColdPublicKey, parameters.PublicKey);
+        }
 
         /// <summary>
         /// Generates the scriptSig.
@@ -105,7 +144,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 && (bytes[27] == 0x14)
                 && (bytes[48] == (byte)OpcodeType.OP_ENDIF)
                 && (bytes[49] == (byte)OpcodeType.OP_EQUALVERIFY)
-                && (bytes[50] == (byte)OpcodeType.OP_ENDIF);
+                && (bytes[50] == (byte)OpcodeType.OP_CHECKSIG);
         }
 
         /// <inheritdoc />
