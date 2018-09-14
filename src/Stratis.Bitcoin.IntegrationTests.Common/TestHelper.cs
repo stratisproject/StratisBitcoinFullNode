@@ -83,6 +83,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 connectedPeer.Behavior<ConsensusManagerBehavior>().ResyncAsync().GetAwaiter().GetResult();
         }
 
+        public static bool IsNodeConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
+        {
+            return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint == isConnectedToNode.Endpoint);
+        }
+
         public static bool IsNodeConnected(CoreNode node)
         {
             return node.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.IsConnected);
@@ -107,20 +112,25 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             Guard.NotEmpty(walletPassword, nameof(walletPassword));
             Guard.NotEmpty(accountName, nameof(accountName));
 
-            if (numberOfBlocks == 0) throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
+            if (numberOfBlocks == 0)
+                throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
-            HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
-            
-            Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
-            Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address).PrivateKey;
+            if (node.MinerSecret == null)
+            {
+                HdAddress unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
 
-            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+                Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
+                Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
 
-            var blockHashes = node.GenerateStratisWithMiner((int)numberOfBlocks);
+                node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+                node.UnusedAddress = unusedAddress;
+            }
+
+            var blockHashes = node.GenerateStratisWithMiner(numberOfBlocks);
 
             WaitForNodeToSync(node);
 
-            return (address, blockHashes);
+            return (node.UnusedAddress, blockHashes);
         }
 
         /// <summary>
@@ -236,6 +246,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         public static void Connect(CoreNode from, CoreNode to)
         {
             from.CreateRPCClient().AddNode(to.Endpoint, true);
+        }
+
+        public static void Disconnect(CoreNode from, CoreNode to)
+        {
+            from.CreateRPCClient().RemoveNode(to.Endpoint);
         }
 
         public static void ConnectAndSync(CoreNode from, CoreNode to)

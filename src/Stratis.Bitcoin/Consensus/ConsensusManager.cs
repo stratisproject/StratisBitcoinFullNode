@@ -7,7 +7,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.ValidationResults;
 using Stratis.Bitcoin.Consensus.Validators;
@@ -407,17 +406,16 @@ namespace Stratis.Bitcoin.Consensus
 
             List<ChainedHeaderBlock> chainedHeaderBlocksToValidate;
             ConnectBlocksResult connectBlocksResult = null;
+            bool fullValidationRequired = false;
 
             using (await this.reorgLock.LockAsync().ConfigureAwait(false))
             {
-                bool fullValidationRequired;
-
                 lock (this.peerLock)
                 {
                     chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out fullValidationRequired);
                 }
 
-                this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? "" : " NOT");
+                this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? string.Empty : " NOT");
 
                 if (fullValidationRequired)
                 {
@@ -455,7 +453,7 @@ namespace Stratis.Bitcoin.Consensus
                 }
             }
 
-            if (chainedHeaderBlocksToValidate != null)
+            if (fullValidationRequired && chainedHeaderBlocksToValidate != null)
             {
                 this.logger.LogTrace("Partial validation of {0} block will be started.", chainedHeaderBlocksToValidate.Count);
 
