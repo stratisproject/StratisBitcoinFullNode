@@ -282,6 +282,7 @@ namespace Stratis.Bitcoin.Base
                 this.flushChainLoop.Dispose();
             }
 
+            this.logger.LogInformation("Disposing time sync behavior.");
             this.timeSyncBehaviorState.Dispose();
 
             this.logger.LogInformation("Disposing block puller.");
