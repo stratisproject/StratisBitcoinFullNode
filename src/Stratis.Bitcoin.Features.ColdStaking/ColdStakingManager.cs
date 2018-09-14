@@ -419,9 +419,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 throw new WalletException("You can't send the money to a cold staking account.");
             }
 
-            // Send the money to the receiving address.
-            Script destination = BitcoinAddress.Create(receivingAddress, wallet.Network).ScriptPubKey.PaymentScript;
-
             // Take the largest unspent outputs from the specified cold staking or setup transaction.
             IOrderedEnumerable<UnspentOutputReference> orderedUnspents = this.walletManager
                 .GetSpendableTransactionsInAccount(new WalletAccountReference(walletName, coldAccount.Name))
@@ -447,6 +444,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 throw new WalletException("Insufficient balance amount.");
             }
 
+            // Send the money to the receiving address.
+            Script destination = BitcoinAddress.Create(receivingAddress, wallet.Network).ScriptPubKey;
+
             // Create the transaction build context (used in BuildTransaction).
             var context = new TransactionBuildContext(wallet.Network)
             {
@@ -470,18 +470,30 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
 
             // Set the cold staking scriptPubKey on the change output.
-            // TODO: Ensure it is output 0.
-            transaction.Outputs[0].ScriptPubKey = selectedInputs[0].Transaction.ScriptPubKey;
+            TxOut changeOutput = transaction.Outputs.SingleOrDefault(a => a.ScriptPubKey != destination && a.Value != 0);
+            if (changeOutput != null)
+                changeOutput.ScriptPubKey = selectedInputs[0].Transaction.ScriptPubKey;
 
             // Sign the inputs.
             var builder = new TransactionBuilder(wallet.Network);
-            List<Script> keysRequiredScripts = selectedInputs.Select(i => i.Transaction.ScriptPubKey).Distinct().ToList();
-            // TODO: Parse the coldPubKeys from the cold staking scripts and generate addresses to use in AddKeys below.
+            // TODO: Restore this line
+            // builder.Extensions.Add(new ColdStakingBuilderExtension(false));
 
+            var addressLookup = new Dictionary<Script, HdAddress>();
             foreach (UnspentOutputReference unspent in selectedInputs)
+            {
+                Script scriptPubKey = unspent.Transaction.ScriptPubKey;
+                if (!addressLookup.TryGetValue(scriptPubKey, out HdAddress address))
+                {
+                    ColdStakingScriptTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey, out _, out KeyId coldPubKeyHash);
+                    addressLookup[scriptPubKey] = coldAccount.ExternalAddresses
+                        .Where(a => a.ScriptPubKey.GetDestination(wallet.Network) == coldPubKeyHash).First();
+                }
+
                 builder
-                    .AddKeys(wallet.GetExtendedPrivateKeyForAddress(walletPassword, /* TODO (see above) */ null))
+                    .AddKeys(wallet.GetExtendedPrivateKeyForAddress(walletPassword, addressLookup[unspent.Transaction.ScriptPubKey]))
                     .AddCoins(new Coin(unspent.ToOutPoint(), new TxOut(unspent.Transaction.Amount, unspent.Transaction.ScriptPubKey)));
+            }
 
             builder.SignTransactionInPlace(transaction);
 

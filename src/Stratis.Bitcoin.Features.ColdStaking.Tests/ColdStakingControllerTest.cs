@@ -471,7 +471,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             HdAddress address = this.coldStakingManager.GetFirstUnusedColdStakingAddress(wallet.Name, true);
 
             TxDestination hotPubKey = BitcoinAddress.Create(hotWalletAddress1, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
-            TxDestination coldPubKey = BitcoinAddress.Create(coldWalletAddress1, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
+            TxDestination coldPubKey = BitcoinAddress.Create(coldWalletAddress2, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
 
             var scriptPubKey = new Script(OpcodeType.OP_DUP, OpcodeType.OP_HASH160, OpcodeType.OP_ROT, OpcodeType.OP_IF,
                 OpcodeType.OP_CHECKCOLDSTAKEVERIFY, Op.GetPushOp(hotPubKey.ToBytes()), OpcodeType.OP_ELSE, Op.GetPushOp(coldPubKey.ToBytes()),
@@ -535,9 +535,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal((uint)0, transaction.Inputs[0].PrevOut.N);
             Assert.Equal(2, transaction.Outputs.Count);
             Assert.Equal(Money.Coins(0.99m), transaction.Outputs[0].Value);
-            Assert.Equal("OP_DUP OP_HASH160 OP_ROT OP_IF OP_CHECKCOLDSTAKEVERIFY 90c582cb91d6b6d777c31c891d4943fed4edac3a OP_ELSE 0f8a4018d5aa05d2ec5b74acaa60db2234e6e735 OP_ENDIF OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[0].ScriptPubKey.ToString());
+            Assert.Equal("OP_DUP OP_HASH160 OP_ROT OP_IF OP_CHECKCOLDSTAKEVERIFY 90c582cb91d6b6d777c31c891d4943fed4edac3a OP_ELSE 92dfb829d31cefe6a0731f3432dea41596a278d9 OP_ENDIF OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[0].ScriptPubKey.ToString());
             Assert.Equal(Money.Coins(100), transaction.Outputs[1].Value);
-            Assert.Equal($"OP_DUP OP_HASH160 {receivingAddress.ScriptPubKey.Hash} OP_EQUALVERIFY OP_CHECKSIG", transaction.Outputs[1].ScriptPubKey.ToString());
+            Assert.Equal(receivingAddress.ScriptPubKey, transaction.Outputs[1].ScriptPubKey);
             Assert.False(transaction.IsCoinBase || transaction.IsCoinStake || transaction.IsColdCoinStake);
             */
         }
