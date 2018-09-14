@@ -193,7 +193,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return StateTransitionResult.Ok((Gas)0, message.To);
             }
 
-            return this.ApplyCall(state, message, contractCode);
+            StateTransitionResult result = this.ApplyCall(state, message, contractCode);
+
+            // For successful internal contract-contract transfers we need to add the transfer to the internal transfer list.
+            if (result.IsSuccess)
+            {
+                state.AddInternalTransfer(new TransferInfo
+                {
+                    From = message.From,
+                    To = message.To,
+                    Value = message.Amount
+                });
+            }
+
+            return result;
         }
 
         /// <summary>
