@@ -419,31 +419,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 throw new WalletException("You can't send the money to a cold staking account.");
             }
 
-            // Take the largest unspent outputs from the specified cold staking or setup transaction.
-            IOrderedEnumerable<UnspentOutputReference> orderedUnspents = this.walletManager
-                .GetSpendableTransactionsInAccount(new WalletAccountReference(walletName, coldAccount.Name))
-                .OrderByDescending(a => a.Transaction.Amount);
-
-            // TODO: See if this can be replaced by a call.
-            var selectedInputs = new List<UnspentOutputReference>();
-            Money availAmount = 0;
-            foreach (UnspentOutputReference unspent in orderedUnspents)
-            {
-                if (availAmount >= amount)
-                    break;
-
-                selectedInputs.Add(unspent);
-
-                availAmount += unspent.Transaction.Amount;
-            }
-
-            // Check the amount requested against the amount available.
-            if (availAmount < amount)
-            {
-                this.logger.LogTrace("(-)[COLDSTAKE_AMOUNT_TOO_LARGE]");
-                throw new WalletException("Insufficient balance amount.");
-            }
-
             // Send the money to the receiving address.
             Script destination = BitcoinAddress.Create(receivingAddress, wallet.Network).ScriptPubKey;
 
@@ -451,20 +426,23 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             var context = new TransactionBuildContext(wallet.Network)
             {
                 AccountReference = new WalletAccountReference(walletName, coldAccount.Name),
-                SelectedInputs = selectedInputs.Select(a => a.ToOutPoint()).ToList(),
-                // Specify a change address to prevent a change (internal) address from being created.
-                ChangeAddress = selectedInputs[0].Address,
+                // Specify a dummy change address to prevent a change (internal) address from being created.
+                // Will be changed after the transacton is built.
+                ChangeAddress = coldAccount.ExternalAddresses.First(),
                 TransactionFee = feeAmount,
                 MinConfirmations = 0,
                 Shuffle = false,
+                WalletPassword = walletPassword,
                 Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = destination } }.ToList()
             };
 
-            // Avoid errors being raised due to the special script that we are using.
-            context.TransactionBuilder.StandardTransactionPolicy.CheckScriptPubKey = false;
+            // Register the cold staking builder extension with the transaction builder.
+            // TODO: Restore this line.
+            // context.TransactionBuilder.Extensions.Add(new ColdStakingBuilderExtension(false));
 
-            // Can't verify script due to empty scriptSig. Avoid stack error.
-            context.TransactionBuilder.StandardTransactionPolicy.ScriptVerify = null;
+            // Finds all the available outputs (UTXO's) that belong to the cold staking account and
+            // then adds them to the context's UnspentOutputs.
+            (this.walletTransactionHandler as WalletTransactionHandler).AddCoins(context);
 
             // Build the transaction according to the settings recorded in the context.
             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
@@ -472,30 +450,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             // Set the cold staking scriptPubKey on the change output.
             TxOut changeOutput = transaction.Outputs.SingleOrDefault(a => a.ScriptPubKey != destination && a.Value != 0);
             if (changeOutput != null)
-                changeOutput.ScriptPubKey = selectedInputs[0].Transaction.ScriptPubKey;
-
-            // Sign the inputs.
-            var builder = new TransactionBuilder(wallet.Network);
-            // TODO: Restore this line
-            // builder.Extensions.Add(new ColdStakingBuilderExtension(false));
-
-            var addressLookup = new Dictionary<Script, HdAddress>();
-            foreach (UnspentOutputReference unspent in selectedInputs)
             {
-                Script scriptPubKey = unspent.Transaction.ScriptPubKey;
-                if (!addressLookup.TryGetValue(scriptPubKey, out HdAddress address))
-                {
-                    ColdStakingScriptTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey, out _, out KeyId coldPubKeyHash);
-                    addressLookup[scriptPubKey] = coldAccount.ExternalAddresses
-                        .Where(a => a.ScriptPubKey.GetDestination(wallet.Network) == coldPubKeyHash).First();
-                }
-
-                builder
-                    .AddKeys(wallet.GetExtendedPrivateKeyForAddress(walletPassword, addressLookup[unspent.Transaction.ScriptPubKey]))
-                    .AddCoins(new Coin(unspent.ToOutPoint(), new TxOut(unspent.Transaction.Amount, unspent.Transaction.ScriptPubKey)));
+                // Send the change back to the largest UTXO.
+                UnspentOutputReference maxUnspent = context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount).First();
+                changeOutput.ScriptPubKey = maxUnspent.Transaction.ScriptPubKey;
             }
-
-            builder.SignTransactionInPlace(transaction);
 
             this.logger.LogTrace("(-)");
             return transaction;
