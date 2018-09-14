@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
     {
         private readonly NodeBuilder builder;
 
-        private readonly MockChainNode[] nodes;
+        protected readonly MockChainNode[] nodes;
 
         /// <summary>
         /// Nodes on this network.
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         /// <summary>
         /// Halts the main thread until all nodes on the network are synced.
         /// </summary>
-        internal void WaitForAllNodesToSync()
+        public void WaitForAllNodesToSync()
         {
             if (this.nodes.Length == 1)
             {
