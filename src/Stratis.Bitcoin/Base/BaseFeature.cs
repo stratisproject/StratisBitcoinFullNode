@@ -367,6 +367,7 @@ namespace Stratis.Bitcoin.Base
 
                     // Consensus
                     services.AddSingleton<IConsensusManager, ConsensusManager>();
+                    services.AddSingleton<IChainedHeaderTree, ChainedHeaderTree>();
                     services.AddSingleton<IHeaderValidator, HeaderValidator>();
                     services.AddSingleton<IIntegrityValidator, IntegrityValidator>();
                     services.AddSingleton<IPartialValidator, PartialValidator>();
