@@ -78,9 +78,6 @@ namespace NBitcoin
             this.signature = block.BlockSignature;
             this.coinstake = block.Transactions[1];
 
-            if (!this.coinstake.IsCoinStake)
-                throw new ArgumentException("Specified POS block contains invalid coinstake transaction.", nameof(block));
-
             this.merkleProof = new MerkleBlock(block, new[] { this.coinstake.GetHash() }).PartialMerkleTree;
         }
 
