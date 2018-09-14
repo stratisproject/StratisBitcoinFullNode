@@ -286,19 +286,24 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Finds the ancestor of this entry in the chain that matches the block hash given.
+        /// Finds the ancestor of this entry in the chain that matches the block hash.
+        /// It will not search lower than the optional height parameter.
         /// </summary>
         /// <param name="blockHash">The block hash to search for.</param>
-        /// <returns>The ancestor of this chain that matches the block hash.</returns>
-        public ChainedHeader FindAncestorOrSelf(uint256 blockHash)
+        /// <param name="height">Optional height to restrict the search to.</param>
+        /// <returns>The ancestor of this chain that matches the block hash, or null if it was not found.</returns>
+        public ChainedHeader FindAncestorOrSelf(uint256 blockHash, int height = 0)
         {
             ChainedHeader currentBlock = this;
-            while ((currentBlock != null) && (currentBlock.HashBlock != blockHash))
+            while ((currentBlock != null) && (currentBlock.Height > height))
             {
+                if (currentBlock.HashBlock == blockHash)
+                    break;
+
                 currentBlock = currentBlock.Previous;
             }
 
-            return currentBlock;
+            return (currentBlock?.HashBlock == blockHash) ? currentBlock : null;
         }
 
         /// <summary>
