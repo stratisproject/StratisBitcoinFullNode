@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Stratis.Bitcoin.Networks
 {
-    public class StratisProtocolVersion : ProtocolVersionBase
+    public class StratisProtocolVersion : ProtocolVersion
     {
 
         public static StratisProtocolVersion ProvenHeaders = new StratisProtocolVersion(70013, nameof(ProvenHeaders).ToLowerInvariant());
@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Networks
         {
         }
 
-        public override IEnumerable<ProtocolVersionBase> List()
+        public override IEnumerable<ProtocolVersion> List()
         {
             var list = base.List().ToList();
 

@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Configuration
     public class NodeSettings : IDisposable
     {
         /// <summary>Version of the protocol the current implementation supports.</summary>
-        public const ProtocolVersion SupportedProtocolVersion = ProtocolVersion.SENDHEADERS_VERSION;
+        public const NBitcoin.Protocol.ProtocolVersion SupportedProtocolVersion = NBitcoin.Protocol.ProtocolVersion.SENDHEADERS_VERSION;
 
         /// <summary>Factory to create instance logger.</summary>
         public ILoggerFactory LoggerFactory { get; private set; }
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Configuration
         public TextFileConfiguration ConfigReader { get; private set; }
 
         /// <summary>Supported protocol version.</summary>
-        public ProtocolVersion ProtocolVersion { get; private set; }
+        public NBitcoin.Protocol.ProtocolVersion ProtocolVersion { get; private set; }
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; private set; }
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Configuration
         /// - Alternatively, if the file name is not supplied then a network-specific file
         ///   name would be determined. In this case we first need to determine the network.
         /// </remarks>
-        public NodeSettings(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion,
+        public NodeSettings(Network network = null, NBitcoin.Protocol.ProtocolVersion protocolVersion = SupportedProtocolVersion,
             string agent = "StratisBitcoin", string[] args = null)
         {
             // Create the default logger factory and logger.
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Configuration
                 if (testNet && regTest)
                     throw new ConfigurationException("Invalid combination of regtest and testnet.");
 
-                if (protocolVersion == ProtocolVersion.ALT_PROTOCOL_VERSION)
+                if (protocolVersion == NBitcoin.Protocol.ProtocolVersion.ALT_PROTOCOL_VERSION)
                     this.Network = testNet ? NetworkRegistration.Register(new StratisTest()) : regTest ? NetworkRegistration.Register(new StratisRegTest()) : NetworkRegistration.Register(new StratisMain());
                 else
                     this.Network = testNet ? NetworkRegistration.Register(new BitcoinTest()) : regTest ? NetworkRegistration.Register(new BitcoinRegTest()) : NetworkRegistration.Register(new BitcoinMain());
@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="protocolVersion">Supported protocol version for which to create the configuration.</param>
         /// <returns>Default node configuration.</returns>
-        public static NodeSettings Default(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion)
+        public static NodeSettings Default(Network network = null, NBitcoin.Protocol.ProtocolVersion protocolVersion = SupportedProtocolVersion)
         {
             return new NodeSettings(network, protocolVersion);
         }

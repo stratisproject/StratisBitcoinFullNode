@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.Networks;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -35,7 +34,7 @@ namespace Stratis.BreezeD
                     if (isTestNet)
                         args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack
 
-                    nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, agent, args:args);
+                    nodeSettings = new NodeSettings(network, NBitcoin.Protocol.ProtocolVersion.ALT_PROTOCOL_VERSION, agent, args: args);
                 }
                 else
                 {

@@ -1,6 +1,6 @@
 ﻿namespace Stratis.Bitcoin.Networks
 {
-    public class BitcoinProtocolVersion : ProtocolVersionBase
+    public class BitcoinProtocolVersion : ProtocolVersion
     {
         public BitcoinProtocolVersion()
         {
