@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace NBitcoin
@@ -75,11 +76,9 @@ namespace NBitcoin
 
             // Set additional properties.
             this.signature = block.BlockSignature;
-
-            uint256[] txIds = block.Transactions.Select(t => t.GetHash()).ToArray();
-            this.merkleProof = block.Filter(txIds).PartialMerkleTree;
-
             this.coinstake = block.Transactions[1];
+
+            this.merkleProof = new MerkleBlock(block, new[] { this.coinstake.GetHash() }).PartialMerkleTree;
         }
 
         /// <inheritdoc />
