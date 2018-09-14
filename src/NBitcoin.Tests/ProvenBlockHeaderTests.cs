@@ -57,12 +57,14 @@ namespace NBitcoin.Tests
             coinstakeTx.AddOutput(new TxOut());
             coinstakeTx.AddInput(previousTx, 0);
             coinstakeTx.IsCoinStake.Should().BeTrue();
+            coinstakeTx.IsCoinBase.Should().BeFalse();
 
             // Create coinbase Tx
             Transaction coinBaseTx = this.network.CreateTransaction();
             coinBaseTx.AddOutput(50, new Script());
             coinBaseTx.AddInput(new TxIn());
             coinBaseTx.IsCoinBase.Should().BeTrue();
+            coinBaseTx.IsCoinStake.Should().BeFalse();
 
             var block = (PosBlock)this.network.CreateBlock();
             block.AddTransaction(coinBaseTx);
