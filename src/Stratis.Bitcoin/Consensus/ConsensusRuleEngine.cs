@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Consensus
             }
             catch (Exception exception)
             {
-                this.logger.LogCritical("Not handled error in the rules engine, exception: {0}.", exception.ToString());
+                this.logger.LogCritical("Unhandled exception in consensus rules engine: {0}.", exception.ToString());
                 throw;
             }
         }
@@ -280,7 +280,7 @@ namespace Stratis.Bitcoin.Consensus
             }
             catch (Exception exception)
             {
-                this.logger.LogCritical("Not handled error in the rules engine, exception: {0}.", exception.ToString());
+                this.logger.LogCritical("Unhandled exception in consensus rules engine: {0}.", exception.ToString());
                 throw;
             }
         }
