@@ -576,33 +576,40 @@ namespace NBitcoin.Tests
         }
 
 
-        // Tests not working but this sort of check and usage.
-
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void StratisProtocolVersionCheck()
-        {
-            var version = new StratisProtocolVersion();
-
-            Assert.True(version.ProvenHeaders.Id  == 70000);
-            Assert.True(version.AltProtocalVersion.Id == 70013);
-
-            // this will be in another test to check the list of items come back
-            IEnumerable<ProtocolVersionBase> list = version.List();
+        public void StratisProtocolVersionValidateItems()
+        {            
+            Assert.True(StratisProtocolVersion.ProvenHeaders.Id == 70013);
         }
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void BitcoinProtocolVersionCheck()
+        public void StratisProtocolVersionAllItemsCount()
+        {
+            var version = new StratisProtocolVersion();
+            IEnumerable<ProtocolVersionBase> list = version.List();
+            Assert.True(list.Count() == 6);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void ProtocolVersionBaseValidateItems()
+        {
+            Assert.True(ProtocolVersionBase.AltProtocalVersion.Id == 70000);
+            Assert.True(ProtocolVersionBase.ProtocolVersion.Id == 70012);
+            Assert.True(ProtocolVersionBase.InitProtoVersion.Id == 209);
+            Assert.True(ProtocolVersionBase.MinPeerProtoVersion.Id == 209);
+            Assert.True(ProtocolVersionBase.CAddressTimeVersion.Id == 31402);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void BitCoinProtocolVersionAllItemsCount()
         {
             var version = new BitcoinProtocolVersion();
-
-            Assert.True(version.ProtocolVersion.Id == 70012);
-            Assert.True(version.InitProtoVersion.Id == 209);
-            Assert.True(version.MinPeerProtoVersion.Id == 209);
-            Assert.True(version.CAddressTimeVersion.Id == 31402);
-
-            // and so on
+            IEnumerable<ProtocolVersionBase> list = version.List();
+            Assert.True(list.Count() == 5);
         }
     }
 }

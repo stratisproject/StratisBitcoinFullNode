@@ -7,27 +7,27 @@ namespace Stratis.Bitcoin.Networks
 {
     public class ProtocolVersionBase : Enumeration
     {
-        public ProtocolVersionBase ProtocolVersion = new ProtocolVersionBase(70012, nameof(ProtocolVersion).ToLowerInvariant());
-        public ProtocolVersionBase AltProtocalVersion = new ProtocolVersionBase(70000, nameof(AltProtocalVersion).ToLowerInvariant());
-        public ProtocolVersionBase InitProtoVersion = new ProtocolVersionBase(209, nameof(InitProtoVersion).ToLowerInvariant());
-        public ProtocolVersionBase MinPeerProtoVersion = new ProtocolVersionBase(209, nameof(MinPeerProtoVersion).ToLowerInvariant());
-        public ProtocolVersionBase CAddressTimeVersion = new ProtocolVersionBase(31402, nameof(CAddressTimeVersion).ToLowerInvariant());
+        public static ProtocolVersionBase ProtocolVersion = new ProtocolVersionBase(70012, nameof(ProtocolVersion).ToLowerInvariant());
+        public static ProtocolVersionBase AltProtocalVersion = new ProtocolVersionBase(70000, nameof(AltProtocalVersion).ToLowerInvariant());
+        public static ProtocolVersionBase InitProtoVersion = new ProtocolVersionBase(209, nameof(InitProtoVersion).ToLowerInvariant());
+        public static ProtocolVersionBase MinPeerProtoVersion = new ProtocolVersionBase(209, nameof(MinPeerProtoVersion).ToLowerInvariant());
+        public static ProtocolVersionBase CAddressTimeVersion = new ProtocolVersionBase(31402, nameof(CAddressTimeVersion).ToLowerInvariant());
 
         protected ProtocolVersionBase()
         {
         }
 
-        public ProtocolVersionBase(int id, string name) : base(id, name)
+        protected ProtocolVersionBase(int id, string name) : base(id, name)
         {
         }
 
         public virtual IEnumerable<ProtocolVersionBase> List() =>
             new[] {
-                this.ProtocolVersion,
-                this.AltProtocalVersion,
-                this.InitProtoVersion,
-                this.MinPeerProtoVersion,
-                this.CAddressTimeVersion
+                ProtocolVersion,
+                AltProtocalVersion,
+                InitProtoVersion,
+                MinPeerProtoVersion,
+                CAddressTimeVersion
             };
 
         public ProtocolVersionBase FromName(string name)
