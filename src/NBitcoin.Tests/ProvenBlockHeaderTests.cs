@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using DBreeze.Utils;
 using FluentAssertions;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -130,9 +131,10 @@ namespace NBitcoin.Tests
                 block.AddTransaction(tx);
             }
 
+            block.UpdateMerkleRoot();
             ProvenBlockHeader provenBlockHeader = this.factory.CreateProvenBlockHeader(block);
-            provenBlockHeader.MerkleProof.Hashes.Count.Should().Be(6);
-            // TODO: Add validation of the merkle proof
+            provenBlockHeader.MerkleProof.Hashes.Should().HaveCount(6);
+            provenBlockHeader.MerkleProof.Check(provenBlockHeader.HashMerkleRoot).Should().BeTrue();
         }
 
         private ProvenBlockHeader CreateNewProvenBlockHeaderMock()
