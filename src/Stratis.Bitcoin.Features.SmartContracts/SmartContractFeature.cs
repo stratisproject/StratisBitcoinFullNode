@@ -99,6 +99,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                         // UTILS ----------------------------------------------------------------------------
                         services.AddSingleton<ISenderRetriever, SenderRetriever>();
+                        services.AddSingleton<IVersionProvider, SmartContractVersionProvider>();
 
                         ICallDataSerializer callDataSerializer = CallDataSerializer.Default;
                         services.AddSingleton(callDataSerializer);
