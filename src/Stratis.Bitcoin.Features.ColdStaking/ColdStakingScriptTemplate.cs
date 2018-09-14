@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// </summary>
         public override TxOutType Type
         {
-            get { return TxOutType.TX_NONSTANDARD; }
+            get { return TxOutType.TX_COLDSTAKE; }
         }
     }
 }
