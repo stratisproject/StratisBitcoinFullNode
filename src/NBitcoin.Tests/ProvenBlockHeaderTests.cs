@@ -48,13 +48,13 @@ namespace NBitcoin.Tests
                     provenHeaderToDeserialize.MerkleProof.Flags[i].Should().Be(provenHeaderToSerialize.MerkleProof.Flags[i]);
                 }
 
-                // Check if coinstake properties match
+                // Check if coinstake properties match.
                 provenHeaderToDeserialize.Coinstake.Should().BeEquivalentTo(provenHeaderToSerialize.Coinstake);
 
-                // Check if signature properties match
+                // Check if signature properties match.
                 provenHeaderToDeserialize.Signature.Signature.Should().BeEquivalentTo(provenHeaderToSerialize.Signature.Signature);
 
-                // Check base properties
+                // Check base properties.
                 provenHeaderToDeserialize.BlockTime.Should().Be(provenHeaderToSerialize.BlockTime);
                 provenHeaderToDeserialize.CurrentVersion.Should().Be(provenHeaderToSerialize.CurrentVersion);
                 provenHeaderToDeserialize.Nonce.Should().Be(provenHeaderToSerialize.Nonce);
@@ -72,7 +72,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void ShouldNotBeAbleToCreateProvenBlockHeaderFromABlockContainingInvalidCoinstake()
         {
-            // Create invalid coinstake Tx
+            // Create invalid coinstake Tx.
             Transaction previousTx = this.network.CreateTransaction();
             previousTx.AddOutput(new TxOut());
             Transaction coinstakeTx = this.network.CreateTransaction();
@@ -81,7 +81,7 @@ namespace NBitcoin.Tests
             coinstakeTx.IsCoinStake.Should().BeFalse();
             coinstakeTx.IsCoinBase.Should().BeFalse();
 
-            // Create coinbase Tx
+            // Create coinbase Tx.
             Transaction coinBaseTx = this.network.CreateTransaction();
             coinBaseTx.AddOutput(100, new Script());
             coinBaseTx.AddInput(new TxIn());
@@ -99,7 +99,7 @@ namespace NBitcoin.Tests
         [Fact]
         public void WhenCreatingNewProvenHeaderMerkleProofIsCorrectlyCreated()
         {
-            // Create coinstake Tx
+            // Create coinstake Tx.
             Transaction previousTx = this.network.CreateTransaction();
             previousTx.AddOutput(new TxOut());
             Transaction coinstakeTx = this.network.CreateTransaction();
@@ -109,7 +109,7 @@ namespace NBitcoin.Tests
             coinstakeTx.IsCoinStake.Should().BeTrue();
             coinstakeTx.IsCoinBase.Should().BeFalse();
 
-            // Create coinbase Tx
+            // Create coinbase Tx.
             Transaction coinBaseTx = this.network.CreateTransaction();
             coinBaseTx.AddOutput(100, new Script());
             coinBaseTx.AddInput(new TxIn());
@@ -120,7 +120,7 @@ namespace NBitcoin.Tests
             block.AddTransaction(coinBaseTx);
             block.AddTransaction(coinstakeTx);
 
-            // Add 20 more transactions
+            // Add 20 more transactions.
             for (int i = 0; i < 20; i++)
             {
                 Transaction tx = this.network.CreateTransaction();
@@ -139,7 +139,7 @@ namespace NBitcoin.Tests
 
         private ProvenBlockHeader CreateNewProvenBlockHeaderMock()
         {
-            // Create coinstake Tx
+            // Create coinstake Tx.
             Transaction previousTx = this.network.CreateTransaction();
             previousTx.AddOutput(new TxOut());
             Transaction coinstakeTx = this.network.CreateTransaction();
@@ -149,7 +149,7 @@ namespace NBitcoin.Tests
             coinstakeTx.IsCoinStake.Should().BeTrue();
             coinstakeTx.IsCoinBase.Should().BeFalse();
 
-            // Create coinbase Tx
+            // Create coinbase Tx.
             Transaction coinBaseTx = this.network.CreateTransaction();
             coinBaseTx.AddOutput(100, new Script());
             coinBaseTx.AddInput(new TxIn());
