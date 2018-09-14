@@ -28,10 +28,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Returns the <see cref="HdAddress"/> values from the <see cref="AddressFromScriptLookup.keysLookup"/> collection.
         /// </summary>
-        public virtual IEnumerable<HdAddress> Values
-        {
-            get { return this.keysLookup.Values.AsEnumerable(); }
-        }
+        public virtual IEnumerable<HdAddress> Values => this.keysLookup.Values.AsEnumerable();
 
         /// <summary>
         /// Maps scripts to addresses.
@@ -47,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Returns the number of elements in the collection.
         /// </summary>
-        public int Count { get { return this.keysLookup.Count; } }
+        public int Count => this.keysLookup.Count;
 
         /// <summary>
         /// The 'get' method returns the address that has been mapped to the script.
@@ -57,8 +54,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>The <see cref="HdAddress"/> object.</returns>
         public virtual HdAddress this[Script script]
         {
-            get { return this.keysLookup[script]; }
-            set { this.keysLookup[script] = value; }
+            get => this.keysLookup[script];
+            set => this.keysLookup[script] = value;
         }
     }
 }
