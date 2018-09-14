@@ -590,7 +590,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>List of blocks that were disconnected.</returns>
         private async Task<List<ChainedHeaderBlock>> RewindToForkPointAsync(ChainedHeader fork, ChainedHeader oldTip)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}'", nameof(fork), fork, nameof(oldTip), oldTip);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(fork), fork, nameof(oldTip), oldTip);
 
             // This is sanity check and should never happen.
             if (fork.Height > oldTip.Height)
