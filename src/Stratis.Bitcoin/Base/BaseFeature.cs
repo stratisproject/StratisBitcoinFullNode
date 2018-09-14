@@ -282,9 +282,6 @@ namespace Stratis.Bitcoin.Base
                 this.flushChainLoop.Dispose();
             }
 
-            this.logger.LogInformation("Saving chain repository.");
-            this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
-
             this.timeSyncBehaviorState.Dispose();
 
             this.logger.LogInformation("Disposing block puller.");
@@ -298,6 +295,9 @@ namespace Stratis.Bitcoin.Base
 
             this.logger.LogInformation("Disposing consensus rules.");
             this.consensusRules.Dispose();
+
+            this.logger.LogInformation("Saving chain repository.");
+            this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
 
             this.logger.LogInformation("Disposing chain repository.");
             this.chainRepository.Dispose();
