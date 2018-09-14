@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         public TransactionSignature TransactionSignature { get; set; }
 
         /// <summary>A flag indicating whether this is coldPubKeyHash.</summary>
-        public bool ColdPublicKey { get; set; }
+        public bool IsColdPublicKey { get; set; }
 
         /// <summary>This is either the coldPubKeyHash or the hotPubKeyHash.</summary>
         public PubKey PublicKey { get; set; }

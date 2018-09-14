@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         public ColdStakingScriptSigParameters ExtractScriptSigParameters(Network network, Script scriptSig)
         {
             Op[] ops = scriptSig.ToOps().ToArray();
-            if (!CheckScriptSigCore(network, scriptSig, ops, null, null))
+            if (!this.CheckScriptSigCore(network, scriptSig, ops, null, null))
                 return null;
 
             try
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 return new ColdStakingScriptSigParameters()
                 {
                     TransactionSignature = (ops[0].Code == OpcodeType.OP_0) ? null : new TransactionSignature(ops[0].PushData),
-                    ColdPublicKey = (ops[0].Code == OpcodeType.OP_0),
+                    IsColdPublicKey = (ops[0].Code == OpcodeType.OP_0),
                     PublicKey = new PubKey(ops[2].PushData, true),
                 };
             }
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <returns>The scriptSig.</returns>
         public Script GenerateScriptSig(ColdStakingScriptSigParameters parameters)
         {
-            return GenerateScriptSig(parameters.TransactionSignature, parameters.ColdPublicKey, parameters.PublicKey);
+            return this.GenerateScriptSig(parameters.TransactionSignature, parameters.IsColdPublicKey, parameters.PublicKey);
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         public bool ExtractScriptPubKeyParameters(Script scriptPubKey, out KeyId hotPubKeyHash, out KeyId coldPubKeyHash)
         {
             bool needMoreCheck;
-            if (!FastCheckScriptPubKey(scriptPubKey, out needMoreCheck))
+            if (!this.FastCheckScriptPubKey(scriptPubKey, out needMoreCheck))
             {
                 hotPubKeyHash = null;
                 coldPubKeyHash = null;
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// </summary>
         public override TxOutType Type
         {
-            get { return TxOutType.TX_COLDSTAKE; }
+            get { return TxOutType.TX_NONSTANDARD; }
         }
     }
 }
