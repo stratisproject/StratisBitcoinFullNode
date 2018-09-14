@@ -78,6 +78,35 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                         il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.FlowThroughMemoryInt32Method));
                         i += 2;
                     }
+
+                    //if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == ".ctor")
+                    //{
+                    //    MethodDefinition method = ((MethodReference)instruction.Operand).Resolve();
+                    //    // Ensure is the constructor with a count param
+                    //    if (method.Parameters.Any(x=>x.Name == "count"))
+                    //    {
+                    //        il.InsertBefore(instruction, il.CreateLdlocBest(observerVariable));
+                    //        il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.FlowThroughMemoryInt32Method));
+                    //        i += 2;
+                    //    }
+                    //}
+                }
+
+                if (instruction.OpCode.Code == Code.Newobj)
+                {
+                    var called = (MethodReference)instruction.Operand;
+
+                    if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == ".ctor")
+                    {
+                        MethodDefinition method = ((MethodReference)instruction.Operand).Resolve();
+                        // Ensure is the constructor with a count param
+                        if (method.Parameters.Any(x => x.Name == "count"))
+                        {
+                            il.InsertBefore(instruction, il.CreateLdlocBest(observerVariable));
+                            il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.FlowThroughMemoryInt32Method));
+                            i += 2;
+                        }
+                    }
                 }
 
             }
