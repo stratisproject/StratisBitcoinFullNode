@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 using NBitcoin.BuilderExtensions;
 
 namespace Stratis.Bitcoin.Features.ColdStaking
@@ -25,14 +26,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <inheritdoc />
         public override bool CanCombineScriptSig(Network network, Script scriptPubKey, Script a, Script b)
         {
-            return ColdStakingScriptTemplate.Instance.CheckScriptPubKey(scriptPubKey);
+            return false;
         }
 
         /// <inheritdoc />
         public override bool CanDeduceScriptPubKey(Network network, Script scriptSig)
         {
-            ColdStakingScriptSigParameters para = ColdStakingScriptTemplate.Instance.ExtractScriptSigParameters(network, scriptSig);
-            return para != null && para.PublicKey != null;
+            return false;
         }
 
         /// <inheritdoc />
@@ -47,30 +47,18 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             return ColdStakingScriptTemplate.Instance.CheckScriptPubKey(scriptPubKey);
         }
 
+        /// <inheritdoc />
+        /// <remarks>Combining is not defined for cold staking scripts.</remarks>
         public override Script CombineScriptSig(Network network, Script scriptPubKey, Script a, Script b)
         {
-            ColdStakingScriptSigParameters aSig = ColdStakingScriptTemplate.Instance.ExtractScriptSigParameters(network, a);
-            ColdStakingScriptSigParameters bSig = ColdStakingScriptTemplate.Instance.ExtractScriptSigParameters(network, b);
-
-            if (aSig == null)
-                return b;
-
-            if (bSig == null)
-                return a;
-
-            var merged = new ColdStakingScriptSigParameters();
-            merged.PublicKey = aSig.PublicKey ?? bSig.PublicKey;
-            // Select the flag corresponding to which public key was selected above.
-            merged.ColdPublicKey = (aSig.PublicKey != null) ? aSig.ColdPublicKey : bSig.ColdPublicKey;
-            merged.TransactionSignature = aSig.TransactionSignature ?? bSig.TransactionSignature;
-            return ColdStakingScriptTemplate.Instance.GenerateScriptSig(merged);
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
+        /// <remarks>It is not possible to construct the original scriptPubKey from a cold staking scriptSig.</remarks>
         public override Script DeduceScriptPubKey(Network network, Script scriptSig)
         {
-            ColdStakingScriptSigParameters p2pkh = ColdStakingScriptTemplate.Instance.ExtractScriptSigParameters(network, scriptSig);
-            return p2pkh.PublicKey.Hash.ScriptPubKey;
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
