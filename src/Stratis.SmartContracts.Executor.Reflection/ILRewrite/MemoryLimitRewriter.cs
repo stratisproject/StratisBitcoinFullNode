@@ -2,68 +2,25 @@
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using RuntimeObserver;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
 {
     /// <summary>
-    /// Must be applied to a module after the <see cref="ObserverRewriter"/>.
+    /// Must be applied to a module after the <see cref="GasInjectorRewriter"/>.
     /// </summary>
-    public class MemoryLimitRewriter : IILRewriter
+    public class MemoryLimitRewriter : IObserverMethodRewriter
     {
-        public ModuleDefinition Rewrite(ModuleDefinition module)
+        public void Rewrite(MethodDefinition methodDefinition, ILProcessor il, ObserverRewriterContext context)
         {
-            FieldDefinition instance = GetObserverInstance(module);
-            ObserverReferences observer = new ObserverReferences(instance, module);
-            foreach (TypeDefinition type in module.Types)
-            {
-                RewriteType(type, observer);
-            }
-            return module;
-        }
-
-        /// <summary>
-        /// Get the same Observer instance that was injected. 
-        /// TODO: Pass around the Observer instance for performance rather than retrieving a second time.
-        /// </summary>
-        private FieldDefinition GetObserverInstance(ModuleDefinition module)
-        {
-            TypeDefinition injectedType = module.GetType(ObserverRewriter.InjectedNamespace, ObserverRewriter.InjectedTypeName);
-
-            if (injectedType == null)
-                throw new NotSupportedException("Can only rewrite assemblies with an Observer injected.");
-
-            return injectedType.Fields.FirstOrDefault(x => x.Name == ObserverRewriter.InjectedPropertyName);
-        }
-
-        private void RewriteType(TypeDefinition type, ObserverReferences observer)
-        {
-            foreach (MethodDefinition method in type.Methods)
-            {
-                RewriteMethod(method, observer);
-            }
-        }
-
-        private void RewriteMethod(MethodDefinition methodDefinition, ObserverReferences observer)
-        {
-            if (methodDefinition.DeclaringType == observer.InstanceField.DeclaringType)
-                return; // don't inject on our injected type.
-
-            if (!methodDefinition.HasBody || methodDefinition.Body.Instructions.Count == 0)
-                return; // don't inject on method without a Body 
-
-            ILProcessor il = methodDefinition.Body.GetILProcessor();
-            VariableDefinition observerVariable = methodDefinition.Body.Variables.First(x => x.VariableType.Name == typeof(Observer).Name);
-
-            // Start from 2 - we added 2 instructions in ObserverRewriter
+            // Start from 2 - we added the 2 load variable instructions in ObserverRewriter
             for(int i=2; i< methodDefinition.Body.Instructions.Count; i++)
             {
                 Instruction instruction = methodDefinition.Body.Instructions[i];
 
                 if (instruction.OpCode.Code == Code.Newarr)
                 {
-                    il.InsertBefore(instruction, il.CreateLdlocBest(observerVariable));
-                    il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.FlowThroughMemoryIntPtrMethod));
+                    il.InsertBefore(instruction, il.CreateLdlocBest(context.ObserverVariable));
+                    il.InsertBefore(instruction, il.Create(OpCodes.Call, context.Observer.FlowThroughMemoryIntPtrMethod));
                     i += 2;
                 }
 
@@ -71,8 +28,8 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                 {
                     if (called.DeclaringType.FullName == typeof(Array).FullName && called.Name == nameof(Array.Resize))
                     {
-                        il.InsertBefore(instruction, il.CreateLdlocBest(observerVariable));
-                        il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.FlowThroughMemoryInt32Method));
+                        il.InsertBefore(instruction, il.CreateLdlocBest(context.ObserverVariable));
+                        il.InsertBefore(instruction, il.Create(OpCodes.Call, context.Observer.FlowThroughMemoryInt32Method));
                         i += 2;
                     }
 
@@ -82,14 +39,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                         il.InsertAfter(instruction,
                             il.Create(OpCodes.Dup),
                             il.Create(OpCodes.Ldlen),
-                            il.CreateLdlocBest(observerVariable),
-                            il.Create(OpCodes.Call, observer.FlowThroughMemoryIntPtrMethod),
+                            il.CreateLdlocBest(context.ObserverVariable),
+                            il.Create(OpCodes.Call, context.Observer.FlowThroughMemoryIntPtrMethod),
                             popJumpDest
                             );
                         i += 5;
                     }
-
-                    // TODO: After concat, there will always be a string on the stack! Just check its length, like what the above is doing :)
 
                     if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == nameof(string.Split))
                     {
@@ -97,8 +52,8 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                         il.InsertAfter(instruction,
                             il.Create(OpCodes.Dup),
                             il.Create(OpCodes.Ldlen),
-                            il.CreateLdlocBest(observerVariable),
-                            il.Create(OpCodes.Call, observer.FlowThroughMemoryIntPtrMethod),
+                            il.CreateLdlocBest(context.ObserverVariable),
+                            il.Create(OpCodes.Call, context.Observer.FlowThroughMemoryIntPtrMethod),
                             popJumpDest
                             );
                         i += 5;
@@ -110,8 +65,8 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                         il.InsertAfter(instruction,
                             il.Create(OpCodes.Dup),
                             il.Create(OpCodes.Ldlen),
-                            il.CreateLdlocBest(observerVariable),
-                            il.Create(OpCodes.Call, observer.FlowThroughMemoryIntPtrMethod),
+                            il.CreateLdlocBest(context.ObserverVariable),
+                            il.Create(OpCodes.Call, context.Observer.FlowThroughMemoryIntPtrMethod),
                             popJumpDest
                             );
                         i += 5;
@@ -123,8 +78,8 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                         il.InsertAfter(instruction,
                             il.Create(OpCodes.Dup),
                             il.Create(OpCodes.Ldlen),
-                            il.CreateLdlocBest(observerVariable),
-                            il.Create(OpCodes.Call, observer.FlowThroughMemoryIntPtrMethod),
+                            il.CreateLdlocBest(context.ObserverVariable),
+                            il.Create(OpCodes.Call, context.Observer.FlowThroughMemoryIntPtrMethod),
                             popJumpDest
                             );
                         i += 5;
@@ -136,15 +91,13 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                         // Ensure is the constructor with a count param (not all string constructors have a count param)
                         if (method.Parameters.Any(x => x.Name == "count"))
                         {
-                            il.InsertBefore(instruction, il.CreateLdlocBest(observerVariable));
-                            il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.FlowThroughMemoryInt32Method));
+                            il.InsertBefore(instruction, il.CreateLdlocBest(context.ObserverVariable));
+                            il.InsertBefore(instruction, il.Create(OpCodes.Call, context.Observer.FlowThroughMemoryInt32Method));
                             i += 2;
                         }
                     }
 
-
                 }
-                
 
             }
 

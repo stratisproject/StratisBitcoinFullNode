@@ -7,7 +7,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
     /// <summary>
     /// Direct references to the field and methods on our <see cref="Observer"/> that we need in our IL. 
     /// </summary>
-    internal class ObserverReferences
+    public class ObserverReferences
     {
         /// <summary>
         /// The actual field to load onto the stack which we can call methods on. 

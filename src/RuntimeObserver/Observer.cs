@@ -9,7 +9,6 @@ namespace RuntimeObserver
     /// </summary>
     public class Observer
     {
-
         /// <summary>
         /// The limit for 'memory units'.
         /// 
