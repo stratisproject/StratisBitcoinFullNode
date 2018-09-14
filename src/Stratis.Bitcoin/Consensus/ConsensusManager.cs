@@ -326,7 +326,7 @@ namespace Stratis.Bitcoin.Consensus
                     this.ProcessDownloadQueueLocked();
                 }
                 else
-                    this.logger.LogDebug("Node is shutting down. Not updating CHT and not processing download queue.");
+                    this.logger.LogDebug("Node is shutting down therefore underlying components won't be updated.");
 
             }
             else
