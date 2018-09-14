@@ -623,7 +623,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (block == null)
                     {
-                        // Sanity check.
+                        // Sanity check. Block being disconnected should always be in the block store before we rewind.
                         this.logger.LogTrace("(-)[BLOCK_NOT_FOUND]");
                         throw new Exception("Block that is about to be rewinded wasn't found in cache or database!");
                     }
