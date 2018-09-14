@@ -123,10 +123,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             HdAddress coldAddress2 = this.coldStakingManager.GetFirstUnusedColdStakingAddress(walletName2, true);
             HdAddress hotAddress2 = this.coldStakingManager.GetFirstUnusedColdStakingAddress(walletName2, false);
 
-            Assert.Equal(coldWalletAddress1, coldAddress1.Address.ToString());
-            Assert.Equal(hotWalletAddress1, hotAddress1.Address.ToString());
-            Assert.Equal(coldWalletAddress2, coldAddress2.Address.ToString());
-            Assert.Equal(hotWalletAddress2, hotAddress2.Address.ToString());
+            Assert.Equal(coldWalletAddress1, coldAddress1.Address);
+            Assert.Equal(hotWalletAddress1, hotAddress1.Address);
+            Assert.Equal(coldWalletAddress2, coldAddress2.Address);
+            Assert.Equal(hotWalletAddress2, hotAddress2.Address);
         }
 
         /// <summary>
@@ -221,8 +221,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
 
-            var wallet1 = this.walletManager.GetWalletByName(walletName1);
-
             IActionResult result = this.coldStakingController.SetupColdStaking(new SetupColdStakingRequest
             {
                 HotWalletAddress = hotWalletAddress1,
@@ -286,8 +284,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             this.Initialize();
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
-
-            Wallet.Wallet wallet1 = this.walletManager.GetWalletByName(walletName1);
 
             string coldWalletAccountName = typeof(ColdStakingManager).GetPrivateConstantValue<string>("ColdWalletAccountName");
             string hotWalletAccountName = typeof(ColdStakingManager).GetPrivateConstantValue<string>("HotWalletAccountName");
