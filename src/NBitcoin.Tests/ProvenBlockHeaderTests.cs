@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using DBreeze.Utils;
 using FluentAssertions;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -68,34 +67,7 @@ namespace NBitcoin.Tests
             Action createProvenHeader = () => this.factory.CreateProvenBlockHeader(null);
             createProvenHeader.Should().Throw<ArgumentNullException>();
         }
-
-        [Fact]
-        public void ShouldNotBeAbleToCreateProvenBlockHeaderFromABlockContainingInvalidCoinstake()
-        {
-            // Create invalid coinstake Tx.
-            Transaction previousTx = this.network.CreateTransaction();
-            previousTx.AddOutput(new TxOut());
-            Transaction coinstakeTx = this.network.CreateTransaction();
-            coinstakeTx.AddOutput(new TxOut(0, Script.Empty));
-            coinstakeTx.AddInput(previousTx, 0);
-            coinstakeTx.IsCoinStake.Should().BeFalse();
-            coinstakeTx.IsCoinBase.Should().BeFalse();
-
-            // Create coinbase Tx.
-            Transaction coinBaseTx = this.network.CreateTransaction();
-            coinBaseTx.AddOutput(100, new Script());
-            coinBaseTx.AddInput(new TxIn());
-            coinBaseTx.IsCoinBase.Should().BeTrue();
-            coinBaseTx.IsCoinStake.Should().BeFalse();
-
-            var block = (PosBlock)this.network.CreateBlock();
-            block.AddTransaction(coinBaseTx);
-            block.AddTransaction(coinstakeTx);
-
-            Action createProvenHeader = () => this.factory.CreateProvenBlockHeader(block);
-            createProvenHeader.Should().Throw<ArgumentException>();
-        }
-
+        
         [Fact]
         public void WhenCreatingNewProvenHeaderMerkleProofIsCorrectlyCreated()
         {
