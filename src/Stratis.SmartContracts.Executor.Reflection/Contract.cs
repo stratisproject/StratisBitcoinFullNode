@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using NBitcoin;
+using RuntimeObserver;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -181,7 +182,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 // This should not happen
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterTypesDontMatch);
             }
-            catch (TargetInvocationException targetException) when (!(targetException.InnerException is OutOfGasException))
+            catch (TargetInvocationException targetException) 
+            when (!(targetException.InnerException is OutOfGasException) 
+            && !(targetException.InnerException is MemoryConsumptionException))
             {
                 // Method threw an exception that was not an OutOfGasException
                 return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.MethodThrewException, targetException.InnerException);
@@ -190,7 +193,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
             {
                 // Method threw an exception that was an OutOfGasException.
                 return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.OutOfGas, targetException.InnerException);
-            }           
+            }
+            catch (TargetInvocationException targetException) when (targetException.InnerException is MemoryConsumptionException)
+            {
+                // Method threw an exception that was an OutOfGasException.
+                return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.OverMemoryLimit, targetException.InnerException);
+            }
         }
 
         /// <summary>

@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var callData = new MethodCall(methodName);
             IContractInvocationResult result = contract.Invoke(callData);
             Assert.False(result.IsSuccess);
-            Assert.Equal(ContractInvocationErrorType.MethodThrewException, result.InvocationErrorType);
+            Assert.Equal(ContractInvocationErrorType.OverMemoryLimit, result.InvocationErrorType);
         }
 
         private void AssertPasses(IContract contract, string methodName)
