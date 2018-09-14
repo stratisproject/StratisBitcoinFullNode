@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Stratis.Bitcoin.Utilities
+namespace NBitcoin
 {
     public abstract class Enumeration : IComparable
     {
