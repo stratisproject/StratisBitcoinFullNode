@@ -8,9 +8,6 @@ namespace Stratis.Bitcoin.Networks
 {
     public class BitcoinMain : Network
     {
-        /// <summary> Bitcoin Protocol Version. </summary>
-        public BitcoinProtocolVersion Version { get; private set; }
-
         public BitcoinMain()
         {
             this.Name = "Main";
