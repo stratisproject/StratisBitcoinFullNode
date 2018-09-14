@@ -125,9 +125,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, 0, null);
 
-            // TODO pass in initial internal transfers list
-            // TODO pass in initial contract log holder
-
             var newTransfers = new List<TransferInfo>
             {
                 new TransferInfo(),

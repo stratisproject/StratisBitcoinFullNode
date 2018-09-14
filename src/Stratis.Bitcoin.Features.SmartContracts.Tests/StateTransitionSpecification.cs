@@ -350,6 +350,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Contract_Transfer_To_Other_Contract_Success()
         {
+            // There is code at the destination address, which causes an internal call to the receive method
             var vmExecutionResult = VmExecutionResult.Success(true, "Test");
             var code = new byte[1];
             var typeName = "Test";
@@ -411,9 +412,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Contract_Transfer_To_Other_P2PKH_Success()
         {
-            // The difference between an internal and an external call:
-            // - Internal call performs a balance check before execution
-            // - Internal call appends a new internal transfer if successful
+            // There is no code at the destination address, which causes a regular P2PKH transaction to be created
             var emptyCode = new byte[0];
 
             var contractTransferMessage = new ContractTransferMessage(
