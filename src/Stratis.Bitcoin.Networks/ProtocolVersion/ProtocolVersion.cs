@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Networks
     /// <remarks>
     /// This class contains baseline versions.
     /// <para>
-    /// Furtue versions will go into either Bitcoin <see cref="BitcoinProtocolVersion"/> or Stratis <see cref="StratisProtocolVersion"/>.
+    /// Future versions will go into either Bitcoin <see cref="BitcoinProtocolVersion"/> or Stratis <see cref="StratisProtocolVersion"/>.
     /// </para>
     /// </remarks>
     public class ProtocolVersion : Enumeration
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Networks
         public static ProtocolVersion Protocol = new ProtocolVersion(70012, nameof(ProtocolVersion).ToLowerInvariant());
 
         /// <summary>
-        /// Alt coin protocol version.
+        /// Alternate coin protocol version.
         /// </summary>
         public static ProtocolVersion AltProtocal = new ProtocolVersion(70000, nameof(AltProtocal).ToLowerInvariant());
 
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Networks
         public static ProtocolVersion Bip31 = new ProtocolVersion(60000, nameof(Bip31).ToLowerInvariant());
 
         /// <summary>
-        /// "mempool" command, enhanced "getdata" behavior starts with this version.
+        /// "mempool" command, enhanced "getdata" behaviour starts with this version.
         /// </summary>
         public static ProtocolVersion MempollGetData = new ProtocolVersion(60002, nameof(MempollGetData).ToLowerInvariant());
 
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Networks
         public static ProtocolVersion Witness = new ProtocolVersion(70012, nameof(Witness).ToLowerInvariant());
 
         /// <summary>
-        /// shord-id-based block download starts with this version.
+        /// short-id-based block download starts with this version.
         /// </summary>
         public static ProtocolVersion ShortIdBlocks = new ProtocolVersion(70014, nameof(ShortIdBlocks).ToLowerInvariant());
 
