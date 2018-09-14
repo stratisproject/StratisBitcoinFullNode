@@ -5,16 +5,11 @@ namespace Stratis.Bitcoin.Networks
 {
     public class StratisProtocolVersion : ProtocolVersion
     {
-
         public static StratisProtocolVersion ProvenHeaders = new StratisProtocolVersion(70013, nameof(ProvenHeaders).ToLowerInvariant());
 
-        public StratisProtocolVersion()
-        {
-        }
+        public StratisProtocolVersion() { }
 
-        protected StratisProtocolVersion(int id, string name) : base(id, name)
-        {
-        }
+        protected StratisProtocolVersion(int id, string name) : base(id, name) { }
 
         public override IEnumerable<ProtocolVersion> List()
         {

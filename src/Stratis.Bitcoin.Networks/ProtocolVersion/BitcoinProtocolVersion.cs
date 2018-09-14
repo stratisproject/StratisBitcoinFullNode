@@ -2,12 +2,8 @@
 {
     public class BitcoinProtocolVersion : ProtocolVersion
     {
-        public BitcoinProtocolVersion()
-        {
-        }
+        public BitcoinProtocolVersion() { }
 
-        public BitcoinProtocolVersion(int id, string name) : base(id, name)
-        {
-        }
+        public BitcoinProtocolVersion(int id, string name) : base(id, name) { }
     }
 }
