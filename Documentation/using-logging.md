@@ -257,4 +257,4 @@ for logs of some components:
 
 This first example can be used as a template, from which we can derive more verbose config files.
 
-Verbose config file can be found in `Documentation\NLog.config`
+Verbose config file can be found in [here](Documentation\NLog.config).
