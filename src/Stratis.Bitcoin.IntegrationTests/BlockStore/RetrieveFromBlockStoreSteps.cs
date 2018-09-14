@@ -16,8 +16,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
     public partial class RetrieveFromBlockStoreSpecification : BddSpecification
     {
-        private readonly SharedSteps sharedSteps;
-
         private NodeBuilder builder;
         private CoreNode node;
         private List<uint256> blockIds;
@@ -43,10 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private Transaction wontRetrieveBlockId;
         private readonly Network network = KnownNetworks.RegTest;
 
-        public RetrieveFromBlockStoreSpecification(ITestOutputHelper output) : base(output)
-        {
-            this.sharedSteps = new SharedSteps();
-        }
+        public RetrieveFromBlockStoreSpecification(ITestOutputHelper output) : base(output) { }
 
         protected override void BeforeTest()
         {
@@ -72,7 +67,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.transactionNode.NotInIBD();
 
             this.transactionNode.CreateRPCClient().AddNode(this.node.Endpoint, true);
-            this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
+            TestHelper.WaitForNodeToSync(this.node, this.transactionNode);
 
             this.transactionNode.FullNode.WalletManager().CreateWallet(this.password, "receiver", this.passphrase);
             this.receiverAddress = this.transactionNode.FullNode.WalletManager()
@@ -115,12 +110,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void the_node_is_synced()
         {
-            this.sharedSteps.WaitForNodeToSync(this.node);
+            TestHelper.WaitForNodeToSync(this.node);
         }
 
         private void the_nodes_are_synced()
         {
-            this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
+            TestHelper.WaitForNodeToSync(this.node, this.transactionNode);
         }
 
         private void a_real_transaction()
@@ -143,13 +138,13 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             this.blockWithTransactionId = this.node.GenerateStratisWithMiner(1).Single();
             this.node.GenerateStratisWithMiner(1);
-            this.sharedSteps.WaitForNodeToSync(this.node, this.transactionNode);
+            TestHelper.WaitForNodeToSync(this.node, this.transactionNode);
         }
 
         private void trying_to_retrieve_the_blocks_from_the_blockstore()
         {
             this.retrievedBlocks = this.blockIds.Concat(new[] { this.wrongBlockId })
-                .Select(id => this.node.FullNode.BlockStoreManager().BlockRepository.GetAsync(id).GetAwaiter().GetResult()).Select(b => b).ToList();
+                .Select(id => this.node.FullNode.BlockStore().GetBlockAsync(id).GetAwaiter().GetResult()).Select(b => b).ToList();
 
             this.retrievedBlocks.Count(b => b != null).Should().Be(this.blockIds.Count);
             this.retrievedBlocks.Count(b => b == null).Should().Be(1);
@@ -160,15 +155,15 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void trying_to_retrieve_the_transactions_by_Id_from_the_blockstore()
         {
-            this.retrievedTransaction = this.node.FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.transaction.GetHash()).GetAwaiter().GetResult();
-            this.wontRetrieveTransaction = this.node.FullNode.BlockStoreManager().BlockRepository.GetTrxAsync(this.wrongTransactionId).GetAwaiter().GetResult();
+            this.retrievedTransaction = this.node.FullNode.BlockStore().GetTrxAsync(this.transaction.GetHash()).GetAwaiter().GetResult();
+            this.wontRetrieveTransaction = this.node.FullNode.BlockStore().GetTrxAsync(this.wrongTransactionId).GetAwaiter().GetResult();
         }
 
         private void trying_to_retrieve_the_block_containing_the_transactions_from_the_blockstore()
         {
-            this.retrievedBlockId = this.node.FullNode.BlockStoreManager().BlockRepository
+            this.retrievedBlockId = this.node.FullNode.BlockStore()
                 .GetTrxBlockIdAsync(this.transaction.GetHash()).GetAwaiter().GetResult();
-            this.wontRetrieveBlockId = this.node.FullNode.BlockStoreManager().BlockRepository
+            this.wontRetrieveBlockId = this.node.FullNode.BlockStore()
                 .GetTrxAsync(this.wrongTransactionId).GetAwaiter().GetResult();
         }
 

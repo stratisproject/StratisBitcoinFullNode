@@ -26,22 +26,17 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Instance of the <see cref="ChainHeadersBehavior"/> that belongs to the same peer as this behaviour.</summary>
-        private ChainHeadersBehavior chainHeadersBehavior;
-
-        /// <summary>Instance of the <see cref="IConnectionManagerBehavior"/> that belongs to the same peer as this behaviour.</summary>
-        private IConnectionManagerBehavior connectionManagerBehavior;
-
-        /// <summary><c>true</c> if <see cref="OnMessageReceivedAsync"/> was registered; <c>false</c> otherwise.</summary>
-        private bool eventHandlerRegistered;
-
         public PeerBanningBehavior(ILoggerFactory loggerFactory, IPeerBanning peerBanning, NodeSettings nodeSettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.peerBanning = peerBanning;
             this.nodeSettings = nodeSettings;
-            this.eventHandlerRegistered = false;
+        }
+
+        /// <inheritdoc />
+        protected override void DetachCore()
+        {
         }
 
         /// <inheritdoc />
@@ -67,43 +62,6 @@ namespace Stratis.Bitcoin.Connection
                     return;
                 }
             }
-
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-            this.chainHeadersBehavior = this.AttachedPeer.Behaviors.Find<ChainHeadersBehavior>();
-            this.connectionManagerBehavior = this.AttachedPeer.Behaviors.Find<IConnectionManagerBehavior>();
-            this.eventHandlerRegistered = true;
-
-            this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Receive message payloads from the peer.
-        /// </summary>
-        /// <param name="peer">The peers that is sending the message.</param>
-        /// <param name="message">The message payload.</param>
-        private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message) // TODO this should be removed after the big refactoring activation
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
-            if (this.chainHeadersBehavior.InvalidHeaderReceived && !this.connectionManagerBehavior.Whitelisted)
-            {
-                ConnectionManagerSettings connectionSettings = this.connectionManagerBehavior.ConnectionManager.ConnectionSettings;
-                this.peerBanning.BanAndDisconnectPeer(peer.RemoteSocketEndpoint, connectionSettings.BanTimeSeconds, "Invalid block header received");
-                this.logger.LogTrace("Invalid block header received from peer '{0}'.", peer.RemoteSocketEndpoint);
-                peer.Disconnect("Invalid block header received");
-            }
-
-            this.logger.LogTrace("(-)");
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc />
-        protected override void DetachCore()
-        {
-            this.logger.LogTrace("()");
-
-            if (this.eventHandlerRegistered)
-                this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
 
             this.logger.LogTrace("(-)");
         }

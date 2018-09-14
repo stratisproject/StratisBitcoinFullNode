@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Primitives
     public sealed class ChainedHeaderBlock
     {
         /// <summary>The block.</summary>
-        public Block Block { get; internal set; }
+        public Block Block { get; private set; }
 
         /// <summary>Chained header of the <see cref="Block"/>.</summary>
         public ChainedHeader ChainedHeader { get; private set; }

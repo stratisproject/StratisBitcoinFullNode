@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -10,7 +11,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <summary>
     /// Proof of stake override for the coinview rules - BIP68, MaxSigOps and BlockReward checks.
     /// </summary>
-    [FullValidationRule]
     public sealed class PosCoinviewRule : CoinViewRule
     {
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             base.Initialize();
 
             this.consensus = this.Parent.Network.Consensus;
-            var consensusRules = (PosConsensusRules)this.Parent;
+            var consensusRules = (PosConsensusRuleEngine)this.Parent;
 
             this.stakeValidator = consensusRules.StakeValidator;
             this.stakeChain = consensusRules.StakeChain;
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             await base.RunAsync(context).ConfigureAwait(false);
             var posRuleContext = context as PosRuleContext;
-            await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeader, posRuleContext.BlockStake).ConfigureAwait(false);
+            await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeaderToValidate, posRuleContext.BlockStake).ConfigureAwait(false);
 
             this.Logger.LogTrace("(-)");
         }
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
-            this.Logger.LogTrace("()");
+            this.Logger.LogTrace("({0}:'{1}')", nameof(transaction), transaction.GetHash());
 
             var posRuleContext = context as PosRuleContext;
 
@@ -138,9 +138,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
-            Block block = context.ValidationContext.Block;
+            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
+            Block block = context.ValidationContext.BlockToValidate;
+
             var posRuleContext = context as PosRuleContext;
+            if (posRuleContext.BlockStake == null)
+                posRuleContext.BlockStake = BlockStake.Load(context.ValidationContext.BlockToValidate);
+
             BlockStake blockStake = posRuleContext.BlockStake;
 
             // Verify hash target and signature of coinstake tx.

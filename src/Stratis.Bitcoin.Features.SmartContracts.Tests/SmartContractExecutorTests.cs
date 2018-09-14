@@ -11,7 +11,6 @@ using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
-using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
@@ -33,15 +32,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly ISmartContractResultTransferProcessor transferProcessor;
         private readonly SmartContractValidator validator;
         private IInternalTransactionExecutorFactory internalTxExecutorFactory;
-        private ReflectionVirtualMachine vm;
-        private ICallDataSerializer serializer;
+        private ISmartContractVirtualMachine vm;
+        private readonly ICallDataSerializer serializer;
         private readonly StateFactory stateFactory;
-        private readonly AddressGenerator addressGenerator;
-        private readonly ContractAssemblyLoader assemblyLoader;
+        private readonly IAddressGenerator addressGenerator;
+        private readonly ILoader assemblyLoader;
         private readonly IContractModuleDefinitionReader moduleDefinitionReader;
         private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
-        private readonly StateProcessor stateProcessor;
-        private readonly SmartContractStateFactory smartContractStateFactory;
+        private readonly IStateProcessor stateProcessor;
+        private readonly ISmartContractStateFactory smartContractStateFactory;
 
         public SmartContractExecutorTests()
         {
@@ -164,7 +163,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
-            Assert.NotNull(result.Exception);
+            Assert.NotNull(result.ErrorMessage);
             // Base cost + constructor cost (21 because that is number of gas to invoke Assert(false);
             Assert.Equal(GasPriceList.BaseCost + 21, result.GasConsumed);
         }
@@ -198,7 +197,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.contractPrimitiveSerializer);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
-            Assert.NotNull(result.Exception);
+            Assert.NotNull(result.ErrorMessage);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
@@ -232,7 +231,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
-            Assert.NotNull(result.Exception);
+            Assert.NotNull(result.ErrorMessage);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
@@ -18,8 +19,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
     [Route("api/[controller]")]
     public class BlockStoreController : Controller
     {
-        /// <summary>An interface for getting blocks asynchronously from the blockstore cache.</summary>
-        private readonly IBlockStoreCache blockStoreCache;
+        /// <see cref="IBlockStore"/>
+        private readonly IBlockStore blockStore;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -34,16 +35,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
         public BlockStoreController(Network network,
             ILoggerFactory loggerFactory,
-            IBlockStoreCache blockStoreCache,
+            IBlockStore blockStore,
             IChainState chainState)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(blockStoreCache, nameof(blockStoreCache));
             Guard.NotNull(chainState, nameof(chainState));
 
             this.network = network;
-            this.blockStoreCache = blockStoreCache;
+            this.blockStore = blockStore;
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
             try
             {
-                Block block = await this.blockStoreCache.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);
+                Block block = await this.blockStore.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);
 
                 if (block == null)
                 {

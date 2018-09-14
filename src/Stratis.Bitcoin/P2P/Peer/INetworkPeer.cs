@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         bool Inbound { get; }
 
         /// <summary>List of node's modules attached to the peer to receive notifications about various events related to the peer.</summary>
-        NetworkPeerBehaviorsCollection Behaviors { get; }
+        List<INetworkPeerBehavior> Behaviors { get; }
 
         /// <summary>IP address and port on the side of the peer.</summary>
         IPEndPoint PeerEndPoint { get; }

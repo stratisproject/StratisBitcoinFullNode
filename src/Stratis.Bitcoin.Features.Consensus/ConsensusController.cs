@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
@@ -19,20 +19,18 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Manager of the longest fully validated chain of blocks.</summary>
-        public IConsensusLoop ConsensusLoop { get; private set; }
-
-        public ConsensusController(ILoggerFactory loggerFactory, IChainState chainState,
-            IConsensusLoop consensusLoop, ConcurrentChain chain)
-            : base(chainState: chainState, chain: chain)
+        public ConsensusController(
+            ILoggerFactory loggerFactory,
+            IChainState chainState,
+            IConsensusManager consensusManager,
+            ConcurrentChain chain)
+            : base(chainState: chainState, consensusManager: consensusManager, chain: chain)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(consensusLoop, nameof(consensusLoop));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(chainState, nameof(chainState));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.ConsensusLoop = consensusLoop;
         }
 
         /// <summary>
@@ -79,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             this.logger.LogDebug("GetBlockHash {0}", height);
 
-            uint256 bestBlockHash = this.ConsensusLoop.Tip?.HashBlock;
+            uint256 bestBlockHash = this.ConsensusManager.Tip?.HashBlock;
             ChainedHeader bestBlock = bestBlockHash == null ? null : this.Chain.GetBlock(bestBlockHash);
             if (bestBlock == null)
                 return null;

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -38,7 +39,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var consensusSettings = new Mock<ConsensusSettings>();
             var checkpoints = new Mock<ICheckpoints>();
             var coinView = new Mock<ICoinView>();
-            var lookAheadBlockPuller = new Mock<ILookaheadBlockPuller>();
+            var chainState = new Mock<ChainState>();
+            var invalidBlockHashStore = new Mock<IInvalidBlockHashStore>();
 
             this.rulesEngine = new TestContractRulesEngine(this.network,
                 loggerFactory.Object,
@@ -48,7 +50,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 consensusSettings.Object,
                 checkpoints.Object,
                 coinView.Object,
-                lookAheadBlockPuller.Object
+                chainState.Object,
+                invalidBlockHashStore.Object
             );
         }
 
@@ -89,10 +92,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
     }
 
-    public class TestContractRulesEngine : PowConsensusRules, ISmartContractCoinviewRule
+    public class TestContractRulesEngine : PowConsensusRuleEngine, ISmartContractCoinviewRule
     {
-        public TestContractRulesEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, ILookaheadBlockPuller puller) 
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, puller)
+        public TestContractRulesEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState,
+            IInvalidBlockHashStore invalidBlockHashStore) 
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore)
         {
         }
 

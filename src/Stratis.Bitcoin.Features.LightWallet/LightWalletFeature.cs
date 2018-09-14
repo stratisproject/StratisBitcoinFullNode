@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// Feature for a full-block SPV wallet.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
-    public class LightWalletFeature : FullNodeFeature, INodeStats, IFeatureStats
+    public class LightWalletFeature : FullNodeFeature
     {
         /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
@@ -92,7 +92,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
             BroadcasterBehavior broadcasterBehavior,
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
-            WalletSettings walletSettings)
+            WalletSettings walletSettings,
+            INodeStats nodeStats)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
@@ -107,6 +108,9 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.loggerFactory = loggerFactory;
             this.nodeSettings = nodeSettings;
             this.walletSettings = walletSettings;
+
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
 
         /// <summary>
@@ -168,8 +172,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.walletManager.Stop();
         }
 
-        /// <inheritdoc />
-        public void AddNodeStats(StringBuilder benchLog)
+        public void AddInlineStats(StringBuilder benchLog)
         {
             var manager = this.walletManager as WalletManager;
 
@@ -185,8 +188,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             }
         }
 
-        /// <inheritdoc />
-        public void AddFeatureStats(StringBuilder benchLog)
+        public void AddComponentStats(StringBuilder benchLog)
         {
             IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
 

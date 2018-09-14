@@ -9,8 +9,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     /// <summary>
     /// Used to check that people don't try and send funds to contracts via P2PKH.
     /// </summary>
-    [PartialValidationRule]
-    public class P2PKHNotContractRule : ConsensusRule, ISmartContractMempoolRule
+    public class P2PKHNotContractRule : PartialValidationConsensusRule, ISmartContractMempoolRule
     {
         protected ISmartContractCoinviewRule ContractCoinviewRule { get; private set; }
 
@@ -23,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             foreach (Transaction transaction in block.Transactions)
             {

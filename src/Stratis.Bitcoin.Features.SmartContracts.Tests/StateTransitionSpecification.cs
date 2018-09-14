@@ -1,6 +1,7 @@
 ﻿using Moq;
 using NBitcoin;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -73,7 +74,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void ExternalCreate_Vm_Error()
         {
             var newContractAddress = uint160.One;
-            var vmExecutionResult = VmExecutionResult.Error(new SmartContractAssertException("Error"));
+            var vmExecutionResult = VmExecutionResult.Error(new ContractErrorMessage("Error"));
 
             var externalCreateMessage = new ExternalCreateMessage(
                 uint160.Zero,
@@ -103,7 +104,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.IsSuccess);
             Assert.True(result.IsFailure);
             Assert.NotNull(result.Error);
-            Assert.Equal(vmExecutionResult.ExecutionException, result.Error.VmException);
+            Assert.Equal(vmExecutionResult.ErrorMessage, result.Error.VmError);
             Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
@@ -166,7 +167,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void ExternalCall_Vm_Error()
         {
             var gasLimit = (Gas)(GasPriceList.BaseCost + 100000);
-            var vmExecutionResult = VmExecutionResult.Error(new SmartContractAssertException("Error"));
+            var vmExecutionResult = VmExecutionResult.Error(new ContractErrorMessage("Error"));
 
             // Code must have a length to pass precondition checks.
             var code = new byte[1];
@@ -211,7 +212,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.True(result.IsFailure);
             Assert.NotNull(result.Error);
-            Assert.Equal(result.Error.VmException, vmExecutionResult.ExecutionException);
+            Assert.Equal(result.Error.VmError, vmExecutionResult.ErrorMessage);
             Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
