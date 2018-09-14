@@ -31,7 +31,7 @@ namespace Stratis.StratisD
                     .UseMempool()
                     .UseWallet()
                     .AddPowPosMining()
-                    .UseApi()        
+                    .UseApi()
                     .UseApps()
                     .AddRPC()
                     .Build();
@@ -41,7 +41,7 @@ namespace Stratis.StratisD
             }
             catch (Exception ex)
             {
-                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
+                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.ToString());
             }
         }
     }

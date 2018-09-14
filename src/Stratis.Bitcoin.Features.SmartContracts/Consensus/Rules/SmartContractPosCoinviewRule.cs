@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -14,7 +15,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     /// <summary>
     /// Proof of stake override for the coinview rules - BIP68, MaxSigOps and BlockReward checks.
     /// </summary>
-    [FullValidationRule]
     public sealed class SmartContractPosCoinviewRule : SmartContractCoinviewRule
     {
         private IConsensus consensus;
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
             await base.RunAsync(context);
 
-            await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeader, (context as PosRuleContext).BlockStake).ConfigureAwait(false);
+            await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeaderToValidate, (context as PosRuleContext).BlockStake).ConfigureAwait(false);
 
             this.Logger.LogTrace("(-)");
         }
@@ -160,9 +160,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         {
             this.Logger.LogTrace("()");
 
-            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeader;
-            NBitcoin.Block block = context.ValidationContext.Block;
+            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
+            NBitcoin.Block block = context.ValidationContext.BlockToValidate;
+
             var posRuleContext = context as PosRuleContext;
+            if (posRuleContext.BlockStake == null)
+                posRuleContext.BlockStake = BlockStake.Load(context.ValidationContext.BlockToValidate);
+
             BlockStake blockStake = posRuleContext.BlockStake;
 
             // Verify hash target and signature of coinstake tx.

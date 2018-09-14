@@ -2,15 +2,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    /// <summary>
-    /// Validate a PoW transaction.
-    /// </summary>
-    [PartialValidationRule(CanSkipValidation = true)]
-    public class CheckPowTransactionRule : ConsensusRule
+    /// <summary>Validate a PoW transaction.</summary>
+    public class CheckPowTransactionRule : PartialValidationConsensusRule
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadTransactionNoInput">Thrown if transaction has no inputs.</exception>
@@ -24,8 +22,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadTransactionNullPrevout">Thrown if transaction contains a null prevout.</exception>
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.ValidationContext.Block;
-            var options = context.Consensus.Options;
+            if (context.SkipValidation)
+                return Task.CompletedTask;
+
+            Block block = context.ValidationContext.BlockToValidate;
+            var options = this.Parent.Network.Consensus.Options;
 
             // Check transactions
             foreach (Transaction tx in block.Transactions)

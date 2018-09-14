@@ -11,11 +11,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Mono.Cecil;
 using NBitcoin;
-using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private const int MinConfirmationsAllChecks = 1;
 
         private readonly IBroadcasterManager broadcasterManager;
-        private readonly IBlockStoreCache blockStoreCache;
+        private readonly IBlockStore blockStore;
         private readonly CoinType coinType;
         private readonly ConcurrentChain chain;
         private readonly ILogger logger;
@@ -51,8 +52,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IReceiptRepository receiptRepository;
 
         public SmartContractsController(IBroadcasterManager broadcasterManager,
-            IBlockStoreCache blockStoreCache,
+            IBlockStore blockStore,
             ConcurrentChain chain,
+            IConsensusManager consensus,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
@@ -69,7 +71,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
-            this.blockStoreCache = blockStoreCache;
+            this.blockStore = blockStore;
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
             this.addressGenerator = addressGenerator;
@@ -192,7 +194,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             List<NBitcoin.Block> blocks = new List<NBitcoin.Block>();
             foreach(ChainedHeader chainedHeader in matches)
             {
-                blocks.Add(await this.blockStoreCache.GetBlockAsync(chainedHeader.HashBlock).ConfigureAwait(false));
+                blocks.Add(await this.blockStore.GetBlockAsync(chainedHeader.HashBlock).ConfigureAwait(false));
             }
 
             // For each block, get all receipts, and if they match, add to list to return.

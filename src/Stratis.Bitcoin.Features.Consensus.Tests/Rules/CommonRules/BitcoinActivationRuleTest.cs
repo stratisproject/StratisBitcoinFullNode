@@ -18,282 +18,266 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_BadVersionLowerThan2_HeightHigherThanBip34_ThrowsBadVersionConsensusErrorAsync()
+        public void Run_BadVersionLowerThan2_HeightHigherThanBip34_ThrowsBadVersionConsensusError()
         {
             // set height above bip34
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34]);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_BadVersionLowerThan2_HeightSameAsBip34_ThrowsBadVersionConsensusErrorAsync()
+        public void Run_BadVersionLowerThan2_HeightSameAsBip34_ThrowsBadVersionConsensusError()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
-            var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            BlockHeader header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34]);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_BadVersionLowerThan3_HeightHigherThanBip66_ThrowsBadVersionConsensusErrorAsync()
+        public void Run_BadVersionLowerThan3_HeightHigherThanBip66_ThrowsBadVersionConsensusError()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 2;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_BadVersionLowerThan3_HeightSameAsBip66_ThrowsBadVersionConsensusErrorAsync()
+        public void Run_BadVersionLowerThan3_HeightSameAsBip66_ThrowsBadVersionConsensusError()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 2;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_BadVersionLowerThan2_HeightHigherThanBip66_ThrowsBadVersionConsensusErrorAsync()
+        public void Run_BadVersionLowerThan2_HeightHigherThanBip66_ThrowsBadVersionConsensusError()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_BadVersionLowerThan2_HeightSameAsBip66_ThrowsBadVersionConsensusErrorAsync()
+        public void Run_BadVersionLowerThan2_HeightSameAsBip66_ThrowsBadVersionConsensusError()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_BadVersionLowerThan4_HeightHigherThanBip65_ThrowsBadVersionConsensusErrorAsync()
+        public void Run_BadVersionLowerThan4_HeightHigherThanBip65_ThrowsBadVersionConsensusError()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 3;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65]);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_BadVersionLowerThan4_HeightSameAsBip65_ThrowsBadVersionConsensusErrorAsync()
+        public void Run_BadVersionLowerThan4_HeightSameAsBip65_ThrowsBadVersionConsensusError()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 3;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65]);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_BadVersionLowerThan3_HeightHigherThanBip65_ThrowsBadVersionConsensusErrorAsync()
+        public void Run_BadVersionLowerThan3_HeightHigherThanBip65_ThrowsBadVersionConsensusError()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 2;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_BadVersionLowerThan3_HeightSameAsBip65_ThrowsBadVersionConsensusErrorAsync()
+        public void Run_BadVersionLowerThan3_HeightSameAsBip65_ThrowsBadVersionConsensusError()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 2;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
-
-            Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
-        }
-
-        [Fact]
-        public async Task RunAsync_BadVersionLowerThan2_HeightHigherThanBip65_ThrowsBadVersionConsensusErrorAsync()
-        {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66];
-            this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
-            var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
-            header.Bits = new Target(0x1f111115);
-            header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
-            header.Version = 1;
-
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
-
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_BadVersionLowerThan2_HeightSameAsBip65_ThrowsBadVersionConsensusErrorAsync()
+        public void Run_BadVersionLowerThan2_HeightHigherThanBip65_ThrowsBadVersionConsensusError()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_GoodVersionHeightBelowBip34_DoesNotThrowExceptionAsync()
+        public void Run_BadVersionLowerThan2_HeightSameAsBip65_ThrowsBadVersionConsensusError()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 2;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 1;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1);
 
-            await this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext);
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+
+            Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_GoodVersionHeightBelowBip66_DoesNotThrowExceptionAsync()
+        public void Run_GoodVersionHeightBelowBip34_DoesNotThrowException()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 2;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
+            header.Bits = new Target(0x1f111115);
+            header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
+            header.Version = 1;
+
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 2);
+
+            this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext);
+        }
+
+        [Fact]
+        public void Run_GoodVersionHeightBelowBip66_DoesNotThrowException()
+        {
+            this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
+            var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 2;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 2);
 
-            await this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_GoodVersionHeightBelowBip65_DoesNotThrowExceptionAsync()
+        public void Run_GoodVersionHeightBelowBip65_DoesNotThrowException()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] - 2;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 3;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] - 2);
 
-            await this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext);
         }
 
         [Fact]
-        public async Task RunAsync_GoodVersionAboveBIPS_DoesNotThrowExceptionAsync()
+        public void Run_GoodVersionAboveBIPS_DoesNotThrowException()
         {
-            this.ruleContext.ConsensusTipHeight = this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] + 30;
             this.ruleContext.Time = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 0));
             var header = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.Block = this.network.CreateBlock();
+            this.ruleContext.ValidationContext.BlockToValidate = this.network.CreateBlock();
             header.Bits = new Target(0x1f111115);
             header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 1, 1));
             header.Version = 4;
 
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(header, header.GetHash(), 1);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] + 30);
 
-            await this.consensusRules.RegisterRule<BitcoinActivationRule>().RunAsync(this.ruleContext);
+            this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext);
         }
     }
 }

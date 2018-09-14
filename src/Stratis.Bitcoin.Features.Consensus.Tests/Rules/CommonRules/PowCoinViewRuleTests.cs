@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
@@ -73,32 +74,33 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext = new PowRuleContext { };
             this.ruleContext.ValidationContext = new ValidationContext();
             BlockHeader blockHeader = this.network.Consensus.ConsensusFactory.CreateBlockHeader();
-            this.ruleContext.ValidationContext.ChainedHeader = new ChainedHeader(blockHeader, new uint256("bcd7d5de8d3bcc7b15e7c8e5fe77c0227cdfa6c682ca13dcf4910616f10fdd06"), HeightOfBlockchain);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(blockHeader, new uint256("bcd7d5de8d3bcc7b15e7c8e5fe77c0227cdfa6c682ca13dcf4910616f10fdd06"), HeightOfBlockchain);
 
             Block block = this.network.CreateBlock();
             block.Transactions = new List<Transaction>();
-            this.ruleContext.ValidationContext.Block = block;
+            this.ruleContext.ValidationContext.BlockToValidate = block;
         }
 
-        protected void WhenExecutingTheRule(ConsensusRule rule, RuleContext ruleContext)
+        protected void WhenExecutingTheRule(ConsensusRuleBase rule, RuleContext ruleContext)
         {
             try
             {
                 this.logger = new Mock<ILogger>();
                 rule.Logger = this.logger.Object;
-                rule.Parent = new PowConsensusRules(
-                    this.network,
+                rule.Parent = new PowConsensusRuleEngine(
+                    KnownNetworks.RegTest,
                     new Mock<ILoggerFactory>().Object,
                     new Mock<IDateTimeProvider>().Object,
                     new ConcurrentChain(this.network),
-                    new NodeDeployments(this.network, new ConcurrentChain(this.network)),
-                    new ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, null);
+                    new NodeDeployments(KnownNetworks.RegTest, new ConcurrentChain(this.network)),
+                    new ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, new Mock<IChainState>().Object,
+                    new InvalidBlockHashStore(new DateTimeProvider()));
 
                 rule.Initialize();
 
                 rule.Parent.PerformanceCounter.ProcessedTransactions.Should().Be(0);
 
-                rule.RunAsync(ruleContext).GetAwaiter().GetResult();
+                (rule as AsyncConsensusRule).RunAsync(ruleContext).GetAwaiter().GetResult();
             }
             catch (Exception e)
             {
@@ -128,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             };
 
             this.ruleContext.Flags = new DeploymentFlags() { LockTimeFlags = Transaction.LockTimeFlags.VerifySequence };
-            this.ruleContext.ValidationContext.Block.Transactions.Add(transaction);
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(transaction);
         }
 
         private void GivenACoinbaseTransactionFromAPreviousBlock()
@@ -141,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
         private void AndATransactionWithNoUnspentOutputsAsInput()
         {
-            this.ruleContext.ValidationContext.Block.Transactions.Add(new Transaction { Inputs = { new TxIn() } });
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(new Transaction { Inputs = { new TxIn() } });
         }
     }
 }

@@ -5,15 +5,16 @@ using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
     /// <summary>
-    /// Mempool observer on block notifications.
+    /// Mempool observer on chained header block notifications.
     /// </summary>
-    public class MempoolSignaled : SignalObserver<Block>
+    public class MempoolSignaled : SignalObserver<ChainedHeaderBlock>
     {
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -80,11 +81,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        protected override void OnNextCore(Block value)
+        protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
         {
-            ChainedHeader blockHeader = this.chain.GetBlock(value.GetHash());
+            ChainedHeader blockHeader = chainedHeaderBlock.ChainedHeader;
 
-            Task task = this.RemoveForBlock(value, blockHeader?.Height ?? -1);
+            Task task = this.RemoveForBlock(chainedHeaderBlock.Block, blockHeader?.Height ?? -1);
 
             // wait for the mempool code to complete
             // until the signaler becomes async

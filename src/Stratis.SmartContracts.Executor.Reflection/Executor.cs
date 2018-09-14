@@ -86,29 +86,32 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 result = state.Apply(message);
             }
 
-            bool revert = !result.Success;
+            bool revert = !result.IsSuccess;
 
             Transaction internalTransaction = this.transferProcessor.Process(
                 this.stateRoot,
-                result.ContractAddress,
+                result.Success?.ContractAddress,
                 transactionContext,
                 state.InternalTransfers,
                 revert);
+
+            bool outOfGas = result.IsFailure && result.Error.Kind == StateTransitionErrorKind.OutOfGas;
 
             (Money fee, TxOut refundTxOut) = this.refundProcessor.Process(
                 callData,
                 transactionContext.MempoolFee,
                 transactionContext.Sender,
                 result.GasConsumed,
-                result.VmExecutionResult.ExecutionException);
+                outOfGas);
 
             var executionResult = new SmartContractExecutionResult
             {
                 To = !callData.IsCreateContract ? callData.ContractAddress : null,
-                NewContractAddress = !revert && creation ? result.ContractAddress : null,
-                Exception = result.VmExecutionResult.ExecutionException,
+                NewContractAddress = !revert && creation ? result.Success?.ContractAddress : null,
+                ErrorMessage = result.Error?.VmError,
+                Revert = revert,
                 GasConsumed = result.GasConsumed,
-                Return = result.VmExecutionResult.Result,
+                Return = result.Success?.ExecutionResult,
                 InternalTransaction = internalTransaction,
                 Fee = fee,
                 Refund = refundTxOut,

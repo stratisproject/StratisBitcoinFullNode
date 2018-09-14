@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.stateFactory);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
-            Assert.IsType<SmartContractDoesNotExistException>(result.Exception);
+            Assert.True(result.Revert);
         }
 
         [Fact]
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
-            Assert.NotNull(result.Exception);
+            Assert.NotNull(result.ErrorMessage);
             // Base cost + constructor cost (21 because that is number of gas to invoke Assert(false);
             Assert.Equal(GasPriceList.BaseCost + 21, result.GasConsumed);
         }
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.stateFactory);
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
-            Assert.NotNull(result.Exception);
+            Assert.NotNull(result.ErrorMessage);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ISmartContractExecutionResult result = executor.Execute(transactionContext);
 
-            Assert.NotNull(result.Exception);
+            Assert.NotNull(result.ErrorMessage);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 

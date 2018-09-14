@@ -14,9 +14,9 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public class BlockStoreSignaled : SignalObserver<Block>
+    public class BlockStoreSignaled : SignalObserver<ChainedHeaderBlock>
     {
-        private readonly BlockStoreQueue blockStoreQueue;
+        private readonly IBlockStoreQueue blockStoreQueue;
 
         private readonly ConcurrentChain chain;
 
@@ -32,8 +32,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly StoreSettings storeSettings;
 
-        private readonly IBlockStoreCache blockStoreCache;
-
         /// <summary>Queue of chained blocks that will be announced to the peers.</summary>
         private readonly AsyncQueue<ChainedHeader> blocksToAnnounce;
 
@@ -47,14 +45,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly Task dequeueLoopTask;
 
         public BlockStoreSignaled(
-            BlockStoreQueue blockStoreQueue,
+            IBlockStoreQueue blockStoreQueue,
             ConcurrentChain chain,
             StoreSettings storeSettings,
             IChainState chainState,
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
-            IBlockStoreCache blockStoreCache,
             IInitialBlockDownloadState initialBlockDownloadState)
         {
             this.blockStoreQueue = blockStoreQueue;
@@ -64,14 +61,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
-            this.blockStoreCache = blockStoreCache;
             this.initialBlockDownloadState = initialBlockDownloadState;
 
             this.blocksToAnnounce = new AsyncQueue<ChainedHeader>();
             this.dequeueLoopTask = this.DequeueContinuouslyAsync();
         }
 
-        protected override void OnNextCore(Block block)
+        protected override void OnNextCore(ChainedHeaderBlock blockPair)
         {
             this.logger.LogTrace("()");
             if (this.storeSettings.Prune)
@@ -80,7 +76,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            ChainedHeader chainedHeader = this.chain.GetBlock(block.GetHash());
+            ChainedHeader chainedHeader = blockPair.ChainedHeader;
             if (chainedHeader == null)
             {
                 this.logger.LogTrace("(-)[REORG]");
@@ -88,8 +84,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             this.logger.LogTrace("Block hash is '{0}'.", chainedHeader.HashBlock);
-
-            var blockPair = new ChainedHeaderBlock(block, chainedHeader);
 
             // Ensure the block is written to disk before relaying.
             this.blockStoreQueue.AddToPending(blockPair);
@@ -99,9 +93,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.logger.LogTrace("(-)[IBD]");
                 return;
             }
-
-            // Add to cache if not in IBD.
-            this.blockStoreCache.AddToCache(block);
 
             this.logger.LogTrace("Block header '{0}' added to the announce queue.", chainedHeader);
             this.blocksToAnnounce.Enqueue(chainedHeader);
@@ -131,7 +122,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     Task task = timerTask == null ? dequeueTask : await Task.WhenAny(dequeueTask, timerTask).ConfigureAwait(false);
                     await task.ConfigureAwait(false);
 
-                    // Send batch if timer ran out or we've received a tip.  
+                    // Send batch if timer ran out or we've received a tip.
                     bool sendBatch = false;
                     if (dequeueTask.Status == TaskStatus.RanToCompletion)
                     {
@@ -147,7 +138,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         this.nodeLifetime.ApplicationStopping.ThrowIfCancellationRequested();
 
-                        await this.SendBatchAsync(batch).ConfigureAwait(false);                        
+                        await this.SendBatchAsync(batch).ConfigureAwait(false);
                         batch.Clear();
 
                         timerTask = null;
@@ -207,7 +198,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.logger.LogTrace("Block header '{0}' not found in the consensus chain and will be skipped.", reorgedBlock);
 
                 // List removal is of O(N) complexity but in this case removals will happen just a few times a day (on orphaned blocks)
-                // and always only the latest items in this list will be subjected to removal so in this case it's better than creating 
+                // and always only the latest items in this list will be subjected to removal so in this case it's better than creating
                 // a new list of blocks on every batch send that were not reorged.
                 batch.Remove(reorgedBlock);
             }

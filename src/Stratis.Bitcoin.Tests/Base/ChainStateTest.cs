@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Tests.Base
             fullNode.Setup(f => f.NodeService<IDateTimeProvider>(true))
                 .Returns(DateTimeProvider.Default);
 
-            var chainState = new ChainState(new InvalidBlockHashStore(DateTimeProvider.Default));
+            var store = new InvalidBlockHashStore(DateTimeProvider.Default);
 
             // Create some hashes that will be banned forever.
             var hashesBannedPermanently = new uint256[]
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Tests.Base
             };
 
             foreach (uint256 hash in hashesBannedPermanently)
-                chainState.MarkBlockInvalid(hash);
+                store.MarkInvalid(hash);
 
             // Create some hashes that will be banned now, but not in 5 seconds.
             var hashesBannedTemporarily1 = new uint256[]
@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Tests.Base
             };
 
             foreach (uint256 hash in hashesBannedTemporarily1)
-                chainState.MarkBlockInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(2000, 5000)));
+                store.MarkInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(2000, 5000)));
 
             // Create some hashes that will be banned now and also after 5 seconds.
             var hashesBannedTemporarily2 = new uint256[]
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.Base
             };
 
             foreach (uint256 hash in hashesBannedTemporarily2)
-                chainState.MarkBlockInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(20000, 50000)));
+                store.MarkInvalid(hash, DateTime.UtcNow.AddMilliseconds(rng.Next(20000, 50000)));
 
             // Check that all hashes we have generated are banned now.
             var allHashes = new List<uint256>(hashesBannedPermanently);
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Tests.Base
             allHashes.AddRange(hashesBannedTemporarily2);
 
             foreach (uint256 hash in allHashes)
-                Assert.True(chainState.IsMarkedInvalid(hash));
+                Assert.True(store.IsInvalid(hash));
 
             // Wait 5 seconds and then check if hashes from first temporary group are no longer banned and all others still are.
             Thread.Sleep(5000);
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Tests.Base
             {
                 uint num = hash.GetLow32();
                 bool isSecondGroup = (0x10 <= num) && (num < 0x20);
-                Assert.Equal(!isSecondGroup, chainState.IsMarkedInvalid(hash));
+                Assert.Equal(!isSecondGroup, store.IsInvalid(hash));
             }
         }
     }

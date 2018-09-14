@@ -4,30 +4,57 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
-    [FullValidationRule]
     public class SaveCoinviewRule : UtxoStoreConsensusRule
     {
+        /// <summary>
+        /// Specifies time threshold which is used to determine if flush is required.
+        /// When consensus tip timestamp is greater than current time minus the threshold the flush is required.
+        /// </summary>
+        /// <remarks>Used only on blockchains without max reorg property.</remarks>
+        private const int FlushRequiredThresholdSeconds = 2 * 24 * 60 * 60;
+
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
-            uint256 oldBlockHash = context.ConsensusTip.HashBlock;
-            uint256 nextBlockHash = context.ValidationContext.ChainedHeader.HashBlock;
+            uint256 oldBlockHash = context.ValidationContext.ChainedHeaderToValidate.Previous.HashBlock;
+            uint256 nextBlockHash = context.ValidationContext.ChainedHeaderToValidate.HashBlock;
 
             // Persist the changes to the coinview. This will likely only be stored in memory,
             // unless the coinview treashold is reached.
             this.Logger.LogTrace("Saving coinview changes.");
             var utxoRuleContext = context as UtxoRuleContext;
             await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash).ConfigureAwait(false);
+
+            bool forceFlush = this.FlushRequired(context.ValidationContext.ChainedHeaderToValidate);
+            if (this.PowParent.UtxoSet is CachedCoinView cachedCoinView)
+                await cachedCoinView.FlushAsync(forceFlush).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Calculates if coinview flush is required.
+        /// </summary>
+        /// <remarks>
+        /// For blockchains with max reorg property flush is required when consensus tip is less than max reorg blocks behind the chain tip.
+        /// If there is no max reorg property - flush is required when consensus tip timestamp is less than <see cref="FlushRequiredThresholdSeconds"/> behind the adjusted time.
+        /// </remarks>
+        private bool FlushRequired(ChainedHeader tip)
+        {
+            if (tip.Header.Time > this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - FlushRequiredThresholdSeconds)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 
-    [FullValidationRule]
     public class LoadCoinviewRule : UtxoStoreConsensusRule
     {
         /// <inheritdoc />
@@ -35,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             // Check that the current block has not been reorged.
             // Catching a reorg at this point will not require a rewind.
-            if (context.ValidationContext.Block.Header.HashPrevBlock != context.ConsensusTip.HashBlock)
+            if (context.ValidationContext.BlockToValidate.Header.HashPrevBlock != this.Parent.ChainState.ConsensusTip.HashBlock)
             {
                 this.Logger.LogTrace("Reorganization detected.");
                 ConsensusErrors.InvalidPrevTip.Throw();
@@ -47,38 +74,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // The UTXO set is stored in the context.
             this.Logger.LogTrace("Loading UTXO set of the new block.");
             utxoRuleContext.UnspentOutputSet = new UnspentOutputSet();
+
             using (new StopwatchDisposable(o => this.Parent.PerformanceCounter.AddUTXOFetchingTime(o)))
             {
-                uint256[] ids = this.GetIdsToFetch(context.ValidationContext.Block, context.Flags.EnforceBIP30);
+                uint256[] ids = this.GetIdsToFetch(context.ValidationContext.BlockToValidate, context.Flags.EnforceBIP30);
                 FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
                 utxoRuleContext.UnspentOutputSet.SetCoins(coins.UnspentOutputs);
             }
-
-            // Attempt to load into the cache the next set of UTXO to be validated.
-            // The task is not awaited so will not stall main validation process.
-            this.TryPrefetchAsync(context.Flags);
         }
 
         /// <summary>
-        /// This method tries to load from cache the UTXO of the next block in a background task.
-        /// </summary>
-        /// <param name="flags">Information about activated features.</param>
-        private async void TryPrefetchAsync(DeploymentFlags flags)
-        {
-            this.Logger.LogTrace("({0}:{1})", nameof(flags), flags);
-
-            if (this.PowParent.UtxoSet is CachedCoinView)
-            {
-                Block nextBlock = this.PowParent.Puller.TryGetLookahead(0);
-                if (nextBlock != null)
-                    await this.PowParent.UtxoSet.FetchCoinsAsync(this.GetIdsToFetch(nextBlock, flags.EnforceBIP30)).ConfigureAwait(false);
-            }
-
-            this.Logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// The transactions identifiers that need to be fetched from store. 
+        /// The transactions identifiers that need to be fetched from store.
         /// </summary>
         /// <param name="block">The block with the transactions.</param>
         /// <param name="enforceBIP30">Whether to enforce look up of the transaction id itself and not only the reference to previous transaction id.</param>
