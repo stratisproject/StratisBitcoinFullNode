@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>
         /// Called after a peer was disconnected.
-        /// Informs underlying components about the event but only if node is not being shut down at the moment.
+        /// Informs underlying components about the event but only if the node is not being shut down at the moment.
         /// Processes any remaining blocks to download.
         /// </summary>
         /// <remarks>Have to be locked by <see cref="peerLock"/>.</remarks>
