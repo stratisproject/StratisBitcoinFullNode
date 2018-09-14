@@ -92,6 +92,21 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                         i += 7;
                     }
 
+                    if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == nameof(string.Split))
+                    {
+                        Instruction popJumpDest = il.Create(OpCodes.Pop);
+                        il.InsertAfter(instruction,
+                            il.Create(OpCodes.Dup),
+                            il.Create(OpCodes.Dup),
+                            il.Create(OpCodes.Brfalse, popJumpDest),
+                            il.Create(OpCodes.Ldlen),
+                            il.CreateLdlocBest(observerVariable),
+                            il.Create(OpCodes.Call, observer.FlowThroughMemoryIntPtrMethod),
+                            popJumpDest
+                            );
+                        i += 7;
+                    }
+
                     if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == ".ctor")
                     {
                         MethodDefinition method = ((MethodReference)instruction.Operand).Resolve();
