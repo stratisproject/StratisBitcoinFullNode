@@ -5,6 +5,15 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Networks
 {
+    /// <summary>
+    /// Class enumeration containing protocol versions, by name and version number (Id).
+    /// </summary>
+    /// <remarks>
+    /// This class contains baseline versions.
+    /// <para>
+    /// Furtue versions will go into either Bitcoin <see cref="BitcoinProtocolVersion"/> or Stratis <see cref="StratisProtocolVersion"/>.
+    /// </para>
+    /// </remarks>
     public class ProtocolVersion : Enumeration
     {
         /// <summary>
@@ -82,6 +91,9 @@ namespace Stratis.Bitcoin.Networks
 
         protected ProtocolVersion(int id, string name) : base(id, name) {}
 
+        /// <summary>
+        /// List all baseline versions.
+        /// </summary>
         public virtual IEnumerable<ProtocolVersion> List() =>
             new[] {
                 Protocol,
@@ -100,6 +112,10 @@ namespace Stratis.Bitcoin.Networks
                 ShortIdBlocks
             };
 
+
+        /// <summary>
+        /// Select a version item by name.
+        /// </summary>
         public ProtocolVersion FromName(string name)
         {
             ProtocolVersion state = List()
@@ -111,6 +127,9 @@ namespace Stratis.Bitcoin.Networks
             return state;
         }
 
+        /// <summary>
+        /// Select a version item by Id.
+        /// </summary>
         public ProtocolVersion From(int id)
         {
             ProtocolVersion state = List().SingleOrDefault(s => s.Id == id);
