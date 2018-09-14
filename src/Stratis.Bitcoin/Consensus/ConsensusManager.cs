@@ -614,7 +614,23 @@ namespace Stratis.Bitcoin.Consensus
                     this.SetConsensusTipInternalLocked(current.Previous);
                 }
 
-                var disconnectedBlock = new ChainedHeaderBlock(current.Block, current);
+                Block block = current.Block;
+
+                if (block == null)
+                {
+                    this.logger.LogTrace("Block '{0}' wasn't cached. Loading it from the database.", current.HashBlock);
+                    block = await this.blockStore.GetBlockAsync(current.HashBlock).ConfigureAwait(false);
+
+                    if (block == null)
+                    {
+                        // Sanity check.
+                        this.logger.LogTrace("(-)[BLOCK_NOT_FOUND]");
+                        throw new Exception("Block that is about to be rewinded wasn't found in cache or database!");
+                    }
+                }
+
+                var disconnectedBlock = new ChainedHeaderBlock(block, current);
+
                 disconnectedBlocks.Add(disconnectedBlock);
 
                 this.signals.SignalBlockDisconnected(disconnectedBlock);
