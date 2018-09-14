@@ -76,35 +76,58 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                         i += 2;
                     }
 
-                    // TODO: Investigate what this is doing - straight from Unbreakable.
                     if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == nameof(string.ToCharArray))
                     {
                         Instruction popJumpDest = il.Create(OpCodes.Pop);
                         il.InsertAfter(instruction,
                             il.Create(OpCodes.Dup),
-                            il.Create(OpCodes.Dup),
-                            il.Create(OpCodes.Brfalse, popJumpDest),
                             il.Create(OpCodes.Ldlen),
                             il.CreateLdlocBest(observerVariable),
                             il.Create(OpCodes.Call, observer.FlowThroughMemoryIntPtrMethod),
                             popJumpDest
                             );
-                        i += 7;
+                        i += 5;
                     }
+
+                    // TODO: After concat, there will always be a string on the stack! Just check its length, like what the above is doing :)
 
                     if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == nameof(string.Split))
                     {
                         Instruction popJumpDest = il.Create(OpCodes.Pop);
                         il.InsertAfter(instruction,
                             il.Create(OpCodes.Dup),
-                            il.Create(OpCodes.Dup),
-                            il.Create(OpCodes.Brfalse, popJumpDest),
                             il.Create(OpCodes.Ldlen),
                             il.CreateLdlocBest(observerVariable),
                             il.Create(OpCodes.Call, observer.FlowThroughMemoryIntPtrMethod),
                             popJumpDest
                             );
-                        i += 7;
+                        i += 5;
+                    }
+
+                    if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == nameof(string.Concat))
+                    {
+                        Instruction popJumpDest = il.Create(OpCodes.Pop);
+                        il.InsertAfter(instruction,
+                            il.Create(OpCodes.Dup),
+                            il.Create(OpCodes.Ldlen),
+                            il.CreateLdlocBest(observerVariable),
+                            il.Create(OpCodes.Call, observer.FlowThroughMemoryIntPtrMethod),
+                            popJumpDest
+                            );
+                        i += 5;
+                    }
+
+                    if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == nameof(string.Join))
+                    {
+                        Instruction popJumpDest = il.Create(OpCodes.Pop);
+                        il.InsertAfter(instruction,
+                            il.Create(OpCodes.Dup),
+                            il.Create(OpCodes.Ldlen),
+                            il.CreateLdlocBest(observerVariable),
+                            il.Create(OpCodes.Call, observer.FlowThroughMemoryIntPtrMethod),
+                            popJumpDest
+                            );
+                        i += 5;
                     }
 
                     if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == ".ctor")
