@@ -67,39 +67,35 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                     i += 2;
                 }
 
-                if (instruction.OpCode.Code == Code.Call)
+                if (instruction.Operand is MethodReference called)
                 {
-                    var called = (MethodReference) instruction.Operand;
-                    
                     if (called.DeclaringType.FullName == typeof(Array).FullName && called.Name == nameof(Array.Resize))
                     {
-                        MethodDefinition method = ((MethodReference)instruction.Operand).Resolve();
                         il.InsertBefore(instruction, il.CreateLdlocBest(observerVariable));
                         il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.FlowThroughMemoryInt32Method));
                         i += 2;
                     }
 
-                    //if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == ".ctor")
-                    //{
-                    //    MethodDefinition method = ((MethodReference)instruction.Operand).Resolve();
-                    //    // Ensure is the constructor with a count param
-                    //    if (method.Parameters.Any(x=>x.Name == "count"))
-                    //    {
-                    //        il.InsertBefore(instruction, il.CreateLdlocBest(observerVariable));
-                    //        il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.FlowThroughMemoryInt32Method));
-                    //        i += 2;
-                    //    }
-                    //}
-                }
-
-                if (instruction.OpCode.Code == Code.Newobj)
-                {
-                    var called = (MethodReference)instruction.Operand;
+                    // TODO: Investigate what this is doing - straight from Unbreakable.
+                    if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == nameof(string.ToCharArray))
+                    {
+                        Instruction popJumpDest = il.Create(OpCodes.Pop);
+                        il.InsertAfter(instruction,
+                            il.Create(OpCodes.Dup),
+                            il.Create(OpCodes.Dup),
+                            il.Create(OpCodes.Brfalse, popJumpDest),
+                            il.Create(OpCodes.Ldlen),
+                            il.CreateLdlocBest(observerVariable),
+                            il.Create(OpCodes.Call, observer.FlowThroughMemoryIntPtrMethod),
+                            popJumpDest
+                            );
+                        i += 7;
+                    }
 
                     if (called.DeclaringType.FullName == typeof(string).FullName && called.Name == ".ctor")
                     {
                         MethodDefinition method = ((MethodReference)instruction.Operand).Resolve();
-                        // Ensure is the constructor with a count param
+                        // Ensure is the constructor with a count param (not all string constructors have a count param)
                         if (method.Parameters.Any(x => x.Name == "count"))
                         {
                             il.InsertBefore(instruction, il.CreateLdlocBest(observerVariable));
@@ -107,7 +103,10 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                             i += 2;
                         }
                     }
+
+
                 }
+                
 
             }
 

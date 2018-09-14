@@ -35,6 +35,18 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             }
         }
 
+        public static void InsertAfter(this ILProcessor il, Instruction target, params Instruction[] instructions)
+        {
+            int position = 0;
+            Instruction lastAdded = target;
+            while (position < instructions.Length)
+            {
+                il.InsertAfter(lastAdded, instructions[position]);
+                lastAdded = instructions[position];
+                position++;
+            }
+        }
+
         private static bool IsSByte(int value)
         {
             return value >= sbyte.MinValue && value <= sbyte.MaxValue;
