@@ -11,25 +11,28 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// </summary>
     public class ColdStakingBuilderExtension : BuilderExtension
     {
-        // Instructs this object to use either to coldPubKeyHash (when false) or the hotPubKeyHash (when true).
-        private readonly bool staking;
+        /// <summary>Uses coldPubKey (when true) or the hotPubKey (when false).</summary>
+        private readonly bool usesColdPubKey;
 
         /// <summary>
         /// Constructs an object for use with staking or cold staking withdrawal transactions.
         /// </summary>
-        /// <param name="staking">Set to <c>true</c> when staking. Set to <c>false</c> when spending from cold staking addresses.</param>
+        /// <param name="staking">Set uto <c>true</c> when staking. Set to <c>false</c> when spending from cold staking addresses.</param>
         public ColdStakingBuilderExtension(bool staking)
         {
-            this.staking = staking;
+            // Use the hotPubKey when staking and the coldPubKey for spending from the cold staking address.
+            this.usesColdPubKey = !staking;
         }
 
         /// <inheritdoc />
+        /// <remarks>Combining is not defined for cold staking scripts.</remarks>
         public override bool CanCombineScriptSig(Network network, Script scriptPubKey, Script a, Script b)
         {
             return false;
         }
 
         /// <inheritdoc />
+        /// <remarks>It is not possible to construct the original scriptPubKey from a cold staking scriptSig.</remarks>
         public override bool CanDeduceScriptPubKey(Network network, Script scriptSig)
         {
             return false;
@@ -74,13 +77,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             ColdStakingScriptTemplate.Instance.ExtractScriptPubKeyParameters(scriptPubKey, out KeyId hotKey, out KeyId coldKey);
 
             // The scriptPubKey will be different depending on whether we are spending or cold staking.
-            Key key = keyRepo.FindKey((this.staking ? hotKey : coldKey).ScriptPubKey);
+            Key key = keyRepo.FindKey((this.usesColdPubKey ? coldKey : hotKey).ScriptPubKey);
             if (key == null)
                 return null;
 
             TransactionSignature sig = signer.Sign(key);
 
-            return ColdStakingScriptTemplate.Instance.GenerateScriptSig(sig, !this.staking, key.PubKey);
+            return ColdStakingScriptTemplate.Instance.GenerateScriptSig(sig, this.usesColdPubKey, key.PubKey);
         }
     }
 }
