@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 ChainedHeader header = longChain.GetBlock(i);
 
-                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, header));
+                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, header));
             }
 
             await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
-                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, lastHeader));
+                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, lastHeader));
             }
 
             await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
@@ -231,7 +231,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                     this.chainState.IsAtBestChainTip = true;
                 }
 
-                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, lastHeader));
+                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, lastHeader));
             }
 
             await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
-                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, alternativeChain.GetBlock(i)));
+                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, alternativeChain.GetBlock(i)));
             }
 
             // Present second chain which has more work and reorgs blocks from genesis.
@@ -266,7 +266,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
-                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
+                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
             }
 
             await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
@@ -305,7 +305,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
-                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
+                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
             }
 
             // Create alternative chain with fork point at 450.
@@ -337,7 +337,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 if (header == alternativeBlocks.Last())
                     this.chainState.IsAtBestChainTip = true;
 
-                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, header));
+                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, header));
             }
 
             await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
@@ -359,7 +359,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 if (i == this.chain.Height)
                     this.chainState.IsAtBestChainTip = true;
 
-                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
+                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
             }
 
             await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
