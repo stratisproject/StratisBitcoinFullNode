@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Base
     /// <summary>
     /// Methods related to network peers time synchronization feature.
     /// </summary>
-    public interface ITimeSyncBehaviorState
+    public interface ITimeSyncBehaviorState : IDisposable
     {
         /// <summary>
         /// Adds a time offset sample to the internal database of samples.
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Base
     /// the one in Bitcoin.
     /// </para>
     /// </remarks>
-    public class TimeSyncBehaviorState : ITimeSyncBehaviorState, IDisposable
+    public class TimeSyncBehaviorState : ITimeSyncBehaviorState
     {
         /// <summary>
         /// Description of a single timestamp offset sample from a peer.
