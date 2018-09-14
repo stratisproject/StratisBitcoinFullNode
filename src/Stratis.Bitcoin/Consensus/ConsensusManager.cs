@@ -7,7 +7,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.ValidationResults;
 using Stratis.Bitcoin.Consensus.Validators;
@@ -301,7 +300,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>
         /// Called after a peer was disconnected.
-        /// Informs underlying components about the even.
+        /// Informs underlying components about the event but only if node is not being shut down at the moment.
         /// Processes any remaining blocks to download.
         /// </summary>
         /// <remarks>Have to be locked by <see cref="peerLock"/>.</remarks>
@@ -314,11 +313,20 @@ namespace Stratis.Bitcoin.Consensus
 
             if (removed)
             {
-                // TODO Use node lifetime here and don't call ProcessDownloadQueueLocked and chainedHeaderTree.PeerDisconnected
-                // on node shutdown. Otherwise we have big shutdown perf hit.
-                this.chainedHeaderTree.PeerDisconnected(peerId);
+                bool shuttingDown = this.nodeLifetime.ApplicationStopping.IsCancellationRequested;
+
+                // Update the components only in case we are not shutting down. In case we update CHT during
+                // shutdown there will be a huge performance hit when we have a lot of headers in front of our
+                // consensus and then disconnect last peer claiming such a chain. CHT will disconnect headers
+                // one by one. This is not needed during the shutdown.
+                if (!shuttingDown)
+                    this.chainedHeaderTree.PeerDisconnected(peerId);
+
+                // Block puller needs to be updated in any case to prevent asking for more blocks from disconnected peer.
                 this.blockPuller.PeerDisconnected(peerId);
-                this.ProcessDownloadQueueLocked();
+
+                if (!shuttingDown)
+                    this.ProcessDownloadQueueLocked();
             }
             else
                 this.logger.LogTrace("Peer {0} was already removed.", peerId);
