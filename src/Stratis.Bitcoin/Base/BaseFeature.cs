@@ -296,11 +296,11 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogInformation("Disposing consensus manager.");
             this.consensusManager.Dispose();
 
-            this.logger.LogInformation("Disposing chain repository.");
-            this.chainRepository.Dispose();
-
             this.logger.LogInformation("Disposing consensus rules.");
             this.consensusRules.Dispose();
+
+            this.logger.LogInformation("Disposing chain repository.");
+            this.chainRepository.Dispose();
 
             this.logger.LogInformation("Disposing block store.");
             this.blockStore.Dispose();
