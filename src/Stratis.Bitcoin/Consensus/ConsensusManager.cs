@@ -315,21 +315,19 @@ namespace Stratis.Bitcoin.Consensus
             {
                 bool shuttingDown = this.nodeLifetime.ApplicationStopping.IsCancellationRequested;
 
-                if (shuttingDown)
-                    this.logger.LogDebug("Node is shutting down. Not updating CHT and not processing download queue.");
-
                 // Update the components only in case we are not shutting down. In case we update CHT during
                 // shutdown there will be a huge performance hit when we have a lot of headers in front of our
                 // consensus and then disconnect last peer claiming such a chain. CHT will disconnect headers
                 // one by one. This is not needed during the shutdown.
                 if (!shuttingDown)
+                {
                     this.chainedHeaderTree.PeerDisconnected(peerId);
-
-                // Block puller needs to be updated in any case to prevent asking for more blocks from disconnected peer.
-                this.blockPuller.PeerDisconnected(peerId);
-
-                if (!shuttingDown)
+                    this.blockPuller.PeerDisconnected(peerId);
                     this.ProcessDownloadQueueLocked();
+                }
+                else
+                    this.logger.LogDebug("Node is shutting down. Not updating CHT and not processing download queue.");
+
             }
             else
                 this.logger.LogTrace("Peer {0} was already removed.", peerId);
