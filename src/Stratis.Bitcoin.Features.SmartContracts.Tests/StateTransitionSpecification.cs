@@ -1,9 +1,7 @@
-﻿//using System.Linq;
-//using Moq;
+﻿//using Moq;
 //using NBitcoin;
 //using Stratis.Bitcoin.Features.SmartContracts.Networks;
 //using Stratis.SmartContracts;
-//using Stratis.SmartContracts.Core.Receipts;
 //using Stratis.SmartContracts.Core.State;
 //using Stratis.SmartContracts.Executor.Reflection;
 //using Stratis.SmartContracts.Executor.Reflection.Serialization;
@@ -69,7 +67,7 @@
 //                new byte[0],
 //                null
 //            );
-            
+
 //            this.vm.Setup(v => v.Create(this.contractStateRoot.Object, It.IsAny<ISmartContractState>(), externalCreateMessage.Code, externalCreateMessage.Parameters, null))
 //                .Returns(vmExecutionResult);
 
@@ -347,7 +345,7 @@
 //            var transactionHash = new uint256();
 //            var gasLimit = (Gas)(GasPriceList.BaseCost + 100000);
 //            var vmExecutionResult = VmExecutionResult.Success(true, "Test");
-            
+
 //            // Code must have a length to pass precondition checks.
 //            var code = new byte[1];
 //            var typeName = "Test";
@@ -368,7 +366,7 @@
 //                .Setup(sr => sr.GetContractType(externalCallMessage.To))
 //                .Returns(typeName);
 
-//            this.vm.Setup(v => 
+//            this.vm.Setup(v =>
 //                    v.ExecuteMethod(It.IsAny<ISmartContractState>(), externalCallMessage.Method, code, typeName))
 //                .Returns(vmExecutionResult);
 
@@ -389,7 +387,7 @@
 //            this.addressGenerator.Verify(a => a.GenerateAddress(It.IsAny<uint256>(), It.IsAny<ulong>()), Times.Never);
 
 //            this.trackedState.Verify(ts => ts.CreateAccount(It.IsAny<uint160>()), Times.Never);
-            
+
 //            this.vm.Verify(
 //                v => v.ExecuteMethod(It.IsAny<ISmartContractState>(), externalCallMessage.Method, code, typeName),
 //                Times.Once);

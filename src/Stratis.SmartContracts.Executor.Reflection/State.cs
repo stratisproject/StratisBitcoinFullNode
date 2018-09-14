@@ -51,16 +51,19 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.smartContractStateFactory = state.smartContractStateFactory;
         }
 
-        public State(IContractState repository,
+        public State(
+            ISmartContractStateFactory smartContractStateFactory, 
+            IContractState repository,
+            IContractLogHolder contractLogHolder,
+            List<TransferInfo> internalTransfers,
             IBlock block,
             Network network,
             ulong txAmount,
-            uint256 transactionHash,
-            ISmartContractStateFactory smartContractStateFactory)
+            uint256 transactionHash)
         {
             this.ContractState = repository;
-            this.LogHolder = new ContractLogHolder(network);
-            this.internalTransfers = new List<TransferInfo>();
+            this.LogHolder = contractLogHolder;
+            this.internalTransfers = internalTransfers;
             this.BalanceState = new BalanceState(this.ContractState, txAmount, this.InternalTransfers);
             this.Network = network;
             this.Nonce = 0;

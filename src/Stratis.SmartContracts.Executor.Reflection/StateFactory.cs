@@ -1,6 +1,8 @@
-﻿using NBitcoin;
+﻿using System.Collections.Generic;
+using NBitcoin;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -22,12 +24,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IState Create(IContractState stateRoot, IBlock block, ulong txOutValue, uint256 transactionHash)
         {
-            return new State(stateRoot,
-                block,
-                this.network,
-                txOutValue,
-                transactionHash,
-                this.smartContractStateFactory);
+            var logHolder = new ContractLogHolder(this.network);
+            var internalTransfers = new List<TransferInfo>();
+            return new State(this.smartContractStateFactory, stateRoot, logHolder, internalTransfers, block, this.network, txOutValue, transactionHash);
         }
     }
 }

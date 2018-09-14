@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Moq;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -14,6 +13,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     {
         private readonly Mock<IContractStateRoot> contractStateRoot;
         private readonly Mock<IContractState> trackedState;
+        private readonly Mock<IContractLogHolder> contractLogHolder;
 
         public StateTests()
         {
@@ -21,12 +21,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.contractStateRoot = new Mock<IContractStateRoot>();
             this.contractStateRoot.Setup(c => c.StartTracking())
                 .Returns(this.trackedState.Object);
+            this.contractLogHolder = new Mock<IContractLogHolder>();
+            this.contractLogHolder.Setup(l => l.GetRawLogs())
+                .Returns(new List<RawLog>());
         }
 
         [Fact]
         public void State_Snapshot_Uses_Tracked_ContractState()
         {
-            var state = new State(this.contractStateRoot.Object, null, null, 0, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, 0, null);
 
             IState newState = state.Snapshot();
 
@@ -38,7 +41,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void State_Snapshot_Has_New_LogHolder_With_Original_Logs()
         {
-            var state = new State(this.contractStateRoot.Object, null, null, 0, null, null);
+            this.contractLogHolder.Setup(l => l.GetRawLogs())
+                .Returns(new List<RawLog>
+                {
+                    new RawLog(null, null),
+                    new RawLog(null, null),
+                    new RawLog(null, null),
+                    new RawLog(null, null)
+                });
+
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, 0, null);
 
             IState newState = state.Snapshot();
 
@@ -55,7 +67,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void State_Snapshot_Has_New_InternalTransfers_With_Original_Transfers()
         {
-            var state = new State(this.contractStateRoot.Object, null, null, 0, null, null);
+            var transfers = new List<TransferInfo>
+            {
+                new TransferInfo(),
+                new TransferInfo()
+            };
+
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, transfers, null, null, 0, null);
 
             IState newState = state.Snapshot();
 
@@ -72,7 +90,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void State_Snapshot_Has_New_BalanceState()
         {
-            var state = new State(this.contractStateRoot.Object, null, null, 0, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, 0, null);
 
             IState newState = state.Snapshot();
 
@@ -83,7 +101,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void State_Snapshot_BalanceState_Has_Original_TxOut()
         {
             ulong initialTxOut = 100_000;
-            var state = new State(this.contractStateRoot.Object, null, null, initialTxOut, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, initialTxOut, null);
 
             IState newState = state.Snapshot();
 
@@ -93,7 +111,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void TransitionTo_Fails_If_New_State_Is_Not_Child()
         {
-            var state = new State(this.contractStateRoot.Object, null, null, 0, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, 0, null);
 
             IState newState = state.Snapshot();
 
@@ -105,7 +123,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void TransitionTo_Updates_State_Correctly()
         {
-            var state = new State(this.contractStateRoot.Object, null, null, 0, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, 0, null);
 
             // TODO pass in initial internal transfers list
             // TODO pass in initial contract log holder
@@ -145,12 +163,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.trackedState.Verify(s => s.Commit(), Times.Once);
 
+            this.contractLogHolder.Verify(l => l.Clear(), Times.Once);
+            this.contractLogHolder.Verify(l => l.AddRawLogs(newLogs), Times.Once);
+
             Assert.Equal(newTransfers.Count, state.InternalTransfers.Count);
             Assert.Contains(newTransfers[0], state.InternalTransfers);
             Assert.Contains(newTransfers[1], state.InternalTransfers);
             Assert.Contains(newTransfers[2], state.InternalTransfers);
-            Assert.Contains(newLogs[0], state.LogHolder.GetRawLogs());
-            Assert.Contains(newLogs[1], state.LogHolder.GetRawLogs());
             Assert.Equal(newNonce, state.Nonce);
         }
     }
