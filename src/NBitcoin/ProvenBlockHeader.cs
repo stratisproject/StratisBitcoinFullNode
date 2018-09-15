@@ -13,13 +13,14 @@ namespace NBitcoin
     /// Proven header prevents such an attack by including additional information that can be validated and confirmed whether
     /// the header is fake or real.
     /// </para>
+    /// </summary>
     /// <remarks>
     /// <para>
     /// Additional information included into proven header:
     /// </para>
     /// <para>
     /// Block header signature (<see cref="Signature"/>), which is signed with the private key which corresponds to
-    /// coinstake's Second output's public key.
+    /// coinstake's second output's public key.
     /// </para>
     /// <para>
     /// Coinstake transaction (<see cref="Coinstake"/>).
@@ -28,7 +29,6 @@ namespace NBitcoin
     /// Merkle proof (<see cref="MerkleProof"/>) that proves the coinstake tx is included in a block that is being represented by the provided header.
     /// </para>
     /// </remarks>
-    /// </summary>
     public class ProvenBlockHeader : PosBlockHeader
     {
         /// <summary>
@@ -71,8 +71,9 @@ namespace NBitcoin
             this.HashPrevBlock = block.Header.HashPrevBlock;
             this.HashMerkleRoot = block.Header.HashMerkleRoot;
             this.Time = block.Header.Time;
-            this.Bits = block.Header.Time;
+            this.Bits = block.Header.Bits;
             this.Nonce = block.Header.Nonce;
+            this.Version = block.Header.Version;
 
             // Set additional properties.
             this.signature = block.BlockSignature;
