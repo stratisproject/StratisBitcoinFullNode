@@ -72,6 +72,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
         }
 
+        /// <summary>
+        /// Mock the stake validator.
+        /// </summary>
         private void MockStakeValidator()
         {
             this.stakeValidator = new Mock<IStakeValidator>();
@@ -81,6 +84,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 .Returns(this.Network.Consensus.PowLimit);
         }
 
+        /// <summary>
+        /// Mock the stake chain.
+        /// </summary>
         private void MockStakeChain()
         {
             this.stakeChain = new Mock<IStakeChain>();
@@ -94,6 +100,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             });
         }
 
+        /// <summary>
+        /// Mock the coin view.
+        /// </summary>
         private void MockCoinView()
         {
             this.unspentOutputs = new Dictionary<uint256, UnspentOutputs>();
@@ -117,6 +126,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             }));
         }
 
+        /// <summary>
+        /// Create the MempoolManager used for testing whether transactions are accepted to the memory pool.
+        /// </summary>
         private void CreateMempoolManager()
         {
             this.mempoolSettings = new MempoolSettings(this.nodeSettings);
