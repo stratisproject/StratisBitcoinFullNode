@@ -9,7 +9,6 @@ namespace NBitcoin.Tests
 {
     public class ProvenBlockHeaderTests
     {
-        private readonly PosConsensusFactory factory = new PosConsensusFactory();
         private readonly Network network = KnownNetworks.StratisTest;
 
         [Fact]
@@ -35,7 +34,7 @@ namespace NBitcoin.Tests
                 provenHeaderToDeserialize.GetHash().Should().NotBe(provenHeaderToSerialize.GetHash());
 
                 // Attempt to deserialize it.
-                provenHeaderToDeserialize.ReadWrite(bytes, this.factory);
+                provenHeaderToDeserialize.ReadWrite(bytes, this.network.Consensus.ConsensusFactory);
 
                 provenHeaderToDeserialize.GetHash().Should().Be(provenHeaderToSerialize.GetHash());
 
@@ -58,13 +57,14 @@ namespace NBitcoin.Tests
                 provenHeaderToDeserialize.CurrentVersion.Should().Be(provenHeaderToSerialize.CurrentVersion);
                 provenHeaderToDeserialize.Nonce.Should().Be(provenHeaderToSerialize.Nonce);
                 provenHeaderToDeserialize.Time.Should().Be(provenHeaderToSerialize.Time);
+                provenHeaderToDeserialize.Version.Should().Be(provenHeaderToSerialize.Version);
             }
         }
 
         [Fact]
         public void ShouldNotBeAbleToCreateProvenBlockHeaderFromANullBlock()
         {
-            Action createProvenHeader = () => this.factory.CreateProvenBlockHeader(null);
+            Action createProvenHeader = () => ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(null);
             createProvenHeader.Should().Throw<ArgumentNullException>();
         }
         
@@ -85,7 +85,7 @@ namespace NBitcoin.Tests
             }
 
             block.UpdateMerkleRoot();
-            ProvenBlockHeader provenBlockHeader = this.factory.CreateProvenBlockHeader(block);
+            ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
             provenBlockHeader.MerkleProof.Hashes.Should().HaveCount(6);
             provenBlockHeader.MerkleProof.Check(provenBlockHeader.HashMerkleRoot).Should().BeTrue();
         }
@@ -93,7 +93,7 @@ namespace NBitcoin.Tests
         private ProvenBlockHeader CreateNewProvenBlockHeaderMock()
         {
             PosBlock block = this.CreatePosBlockMock();
-            ProvenBlockHeader provenBlockHeader = this.factory.CreateProvenBlockHeader(block);
+            ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
 
             return provenBlockHeader;
         }
