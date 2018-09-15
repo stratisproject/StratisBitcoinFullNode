@@ -19,6 +19,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="network">The network that the scriptSig is for.</param>
         /// <param name="scriptSig">The scriptSig to extract parameters from.</param>
         /// <returns>The extracted scriptSig paramers as a <see cref="ColdStakingScriptSigParameters"/> object.</returns>
+        /// <remarks>
+        /// The <paramref name="signature"/> can be <c>null</c> in which case it is encoded as an <c>OP_0</c>.
+        /// According to <see href="https://en.bitcoin.it/wiki/Script">Bitcoin Wiki</see> an empty array of bytes
+        /// is pushed onto the stack for <c>OP_0</c>.
+        /// </remarks>
         public ColdStakingScriptSigParameters ExtractScriptSigParameters(Network network, Script scriptSig)
         {
             Op[] ops = scriptSig.ToOps().ToArray();
@@ -53,6 +58,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <summary>
         /// Generates the scriptSig.
         /// </summary>
+        /// <remarks>
+        /// The <paramref name="signature"/> can be <c>null</c> in which case it is encoded as an <c>OP_0</c>.
+        /// According to <see href="https://en.bitcoin.it/wiki/Script">Bitcoin Wiki</see> an empty array of bytes
+        /// is pushed onto the stack for <c>OP_0</c>.
+        /// </remarks>
         /// <param name="signature">The transaction signature.</param>
         /// <param name="coldPubKey">A flag indicating whether the cold wallet versus the hot wallet is signing.</param>
         /// <param name="publicKey">The cold or hot wallet public key.</param>
@@ -148,6 +158,12 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         }
 
         /// <inheritdoc />
+        /// <remarks>
+        /// This method is called to implement additional checks if <see cref="FastCheckScriptPubKey"/>
+        /// sets <c>needMoreCheck</c> to <c>true</c>. In our case it is not set and this method is not
+        /// called. However this method is defined as <c>abstract</c> in <see cref="ScriptTemplate"/>
+        /// so we still need this dummy implementation.
+        /// </remarks>
         protected override bool CheckScriptPubKeyCore(Script scriptPubKey, Op[] scriptPubKeyOps)
         {
             return true;
@@ -162,8 +178,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <returns>Returns <c>true</c> if this is a cold staking script and the keys have been extracted.</returns>
         public bool ExtractScriptPubKeyParameters(Script scriptPubKey, out KeyId hotPubKeyHash, out KeyId coldPubKeyHash)
         {
-            bool needMoreCheck;
-            if (!this.FastCheckScriptPubKey(scriptPubKey, out needMoreCheck))
+            if (!this.FastCheckScriptPubKey(scriptPubKey, out bool _))
             {
                 hotPubKeyHash = null;
                 coldPubKeyHash = null;
@@ -180,7 +195,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <summary>
         /// Checks whether the scriptSig is valid.
         /// </summary>
-        /// <param name="network">The network the script belong to.</param>
+        /// <param name="network">The network the script belongs to.</param>
         /// <param name="scriptSig">The scriptSig to check (not used).</param>
         /// <param name="scriptSigOps">The scriptSig opcodes.</param>
         /// <param name="scriptPubKey">The scriptPubKey to check (not used).</param>
