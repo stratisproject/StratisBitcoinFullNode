@@ -59,7 +59,7 @@ namespace NBitcoin
 
         /// <summary>
         /// Gets block header signature which is signed with the private key which corresponds to
-        /// coinstake's Second output's public key.
+        /// coinstake's second output's public key.
         /// </summary>
         public BlockSignature Signature => this.signature;
 
