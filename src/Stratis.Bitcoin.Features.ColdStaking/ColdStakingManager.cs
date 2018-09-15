@@ -445,7 +445,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
 
             // Set the cold staking scriptPubKey on the change output.
-            TxOut changeOutput = transaction.Outputs.SingleOrDefault(output => output.ScriptPubKey != destination && output.Value != 0);
+            TxOut changeOutput = transaction.Outputs.SingleOrDefault(output => (output.ScriptPubKey != destination) && (output.Value != 0));
             if (changeOutput != null)
             {
                 // Map OutPoint to UnspentOutputReference.
