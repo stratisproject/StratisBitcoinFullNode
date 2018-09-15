@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.ColdStaking.Controllers;
@@ -84,6 +85,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     {
         public static IFullNodeBuilder UseColdStaking(this IFullNodeBuilder fullNodeBuilder)
         {
+            StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
