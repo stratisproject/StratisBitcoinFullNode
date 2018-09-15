@@ -423,9 +423,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             Script destination = BitcoinAddress.Create(receivingAddress, wallet.Network).ScriptPubKey;
 
             // Create the transaction build context (used in BuildTransaction).
+            var accountReference = new WalletAccountReference(walletName, coldAccount.Name);
             var context = new TransactionBuildContext(wallet.Network)
             {
-                AccountReference = new WalletAccountReference(walletName, coldAccount.Name),
+                AccountReference = accountReference,
                 // Specify a dummy change address to prevent a change (internal) address from being created.
                 // Will be changed after the transacton is built.
                 ChangeAddress = coldAccount.ExternalAddresses.First(),
@@ -440,20 +441,22 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             // TODO: Restore this line.
             // context.TransactionBuilder.Extensions.Add(new ColdStakingBuilderExtension(false));
 
-            // Finds all the available outputs (UTXO's) that belong to the cold staking account and
-            // then adds them to the context's UnspentOutputs.
-            (this.walletTransactionHandler as WalletTransactionHandler).AddCoins(context);
-
             // Build the transaction according to the settings recorded in the context.
             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
 
             // Set the cold staking scriptPubKey on the change output.
-            TxOut changeOutput = transaction.Outputs.SingleOrDefault(a => a.ScriptPubKey != destination && a.Value != 0);
+            TxOut changeOutput = transaction.Outputs.SingleOrDefault(output => output.ScriptPubKey != destination && output.Value != 0);
             if (changeOutput != null)
             {
-                // Send the change back to the largest UTXO.
-                UnspentOutputReference maxUnspent = context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount).First();
-                changeOutput.ScriptPubKey = maxUnspent.Transaction.ScriptPubKey;
+                // Map OutPoint to UnspentOutputReference.
+                Dictionary<OutPoint, UnspentOutputReference> mapOutPointToUnspent = this.walletManager.GetSpendableTransactionsInAccount(accountReference)
+                    .ToDictionary(unspent => unspent.ToOutPoint(), unspent => unspent);
+
+                // Find the largest input.
+                TxIn largestInput = transaction.Inputs.OrderByDescending(input => mapOutPointToUnspent[input.PrevOut].Transaction.Amount).Take(1).Single();
+
+                // Set the scriptPubKey of the change output to the scriptPubKey of the largest input.
+                changeOutput.ScriptPubKey = mapOutPointToUnspent[largestInput.PrevOut].Transaction.ScriptPubKey;
             }
 
             this.logger.LogTrace("(-)");
