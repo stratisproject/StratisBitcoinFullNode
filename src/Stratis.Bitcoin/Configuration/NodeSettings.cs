@@ -157,6 +157,10 @@ namespace Stratis.Bitcoin.Configuration
 
                 this.Logger.LogDebug("Network set to '{0}'.", this.Network.Name);
             }
+            else
+            {
+                NetworkRegistration.Register(network);
+            }
 
             // Set the full data directory path.
             if (this.DataDir == null)
