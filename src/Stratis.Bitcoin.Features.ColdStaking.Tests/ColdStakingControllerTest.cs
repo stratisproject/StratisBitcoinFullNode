@@ -110,8 +110,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             // Mock the coinviews "FetchCoinsAsync" method. We will use the "unspentOutputs" dictionary to track spendable outputs.
             this.coinView.Setup(d => d.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .Returns((uint256[] txIds, CancellationToken cancel) => Task.Run(() => {
-
+                .Returns((uint256[] txIds, CancellationToken cancel) => Task.Run(() =>
+                {
                     var result = new UnspentOutputs[txIds.Length];
 
                     for (int i = 0; i < txIds.Length; i++)
@@ -121,7 +121,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 }));
 
             // Mock the coinviews "GetTipHashAsync" method.
-            this.coinView.Setup(d => d.GetTipHashAsync(It.IsAny<CancellationToken>())).Returns(() => Task.Run(() => {
+            this.coinView.Setup(d => d.GetTipHashAsync(It.IsAny<CancellationToken>())).Returns(() => Task.Run(() =>
+            {
                 return this.concurrentChain.Tip.HashBlock;
             }));
         }
