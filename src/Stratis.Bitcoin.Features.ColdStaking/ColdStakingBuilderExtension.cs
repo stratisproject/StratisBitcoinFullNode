@@ -11,13 +11,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// </summary>
     public class ColdStakingBuilderExtension : BuilderExtension
     {
-        /// <summary>Uses coldPubKey (when true) or the hotPubKey (when false).</summary>
+        /// <summary>Uses coldPubKey (when <c>true</c>) or the hotPubKey (when <c>false</c>).</summary>
         private readonly bool usesColdPubKey;
 
         /// <summary>
         /// Constructs an object for use with staking or cold staking withdrawal transactions.
         /// </summary>
-        /// <param name="staking">Set uto <c>true</c> when staking. Set to <c>false</c> when spending from cold staking addresses.</param>
+        /// <param name="staking">Set to <c>true</c> when staking. Set to <c>false</c> when spending from cold staking addresses.</param>
         public ColdStakingBuilderExtension(bool staking)
         {
             // Use the hotPubKey when staking and the coldPubKey for spending from the cold staking address.
