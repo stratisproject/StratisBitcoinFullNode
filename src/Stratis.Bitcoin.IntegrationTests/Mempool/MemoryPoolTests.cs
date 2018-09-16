@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 // wiat for the trx to enter the pool
                 TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 1);
                 // mine the transactions in the mempool
-                stratisNodeSync.GenerateBlockManually(stratisNodeSync.FullNode.MempoolManager().InfoAllAsync().Result.Select(s => s.Trx).ToList());
+                TestHelper.GenerateBlockManually(stratisNodeSync, stratisNodeSync.FullNode.MempoolManager().InfoAllAsync().Result.Select(s => s.Trx).ToList());
                 TestHelper.WaitLoop(() => stratisNodeSync.CreateRPCClient().GetRawMempool().Length == 0);
 
                 //create a new trx spending both outputs
@@ -185,20 +185,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
                 // Test 1: block with both of those transactions should be rejected.
                 var tipBeforeBlockCreation = stratisNodeSync.FullNode.Chain.Tip;
-                Assert.Throws<ConsensusException>(() => { Block block = stratisNodeSync.GenerateBlockManually(spends); });
+                Assert.Throws<ConsensusException>(() => { Block block = TestHelper.GenerateBlockManually(stratisNodeSync, spends); });
                 Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == tipBeforeBlockCreation.HashBlock);
 
                 // Test 2: ... and should be rejected if spend1 is in the memory pool
                 tipBeforeBlockCreation = stratisNodeSync.FullNode.Chain.Tip;
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[0]));
-                Assert.Throws<ConsensusException>(() => { Block block = stratisNodeSync.GenerateBlockManually(spends, 100000); });
+                Assert.Throws<ConsensusException>(() => { Block block = TestHelper.GenerateBlockManually(stratisNodeSync, spends, 100_000); });
                 Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == tipBeforeBlockCreation.HashBlock);
                 stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
 
                 // Test 3: ... and should be rejected if spend2 is in the memory pool
                 tipBeforeBlockCreation = stratisNodeSync.FullNode.Chain.Tip;
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
-                Assert.Throws<ConsensusException>(() => { Block block = stratisNodeSync.GenerateBlockManually(spends, 100000000); });
+                Assert.Throws<ConsensusException>(() => { Block block = TestHelper.GenerateBlockManually(stratisNodeSync, spends, 100_000_000); });
                 Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == tipBeforeBlockCreation.HashBlock);
                 stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
 
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 var oneSpend = new List<Transaction>();
                 oneSpend.Add(spends[0]);
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
-                var validBlock = stratisNodeSync.GenerateBlockManually(oneSpend);
+                var validBlock = TestHelper.GenerateBlockManually(stratisNodeSync, oneSpend);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == validBlock.GetHash());
 

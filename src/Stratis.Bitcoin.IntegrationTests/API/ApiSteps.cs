@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private readonly Money transferAmount = Money.COIN * 1;
         private NodeBuilder powNodeBuilder;
         private NodeBuilder posNodeBuilder;
-        private SharedSteps sharedSteps;
+
         private Transaction transaction;
         private uint256 block;
         private Uri apiUri;
@@ -107,7 +107,6 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         protected override void BeforeTest()
         {
-            this.sharedSteps = new SharedSteps();
             this.httpHandler = new HttpClientHandler() { ServerCertificateCustomValidationCallback = (request, cert, chain, errors) => true };
             this.httpClient = new HttpClient(this.httpHandler);
             this.httpClient.DefaultRequestHeaders.Accept.Clear();
@@ -179,12 +178,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         protected void a_block_is_mined_creating_spendable_coins()
         {
-            this.sharedSteps.MineBlocks(1, this.firstStratisPowApiNode, WalletAccountName, PrimaryWalletName, WalletPassword);
+            TestHelper.MineBlocks(this.firstStratisPowApiNode, PrimaryWalletName, WalletPassword, WalletAccountName, 1);
         }
 
         private void more_blocks_mined_past_maturity_of_original_block()
         {
-            this.sharedSteps.MineBlocks(this.maturity, this.firstStratisPowApiNode, WalletAccountName, PrimaryWalletName, WalletPassword);
+            TestHelper.MineBlocks(this.firstStratisPowApiNode, PrimaryWalletName, WalletPassword, WalletAccountName, this.maturity);
         }
 
         private void a_real_transaction()
