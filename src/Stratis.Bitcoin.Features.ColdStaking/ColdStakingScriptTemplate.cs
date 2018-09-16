@@ -19,11 +19,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="network">The network that the scriptSig is for.</param>
         /// <param name="scriptSig">The scriptSig to extract parameters from.</param>
         /// <returns>The extracted scriptSig paramers as a <see cref="ColdStakingScriptSigParameters"/> object.</returns>
-        /// <remarks>
-        /// The <paramref name="signature"/> can be <c>null</c> in which case it is encoded as an <c>OP_0</c>.
-        /// According to <see href="https://en.bitcoin.it/wiki/Script">Bitcoin Wiki</see> an empty array of bytes
-        /// is pushed onto the stack for <c>OP_0</c>.
-        /// </remarks>
         public ColdStakingScriptSigParameters ExtractScriptSigParameters(Network network, Script scriptSig)
         {
             Op[] ops = scriptSig.ToOps().ToArray();
@@ -34,6 +29,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             {
                 return new ColdStakingScriptSigParameters()
                 {
+                    // The signature can be null in which case it is encoded as an OP_0. This reverses the encoding.
                     TransactionSignature = (ops[0].Code == OpcodeType.OP_0) ? null : new TransactionSignature(ops[0].PushData),
                     IsColdPublicKey = (ops[0].Code == OpcodeType.OP_0),
                     PublicKey = new PubKey(ops[2].PushData, true),
@@ -58,12 +54,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <summary>
         /// Generates the scriptSig.
         /// </summary>
-        /// <remarks>
-        /// The <paramref name="signature"/> can be <c>null</c> in which case it is encoded as an <c>OP_0</c>.
-        /// According to <see href="https://en.bitcoin.it/wiki/Script">Bitcoin Wiki</see> an empty array of bytes
-        /// is pushed onto the stack for <c>OP_0</c>.
-        /// </remarks>
-        /// <param name="signature">The transaction signature.</param>
+        /// <param name="signature">The transaction signature. For unsigned inputs this can be <c>null</c> in which case it is encoded as an <c>OP_0</c>.</param>
         /// <param name="coldPubKey">A flag indicating whether the cold wallet versus the hot wallet is signing.</param>
         /// <param name="publicKey">The cold or hot wallet public key.</param>
         /// <returns>The scriptSig.</returns>
