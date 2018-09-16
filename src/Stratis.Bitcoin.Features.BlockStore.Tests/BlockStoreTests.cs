@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 ChainedHeader header = longChain.GetBlock(i);
 
-                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, header));
+                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, header));
             }
 
             await WaitUntilBatchIsEmptyAsync().ConfigureAwait(false);
@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
-                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, lastHeader));
+                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, lastHeader));
             }
 
             // At this point we expect the blocks to be in the batch.
@@ -228,12 +228,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 {
                     // Add a last block at the chain tip to trigger a save.
                     this.chainState.IsAtBestChainTip = true;
-                    this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, lastHeader));
+                    this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, lastHeader));
 
                     break;
                 }
 
-                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, lastHeader));
+                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, lastHeader));
             }
 
             await this.WaitUntilBatchIsEmptyAsync().ConfigureAwait(false);
@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
-                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, alternativeChain.GetBlock(i)));
+                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, alternativeChain.GetBlock(i)));
             }
 
             // Present second chain which has more work and reorgs blocks from genesis.
@@ -268,7 +268,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
-                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
+                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
             }
 
             Assert.Equal(this.chainState.BlockStoreTip, this.chain.Genesis);
@@ -305,7 +305,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
-                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
+                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
             }
 
             // Create alternative chain with fork point at 450.
@@ -337,7 +337,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 if (header == alternativeBlocks.Last())
                     this.chainState.IsAtBestChainTip = true;
 
-                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, header));
+                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, header));
             }
 
             await WaitUntilBatchIsEmptyAsync().ConfigureAwait(false);
@@ -359,7 +359,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 if (i == this.chain.Height)
                     this.chainState.IsAtBestChainTip = true;
 
-                this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
+                this.blockStoreQueue.AddToPending(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
             }
 
             await WaitUntilBatchIsEmptyAsync().ConfigureAwait(false);

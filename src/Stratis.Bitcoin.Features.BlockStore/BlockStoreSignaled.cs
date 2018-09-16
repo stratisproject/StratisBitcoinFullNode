@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("Block hash is '{0}'.", chainedHeader.HashBlock);
 
             // Ensure the block is in the batch ready to be written to disk before progressing to relaying.
-            this.blockStoreQueue.AddToBatch(blockPair);
+            this.blockStoreQueue.AddToPending(blockPair);
 
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
