@@ -355,6 +355,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
             lock (this.getBlockLock)
             {
                 clearedBatch = this.GetBatchWithoutReorgedBlocks();
+
+                // We do not want reorged blocks to be left inside the batch once saving is complete.
+                // Therefore replace the batch with the cleaned version.
+                this.batch.Clear();
+                this.batch.AddRange(clearedBatch);
+
+                // We effectively have a copy of the batch now. We do not want to hold a lock on
+                // the batch while saving to the repository later, as this may stall consensus.
             }
 
             ChainedHeader expectedStoreTip = clearedBatch.First().ChainedHeader.Previous;

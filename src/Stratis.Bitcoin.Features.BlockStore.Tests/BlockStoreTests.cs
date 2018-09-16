@@ -104,17 +104,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             return chain;
         }
 
-        private async Task WaitUntilQueueIsEmptyAsync()
+        private async Task WaitUntilBatchIsEmptyAsync()
         {
             int iterations = 0;
 
-            var queue = this.blockStoreQueue.GetMemberValue("blocksQueue") as AsyncQueue<ChainedHeaderBlock>;
+            var batch = this.blockStoreQueue.GetMemberValue("batch") as List<ChainedHeaderBlock>;
 
             while (true)
             {
-                int itemsCount = ((Queue<ChainedHeaderBlock>)queue.GetMemberValue("items")).Count;
-
-                if (itemsCount != 0)
+                if (batch.Count != 0)
                     await Task.Delay(100).ConfigureAwait(false);
                 else
                     break;
@@ -175,7 +173,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, header));
             }
 
-            await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
+            await WaitUntilBatchIsEmptyAsync().ConfigureAwait(false);
             Assert.Equal(longChain.GetBlock(count - 1), this.chainState.BlockStoreTip);
             Assert.Equal(1, this.repositorySavesCount);
         }
@@ -198,14 +196,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, lastHeader));
             }
 
-            await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
-
+            // At this point we expect the blocks to be in the batch.
+            // They will not have been saved yet.
             Assert.Equal(this.chainState.BlockStoreTip, this.chain.Genesis);
             Assert.Equal(0, this.repositorySavesCount);
 
             this.nodeLifetime.StopApplication();
             this.blockStoreQueue.Dispose();
 
+            // Blocks should have been saved.
             Assert.Equal(this.chainState.BlockStoreTip, lastHeader);
             Assert.Equal(1, this.repositorySavesCount);
         }
@@ -227,14 +226,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
                 if (i == this.chain.Height)
                 {
-                    await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
+                    // Add a last block at the chain tip to trigger a save.
                     this.chainState.IsAtBestChainTip = true;
+                    this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, lastHeader));
+
+                    break;
                 }
 
                 this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, lastHeader));
             }
 
-            await this.WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
+            await this.WaitUntilBatchIsEmptyAsync().ConfigureAwait(false);
 
             Assert.Equal(this.chainState.BlockStoreTip, this.chain.Tip);
             Assert.Equal(1, this.repositorySavesCount);
@@ -247,11 +249,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
 
-            int reorgedChainLenght = 3;
-            int realChainLenght = 6;
+            int reorgedChainLength = 3;
+            int realChainLength = 6;
 
             // First present a short chain.
-            ConcurrentChain alternativeChain = CreateChain(reorgedChainLenght);
+            ConcurrentChain alternativeChain = CreateChain(reorgedChainLength);
             for (int i = 1; i < alternativeChain.Height; i++)
             {
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
@@ -261,15 +263,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             }
 
             // Present second chain which has more work and reorgs blocks from genesis.
-            for (int i = 1; i < realChainLenght; i++)
+            for (int i = 1; i < realChainLength; i++)
             {
                 Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
                 block.GetSerializedSize();
 
                 this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
             }
-
-            await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
 
             Assert.Equal(this.chainState.BlockStoreTip, this.chain.Genesis);
             Assert.Equal(0, this.repositorySavesCount);
@@ -279,9 +279,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.blockStoreQueue.Dispose();
 
             // Make sure that blocks only from 2nd chain were saved.
-            Assert.Equal(this.chain.GetBlock(realChainLenght - 1), this.chainState.BlockStoreTip);
+            Assert.Equal(this.chain.GetBlock(realChainLength - 1), this.chainState.BlockStoreTip);
             Assert.Equal(1, this.repositorySavesCount);
-            Assert.Equal(realChainLenght - 1, this.repositoryTotalBlocksSaved);
+            Assert.Equal(realChainLength - 1, this.repositoryTotalBlocksSaved);
         }
 
         /// <summary>
@@ -340,7 +340,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, header));
             }
 
-            await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
+            await WaitUntilBatchIsEmptyAsync().ConfigureAwait(false);
 
             this.chainState.IsAtBestChainTip = false;
 
@@ -362,7 +362,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 this.blockStoreQueue.AddToBatch(new ChainedHeaderBlock(block, this.chain.GetBlock(i)));
             }
 
-            await WaitUntilQueueIsEmptyAsync().ConfigureAwait(false);
+            await WaitUntilBatchIsEmptyAsync().ConfigureAwait(false);
 
             // Make sure chain is saved.
             Assert.Equal(this.chain.Tip.Height + alternativeBlocks.Count, this.repositoryTotalBlocksSaved);
