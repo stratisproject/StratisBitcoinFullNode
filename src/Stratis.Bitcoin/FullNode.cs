@@ -241,12 +241,20 @@ namespace Stratis.Bitcoin
                 this.LastLogOutput = stats;
 
                 return Task.CompletedTask;
-            },
-            this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpans.FiveSeconds,
-            startAfter: TimeSpans.FiveSeconds);
+            }, this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpans.FiveSeconds, startAfter: TimeSpans.FiveSeconds);
 
             this.Resources.Add(periodicLogLoop);
+
+            IAsyncLoop periodicBenchmarkLoop = this.AsyncLoopFactory.Run("PeriodicBenchmarkLog", (cancellation) =>
+            {
+                string benchmark = this.nodeStats.GetBenchmark();
+
+                this.logger.LogInformation(benchmark);
+
+                return Task.CompletedTask;
+            }, this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpan.FromSeconds(17), startAfter: TimeSpan.FromSeconds(17));
+
+            this.Resources.Add(periodicBenchmarkLoop);
         }
 
         public string LastLogOutput { get; private set; }
