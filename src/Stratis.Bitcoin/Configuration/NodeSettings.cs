@@ -158,8 +158,8 @@ namespace Stratis.Bitcoin.Configuration
                 this.Logger.LogDebug("Network set to '{0}'.", this.Network.Name);
             }
 
-            // Ensure the network being used is registered.
-            NetworkRegistration.Register(this.Network);
+            // Ensure the network being used is registered and we have the correct Network object reference.
+            this.Network = NetworkRegistration.Register(this.Network);
 
             // Set the full data directory path.
             if (this.DataDir == null)
