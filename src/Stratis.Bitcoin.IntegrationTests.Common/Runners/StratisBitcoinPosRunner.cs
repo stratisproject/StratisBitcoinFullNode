@@ -14,15 +14,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
     public sealed class StratisBitcoinPosRunner : NodeRunner
     {
-        public StratisBitcoinPosRunner(string dataDir, Network network)
+        private readonly string agentPrefix;
+
+        public StratisBitcoinPosRunner(string dataDir, Network network, string agentPrefix)
             : base(dataDir)
         {
+            this.agentPrefix = agentPrefix;
             this.Network = network;
         }
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
+            var settings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder, "agentprefix=" + this.agentPrefix });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)

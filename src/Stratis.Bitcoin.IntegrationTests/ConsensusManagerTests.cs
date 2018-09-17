@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.network.Consensus.Options = new ConsensusOptionsTest();
 
             Type consensusType = typeof(NBitcoin.Consensus);
-            consensusType.GetProperty("MaxReorgLength").SetValue(this.network.Consensus, 20);
+            consensusType.GetProperty("MaxReorgLength").SetValue(this.network.Consensus, (uint)20);
         }
 
         private class ConsensusOptionsTest : PosConsensusOptions
@@ -81,6 +81,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Ensure that Syncer is not connected to miner B any longer.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, minerB));
+
+                // Reconnect Miner B to Miner A and ensure the sync
+                TestHelper.Connect(minerB, minerA);
+                TestHelper.IsNodeConnectedTo(minerB, minerA);
+
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(minerA, minerB));
             }
         }
     }
