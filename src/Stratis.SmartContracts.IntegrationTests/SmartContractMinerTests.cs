@@ -7,17 +7,13 @@ using System.Text;
 using System.Threading.Tasks;
 using DBreeze;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
@@ -25,16 +21,11 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
-using Stratis.Bitcoin.IntegrationTests.Mempool;
-using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Mining;
-using Stratis.Bitcoin.P2P;
-using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Patricia;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
@@ -48,7 +39,7 @@ using Xunit;
 using Key = NBitcoin.Key;
 
 
-namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
+namespace Stratis.SmartContracts.IntegrationTests
 {
     /// <summary>
     /// This is taken from 'MinerTests.cs' and adjusted to use a different block validator.
@@ -240,7 +231,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 this.entry.Fee(11);
                 this.entry.Height(11);
 
-                var dateTimeProviderSet = new MemoryPoolTests.DateTimeProviderSet
+                var dateTimeProviderSet = new DateTimeProviderSet
                 {
                     time = DateTimeProvider.Default.GetTime(),
                     timeutc = DateTimeProvider.Default.GetUtcNow()
