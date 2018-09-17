@@ -85,8 +85,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Block hash is '{0}'.", chainedHeader.HashBlock);
 
-            // Ensure the block is in the batch ready to be written to disk before progressing to relaying.
-            this.blockStoreQueue.AddToBatch(blockPair);
+            // Ensure the block is written to disk before relaying.
+            this.blockStoreQueue.AddToPending(blockPair);
 
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>
         /// Continuously dequeues items from <see cref="blocksToAnnounce"/> and sends
-        /// them to the peers after the timer runs out or if the last item is a tip.
+        /// them  to the peers after the timer runs out or if the last item is a tip.
         /// </summary>
         private async Task DequeueContinuouslyAsync()
         {

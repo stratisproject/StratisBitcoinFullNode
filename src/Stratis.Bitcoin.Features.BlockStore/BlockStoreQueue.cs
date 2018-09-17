@@ -61,12 +61,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="IBlockRepository"/>
         private readonly IBlockRepository blockRepository;
 
+        /// <summary>Queue which contains blocks that should be saved to the database.</summary>
+        private readonly AsyncQueue<ChainedHeaderBlock> blocksQueue;
+
         /// <summary>Batch of blocks which should be saved in the database.</summary>
         /// <remarks>Write access should be protected by <see cref="getBlockLock"/>.</remarks>
         private readonly List<ChainedHeaderBlock> batch;
 
-        /// <summary>Task that runs <see cref="CheckBatchContinuouslyAsync"/>.</summary>
-        private Task checkBatchLoopTask;
+        /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
+        private Task dequeueLoopTask;
 
         /// <summary>Protects the batch from being modifying while <see cref="GetBlockAsync"/> method is using the batch.</summary>
         private readonly object getBlockLock;
@@ -94,6 +97,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.batch = new List<ChainedHeaderBlock>();
             this.getBlockLock = new object();
 
+            this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
@@ -153,9 +157,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 throw new BlockStoreException("Block store initialized after consensus!");
             }
 
-            // Start periodically checking the size of the batch, so it can be saved to disk.
+            // Start dequeuing.
             this.currentBatchSizeBytes = 0;
-            this.checkBatchLoopTask = this.CheckBatchContinuouslyAsync();
+            this.dequeueLoopTask = this.DequeueBlocksContinuouslyAsync();
 
             this.logger.LogTrace("(-)");
         }
@@ -263,44 +267,39 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public void AddToBatch(ChainedHeaderBlock chainedHeaderBlock)
+        public void AddToPending(ChainedHeaderBlock chainedHeaderBlock)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock.ChainedHeader);
 
-            lock (this.getBlockLock)
-            {
-                this.batch.Add(chainedHeaderBlock);
-                this.currentBatchSizeBytes += chainedHeaderBlock.Block.BlockSize.Value;
-            }
+            this.blocksQueue.Enqueue(chainedHeaderBlock);
 
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>
-        /// Periodically checks whether the batch of blocks is full enough to be saved to the database,
-        /// or if sufficient time elapses save the batch anyway.
+        /// Dequeues the blocks continuously and saves them to the database when max batch size is reached or timer ran out.
         /// </summary>
         /// <remarks>Batch is always saved on shutdown.</remarks>
-        private async Task CheckBatchContinuouslyAsync()
+        private async Task DequeueBlocksContinuouslyAsync()
         {
             this.logger.LogTrace("()");
 
-            int cumulativeTicks = 0;
-            bool saveBatch = false;
+            Task<ChainedHeaderBlock> dequeueTask = null;
+            Task timerTask = null;
 
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
+                // Start new dequeue task if not started already.
+                dequeueTask = dequeueTask ?? this.blocksQueue.DequeueAsync();
+
+                // Wait for one of the tasks: dequeue or timer (if available) to finish.
+                Task task = (timerTask == null) ? dequeueTask : await Task.WhenAny(dequeueTask, timerTask).ConfigureAwait(false);
+
+                bool saveBatch = false;
+
                 try
                 {
-                    await Task.Delay(1000);
-
-                    cumulativeTicks++;
-
-                    if (cumulativeTicks >= BatchMaxSaveIntervalSeconds)
-                    {
-                        saveBatch = true;
-                        cumulativeTicks = 0;
-                    }
+                    await task.ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -311,27 +310,50 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.logger.LogDebug("Node is shutting down. Save batch.");
                 }
 
-                saveBatch = saveBatch || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes) || this.chainState.IsAtBestChainTip;
+                // Save batch if timer ran out or we've dequeued a new block and reached the consensus tip
+                // or the max batch size is reached or the node is shutting down.
+                if (dequeueTask.Status == TaskStatus.RanToCompletion)
+                {
+                    ChainedHeaderBlock item = dequeueTask.Result;
+
+                    // Set the dequeue task to null so it can be assigned on the next iteration.
+                    dequeueTask = null;
+
+                    lock (this.getBlockLock)
+                    {
+                        this.batch.Add(item);
+                    }
+
+                    this.currentBatchSizeBytes += item.Block.BlockSize.Value;
+
+                    saveBatch = saveBatch || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes) || this.chainState.IsAtBestChainTip;
+                }
+                else
+                {
+                    // Will be executed in case timer ran out or node is being shut down.
+                    saveBatch = true;
+                }
 
                 if (saveBatch)
                 {
                     if (this.batch.Count != 0)
                     {
-                        List<ChainedHeaderBlock> saved = await this.SaveBatchAsync().ConfigureAwait(false);
+                        await this.SaveBatchAsync().ConfigureAwait(false);
 
                         lock (this.getBlockLock)
                         {
-                            // Only remove items from the batch that have explicitly been saved.
-                            foreach (ChainedHeaderBlock savedHeaderBlock in saved)
-                                this.batch.Remove(savedHeaderBlock);
-
-                            // Recompute batch size after saving - it is possible that there are still blocks in it.
-                            foreach (ChainedHeaderBlock stillInBatch in this.batch)
-                                this.currentBatchSizeBytes += stillInBatch.Block.BlockSize.Value;
+                            this.batch.Clear();
                         }
+
+                        this.currentBatchSizeBytes = 0;
                     }
 
-                    saveBatch = false;
+                    timerTask = null;
+                }
+                else
+                {
+                    // Start timer if it is not started already.
+                    timerTask = timerTask ?? Task.Delay(BatchMaxSaveIntervalSeconds * 1000, this.nodeLifetime.ApplicationStopping);
                 }
             }
 
@@ -345,17 +367,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Checks if repository contains reorged blocks and deletes them; saves batch on top.
         /// The last block in the list is considered to be on the current main chain and will be used to determine if a database reorg is required.
         /// </summary>
-        /// <returns>List of saved blocks.</returns>
-        private async Task<List<ChainedHeaderBlock>> SaveBatchAsync()
+        private async Task SaveBatchAsync()
         {
             this.logger.LogTrace("()");
 
-            List<ChainedHeaderBlock> clearedBatch;
-
-            lock (this.getBlockLock)
-            {
-                clearedBatch = this.GetBatchWithoutReorgedBlocks();
-            }
+            List<ChainedHeaderBlock> clearedBatch = this.GetBatchWithoutReorgedBlocks();
 
             ChainedHeader expectedStoreTip = clearedBatch.First().ChainedHeader.Previous;
 
@@ -373,9 +389,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.SetStoreTip(newTip);
             this.logger.LogDebug("Store tip set to '{0}'.", this.storeTip);
 
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(clearedBatch.Count), clearedBatch.Count);
-
-            return clearedBatch;
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -425,13 +439,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 blocksToDelete.Add(currentHeader.HashBlock);
                 currentHeader = currentHeader.Previous;
-
-                if (currentHeader == null)
-                {
-                    this.logger.LogTrace("Invalid expected store tip '{0}', searched to genesis without finding it. Store tip is '{1}'.", expectedStoreTip, this.storeTip);
-                    this.logger.LogTrace("(-)[INVALID_EXPECTED_STORE_TIP]");
-                    throw new BlockStoreException("Invalid expected store tip!");
-                }
             }
 
             this.logger.LogDebug("Block store reorg detected. Removing {0} blocks from the database.", blocksToDelete.Count);
@@ -450,7 +457,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("()");
 
             // Let current batch saving task finish.
-            this.checkBatchLoopTask?.GetAwaiter().GetResult();
+            this.blocksQueue.Dispose();
+            this.dequeueLoopTask?.GetAwaiter().GetResult();
             this.blockRepository.Dispose();
 
             this.logger.LogTrace("(-)");
