@@ -74,6 +74,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Protects the batch from being modifying while <see cref="GetBlockAsync"/> method is using the batch.</summary>
         private readonly object getBlockLock;
 
+        /// <summary>Represents all blocks currently in the queue & pending batch, so that <see cref="GetBlockAsync"/> is able to return a value directly after enqueuing.</summary>
+        private Dictionary<uint256, ChainedHeaderBlock> blocksBeingPersisted;
+
         public BlockStoreQueue(
             ConcurrentChain chain,
             IChainState chainState,
@@ -96,8 +99,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockRepository = blockRepository;
             this.batch = new List<ChainedHeaderBlock>();
             this.getBlockLock = new object();
-
             this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
+            this.blocksBeingPersisted = new Dictionary<uint256, ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
@@ -181,17 +184,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
-            Block block = null;
-
             lock (this.getBlockLock)
             {
-                block = this.batch.FirstOrDefault(x => x.ChainedHeader.HashBlock == blockHash)?.Block;
+                if (this.blocksBeingPersisted.TryGetValue(blockHash, out ChainedHeaderBlock chainedHeaderBlock))
+                {
+                    this.logger.LogTrace("(-)[FOUND_IN_DICTIONARY]");
+                    return chainedHeaderBlock.Block;
+                }
             }
 
+            Block block = await this.blockRepository.GetBlockAsync(blockHash).ConfigureAwait(false);
+
             if (block == null)
-                block = await this.blockRepository.GetBlockAsync(blockHash).ConfigureAwait(false);
+                this.logger.LogTrace("Block was not found in the repository.");
             else
-                this.logger.LogTrace("Block was found in the batch.");
+                this.logger.LogTrace("Block was found in the repository.");
 
             this.logger.LogTrace("(-)");
             return block;
@@ -271,6 +278,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock.ChainedHeader);
 
+            lock (this.getBlockLock)
+            {
+                this.blocksBeingPersisted.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
+            }
+
             this.blocksQueue.Enqueue(chainedHeaderBlock);
 
             this.logger.LogTrace("(-)");
@@ -342,6 +354,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                         lock (this.getBlockLock)
                         {
+                            foreach (ChainedHeaderBlock chainedHeaderBlock in this.batch)
+                            {
+                                this.blocksBeingPersisted.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
+                            }
+
                             this.batch.Clear();
                         }
 
