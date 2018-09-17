@@ -6,6 +6,6 @@ namespace Stratis.Bitcoin.Interfaces
     {
         /// <summary>Adds a block to the batch, pending being written to disk.</summary>
         /// <param name="chainedHeaderBlock">The block and its chained header pair.</param>
-        void AddToPending(ChainedHeaderBlock chainedHeaderBlock);
+        void AddToBatch(ChainedHeaderBlock chainedHeaderBlock);
     }
 }
