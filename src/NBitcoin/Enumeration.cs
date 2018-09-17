@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace NBitcoin
 {
     /// <summary>
     /// Enumeration classes that enable all the rich features of an object-oriented language
     /// <seealso cref="https://docs.microsoft.com/en-us/dotnet/standard/microservices-architecture/microservice-ddd-cqrs-patterns/enumeration-classes-over-enum-types"/>
-    /// </summary
+    /// </summary>
     public abstract class Enumeration : IComparable
     {
         public string Name { get; private set; }
@@ -27,8 +30,8 @@ namespace NBitcoin
             if (!(obj is Enumeration otherValue))
                 return false;
 
-            var typeMatches = this.GetType().Equals(obj.GetType());
-            var valueMatches = this.Id.Equals(otherValue.Id);
+            bool typeMatches = this.GetType().Equals(obj.GetType());
+            bool valueMatches = this.Id.Equals(otherValue.Id);
 
             return typeMatches && valueMatches;
         }
@@ -36,5 +39,22 @@ namespace NBitcoin
         public override int GetHashCode() => this.Id.GetHashCode();
 
         public int CompareTo(object other) => this.Id.CompareTo(((Enumeration)other).Id);
+
+        public static IEnumerable<TReturn> GetAll<T, TReturn>() where T : Enumeration, new()
+        {
+            Type type = typeof(T);
+
+            IEnumerable<TReturn> allStaticFields = GetPublicClassConstants(type)
+                .Concat(type.GetNestedTypes(BindingFlags.Public).SelectMany(GetPublicClassConstants))
+                .Select(fi => (TReturn)fi.GetValue(null));
+
+            return allStaticFields;
+        }
+
+        private static IEnumerable<FieldInfo> GetPublicClassConstants(Type type)
+        {
+            return type
+                .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+        }
     }
 }

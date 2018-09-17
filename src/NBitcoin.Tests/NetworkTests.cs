@@ -7,8 +7,10 @@ using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Networks;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Networks.ProtocolVersion;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
+using FluentAssertions;
 
 namespace NBitcoin.Tests
 {
@@ -18,6 +20,8 @@ namespace NBitcoin.Tests
         private readonly Network stratisMain;
         private readonly Network stratisTest;
         private readonly Network stratisRegTest;
+
+        private const int BaseProtocolVersionItemCount = 13;
 
         public NetworkTests()
         {
@@ -575,7 +579,6 @@ namespace NBitcoin.Tests
             Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(), coinbaseText100Long, new Target(new uint256()), Money.Zero));
         }
 
-
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void StratisProtocolVersionValidateItems()
@@ -587,45 +590,59 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void StratisProtocolVersionAllItemsCount()
         {
-            var itemCount = 14;
             var stratisItemCount = 1;
+            IEnumerable<IProtocolVersion> list = ProtocolVersionBase.GetAll<StratisProtocolVersion>();
 
-            var version = new StratisProtocolVersion();
-            IEnumerable<ProtocolVersion> list = version.List();
-            Assert.True(list.Count() == itemCount + stratisItemCount);
+            list.Count(x => x is StratisProtocolVersion).Should().Be(stratisItemCount);
+            list.Count(x => x is ProtocolVersionBase).Should().Be(BaseProtocolVersionItemCount + stratisItemCount);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void BitcoinProtocolVersionValidateItems()
+        {
+            Assert.True(BitcoinProtocolVersion.ShortIdBlocks.Id == 70014);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void BitcoinProtocolVersionAllItemsCount()
+        {
+            var bitcoinItemCount = 1;
+
+            var version = new BitcoinProtocolVersion();
+            IEnumerable<IProtocolVersion> list = ProtocolVersionBase.GetAll<BitcoinProtocolVersion>();
+
+            list.Count(x => x is BitcoinProtocolVersion).Should().Be(bitcoinItemCount);
+            list.Count(x => x is ProtocolVersionBase).Should().Be(BaseProtocolVersionItemCount + bitcoinItemCount);
         }
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
         public void ProtocolVersionBaseValidateItems()
         {
-            Assert.True(ProtocolVersion.Protocol.Id == 70012);
-            Assert.True(ProtocolVersion.AltProtocal.Id == 70000);
-            Assert.True(ProtocolVersion.InitProtocol.Id == 209);
-            Assert.True(ProtocolVersion.MinPeers.Id == 209);
-            Assert.True(ProtocolVersion.CAddressTime.Id == 31402);
-            Assert.True(ProtocolVersion.NoBlocksStart.Id == 32000);
-            Assert.True(ProtocolVersion.NoBlocksEnd.Id == 32400);
-            Assert.True(ProtocolVersion.Bip31.Id == 60000);
-            Assert.True(ProtocolVersion.MempoolGetData.Id == 60002);
-            Assert.True(ProtocolVersion.Reject.Id == 70002);
-            Assert.True(ProtocolVersion.NoBloom.Id == 70011);
-            Assert.True(ProtocolVersion.SendHeaders.Id == 70012);
-            Assert.True(ProtocolVersion.Witness.Id == 70012);
-            Assert.True(ProtocolVersion.ShortIdBlocks.Id == 70014);
+            ProtocolVersionBase.Protocol.Id.Should().Be(70012);
+            ProtocolVersionBase.AltProtocal.Id.Should().Be(70000);
+            ProtocolVersionBase.InitProtocol.Id .Should().Be(209);
+            ProtocolVersionBase.MinPeers.Id.Should().Be(209);
+            ProtocolVersionBase.CAddressTime.Id.Should().Be(31402);
+            ProtocolVersionBase.NoBlocksStart.Id.Should().Be(32000);
+            ProtocolVersionBase.NoBlocksEnd.Id.Should().Be(32400);
+            ProtocolVersionBase.Bip31.Id.Should().Be(60000);
+            ProtocolVersionBase.MempoolGetData.Id.Should().Be(60002);
+            ProtocolVersionBase.Reject.Id.Should().Be(70002);
+            ProtocolVersionBase.NoBloom.Id.Should().Be(70011);
+            ProtocolVersionBase.SendHeaders.Id.Should().Be(70012);
+            ProtocolVersionBase.Witness.Id.Should().Be(70012);
         }
 
         [Fact]
         [Trait("UnitTest", "UnitTest")]
-        public void BitCoinProtocolVersionAllItemsCount()
+        public void ProtocolVersionBaseAllItemsCount()
         {
-            var itemCount = 14;
-            var bitCoinItemCount = 0;
-
-            var version = new BitcoinProtocolVersion();
-            IEnumerable<ProtocolVersion> list = version.List();
-
-            Assert.True(list.Count() == itemCount + bitCoinItemCount);
+            IEnumerable<IProtocolVersion> list = ProtocolVersionBase.GetAll<ProtocolVersionBase>();
+    
+            list.Count(x => x is ProtocolVersionBase).Should().Be(BaseProtocolVersionItemCount);
         }
     }
 }
