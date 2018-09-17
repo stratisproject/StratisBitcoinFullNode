@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
@@ -13,7 +14,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects access to <see cref="rulesInfo"/>.</summary>
         private readonly object locker;
 
-        private const int MaxSamples = 100;
+        private const int MaxSamples = 1000;
 
         public ConsensusRulesPerformanceCounter()
         {
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.Consensus
 
         public IDisposable MeasureRuleExecutionTime(ConsensusRuleBase rule, RuleType ruleType)
         {
-            var stopwatch = new StopwatchDisposable(elapsed =>
+            var stopwatch = new StopwatchDisposable(elapsedTicks =>
             {
                 string ruleName = rule.GetType().Name;
 
@@ -31,17 +32,18 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     if (this.rulesInfo.ContainsKey(ruleName))
                     {
-                        this.rulesInfo[ruleName].ExecutionTime.AddSample(elapsed);
+                        this.rulesInfo[ruleName].ExecutionTime.AddSample(elapsedTicks);
                     }
                     else
                     {
                         var ruleItem = new RuleItem()
                         {
+                            RuleName = ruleName,
                             RuleType = ruleType,
                             ExecutionTime = new AverageCalculator(MaxSamples)
                         };
 
-                        ruleItem.ExecutionTime.AddSample(elapsed);
+                        ruleItem.ExecutionTime.AddSample(elapsedTicks);
                         this.rulesInfo.Add(ruleName, ruleItem);
                     }
                 }
@@ -54,13 +56,44 @@ namespace Stratis.Bitcoin.Consensus
         {
             var builder = new StringBuilder();
 
-            // TODO
+            builder.AppendLine();
+            builder.AppendLine("======ConsensusRules Bench======");
+
+            int ticksPerMs = 10_000;
+
+            lock (this.locker)
+            {
+                if (this.rulesInfo.Count != 0)
+                {
+                    builder.AppendLine($"Using up to {MaxSamples} most recent samples.");
+
+                    foreach (IGrouping<RuleType, RuleItem> rulesGroup in this.rulesInfo.Values.GroupBy(x => x.RuleType))
+                    {
+                        double totalRunningTimeMs = Math.Round(rulesGroup.Sum(x => x.ExecutionTime.Average) / ticksPerMs, 4);
+
+                        builder.AppendLine($"{rulesGroup.Key} validation rules. Total execution time: {totalRunningTimeMs} ms.");
+
+                        foreach (RuleItem rule in rulesGroup)
+                        {
+                            double milliseconds = Math.Round(rule.ExecutionTime.Average / ticksPerMs, 4);
+                            double percentage = Math.Round((milliseconds / totalRunningTimeMs) * 100.0);
+
+                            builder.AppendLine($"    {rule.RuleName.PadRight(50, '-')}{(milliseconds + " ms").PadRight(12, '-')}{percentage} %");
+                        }
+
+                        builder.AppendLine();
+                    }
+                }
+                else
+                    builder.AppendLine("No samples...");
+            }
 
             return builder.ToString();
         }
 
         private class RuleItem
         {
+            public string RuleName;
             public RuleType RuleType;
             public AverageCalculator ExecutionTime;
         }
