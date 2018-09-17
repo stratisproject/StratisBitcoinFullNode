@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.secondNode.Start();
             this.secondNode.NotInIBD().WithWallet();
 
-            TestHelper.ConnectAndSync(this.firstNode, this.secondNode);
+            TestHelper.Connect(this.firstNode, this.secondNode);
         }
 
         private void node1_sends_funds_to_node2_TO_fifty_addresses()

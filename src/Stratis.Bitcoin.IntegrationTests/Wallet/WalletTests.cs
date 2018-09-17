@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 builder.StartAll();
 
                 stratisSender.NotInIBD().WithWallet();
-                stratisReceiver.NotInIBD();
+                stratisReceiver.NotInIBD().WithWallet();
                 stratisReorg.NotInIBD().WithWallet();
 
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
