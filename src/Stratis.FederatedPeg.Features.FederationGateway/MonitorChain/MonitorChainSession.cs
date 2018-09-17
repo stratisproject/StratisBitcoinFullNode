@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
@@ -20,15 +17,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     {
         public SessionStatus Status { get; set; }
 
-        // Time when the session started.
         private readonly DateTime startTime;
 
         public ICollection<CrossChainTransactionInfo> CrossChainTransactions { get; set; }
-
         
         public int BlockNumber { get; }
 
-        // Boss table.
         public BossTable BossTable { get; }
 
         // My boss card. I only get to build and broadcast the transaction when my boss card is in play.
@@ -43,7 +37,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.CrossChainTransactions = new List<CrossChainTransactionInfo>();
             this.BlockNumber = blockNumber;
 
-            // Build the boss table.
             this.BossTable = new BossTableBuilder().Build(blockNumber, federationPubKeys);
             this.BossCard = BossTable.MakeBossTableEntry(blockNumber, myPublicKey).ToString();
         }
@@ -60,10 +53,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public string WhoHoldsTheBossCard(DateTime now) => this.BossTable.WhoHoldsTheBossCard(this.startTime, now);
 
-        /// <summary>
-        /// Helper to generate a json respresentation of this structure for logging/debugging.
-        /// </summary>
-        /// <returns></returns>
         public override string ToString()
         {
             return JsonConvert.SerializeObject(this, Formatting.Indented);

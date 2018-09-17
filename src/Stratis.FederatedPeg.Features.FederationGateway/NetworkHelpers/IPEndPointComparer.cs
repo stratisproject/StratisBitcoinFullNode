@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
-using System.Runtime.CompilerServices;
-using System.Text;
-using DBreeze.Utils;
 using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers

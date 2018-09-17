@@ -3,8 +3,6 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 
 using NBitcoin;
-using NBitcoin.JsonConverters;
-using Newtonsoft.Json;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.CounterChain;
@@ -13,55 +11,9 @@ using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
-    public class CrossChainTransactionInfo
-    {
-        /// <summary>
-        /// The hash of the source transaction that originates the fund transfer. 
-        /// </summary>
-        [JsonConverter(typeof(UInt256JsonConverter))]
-        public uint256 TransactionHash { get; set; }
-
-        /// <summary>
-        /// The amount of the requested fund transfer.
-        /// </summary>
-        public Money Amount { get; set; }
-
-        /// <summary>
-        /// The final destination of funds (on the counter chain).
-        /// </summary>
-        public string DestinationAddress { get; set; }
-
-        /// <summary>
-        /// The block number where the source transaction resides.
-        /// </summary>
-        public int BlockNumber { get; set; }
-
-        /// <summary>
-        /// The hash of the block where the transaction resides.
-        /// </summary>
-        [JsonConverter(typeof(UInt256JsonConverter))]
-        public uint256 BlockHash { get; set; }
-
-        /// <summary>
-        /// The hash of the destination transaction that moved the funds into the counterchain destination.
-        /// </summary>
-        [JsonConverter(typeof(UInt256JsonConverter))]
-        public uint256 CrossChainTransactionId { get; set; } = uint256.Zero;
-
-        /// <summary>
-        /// Helper to generate a json respresentation of this structure for logging/debugging.
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString()
-        {
-            return JsonConvert.SerializeObject(this, Formatting.Indented);
-        }
-    }
-
     ///<inheritdoc/>
     internal class CrossChainTransactionMonitor : ICrossChainTransactionMonitor
     {
-        // Logging.
         private readonly ILogger logger;
 
         // Our session manager.
@@ -71,11 +23,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         // The redeem Script we are monitoring.
         private Script script;
-
-        // The gateway settings from the config file.
+        
         private readonly FederationGatewaySettings federationGatewaySettings;
-
-        // The network we are running on. Will be a Stratis chain for mainchain or a sidechain.
+        
         private readonly Network network;
 
         private readonly ConcurrentChain concurrentChain;
@@ -151,7 +101,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             var chainBlockTip = this.concurrentChain.GetBlock(block.GetHash());
             int blockNumber = chainBlockTip.Height;
 
-            // If we are in IBD we do nothing.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
                 this.logger.LogTrace("MonitorChain ({0}) in IBD: blockNumber {1} not processed.", this.network.ToChain(), blockNumber);
@@ -166,13 +115,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             
             foreach (var transaction in block.Transactions)
             {
-                // Look at each output in the transaction.
                 foreach (var txOut in transaction.Outputs)
                 {
-                    // Does the ScriptPubKey match the script that we are interested in?
                     if (txOut.ScriptPubKey != this.script) continue;
-                    // Ok we found the script in this transaction. Does it also have an OP_RETURN?
                     var stringResult = OpReturnDataReader.GetStringFromOpReturn(this.logger, network, transaction, out var opReturnDataType);
+
                     switch (opReturnDataType)
                     {
                         case OpReturnDataType.Unknown:
@@ -192,28 +139,23 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                                 monitorSession.CrossChainTransactions.Add(trxInfo);
                             }
                             continue;
-                        //case OpReturnDataType.Hash:
-                        //    var hash = uint256.Parse(stringResult);
-                        //    this.logger.LogInformation("AddCounterChainTransactionId: {0} for transaction {1}.", transaction.GetHash(), hash);
-                        //    this.counterChainSessionManager.AddCounterChainTransactionId(hash, transaction.GetHash());
-                        //    continue;
                         case OpReturnDataType.BlockHeight:
                             var blockHeight = int.Parse(stringResult);
                             this.logger.LogInformation("AddCounterChainTransactionId: {0} for session in block {1}.", transaction.GetHash(), blockHeight);
                             this.counterChainSessionManager.AddCounterChainTransactionId(blockHeight, transaction.GetHash());
                             continue;
+                        case OpReturnDataType.Hash:
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
                 }
             }
 
-            if (monitorSession.CrossChainTransactions.Any())
-            {
-                this.logger.LogInformation("AddCounterChainTransactionId: Found {0} transactions to process in block with height {1}.", monitorSession.CrossChainTransactions.Count, monitorSession.BlockNumber);
-                this.monitorChainSessionManager.RegisterMonitorSession(monitorSession);
-                this.monitorChainSessionManager.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort, monitorSession);
-            }
+            if (!monitorSession.CrossChainTransactions.Any()) return;
+
+            this.logger.LogInformation("AddCounterChainTransactionId: Found {0} transactions to process in block with height {1}.", monitorSession.CrossChainTransactions.Count, monitorSession.BlockNumber);
+            this.monitorChainSessionManager.RegisterMonitorSession(monitorSession);
+            this.monitorChainSessionManager.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort, monitorSession);
 
         }
 
@@ -221,14 +163,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(transactionHash), transactionHash, nameof(amount), amount, nameof(destinationAddress), destinationAddress, nameof(blockNumber), blockNumber, nameof(blockHash), blockHash);
 
-            // Ignore sessions below the MinimumTransferAmount
             if (amount < MinimumTransferAmount)
             {
                 this.logger.LogInformation($"The transaction {transactionHash} has less than the MinimumTransferAmount.  Ignoring. ");
                 return null;
             }
-            
-            // This looks like a deposit or withdrawal transaction. Record the info.
+
             var crossChainTransactionInfo = new CrossChainTransactionInfo
             {
                 DestinationAddress = destinationAddress,
@@ -237,8 +177,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 BlockHash = blockHash,
                 TransactionHash = transactionHash
             };
-
-            // Log Info for info/diagnostics.
+            
             this.logger.LogInformation("Crosschain Transaction Found on : {0}", this.network.ToChain());
             this.logger.LogInformation("CrosschainTransactionInfo: {0}", crossChainTransactionInfo);
             return crossChainTransactionInfo;

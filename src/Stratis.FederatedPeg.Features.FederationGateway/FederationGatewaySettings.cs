@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
@@ -47,20 +46,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public IEnumerable<IPEndPoint> FederationNodeIpEndPoints { get; set; }
 
-        /// <summary>
-        /// A string representation of the PublicKey used for determining turns in the round robin.
-        /// </summary>
+
         public string PublicKey { get; set; }
 
-        /// <summary>
-        /// Public keys of all the federation members
-        /// </summary>
         public PubKey[] FederationPublicKeys { get; set; }
-
-        /// <summary>
-        /// The API port of the counterchain.  <example>The federation members are required to run full nodes for both the
-        /// sidechain and the mainchain.  If this is the mainchain then the CounterChainApiPort is the api port of the sidechain node.</example>
-        /// </summary>
+ 
         public int CounterChainApiPort { get; set; }
 
         /// <summary>
@@ -73,9 +63,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// </summary>
         public int MultiSigN { get; set; }
 
-        /// <summary>
-        /// Mutlisig bitcoin address.
-        /// </summary>
         public BitcoinAddress MultiSigAddress { get; set; }
 
         /// <summary>

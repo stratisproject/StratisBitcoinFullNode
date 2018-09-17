@@ -9,11 +9,6 @@ using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 {
-    /// <summary>
-    /// A wallet containing addresses not derived from an HD seed.
-    /// Also sometimes referred to as a JBOK (Just a Bunch Of Keys)
-    /// wallet.
-    /// </summary>
     public class FederationWallet
     {
         /// <summary>

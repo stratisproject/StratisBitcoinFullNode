@@ -35,10 +35,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         // Peer connector for broadcasting the payloads.
         private readonly IConnectionManager connectionManager;
 
-        // The network we are running.
         private readonly Network network;
 
-        // Gateway settings picked up from the node config.
         private readonly FederationGatewaySettings federationGatewaySettings;
 
         // Broadcaster we use to pass our payload to peers.
@@ -50,18 +48,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         // This is used only in the log file to tell us the block height.
         private readonly ConcurrentChain concurrentChain;
 
-        // The logger. It's the logger.
         private readonly ILogger logger;
         
-        // The shoulders we stand on.
         private readonly IFullNode fullnode;
 
-        // The sessions are stored here.
         private readonly ConcurrentDictionary<int, CounterChainSession> sessions = new ConcurrentDictionary<int, CounterChainSession>();
 
         private readonly IPAddressComparer ipAddressComparer;
 
-        // Get everything together before we get going.
         public CounterChainSessionManager(
             ILoggerFactory loggerFactory, 
             IFederationWalletManager federationWalletManager,
@@ -95,7 +89,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         }
 
         // Add the session to its collection.
-        private CounterChainSession RegisterSession(int blockHeight, List<CounterChainTransactionInfoRequest> counterChainTransactionInfos)
+        private void RegisterSession(int blockHeight, List<CounterChainTransactionInfoRequest> counterChainTransactionInfos)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(blockHeight), blockHeight, "Transactions Count", counterChainTransactionInfos.Count);
 
@@ -110,7 +104,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             }).ToList();
 
             this.sessions.AddOrReplace(blockHeight, counterChainSession);
-            return counterChainSession;
         }
 
         ///<inheritdoc/>
@@ -133,7 +126,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
         public void CreateSessionOnCounterChain(int blockHeight, List<CounterChainTransactionInfoRequest> counterChainTransactionInfos)
         {
-            // We don't process sessions if our chain is not past IBD.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
                 this.logger.LogInformation($"RunSessionsAsync() CounterChain is in IBD exiting. Height:{this.concurrentChain.Height}.");
@@ -142,7 +134,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.RegisterSession(blockHeight, counterChainTransactionInfos);
         }
 
-        // If we have reached the quorum we can combine and broadcast the transaction. 
         private void BroadcastTransaction(CounterChainSession counterChainSession)
         {
             //TODO: can remove this?
@@ -205,7 +196,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
                 throw new WalletException(errorMessage);
             }
 
-            //create the partial transaction template
             var wallet = this.federationWalletManager.GetWallet();
             var multiSigAddress = wallet.MultiSigAddress;
 
@@ -281,10 +271,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             this.logger.LogTrace("()");
             this.logger.LogInformation("CounterChainSession exists: {0} sessionId: {1}", exists, blockHeight);
 
-            // We do not have this session.
             if (!exists) return null;
-
-            // Have I already signed this session?
+            
             this.logger.LogInformation("HaveISigned:{0}", counterChainSession.HaveISigned);
             if (counterChainSession.HaveISigned)
             {

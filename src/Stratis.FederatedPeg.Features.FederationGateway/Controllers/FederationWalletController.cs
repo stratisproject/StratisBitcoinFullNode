@@ -55,10 +55,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        /// <summary>
-        /// Get some general info about a wallet.
-        /// </summary>
-        /// <returns></returns>
         [Route("general-info")]
         [HttpGet]
         public IActionResult GetGeneralInfo()
@@ -92,10 +88,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             }
         }
 
-        /// <summary>
-        /// Gets the balance of a wallet.
-        /// </summary>
-        /// <returns></returns>
         [Route("balance")]
         [HttpGet]
         public IActionResult GetBalance()

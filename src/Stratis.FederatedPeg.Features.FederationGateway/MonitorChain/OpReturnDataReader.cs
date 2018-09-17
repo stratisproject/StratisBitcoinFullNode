@@ -12,25 +12,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     /// </summary>
     internal enum OpReturnDataType
     {
-        /// <summary>
-        /// Address type.
-        /// </summary>
         Address,
-
-        /// <summary>
-        /// Transaction hash type.
-        /// </summary>
         Hash,
-
-
-        /// <summary>
-        /// Height of the block for the session.
-        /// </summary>
         BlockHeight,
-
-        /// <summary>
-        /// Unknown and we can ignore it.
-        /// </summary>
         Unknown
     }
 
@@ -60,20 +44,20 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 return address;
             }
 
-            //string hash = GetHashFromOpReturn(logger, transaction);
-            //if (hash != null)
-            //{
-            //    opReturnDataType = OpReturnDataType.Hash;
-            //    return hash;
-            //}
 
-            int blockHeight = GetBlockHeightFromOpReturn(logger, transaction);
+            int blockHeight = GetBlockHeightFromOpReturn(transaction);
             if (blockHeight != -1)
             {
                 opReturnDataType = OpReturnDataType.BlockHeight;
                 return blockHeight.ToString();
             }
 
+            string hash = GetHashFromOpReturn(logger, transaction);
+            if (hash != null)
+            {
+                opReturnDataType = OpReturnDataType.Hash;
+                return hash;
+            }
 
             opReturnDataType = OpReturnDataType.Unknown;
             return null;
@@ -93,17 +77,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             return hash;
         }
 
-        private static int GetBlockHeightFromOpReturn(ILogger logger, Transaction transaction)
+        private static int GetBlockHeightFromOpReturn(Transaction transaction)
         {
             int blockHeight = -1;
             foreach (var txOut in transaction.Outputs)
             {
                 var data = txOut.ScriptPubKey.ToBytes();
-                if ((OpcodeType) data[0] == OpcodeType.OP_RETURN)
-                {
-                    var asString = Encoding.UTF8.GetString(data).Remove(0, 2);
-                    int.TryParse(asString, out blockHeight);
-                }                
+                if ((OpcodeType) data[0] != OpcodeType.OP_RETURN) continue;
+                var asString = Encoding.UTF8.GetString(data.RemoveReturnOperator());
+                int.TryParse(asString, out blockHeight);
             }
             return blockHeight;
         }
@@ -128,7 +110,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private static string ConvertValidOpReturnDataToAddress(ILogger logger, Network network, byte[] data)
         {
             // Remove the RETURN operator and convert the remaining bytes to our candidate address.
-            string destination = Encoding.UTF8.GetString(data).Remove(0, 2);
+            string destination = Encoding.UTF8.GetString(data.RemoveReturnOperator());
 
             // Attempt to parse the string. Validates the base58 string.
             try
@@ -144,11 +126,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             }
         }
 
-        // Interpret the data as a hash and validate it by passing the data to the uint256 constructor.
         private static string ConvertValidOpReturnDataToHash(ILogger logger, byte[] data)
         {
-            // Remove the RETURN operator.
-            byte[] hashBytes = data.Skip(2).ToArray(); ;
+            byte[] hashBytes = data.RemoveReturnOperator().ToArray(); ;
 
             // Attempt to parse the hash. Validates the uint256 string.
             try
@@ -162,6 +142,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 logger.LogInformation($"Candidate hash {hashBytes} could not be converted to a valid uint256. Reason {ex.Message}.");
                 return null;
             }
+        }
+
+        private static byte[] RemoveReturnOperator(this byte[] rawBytes)
+        {
+            return rawBytes.Skip(2).ToArray();
         }
     }
 }
