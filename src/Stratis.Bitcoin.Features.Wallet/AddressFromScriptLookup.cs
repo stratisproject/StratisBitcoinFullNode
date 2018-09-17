@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// <see cref="HdAddress.Transactions" />) that pay to those addresses regardless of the type of script being used.
     /// The methods are virtual so that the functionality can be overridden as required to support additional script types.
     /// </remarks>
-    public class AddressFromScriptLookup
+    public class ScriptToAddressLookup
     {
         /// <summary>A collection of <see cref="HdAddress"/> objects eached keyed by a <see cref="Script"/> object.</summary>
         protected Dictionary<Script, HdAddress> keysLookup;
@@ -20,13 +20,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Constructs this object.
         /// </summary>
-        public AddressFromScriptLookup()
+        public ScriptToAddressLookup()
         {
             this.keysLookup = new Dictionary<Script, HdAddress>();
         }
 
         /// <summary>
-        /// Returns the <see cref="HdAddress"/> values from the <see cref="AddressFromScriptLookup.keysLookup"/> collection.
+        /// Returns the <see cref="HdAddress"/> values from the <see cref="ScriptToAddressLookup.keysLookup"/> collection.
         /// </summary>
         public virtual IEnumerable<HdAddress> Values => this.keysLookup.Values.AsEnumerable();
 
