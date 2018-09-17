@@ -193,12 +193,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
             catch (TargetInvocationException targetException) when (targetException.InnerException is OutOfGasException)
             {
-                // Method threw an exception that was an OutOfGasException.
+                // Method threw an OutOfGasException
                 return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.OutOfGas, targetException.InnerException);
             }
             catch (TargetInvocationException targetException) when (targetException.InnerException is MemoryConsumptionException)
             {
-                // Method threw an exception that was a MemoryConsumptionException
+                // Method threw a MemoryConsumptionException
                 return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.OverMemoryLimit, targetException.InnerException);
             }
         }
