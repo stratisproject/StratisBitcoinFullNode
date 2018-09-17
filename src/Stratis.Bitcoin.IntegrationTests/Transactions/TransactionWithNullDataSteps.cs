@@ -28,10 +28,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private Transaction transaction;
         private uint256 blockWithOpReturnId;
 
-        private readonly string senderWallet = "sender";
-        private readonly string receiverWallet = "receiver";
-        private readonly string account = "account 0";
-        private readonly string password = "p@ssw0rd";
+        private readonly string walletAccount = "account 0";
+        private readonly string walletName = "mywallet";
+        private readonly string walletPassword = "password";
         private readonly string passphrase = "p@ssphr@se";
         private readonly string opReturnContent = "extra informations!";
         private readonly int transferAmount = 31415;
@@ -54,36 +53,36 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         {
             this.senderNode = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
             this.receiverNode = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
+
             this.builder.StartAll();
-            this.senderNode.NotInIBD();
-            this.receiverNode.NotInIBD();
+
+            this.senderNode.NotInIBD().WithWallet();
+            this.receiverNode.NotInIBD().WithWallet();
         }
 
         private void a_sending_and_a_receiving_wallet()
         {
-            this.receiverNode.FullNode.WalletManager().CreateWallet(this.password, this.receiverWallet, this.passphrase);
-            this.receiverAddress = this.receiverNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.receiverWallet, this.account));
-            this.sendingWallet = this.receiverNode.FullNode.WalletManager().GetWalletByName(this.receiverWallet);
+            this.receiverAddress = this.receiverNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.walletName, this.walletAccount));
+            this.sendingWallet = this.receiverNode.FullNode.WalletManager().GetWalletByName(this.walletName);
 
-            this.senderNode.FullNode.WalletManager().CreateWallet(this.password, this.senderWallet, this.passphrase);
-            this.sendingWalletAccountReference = new WalletAccountReference(this.senderWallet, this.account);
+            this.sendingWalletAccountReference = new WalletAccountReference(this.walletName, this.walletAccount);
             this.senderAddress = this.senderNode.FullNode.WalletManager().GetUnusedAddress(this.sendingWalletAccountReference);
-            this.sendingWallet = this.senderNode.FullNode.WalletManager().GetWalletByName(this.senderWallet);
+            this.sendingWallet = this.senderNode.FullNode.WalletManager().GetWalletByName(this.walletName);
         }
 
         private void some_funds_in_the_sending_wallet()
         {
             int maturity = (int)this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
-            TestHelper.MineBlocks(this.senderNode, maturity + 5, this.senderWallet, this.password, this.account);
+            TestHelper.MineBlocks(this.senderNode, maturity + 5);
 
-            this.senderNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(this.senderWallet)
+            this.senderNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(this.walletName)
                 .Sum(utxo => utxo.Transaction.Amount)
                 .Should().Be(Money.COIN * 6 * 50);
         }
 
         private void no_fund_in_the_receiving_wallet()
         {
-            this.receiverNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(this.receiverWallet)
+            this.receiverNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(this.walletName)
                 .Sum(utxo => utxo.Transaction.Amount)
                 .Should().Be(Money.Zero);
         }
@@ -102,7 +101,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
                 AccountReference = this.sendingWalletAccountReference,
                 MinConfirmations = maturity,
                 OpReturnData = this.opReturnContent,
-                WalletPassword = this.password,
+                WalletPassword = this.walletPassword,
                 Recipients = new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } }
             };
 
@@ -118,15 +117,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         }
         private void the_block_is_mined()
         {
-            this.blockWithOpReturnId = TestHelper.MineBlocks(this.senderNode, 1, this.senderWallet, this.password, this.account).BlockHashes.Single();
-            TestHelper.MineBlocks(this.senderNode, 1, this.senderWallet, this.password, this.account);
+            this.blockWithOpReturnId = TestHelper.MineBlocks(this.senderNode, 1).BlockHashes.Single();
+            TestHelper.MineBlocks(this.senderNode, 1);
 
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.senderNode, this.receiverNode));
         }
 
         private void the_transaction_should_get_confirmed()
         {
-            this.receiverNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(this.receiverWallet, 2)
+            this.receiverNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(this.walletName, 2)
                 .First().Transaction.Amount.Satoshi
                 .Should().Be(this.transferAmount);
         }

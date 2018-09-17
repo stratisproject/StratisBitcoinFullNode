@@ -34,10 +34,10 @@ namespace Stratis.Bitcoin.IntegrationTests.API
     public partial class ApiSpecification : BddSpecification
     {
         private const string JsonContentType = "application/json";
-        private const string PrimaryWalletName = "wallet_name";
-        private const string SecondaryWalletName = "secondary_wallet_name";
+        private const string PrimaryWalletName = "mywallet";
+        private const string SecondaryWalletName = "mywallet";
         private const string WalletAccountName = "account 0";
-        private const string WalletPassword = "wallet_password";
+        private const string WalletPassword = "password";
         private const string WalletPassphrase = "wallet_passphrase";
         private const string StratisRegTest = "StratisRegTest";
 
@@ -178,12 +178,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         protected void a_block_is_mined_creating_spendable_coins()
         {
-            TestHelper.MineBlocks(this.firstStratisPowApiNode, 1, PrimaryWalletName, WalletPassword, WalletAccountName);
+            TestHelper.MineBlocks(this.firstStratisPowApiNode, 1);
         }
 
         private void more_blocks_mined_past_maturity_of_original_block()
         {
-            TestHelper.MineBlocks(this.firstStratisPowApiNode, this.maturity, PrimaryWalletName, WalletPassword, WalletAccountName);
+            TestHelper.MineBlocks(this.firstStratisPowApiNode, this.maturity);
         }
 
         private void a_real_transaction()
@@ -193,8 +193,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void the_block_with_the_transaction_is_mined()
         {
-            this.block = TestHelper.MineBlocks(this.firstStratisPowApiNode, 1, PrimaryWalletName, WalletPassword, WalletAccountName).BlockHashes[0];
-            TestHelper.MineBlocks(this.firstStratisPowApiNode, 1, PrimaryWalletName, WalletPassword, WalletAccountName);
+            this.block = TestHelper.MineBlocks(this.firstStratisPowApiNode, 1).BlockHashes[0];
+            TestHelper.MineBlocks(this.firstStratisPowApiNode, 1);
         }
 
         private void calling_startstaking()

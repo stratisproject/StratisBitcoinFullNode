@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             Money nodeOneBeforeBalance = this.firstNode.WalletBalance(WalletName);
 
-            TestHelper.MineBlocks(this.secondNode, 1, WalletName, WalletPassword, WalletAccountName);
+            TestHelper.MineBlocks(this.secondNode, 1);
 
             this.firstNode.WalletBalance(WalletName).Should().Be(nodeOneBeforeBalance + Money.Coins(49));
 

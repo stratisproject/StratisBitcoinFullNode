@@ -18,9 +18,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         public CoreNode PremineNodeWithCoins;
 
         public readonly string PremineNode = "PremineNode";
-        public readonly string PremineWallet = "preminewallet";
+        public readonly string PremineWallet = "mywallet";
         public readonly string PremineWalletAccount = "account 0";
-        public readonly string PremineWalletPassword = "preminewalletpassword";
+        public readonly string PremineWalletPassword = "password";
 
         private readonly HashSet<uint256> transactionsBeforeStaking = new HashSet<uint256>();
 

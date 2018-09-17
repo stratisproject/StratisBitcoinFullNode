@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
     public partial class SendingTransactionWithDoubleSpend : BddSpecification
     {
-        private const string Password = "123456";
+        private const string Password = "password";
         private const string Name = "mywallet";
         private const string Passphrase = "passphrase";
         private const string AccountName = "account 0";
