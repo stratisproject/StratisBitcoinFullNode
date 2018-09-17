@@ -620,7 +620,7 @@ namespace NBitcoin.Tests
         public void BitCoinProtocolVersionAllItemsCount()
         {
             var itemCount = 14;
-            var bitCointItemCount = 0;
+            var bitCoinItemCount = 0;
 
             var version = new BitcoinProtocolVersion();
             IEnumerable<ProtocolVersion> list = version.List();
