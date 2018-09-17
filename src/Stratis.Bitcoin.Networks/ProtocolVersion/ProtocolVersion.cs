@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Networks
@@ -111,38 +109,5 @@ namespace Stratis.Bitcoin.Networks
                 Witness,
                 ShortIdBlocks
             };
-
-
-        /// <summary>
-        /// Select a version item by name.
-        /// </summary>
-        public ProtocolVersion FromName(string name)
-        {
-            ProtocolVersion state = List()
-                .SingleOrDefault(s => string.Equals(s.Name, name, StringComparison.CurrentCultureIgnoreCase));
-
-            if (state == null)
-                ThrowException();
-
-            return state;
-        }
-
-        /// <summary>
-        /// Select a version item by Id.
-        /// </summary>
-        public ProtocolVersion From(int id)
-        {
-            ProtocolVersion state = List().SingleOrDefault(s => s.Id == id);
-
-            if (state == null)
-                ThrowException();
-
-            return state;
-        }
-
-        private void ThrowException()
-        {
-            throw new Exception($"Possible values for ProtocolVersion: {string.Join(",", List().Select(s => s.Name))}");
-        }
     }
 }
