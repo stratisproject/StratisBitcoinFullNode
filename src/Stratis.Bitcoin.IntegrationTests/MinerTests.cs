@@ -139,7 +139,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
-                this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
+                var inMemoryCoinView = new InMemoryCoinView(this.chain.Tip.HashBlock);
+                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, new LoggerFactory());
 
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
@@ -170,7 +171,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings,
                     new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider)).Register();
 
-                this.consensus = ConsensusManagerHelper.CreateConsensusManager(this.network);
+                this.consensus = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain);
+
                 await this.consensus.InitializeAsync(chainState.BlockStoreTip);
 
                 this.entry.Fee(11);
@@ -197,7 +199,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 for (int i = 0; i < this.blockinfo.Count; ++i)
                 {
                     Block block = this.network.CreateBlock();
-                    block.Header.HashPrevBlock = this.chain.Tip.HashBlock;
+                    block.Header.HashPrevBlock = this.consensus.Tip.HashBlock;
                     block.Header.Version = 1;
                     block.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
 
@@ -224,7 +226,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                     // Serialization sets the BlockSize property.
                     block = Block.Load(block.ToBytes(), this.network);
 
-                    await this.consensus.BlockMinedAsync(block);
+                    var res = await this.consensus.BlockMinedAsync(block);
+
+                    if(res == null)
+                        throw new InvalidOperationException();
 
                     blocks.Add(block);
                 }
