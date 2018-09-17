@@ -24,8 +24,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly ICoinView bottom;
 
-        private ConsensusPerformanceSnapshot lastSnapshot;
-
         private BackendPerformanceSnapshot lastSnapshot2;
 
         private CachePerformanceSnapshot lastSnapshot3;
@@ -71,7 +69,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusManager = consensusManager;
             this.consensusRules = consensusRules;
 
-            this.lastSnapshot = consensusRules.PerformanceCounter.Snapshot();
             this.lastSnapshot2 = this.dbreeze?.PerformanceCounter.Snapshot();
             this.lastSnapshot3 = this.cache?.PerformanceCounter.Snapshot();
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -90,10 +87,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (this.cache != null)
                 benchLogs.AppendLine("Cache entries".PadRight(LoggingConfiguration.ColumnLength) + this.cache.CacheEntryCount);
-
-            ConsensusPerformanceSnapshot snapshot = this.consensusRules.PerformanceCounter.Snapshot();
-            benchLogs.AppendLine((snapshot - this.lastSnapshot).ToString());
-            this.lastSnapshot = snapshot;
 
             if (this.dbreeze != null)
             {
@@ -117,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
                 return;
 
-            if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot.Taken > TimeSpan.FromSeconds(5.0))
+            if (this.dateTimeProvider.GetUtcNow() - this.lastSnapshot2.Taken > TimeSpan.FromSeconds(5.0))
             {
                 if (this.initialBlockDownloadState.IsInitialBlockDownload())
                     this.BenchStats();
