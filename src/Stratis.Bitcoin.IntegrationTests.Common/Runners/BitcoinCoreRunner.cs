@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 
                     return false;
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return false;
                 }

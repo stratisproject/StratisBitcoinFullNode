@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 tester.NewBlock();
 
-                // This will save an empty RewindData instance/
+                // This will save an empty RewindData instance
                 tester.NewBlock();
 
                 // Create a new coin set/

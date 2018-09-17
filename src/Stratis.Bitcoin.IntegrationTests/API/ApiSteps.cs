@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private const string GetStakingInfoUri = "api/staking/getstakinginfo";
 
         // Wallet
-        private const string AccountUri = "api/wallet/account";  
+        private const string AccountUri = "api/wallet/account";
         private const string GeneralInfoUri = "api/wallet/general-info";
         private const string BalanceUri = "api/wallet/balance";
         private const string RecoverViaExtPubKeyUri = "api/wallet/recover-via-extpubkey";
@@ -126,13 +126,13 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 this.httpClient.Dispose();
                 this.httpClient = null;
             }
-            
+
             if (this.httpHandler != null)
             {
                 this.httpHandler.Dispose();
                 this.httpHandler = null;
             }
-            
+
             this.powNodeBuilder.Dispose();
             this.posNodeBuilder.Dispose();
         }
@@ -178,12 +178,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         protected void a_block_is_mined_creating_spendable_coins()
         {
-            TestHelper.MineBlocks(this.firstStratisPowApiNode, PrimaryWalletName, WalletPassword, WalletAccountName, 1);
+            TestHelper.MineBlocks(this.firstStratisPowApiNode, 1, PrimaryWalletName, WalletPassword, WalletAccountName);
         }
 
         private void more_blocks_mined_past_maturity_of_original_block()
         {
-            TestHelper.MineBlocks(this.firstStratisPowApiNode, PrimaryWalletName, WalletPassword, WalletAccountName, this.maturity);
+            TestHelper.MineBlocks(this.firstStratisPowApiNode, this.maturity, PrimaryWalletName, WalletPassword, WalletAccountName);
         }
 
         private void a_real_transaction()
@@ -193,8 +193,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void the_block_with_the_transaction_is_mined()
         {
-            this.block = this.firstStratisPowApiNode.GenerateStratisWithMiner(1).Single();
-            this.firstStratisPowApiNode.GenerateStratisWithMiner(1);
+            this.block = TestHelper.MineBlocks(this.firstStratisPowApiNode, 1, PrimaryWalletName, WalletPassword, WalletAccountName).BlockHashes[0];
+            TestHelper.MineBlocks(this.firstStratisPowApiNode, 1, PrimaryWalletName, WalletPassword, WalletAccountName);
         }
 
         private void calling_startstaking()
@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.send_api_get_request($"{GetTxOutUri}?trxid={this.transaction.GetHash().ToString()}&vout=1&includeMemPool=false");
         }
-    
+
         private void calling_getrawtransaction_nonverbose()
         {
             this.send_api_get_request($"{GetRawTransactionUri}?trxid={this.transaction.GetHash().ToString()}&verbose=false");
@@ -485,7 +485,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             List<string> transactionList = JArray.Parse(this.responseText).ToObject<List<string>>();
             transactionList[0].Should().Be(this.transaction.GetHash().ToString());
         }
-        
+
         private void staking_is_enabled_but_nothing_is_staked()
         {
             var miningRpcController = this.stratisPosApiNode.FullNode.NodeService<StakingRpcController>();
@@ -504,12 +504,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var verboseRawTransactionResponse = JsonDataSerializer.Instance.Deserialize<TransactionVerboseModel>(this.responseText);
             verboseRawTransactionResponse.Hex.Should().Be(this.transaction.ToHex());
-            verboseRawTransactionResponse.TxId.Should().Be(this.transaction.GetHash().ToString());            
+            verboseRawTransactionResponse.TxId.Should().Be(this.transaction.GetHash().ToString());
         }
 
         private void a_single_connected_peer_is_returned()
         {
-            List<PeerNodeModel> getPeerInfoResponseList = JArray.Parse(this.responseText).ToObject<List<PeerNodeModel>>();            
+            List<PeerNodeModel> getPeerInfoResponseList = JArray.Parse(this.responseText).ToObject<List<PeerNodeModel>>();
             getPeerInfoResponseList.Count.Should().Be(1);
             getPeerInfoResponseList[0].Id.Should().Be(0);
             getPeerInfoResponseList[0].Address.Should().Contain("[::ffff:127.0.0.1]");

@@ -26,7 +26,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private HdAddress receiverAddress;
         private WalletAccountReference sendingWalletAccountReference;
         private Transaction transaction;
-        private Key key;
         private uint256 blockWithOpReturnId;
 
         private readonly string senderWallet = "sender";
@@ -71,11 +70,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
             this.senderAddress = this.senderNode.FullNode.WalletManager().GetUnusedAddress(this.sendingWalletAccountReference);
             this.sendingWallet = this.senderNode.FullNode.WalletManager().GetWalletByName(this.senderWallet);
         }
+
         private void some_funds_in_the_sending_wallet()
         {
             int maturity = (int)this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
-            TestHelper.MineBlocks(this.senderNode, this.senderWallet, this.password, this.account, maturity + 5);
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.senderNode));
+            TestHelper.MineBlocks(this.senderNode, maturity + 5, this.senderWallet, this.password, this.account);
 
             this.senderNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(this.senderWallet)
                 .Sum(utxo => utxo.Transaction.Amount)
@@ -118,11 +117,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
                 .SendTransaction(new SendTransactionRequest(this.transaction.ToHex()));
         }
         private void the_block_is_mined()
-        {            
-            this.blockWithOpReturnId = TestHelper.MineBlocks(this.senderNode, this.senderWallet, this.password, this.account, 1).BlockHashes.Single();
-            TestHelper.MineBlocks(this.senderNode, this.senderWallet, this.password, this.account, 1);
+        {
+            this.blockWithOpReturnId = TestHelper.MineBlocks(this.senderNode, 1, this.senderWallet, this.password, this.account).BlockHashes.Single();
+            TestHelper.MineBlocks(this.senderNode, 1, this.senderWallet, this.password, this.account);
 
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.senderNode));
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.senderNode, this.receiverNode));
         }
 

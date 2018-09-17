@@ -21,7 +21,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         public readonly string PremineWallet = "preminewallet";
         public readonly string PremineWalletAccount = "account 0";
         public readonly string PremineWalletPassword = "preminewalletpassword";
-        public readonly string PremineWalletPassphrase = "";
 
         private readonly HashSet<uint256> transactionsBeforeStaking = new HashSet<uint256>();
 
@@ -45,15 +44,14 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(KnownNetworks.StratisRegTest);
             this.PremineNodeWithCoins.Start();
-            this.PremineNodeWithCoins.NotInIBD();
-            this.PremineNodeWithCoins.FullNode.WalletManager().CreateWallet(this.PremineWalletPassword, this.PremineWallet, this.PremineWalletPassphrase);
+            this.PremineNodeWithCoins.NotInIBD().WithWallet();
         }
 
         public void MineGenesisAndPremineBlocks()
         {
             int premineBlockCount = 2;
 
-            var addressUsed = TestHelper.MineBlocks(this.PremineNodeWithCoins, this.PremineWallet, this.PremineWalletPassword, this.PremineWalletAccount, premineBlockCount).AddressUsed;
+            var addressUsed = TestHelper.MineBlocks(this.PremineNodeWithCoins, premineBlockCount).AddressUsed;
 
             // Since the pre-mine will not be immediately spendable, the transactions have to be counted directly from the address.
             addressUsed.Transactions.Count().Should().Be(premineBlockCount);
@@ -65,13 +63,12 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void MineCoinsToMaturity()
         {
-            TestHelper.MineBlocks(this.PremineNodeWithCoins, this.PremineWallet, this.PremineWalletPassword, this.PremineWalletAccount, (int)this.PremineNodeWithCoins.FullNode.Network.Consensus.CoinbaseMaturity);
-            TestHelper.WaitForNodeToSync(this.PremineNodeWithCoins);
+            TestHelper.MineBlocks(this.PremineNodeWithCoins, (int)this.PremineNodeWithCoins.FullNode.Network.Consensus.CoinbaseMaturity);
         }
 
         public void PremineNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked()
         {
-            this.PremineNodeWithCoins.GenerateStratisWithMiner(10);
+            TestHelper.MineBlocks(this.PremineNodeWithCoins, 10);
         }
 
         public void PremineNodeStartsStaking()

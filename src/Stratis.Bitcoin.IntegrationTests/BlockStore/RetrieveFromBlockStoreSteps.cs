@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private void some_real_blocks_with_a_uint256_identifier()
         {
             this.maturity = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity;
-            this.blockIds = this.node.GenerateStratisWithMiner(this.maturity + 1);
+            this.blockIds = TestHelper.MineBlocks(this.node, this.maturity + 1).BlockHashes;
         }
 
         private void some_blocks_creating_reward()
@@ -136,8 +136,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void the_block_with_the_transaction_is_mined()
         {
-            this.blockWithTransactionId = this.node.GenerateStratisWithMiner(1).Single();
-            this.node.GenerateStratisWithMiner(1);
+            this.blockWithTransactionId = TestHelper.MineBlocks(this.node, 1).BlockHashes.Single();
+            TestHelper.MineBlocks(this.node, 1);
             TestHelper.WaitForNodeToSync(this.node, this.transactionNode);
         }
 

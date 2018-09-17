@@ -31,17 +31,11 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 builder.StartAll();
 
-                scSender.NotInIBD();
-                scReceiver.NotInIBD();
-
-                scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
-                scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
+                scSender.NotInIBD().WithWallet(Password, WalletName, Passphrase);
+                scReceiver.NotInIBD().WithWallet(Password, WalletName, Passphrase);
 
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                HdAddress senderAddress = TestHelper.MineBlocks(scSender, WalletName, Password, AccountName, maturity + 5).AddressUsed;
-
-                // Wait for block repo for block sync to work.
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
+                HdAddress senderAddress = TestHelper.MineBlocks(scSender, maturity + 5, WalletName, Password, AccountName).AddressUsed;
 
                 // The mining should add coins to the wallet.
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
@@ -77,8 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
                 TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
 
                 // Mine the token transaction and wait for it sync
-                scSender.GenerateStratisWithMiner(1);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
+                TestHelper.MineBlocks(scSender, 1);
 
                 // Sync to the receiver node 
                 scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
@@ -117,10 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // Wait for the token transaction to be picked up by the mempool
                 TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
-                scSender.GenerateStratisWithMiner(1);
-
-                // Ensure the node is synced
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
+                TestHelper.MineBlocks(scSender, 1);
 
                 // Ensure both nodes are synced with each other
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
@@ -151,10 +141,9 @@ namespace Stratis.Bitcoin.IntegrationTests.SmartContracts
 
                 // Wait for the token transaction to be picked up by the mempool
                 TestHelper.WaitLoop(() => scSender.CreateRPCClient().GetRawMempool().Length > 0);
-                scSender.GenerateStratisWithMiner(1);
+                TestHelper.MineBlocks(scSender, 1);
 
                 // Ensure the nodes are synced
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(scSender));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
                 // The balance should now reflect the transfer

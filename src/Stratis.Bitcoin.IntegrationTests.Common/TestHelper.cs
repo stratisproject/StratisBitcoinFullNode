@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.P2P.Peer;
@@ -100,27 +103,31 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             nodes.Skip(1).ToList().ForEach(node => WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
         }
 
-        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, string walletName, string walletPassword, string accountName, int numberOfBlocks)
+        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0")
         {
             Guard.NotNull(node, nameof(node));
-            Guard.NotEmpty(walletName, nameof(walletName));
-            Guard.NotEmpty(walletPassword, nameof(walletPassword));
-            Guard.NotEmpty(accountName, nameof(accountName));
 
-            if (numberOfBlocks == 0) throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
+            if (numberOfBlocks == 0)
+                throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
-            HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
-            
-            Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
-            Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address).PrivateKey;
+            if (node.MinerSecret == null)
+            {
+                HdAddress unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
 
-            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+                Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
+                Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
 
-            var blockHashes = node.GenerateStratisWithMiner((int)numberOfBlocks);
+                node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+                node.MinerSecretHDAddress = unusedAddress;
+            }
+
+            var script = new ReserveScript { ReserveFullNodeScript = node.MinerSecret.ScriptPubKey };
+
+            var blockHashes = node.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(script, (ulong)numberOfBlocks, uint.MaxValue);
 
             WaitForNodeToSync(node);
 
-            return (address, blockHashes);
+            return (node.MinerSecretHDAddress, blockHashes);
         }
 
         /// <summary>
