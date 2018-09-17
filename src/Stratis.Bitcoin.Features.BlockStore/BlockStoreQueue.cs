@@ -75,6 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         private readonly object batchLock;
 
+        /// <summary>Event that signals when an item is added to the batch.</summary>
         private readonly AsyncManualResetEvent addEvent;
 
         public BlockStoreQueue(
