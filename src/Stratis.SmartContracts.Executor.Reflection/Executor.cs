@@ -1,9 +1,10 @@
-﻿using System;
-using CSharpFunctionalExtensions;
+﻿using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Block = Stratis.SmartContracts.Core.Block;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -14,20 +15,24 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class Executor : ISmartContractExecutor
     {
         private readonly ILogger logger;
-        private readonly IContractStateRoot stateRoot;
+        private readonly IContractState stateRoot;
         private readonly ISmartContractResultRefundProcessor refundProcessor;
         private readonly ISmartContractResultTransferProcessor transferProcessor;
         private readonly ICallDataSerializer serializer;
         private readonly Network network;
         private readonly IStateFactory stateFactory;
+        private readonly IStateProcessor stateProcessor;
+        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
 
         public Executor(ILoggerFactory loggerFactory,
             ICallDataSerializer serializer,
-            IContractStateRoot stateRoot,
+            IContractState stateRoot,
             ISmartContractResultRefundProcessor refundProcessor,
             ISmartContractResultTransferProcessor transferProcessor,
             Network network,
-            IStateFactory stateFactory)
+            IStateFactory stateFactory,
+            IStateProcessor stateProcessor,
+            IContractPrimitiveSerializer contractPrimitiveSerializer)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
             this.stateRoot = stateRoot;
@@ -36,6 +41,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.serializer = serializer;
             this.network = network;
             this.stateFactory = stateFactory;
+            this.stateProcessor = stateProcessor;
+            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
         }
 
         public ISmartContractExecutionResult Execute(ISmartContractTransactionContext transactionContext)
@@ -57,10 +64,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 this.stateRoot,
                 block,
                 transactionContext.TxOutValue,
-                transactionContext.TransactionHash,
-                callData.GasLimit);
+                transactionContext.TransactionHash);
 
             StateTransitionResult result;
+            IState newState = state.Snapshot();
 
             if (creation)
             {
@@ -72,7 +79,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     callData.MethodParameters
                 );
 
-                result = state.Apply(message);
+
+                result = this.stateProcessor.Apply(newState, message);
             }
             else
             {
@@ -84,8 +92,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
                         new MethodCall(callData.MethodName, callData.MethodParameters)
                 );
 
-                result = state.Apply(message);
+                result = this.stateProcessor.Apply(newState, message);
             }
+
+            if (result.IsSuccess)
+                state.TransitionTo(newState);
 
             bool revert = !result.IsSuccess;
 
@@ -109,14 +120,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
             {
                 To = !callData.IsCreateContract ? callData.ContractAddress : null,
                 NewContractAddress = !revert && creation ? result.Success?.ContractAddress : null,
-                Exception = result.Error?.VmException,
+                ErrorMessage = result.Error?.VmError,
                 Revert = revert,
                 GasConsumed = result.GasConsumed,
                 Return = result.Success?.ExecutionResult,
                 InternalTransaction = internalTransaction,
                 Fee = fee,
                 Refund = refundTxOut,
-                Logs = state.GetLogs()
+                Logs = state.GetLogs(this.contractPrimitiveSerializer)
             };
 
             return executionResult;

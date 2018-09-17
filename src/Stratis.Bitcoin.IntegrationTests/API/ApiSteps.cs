@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private readonly Money transferAmount = Money.COIN * 1;
         private NodeBuilder powNodeBuilder;
         private NodeBuilder posNodeBuilder;
-        private SharedSteps sharedSteps;
+
         private Transaction transaction;
         private uint256 block;
         private Uri apiUri;
@@ -107,7 +107,6 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         protected override void BeforeTest()
         {
-            this.sharedSteps = new SharedSteps();
             this.httpHandler = new HttpClientHandler() { ServerCertificateCustomValidationCallback = (request, cert, chain, errors) => true };
             this.httpClient = new HttpClient(this.httpHandler);
             this.httpClient.DefaultRequestHeaders.Accept.Clear();
@@ -140,7 +139,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_proof_of_stake_node_with_api_enabled()
         {
-            this.stratisPosApiNode = this.posNodeBuilder.CreateStratisPosApiNode(this.posNetwork);
+            this.stratisPosApiNode = this.posNodeBuilder.CreateStratisPosNode(this.posNetwork);
             this.stratisPosApiNode.Start();
 
             this.stratisPosApiNode.FullNode.NodeService<IPosMinting>(true).Should().NotBeNull();
@@ -159,7 +158,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_proof_of_work_node_with_api_enabled()
         {
-            this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowApiNode(this.powNetwork);
+            this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork);
             this.firstStratisPowApiNode.Start();
             this.firstStratisPowApiNode.NotInIBD();
             this.firstStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, PrimaryWalletName, WalletPassphrase);
@@ -171,7 +170,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_second_proof_of_work_node_with_api_enabled()
         {
-            this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowApiNode(this.powNetwork);
+            this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork);
             this.secondStratisPowApiNode.Start();
             this.secondStratisPowApiNode.NotInIBD();
             this.secondStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, SecondaryWalletName, WalletPassphrase);
@@ -179,12 +178,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         protected void a_block_is_mined_creating_spendable_coins()
         {
-            this.sharedSteps.MineBlocks(1, this.firstStratisPowApiNode, WalletAccountName, PrimaryWalletName, WalletPassword);
+            TestHelper.MineBlocks(this.firstStratisPowApiNode, PrimaryWalletName, WalletPassword, WalletAccountName, 1);
         }
 
         private void more_blocks_mined_past_maturity_of_original_block()
         {
-            this.sharedSteps.MineBlocks(this.maturity, this.firstStratisPowApiNode, WalletAccountName, PrimaryWalletName, WalletPassword);
+            TestHelper.MineBlocks(this.firstStratisPowApiNode, PrimaryWalletName, WalletPassword, WalletAccountName, this.maturity);
         }
 
         private void a_real_transaction()

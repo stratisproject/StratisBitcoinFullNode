@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using Mono.Cecil;
 using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Policy;
@@ -32,6 +30,12 @@ namespace Stratis.SmartContracts.Core.Validation
             }
 
             policy
+                .Type(typeof(Array).Name, AccessPolicy.Denied,
+                    m => m.Member(nameof(Array.GetLength), AccessPolicy.Allowed)
+                            .Member(nameof(Array.Copy), AccessPolicy.Allowed)
+                            .Member(nameof(Array.GetValue), AccessPolicy.Allowed)
+                            .Member(nameof(Array.SetValue), AccessPolicy.Allowed)
+                            .Member(nameof(Array.Resize), AccessPolicy.Allowed))
                 .Type(typeof(void).Name, AccessPolicy.Allowed)
                 .Type(typeof(object).Name, AccessPolicy.Denied, 
                     m => m.Member(nameof(ToString), AccessPolicy.Allowed)
@@ -50,8 +54,7 @@ namespace Stratis.SmartContracts.Core.Validation
         private static void SmartContractsPolicy(NamespacePolicy policy)
         {
             policy
-                .Type(typeof(SmartContract), AccessPolicy.Allowed,
-                    type => type.Member(nameof(SmartContract.SpendGas), AccessPolicy.Denied));
+                .Type(typeof(SmartContract), AccessPolicy.Allowed);
         }
     }
 }
