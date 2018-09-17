@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Tests.Common
 {
     public static class ConsensusManagerHelper
     {
-        public static ConsensusManager CreateConsensusManager(Network network, string dataDir = null, ChainState chainState = null, InMemoryCoinView inMemoryCoinView = null)
+        public static ConsensusManager CreateConsensusManager(Network network, string dataDir = null, ChainState chainState = null, InMemoryCoinView inMemoryCoinView = null, ConcurrentChain chain = null)
         {
             string[] param = dataDir == null ? new string[]{} : new string[] { $"-datadir={dataDir}" };
 
@@ -42,7 +42,9 @@ namespace Stratis.Bitcoin.Tests.Common
             network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
-            var chain = new ConcurrentChain(network);
+
+            if (chain == null)
+                chain = new ConcurrentChain(network);
 
             if (inMemoryCoinView == null)
                 inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
