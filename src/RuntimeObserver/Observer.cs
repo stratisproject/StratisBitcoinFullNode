@@ -1,5 +1,4 @@
-﻿using System;
-using Stratis.SmartContracts;
+﻿using Stratis.SmartContracts;
 
 namespace RuntimeObserver
 {
@@ -57,12 +56,6 @@ namespace RuntimeObserver
         /// </summary>
         public static class FlowThrough
         {
-            public static IntPtr SpendMemoryIntPtr(IntPtr count, Observer observer)
-            {
-                observer.SpendMemory(count.ToInt64());
-                return count;
-            }
-
             public static int SpendMemoryInt32(int count, Observer observer)
             {
                 observer.SpendMemory(count);

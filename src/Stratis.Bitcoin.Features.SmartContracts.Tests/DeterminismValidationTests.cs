@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.SmartContracts.Core.Validation;
@@ -538,6 +537,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             string adjustedSource = TestString.Replace(ReplaceCodeString,
                 "var r = System.Globalization.CultureInfo.CurrentCulture;")
                 .Replace(ReplaceReferencesString, "");
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.False(result.IsValid);
+        }
+
+        #endregion
+
+        #region IntPtr
+
+        [Fact]
+        public void Validate_Determinism_IntPtr_Fails()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, "var test = new IntPtr(0);").Replace(ReplaceReferencesString, "");
 
             SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
             Assert.True(compilationResult.Success);
