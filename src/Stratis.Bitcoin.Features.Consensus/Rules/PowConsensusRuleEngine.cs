@@ -24,8 +24,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// </summary>
         public PowConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain,
             NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore)
+            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats)
         {
             this.UtxoSet = utxoSet;
         }

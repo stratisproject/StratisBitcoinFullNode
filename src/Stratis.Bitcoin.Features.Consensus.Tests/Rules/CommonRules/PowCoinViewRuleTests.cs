@@ -98,8 +98,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
                 rule.Initialize();
 
-                rule.Parent.PerformanceCounter.ProcessedTransactions.Should().Be(0);
-
                 (rule as AsyncConsensusRule).RunAsync(ruleContext).GetAwaiter().GetResult();
             }
             catch (Exception e)
