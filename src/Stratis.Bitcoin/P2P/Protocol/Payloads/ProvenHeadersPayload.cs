@@ -6,7 +6,7 @@ using NBitcoin.Protocol;
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
     /// <summary>
-    /// Proven block headers received after a getheaders messages.
+    /// Proven block headers received after a getheaders message.
     /// </summary>
     [Payload("provhdr")]
     public class ProvenHeadersPayload : Payload
@@ -53,8 +53,8 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         {
             if (stream.Serializing)
             {
-                List<ProvenBlockHeaderWithTxCount> heardersOff = this.Headers.Select(h => new ProvenBlockHeaderWithTxCount(h)).ToList();
-                stream.ReadWrite(ref heardersOff);
+                List<ProvenBlockHeaderWithTxCount> headersOff = this.Headers.Select(h => new ProvenBlockHeaderWithTxCount(h)).ToList();
+                stream.ReadWrite(ref headersOff);
             }
             else
             {
