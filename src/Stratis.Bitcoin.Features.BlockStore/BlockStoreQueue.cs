@@ -63,17 +63,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly IBlockRepository blockRepository;
 
         /// <summary>Batch of blocks which should be saved in the database.</summary>
-        /// <remarks>Write access should be protected by <see cref="batchLock"/>.</remarks>
+        /// <remarks>Write access should be protected by <see cref="getBlockLock"/>.</remarks>
         private readonly List<ChainedHeaderBlock> batch;
 
         /// <summary>Task that runs <see cref="CheckBatchContinuouslyAsync"/>.</summary>
         private Task checkBatchLoopTask;
 
-        /// <summary>
-        /// Protects the batch from being modified by multiple threads at once.
-        /// All methods that modify the batch should use this lock.
-        /// </summary>
-        private readonly object batchLock;
+        /// <summary>Protects the batch from being modifying while <see cref="GetBlockAsync"/> method is using the batch.</summary>
+        private readonly object getBlockLock;
 
         private readonly AsyncManualResetEvent addEvent;
 
@@ -98,7 +95,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chain = chain;
             this.blockRepository = blockRepository;
             this.batch = new List<ChainedHeaderBlock>();
-            this.batchLock = new object();
+            this.getBlockLock = new object();
             this.addEvent = new AsyncManualResetEvent(true);
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -186,7 +183,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             Block block = null;
 
-            lock (this.batchLock)
+            lock (this.getBlockLock)
             {
                 block = this.batch.FirstOrDefault(x => x.ChainedHeader.HashBlock == blockHash)?.Block;
             }
@@ -274,7 +271,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock.ChainedHeader);
 
-            lock (this.batchLock)
+            lock (this.getBlockLock)
             {
                 this.batch.Add(chainedHeaderBlock);
                 this.currentBatchSizeBytes += chainedHeaderBlock.Block.BlockSize.Value;
@@ -334,7 +331,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         List<ChainedHeaderBlock> saved = await this.SaveBatchAsync().ConfigureAwait(false);
 
-                        lock (this.batchLock)
+                        lock (this.getBlockLock)
                         {
                             // Only remove items from the batch that have explicitly been saved.
                             foreach (ChainedHeaderBlock savedHeaderBlock in saved)
@@ -365,7 +362,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             List<ChainedHeaderBlock> clearedBatch;
 
-            lock (this.batchLock)
+            lock (this.getBlockLock)
             {
                 clearedBatch = this.GetBatchWithoutReorgedBlocks();
 
