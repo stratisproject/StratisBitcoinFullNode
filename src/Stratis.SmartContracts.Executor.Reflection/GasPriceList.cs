@@ -17,7 +17,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>The cost per gas unit if contract validation fails.</summary>
         public const ulong ContractValidationFailedCost = 1000;
 
-        public const int StorageGasCost = 10;
+        public const int StoragePerByteSavedGasCost = 10;
+        public const int StoragePerByteRetrievedGasCost = 1;
         public const int MethodCallGasCost = 5;
         public const int InstructionGasCost = 1;
 
@@ -51,13 +52,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// 
+        /// Get cost to store this key and value.
         /// </summary>
-        /// <param name="keyBytes"></param>
-        /// <param name="valueBytes"></param>
-        public static Gas StorageOperationCost(byte[] keyBytes, byte[] valueBytes)
+        public static Gas StorageSaveOperationCost(byte[] keyBytes, byte[] valueBytes)
         {
-            Gas cost = (Gas)(ulong)(StorageGasCost * keyBytes.Length + StorageGasCost * valueBytes.Length);
+            Gas cost = (Gas)(ulong)(StoragePerByteSavedGasCost * keyBytes.Length + StoragePerByteSavedGasCost * valueBytes.Length);
+            return cost;
+        }
+
+        /// <summary>
+        /// Get cost to retrieve this value via key.
+        /// </summary>
+        public static Gas StorageRetrieveOperationCost(byte[] keyBytes, byte[] valueBytes)
+        {
+            Gas cost = (Gas)(ulong)(StoragePerByteRetrievedGasCost * keyBytes.Length + StoragePerByteRetrievedGasCost * valueBytes.Length);
             return cost;
         }
 
