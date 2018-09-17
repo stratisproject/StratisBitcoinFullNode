@@ -91,26 +91,20 @@ namespace Stratis.FederatedSidechains.IntegrationTests.FederationGateway
         public void a_mainchain_node_with_funded_account()
         {
             var nodeKey = new NodeKey() { Chain = Chain.Mainchain, Role = NodeRole.Wallet };
-            //todo: find out why this is different from the call to "CreateStratisPowMiningNode"
-            //var buildNodeAction = new Action<IFullNodeBuilder>(fullNodeBuilder =>
-            //    fullNodeBuilder
-            //        .UseBlockStore()
-            //        .UsePosConsensus()
-            //        .UseMempool()
-            //        .AddMining()
-            //        .UseWallet()
-            //        .UseApi()
-            //        .AddRPC()
-            //        .MockIBD()
-            //        .SubstituteDateTimeProviderFor<MiningFeature>()
-            //    );
-            //TestHelper.BuildStartAndRegisterNode(nodeBuilder, buildNodeAction, nodeKey, nodesByKey, mainchainNetwork, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
-            //var node = nodesByKey[nodeKey];
-
-            var node = this.nodeBuilder.CreateStratisPowMiningNode();
-            nodesByKey.Add(nodeKey, node);
-            node.Start();
-            node.NotInIBD();
+            var buildNodeAction = new Action<IFullNodeBuilder>(fullNodeBuilder =>
+                fullNodeBuilder
+                    .UseBlockStore()
+                    .UsePosConsensus()
+                    .UseMempool()
+                    .AddMining()
+                    .UseWallet()
+                    .UseApi()
+                    .AddRPC()
+                    .MockIBD()
+                    .SubstituteDateTimeProviderFor<MiningFeature>()
+                );
+            TestHelper.BuildStartAndRegisterNode(nodeBuilder, buildNodeAction, nodeKey, nodesByKey, mainchainNetwork, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION);
+            var node = nodesByKey[nodeKey];
             
             var account = CreateAndRegisterHdAccount(node, nodeKey);
 
@@ -224,10 +218,9 @@ namespace Stratis.FederatedSidechains.IntegrationTests.FederationGateway
 
         private void CheckGpWalletBalance(Chain chain, Money expectedAmount)
         {
-            //gatewayEnvironment.GpAccountsByKey.Where(p => p.Key.Chain == chain).ToList()
-            //    .ForEach(p =>
-            //        p.Value.GetSpendableAmount(true).ConfirmedAmount
-            //            .Should().Be(expectedAmount));
+            gatewayEnvironment.FedWalletsByKey.Where(p => p.Key.Chain == chain).ToList()
+                .ForEach(p => p.Value.GetSpendableAmount().ConfirmedAmount
+                        .Should().Be(expectedAmount));
         }
 
         private void CheckHdWalletBalance(Chain chain, Money expectedAmount)

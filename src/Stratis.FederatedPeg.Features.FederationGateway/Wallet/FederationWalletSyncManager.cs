@@ -19,8 +19,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         protected readonly ConcurrentChain chain;
 
         protected readonly CoinType coinType;
-
-        /// <summary>Instance logger.</summary>
+        
         private readonly ILogger logger;
 
         private readonly IBlockStoreCache blockStoreCache;

@@ -50,28 +50,20 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         // This is typically used for reorgs protection.
         private const int BlockSecurityDelay = 0;
 
-        // The time between sessions.
-        private readonly TimeSpan sessionRunInterval = new TimeSpan(hours: 0, minutes: 0, seconds: 30);
-
-        // The logger.
         private readonly ILogger logger;
 
+        // The time between sessions.
+        private readonly TimeSpan sessionRunInterval = new TimeSpan(hours: 0, minutes: 0, seconds: 30);
+        
         // Timer used to trigger session processing.
         private Timer actionTimer;
         
-        // The network we are running.
-        private Network network;
-
-        // Settings from the config files. 
         private readonly FederationGatewaySettings federationGatewaySettings;
 
-        // Our monitor sessions.
         private readonly ConcurrentDictionary<int, MonitorChainSession> monitorSessions = new ConcurrentDictionary<int, MonitorChainSession>();
 
-        // The IBD state.
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
-        // The blockchain.
         private readonly ConcurrentChain concurrentChain;
 
         // The auditor can capture the details of the transactions that the monitor discovers.
@@ -80,13 +72,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         public MonitorChainSessionManager(
             ILoggerFactory loggerFactory,
             FederationGatewaySettings federationGatewaySettings,
-            Network network,
             ConcurrentChain concurrentChain,
             IInitialBlockDownloadState initialBlockDownloadState,
             ICrossChainTransactionAuditor crossChainTransactionAuditor = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.network = network;
             this.federationGatewaySettings = federationGatewaySettings;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.concurrentChain = concurrentChain;
@@ -108,25 +98,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             this.actionTimer?.Dispose();
         }
 
-        // Creates the Monitor session.
         // A session is added when the CrossChainTransactionMonitor identifies a transaction that needs to be completed cross chain.
         public void RegisterMonitorSession(MonitorChainSession monitorSession)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(monitorSession.BlockNumber), monitorSession.BlockNumber);
             
             this.monitorSessions.TryAdd(monitorSession.BlockNumber, monitorSession);
-            
-            //monitorChainSession.CrossChainTransactions.Add(crossChainTransactionInfo);
-
-            //this.monitorSessions.TryAdd(monitorChainSession.SessionId, monitorChainSession);
-            //this.logger.LogInformation("MonitorChainSession added: {0}", monitorChainSession);
-            
-            //// Call to the counter chain and tell it to also create a session.
-            //this.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort, monitorChainSession);
-            //    //crossChainTransactionInfo.TransactionHash,
-            //    //crossChainTransactionInfo.Amount,
-            //    //crossChainTransactionInfo.DestinationAddress,
-            //    //crossChainTransactionInfo.BlockNumber);
         }
 
         // Calls into the counter chain and registers the session there.
@@ -173,7 +150,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             this.logger.LogTrace("()");
             this.logger.LogInformation("RunSessionAsync()");
 
-            // We don't process sessions if our chain is not past IBD.
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
                 this.logger.LogInformation("RunSessionAsync() Monitor chain is in IBD exiting. Height:{0}.", this.concurrentChain.Height);
@@ -184,7 +160,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
             {
                 if (monitorChainSession.Status == SessionStatus.Completed) continue;
 
-                // Don't start the session if we are still in the SecurityDelay
                 if (!IsBeyondBlockSecurityDelay(monitorChainSession)) continue;
 
                 var time = DateTime.Now;

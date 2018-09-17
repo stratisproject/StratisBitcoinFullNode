@@ -34,13 +34,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         IEnumerable<Wallet.UnspentOutputReference> GetSpendableTransactionsInWallet(int confirmations = 0);
 
         /// <summary>
-        /// Gets a collection of addresses containing transactions for this coin.
-        /// </summary>
-        /// <param name="wallet">The wallet to get history from.</param>
-        /// <returns></returns>
-    //	IEnumerable<FlatHistory> GetHistory();
-
-        /// <summary>
         /// Gets the last block height.
         /// </summary>
         /// <returns></returns>

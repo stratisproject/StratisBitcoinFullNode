@@ -8,7 +8,6 @@ using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Notifications;
@@ -42,23 +41,23 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly IConnectionManager connectionManager;
 
-        private FederationGatewaySettings federationGatewaySettings;
+        private readonly FederationGatewaySettings federationGatewaySettings;
 
         private IFullNode fullNode;
 
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
-        private IFederationWalletManager federationWalletManager;
+        private readonly IFederationWalletManager federationWalletManager;
 
         private readonly IFederationWalletSyncManager walletSyncManager;
 
-        private ConcurrentChain chain;
+        private readonly ConcurrentChain chain;
 
-        private Network network;
+        private readonly Network network;
 
-        private IMonitorChainSessionManager monitorChainSessionManager;
+        private readonly IMonitorChainSessionManager monitorChainSessionManager;
         
-        private ICounterChainSessionManager counterChainSessionManager;
+        private readonly ICounterChainSessionManager counterChainSessionManager;
 
         public FederationGatewayFeature(ILoggerFactory loggerFactory, 
             ICrossChainTransactionMonitor crossChainTransactionMonitor, 
@@ -88,7 +87,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.monitorChainSessionManager = monitorChainSessionManager;
 
             // add our payload
-            var payloadProvider = this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider)) as PayloadProvider;
+            var payloadProvider = (PayloadProvider)this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider));
             payloadProvider.AddPayload(typeof(RequestPartialTransactionPayload));
         }
 
@@ -125,24 +124,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <inheritdoc />
         public void AddNodeStats(StringBuilder benchLogs)
         {
-            FederationWalletManager walletManager = this.federationWalletManager as FederationWalletManager;
+            if (federationWalletManager == null) return;
+            int height = this.federationWalletManager.LastBlockHeight();
+            ChainedHeader block = this.chain.GetBlock(height);
+            uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
-            if (walletManager != null)
-            {
-                int height = walletManager.LastBlockHeight();
-                ChainedHeader block = this.chain.GetBlock(height);
-                uint256 hashBlock = block == null ? 0 : block.HashBlock;
-
-                benchLogs.AppendLine("Federation Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                                     (walletManager.Wallet != null ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                     (walletManager.Wallet != null ? (" Federation Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
-            }
+            var federationWallet = this.federationWalletManager.GetWallet();
+            benchLogs.AppendLine("Federation Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                                 (federationWallet != null ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                                 (federationWallet != null ? (" Federation Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
         }
 
         public void AddFeatureStats(StringBuilder benchLog)
         {
-            var wallet = this.federationWalletManager.GetWallet();
-
             benchLog.AppendLine();
             benchLog.AppendLine("====== Federation Wallet ======");
 

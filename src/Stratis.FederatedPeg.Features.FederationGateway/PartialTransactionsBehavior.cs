@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -18,10 +17,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 {
     class PartialTransactionsBehavior : NetworkPeerBehavior
     {
-        /// <summary>Logger factory to create loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
-        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         private readonly ICrossChainTransactionMonitor crossChainTransactionMonitor;

@@ -15,7 +15,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
+using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
 
 namespace Stratis.FederatedSidechains.IntegrationTests
 {
@@ -27,7 +29,7 @@ namespace Stratis.FederatedSidechains.IntegrationTests
         public IList<FederationMemberKey> FederationMemberKeys { get; private set; }
         public IDictionary<FederationMemberKey, Mnemonic> FederationMembersMnemonics { get; private set; }
         public Script RedeemScript { get; private set; }
-        public IDictionary<NodeKey, string> GpAccountsByKey { get; }
+        public IDictionary<NodeKey, FederationWallet> FedWalletsByKey { get; }
         public IDictionary<NodeKey, CoreNode> NodesByKey { get; }
 
         private readonly NodeBuilder nodeBuilder;
@@ -40,7 +42,7 @@ namespace Stratis.FederatedSidechains.IntegrationTests
             FederationMembersMnemonics = new Dictionary<FederationMemberKey, Mnemonic>();
             ChainMnemonics = new Dictionary<Chain, Mnemonic>();
             NodesByKey = new Dictionary<NodeKey, CoreNode>();
-            GpAccountsByKey = new Dictionary<NodeKey, string>();
+            FedWalletsByKey = new Dictionary<NodeKey, FederationWallet>();
             Networks = new Dictionary<Chain, Network>
             {
                 {Chain.Mainchain, mainchainNetwork},
@@ -119,8 +121,6 @@ namespace Stratis.FederatedSidechains.IntegrationTests
                         .AddRPC()
                         .MockIBD(),
                     key, NodesByKey, Networks[key.Chain], addParametersAction);
-                //todo: check this is needed
-                //TestHelper.ConnectNodeToOtherNodesInTest(key, nodesByKey);
             }
         }
 
@@ -129,9 +129,9 @@ namespace Stratis.FederatedSidechains.IntegrationTests
             foreach (var key in FederationNodeKeys)
             {
                 //todo: change that when FederationWallets are ready again
-                //var generalWalletManager = nodesByKey[key].FullNode.NodeService<IFederationWalletManager>();
-                //generalWalletManager.CreateWallet(NamingConstants.MultisigPassword, NamingConstants.MultisigWallet)
-                GpAccountsByKey.Add(key, null);
+                var generalWalletManager = NodesByKey[key].FullNode.NodeService<IFederationWalletManager>();
+                var federationWallet = generalWalletManager.GetWallet();
+                FedWalletsByKey.Add(key, federationWallet);
             }
         }
 

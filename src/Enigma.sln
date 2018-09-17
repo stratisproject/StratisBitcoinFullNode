@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.27004.2009
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FedKeyPairGen", "FedKeyPairGen\FedKeyPairGen.csproj", "{E72E7605-B499-4078-ACD9-13BD6B052321}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.IntegrationTests", "Stratis.FederatedPeg.IntegrationTests\Stratis.FederatedPeg.IntegrationTests.csproj", "{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Tests", "Stratis.FederatedPeg.Tests\Stratis.FederatedPeg.Tests.csproj", "{C08CA036-D47D-40CF-83E3-F09EF5EC7515}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Features.FederationGateway", "Stratis.FederatedPeg.Features.FederationGateway\Stratis.FederatedPeg.Features.FederationGateway.csproj", "{2B5A4BFC-1894-47E6-B66B-529A1E796ADF}"
@@ -37,10 +35,6 @@ Global
 		{E72E7605-B499-4078-ACD9-13BD6B052321}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E72E7605-B499-4078-ACD9-13BD6B052321}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E72E7605-B499-4078-ACD9-13BD6B052321}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C08CA036-D47D-40CF-83E3-F09EF5EC7515}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C08CA036-D47D-40CF-83E3-F09EF5EC7515}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C08CA036-D47D-40CF-83E3-F09EF5EC7515}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -79,7 +73,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E72E7605-B499-4078-ACD9-13BD6B052321} = {4B9DEF95-A336-404B-908D-E1BFA1DB2DA9}
-		{EB41C31A-FF32-4164-822D-43D1D9AC7FEA} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
 		{C08CA036-D47D-40CF-83E3-F09EF5EC7515} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
 		{3526B5DB-8E08-445F-9DCE-65566491D94F} = {4B9DEF95-A336-404B-908D-E1BFA1DB2DA9}
 		{3D106928-3A8E-4EB1-9F9A-45856DBAA16B} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}

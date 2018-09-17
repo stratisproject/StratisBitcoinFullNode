@@ -26,25 +26,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <returns></returns>
         public BossTable Build(int blockHeight, IEnumerable<string> keys)
         {
-            // BossTableEntries are strings.
-            // Hash the concatination of the sessionId and the key to get each entry in the table.
             var bossCards = keys
                 .Select(key => BossTable.MakeBossTableEntry(blockHeight, key).ToString())
                 .OrderBy(k => k);
-
-            // We now have a table that is reproducable on every federation node on the network.
+            
             return new BossTable(bossCards.ToList());
         }
     }
 
-    /// <summary>
-    /// The BossTable.
-    /// </summary>
     public sealed class BossTable
     {
-        /// <summary>
-        /// Each entry in the BossTable.
-        /// </summary>
         public List<string> BossTableEntries { get; }
 
         public BossTable(List<string> bossTableEntries)
@@ -55,12 +46,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         // The interval before the boss card changes hands.
         private readonly int bossCardHoldTime = (int) new TimeSpan(hours: 0, minutes: 1, seconds: 0).TotalSeconds;
 
-        /// <summary>
-        /// Hashes the SessionId with the key.
-        /// </summary>
-        /// <param name="blockHeight">The transaction's sessionId.</param>
-        /// <param name="key"></param>
-        /// <returns>The hash of the concatenation of both pieces of data.</returns>
         public static uint256 MakeBossTableEntry(int blockHeight, string key)
         {
             var mergedBytes = Encoding.UTF8.GetBytes($"{blockHeight}{key}");
