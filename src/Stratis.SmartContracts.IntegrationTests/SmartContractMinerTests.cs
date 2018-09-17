@@ -144,6 +144,10 @@ namespace Stratis.SmartContracts.IntegrationTests
             #region Smart Contract Components
 
             internal AddressGenerator AddressGenerator { get; private set; }
+            private bool useCheckpoints = true;
+            public Key privateKey;
+            private ReflectionVirtualMachine vm;
+            private ICallDataSerializer serializer;
             private ContractAssemblyLoader assemblyLoader;
             private ICallDataSerializer callDataSerializer;
             internal ReflectionSmartContractExecutorFactory ExecutorFactory { get; private set; }
@@ -159,6 +163,8 @@ namespace Stratis.SmartContracts.IntegrationTests
             internal ContractStateRoot StateRoot { get; private set; }
             private ISmartContractResultTransferProcessor transferProcessor;
             private SmartContractValidator validator;
+            private StateProcessor stateProcessor;
+            private SmartContractStateFactory smartContractStateFactory;
 
             #endregion
 
@@ -296,12 +302,14 @@ namespace Stratis.SmartContracts.IntegrationTests
                 this.AddressGenerator = new AddressGenerator();
                 this.assemblyLoader = new ContractAssemblyLoader();
                 this.callDataSerializer = CallDataSerializer.Default;
-                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.loggerFactory, this.network);
                 this.moduleDefinitionReader = new ContractModuleDefinitionReader();
-                this.primitiveSerializer = new ContractPrimitiveSerializer(this.network);
                 this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.network, this.assemblyLoader, this.moduleDefinitionReader);
-                this.stateFactory = new StateFactory(this.network, this.primitiveSerializer, this.reflectionVirtualMachine, this.AddressGenerator, this.internalTxExecutorFactory);
-                this.ExecutorFactory = new ReflectionSmartContractExecutorFactory(this.loggerFactory, this.callDataSerializer, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory);
+                this.stateProcessor = new StateProcessor(this.reflectionVirtualMachine, this.AddressGenerator);
+                this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.loggerFactory, this.network, this.stateProcessor);
+                this.primitiveSerializer = new ContractPrimitiveSerializer(this.network);
+                this.smartContractStateFactory = new SmartContractStateFactory(this.primitiveSerializer, this.network, this.internalTxExecutorFactory);
+                this.stateFactory = new StateFactory(this.network, this.smartContractStateFactory);
+                this.ExecutorFactory = new ReflectionSmartContractExecutorFactory(this.loggerFactory, this.callDataSerializer, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor, this.primitiveSerializer);
             }
         }
 
