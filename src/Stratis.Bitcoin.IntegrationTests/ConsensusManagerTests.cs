@@ -37,9 +37,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var minerA = builder.CreateStratisPosNode(this.network);
-                var minerB = builder.CreateStratisPosNode(this.network);
-                var syncer = builder.CreateStratisPosNode(this.network);
+                var minerA = builder.CreateStratisPosNode(this.network, "minerA");
+                var minerB = builder.CreateStratisPosNode(this.network, "minerB");
+                var syncer = builder.CreateStratisPosNode(this.network, "syncer");
 
                 builder.StartAll();
 

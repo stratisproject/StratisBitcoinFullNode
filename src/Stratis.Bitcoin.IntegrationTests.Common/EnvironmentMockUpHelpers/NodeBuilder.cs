@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateCustomNode(callback, network, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
         }
 
-        public CoreNode CreateStratisPosNode(Network network, string agentPrefix = "test-node")
+        public CoreNode CreateStratisPosNode(Network network, string agentPrefix = "")
         {
             return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), network, agentPrefix), "stratis.conf");
         }
