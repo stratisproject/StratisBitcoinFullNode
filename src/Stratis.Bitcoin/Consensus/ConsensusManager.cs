@@ -7,7 +7,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.ValidationResults;
 using Stratis.Bitcoin.Consensus.Validators;
@@ -49,13 +48,13 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IChainState chainState;
         private readonly IPartialValidator partialValidator;
         private readonly IFullValidator fullValidator;
-        private readonly IConsensusRuleEngine consensusRules;
         private readonly Signals.Signals signals;
         private readonly IPeerBanning peerBanning;
         private readonly IBlockStore blockStore;
         private readonly IFinalizedBlockInfo finalizedBlockInfo;
         private readonly IBlockPuller blockPuller;
         private readonly IIntegrityValidator integrityValidator;
+        private readonly INodeLifetime nodeLifetime;
 
         /// <summary>Connection manager of all the currently connected peers.</summary>
         private readonly IConnectionManager connectionManager;
@@ -64,7 +63,7 @@ namespace Stratis.Bitcoin.Consensus
         public ChainedHeader Tip { get; private set; }
 
         /// <inheritdoc />
-        public IConsensusRuleEngine ConsensusRules => this.consensusRules;
+        public IConsensusRuleEngine ConsensusRules { get; private set; }
 
         private readonly Dictionary<uint256, List<OnBlockDownloadedCallback>> callbacksByBlocksRequestedHash;
 
@@ -77,7 +76,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects access to the <see cref="blockPuller"/>, <see cref="chainedHeaderTree"/>, <see cref="expectedBlockSizes"/> and <see cref="expectedBlockDataBytes"/>.</summary>
         private readonly object peerLock;
 
-        private IInitialBlockDownloadState ibdState;
+        private readonly IInitialBlockDownloadState ibdState;
 
         private readonly object blockRequestedLock;
 
@@ -92,15 +91,13 @@ namespace Stratis.Bitcoin.Consensus
         private bool isIbd;
 
         public ConsensusManager(
+            IChainedHeaderTree chainedHeaderTree,
             Network network,
             ILoggerFactory loggerFactory,
             IChainState chainState,
-            IHeaderValidator headerValidator,
             IIntegrityValidator integrityValidator,
             IPartialValidator partialValidator,
             IFullValidator fullValidator,
-            ICheckpoints checkpoints,
-            ConsensusSettings consensusSettings,
             IConsensusRuleEngine consensusRules,
             IFinalizedBlockInfo finalizedBlockInfo,
             Signals.Signals signals,
@@ -109,25 +106,26 @@ namespace Stratis.Bitcoin.Consensus
             ConcurrentChain chain,
             IBlockPuller blockPuller,
             IBlockStore blockStore,
-            IInvalidBlockHashStore invalidHashesStore,
             IConnectionManager connectionManager,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            INodeLifetime nodeLifetime)
         {
             this.network = network;
             this.chainState = chainState;
             this.integrityValidator = integrityValidator;
             this.partialValidator = partialValidator;
             this.fullValidator = fullValidator;
-            this.consensusRules = consensusRules;
+            this.ConsensusRules = consensusRules;
             this.signals = signals;
             this.peerBanning = peerBanning;
             this.blockStore = blockStore;
             this.finalizedBlockInfo = finalizedBlockInfo;
             this.chain = chain;
             this.connectionManager = connectionManager;
+            this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            this.chainedHeaderTree = new ChainedHeaderTree(network, loggerFactory, headerValidator, checkpoints, chainState, finalizedBlockInfo, consensusSettings, invalidHashesStore);
+            this.chainedHeaderTree = chainedHeaderTree;
 
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
@@ -160,7 +158,7 @@ namespace Stratis.Bitcoin.Consensus
             // We should consider creating a consensus store class that will internally contain
             // coinview and it will abstract the methods `RewindAsync()` `GetBlockHashAsync()`
 
-            uint256 consensusTipHash = await this.consensusRules.GetBlockHashAsync().ConfigureAwait(false);
+            uint256 consensusTipHash = await this.ConsensusRules.GetBlockHashAsync().ConfigureAwait(false);
 
             ChainedHeader pendingTip;
 
@@ -173,7 +171,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
-                RewindState transitionState = await this.consensusRules.RewindAsync().ConfigureAwait(false);
+                RewindState transitionState = await this.ConsensusRules.RewindAsync().ConfigureAwait(false);
                 consensusTipHash = transitionState.BlockHash;
             }
 
@@ -302,7 +300,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>
         /// Called after a peer was disconnected.
-        /// Informs underlying components about the even.
+        /// Informs underlying components about the event but only if the node is not being shut down at the moment.
         /// Processes any remaining blocks to download.
         /// </summary>
         /// <remarks>Have to be locked by <see cref="peerLock"/>.</remarks>
@@ -315,9 +313,21 @@ namespace Stratis.Bitcoin.Consensus
 
             if (removed)
             {
-                this.chainedHeaderTree.PeerDisconnected(peerId);
-                this.blockPuller.PeerDisconnected(peerId);
-                this.ProcessDownloadQueueLocked();
+                bool shuttingDown = this.nodeLifetime.ApplicationStopping.IsCancellationRequested;
+
+                // Update the components only in case we are not shutting down. In case we update CHT during
+                // shutdown there will be a huge performance hit when we have a lot of headers in front of our
+                // consensus and then disconnect last peer claiming such a chain. CHT will disconnect headers
+                // one by one. This is not needed during the shutdown.
+                if (!shuttingDown)
+                {
+                    this.chainedHeaderTree.PeerDisconnected(peerId);
+                    this.blockPuller.PeerDisconnected(peerId);
+                    this.ProcessDownloadQueueLocked();
+                }
+                else
+                    this.logger.LogDebug("Node is shutting down therefore underlying components won't be updated.");
+
             }
             else
                 this.logger.LogTrace("Peer {0} was already removed.", peerId);
@@ -589,7 +599,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>List of blocks that were disconnected.</returns>
         private async Task<List<ChainedHeaderBlock>> RewindToForkPointAsync(ChainedHeader fork, ChainedHeader oldTip)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}'", nameof(fork), fork, nameof(oldTip), oldTip);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(fork), fork, nameof(oldTip), oldTip);
 
             // This is sanity check and should never happen.
             if (fork.Height > oldTip.Height)
@@ -606,14 +616,30 @@ namespace Stratis.Bitcoin.Consensus
 
             while (current != fork)
             {
-                await this.consensusRules.RewindAsync().ConfigureAwait(false);
+                await this.ConsensusRules.RewindAsync().ConfigureAwait(false);
 
                 lock (this.peerLock)
                 {
                     this.SetConsensusTipInternalLocked(current.Previous);
                 }
 
-                var disconnectedBlock = new ChainedHeaderBlock(current.Block, current);
+                Block block = current.Block;
+
+                if (block == null)
+                {
+                    this.logger.LogTrace("Block '{0}' wasn't cached. Loading it from the database.", current.HashBlock);
+                    block = await this.blockStore.GetBlockAsync(current.HashBlock).ConfigureAwait(false);
+
+                    if (block == null)
+                    {
+                        // Sanity check. Block being disconnected should always be in the block store before we rewind.
+                        this.logger.LogTrace("(-)[BLOCK_NOT_FOUND]");
+                        throw new Exception("Block that is about to be rewinded wasn't found in cache or database!");
+                    }
+                }
+
+                var disconnectedBlock = new ChainedHeaderBlock(block, current);
+
                 disconnectedBlocks.Add(disconnectedBlock);
 
                 this.signals.SignalBlockDisconnected(disconnectedBlock);
@@ -1224,8 +1250,6 @@ namespace Stratis.Bitcoin.Consensus
         public void Dispose()
         {
             this.logger.LogTrace("()");
-
-            this.partialValidator.Dispose();
 
             this.reorgLock.Dispose();
 

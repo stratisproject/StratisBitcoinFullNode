@@ -234,6 +234,11 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ruleContext.ValidationContext.Error = ex.ConsensusError;
             }
+            catch (Exception exception)
+            {
+                this.logger.LogCritical("Unhandled exception in consensus rules engine: {0}.", exception.ToString());
+                throw;
+            }
         }
 
         /// <summary>Adds block hash to a list of failed header unless specific consensus error was used that doesn't require block banning.</summary>
@@ -272,6 +277,11 @@ namespace Stratis.Bitcoin.Consensus
             catch (ConsensusErrorException ex)
             {
                 ruleContext.ValidationContext.Error = ex.ConsensusError;
+            }
+            catch (Exception exception)
+            {
+                this.logger.LogCritical("Unhandled exception in consensus rules engine: {0}.", exception.ToString());
+                throw;
             }
         }
 

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Rules;
@@ -18,7 +17,6 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
-using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
@@ -205,7 +203,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     new SetActivationDeploymentsPartialValidationRule(),
 
-                    new CheckDifficultyHybridRule(),
                     new PosTimeMaskRule(),
 
                     // rules that are inside the method ContextualCheckBlock
@@ -227,6 +224,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
                 {
                     new SetActivationDeploymentsFullValidationRule(),
+
+                    new CheckDifficultyHybridRule(),
 
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),

@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using NBitcoin;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Exceptions;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
@@ -28,72 +27,59 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </summary>
     public class State : IState
     {
-        /// <summary>
-        /// A snapshot of the world state during a contract execution.
-        /// </summary>
-        private class StateSnapshot
-        {
-            public StateSnapshot(IContractLogHolder logHolder, IReadOnlyList<TransferInfo> internalTransfers, ulong nonce, IContractState contractState)
-            {
-                this.Logs = logHolder.GetRawLogs().ToImmutableList();
-                this.InternalTransfers = internalTransfers.ToImmutableList();
-                this.Nonce = nonce;
-                this.ContractState = contractState;
-            }
-
-            public IContractState ContractState { get; }
-
-            public ImmutableList<RawLog> Logs { get; }
-
-            public ImmutableList<TransferInfo> InternalTransfers { get; }
-
-            public ulong Nonce { get; }
-        }
-
         private readonly List<TransferInfo> internalTransfers;
 
+        private IState child;
+        private readonly ISmartContractStateFactory smartContractStateFactory;
+
+        private State(State state)
+        {
+            this.ContractState = state.ContractState.StartTracking();
+            
+            // We create a new log holder but use references to the original raw logs
+            this.LogHolder = new ContractLogHolder(state.Network);
+            this.LogHolder.AddRawLogs(state.LogHolder.GetRawLogs());
+
+            // We create a new list but use references to the original transfers.
+            this.internalTransfers = new List<TransferInfo>(state.InternalTransfers);
+
+            // Create a new balance state based off the old one but with the repository and internal transfers list reference
+            this.BalanceState = new BalanceState(this.ContractState, state.BalanceState.TxAmount, this.internalTransfers);
+            this.Network = state.Network;
+            this.Nonce = state.Nonce;
+            this.Block = state.Block;
+            this.TransactionHash = state.TransactionHash;
+            this.smartContractStateFactory = state.smartContractStateFactory;
+        }
+
         public State(
-            IContractPrimitiveSerializer serializer,
-            InternalTransactionExecutorFactory internalTransactionExecutorFactory,
-            ISmartContractVirtualMachine vm,
-            IContractStateRoot repository,
+            ISmartContractStateFactory smartContractStateFactory, 
+            IContractState repository,
+            IContractLogHolder contractLogHolder,
+            List<TransferInfo> internalTransfers,
             IBlock block,
             Network network,
             ulong txAmount,
-            uint256 transactionHash,
-            IAddressGenerator addressGenerator,
-            Gas gasLimit)
+            uint256 transactionHash)
         {
-            this.intermediateState = repository;
-            this.LogHolder = new ContractLogHolder(network);
-            this.internalTransfers = new List<TransferInfo>();
-            this.BalanceState = new BalanceState(this.intermediateState, txAmount, this.InternalTransfers);
+            this.ContractState = repository;
+            this.LogHolder = contractLogHolder;
+            this.internalTransfers = internalTransfers;
+            this.BalanceState = new BalanceState(this.ContractState, txAmount, this.InternalTransfers);
             this.Network = network;
             this.Nonce = 0;
             this.Block = block;
             this.TransactionHash = transactionHash;
-            this.AddressGenerator = addressGenerator;
-            this.InternalTransactionExecutorFactory = internalTransactionExecutorFactory;
-            this.Vm = vm;
-            this.GasRemaining = gasLimit;
-            this.Serializer = serializer;
+            this.smartContractStateFactory = smartContractStateFactory;
         }
-
-        public IContractPrimitiveSerializer Serializer { get; }
-
-        public Gas GasRemaining { get; private set; }
-
-        public IAddressGenerator AddressGenerator { get; }
-
+        
         public uint256 TransactionHash { get; }
 
         public IBlock Block { get; }
 
+        private Network Network { get; }
+
         public ulong Nonce { get; private set; }
-
-        public Network Network { get; }
-
-        private IContractState intermediateState;
 
         public IContractLogHolder LogHolder { get; }
 
@@ -101,311 +87,78 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IReadOnlyList<TransferInfo> InternalTransfers => this.internalTransfers;
 
-        public InternalTransactionExecutorFactory InternalTransactionExecutorFactory { get; }
-
-        public ISmartContractVirtualMachine Vm { get; }
-
-        private ulong GetNonceAndIncrement()
+        public ulong GetNonceAndIncrement()
         {
             return this.Nonce++;
+        }
+
+        public IContractState ContractState { get; }
+
+        /// <summary>
+        /// Sets up a new <see cref="ISmartContractState"/> based on the current state.
+        /// </summary>
+         public ISmartContractState CreateSmartContractState(IState state, GasMeter gasMeter, uint160 address, BaseMessage message, IContractState repository) 
+        {
+            return this.smartContractStateFactory.Create(state, gasMeter, address, message, repository);
         }
 
         /// <summary>
         /// Returns contract logs in the log type used by consensus.
         /// </summary>
-        public IList<Log> GetLogs()
+        public IList<Log> GetLogs(IContractPrimitiveSerializer serializer)
         {
-            return this.LogHolder.GetRawLogs().ToLogs(this.Serializer);
-        }
-        
-        /// <summary>
-        /// Returns a new contract address and increments the address generation nonce.
-        /// </summary>
-        private uint160 GetNewAddress()
+            return this.LogHolder.GetRawLogs().ToLogs(serializer);
+        }       
+
+        public void TransitionTo(IState state)
         {
-            return this.AddressGenerator.GenerateAddress(this.TransactionHash, this.GetNonceAndIncrement());
-        }
+            if (this.child != state)
+            {
+                throw new ArgumentException("New state must be a child of this state.");
+            }
 
-        /// <summary>
-        /// Reverts the state to a previous snapshot.
-        /// </summary>
-        private void Rollback(StateSnapshot snapshot)
-        {
-            this.intermediateState = snapshot.ContractState;
-
-            // Reset the nonce
-            this.Nonce = snapshot.Nonce;
-
-            // Rollback internal transfers
+            // Update internal transfers
             this.internalTransfers.Clear();
-            this.internalTransfers.AddRange(snapshot.InternalTransfers);
-            
-            // Rollback logs
+            this.internalTransfers.AddRange(state.InternalTransfers);
+
+            // Update logs
             this.LogHolder.Clear();
-            this.LogHolder.AddRawLogs(snapshot.Logs);
+            this.LogHolder.AddRawLogs(state.LogHolder.GetRawLogs());
+
+            // Update nonce
+            this.Nonce = state.Nonce;
+
+            // Commit the state to update the parent state
+            state.ContractState.Commit();
+
+            this.child = null;
+        }
+
+        public void AddInternalTransfer(TransferInfo transferInfo)
+        {
+            this.internalTransfers.Add(transferInfo);
+        }
+
+        public ulong GetBalance(uint160 address)
+        {
+            return this.BalanceState.GetBalance(address);
+        }
+
+        public uint160 GenerateAddress(IAddressGenerator addressGenerator)
+        {
+            return addressGenerator.GenerateAddress(this.TransactionHash, this.GetNonceAndIncrement());
         }
 
         /// <summary>
-        /// Snapshots the existing state.
+        /// Returns a mutable snapshot of the current state. Changes can be made to the snapshot, then discarded or applied to the parent state.
+        /// To update this state with changes made to the snapshot, call <see cref="TransitionTo"/>. Only one valid snapshot can exist. If a new
+        /// snapshot is created, the parent state will reject any transitions from older snapshots.
         /// </summary>
-        private StateSnapshot TakeSnapshot()
+        public IState Snapshot()
         {
-            return new StateSnapshot(this.LogHolder, this.InternalTransfers, this.Nonce, this.intermediateState);
-        }
+            this.child = new State(this);
 
-        private StateTransitionResult ApplyCreate(object[] parameters, byte[] code, BaseMessage message, string type = null)
-        {
-            if (this.GasRemaining < message.GasLimit || this.GasRemaining < GasPriceList.BaseCost)
-                return StateTransitionResult.Fail((Gas) 0, StateTransitionErrorKind.InsufficientGas);
-
-            StateSnapshot stateSnapshot = this.TakeSnapshot();
-
-            var gasMeter = new GasMeter(message.GasLimit);
-
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
-
-            uint160 address = this.GetNewAddress();
-            
-            // Begin tracking the new intermediate state. We need to keep this reference around
-            // for the scope of the transaction, so we can commit it later.
-            IContractState state = this.CreateIntermediateState();
-
-            state.CreateAccount(address);
-
-            ISmartContractState smartContractState = this.CreateSmartContractState(gasMeter, address, message, state);
-
-            VmExecutionResult result = this.Vm.Create(state, smartContractState, code, parameters, type);
-
-            this.GasRemaining -= gasMeter.GasConsumed;
-
-            bool revert = result.ErrorMessage != null;
-
-            if (revert)
-            {
-                this.Rollback(stateSnapshot);
-
-                return StateTransitionResult.Fail(
-                    gasMeter.GasConsumed,
-                    result.ErrorMessage);
-            }
-
-            state.Commit();
-
-            return StateTransitionResult.Ok(
-                gasMeter.GasConsumed,
-                address,
-                result.Result
-            );            
-        }
-
-        /// <summary>
-        /// Applies an externally generated contract creation message to the current state.
-        /// </summary>
-        public StateTransitionResult Apply(ExternalCreateMessage message)
-        {
-            return this.ApplyCreate(message.Parameters, message.Code, message);
-        }
-
-        /// <summary>
-        /// Applies an internally generated contract creation message to the current state.
-        /// </summary>
-        public StateTransitionResult Apply(InternalCreateMessage message)
-        {
-            bool enoughBalance = this.EnsureContractHasEnoughBalance(message.From, message.Amount);
-
-            if (!enoughBalance)
-                throw new InsufficientBalanceException();
-
-            byte[] contractCode = this.intermediateState.GetCode(message.From);
-
-            StateTransitionResult result = this.ApplyCreate(message.Parameters, contractCode, message, message.Type);
-
-            // For successful internal creates we need to add the transfer to the internal transfer list.
-            // For external creates we do not need to do this.
-            if (result.IsSuccess)
-            {
-                this.internalTransfers.Add(new TransferInfo
-                {
-                    From = message.From,
-                    To = result.Success.ContractAddress,
-                    Value = message.Amount
-                });
-            }
-
-            return result;
-        }
-
-        private StateTransitionResult ApplyCall(CallMessage message, byte[] contractCode)
-        {
-            if (this.GasRemaining < message.GasLimit || this.GasRemaining < GasPriceList.BaseCost)
-                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientGas);
-
-            var gasMeter = new GasMeter(message.GasLimit);
-
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
-
-            if (message.Method.Name == null)
-            {
-                return StateTransitionResult.Fail(gasMeter.GasConsumed, StateTransitionErrorKind.NoMethodName);
-            }
-
-            StateSnapshot stateSnapshot = this.TakeSnapshot();
-
-            IContractState state = this.CreateIntermediateState();
-
-            string type = state.GetContractType(message.To);
-
-            ISmartContractState smartContractState = this.CreateSmartContractState(gasMeter, message.To, message, state);
-
-            VmExecutionResult result = this.Vm.ExecuteMethod(smartContractState, message.Method, contractCode, type);
-
-            this.GasRemaining -= gasMeter.GasConsumed;
-
-            bool revert = result.ErrorMessage != null;
-
-            if (revert)
-            {
-                this.Rollback(stateSnapshot);
-
-                return StateTransitionResult.Fail(
-                    gasMeter.GasConsumed,
-                    result.ErrorMessage);
-            }
-
-            state.Commit();
-            this.GasRemaining -= gasMeter.GasConsumed;            
-
-            return StateTransitionResult.Ok(
-                gasMeter.GasConsumed,
-                message.To,
-                result.Result
-            );            
-        }
-
-        /// <summary>
-        /// Applies an internally generated contract method call message to the current state.
-        /// </summary>
-        public StateTransitionResult Apply(InternalCallMessage message)
-        {
-            bool enoughBalance = this.EnsureContractHasEnoughBalance(message.From, message.Amount);
-
-            if (!enoughBalance)
-                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance);
-
-            byte[] contractCode = this.intermediateState.GetCode(message.To);
-
-            if (contractCode == null || contractCode.Length == 0)
-            {
-                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.NoCode);
-            }
-
-            StateTransitionResult result = this.ApplyCall(message, contractCode);
-
-            // For successful internal calls we need to add the transfer to the internal transfer list.
-            // For external calls we do not need to do this.
-            if (result.IsSuccess)
-            {
-                this.internalTransfers.Add(new TransferInfo
-                {
-                    From = message.From,
-                    To = message.To,
-                    Value = message.Amount
-                });
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Applies an externally generated contract method call message to the current state.
-        /// </summary>
-        public StateTransitionResult Apply(ExternalCallMessage message)
-        {
-            byte[] contractCode = this.intermediateState.GetCode(message.To);
-
-            if (contractCode == null || contractCode.Length == 0)
-            {
-                return StateTransitionResult.Fail((Gas) 0, StateTransitionErrorKind.NoCode);
-            }
-
-            return this.ApplyCall(message, contractCode);
-        }
-
-        /// <summary>
-        /// Applies an internally generated contract funds transfer message to the current state.
-        /// </summary>
-        public StateTransitionResult Apply(ContractTransferMessage message)
-        {
-            bool enoughBalance = this.EnsureContractHasEnoughBalance(message.From, message.Amount);
-
-            if (!enoughBalance)
-                return StateTransitionResult.Fail((Gas) 0, StateTransitionErrorKind.InsufficientBalance);
-
-            // If it's not a contract, create a regular P2PKH tx
-            // If it is a contract, do a regular contract call
-            byte[] contractCode = this.intermediateState.GetCode(message.To);
-
-            if (contractCode == null || contractCode.Length == 0)
-            {
-                // No contract at this address, create a regular P2PKH xfer
-                this.internalTransfers.Add(new TransferInfo
-                {
-                    From = message.From,
-                    To = message.To,
-                    Value = message.Amount
-                });
-
-                return StateTransitionResult.Ok((Gas) 0, message.To);
-            }
-
-            return this.ApplyCall(message, contractCode);
-        }
-
-        /// <summary>
-        /// Create a new intermediate <see cref="IContractState"/> based on the previous intermediate state.
-        /// Updates the intermediate state reference to point to the new state.
-        /// </summary>
-        private IContractState CreateIntermediateState()
-        {
-            this.intermediateState = this.intermediateState.StartTracking();
-            return this.intermediateState;
-        }
-
-        /// <summary>
-        /// Sets up a new <see cref="ISmartContractState"/> based on the current state.
-        /// </summary>        
-        private ISmartContractState CreateSmartContractState(IGasMeter gasMeter, uint160 address, BaseMessage message, IContractState repository)
-        {
-            IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
-
-            var persistentState = new PersistentState(persistenceStrategy, new ContractPrimitiveSerializer(this.Network), address);
-
-            var contractState = new SmartContractState(
-                this.Block,
-                new Message(
-                    address.ToAddress(this.Network),
-                    message.From.ToAddress(this.Network),
-                    message.Amount
-                ),
-                persistentState,
-                this.Serializer,
-                gasMeter,
-                this.LogHolder,
-                this.InternalTransactionExecutorFactory.Create(this),
-                new InternalHashHelper(),
-                () => this.BalanceState.GetBalance(address));
-
-            return contractState;
-        }
-
-        /// <summary>
-        /// Checks whether a contract has enough funds to make this transaction.
-        /// </summary>
-        private bool EnsureContractHasEnoughBalance(uint160 contractAddress, ulong amountToTransfer)
-        {
-            ulong balance = this.BalanceState.GetBalance(contractAddress);
-
-            return balance >= amountToTransfer;
+            return this.child;
         }
     }
 }
