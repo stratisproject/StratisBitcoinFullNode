@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -93,8 +94,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         }
 
         /// <inheritdoc />
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
+            this.logger.LogTrace("()");
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
 
@@ -104,6 +106,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
             this.logger.LogInformation("Smart Contract Feature Wallet Injected.");
+            this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />

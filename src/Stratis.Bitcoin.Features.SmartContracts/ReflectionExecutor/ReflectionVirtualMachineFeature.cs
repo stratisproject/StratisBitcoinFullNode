@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Rules;
@@ -17,11 +18,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
+            this.logger.LogTrace("()");
+
             new ReflectionRuleRegistration().RegisterRules(this.network.Consensus);
 
             this.logger.LogInformation("Reflection Virtual Machine Injected.");
+
+            this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
     }
 }

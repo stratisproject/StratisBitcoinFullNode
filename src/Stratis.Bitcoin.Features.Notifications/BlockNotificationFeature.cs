@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -45,13 +46,15 @@ namespace Stratis.Bitcoin.Features.Notifications
             this.loggerFactory = loggerFactory;
         }
 
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
             //connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             this.blockNotification.Start();
             this.chainState.ConsensusTip = this.chain.Tip;
+
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
