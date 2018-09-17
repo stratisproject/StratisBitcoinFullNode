@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -72,8 +71,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Protects the batch from being modifying while <see cref="GetBlockAsync"/> method is using the batch.</summary>
         private readonly object getBlockLock;
 
-        private readonly AsyncManualResetEvent addEvent;
-
         public BlockStoreQueue(
             ConcurrentChain chain,
             IChainState chainState,
@@ -96,7 +93,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockRepository = blockRepository;
             this.batch = new List<ChainedHeaderBlock>();
             this.getBlockLock = new object();
-            this.addEvent = new AsyncManualResetEvent(true);
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -275,7 +271,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 this.batch.Add(chainedHeaderBlock);
                 this.currentBatchSizeBytes += chainedHeaderBlock.Block.BlockSize.Value;
-                this.addEvent.Set();
             }
 
             this.logger.LogTrace("(-)");
@@ -290,39 +285,32 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
+            int cumulativeTicks = 0;
+            bool saveBatch = false;
+
             while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
             {
-                bool saveBatch = false;
-
                 try
                 {
-                    using (CancellationTokenSource timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.nodeLifetime.ApplicationStopping))
-                    {
-                        timeoutTokenSource.CancelAfter(BatchMaxSaveIntervalSeconds * 1000);
-                        await this.addEvent.WaitAsync(timeoutTokenSource.Token).ConfigureAwait(false);
+                    await Task.Delay(1000);
 
-                        // The event was set, indicating at least one item is in the batch.
-                        // We check further down whether this was sufficient to trigger a save.
-                        // Reset the event for now.
-                        this.addEvent.Reset();
+                    cumulativeTicks++;
+
+                    if (cumulativeTicks >= BatchMaxSaveIntervalSeconds)
+                    {
+                        saveBatch = true;
+                        cumulativeTicks = 0;
                     }
                 }
                 catch (OperationCanceledException)
                 {
-                    // Check whether it was a node shutdown/Dispose() or the timeout token.
-                    if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
-                        this.logger.LogDebug("Node is shutting down. Save batch.");
-                    else
-                        this.logger.LogDebug("Maximum batch saving interval elapsed. Save batch.");
-
-                    // When node is shutting down or Dispose() is called,
-                    // we want to save whatever is in the batch before exiting the loop.
-                    // For normal timeouts we just save the batch, the loop will execute again.
+                    // Happens when node is shutting down or Dispose() is called.
+                    // We want to save whatever is in the batch before exiting the loop.
                     saveBatch = true;
+
+                    this.logger.LogDebug("Node is shutting down. Save batch.");
                 }
 
-                // Apart from node shutdown, we also trigger a save if the batch is sufficiently full,
-                // or we are at the consensus tip.
                 saveBatch = saveBatch || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes) || this.chainState.IsAtBestChainTip;
 
                 if (saveBatch)
@@ -342,6 +330,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                                 this.currentBatchSizeBytes += stillInBatch.Block.BlockSize.Value;
                         }
                     }
+
+                    saveBatch = false;
                 }
             }
 
