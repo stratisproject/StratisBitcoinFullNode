@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
     /// <summary>Calculate the difficulty of a POS network for both Pow/POS blocks.</summary>
-    public class CheckDifficultyHybridRule : PartialValidationConsensusRule
+    public class CheckDifficultyHybridRule : FullValidationConsensusRule
     {
         /// <summary>Allow access to the POS parent.</summary>
         protected PosConsensusRuleEngine PosParent;

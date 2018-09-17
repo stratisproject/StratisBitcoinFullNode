@@ -30,7 +30,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 new SetActivationDeploymentsPartialValidationRule(),
 
-                new CheckDifficultyHybridRule(),
                 new PosTimeMaskRule(),
 
                 // rules that are inside the method ContextualCheckBlock
@@ -54,6 +53,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 new SetActivationDeploymentsFullValidationRule(),
 
+                new CheckDifficultyHybridRule(),
                 new SmartContractLoadCoinviewRule(),
                 new TransactionDuplicationActivationRule(), // implements BIP30
                 new SmartContractPosCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
