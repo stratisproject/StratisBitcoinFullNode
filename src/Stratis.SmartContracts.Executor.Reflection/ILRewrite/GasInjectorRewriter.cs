@@ -2,15 +2,17 @@
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using RuntimeObserver;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
 {
     /// <summary>
-    /// Rewrites a module to include an <see cref="Observer"/> that tracks gas usage. 
+    /// Rewrites a method to spend gas as execution occurs.
     /// </summary>
     public class GasInjectorRewriter : IObserverMethodRewriter
     {
+        /// <summary>
+        /// All branching opcodes.
+        /// </summary>
         private static readonly HashSet<OpCode> BranchingOps = new HashSet<OpCode>
         {
             OpCodes.Beq,
@@ -35,6 +37,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             OpCodes.Br_S
         };
 
+        /// <summary>
+        /// All opcodes that call to a method.
+        /// </summary>
         private static readonly HashSet<OpCode> CallingOps = new HashSet<OpCode>
         {
             OpCodes.Call,
@@ -42,8 +47,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             OpCodes.Callvirt
         };
 
-        public GasInjectorRewriter(){ }
-
+        /// <inheritdoc />
         public void Rewrite(MethodDefinition methodDefinition, ILProcessor il, ObserverRewriterContext context)
         {
             List<Instruction> branches = methodDefinition.Body.Instructions.Where(x => BranchingOps.Contains(x.OpCode)).ToList();
@@ -139,6 +143,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             }
         }
 
+        /// <summary>
+        /// Adds a call to SpendGas from the RuntimeObserver before the given instruction.
+        /// </summary>
         private static void AddSpendGasMethodBeforeInstruction(MethodDefinition methodDefinition, ObserverReferences observer, VariableDefinition variable, Instruction instruction, Gas opcodeCount)
         {
             ILProcessor il = methodDefinition.Body.GetILProcessor();

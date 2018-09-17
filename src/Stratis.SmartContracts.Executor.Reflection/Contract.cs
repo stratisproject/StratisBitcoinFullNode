@@ -186,7 +186,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             when (!(targetException.InnerException is OutOfGasException) 
             && !(targetException.InnerException is MemoryConsumptionException))
             {
-                // Method threw an exception that was not an OutOfGasException
+                // Method threw an exception that was not an OutOfGasException or a MemoryConsumptionException
+                // TODO: OutofGas and MemoryConsumption exceptions should inherit from same base 'ResourceTrackingException'
+                // which can be tracked here.
                 return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.MethodThrewException, targetException.InnerException);
             }
             catch (TargetInvocationException targetException) when (targetException.InnerException is OutOfGasException)

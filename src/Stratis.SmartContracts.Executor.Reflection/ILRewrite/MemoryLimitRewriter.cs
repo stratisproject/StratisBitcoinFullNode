@@ -6,7 +6,7 @@ using Mono.Cecil.Cil;
 namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
 {
     /// <summary>
-    /// Must be applied to a module after the <see cref="GasInjectorRewriter"/>.
+    /// Rewrites the IL to spend 'memory units' inside the given <see cref="RuntimeObserver.Observer"/>.
     /// </summary>
     public class MemoryLimitRewriter : IObserverMethodRewriter
     {

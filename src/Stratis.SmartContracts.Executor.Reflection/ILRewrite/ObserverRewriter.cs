@@ -6,17 +6,24 @@ using RuntimeObserver;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
 {
+    /// <summary>
+    /// Injects a new type with reference to an <see cref="Observer"/> into a module which can be used to track runtime metrics.
+    /// </summary>
     public class ObserverRewriter : IILRewriter
     {
         private const string InjectedNamespace = "<Stratis>";
         private const string InjectedTypeName = "<RuntimeObserverInstance>";
         private const string InjectedPropertyName = "Instance";
 
+        /// <summary>
+        /// The individual rewriters to be applied to each method, which use the injected type.
+        /// </summary>
         private static readonly List<IObserverMethodRewriter> methodRewriters = new List<IObserverMethodRewriter>
         {
             new GasInjectorRewriter(),
             new MemoryLimitRewriter()
         };
+
 
         private readonly Observer observerToInject;
 
@@ -88,6 +95,10 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             }
         }
 
+        /// <summary>
+        /// Makes the <see cref="Observer"/> available to the given method as a variable and then
+        /// applies all of the individual rewriters to the method.
+        /// </summary>
         private void RewriteMethod(MethodDefinition methodDefinition, ObserverReferences observer)
         {
             if (methodDefinition.DeclaringType == observer.InstanceField.DeclaringType)
