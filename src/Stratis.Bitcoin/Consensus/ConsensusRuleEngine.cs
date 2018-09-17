@@ -51,10 +51,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IInvalidBlockHashStore invalidBlockHashStore;
 
         /// <inheritdoc cref="ConsensusRulesPerformanceCounter"/>
-        private ConsensusRulesPerformanceCounter PerformanceCounter { get; }
-
-        /// <inheritdoc cref="INodeStats"/>
-        private readonly INodeStats nodeStats;
+        private ConsensusRulesPerformanceCounter performanceCounter;
 
         /// <summary>Group of rules that are used during block header validation.</summary>
         private List<HeaderValidationConsensusRule> headerValidationRules;
@@ -105,15 +102,14 @@ namespace Stratis.Bitcoin.Consensus
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.NodeDeployments = nodeDeployments;
-            this.PerformanceCounter = new ConsensusRulesPerformanceCounter();
-            this.nodeStats = nodeStats;
 
             this.headerValidationRules = new List<HeaderValidationConsensusRule>();
             this.integrityValidationRules = new List<IntegrityValidationConsensusRule>();
             this.partialValidationRules = new List<PartialValidationConsensusRule>();
             this.fullValidationRules = new List<FullValidationConsensusRule>();
+            this.performanceCounter = new ConsensusRulesPerformanceCounter();
 
-            this.nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 500);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 500);
         }
 
         /// <inheritdoc />
@@ -234,7 +230,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 foreach (AsyncConsensusRule rule in asyncRules)
                 {
-                    using (this.PerformanceCounter.MeasureRuleExecutionTime(rule, rulesType))
+                    using (this.performanceCounter.MeasureRuleExecutionTime(rule, rulesType))
                     {
                         await rule.RunAsync(ruleContext).ConfigureAwait(false);
                     }
@@ -280,7 +276,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 foreach (SyncConsensusRule rule in rules)
                 {
-                    using (this.PerformanceCounter.MeasureRuleExecutionTime(rule, rulesType))
+                    using (this.performanceCounter.MeasureRuleExecutionTime(rule, rulesType))
                     {
                         rule.Run(ruleContext);
                     }
@@ -326,7 +322,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("()");
 
-            benchLog.AppendLine(this.PerformanceCounter.ToString());
+            benchLog.AppendLine(this.performanceCounter.ToString());
 
             this.logger.LogTrace("(-)");
         }
