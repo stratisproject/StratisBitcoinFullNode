@@ -1066,7 +1066,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Loads the block data from <see cref="chainedHeaderTree"/> or block store if it's enabled.</summary>
         /// <param name="blockHash">The block hash.</param>
-        private async Task<ChainedHeaderBlock> LoadBlockDataAsync(uint256 blockHash)
+        public async Task<ChainedHeaderBlock> LoadBlockDataAsync(uint256 blockHash)
         {
             this.logger.LogTrace("({0}:{1})", nameof(blockHash), blockHash);
 
