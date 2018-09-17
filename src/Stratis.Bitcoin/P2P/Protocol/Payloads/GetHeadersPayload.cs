@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     [Payload("getheaders")]
     public class GetHeadersPayload : Payload
     {
-        private uint version = (uint)ProtocolVersion.PROTOCOL_VERSION; // TODO: Update once new protocol version is merge in
+        private uint version = (uint)ProtocolVersion.PROTOCOL_VERSION;
 
         public ProtocolVersion Version
         {
