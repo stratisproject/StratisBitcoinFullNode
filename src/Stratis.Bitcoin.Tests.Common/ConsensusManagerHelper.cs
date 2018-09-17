@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Tests.Common
             var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
             var deployments = new NodeDeployments(network, chain);
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(),
-                inMemoryCoinView, chainState, new InvalidBlockHashStore(new DateTimeProvider())).Register();
+                inMemoryCoinView, chainState, new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(dateTimeProvider)).Register();
 
             var tree = new ChainedHeaderTree(network, loggerFactory, new HeaderValidator(consensusRules, loggerFactory), new Checkpoints(),
                 new ChainState(), new Mock<IFinalizedBlockInfo>().Object, consensusSettings, new InvalidBlockHashStore(new DateTimeProvider()));

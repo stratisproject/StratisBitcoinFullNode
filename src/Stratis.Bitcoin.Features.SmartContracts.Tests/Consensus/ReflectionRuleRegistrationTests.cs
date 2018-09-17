@@ -38,7 +38,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
                 new Mock<ISenderRetriever>().Object,
                 new Mock<ICoinView>().Object,
                 new Mock<IChainState>().Object,
-                new InvalidBlockHashStore(new DateTimeProvider()));
+                new InvalidBlockHashStore(new DateTimeProvider()),
+                new NodeStats(new DateTimeProvider()));
 
             var feature = new ReflectionVirtualMachineFeature(loggerFactory, network);
             feature.Initialize();

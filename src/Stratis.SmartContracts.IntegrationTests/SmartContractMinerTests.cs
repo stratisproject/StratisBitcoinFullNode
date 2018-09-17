@@ -186,7 +186,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 new SmartContractPowRuleRegistration().RegisterRules(this.network.Consensus);
 
-                this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), DateTimeProvider.Default, new LoggerFactory());
+                this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), DateTimeProvider.Default, new LoggerFactory(), new NodeStats(new DateTimeProvider()));
 
                 this.loggerFactory = new ExtendedLoggerFactory();
                 this.loggerFactory.AddConsoleWithFilters();
@@ -221,7 +221,8 @@ namespace Stratis.SmartContracts.IntegrationTests
                     senderRetriever,
                     this.cachedCoinView,
                     chainState,
-                    new InvalidBlockHashStore(DateTimeProvider.Default))
+                    new InvalidBlockHashStore(DateTimeProvider.Default),
+                    new NodeStats(new DateTimeProvider()))
                     .Register();
 
                 this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network);
