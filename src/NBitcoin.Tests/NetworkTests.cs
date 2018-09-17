@@ -625,7 +625,7 @@ namespace NBitcoin.Tests
             var version = new BitcoinProtocolVersion();
             IEnumerable<ProtocolVersion> list = version.List();
 
-            Assert.True(list.Count() == itemCount + bitCointItemCount);
+            Assert.True(list.Count() == itemCount + bitCoinItemCount);
         }
     }
 }
