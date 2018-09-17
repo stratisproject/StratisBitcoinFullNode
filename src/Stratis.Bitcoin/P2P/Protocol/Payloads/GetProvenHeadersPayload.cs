@@ -1,22 +1,13 @@
 ﻿using NBitcoin;
-using NBitcoin.Protocol;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
     /// <summary>
-    /// Ask for proven block headers that happened since BlockLocator.
+    /// Ask for proven block headers that happened since <see cref="BlockLocator"/>.
     /// </summary>
     [Payload("getprovhdr")]
     public class GetProvenHeadersPayload : Payload
     {
-        private uint version = (uint)ProtocolVersion.PROTOCOL_VERSION;
-
-        public ProtocolVersion Version
-        {
-            get => (ProtocolVersion)this.version;
-            set => this.version = (uint)value;
-        }
-
         private BlockLocator blockLocator;
 
         public BlockLocator BlockLocator
@@ -44,7 +35,6 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            stream.ReadWrite(ref this.version);
             stream.ReadWrite(ref this.blockLocator);
             stream.ReadWrite(ref this.hashStop);
         }
