@@ -9,6 +9,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -40,10 +41,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Setup(s => s.Deserialize(It.IsAny<byte[]>()))
                 .Returns(Result.Ok(contractTxData));
 
+            var contractPrimitiveSerializer = new Mock<IContractPrimitiveSerializer>();
             var vmExecutionResult = VmExecutionResult.Success(null, null);
 
-            var contractStateRoot = new Mock<IContractStateRoot>();
+            var contractStateRoot = new Mock<IContractState>();
             var transferProcessor = new Mock<ISmartContractResultTransferProcessor>();
+            var stateProcessor = new Mock<IStateProcessor>();
 
             (Money refund, TxOut) refundResult = (refund, null);
             var refundProcessor = new Mock<ISmartContractResultRefundProcessor>();
@@ -60,18 +63,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var stateTransitionResult = StateTransitionResult.Ok(gasConsumed, newContractAddress, vmExecutionResult.Result);
 
             var internalTransfers = new List<TransferInfo>().AsReadOnly();
+
+            var snapshot = new Mock<IState>();
+
             var stateMock = new Mock<IState>();
-            stateMock.Setup(s => s.Apply(It.IsAny<ExternalCreateMessage>()))                
-                .Returns(stateTransitionResult);
+            stateMock.Setup(s => s.ContractState).Returns(contractStateRoot.Object);
             stateMock.SetupGet(p => p.InternalTransfers).Returns(internalTransfers);
+            stateMock.Setup(s => s.Snapshot()).Returns(snapshot.Object);
+            
+            stateProcessor.Setup(s => s.Apply(snapshot.Object, It.IsAny<ExternalCreateMessage>())).Returns(stateTransitionResult);
 
             var stateFactory = new Mock<IStateFactory>();
             stateFactory.Setup(sf => sf.Create(
                 contractStateRoot.Object,
                 It.IsAny<IBlock>(),
                 context.TxOutValue,
-                context.TransactionHash,
-                contractTxData.GasLimit))
+                context.TransactionHash))
             .Returns(stateMock.Object);
 
             var sut = new Executor(
@@ -81,7 +88,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 refundProcessor.Object,
                 transferProcessor.Object,
                 network,
-                stateFactory.Object);
+                stateFactory.Object,
+                stateProcessor.Object,
+                contractPrimitiveSerializer.Object);
 
             sut.Execute(context);
 
@@ -92,12 +101,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     contractStateRoot.Object,
                     It.IsAny<IBlock>(),
                     context.TxOutValue,
-                    context.TransactionHash,
-                    contractTxData.GasLimit),
+                    context.TransactionHash),
                 Times.Once);
 
-            stateMock.Verify(sm => sm
-                .Apply(It.IsAny<ExternalCreateMessage>()), Times.Once);
+            // We only apply the message to the snapshot.
+            stateProcessor.Verify(sm => sm.Apply(snapshot.Object, It.IsAny<ExternalCreateMessage>()), Times.Once);
+
+            // Must transition to the snapshot.
+            stateMock.Verify(sm => sm.TransitionTo(snapshot.Object), Times.Once);
 
             transferProcessor.Verify(t => t
                 .Process(
