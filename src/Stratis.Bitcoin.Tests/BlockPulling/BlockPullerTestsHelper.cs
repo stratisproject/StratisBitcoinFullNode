@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.BlockPulling
             VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), new IPEndPoint(1, 1), KnownNetworks.StratisMain, new DateTimeProvider().GetTimeOffset());
 
             if (notSupportedVersion)
-                version.Version = ProtocolVersion.NOBLKS_VERSION_START;
+                version.Version = NBitcoin.Protocol.ProtocolVersion.NOBLKS_VERSION_START;
             else
                 version.Services = NetworkPeerServices.Network;
 

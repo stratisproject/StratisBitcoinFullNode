@@ -574,5 +574,58 @@ namespace NBitcoin.Tests
             string coinbaseText100Long = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
             Assert.Throws<ArgumentException>(() => Network.MineGenesisBlock(new ConsensusFactory(), coinbaseText100Long, new Target(new uint256()), Money.Zero));
         }
+
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void StratisProtocolVersionValidateItems()
+        {            
+            Assert.True(StratisProtocolVersion.ProvenHeaders.Id == 70013);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void StratisProtocolVersionAllItemsCount()
+        {
+            var itemCount = 14;
+            var stratisItemCount = 1;
+
+            var version = new StratisProtocolVersion();
+            IEnumerable<ProtocolVersion> list = version.List();
+            Assert.True(list.Count() == itemCount + stratisItemCount);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void ProtocolVersionBaseValidateItems()
+        {
+            Assert.True(ProtocolVersion.Protocol.Id == 70012);
+            Assert.True(ProtocolVersion.AltProtocal.Id == 70000);
+            Assert.True(ProtocolVersion.InitProtocol.Id == 209);
+            Assert.True(ProtocolVersion.MinPeers.Id == 209);
+            Assert.True(ProtocolVersion.CAddressTime.Id == 31402);
+            Assert.True(ProtocolVersion.NoBlocksStart.Id == 32000);
+            Assert.True(ProtocolVersion.NoBlocksEnd.Id == 32400);
+            Assert.True(ProtocolVersion.Bip31.Id == 60000);
+            Assert.True(ProtocolVersion.MempoolGetData.Id == 60002);
+            Assert.True(ProtocolVersion.Reject.Id == 70002);
+            Assert.True(ProtocolVersion.NoBloom.Id == 70011);
+            Assert.True(ProtocolVersion.SendHeaders.Id == 70012);
+            Assert.True(ProtocolVersion.Witness.Id == 70012);
+            Assert.True(ProtocolVersion.ShortIdBlocks.Id == 70014);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void BitCoinProtocolVersionAllItemsCount()
+        {
+            var itemCount = 14;
+            var bitCoinItemCount = 0;
+
+            var version = new BitcoinProtocolVersion();
+            IEnumerable<ProtocolVersion> list = version.List();
+
+            Assert.True(list.Count() == itemCount + bitCoinItemCount);
+        }
     }
 }
