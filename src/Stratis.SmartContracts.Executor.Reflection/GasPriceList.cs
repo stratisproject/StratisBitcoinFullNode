@@ -56,7 +56,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public static Gas StorageSaveOperationCost(byte[] keyBytes, byte[] valueBytes)
         {
-            Gas cost = (Gas)(ulong)(StoragePerByteSavedGasCost * keyBytes.Length + StoragePerByteSavedGasCost * valueBytes.Length);
+            int keyLen = keyBytes != null ? keyBytes.Length : 0;
+            int valueLen = valueBytes != null ? valueBytes.Length : 0;
+
+            Gas cost = (Gas)(ulong)(StoragePerByteSavedGasCost * keyLen + StoragePerByteSavedGasCost * valueLen);
             return cost;
         }
 
@@ -65,7 +68,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public static Gas StorageRetrieveOperationCost(byte[] keyBytes, byte[] valueBytes)
         {
-            Gas cost = (Gas)(ulong)(StoragePerByteRetrievedGasCost * keyBytes.Length + StoragePerByteRetrievedGasCost * valueBytes.Length);
+            int keyLen = keyBytes != null ? keyBytes.Length : 0;
+            int valueLen = valueBytes != null ? valueBytes.Length : 0;
+
+            Gas cost = (Gas)(ulong)(StoragePerByteRetrievedGasCost * keyLen + StoragePerByteRetrievedGasCost * valueLen);
             return cost;
         }
 
