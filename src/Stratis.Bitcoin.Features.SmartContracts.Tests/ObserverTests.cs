@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Coinbase = TestAddress,
                 Number = 1
             };
-            var message = new TestMessage
+            var message = new TestMessage  
             {
                 ContractAddress = TestAddress,
                 GasLimit = (Gas)GasLimit,
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new InternalHashHelper(),
                 () => 1000);
 
-            this.rewriter = new ObserverRewriter(new Observer(this.gasMeter));
+            this.rewriter = new ObserverRewriter(new Observer(this.gasMeter, ReflectionVirtualMachine.MemoryUnitLimit));
         }
 
         // These tests are almost identical to the GasInjectorTests, just with the new injector.
@@ -276,6 +276,119 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.True(result.IsSuccess);
             Assert.True(this.gasMeter.GasConsumed > 0);
+        }
+
+
+        [Fact]
+        public void Test_MemoryLimit_Small_Allocations_Pass()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+
+            // Small array passes
+            AssertPasses(contract, nameof(MemoryLimit.AllowedArray));
+
+            // Small array resize passes
+            AssertPasses(contract, nameof(MemoryLimit.AllowedArrayResize));
+
+            // Small string constructor passes
+            AssertPasses(contract, nameof(MemoryLimit.AllowedStringConstructor));
+
+            // Small ToCharArray passes
+            AssertPasses(contract, nameof(MemoryLimit.AllowedToCharArray));
+
+            // Small Split passes
+            AssertPasses(contract, nameof(MemoryLimit.AllowedSplit));
+
+            // Small Join passes
+            AssertPasses(contract, nameof(MemoryLimit.AllowedJoin));
+
+            // Small Concat passes
+            AssertPasses(contract, nameof(MemoryLimit.AllowedConcat));
+        }
+
+        // These are all split up because if they all use the same one
+        // they will have the same 'Observer' and it will overflow.
+        // TODO: Future improvement: Use Theory, and don't compile from scratch
+        // every time to save performance.
+
+        [Fact]
+        public void Test_MemoryLimit_BigArray_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedArray));
+        }
+
+        [Fact]
+        public void Test_MemoryLimit_BigArrayResize_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedArrayResize));
+        }
+
+        [Fact]
+        public void Test_MemoryLimit_BigStringConstructor_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedStringConstructor));
+        }
+
+        [Fact]
+        public void Test_MemoryLimit_BigCharArray_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedToCharArray));
+        }
+
+        [Fact]
+        public void Test_MemoryLimit_BigStringSplit_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedSplit));
+        }
+
+        [Fact]
+        public void Test_MemoryLimit_BigStringJoin_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedJoin));
+        }
+
+        [Fact]
+        public void Test_MemoryLimit_BigStringConcat_Fails()
+        {
+            IContract contract = GetContractAfterRewrite("SmartContracts/MemoryLimit.cs");
+            AssertFailsDueToMemory(contract, nameof(MemoryLimit.NotAllowedConcat));
+        }
+
+        private void AssertFailsDueToMemory(IContract contract, string methodName)
+        {
+            var callData = new MethodCall(methodName);
+            IContractInvocationResult result = contract.Invoke(callData);
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ContractInvocationErrorType.OverMemoryLimit, result.InvocationErrorType);
+        }
+
+        private void AssertPasses(IContract contract, string methodName)
+        {
+            var callData = new MethodCall(methodName);
+            IContractInvocationResult result = contract.Invoke(callData);
+            Assert.True(result.IsSuccess);
+        }
+
+        private IContract GetContractAfterRewrite(string filename)
+        {
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile(filename);
+            Assert.True(compilationResult.Success);
+
+            byte[] originalAssemblyBytes = compilationResult.Compilation;
+
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+
+            module.Rewrite(this.rewriter);
+
+            CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
+
+            return Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
         }
 
     }

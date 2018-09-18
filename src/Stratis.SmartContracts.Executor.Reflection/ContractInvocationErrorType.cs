@@ -9,6 +9,7 @@
         ParameterTypesDontMatch,
         ParameterCountIncorrect,
         MethodThrewException,
-        OutOfGas
+        OutOfGas,
+        OverMemoryLimit
     }
 }
