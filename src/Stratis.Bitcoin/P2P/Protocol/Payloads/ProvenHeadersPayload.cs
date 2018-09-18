@@ -4,13 +4,20 @@ using NBitcoin;
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
     /// <summary>
-    /// Proven block headers received after a getheaders message.
+    /// Proven headers payload which contains list of up to 2000 proven headers.
     /// </summary>
+    /// <seealso cref="Stratis.Bitcoin.P2P.Protocol.Payloads.Payload" />
     [Payload("provhdr")]
     public class ProvenHeadersPayload : Payload
     {
+        /// <summary>
+        /// A list of up to 2,000 proven headers.
+        /// </summary>
         private List<BlockHeader> headers = new List<BlockHeader>();
 
+        /// <summary>
+        /// Gets a list of up to 2,000 proven headers.
+        /// </summary>
         public List<BlockHeader> Headers => this.headers;
 
         public ProvenHeadersPayload()
@@ -22,6 +29,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             this.Headers.AddRange(headers);
         }
 
+        /// <inheritdoc />
         public override void ReadWriteCore(BitcoinStream stream)
         {
             stream.ReadWrite(ref this.headers);
