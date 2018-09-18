@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Then add them to the <see cref="TransactionBuildContext.UnspentOutputs"/>.
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
-        public void AddCoins(TransactionBuildContext context)
+        protected void AddCoins(TransactionBuildContext context)
         {
             context.UnspentOutputs = this.walletManager.GetSpendableTransactionsInAccount(context.AccountReference, context.MinConfirmations).ToList();
 
