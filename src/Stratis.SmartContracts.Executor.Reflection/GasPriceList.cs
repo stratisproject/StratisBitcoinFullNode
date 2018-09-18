@@ -1,4 +1,6 @@
-﻿using Mono.Cecil;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -53,9 +55,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return cost;
         }
 
-        public static Gas LogOperationCost()
+        public static Gas LogOperationCost(IEnumerable<byte[]> topics, byte[] data)
         {
-
+            int topicCost = topics.Select(x => x.Length * LogPerTopicByteCost).Sum();
+            int dataCost = data.Length * LogPerByteCost;
+            return (Gas)(ulong) (topicCost + dataCost);
         }
 
         /// <summary>
