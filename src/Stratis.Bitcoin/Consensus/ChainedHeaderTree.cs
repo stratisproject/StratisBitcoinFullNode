@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus.ValidationResults;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -71,9 +72,8 @@ namespace Stratis.Bitcoin.Consensus
         /// </para>
         /// </remarks>
         /// <param name="chainedHeader">The chained header.</param>
-        /// <param name="fullValidationRequired"><c>true</c> in case we want to switch our consensus tip to <paramref name="chainedHeader"/>.</param>
-        /// <returns>List of chained header blocks with block data that should be partially validated next. Or <c>null</c> if none should be validated.</returns>
-        List<ChainedHeaderBlock> PartialValidationSucceeded(ChainedHeader chainedHeader, out bool fullValidationRequired);
+        /// <returns>Feedback specific to when a partial block validation succeeded.</returns>
+        PartialValidationSucceededResult PartialValidationSucceeded(ChainedHeader chainedHeader);
 
         /// <summary>
         /// Handles situation when block data was considered to be invalid
@@ -325,17 +325,17 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public List<ChainedHeaderBlock> PartialValidationSucceeded(ChainedHeader chainedHeader, out bool fullValidationRequired)
+        public PartialValidationSucceededResult PartialValidationSucceeded(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            fullValidationRequired = false;
+            var result = new PartialValidationSucceededResult();
 
             // Can happen in case peer was disconnected during the validation and it was the only peer claiming that header.
             if (!this.chainedHeadersByHash.ContainsKey(chainedHeader.HashBlock))
             {
                 this.logger.LogTrace("(-)[HEADER_NOT_FOUND]:null");
-                return null;
+                return result;
             }
 
             // Can happen when peer was disconnected after sending the block but before the validation was completed
@@ -343,7 +343,7 @@ namespace Stratis.Bitcoin.Consensus
             if (chainedHeader.Block == null)
             {
                 this.logger.LogTrace("(-)[BLOCK_DATA_NULL]:null");
-                return null;
+                return result;
             }
 
             // Can happen in case of a race condition when peer 1 presented a block, we started partial validation, peer 1 disconnected,
@@ -352,7 +352,7 @@ namespace Stratis.Bitcoin.Consensus
                 (chainedHeader.Previous.BlockValidationState != ValidationState.FullyValidated))
             {
                 this.logger.LogTrace("(-)[PREV_BLOCK_NOT_VALIDATED]:null");
-                return null;
+                return result;
             }
 
             // Same scenario as above except for prev block was validated which triggered next partial validation to be started.
@@ -360,7 +360,7 @@ namespace Stratis.Bitcoin.Consensus
                 (chainedHeader.BlockValidationState == ValidationState.FullyValidated))
             {
                 this.logger.LogTrace("(-)[ALREADY_VALIDATED]:null");
-                return null;
+                return result;
             }
 
             chainedHeader.BlockValidationState = ValidationState.PartiallyValidated;
@@ -375,7 +375,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 this.ClaimPeerTip(LocalPeerId, chainedHeader.HashBlock);
 
-                fullValidationRequired = true;
+                result.FullValidationRequired = true;
             }
 
             var chainedHeaderBlocksToValidate = new List<ChainedHeaderBlock>();
@@ -389,8 +389,10 @@ namespace Stratis.Bitcoin.Consensus
                 }
             }
 
-            this.logger.LogTrace("(-):*.{0}={1},{2}={3}", nameof(chainedHeaderBlocksToValidate.Count), chainedHeaderBlocksToValidate.Count, nameof(fullValidationRequired), fullValidationRequired);
-            return chainedHeaderBlocksToValidate;
+            result.ChainedHeaderBlocksToValidate = chainedHeaderBlocksToValidate;
+
+            this.logger.LogTrace("(-):*.{0}", result.ToString());
+            return result;
         }
 
         /// <summary>Sets the tip claim for a peer.</summary>
@@ -448,6 +450,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
                 this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
+
                 currentHeader = currentHeader.Previous;
             }
 

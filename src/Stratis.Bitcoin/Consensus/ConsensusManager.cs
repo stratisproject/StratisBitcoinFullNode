@@ -258,14 +258,14 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (validationContext.Error == null)
                 {
-                    bool fullValidationRequired;
+                    PartialValidationSucceededResult result;
 
                     lock (this.peerLock)
                     {
-                        this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out fullValidationRequired);
+                        result = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader);
                     }
 
-                    if (fullValidationRequired)
+                    if (result.FullValidationRequired)
                     {
                         ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
                         if (!fullValidationResult.Succeeded)
@@ -414,67 +414,85 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            List<ChainedHeaderBlock> chainedHeaderBlocksToValidate;
-            ConnectBlocksResult connectBlocksResult = null;
+            bool continuePartialValidation = false;
+            ConnectBlocksResult fullResult = null;
+            PartialValidationSucceededResult partialResult = null;
 
             using (await this.reorgLock.LockAsync().ConfigureAwait(false))
             {
-                bool fullValidationRequired;
-
                 lock (this.peerLock)
                 {
-                    chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out fullValidationRequired);
+                    partialResult = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader);
+                    if (partialResult.ChainedHeaderBlocksToValidate != null)
+                        continuePartialValidation = true;
                 }
 
-                this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? "" : " NOT");
+                this.logger.LogTrace("Full validation is{0} required.", partialResult.FullValidationRequired ? string.Empty : " NOT");
 
-                if (fullValidationRequired)
+                if (partialResult.FullValidationRequired)
                 {
-                    connectBlocksResult = await this.FullyValidateLockedAsync(chainedHeader).ConfigureAwait(false);
+                    fullResult = await this.InitiateFullValidationLockedAsync(chainedHeader).ConfigureAwait(false);
+                    continuePartialValidation = fullResult.Succeeded;
                 }
             }
 
-            if (connectBlocksResult != null)
+            // Partial validation should ONLY continue if:
+            //  1: There was no full validation.
+            //  2: There was full validation and full validation succeeded.
+            if (continuePartialValidation)
             {
-                if (connectBlocksResult.PeersToBan != null)
-                {
-                    var peersToBan = new List<INetworkPeer>();
-
-                    lock (this.peerLock)
-                    {
-                        foreach (int peerId in connectBlocksResult.PeersToBan)
-                        {
-                            if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
-                                peersToBan.Add(peer);
-                        }
-                    }
-
-                    this.logger.LogTrace("{0} peers will be banned.", peersToBan.Count);
-
-                    foreach (INetworkPeer peer in peersToBan)
-                        this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, connectBlocksResult.BanDurationSeconds, connectBlocksResult.BanReason);
-                }
-
-                if (connectBlocksResult.ConsensusTipChanged)
-                    await this.NotifyBehaviorsOnConsensusTipChangedAsync().ConfigureAwait(false);
-
-                lock (this.peerLock)
-                {
-                    this.ProcessDownloadQueueLocked();
-                }
-            }
-
-            if (chainedHeaderBlocksToValidate != null)
-            {
-                this.logger.LogTrace("Partial validation of {0} block will be started.", chainedHeaderBlocksToValidate.Count);
+                this.logger.LogTrace("Partial validation of {0} block will be started.", partialResult.ChainedHeaderBlocksToValidate.Count);
 
                 // Start validating all next blocks that come after the current block,
                 // all headers in this list have the blocks present in the header.
-                foreach (ChainedHeaderBlock toValidate in chainedHeaderBlocksToValidate)
+                foreach (ChainedHeaderBlock toValidate in partialResult.ChainedHeaderBlocksToValidate)
                     this.partialValidator.StartPartialValidation(toValidate.ChainedHeader, toValidate.Block, this.OnPartialValidationCompletedCallbackAsync);
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>
+        /// Fully validates the chained header and should it fail, ban peers that has this header.
+        /// </summary>
+        /// <param name="chainedHeader">The chained header to validate.</param>
+        /// <returns>Validation related information.</returns>
+        private async Task<ConnectBlocksResult> InitiateFullValidationLockedAsync(ChainedHeader chainedHeader)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
+
+            ConnectBlocksResult result = await this.FullyValidateLockedAsync(chainedHeader).ConfigureAwait(false);
+
+            if (result.PeersToBan != null)
+            {
+                var peersToBan = new List<INetworkPeer>();
+
+                lock (this.peerLock)
+                {
+                    foreach (int peerId in result.PeersToBan)
+                    {
+                        if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
+                            peersToBan.Add(peer);
+                    }
+                }
+
+                this.logger.LogTrace("{0} peers will be banned.", peersToBan.Count);
+
+                foreach (INetworkPeer peer in peersToBan)
+                    this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, result.BanDurationSeconds, result.BanReason);
+            }
+
+            if (result.ConsensusTipChanged)
+                await this.NotifyBehaviorsOnConsensusTipChangedAsync().ConfigureAwait(false);
+
+            lock (this.peerLock)
+            {
+                this.ProcessDownloadQueueLocked();
+            }
+
+            this.logger.LogTrace("(-)");
+
+            return result;
         }
 
         /// <summary>

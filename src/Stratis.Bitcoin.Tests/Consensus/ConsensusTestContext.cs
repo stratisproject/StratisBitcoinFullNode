@@ -6,7 +6,6 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -242,7 +241,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             {
                 ChainedHeader currentConsumedCh = consumedHeaders[i];
                 cht.BlockDataDownloaded(currentConsumedCh, chainTip.GetAncestor(currentConsumedCh.Height).Block);
-                cht.PartialValidationSucceeded(currentConsumedCh, out bool fullValidationRequired);
+                cht.PartialValidationSucceeded(currentConsumedCh);
                 cht.ConsensusTipChanged(currentConsumedCh);
             }
         }
