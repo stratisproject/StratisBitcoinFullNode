@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IInvalidBlockHashStore invalidBlockHashStore;
 
         /// <inheritdoc cref="ConsensusRulesPerformanceCounter"/>
-        private ConsensusRulesPerformanceCounter performanceCounter;
+        private readonly ConsensusRulesPerformanceCounter performanceCounter;
 
         /// <summary>Group of rules that are used during block header validation.</summary>
         private List<HeaderValidationConsensusRule> headerValidationRules;

@@ -63,29 +63,30 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.locker)
             {
-                if (this.rulesInfo.Count != 0)
+                if (this.rulesInfo.Count == 0)
                 {
-                    builder.AppendLine($"Using up to {MaxSamples} most recent samples.");
-
-                    foreach (IGrouping<RuleType, RuleItem> rulesGroup in this.rulesInfo.Values.GroupBy(x => x.RuleType))
-                    {
-                        double totalRunningTimeMs = Math.Round(rulesGroup.Sum(x => x.ExecutionTime.Average) / ticksPerMs, 4);
-
-                        builder.AppendLine($"{rulesGroup.Key} validation rules. Total execution time: {totalRunningTimeMs} ms.");
-
-                        foreach (RuleItem rule in rulesGroup)
-                        {
-                            double milliseconds = Math.Round(rule.ExecutionTime.Average / ticksPerMs, 4);
-                            double percentage = Math.Round((milliseconds / totalRunningTimeMs) * 100.0);
-
-                            builder.AppendLine($"    {rule.RuleName.PadRight(50, '-')}{(milliseconds + " ms").PadRight(12, '-')}{percentage} %");
-                        }
-
-                        builder.AppendLine();
-                    }
-                }
-                else
                     builder.AppendLine("No samples...");
+                    return builder.ToString();
+                }
+
+                builder.AppendLine($"Using up to {MaxSamples} most recent samples.");
+
+                foreach (IGrouping<RuleType, RuleItem> rulesGroup in this.rulesInfo.Values.GroupBy(x => x.RuleType))
+                {
+                    double totalRunningTimeMs = Math.Round(rulesGroup.Sum(x => x.ExecutionTime.Average) / ticksPerMs, 4);
+
+                    builder.AppendLine($"{rulesGroup.Key} validation rules. Total execution time: {totalRunningTimeMs} ms.");
+
+                    foreach (RuleItem rule in rulesGroup)
+                    {
+                        double milliseconds = Math.Round(rule.ExecutionTime.Average / ticksPerMs, 4);
+                        double percentage = Math.Round((milliseconds / totalRunningTimeMs) * 100.0);
+
+                        builder.AppendLine($"    {rule.RuleName.PadRight(50, '-')}{(milliseconds + " ms").PadRight(12, '-')}{percentage} %");
+                    }
+
+                    builder.AppendLine();
+                }
             }
 
             return builder.ToString();
