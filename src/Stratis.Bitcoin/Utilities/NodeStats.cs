@@ -74,6 +74,7 @@ namespace Stratis.Bitcoin.Utilities
             return statsBuilder.ToString();
         }
 
+        /// <inheritdoc />
         public string GetBenchmark()
         {
             var statsBuilder = new StringBuilder();

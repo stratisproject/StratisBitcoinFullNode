@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
+    /// <summary>Measures rules average execution time.</summary>
     public class ConsensusRulesPerformanceCounter
     {
         private readonly Dictionary<string, RuleItem> rulesInfo;
@@ -22,6 +23,10 @@ namespace Stratis.Bitcoin.Consensus
             this.locker = new object();
         }
 
+        /// <summary>Measures the rule execution time and adds this sample to performance counter.</summary>
+        /// <param name="rule">Rule being measured.</param>
+        /// <param name="ruleType">Type of the rule.</param>
+        /// <returns><see cref="IDisposable"/> that should be disposed after rule has finished it's execution.</returns>
         public IDisposable MeasureRuleExecutionTime(ConsensusRuleBase rule, RuleType ruleType)
         {
             var stopwatch = new StopwatchDisposable(elapsedTicks =>

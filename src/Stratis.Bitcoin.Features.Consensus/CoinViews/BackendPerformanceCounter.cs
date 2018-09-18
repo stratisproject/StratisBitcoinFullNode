@@ -248,7 +248,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             return snapshot;
         }
 
-        private string ToTimespan(TimeSpan timespan)
+        private string timespanToString(TimeSpan timespan)
         {
             return timespan.ToString("c");
         }
@@ -260,13 +260,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             if (this.TotalInsertedEntities > 0)
                 builder.AppendLine("Insert speed:".PadRight(LoggingConfiguration.ColumnLength) + (this.TotalInsertTime.TotalMilliseconds / this.TotalInsertedEntities).ToString("0.0000") + " ms/utxo");
 
-            builder.AppendLine("Insert time:".PadRight(LoggingConfiguration.ColumnLength) + this.ToTimespan(this.TotalInsertTime));
+            builder.AppendLine("Insert time:".PadRight(LoggingConfiguration.ColumnLength) + this.timespanToString(this.TotalInsertTime));
             builder.AppendLine("Inserted UTXO:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalInsertedEntities);
 
             if (this.TotalQueriedEntities > 0)
                 builder.AppendLine("Query speed:".PadRight(LoggingConfiguration.ColumnLength) + (this.TotalQueryTime.TotalMilliseconds / this.TotalQueriedEntities).ToString("0.0000") + " ms/utxo");
 
-            builder.AppendLine("Query time:".PadRight(LoggingConfiguration.ColumnLength) + this.ToTimespan(this.TotalQueryTime));
+            builder.AppendLine("Query time:".PadRight(LoggingConfiguration.ColumnLength) + this.timespanToString(this.TotalQueryTime));
             builder.AppendLine("Queried UTXO:".PadRight(LoggingConfiguration.ColumnLength) + this.TotalQueriedEntities);
             return builder.ToString();
         }

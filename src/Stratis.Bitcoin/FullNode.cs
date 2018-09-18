@@ -241,7 +241,10 @@ namespace Stratis.Bitcoin
                 this.LastLogOutput = stats;
 
                 return Task.CompletedTask;
-            }, this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpans.FiveSeconds, startAfter: TimeSpans.FiveSeconds);
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpans.FiveSeconds,
+            startAfter: TimeSpans.FiveSeconds);
 
             this.Resources.Add(periodicLogLoop);
 
@@ -252,7 +255,10 @@ namespace Stratis.Bitcoin
                 this.logger.LogInformation(benchmark);
 
                 return Task.CompletedTask;
-            }, this.nodeLifetime.ApplicationStopping, repeatEvery: TimeSpan.FromSeconds(17), startAfter: TimeSpan.FromSeconds(17));
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpan.FromSeconds(17),
+            startAfter: TimeSpan.FromSeconds(17));
 
             this.Resources.Add(periodicBenchmarkLoop);
         }

@@ -522,7 +522,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             CachePerformanceSnapshot snapShot = this.performanceCounter.Snapshot();
 
             if (this.latestPerformanceSnapShot == null)
-                benchLog.AppendLine((snapShot).ToString());
+                benchLog.AppendLine(snapShot.ToString());
             else
                 benchLog.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
 
