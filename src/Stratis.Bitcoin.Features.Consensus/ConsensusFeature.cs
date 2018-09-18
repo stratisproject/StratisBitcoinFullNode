@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Rules;
@@ -53,11 +54,13 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
             DeploymentFlags flags = this.nodeDeployments.GetFlags(this.consensusManager.Tip);
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
+
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />

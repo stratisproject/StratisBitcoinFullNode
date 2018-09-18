@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
                 new NodeStats(new DateTimeProvider()));
 
             var feature = new ReflectionVirtualMachineFeature(loggerFactory, network);
-            feature.Initialize();
+            feature.InitializeAsync().GetAwaiter().GetResult();
 
             Assert.Single(network.Consensus.FullValidationRules.Where(r => r.GetType() == typeof(SmartContractFormatRule)));
         }
