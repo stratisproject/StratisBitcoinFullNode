@@ -414,7 +414,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            bool shouldPartialValidationContinue = false;
+            bool continuePartialValidation = false;
             ConnectBlocksResult fullResult = null;
             PartialValidationSucceededResult partialResult = null;
 
@@ -423,13 +423,8 @@ namespace Stratis.Bitcoin.Consensus
                 lock (this.peerLock)
                 {
                     partialResult = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader);
-                    if (partialResult.ChainedHeaderBlocksToValidate == null)
-                    {
-                        this.logger.LogTrace("(-)[NO_FURTHER_BLOCKS_TO_VALIDATE]");
-                        return;
-                    }
-                    else
-                        shouldPartialValidationContinue = true;
+                    if (partialResult.ChainedHeaderBlocksToValidate != null)
+                        continuePartialValidation = true;
                 }
 
                 this.logger.LogTrace("Full validation is{0} required.", partialResult.FullValidationRequired ? string.Empty : " NOT");
@@ -437,13 +432,14 @@ namespace Stratis.Bitcoin.Consensus
                 if (partialResult.FullValidationRequired)
                 {
                     fullResult = await this.InitiateFullValidationLockedAsync(chainedHeader).ConfigureAwait(false);
-                    shouldPartialValidationContinue = fullResult.Succeeded;
+                    continuePartialValidation = fullResult.Succeeded;
                 }
             }
 
-            // If there was no full validation, partial validation should continue.
-            // If there was full validation, partial validation should continue only if full validation succeeded.
-            if (shouldPartialValidationContinue)
+            // Partial validation should ONLY continue if:
+            //  1: There was no full validation.
+            //  2: There was full validation and full validation succeeded.
+            if (continuePartialValidation)
             {
                 this.logger.LogTrace("Partial validation of {0} block will be started.", partialResult.ChainedHeaderBlocksToValidate.Count);
 
