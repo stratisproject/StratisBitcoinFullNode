@@ -23,7 +23,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.loggerFactory = new LoggerFactory();
             this.Network = network;
             this.FolderName = TestBase.CreateTestDir(caller, name);
-            this.PersistentCoinView = new DBreezeCoinView(network, this.FolderName, DateTimeProvider.Default, this.loggerFactory, new NodeStats(new DateTimeProvider()));
+            var dateTimeProvider = new DateTimeProvider();
+            this.PersistentCoinView = new DBreezeCoinView(network, this.FolderName, dateTimeProvider, this.loggerFactory, new NodeStats(dateTimeProvider));
             this.PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
             this.cleanList = new List<IDisposable> {this.PersistentCoinView};
         }
@@ -59,7 +60,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             this.PersistentCoinView.Dispose();
             this.cleanList.Remove(this.PersistentCoinView);
-            this.PersistentCoinView = new DBreezeCoinView(this.Network, this.FolderName, DateTimeProvider.Default, this.loggerFactory, new NodeStats(new DateTimeProvider()));
+            var dateTimeProvider = new DateTimeProvider();
+            this.PersistentCoinView = new DBreezeCoinView(this.Network, this.FolderName, dateTimeProvider, this.loggerFactory, new NodeStats(dateTimeProvider));
             this.PersistentCoinView.InitializeAsync().GetAwaiter().GetResult();
             this.cleanList.Add(this.PersistentCoinView);
         }

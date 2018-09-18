@@ -87,6 +87,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             {
                 this.logger = new Mock<ILogger>();
                 rule.Logger = this.logger.Object;
+
+                var dateTimeProvider = new DateTimeProvider();
+
                 rule.Parent = new PowConsensusRuleEngine(
                     KnownNetworks.RegTest,
                     new Mock<ILoggerFactory>().Object,
@@ -94,8 +97,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                     new ConcurrentChain(this.network),
                     new NodeDeployments(KnownNetworks.RegTest, new ConcurrentChain(this.network)),
                     new ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, new Mock<IChainState>().Object,
-                    new InvalidBlockHashStore(new DateTimeProvider()),
-                    new NodeStats(new DateTimeProvider()));
+                    new InvalidBlockHashStore(dateTimeProvider),
+                    new NodeStats(dateTimeProvider));
 
                 rule.Initialize();
 
