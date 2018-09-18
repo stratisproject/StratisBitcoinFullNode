@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Utilities
                 {
                     if (!cts.IsCancellationRequested)
                     {
-                        Console.WriteLine("Application is shutting down...");
+                        Console.WriteLine("Application is shutting down.");
                         try
                         {
                             cts.Cancel();

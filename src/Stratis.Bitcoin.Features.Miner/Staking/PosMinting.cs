@@ -388,7 +388,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 if (this.initialBlockDownloadState.IsInitialBlockDownload() ||
                     this.consensusManager.Tip != this.chain.Tip)
                 {
-                    this.logger.LogTrace("Waiting for synchronization before mining can be started...");
+                    this.logger.LogTrace("Waiting for synchronization before mining can be started.");
 
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), cancellationToken).ConfigureAwait(false);
                     continue;
@@ -441,7 +441,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 }
                 else
                 {
-                    this.logger.LogTrace("{0} failed to create POS block, waiting {1} ms for next round...", nameof(this.StakeAndSignBlockAsync), this.minerSleep);
+                    this.logger.LogTrace("{0} failed to create POS block, waiting {1} ms for next round.", nameof(this.StakeAndSignBlockAsync), this.minerSleep);
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), cancellationToken).ConfigureAwait(false);
                 }
             }
@@ -797,7 +797,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             bool stopWork = false;
             foreach (UtxoStakeDescription utxoStakeInfo in orderedUtxoStakeDescriptions)
             {
-                context.Logger.LogTrace("Trying UTXO from address '{0}', output amount {1}...", utxoStakeInfo.Address.Address, utxoStakeInfo.TxOut.Value);
+                context.Logger.LogTrace("Trying UTXO from address '{0}', output amount {1}.", utxoStakeInfo.Address.Address, utxoStakeInfo.TxOut.Value);
 
                 // Script of the first coinstake input.
                 Script scriptPubKeyKernel = utxoStakeInfo.TxOut.ScriptPubKey;
@@ -841,7 +841,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     if ((txTime & PosTimeMaskRule.StakeTimestampMask) != 0)
                         continue;
 
-                    context.Logger.LogTrace("Trying with transaction time {0}...", txTime);
+                    context.Logger.LogTrace("Trying with transaction time {0}.", txTime);
 
                     try
                     {

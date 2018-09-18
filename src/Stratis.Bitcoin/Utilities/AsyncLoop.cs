@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Utilities
             return Task.Run(async () =>
             {
                 Exception uncaughtException = null;
-                this.logger.LogInformation(this.Name + " starting");
+                this.logger.LogInformation(this.Name + " starting.");
                 try
                 {
                     if (delayStart != null)
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Utilities
                 }
                 finally
                 {
-                    this.logger.LogInformation(this.Name + " stopping");
+                    this.logger.LogInformation(this.Name + " stopping.");
                 }
 
                 if (uncaughtException != null)
