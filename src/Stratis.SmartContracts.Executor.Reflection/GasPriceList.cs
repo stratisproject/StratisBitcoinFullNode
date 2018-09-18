@@ -19,6 +19,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public const int StoragePerByteSavedGasCost = 10;
         public const int StoragePerByteRetrievedGasCost = 1;
+        public const int LogPerTopicByteCost = 2;
+        public const int LogPerByteCost = 1;
         public const int MethodCallGasCost = 5;
         public const int InstructionGasCost = 1;
 

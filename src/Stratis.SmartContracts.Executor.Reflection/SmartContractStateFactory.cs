@@ -1,6 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -27,7 +28,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
 
-            var persistentState = new PersistentState(persistenceStrategy, new ContractPrimitiveSerializer(this.Network), address);
+            var persistentState = new PersistentState(persistenceStrategy, this.Serializer, address);
+
+            var contractLogger = new MeteredContractLogger(gasMeter, state.LogHolder, this.Network, this.Serializer);
 
             var contractState = new SmartContractState(
                 state.Block,
@@ -39,7 +42,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 persistentState,
                 this.Serializer,
                 gasMeter,
-                state.LogHolder,
+                contractLogger,
                 this.InternalTransactionExecutorFactory.Create(state),
                 new InternalHashHelper(),
                 () => state.GetBalance(address));
