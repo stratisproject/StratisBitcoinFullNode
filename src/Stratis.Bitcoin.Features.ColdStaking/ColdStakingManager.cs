@@ -374,35 +374,47 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             {
                 AccountReference = accountReference,
                 // Specify a dummy change address to prevent a change (internal) address from being created.
-                // Will be changed after the transacton is built.
+                // Will be changed after the transacton is built and before it is signed.
                 ChangeAddress = coldAccount.ExternalAddresses.First(),
                 TransactionFee = feeAmount,
                 MinConfirmations = 0,
                 Shuffle = false,
-                WalletPassword = walletPassword,
                 Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = destination } }.ToList()
             };
 
             // Register the cold staking builder extension with the transaction builder.
             context.TransactionBuilder.Extensions.Add(new ColdStakingBuilderExtension(false));
 
+            // Avoid script errors due to missing scriptSig.
+            context.TransactionBuilder.StandardTransactionPolicy.ScriptVerify = null;
+
             // Build the transaction according to the settings recorded in the context.
             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
+
+            // Map OutPoint to UnspentOutputReference.
+            Dictionary<OutPoint, UnspentOutputReference> mapOutPointToUnspent = this.walletManager.GetSpendableTransactionsInAccount(accountReference)
+                .ToDictionary(unspent => unspent.ToOutPoint(), unspent => unspent);
 
             // Set the cold staking scriptPubKey on the change output.
             TxOut changeOutput = transaction.Outputs.SingleOrDefault(output => (output.ScriptPubKey != destination) && (output.Value != 0));
             if (changeOutput != null)
             {
-                // Map OutPoint to UnspentOutputReference.
-                Dictionary<OutPoint, UnspentOutputReference> mapOutPointToUnspent = this.walletManager.GetSpendableTransactionsInAccount(accountReference)
-                    .ToDictionary(unspent => unspent.ToOutPoint(), unspent => unspent);
-
                 // Find the largest input.
                 TxIn largestInput = transaction.Inputs.OrderByDescending(input => mapOutPointToUnspent[input.PrevOut].Transaction.Amount).Take(1).Single();
 
                 // Set the scriptPubKey of the change output to the scriptPubKey of the largest input.
                 changeOutput.ScriptPubKey = mapOutPointToUnspent[largestInput.PrevOut].Transaction.ScriptPubKey;
             }
+
+            // Add keys for signing inputs.
+            foreach (TxIn input in transaction.Inputs)
+            {
+                UnspentOutputReference unspent = mapOutPointToUnspent[input.PrevOut];
+                context.TransactionBuilder.AddKeys(wallet.GetExtendedPrivateKeyForAddress(walletPassword, unspent.Address));
+            }
+
+            // Sign the transaction.
+            context.TransactionBuilder.SignTransactionInPlace(transaction);
 
             this.logger.LogTrace("(-)");
             return transaction;
