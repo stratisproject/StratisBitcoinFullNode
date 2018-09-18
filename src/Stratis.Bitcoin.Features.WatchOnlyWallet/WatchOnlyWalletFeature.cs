@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -33,13 +34,14 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         }
 
         /// <inheritdoc />
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
             // subscribe to receiving blocks and transactions
             this.blockSubscriberdDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletManager));
             this.transactionSubscriberdDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletManager));
 
             this.walletManager.Initialize();
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />

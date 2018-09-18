@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -49,15 +50,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.stateRoot = stateRoot;
         }
 
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
+            this.logger.LogTrace("()");
+
             if (this.network.Consensus.IsProofOfStake)
                 Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPosConsensusFactory);
             else
                 Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPowConsensusFactory);
 
             this.stateRoot.SyncToRoot(((SmartContractBlockHeader)this.consensusManager.Tip.Header).HashStateRoot.ToBytes());
+
             this.logger.LogInformation("Smart Contract Feature Injected.");
+            this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
     }
 

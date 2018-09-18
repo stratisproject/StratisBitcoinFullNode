@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             // Act.
             var feature = new DnsFeature(dnsServer.Object, whitelistManager.Object, loggerFactory.Object, nodeLifetime.Object, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory);
-            feature.Initialize();
+            feature.InitializeAsync().GetAwaiter().GetResult();
             bool waited = waitObject.Wait(5000);
 
             // Assert.
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             // Act.
             var feature = new DnsFeature(dnsServer.Object, whitelistManager, loggerFactory.Object, nodeLifetimeObject, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory);
-            feature.Initialize();
+            feature.InitializeAsync().GetAwaiter().GetResult();
             nodeLifetimeObject.StopApplication();
             bool waited = source.Token.WaitHandle.WaitOne(5000);
 
@@ -266,7 +266,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             // Act.
             var feature = new DnsFeature(dnsServer.Object, whitelistManager, loggerFactory.Object, nodeLifetimeObject, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory);
-            feature.Initialize();
+            feature.InitializeAsync().GetAwaiter().GetResult();
             bool waited = source.Token.WaitHandle.WaitOne(5000);
 
             // Assert.
@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             using (var feature = new DnsFeature(dnsServer, whitelistManager, loggerFactory, nodeLifetimeObject, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory))
             {
                 // Act.
-                feature.Initialize();
+                feature.InitializeAsync().GetAwaiter().GetResult();
                 bool waited = source.Token.WaitHandle.WaitOne(5000);
 
                 // Assert.

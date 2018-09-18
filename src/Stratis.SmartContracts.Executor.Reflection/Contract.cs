@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using NBitcoin;
+using RuntimeObserver;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -181,16 +182,25 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 // This should not happen
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterTypesDontMatch);
             }
-            catch (TargetInvocationException targetException) when (!(targetException.InnerException is OutOfGasException))
+            catch (TargetInvocationException targetException) 
+            when (!(targetException.InnerException is OutOfGasException) 
+            && !(targetException.InnerException is MemoryConsumptionException))
             {
-                // Method threw an exception that was not an OutOfGasException
+                // Method threw an exception that was not an OutOfGasException or a MemoryConsumptionException
+                // TODO: OutofGas and MemoryConsumption exceptions should inherit from same base 'ResourceTrackingException'
+                // which can be tracked here.
                 return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.MethodThrewException, targetException.InnerException);
             }
             catch (TargetInvocationException targetException) when (targetException.InnerException is OutOfGasException)
             {
-                // Method threw an exception that was an OutOfGasException.
+                // Method threw an OutOfGasException
                 return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.OutOfGas, targetException.InnerException);
-            }           
+            }
+            catch (TargetInvocationException targetException) when (targetException.InnerException is MemoryConsumptionException)
+            {
+                // Method threw a MemoryConsumptionException
+                return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.OverMemoryLimit, targetException.InnerException);
+            }
         }
 
         /// <summary>
