@@ -322,7 +322,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
             {
                 // TODO: check if we need to add support for "not found"
-                ChainedHeaderBlock chainedHeaderBlock = await this.consensusManager.LoadBlockDataAsync(item.Hash).ConfigureAwait(false);
+                ChainedHeaderBlock chainedHeaderBlock = await this.consensusManager.GetBlockDataAsync(item.Hash).ConfigureAwait(false);
 
                 if (chainedHeaderBlock.Block != null)
                 {

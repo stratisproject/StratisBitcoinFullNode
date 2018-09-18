@@ -813,7 +813,7 @@ namespace Stratis.Bitcoin.Consensus
 
             while (currentHeader.Height >= heightOfFirstBlock)
             {
-                ChainedHeaderBlock chainedHeaderBlock = await this.LoadBlockDataAsync(currentHeader.HashBlock).ConfigureAwait(false);
+                ChainedHeaderBlock chainedHeaderBlock = await this.GetBlockDataAsync(currentHeader.HashBlock).ConfigureAwait(false);
 
                 if (chainedHeaderBlock?.Block == null)
                 {
@@ -1037,7 +1037,7 @@ namespace Stratis.Bitcoin.Consensus
 
             foreach (uint256 blockHash in blockHashes)
             {
-                ChainedHeaderBlock chainedHeaderBlock = await this.LoadBlockDataAsync(blockHash).ConfigureAwait(false);
+                ChainedHeaderBlock chainedHeaderBlock = await this.GetBlockDataAsync(blockHash).ConfigureAwait(false);
 
                 if ((chainedHeaderBlock == null) || (chainedHeaderBlock.Block != null))
                 {
@@ -1065,7 +1065,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public async Task<ChainedHeaderBlock> LoadBlockDataAsync(uint256 blockHash)
+        public async Task<ChainedHeaderBlock> GetBlockDataAsync(uint256 blockHash)
         {
             this.logger.LogTrace("({0}:{1})", nameof(blockHash), blockHash);
 

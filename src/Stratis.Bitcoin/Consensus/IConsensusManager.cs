@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Loads the block data from <see cref="chainedHeaderTree"/> or block store if it's enabled.</summary>
         /// <param name="blockHash">The block hash.</param>
-        Task<ChainedHeaderBlock> LoadBlockDataAsync(uint256 blockHash);
+        Task<ChainedHeaderBlock> GetBlockDataAsync(uint256 blockHash);
 
         /// <summary>
         /// A new block was mined by the node and is attempted to connect to tip.
