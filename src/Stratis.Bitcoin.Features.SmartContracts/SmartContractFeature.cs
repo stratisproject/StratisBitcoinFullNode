@@ -124,7 +124,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public static IFullNodeBuilder UseSmartContractConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
-            LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -137,7 +136,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<ICoinView, CachedCoinView>();
                     services.AddSingleton<ConsensusController>();
-                    services.AddSingleton<ConsensusStats>();
                     services.AddSingleton<IConsensusRuleEngine, SmartContractPowConsensusRuleEngine>();
 
                     new SmartContractPowRuleRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
@@ -153,7 +151,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public static IFullNodeBuilder UseSmartContractPosConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
-            LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -166,7 +163,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<ConsensusStats>();
                         services.AddSingleton<IConsensusRuleEngine, SmartContractPosConsensusRuleEngine>();
 
                         new SmartContractPosRuleRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
