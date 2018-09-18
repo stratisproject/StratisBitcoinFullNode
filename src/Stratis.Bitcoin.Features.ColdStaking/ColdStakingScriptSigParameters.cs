@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// </summary>
     public class ColdStakingScriptSigParameters
     {
-        /// <summary>The signature used with OP_CHECKSIG.</summary>
+        /// <summary>The signature used with <see cref="OpcodeType.OP_CHECKSIG"/>.</summary>
         public TransactionSignature TransactionSignature { get; set; }
 
         /// <summary>A flag indicating whether this is coldPubKey.</summary>
