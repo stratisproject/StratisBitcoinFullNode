@@ -436,7 +436,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (partialResult.FullValidationRequired)
                 {
-                    fullResult = await this.FullyValidateAsync(chainedHeader).ConfigureAwait(false);
+                    fullResult = await this.InitiateFullValidationLockedAsync(chainedHeader).ConfigureAwait(false);
                     shouldPartialValidationContinue = fullResult.Succeeded;
                 }
             }
@@ -461,7 +461,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="chainedHeader">The chained header to validate.</param>
         /// <returns>Validation related information.</returns>
-        private async Task<ConnectBlocksResult> FullyValidateAsync(ChainedHeader chainedHeader)
+        private async Task<ConnectBlocksResult> InitiateFullValidationLockedAsync(ChainedHeader chainedHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
