@@ -184,9 +184,9 @@ namespace Stratis.SmartContracts.IntegrationTests
                 this.chain = new ConcurrentChain(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
 
-                new SmartContractPowRuleRegistration().RegisterRules(this.network.Consensus);
-
-                this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), DateTimeProvider.Default, new LoggerFactory());
+                IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
+                var inMemoryCoinView = new InMemoryCoinView(this.chain.Tip.HashBlock);
+                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, new LoggerFactory());
 
                 this.loggerFactory = new ExtendedLoggerFactory();
                 this.loggerFactory.AddConsoleWithFilters();
@@ -224,7 +224,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                     new InvalidBlockHashStore(DateTimeProvider.Default))
                     .Register();
 
-                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network);
+                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain, ruleRegistration: new SmartContractPowRuleRegistration(), consensusRules: this.consensusRules);
 
                 await this.consensusManager.InitializeAsync(chainState.BlockStoreTip);
 
@@ -248,7 +248,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 for (int i = 0; i < this.blockinfo.Count; ++i)
                 {
                     NBitcoin.Block block = this.network.CreateBlock();
-                    block.Header.HashPrevBlock = this.chain.Tip.HashBlock;
+                    block.Header.HashPrevBlock = this.consensusManager.Tip.HashBlock;
                     ((SmartContractBlockHeader)block.Header).HashStateRoot = ((SmartContractBlockHeader)genesis.Header).HashStateRoot;
                     block.Header.Version = 1;
                     block.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
@@ -273,7 +273,9 @@ namespace Stratis.SmartContracts.IntegrationTests
                     // Serialization sets the BlockSize property.
                     block = NBitcoin.Block.Load(block.ToBytes(), this.network);
 
-                    await this.consensusManager.BlockMinedAsync(block);
+                    var res = await this.consensusManager.BlockMinedAsync(block);
+                    if (res == null)
+                        throw new InvalidOperationException();
 
                     blocks.Add(block);
                 }
