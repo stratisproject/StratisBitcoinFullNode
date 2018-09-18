@@ -2101,7 +2101,7 @@ namespace NBitcoin.BouncyCastle.Math
         {
             // Note: this method allows w to be only (2 * x.Length - 1) words if result will fit
             //            if (w.Length != 2 * x.Length)
-            //                throw new ArgumentException("no I don't think so...");
+            //                throw new ArgumentException("no I don't think so.");
 
             ulong c;
 

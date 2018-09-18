@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Utilities
             var t = new Thread(() =>
             {
                 Exception uncatchException = null;
-                this.logger.LogInformation(this.name + " starting");
+                this.logger.LogInformation(this.name + " starting.");
                 try
                 {
                     if (delayStart)
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Utilities
                 }
                 finally
                 {
-                    this.logger.LogInformation(this.Name + " stopping");
+                    this.logger.LogInformation(this.Name + " stopping.");
                 }
 
                 if (uncatchException != null)
