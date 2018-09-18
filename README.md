@@ -1,4 +1,6 @@
-[![Build Status](https://stratisplatformuk.visualstudio.com/Enigma/_apis/build/status/FederatedSidechains-CI-win-hosted)](https://stratisplatformuk.visualstudio.com/Enigma/_build/latest?definitionId=11)
+| Windows | MacOs | Ubuntu64
+| :---- | :------ | :---- |
+| [![Build Status](https://stratisplatformuk.visualstudio.com/Enigma/_apis/build/status/FederatedSidechains-CI-win-hosted)](https://stratisplatformuk.visualstudio.com/Enigma/_build/latest?definitionId=11) | [![Build Status](https://stratisplatformuk.visualstudio.com/Enigma/_apis/build/status/FederatedSidechains-CI-macOs-hosted)](https://stratisplatformuk.visualstudio.com/Enigma/_build/latest?definitionId=12) | [![Build Status](https://stratisplatformuk.visualstudio.com/Enigma/_apis/build/status/FederatedSidechains-CI-ubuntu-hosted)](https://stratisplatformuk.visualstudio.com/Enigma/_build/latest?definitionId=14)
 
 Stratis Federated Sidechains - Testnet Alpha Release
 ============================
