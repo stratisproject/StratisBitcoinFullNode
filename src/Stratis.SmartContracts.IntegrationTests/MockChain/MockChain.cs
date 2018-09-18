@@ -32,7 +32,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         public MockChain(int numNodes)
         {
             this.Network = new SmartContractsRegTest(); // TODO: Make this configurable.
-            this.Network = NetworkRegistration.Register(new SmartContractsRegTest());
 
             this.builder = NodeBuilder.Create(this);
             this.nodes = new MockChainNode[numNodes];
