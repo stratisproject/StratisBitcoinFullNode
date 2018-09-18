@@ -250,9 +250,11 @@ namespace Stratis.Bitcoin
 
             IAsyncLoop periodicBenchmarkLoop = this.AsyncLoopFactory.Run("PeriodicBenchmarkLog", (cancellation) =>
             {
-                string benchmark = this.nodeStats.GetBenchmark();
-
-                this.logger.LogInformation(benchmark);
+                if (this.InitialBlockDownloadState.IsInitialBlockDownload())
+                {
+                    string benchmark = this.nodeStats.GetBenchmark();
+                    this.logger.LogInformation(benchmark);
+                }
 
                 return Task.CompletedTask;
             },
