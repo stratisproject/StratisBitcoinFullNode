@@ -53,6 +53,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return cost;
         }
 
+        public static Gas LogOperationCost()
+        {
+
+        }
+
         /// <summary>
         /// Get cost to store this key and value.
         /// </summary>
