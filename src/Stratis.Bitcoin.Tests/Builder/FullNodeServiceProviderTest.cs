@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Moq;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
@@ -62,7 +63,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             }
 
             /// <inheritdoc />
-            public void Initialize()
+            public Task InitializeAsync()
             {
                 throw new NotImplementedException();
             }
@@ -88,7 +89,7 @@ namespace Stratis.Bitcoin.Tests.Builder
             }
 
             /// <inheritdoc />
-            public void Initialize()
+            public Task InitializeAsync()
             {
                 throw new NotImplementedException();
             }

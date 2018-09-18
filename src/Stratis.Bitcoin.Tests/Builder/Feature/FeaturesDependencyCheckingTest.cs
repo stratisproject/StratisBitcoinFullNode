@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -27,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             }
 
             /// <inheritdoc />
-            public void Initialize()
+            public Task InitializeAsync()
             {
                 throw new NotImplementedException();
             }
