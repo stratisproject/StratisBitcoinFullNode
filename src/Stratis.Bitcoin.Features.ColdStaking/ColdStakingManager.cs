@@ -357,14 +357,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 Recipients = new List<Recipient>() { new Recipient { Amount = amount, ScriptPubKey = destination } }
             };
 
-            // Avoid errors being raised due to the special script that we are using.
-            // TODO: Remove this.
-            context.TransactionBuilder.StandardTransactionPolicy.CheckScriptPubKey = false;
-
             // Register the cold staking builder extension with the transaction builder.
-            // TODO: Add this line.
-            // context.TransactionBuilder.Extensions.Add(new ColdStakingBuilderExtension(false));
+            context.TransactionBuilder.Extensions.Add(new ColdStakingBuilderExtension(false));
 
+            // Build the transaction.
             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
 
             this.logger.LogTrace("(-):'{0}'", transaction.GetHash());
