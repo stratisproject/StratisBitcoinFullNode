@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Rules;
@@ -18,7 +17,6 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
-using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
@@ -47,8 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             Signals.Signals signals,
             IConsensusManager consensusManager,
             NodeDeployments nodeDeployments,
-            ConsensusStats consensusStats,
-            INodeStats nodeStats)
+            ConsensusStats consensusStats)
         {
             this.chainState = chainState;
             this.connectionManager = connectionManager;
@@ -58,20 +55,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.consensusStats = consensusStats;
 
             this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
-
-            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
-        }
-
-        private void AddInlineStats(StringBuilder benchLogs)
-        {
-            if (this.chainState?.ConsensusTip != null)
-            {
-                string log = "Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                    this.chainState.ConsensusTip.Height.ToString().PadRight(8) + " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) +
-                    this.chainState.ConsensusTip.HashBlock;
-
-                benchLogs.AppendLine(log);
-            }
         }
 
         /// <inheritdoc />
@@ -220,7 +203,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     new SetActivationDeploymentsPartialValidationRule(),
 
-                    new CheckDifficultyHybridRule(),
                     new PosTimeMaskRule(),
 
                     // rules that are inside the method ContextualCheckBlock
@@ -242,6 +224,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
                 {
                     new SetActivationDeploymentsFullValidationRule(),
+
+                    new CheckDifficultyHybridRule(),
 
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),

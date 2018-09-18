@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             var cache = this.UtxoSet as CachedCoinView;
             if (cache != null)
             {
-                this.logger.LogInformation("Flushing Cache CoinView...");
+                this.logger.LogInformation("Flushing Cache CoinView.");
                 cache.FlushAsync().GetAwaiter().GetResult();
                 cache.Dispose();
             }

@@ -298,14 +298,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 bitcoinReader.ReadWrite(ref version);
                 if (version != MempoolDumpVersion)
                 {
-                    this.mempoolLogger.LogWarning($"Memorypool data is wrong version ({version}) aborting...");
+                    this.mempoolLogger.LogWarning($"Memorypool data is wrong version ({version}) aborting.");
                     return null;
                 }
                 bitcoinReader.ReadWrite(ref numEntries);
             }
             catch
             {
-                this.mempoolLogger.LogWarning($"Memorypool data is corrupt at header, aborting...");
+                this.mempoolLogger.LogWarning($"Memorypool data is corrupt at header, aborting.");
                 return null;
             }
 
@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
                 catch
                 {
-                    this.mempoolLogger.LogWarning($"Memorypool data is corrupt at item {i + 1}, aborting...");
+                    this.mempoolLogger.LogWarning($"Memorypool data is corrupt at item {i + 1}, aborting.");
                     return null;
                 }
 

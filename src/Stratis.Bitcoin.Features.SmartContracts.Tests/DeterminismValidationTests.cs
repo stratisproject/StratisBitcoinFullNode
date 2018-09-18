@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.SmartContracts.Core.Validation;
@@ -211,6 +212,51 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_Determinism_Passes_Array_AllowedMembers()
+        {
+            string code = @"
+            var test = new int[25];
+            var test2 = new int[25];
+            test[0] = 123;
+            int ret = test[0];
+            int len = test.Length;
+            Array.Resize(ref test, 50);
+            Array.Copy(test, test2, len);";
+
+            string adjustedSource = TestString.Replace(ReplaceCodeString,code).Replace(ReplaceReferencesString, "");
+
+            byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_Determinism_Fails_Array_Clone()
+        {
+            string code = @"
+            var test = new int[25];
+            var ret = test.Clone();";
+
+            string adjustedSource = TestString.Replace(ReplaceCodeString, code).Replace(ReplaceReferencesString, "");
+
+            byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.False(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_Determinism_Fails_MultiDimensional_Arrays()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, @"var test = new int[50,50];").Replace(ReplaceReferencesString, "");
+            byte[] assemblyBytes = SmartContractCompiler.Compile(adjustedSource).Compilation;
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.False(result.IsValid);
         }
 
         #endregion

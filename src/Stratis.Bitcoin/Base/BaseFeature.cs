@@ -51,9 +51,6 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
-        /// <summary>Disposable resources that will be disposed when the feature stops.</summary>
-        private readonly List<IDisposable> disposableResources;
-
         /// <summary>Information about node's chain.</summary>
         private readonly IChainState chainState;
 
@@ -116,6 +113,9 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc cref="IFinalizedBlockInfo"/>
         private readonly IFinalizedBlockInfo finalizedBlockInfo;
 
+        /// <inheritdoc cref="IPartialValidator"/>
+        private readonly IPartialValidator partialValidator;
+
         public BaseFeature(
             NodeSettings nodeSettings,
             DataFolder dataFolder,
@@ -153,6 +153,7 @@ namespace Stratis.Bitcoin.Base
             this.blockPuller = blockPuller;
             this.blockStore = blockStore;
             this.network = network;
+            this.partialValidator = partialValidator;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
@@ -165,7 +166,6 @@ namespace Stratis.Bitcoin.Base
             this.loggerFactory = loggerFactory;
             this.dbreezeSerializer = dbreezeSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.disposableResources = new List<IDisposable>();
         }
 
         /// <inheritdoc />
@@ -196,9 +196,6 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogDebug("Time synchronization with peers is disabled.");
             }
 
-            this.disposableResources.Add(this.timeSyncBehaviorState as IDisposable);
-            this.disposableResources.Add(this.chainRepository);
-
             // Block store must be initialized before consensus manager.
             // This may be a temporary solution until a better way is found to solve this dependency.
             this.blockStore.InitializeAsync().GetAwaiter().GetResult();
@@ -222,18 +219,18 @@ namespace Stratis.Bitcoin.Base
         {
             if (!Directory.Exists(this.dataFolder.ChainPath))
             {
-                this.logger.LogInformation("Creating " + this.dataFolder.ChainPath);
+                this.logger.LogInformation("Creating {0}.", this.dataFolder.ChainPath);
                 Directory.CreateDirectory(this.dataFolder.ChainPath);
             }
 
-            this.logger.LogInformation("Loading finalized block height");
+            this.logger.LogInformation("Loading finalized block height.");
             await this.finalizedBlockInfo.LoadFinalizedBlockInfoAsync(this.network).ConfigureAwait(false);
 
-            this.logger.LogInformation("Loading chain");
+            this.logger.LogInformation("Loading chain.");
             ChainedHeader chainTip = await this.chainRepository.LoadAsync(this.chain.Genesis).ConfigureAwait(false);
             this.chain.SetTip(chainTip);
 
-            this.logger.LogInformation("Chain loaded at height " + this.chain.Height);
+            this.logger.LogInformation("Chain loaded at height {0}.", this.chain.Height);
 
             this.flushChainLoop = this.asyncLoopFactory.Run("FlushChain", async token =>
             {
@@ -256,11 +253,11 @@ namespace Stratis.Bitcoin.Base
 
             if (File.Exists(Path.Combine(this.dataFolder.AddressManagerFilePath, PeerAddressManager.PeerFileName)))
             {
-                this.logger.LogInformation($"Loading peers from : {this.dataFolder.AddressManagerFilePath}...");
+                this.logger.LogInformation($"Loading peers from : {this.dataFolder.AddressManagerFilePath}.");
                 this.peerAddressManager.LoadPeers();
             }
 
-            this.flushAddressManagerLoop = this.asyncLoopFactory.Run("Periodic peer flush...", token =>
+            this.flushAddressManagerLoop = this.asyncLoopFactory.Run("Periodic peer flush", token =>
             {
                 this.peerAddressManager.SavePeers();
                 return Task.CompletedTask;
@@ -273,37 +270,40 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.logger.LogInformation("Flushing peers...");
+            this.logger.LogInformation("Flushing peers.");
             this.flushAddressManagerLoop.Dispose();
 
-            this.logger.LogInformation("Disposing peer address manager...");
+            this.logger.LogInformation("Disposing peer address manager.");
             this.peerAddressManager.Dispose();
 
             if (this.flushChainLoop != null)
             {
-                this.logger.LogInformation("Flushing headers chain...");
+                this.logger.LogInformation("Flushing headers chain.");
                 this.flushChainLoop.Dispose();
             }
 
-            this.logger.LogInformation("Saving chain repository...");
-            this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
+            this.logger.LogInformation("Disposing time sync behavior.");
+            this.timeSyncBehaviorState.Dispose();
 
-            foreach (IDisposable disposable in this.disposableResources)
-            {
-                this.logger.LogInformation($"{disposable.GetType().Name}...");
-                disposable.Dispose();
-            }
-
-            this.logger.LogInformation("Disposing block puller...");
+            this.logger.LogInformation("Disposing block puller.");
             this.blockPuller.Dispose();
 
-            this.logger.LogInformation("Disposing consensus manager...");
+            this.logger.LogInformation("Disposing partial validator.");
+            this.partialValidator.Dispose();
+
+            this.logger.LogInformation("Disposing consensus manager.");
             this.consensusManager.Dispose();
 
-            this.logger.LogInformation("Disposing consensus rules...");
+            this.logger.LogInformation("Disposing consensus rules.");
             this.consensusRules.Dispose();
 
-            this.logger.LogInformation("Disposing block store...");
+            this.logger.LogInformation("Saving chain repository.");
+            this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
+
+            this.logger.LogInformation("Disposing chain repository.");
+            this.chainRepository.Dispose();
+
+            this.logger.LogInformation("Disposing block store.");
             this.blockStore.Dispose();
         }
     }
@@ -367,6 +367,7 @@ namespace Stratis.Bitcoin.Base
 
                     // Consensus
                     services.AddSingleton<IConsensusManager, ConsensusManager>();
+                    services.AddSingleton<IChainedHeaderTree, ChainedHeaderTree>();
                     services.AddSingleton<IHeaderValidator, HeaderValidator>();
                     services.AddSingleton<IIntegrityValidator, IntegrityValidator>();
                     services.AddSingleton<IPartialValidator, PartialValidator>();
