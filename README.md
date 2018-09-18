@@ -1,3 +1,5 @@
+[![Build Status](https://stratisplatformuk.visualstudio.com/Enigma/_apis/build/status/FederatedSidechains-CI-win-hosted)](https://stratisplatformuk.visualstudio.com/Enigma/_build/latest?definitionId=11)
+
 Stratis Federated Sidechains - Testnet Alpha Release
 ============================
 https://stratisplatform.com
