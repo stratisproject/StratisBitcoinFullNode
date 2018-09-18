@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         {
             NodeSettings settings;
 
-            if (this.agentPrefix == string.Empty)
+            if (string.IsNullOrEmpty(this.agentPrefix))
                 settings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
             else
                 settings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder, "agentprefix=" + this.agentPrefix });
