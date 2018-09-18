@@ -15,6 +15,7 @@ namespace NBitcoin.Tests
             var exceptionalTypes = new List<Type>()
             {
                 typeof(BlockHeader),
+                typeof(ProvenBlockHeader),
                 typeof(ExtKey),
                 typeof(ExtPubKey),
                 typeof(PubKey),

@@ -261,7 +261,7 @@ namespace Stratis.Bitcoin.Connection
         {
             this.logger.LogTrace("()");
 
-            this.logger.LogInformation("Stopping peer discovery...");
+            this.logger.LogInformation("Stopping peer discovery.");
             this.peerDiscovery?.Dispose();
 
             foreach (IPeerConnector peerConnector in this.PeerConnectors)

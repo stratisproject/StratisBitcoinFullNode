@@ -215,61 +215,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         }
 
         /// <summary>
-        /// Creates a cold staking script.
-        /// </summary>
-        /// <remarks>Two keys control the balance associated with the script.
-        /// The hot wallet key allows transactions to only spend amounts back to themselves while the cold
-        /// wallet key allows amounts to be moved to different addresses. This makes it possible to perform
-        /// staking using the hot wallet key so that even if the key becomes compromised it can't be used
-        /// to reduce the balance. Only the person with the cold wallet key can retrieve the coins and move
-        /// them elsewhere. This behavior is enforced by the <see cref="OpcodeType.OP_CHECKCOLDSTAKEVERIFY"/>
-        /// opcode within the script flow related to hot wallet key usage. It sets the <see cref="PosTransaction.IsColdCoinStake"/>
-        /// flag if the transaction spending an output, which contains this instruction, is a coinstake
-        /// transaction. If this flag is set then further rules are enforced by <see cref="Consensus.Rules.CommonRules.PosColdStakingRule"/>.
-        /// </remarks>
-        /// <param name="hotPubKey">The hot wallet public key to use.</param>
-        /// <param name="coldPubKey">The cold wallet public key to use.</param>
-        /// <returns>The cold staking script.</returns>
-        /// <seealso cref="Consensus.Rules.CommonRules.PosColdStakingRule"/>
-        private Script GetColdStakingScript(TxDestination hotPubKey, TxDestination coldPubKey)
-        {
-            // The initial stack consumed by this script will be set up differently depending on whether a
-            // hot or cold pubkey is used - i.e. either <scriptSig> 0 <coldPubKey> OR <scriptSig> 1 <hotPubKey>.
-            return new Script(
-                // Duplicates the last stack entry resulting in:
-                // <scriptSig> 0/1 <coldPubKey/hotPubKey> <coldPubKey/hotPubKey>.
-                OpcodeType.OP_DUP,
-                // Replaces the last stack entry with its hash resulting in:
-                // <scriptSig> 0/1 <coldPubKey/hotPubKey> <coldPubKeyHash/hotPubKeyHash>.
-                OpcodeType.OP_HASH160,
-                // Rotates the top 3 stack entries resulting in:
-                // <scriptSig> <coldPubKey/hotPubKey> <coldPubKeyHash/hotPubKeyHash> 0/1.
-                OpcodeType.OP_ROT,
-                // Consumes the top stack entry and continues from the OP_ELSE if the value was 0. Results in:
-                // <scriptSig> <coldPubKey/hotPubKey> <coldPubKeyHash/hotPubKeyHash>.
-                OpcodeType.OP_IF,
-                // Reaching this point means that the value was 1 - i.e. the hotPubKey is being used.
-                // Executes the opcode as described in the remarks section. Stack remains unchanged.
-                OpcodeType.OP_CHECKCOLDSTAKEVERIFY,
-                // Pushes the expected hotPubKey value onto the stack for later comparison purposes. Results in:
-                // <scriptSig> <hotPubKey> <hotPubKeyHash> <hotPubKeyHash for comparison>.
-                Op.GetPushOp(hotPubKey.ToBytes()),
-                // The code contained in the OP_ELSE is executed when the value was 0 - i.e. the coldPubKey is used.
-                OpcodeType.OP_ELSE,
-                // Pushes the expected coldPubKey value onto the stack for later comparison purposes. Results in:
-                // <scriptSig> <coldPubKey> <coldPubKeyHash> <coldPubKeyHash for comparison>.
-                Op.GetPushOp(coldPubKey.ToBytes()),
-                OpcodeType.OP_ENDIF,
-                // Checks that the <coldPubKeyHash/hotPubKeyHash> matches the comparison value and removes both values
-                // from the stack. The script fails at this point if the values mismatch. Results in:
-                // <scriptSig> <coldPubKey/hotPubKey>.
-                OpcodeType.OP_EQUALVERIFY,
-                // Consumes the top 2 stack entries and uses those values to verify the signature. Results in:
-                // true/false - i.e. true if the signature is valid and false otherwise.
-                OpcodeType.OP_CHECKSIG);
-        }
-
-        /// <summary>
         /// Creates cold staking setup <see cref="Transaction"/>.
         /// </summary>
         /// <remarks>
@@ -336,9 +281,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 throw new WalletException("The hot and cold wallet addresses could not be found in the corresponding accounts.");
             }
 
-            TxDestination hotPubKey = BitcoinAddress.Create(hotWalletAddress, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
-            TxDestination coldPubKey = BitcoinAddress.Create(coldWalletAddress, wallet.Network).ScriptPubKey.GetDestination(wallet.Network);
-            Script destination = this.GetColdStakingScript(hotPubKey, coldPubKey);
+            KeyId hotPubKeyHash = new BitcoinPubKeyAddress(hotWalletAddress, wallet.Network).Hash;
+            KeyId coldPubKeyHash = new BitcoinPubKeyAddress(coldWalletAddress, wallet.Network).Hash;
+            Script destination = ColdStakingScriptTemplate.Instance.GenerateScriptPubKey(hotPubKeyHash, coldPubKeyHash);
 
             // Only normal accounts should be allowed.
             if (!this.walletManager.GetAccounts(walletName).Any(a => a.Name == walletAccount))

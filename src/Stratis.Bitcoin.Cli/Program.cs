@@ -138,13 +138,13 @@ namespace Stratis.Bitcoin.Cli
                         rpcSettings.RpcUser = options.GetValueOf("-rpcuser") ?? rpcSettings.RpcUser;
                         rpcSettings.RpcPassword = options.GetValueOf("-rpcpassword") ?? rpcSettings.RpcPassword;
 
-                        Console.WriteLine($"Connecting to the following RPC node: http://{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}@{rpcUri.Authority}...");
+                        Console.WriteLine($"Connecting to the following RPC node: http://{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}@{rpcUri.Authority}.");
 
                         // Initialize the RPC client with the configured or passed userid, password and endpoint.
                         var rpcClient = new RPCClient($"{rpcSettings.RpcUser}:{rpcSettings.RpcPassword}", rpcUri, network);
 
                         // Execute the RPC command
-                        Console.WriteLine($"Sending RPC command '{command} {string.Join(" ", commandArgList)}' to '{rpcUri}'...");
+                        Console.WriteLine($"Sending RPC command '{command} {string.Join(" ", commandArgList)}' to '{rpcUri}'.");
                         RPCResponse response = rpcClient.SendCommand(command, commandArgList.ToArray());
 
                         // Return the result as a string to the console.
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Cli
                         try
                         {
                             // Get the response.
-                            Console.WriteLine($"Sending API command to {url}...");
+                            Console.WriteLine($"Sending API command to {url}.");
                             string response = client.GetStringAsync(url).GetAwaiter().GetResult();
 
                             // Format and return the result as a string to the console.
