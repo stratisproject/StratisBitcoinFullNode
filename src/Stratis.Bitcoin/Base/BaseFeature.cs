@@ -169,13 +169,13 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
-        public override void Initialize()
+        public override async Task InitializeAsync()
         {
             this.logger.LogTrace("()");
 
             this.dbreezeSerializer.Initialize(this.chain.Network);
 
-            this.StartChainAsync().GetAwaiter().GetResult();
+            await this.StartChainAsync().ConfigureAwait(false);
 
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
@@ -198,13 +198,13 @@ namespace Stratis.Bitcoin.Base
 
             // Block store must be initialized before consensus manager.
             // This may be a temporary solution until a better way is found to solve this dependency.
-            this.blockStore.InitializeAsync().GetAwaiter().GetResult();
+            await this.blockStore.InitializeAsync().ConfigureAwait(false);
 
-            this.consensusRules.Initialize().GetAwaiter().GetResult();
+            await this.consensusRules.Initialize().ConfigureAwait(false);
 
             this.consensusRules.Register();
 
-            this.consensusManager.InitializeAsync(this.chain.Tip).GetAwaiter().GetResult();
+            await this.consensusManager.InitializeAsync(this.chain.Tip).ConfigureAwait(false);
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
 
