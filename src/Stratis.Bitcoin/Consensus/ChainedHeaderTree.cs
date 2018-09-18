@@ -448,11 +448,8 @@ namespace Stratis.Bitcoin.Consensus
             // Consider blocks that became a part of our best chain as consumed.
             while (currentHeader != fork)
             {
-                if (currentHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable)
-                {
-                    this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
-                    this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
-                }
+                this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
+                this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
 
                 currentHeader = currentHeader.Previous;
             }

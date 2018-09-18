@@ -1139,8 +1139,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             cht.BlockDataDownloaded(connectionResult.Consumed, chainTip.Block);
 
-            cht.PartialValidationSucceeded(connectionResult.Consumed, out bool fullValidationRequired);
-            fullValidationRequired.Should().BeTrue();
+            var result = cht.PartialValidationSucceeded(connectionResult.Consumed);
+            result.FullValidationRequired.Should().BeTrue();
             cht.PartialOrFullValidationFailed(connectionResult.Consumed);
 
             // Peer id must be found only once on header 5.
@@ -1178,8 +1178,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             cht.BlockDataDownloaded(connectionResult.Consumed, chainTip.Block);
 
-            cht.PartialValidationSucceeded(connectionResult.Consumed, out bool fullValidationRequired);
-            fullValidationRequired.Should().BeTrue();
+            var result = cht.PartialValidationSucceeded(connectionResult.Consumed);
+            result.FullValidationRequired.Should().BeTrue();
 
             // Call ConsensusTipChanged on chaintip at header 6.
             cht.ConsensusTipChanged(chainTip);
@@ -1230,7 +1230,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 Block block = chainAChainHeaders[i].Block;
 
                 cht.BlockDataDownloaded(currentChainTip, block);
-                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                cht.PartialValidationSucceeded(currentChainTip);
                 ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockInfo()).Returns(new HashHeightPair(uint256.One, currentChainTip.Height - maxReorg));
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
                 peerIds.Should().BeEmpty();
@@ -1252,7 +1252,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 Block block = chainAChainHeaders[i].Block;
 
                 cht.BlockDataDownloaded(currentChainTip, block);
-                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                var result = cht.PartialValidationSucceeded(currentChainTip);
                 ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockInfo()).Returns(new HashHeightPair(uint256.One, currentChainTip.Height - maxReorg));
                 List<int> peerIds = cht.ConsensusTipChanged(currentChainTip);
                 if (currentChainTip.Height > maxReorg + initialChainSize)
@@ -1305,9 +1305,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             cht.PeerDisconnected(peer1Id);
 
             // Attempt to call PartialValidationSucceeded on a saved bock.
-            List<ChainedHeaderBlock> headersToValidate = cht.PartialValidationSucceeded(firstPresentedHeader, out bool fullValidationRequired);
-            headersToValidate.Should().BeNull();
-            fullValidationRequired.Should().BeFalse();
+            var result = cht.PartialValidationSucceeded(firstPresentedHeader);
+            result.ChainedHeaderBlocksToValidate.Should().BeNull();
+            result.FullValidationRequired.Should().BeFalse();
         }
 
         /// <summary>
@@ -1345,12 +1345,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 cht.BlockDataDownloaded(headerArray[i], originalHeaderArray[i].Block);
             }
 
-            List<ChainedHeaderBlock> listOfHeaders = cht.PartialValidationSucceeded(firstHeader, out bool fullValidationRequired);
+            var result = cht.PartialValidationSucceeded(firstHeader);
 
             // First header validation state should be "PartiallyValidated" and next header returned.
             firstHeader.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
-            listOfHeaders.Should().HaveCount(1);
-            listOfHeaders.First().ChainedHeader.HashBlock.Should().Be(secondHeader.HashBlock);
+            result.ChainedHeaderBlocksToValidate.Should().HaveCount(1);
+            result.ChainedHeaderBlocksToValidate.First().ChainedHeader.HashBlock.Should().Be(secondHeader.HashBlock);
         }
 
         /// <summary>
@@ -1374,11 +1374,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
 
             // Call PartialValidationSucceeded on h2.
-            chainedHeaderTree.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
+            var result = chainedHeaderTree.PartialValidationSucceeded(chainTip);
 
             chainTip.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
 
-            fullValidationRequired.Should().BeTrue();
+            result.FullValidationRequired.Should().BeTrue();
         }
 
         /// <summary>
@@ -1653,7 +1653,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 ChainedHeader currentChainTip = consumedHeaders[i];
 
                 cht.BlockDataDownloaded(currentChainTip, originalHeaders[i].Block);
-                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                cht.PartialValidationSucceeded(currentChainTip);
                 cht.ConsensusTipChanged(currentChainTip);
             }
 
@@ -1707,7 +1707,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 ChainedHeader currentChainTip = consumedChainAHeaders[i];
 
                 cht.BlockDataDownloaded(currentChainTip, originalChainAHeaders[i].Block);
-                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                cht.PartialValidationSucceeded(currentChainTip);
                 cht.ConsensusTipChanged(currentChainTip);
             }
 
@@ -1729,7 +1729,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 ChainedHeader currentChainTip = consumedChainBHeaders[i];
 
                 cht.BlockDataDownloaded(currentChainTip, originalChainBHeaders[i].Block);
-                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                cht.PartialValidationSucceeded(currentChainTip);
             }
 
             cht.ConsensusTipChanged(connectionResult.Consumed);
@@ -2136,7 +2136,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 Block block = originalChainAHeaders[i].Block;
 
                 cht.BlockDataDownloaded(currentChainTip, block);
-                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                cht.PartialValidationSucceeded(currentChainTip);
                 ctx.FinalizedBlockMock.Setup(m => m.GetFinalizedBlockInfo()).Returns(new HashHeightPair(uint256.One, currentChainTip.Height - maxReorg));
                 cht.ConsensusTipChanged(currentChainTip);
             }
@@ -2220,8 +2220,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, commonChainTip.FindAncestorOrSelf(chainedHeader).Block);
-                chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
-                fullValidationRequired.Should().BeTrue();
+                var result = chainedHeaderTree.PartialValidationSucceeded(chainedHeader);
+                result.FullValidationRequired.Should().BeTrue();
             }
 
             // CT advances to 5.
@@ -2280,7 +2280,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, extendedChainTip.FindAncestorOrSelf(chainedHeader).Block);
-                chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
+                chainedHeaderTree.PartialValidationSucceeded(chainedHeader);
 
                 if (chainedHeader.Height <= 5) // CT advances to 5.
                 {
@@ -2305,7 +2305,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, tipOfFork.FindAncestorOrSelf(chainedHeader).Block);
-                chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
+                chainedHeaderTree.PartialValidationSucceeded(chainedHeader);
 
                 if (chainedHeader.Height <= 8)  // CT advances to 8.
                 {
@@ -2373,8 +2373,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, chainTip.FindAncestorOrSelf(chainedHeader).Block);
                 if (chainedHeader.Height <= 5)
                 {
-                    chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
-                    fullValidationRequired.Should().BeTrue();
+                    var result = chainedHeaderTree.PartialValidationSucceeded(chainedHeader);
+                    result.FullValidationRequired.Should().BeTrue();
                     chainedHeaderTree.ConsensusTipChanged(chainedHeader);
                 }
             }
@@ -2446,7 +2446,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
             {
                 chainedHeaderTree.BlockDataDownloaded(chainedHeader, newTip.FindAncestorOrSelf(chainedHeader).Block);
-                chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
+                var result = chainedHeaderTree.PartialValidationSucceeded(chainedHeader);
                 chainedHeaderTree.ConsensusTipChanged(chainedHeader);
             }
 
@@ -2641,7 +2641,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 ChainedHeader currentChainTip = consumedHeaderArray[i];
 
                 cht.BlockDataDownloaded(currentChainTip, originalHeaderArray[i].Block);
-                cht.PartialValidationSucceeded(currentChainTip, out bool fullValidationRequired);
+                var result = cht.PartialValidationSucceeded(currentChainTip);
                 cht.ConsensusTipChanged(currentChainTip);
             }
 
@@ -2692,9 +2692,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Call partial validation on h4 and make sure nothing is returned
             // and full validation is not required.
-            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(consumed, out bool fullValidationRequired);
-            headers.Should().BeNull();
-            fullValidationRequired.Should().BeFalse();
+            var result = cht.PartialValidationSucceeded(consumed);
+            result.ChainedHeaderBlocksToValidate.Should().BeNull();
+            result.FullValidationRequired.Should().BeFalse();
         }
 
         /// <summary>
@@ -2732,9 +2732,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             // Call partial validation on h9 (h8 has validation state as HeaderOnly) and make sure nothing is returned
             // and full validation is not required.
-            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(consumed, out bool fullValidationRequired);
-            headers.Should().BeNull();
-            fullValidationRequired.Should().BeFalse();
+            var result = cht.PartialValidationSucceeded(consumed);
+            result.ChainedHeaderBlocksToValidate.Should().BeNull();
+            result.FullValidationRequired.Should().BeFalse();
         }
 
         /// <summary>
@@ -2765,19 +2765,18 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             ChainedHeader[] originalHeaderArray = chainTip.ToArray(extensionSize);
             ChainedHeader[] headerArray = consumed.ToArray(extensionSize);
-            bool fullValidationRequired;
             for (int i = 0; i < headerArray.Length; i++)
             {
                 cht.BlockDataDownloaded(headerArray[i], originalHeaderArray[i].Block);
-                cht.PartialValidationSucceeded(headerArray[i], out fullValidationRequired);
+                cht.PartialValidationSucceeded(headerArray[i]);
             }
 
             // Call partial validation on h9 again and make sure nothing is returned
             // and full validation is not required.
             Dictionary<uint256, ChainedHeader> treeHeaders = cht.GetChainedHeadersByHash();
-            List<ChainedHeaderBlock> headers = cht.PartialValidationSucceeded(treeHeaders[chainTip.HashBlock], out fullValidationRequired);
-            headers.Should().BeNull();
-            fullValidationRequired.Should().BeFalse();
+            var result = cht.PartialValidationSucceeded(treeHeaders[chainTip.HashBlock]);
+            result.ChainedHeaderBlocksToValidate.Should().BeNull();
+            result.FullValidationRequired.Should().BeFalse();
         }
 
         /// <summary>
