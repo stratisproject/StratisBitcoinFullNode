@@ -224,7 +224,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                     new InvalidBlockHashStore(DateTimeProvider.Default))
                     .Register();
 
-                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, new SmartContractPowRuleRegistration(), this.consensusRules,  chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain);
+                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain, ruleRegistration: new SmartContractPowRuleRegistration(), consensusRules: this.consensusRules);
 
                 await this.consensusManager.InitializeAsync(chainState.BlockStoreTip);
 

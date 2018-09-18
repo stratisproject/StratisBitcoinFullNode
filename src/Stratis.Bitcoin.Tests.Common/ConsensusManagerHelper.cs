@@ -10,7 +10,9 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
@@ -24,12 +26,12 @@ namespace Stratis.Bitcoin.Tests.Common
     {
         public static ConsensusManager CreateConsensusManager(
             Network network,
-            IRuleRegistration ruleRegistration,
-            ConsensusRuleEngine consensusRules,
             string dataDir = null,
             ChainState chainState = null,
             InMemoryCoinView inMemoryCoinView = null,
-            ConcurrentChain chain = null)
+            ConcurrentChain chain = null,
+            IRuleRegistration ruleRegistration = null,
+            ConsensusRuleEngine consensusRules = null)
         {
             string[] param = dataDir == null ? new string[]{} : new string[] { $"-datadir={dataDir}" };
 
@@ -39,6 +41,10 @@ namespace Stratis.Bitcoin.Tests.Common
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new ConsensusOptions();
+
+            if (ruleRegistration == null)
+                ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
+
             ruleRegistration.RegisterRules(network.Consensus);
 
             // Dont check PoW of a header in this test.
@@ -71,6 +77,10 @@ namespace Stratis.Bitcoin.Tests.Common
                 chainState = new ChainState();
             var peerBanning = new PeerBanning(connectionManager, loggerFactory, dateTimeProvider, peerAddressManager);
             var deployments = new NodeDeployments(network, chain);
+
+            if (consensusRules == null)
+                consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(), inMemoryCoinView, chainState, new InvalidBlockHashStore(new DateTimeProvider())).Register();
+
 
             consensusRules.Register();
 
