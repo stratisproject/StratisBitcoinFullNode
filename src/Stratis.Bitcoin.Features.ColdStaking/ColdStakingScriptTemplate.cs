@@ -29,8 +29,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             {
                 return new ColdStakingScriptSigParameters()
                 {
-                    // The signature can be null in which case it is encoded as an OP_0. This reverses the encoding.
-                    TransactionSignature = (ops[0].Code == OpcodeType.OP_0) ? null : new TransactionSignature(ops[0].PushData),
+                    TransactionSignature = new TransactionSignature(ops[0].PushData),
                     IsColdPublicKey = (ops[0].Code == OpcodeType.OP_0),
                     PublicKey = new PubKey(ops[2].PushData, true),
                 };
@@ -60,10 +59,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <returns>The scriptSig.</returns>
         public Script GenerateScriptSig(TransactionSignature signature, bool coldPubKey, PubKey publicKey)
         {
+            Guard.NotNull(signature, nameof(signature));
             Guard.NotNull(publicKey, nameof(publicKey));
 
             return new Script(
-                signature == null ? OpcodeType.OP_0 : Op.GetPushOp(signature.ToBytes()),
+                Op.GetPushOp(signature.ToBytes()),
                 coldPubKey ? OpcodeType.OP_0 : OpcodeType.OP_1,
                 Op.GetPushOp(publicKey.ToBytes())
                 );
@@ -198,8 +198,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             if (ops.Length != 3)
                 return false;
 
-            return (ops[0].PushData != null)
-                && ((ops[0].Code == OpcodeType.OP_0) || TransactionSignature.IsValid(network, ops[0].PushData, ScriptVerify.None))
+            return ((ops[0].PushData != null) && TransactionSignature.IsValid(network, ops[0].PushData, ScriptVerify.None))
                 && ((ops[1].Code == OpcodeType.OP_0) || (ops[1].Code == OpcodeType.OP_1))
                 && (ops[2].PushData != null) && PubKey.Check(ops[2].PushData, false);
         }
