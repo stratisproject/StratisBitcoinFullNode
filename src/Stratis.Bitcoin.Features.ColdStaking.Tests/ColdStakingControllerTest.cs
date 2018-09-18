@@ -184,7 +184,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             this.coldStakingManager = new ColdStakingManager(this.loggerFactory, this.walletManager, walletTransactionHandler, this.dateTimeProvider);
             this.coldStakingController = new ColdStakingController(this.loggerFactory, this.coldStakingManager);
-
         }
 
         /// <summary>
@@ -497,7 +496,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             // Verify that the transaction would be accepted to the memory pool.
             var state = new MempoolValidationState(true);
             Assert.True(this.mempoolManager.Validator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult(), "Transaction failed mempool validation.");
-
         }
 
         /// <summary>
@@ -639,6 +637,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         public void ColdStakingWithdrawalWithColdWalletSucceeds()
         {
             this.Initialize();
+            this.CreateMempoolManager();
 
             this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
             this.walletManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
@@ -671,6 +670,16 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal(Money.Coins(100), transaction.Outputs[1].Value);
             Assert.Equal(receivingAddress.ScriptPubKey, transaction.Outputs[1].ScriptPubKey);
             Assert.False(transaction.IsCoinBase || transaction.IsCoinStake || transaction.IsColdCoinStake);
+
+            // TODO: Restore these lines.
+            /*
+            // Record the spendable outputs.
+            this.unspentOutputs[prevTran.GetHash()] = new UnspentOutputs(1, prevTran);
+
+            // Verify that the transaction would be accepted to the memory pool.
+            var state = new MempoolValidationState(true);
+            Assert.True(this.mempoolManager.Validator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult(), "Transaction failed mempool validation.");
+            */
         }
     }
 }
