@@ -44,6 +44,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                                 public Test(ISmartContractState state) : base(state) 
                                                 {
                                                     this.Owner = ""Test Owner"";
+                                                    string newString = this.Owner + 1;
                                                 }
 
                                                 public void TestMethod(int number)
@@ -137,8 +138,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.rewriter = new ObserverRewriter(new Observer(this.gasMeter, ReflectionVirtualMachine.MemoryUnitLimit));
         }
 
-        // These tests are almost identical to the GasInjectorTests, just with the new injector.
-
         [Fact]
         public void TestGasInjector()
         {
@@ -226,7 +225,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Constructor: 15
             // Property setter: 12
             // Storage: 150
-            Assert.Equal((Gas)177, this.gasMeter.GasConsumed);
+            // "string newString = this.Owner + 1;": 36
+            Assert.Equal((Gas)213, this.gasMeter.GasConsumed);
         }
 
         [Fact]
