@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Apps
 
         public override void Initialize()
         {
-            this.logger.LogInformation("Initializing {0}", nameof(AppsFeature));
+            this.logger.LogInformation("Initializing {0}.", nameof(AppsFeature));
 
             Directory.CreateDirectory(this.dataFolder.ApplicationsPath);
 
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Apps
         {
             if (this.disposed)
                 return;
-            this.logger.LogInformation("Disposing {0}", nameof(AppsFeature));
+            this.logger.LogInformation("Disposing {0}.", nameof(AppsFeature));
 
             this.appsHost.Close();
 
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Apps
                     .AddFeature<AppsFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<IAppsStore, AppsStore>();                        
+                        services.AddSingleton<IAppsStore, AppsStore>();
                         services.AddSingleton<IAppsHost, AppsHost>();
                         services.AddSingleton<AppsController>();
                     });

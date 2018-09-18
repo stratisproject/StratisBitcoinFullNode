@@ -204,6 +204,11 @@ namespace NBitcoin
             return new PosBlockHeader();
         }
 
+        public ProvenBlockHeader CreateProvenBlockHeader(PosBlock block)
+        {
+            return new ProvenBlockHeader(block);
+        }
+
         /// <inheritdoc />
         public override Transaction CreateTransaction()
         {

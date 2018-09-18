@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using Mono.Cecil;
 using Stratis.ModuleValidation.Net;
-using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Policy;
 using Stratis.SmartContracts.Core.Validation.Validators;
@@ -101,7 +98,7 @@ namespace Stratis.SmartContracts.Core.Validation
             return this;
         }
         
-        public ValidationPolicy InstructionValidator(FloatValidator validator)
+        public ValidationPolicy InstructionValidator(IInstructionValidator validator)
         {
             this.instructionValidators.Add(validator);
             return this;

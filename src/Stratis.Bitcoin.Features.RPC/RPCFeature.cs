@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.RPC
             }
             else
             {
-                this.logger.LogWarning("RPC Server is off based on configuration.");
+                this.logger.LogInformation("RPC Server is off based on configuration.");
             }
         }
     }
