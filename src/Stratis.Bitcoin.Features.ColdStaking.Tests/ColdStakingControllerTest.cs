@@ -659,8 +659,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 Fees = "0.01"
             });
 
-            // TODO: Restore these lines.
-            /*
             var jsonResult = Assert.IsType<JsonResult>(result);
             var response = Assert.IsType<ColdStakingWithdrawalResponse>(jsonResult.Value);
             var transaction = Assert.IsType<PosTransaction>(this.Network.CreateTransaction(response.TransactionHex));
@@ -673,7 +671,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal(Money.Coins(100), transaction.Outputs[1].Value);
             Assert.Equal(receivingAddress.ScriptPubKey, transaction.Outputs[1].ScriptPubKey);
             Assert.False(transaction.IsCoinBase || transaction.IsCoinStake || transaction.IsColdCoinStake);
-            */
         }
     }
 }

@@ -439,8 +439,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             };
 
             // Register the cold staking builder extension with the transaction builder.
-            // TODO: Restore this line.
-            // context.TransactionBuilder.Extensions.Add(new ColdStakingBuilderExtension(false));
+            context.TransactionBuilder.Extensions.Add(new ColdStakingBuilderExtension(false));
 
             // Build the transaction according to the settings recorded in the context.
             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
