@@ -78,6 +78,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             // The scriptPubKey will be different depending on whether we are spending or cold staking.
             Key key = keyRepo.FindKey((this.usesColdPubKey ? coldKey : hotKey).ScriptPubKey);
+
             if (key == null)
                 return null;
 
