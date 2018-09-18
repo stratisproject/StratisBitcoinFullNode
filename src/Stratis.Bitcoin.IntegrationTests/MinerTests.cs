@@ -135,8 +135,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.chain = new ConcurrentChain(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
 
-                new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(this.network.Consensus);
-
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
                 var inMemoryCoinView = new InMemoryCoinView(this.chain.Tip.HashBlock);
@@ -171,7 +169,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings,
                     new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider)).Register();
 
-                this.consensus = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain);
+                this.consensus = ConsensusManagerHelper.CreateConsensusManager(this.network, new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(), this.ConsensusRules, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain);
 
                 await this.consensus.InitializeAsync(chainState.BlockStoreTip);
 
