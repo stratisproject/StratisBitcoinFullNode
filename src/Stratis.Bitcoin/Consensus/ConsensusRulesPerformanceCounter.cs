@@ -71,6 +71,7 @@ namespace Stratis.Bitcoin.Consensus
         }
     }
 
+    /// <summary>Snapshot of rule's performance.</summary>
     public class ConsensusRulesPerformanceSnapshot
     {
         internal Dictionary<IConsensusRuleBase, RulePerformance> PerformanceInfo { get; }
@@ -134,6 +135,7 @@ namespace Stratis.Bitcoin.Consensus
         }
     }
 
+    /// <summary>Container of info related to a consensus rule.</summary>
     internal class RuleItem
     {
         public string RuleName { get; set; }
@@ -143,6 +145,11 @@ namespace Stratis.Bitcoin.Consensus
         public IConsensusRuleBase RuleReferenceInstance { get; set; }
     }
 
+    /// <summary>
+    /// Container of general information about the consensus rule as well as
+    /// amount of times it was executed and sum of execution times.
+    /// </summary>
+    /// <seealso cref="Stratis.Bitcoin.Consensus.RuleItem" />
     internal class RulePerformance : RuleItem
     {
         public int CalledTimes;
