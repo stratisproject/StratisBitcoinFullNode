@@ -89,6 +89,8 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly ConcurrentChain chain;
 
+        private readonly ConsensusManagerPerformanceCounter performanceCounter;
+
         private bool isIbd;
 
         public ConsensusManager(
@@ -137,12 +139,14 @@ namespace Stratis.Bitcoin.Consensus
             this.callbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
             this.peersByPeerId = new Dictionary<int, INetworkPeer>();
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
+            this.performanceCounter = new ConsensusManagerPerformanceCounter();
             this.ibdState = ibdState;
 
             this.blockPuller = blockPuller;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1000);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 1000);
         }
 
         /// <inheritdoc />
@@ -648,7 +652,10 @@ namespace Stratis.Bitcoin.Consensus
 
                 disconnectedBlocks.Add(disconnectedBlock);
 
-                this.signals.SignalBlockDisconnected(disconnectedBlock);
+                using (this.performanceCounter.MeasureBlockDisconnectedSignal())
+                {
+                    this.signals.SignalBlockDisconnected(disconnectedBlock);
+                }
 
                 current = current.Previous;
             }
@@ -700,7 +707,10 @@ namespace Stratis.Bitcoin.Consensus
                     }
                 }
 
-                this.signals.SignalBlockConnected(blockToConnect);
+                using (this.performanceCounter.MeasureBlockConnectedSignal())
+                {
+                    this.signals.SignalBlockConnected(blockToConnect);
+                }
             }
 
             this.logger.LogTrace("(-):'{0}'", connectBlockResult);
@@ -1248,6 +1258,15 @@ namespace Stratis.Bitcoin.Consensus
                                   " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.Tip.HashBlock;
 
             log.AppendLine(consensusLog);
+
+            this.logger.LogTrace("(-)");
+        }
+
+        private void AddBenchStats(StringBuilder benchLog)
+        {
+            this.logger.LogTrace("()");
+
+            benchLog.AppendLine(this.performanceCounter.TakeSnapshot().ToString());
 
             this.logger.LogTrace("(-)");
         }
