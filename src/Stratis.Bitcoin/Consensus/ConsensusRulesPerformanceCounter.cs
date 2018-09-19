@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Stratis.Bitcoin.Consensus.Rules;
+using System.Threading;
+using NBitcoin;
+using NBitcoin.Rules;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -10,51 +13,82 @@ namespace Stratis.Bitcoin.Consensus
     /// <summary>Measures rules average execution time.</summary>
     public class ConsensusRulesPerformanceCounter
     {
-        private readonly Dictionary<string, RuleItem> rulesInfo;
+        /// <summary>List of rules registered for performance tracking.</summary>
+        private readonly IList<RuleItem> registeredRules;
 
-        /// <summary>Protects access to <see cref="rulesInfo"/>.</summary>
-        private readonly object locker;
+        /// <summary>Snapshot that is currently being populated.</summary>
+        private ConsensusRulesPerformanceSnapshot currentSnapshot;
 
-        private const int MaxSamples = 1000;
+        /// <summary>Last fully populated shapshot.</summary>
+        private ConsensusRulesPerformanceSnapshot previousSnapshot;
 
-        public ConsensusRulesPerformanceCounter()
+        public ConsensusRulesPerformanceCounter(IConsensus consensus)
         {
-            this.rulesInfo = new Dictionary<string, RuleItem>();
-            this.locker = new object();
+            this.registeredRules = new List<RuleItem>();
+
+            this.RegisterRulesCollection(consensus.HeaderValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Header);
+            this.RegisterRulesCollection(consensus.IntegrityValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Integrity);
+            this.RegisterRulesCollection(consensus.PartialValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Partial);
+            this.RegisterRulesCollection(consensus.FullValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Full);
+
+            this.currentSnapshot = new ConsensusRulesPerformanceSnapshot(this.registeredRules);
+            this.previousSnapshot = null;
+        }
+
+        private void RegisterRulesCollection(IEnumerable<IConsensusRuleBase> rules, RuleType rulesType)
+        {
+            foreach (IConsensusRuleBase rule in rules)
+            {
+                this.registeredRules.Add(new RuleItem()
+                {
+                    RuleName = rule.GetType().Name,
+                    RuleType = rulesType,
+                    RuleReferenceInstance = rule
+                });
+            }
         }
 
         /// <summary>Measures the rule execution time and adds this sample to performance counter.</summary>
         /// <param name="rule">Rule being measured.</param>
-        /// <param name="ruleType">Type of the rule.</param>
         /// <returns><see cref="IDisposable"/> that should be disposed after rule has finished it's execution.</returns>
-        public IDisposable MeasureRuleExecutionTime(ConsensusRuleBase rule, RuleType ruleType)
+        public IDisposable MeasureRuleExecutionTime(IConsensusRuleBase rule)
         {
             var stopwatch = new StopwatchDisposable(elapsedTicks =>
             {
-                string ruleName = rule.GetType().Name;
+                RulePerformance performance = this.currentSnapshot.PerformanceInfo[rule];
 
-                lock (this.locker)
-                {
-                    if (this.rulesInfo.ContainsKey(ruleName))
-                    {
-                        this.rulesInfo[ruleName].ExecutionTime.AddSample(elapsedTicks);
-                    }
-                    else
-                    {
-                        var ruleItem = new RuleItem()
-                        {
-                            RuleName = ruleName,
-                            RuleType = ruleType,
-                            ExecutionTime = new AverageCalculator(MaxSamples)
-                        };
-
-                        ruleItem.ExecutionTime.AddSample(elapsedTicks);
-                        this.rulesInfo.Add(ruleName, ruleItem);
-                    }
-                }
+                Interlocked.Increment(ref performance.CalledTimes);
+                Interlocked.Add(ref performance.ExecutionTimesTicks, elapsedTicks);
             });
 
             return stopwatch;
+        }
+
+        /// <summary>Takes current snapshot.</summary>
+        /// <remarks>Not thread-safe. Caller should ensure that it's not called from different threads at once.</remarks>
+        public ConsensusRulesPerformanceSnapshot TakeSnapshot()
+        {
+            var newShapShot = new ConsensusRulesPerformanceSnapshot(this.registeredRules);
+            this.previousSnapshot = this.currentSnapshot;
+            this.currentSnapshot = newShapShot;
+
+            return this.previousSnapshot;
+        }
+    }
+
+    public class ConsensusRulesPerformanceSnapshot
+    {
+        public Dictionary<IConsensusRuleBase, RulePerformance> PerformanceInfo { get; }
+
+        public ConsensusRulesPerformanceSnapshot(IEnumerable<RuleItem> rulesToTrack)
+        {
+            this.PerformanceInfo = new Dictionary<IConsensusRuleBase, RulePerformance>();
+
+            foreach (RuleItem rule in rulesToTrack)
+            {
+                var perf = new RulePerformance(rule);
+                this.PerformanceInfo.Add(rule.RuleReferenceInstance, perf);
+            }
         }
 
         public override string ToString()
@@ -64,44 +98,78 @@ namespace Stratis.Bitcoin.Consensus
             builder.AppendLine();
             builder.AppendLine("======ConsensusRules Bench======");
 
-            int ticksPerMs = 10_000;
-
-            lock (this.locker)
+            if (this.PerformanceInfo.All(x => x.Value.CalledTimes == 0))
             {
-                if (this.rulesInfo.Count == 0)
+                builder.AppendLine("No samples...");
+                return builder.ToString();
+            }
+
+            foreach (IGrouping<RuleType, RulePerformance> rulesGroup in this.PerformanceInfo.Values.GroupBy(x => x.RuleType))
+            {
+                int ruleGroupTotalCalls = rulesGroup.Max(x => x.CalledTimes);
+
+                if (ruleGroupTotalCalls == 0)
+                    continue;
+
+                long totalExecutionTimeTicks = rulesGroup.Sum(x => x.ExecutionTimesTicks);
+                double avgGroupExecutionTimeMs = Math.Round(TimeSpan.FromTicks(totalExecutionTimeTicks / ruleGroupTotalCalls).TotalMilliseconds, 4);
+
+                builder.AppendLine($"{rulesGroup.Key} validation rules. Average total execution time: {avgGroupExecutionTimeMs} ms.");
+
+                foreach (RulePerformance rule in rulesGroup)
                 {
-                    builder.AppendLine("No samples...");
-                    return builder.ToString();
-                }
-
-                builder.AppendLine($"Using up to {MaxSamples} most recent samples.");
-
-                foreach (IGrouping<RuleType, RuleItem> rulesGroup in this.rulesInfo.Values.GroupBy(x => x.RuleType))
-                {
-                    double totalRunningTimeMs = Math.Round(rulesGroup.Sum(x => x.ExecutionTime.Average) / ticksPerMs, 4);
-
-                    builder.AppendLine($"{rulesGroup.Key} validation rules. Total execution time: {totalRunningTimeMs} ms.");
-
-                    foreach (RuleItem rule in rulesGroup)
+                    if (rule.CalledTimes == 0)
                     {
-                        double milliseconds = Math.Round(rule.ExecutionTime.Average / ticksPerMs, 4);
-                        double percentage = Math.Round((milliseconds / totalRunningTimeMs) * 100.0);
-
-                        builder.AppendLine($"    {rule.RuleName.PadRight(50, '-')}{(milliseconds + " ms").PadRight(12, '-')}{percentage} %");
+                        builder.AppendLine($"    {rule.RuleName.PadRight(50, '-')}{("No Samples").PadRight(12, '-')}");
+                        continue;
                     }
 
-                    builder.AppendLine();
+                    double avgExecutionTimeMs = Math.Round((TimeSpan.FromTicks(rule.ExecutionTimesTicks / rule.CalledTimes).TotalMilliseconds), 4);
+
+                    // % from average execution time for the group.
+                    double percentage = Math.Round((avgExecutionTimeMs / avgGroupExecutionTimeMs) * 100.0);
+
+                    builder.AppendLine($"    {rule.RuleName.PadRight(50, '-')}{(avgExecutionTimeMs + " ms").PadRight(12, '-')}{percentage} %");
                 }
+
+                builder.AppendLine();
             }
 
             return builder.ToString();
         }
+    }
 
-        private class RuleItem
+    public class RuleItem
+    {
+        public string RuleName { get; set; }
+
+        public RuleType RuleType { get; set; }
+
+        public IConsensusRuleBase RuleReferenceInstance { get; set; }
+    }
+
+    public class RulePerformance : RuleItem
+    {
+        public int CalledTimes;
+
+        public long ExecutionTimesTicks;
+
+        public RulePerformance(RuleItem rule)
         {
-            public string RuleName;
-            public RuleType RuleType;
-            public AverageCalculator ExecutionTime;
+            this.RuleName = rule.RuleName;
+            this.RuleType = rule.RuleType;
+            this.RuleReferenceInstance = rule.RuleReferenceInstance;
+
+            this.CalledTimes = 0;
+            this.ExecutionTimesTicks = 0;
         }
+    }
+
+    public enum RuleType
+    {
+        Header,
+        Integrity,
+        Partial,
+        Full
     }
 }

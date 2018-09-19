@@ -60,12 +60,4 @@ namespace Stratis.Bitcoin.Consensus.Rules
     public abstract class FullValidationConsensusRule : AsyncConsensusRule, IFullValidationConsensusRule
     {
     }
-
-    public enum RuleType
-    {
-        Header,
-        Integrity,
-        Partial,
-        Full
-    }
 }
