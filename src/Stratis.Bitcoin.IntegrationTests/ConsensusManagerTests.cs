@@ -18,10 +18,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         public ConsensusManagerTests()
         {
             this.network = new StratisRegTest();
-            this.network.Consensus.Options = new ConsensusOptionsTest();
 
             Type consensusType = typeof(NBitcoin.Consensus);
             consensusType.GetProperty("MaxReorgLength").SetValue(this.network.Consensus, (uint)20);
+
+            this.network.Consensus.Options = new ConsensusOptionsTest();
         }
 
         private class ConsensusOptionsTest : PosConsensusOptions
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Fork_Occurs_Node_Gets_Disconnected_Due_To_MaxReorgViolation()
+        public void ConsensusManager_Fork_Occurs_MinerNode_Reorgs_AndResyncs_ToBestHeight()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -69,24 +70,16 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Miner B continues to mine to height 14 whilst disconnected.
                 TestHelper.MineBlocks(minerB, walletName, walletPassword, walletAccount, 4);
 
-                // Syncer now connects to both miners.
+                // Syncer now connects to both miners causing a re-org to occur for Miner B back to height 10
                 TestHelper.Connect(syncer, minerA);
                 TestHelper.Connect(syncer, minerB);
 
-                // Ensure that Syncer has synced with Miner A which is the node with the best tip.
+                // Ensure that Syncer has synced with Miner A and Miner B.
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
-
-                // Miner A needs to mine 20 more blocks so that Miner B can be disconnected from syncer.
-                TestHelper.MineBlocks(minerA, walletName, walletPassword, walletAccount, 20);
-
-                // Ensure that Syncer is not connected to miner B any longer.
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, minerB));
-
-                // Reconnect Miner B to Miner A and ensure the sync
-                TestHelper.Connect(minerB, minerA);
-                TestHelper.IsNodeConnectedTo(minerB, minerA);
-
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(minerA, minerB));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
+                Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 20);
+                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 20);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 20);
             }
         }
     }
