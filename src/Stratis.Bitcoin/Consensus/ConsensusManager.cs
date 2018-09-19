@@ -1256,7 +1256,7 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
-                // TODO
+                log.AppendLine($"Unconsumed blocks: {this.chainedHeaderTree.UnconsumedBlocksCount} ({this.chainedHeaderTree.UnconsumedBlocksDataBytes} bytes)");
             }
 
             this.logger.LogTrace("(-)");
