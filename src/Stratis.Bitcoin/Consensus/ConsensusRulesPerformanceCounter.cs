@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.Rules;
-using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -74,9 +73,9 @@ namespace Stratis.Bitcoin.Consensus
 
     public class ConsensusRulesPerformanceSnapshot
     {
-        public Dictionary<IConsensusRuleBase, RulePerformance> PerformanceInfo { get; }
+        internal Dictionary<IConsensusRuleBase, RulePerformance> PerformanceInfo { get; }
 
-        public ConsensusRulesPerformanceSnapshot(IEnumerable<RuleItem> rulesToTrack)
+        internal ConsensusRulesPerformanceSnapshot(IEnumerable<RuleItem> rulesToTrack)
         {
             this.PerformanceInfo = new Dictionary<IConsensusRuleBase, RulePerformance>();
 
@@ -135,7 +134,7 @@ namespace Stratis.Bitcoin.Consensus
         }
     }
 
-    public class RuleItem
+    internal class RuleItem
     {
         public string RuleName { get; set; }
 
@@ -144,7 +143,7 @@ namespace Stratis.Bitcoin.Consensus
         public IConsensusRuleBase RuleReferenceInstance { get; set; }
     }
 
-    public class RulePerformance : RuleItem
+    internal class RulePerformance : RuleItem
     {
         public int CalledTimes;
 
