@@ -87,9 +87,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     {
         public static IFullNodeBuilder UseColdStaking(this IFullNodeBuilder fullNodeBuilder)
         {
+            // Ensure that this feature is onlu used on a Stratis network.
             if (fullNodeBuilder.Network.IsBitcoin())
                 throw new InvalidOperationException("Cold staking can only be used on a Stratis network.");
 
+            // Register the cold staking script template.
             StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
 
             fullNodeBuilder.ConfigureFeature(features =>
