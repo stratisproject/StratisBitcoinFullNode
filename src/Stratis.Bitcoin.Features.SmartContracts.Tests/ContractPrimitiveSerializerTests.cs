@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
@@ -10,12 +11,12 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public class PersistentStateSerializerTests
+    public class ContractPrimitiveSerializerTests
     {
         private readonly ContractPrimitiveSerializer serializer;
         private readonly Network network;
 
-        public PersistentStateSerializerTests()
+        public ContractPrimitiveSerializerTests()
         {
             this.network = new SmartContractsRegTest();
             this.serializer = new ContractPrimitiveSerializer(this.network);
@@ -112,6 +113,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(serialized.Length < jsonSerialized.Length);
         }
 
+        [Fact]
+        public void PersistentState_Nullable_Behaviour()
+        {
+            // This shows that nullable fields on a struct can only be serialized and deserialized when the value is null.
+            var testStruct = new ContainsNullInt();
+            testStruct.NullInt = null;
+            byte[] serialized = this.serializer.Serialize(testStruct);
+            ContainsNullInt deserialized = this.serializer.Deserialize<ContainsNullInt>(serialized);
+            Assert.Equal(testStruct.NullInt, deserialized.NullInt);
+
+            // When the value is set, the serializer breaks.
+            // This isn't a problem as nullable types can't be set in a contract thanks to the determinism validator.
+            //TODO: Should throw the ContractPrimitiveSerializationException
+            testStruct.NullInt = 6;
+            serialized = this.serializer.Serialize(testStruct);
+            Assert.ThrowsAny<Exception>(() => this.serializer.Deserialize<ContainsNullInt>(serialized));
+        }
+
         private TestValueType NewTestValueType()
         {
             var instance = new TestValueType();
@@ -199,5 +218,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     public class ReferencedType
     {
         public TestValueType TestValueType;
+    }
+
+    public struct ContainsNullInt
+    {
+        public int? NullInt;
     }
 }
