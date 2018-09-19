@@ -6,7 +6,8 @@ using Stratis.SmartContracts.Executor.Reflection.Serialization;
 namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
 {
     /// <summary>
-    /// Injected into the <see cref="SmartContract"/> class. Spends the gas 
+    /// Injected into the <see cref="SmartContract"/> class. Spends gas for logging an event
+    /// before passing it into the logger that actually handles the logging.
     /// </summary>
     public class MeteredContractLogger : IContractLogger
     {
