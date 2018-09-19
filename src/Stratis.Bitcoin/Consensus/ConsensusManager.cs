@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Consensus
         private const long ConsumptionThresholdBytes = MaxUnconsumedBlocksDataBytes / 10;
 
         /// <summary>The maximum amount of blocks that can be assigned to <see cref="IBlockPuller"/> at the same time.</summary>
-        private const int MaxBlocksToAskFromPuller = 5000;
+        private const int MaxBlocksToAskFromPuller = 30000;
 
         /// <summary>The minimum amount of slots that should be available to trigger asking block puller for blocks.</summary>
         private const int ConsumptionThresholdSlots = MaxBlocksToAskFromPuller / 10;
