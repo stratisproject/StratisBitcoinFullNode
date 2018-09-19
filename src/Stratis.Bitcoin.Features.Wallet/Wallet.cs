@@ -241,7 +241,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A value indicating whether the wallet contains the specified address.</returns>
         public bool ContainsAddress(HdAddress address)
         {
-            if (!this.AccountsRoot.Any(r => r.Accounts.Where(NormalAccounts).Any(
+            if (!this.AccountsRoot.Any(r => r.Accounts.Any(
                 a => a.ExternalAddresses.Any(i => i.Address == address.Address) ||
                      a.InternalAddresses.Any(i => i.Address == address.Address))))
             {
