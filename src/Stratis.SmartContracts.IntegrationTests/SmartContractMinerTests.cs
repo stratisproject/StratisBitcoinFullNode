@@ -186,7 +186,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
                 var inMemoryCoinView = new InMemoryCoinView(this.chain.Tip.HashBlock);
-                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, new LoggerFactory());
+                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, new LoggerFactory(), new NodeStats(new DateTimeProvider()));
 
                 this.loggerFactory = new ExtendedLoggerFactory();
                 this.loggerFactory.AddConsoleWithFilters();
@@ -221,10 +221,11 @@ namespace Stratis.SmartContracts.IntegrationTests
                     senderRetriever,
                     this.cachedCoinView,
                     chainState,
-                    new InvalidBlockHashStore(DateTimeProvider.Default))
+                    new InvalidBlockHashStore(DateTimeProvider.Default),
+                    new NodeStats(new DateTimeProvider()))
                     .Register();
 
-                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, new SmartContractPowRuleRegistration(), this.consensusRules,  chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain);
+                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain, ruleRegistration: new SmartContractPowRuleRegistration(), consensusRules: this.consensusRules);
 
                 await this.consensusManager.InitializeAsync(chainState.BlockStoreTip);
 

@@ -420,8 +420,8 @@ namespace Stratis.SmartContracts.IntegrationTests
 
 
         /*
-        * Tests the most basic end-to-end functionality of the Auction contract. 
-        * 
+        * Tests the most basic end-to-end functionality of the Auction contract.
+        *
         * NOTE: This tests the situation where a contract leaves itself with a 0 balance, and
         * hence hits 'ClearUnspent' in TransactionCondenser.cs. If about to remove this test,
         * ensure that we have this case covered in SmartContractMinerTests.cs.
@@ -500,7 +500,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 // Send create with value, and ensure balance is stored.
                 BuildCreateContractTransactionResponse sendResponse = sender.SendCreateContractTransaction(compilationResult.Compilation, 30);
                 sender.WaitMempoolCount(1);
-                TestHelper.MineBlocks(sender.CoreNode, sender.WalletName, sender.Password, sender.AccountName, 1);                
+                TestHelper.MineBlocks(sender.CoreNode, sender.WalletName, sender.Password, sender.AccountName, 1);
 
                 Assert.Equal((ulong)30 * 100_000_000, sender.GetContractBalance(sendResponse.NewContractAddress));
             }
