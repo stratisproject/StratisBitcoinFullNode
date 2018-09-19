@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly object getBlockLock;
 
         /// <summary>Represents all blocks currently in the queue & pending batch, so that <see cref="GetBlockAsync"/> is able to return a value directly after enqueuing.</summary>
-        private Dictionary<uint256, ChainedHeaderBlock> blocksBeingPersisted;
+        private readonly Dictionary<uint256, ChainedHeaderBlock> pendingBlocks;
 
         public BlockStoreQueue(
             ConcurrentChain chain,
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.batch = new List<ChainedHeaderBlock>();
             this.getBlockLock = new object();
             this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
-            this.blocksBeingPersisted = new Dictionary<uint256, ChainedHeaderBlock>();
+            this.pendingBlocks = new Dictionary<uint256, ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             lock (this.getBlockLock)
             {
-                if (this.blocksBeingPersisted.TryGetValue(blockHash, out ChainedHeaderBlock chainedHeaderBlock))
+                if (this.pendingBlocks.TryGetValue(blockHash, out ChainedHeaderBlock chainedHeaderBlock))
                 {
                     this.logger.LogTrace("(-)[FOUND_IN_DICTIONARY]");
                     return chainedHeaderBlock.Block;
@@ -195,12 +195,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             Block block = await this.blockRepository.GetBlockAsync(blockHash).ConfigureAwait(false);
 
-            if (block == null)
-                this.logger.LogTrace("Block was not found in the repository.");
-            else
-                this.logger.LogTrace("Block was found in the repository.");
-
+            this.logger.LogTrace("Block was{0} found in the repository.", (block == null) ? " not" : "");
             this.logger.LogTrace("(-)");
+            
             return block;
         }
 
@@ -280,7 +277,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             lock (this.getBlockLock)
             {
-                this.blocksBeingPersisted.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
+                this.pendingBlocks.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
             }
 
             this.blocksQueue.Enqueue(chainedHeaderBlock);
@@ -356,7 +353,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         {
                             foreach (ChainedHeaderBlock chainedHeaderBlock in this.batch)
                             {
-                                this.blocksBeingPersisted.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
+                                this.pendingBlocks.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
                             }
 
                             this.batch.Clear();
