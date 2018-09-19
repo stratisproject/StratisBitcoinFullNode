@@ -217,10 +217,16 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if this is not a Stratis network.</exception>
     public static class FullNodeBuilderColdStakingExtension
     {
         public static IFullNodeBuilder UseColdStakingWallet(this IFullNodeBuilder fullNodeBuilder)
         {
+            if (fullNodeBuilder.Network.IsBitcoin())
+                throw new InvalidOperationException("Cold staking can only be used on a Stratis network.");
+
+            StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
+
             LoggingConfiguration.RegisterFeatureNamespace<ColdStakingFeature>("wallet");
 
             fullNodeBuilder.ConfigureFeature(features =>

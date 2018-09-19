@@ -136,19 +136,14 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
 
     /// <summary>
     /// The data structure used by a client requesting that a cold staking cancellation be performed.
-    /// Refer to <see cref="Controllers.ColdStakingController.CancelColdStaking"/>.
+    /// Refer to <see cref="Controllers.ColdStakingController.ColdStakingWithdrawal"/>.
     /// </summary>
-    public class CancelColdStakingRequest
+    public class ColdStakingWithdrawalRequest
     {
-        /// <summary>The Base58 cold wallet address.</summary>
+        /// <summary>The Base58 receiving address.</summary>
         [Required]
-        [JsonProperty(PropertyName = "coldWalletAddress")]
-        public string ColdWalletAddress { get; set; }
-
-        /// <summary>The Base58 hot wallet address.</summary>
-        [Required]
-        [JsonProperty(PropertyName = "hotWalletAddress")]
-        public string HotWalletAddress { get; set; }
+        [JsonProperty(PropertyName = "receivingAddress")]
+        public string ReceivingAddress { get; set; }
 
         /// <summary>The name of the wallet from which we select coins for cold staking cancellation.</summary>
         [Required]
@@ -176,15 +171,15 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Models
         /// <returns>A string containing the properties of the object.</returns>
         public override string ToString()
         {
-            return $"{nameof(this.ColdWalletAddress)}={this.ColdWalletAddress},{nameof(this.HotWalletAddress)}={this.HotWalletAddress},{nameof(this.WalletName)}={this.WalletName},{nameof(this.Amount)}={this.Amount},{nameof(this.Fees)}={this.Fees}";
+            return $"{nameof(this.ReceivingAddress)}={this.ReceivingAddress},{nameof(this.WalletName)}={this.WalletName},{nameof(this.Amount)}={this.Amount},{nameof(this.Fees)}={this.Fees}";
         }
     }
 
     /// <summary>
     /// The response data structure received by a client after requesting that a cold staking cancellation be performed.
-    /// Refer to <see cref="CancelColdStakingRequest"/>.
+    /// Refer to <see cref="ColdStakingWithdrawalRequest"/>.
     /// </summary>
-    public class CancelColdStakingResponse
+    public class ColdStakingWithdrawalResponse
     {
         /// <summary>The transaction bytes as a hexadecimal string.</summary>
         [JsonProperty(PropertyName = "transactionHex")]
