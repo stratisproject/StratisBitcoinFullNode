@@ -344,6 +344,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <remarks>
         /// Cold staking withdrawal is performed on the wallet that is in the role of the cold staking cold wallet.
         /// </remarks>
+        /// <param name="walletTransactionHandler">The wallet transaction handler used to build the transaction.</param>
         /// <param name="receivingAddress">The address that will receive the withdrawal.</param>
         /// <param name="walletName">The name of the wallet in the role of cold wallet.</param>
         /// <param name="walletPassword">The wallet password.</param>
