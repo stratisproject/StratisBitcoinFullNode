@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin
             this.AsyncLoopFactory = this.Services.ServiceProvider.GetService<IAsyncLoopFactory>();
 
             this.logger.LogInformation(Properties.Resources.AsciiLogo);
-            this.logger.LogInformation($"Full node initialized on {this.Network.Name}");
+            this.logger.LogInformation("Full node initialized on {0}.", this.Network.Name);
 
             this.State = FullNodeState.Initialized;
             this.StartTime = this.DateTimeProvider.GetUtcNow();
@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin
             if (this.fullNodeFeatureExecutor == null)
                 throw new InvalidOperationException($"{nameof(FullNodeFeatureExecutor)} must be set.");
 
-            this.logger.LogInformation("Starting node...");
+            this.logger.LogInformation("Starting node.");
 
             // Initialize all registered features.
             this.fullNodeFeatureExecutor.Initialize();
@@ -259,22 +259,29 @@ namespace Stratis.Bitcoin
 
             this.State = FullNodeState.Disposing;
 
-            this.logger.LogInformation("Closing node pending...");
+            this.logger.LogInformation("Closing node pending.");
 
             // Fire INodeLifetime.Stopping.
             this.nodeLifetime.StopApplication();
 
+            this.logger.LogInformation("Disposing connection manager.");
             this.ConnectionManager.Dispose();
 
             foreach (IDisposable disposable in this.Resources)
+            {
+                this.logger.LogInformation($"{disposable.GetType().Name}.");
                 disposable.Dispose();
+            }
 
             // Fire the NodeFeatureExecutor.Stop.
+            this.logger.LogInformation("Disposing the full node feature executor.");
             this.fullNodeFeatureExecutor.Dispose();
 
+            this.logger.LogInformation("Disposing settings.");
             this.Settings.Dispose();
 
             // Fire INodeLifetime.Stopped.
+            this.logger.LogInformation("Notify application has stopped.");
             this.nodeLifetime.NotifyStopped();
 
             this.State = FullNodeState.Disposed;

@@ -132,16 +132,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.mempoolLogger.LogInformation("Saving Memory Pool...");
+            this.mempoolLogger.LogInformation("Saving Memory Pool.");
 
             MemPoolSaveResult result = this.mempoolManager.SavePool();
             if (result.Succeeded)
             {
-                this.mempoolLogger.LogInformation($"...Memory Pool Saved {result.TrxSaved} transactions");
+                this.mempoolLogger.LogInformation($"Memory Pool Saved {result.TrxSaved} transactions");
             }
             else
             {
-                this.mempoolLogger.LogWarning("...Memory Pool Not Saved!");
+                this.mempoolLogger.LogWarning("Memory Pool Not Saved!");
             }
 
             this.mempoolSignaled.Stop();

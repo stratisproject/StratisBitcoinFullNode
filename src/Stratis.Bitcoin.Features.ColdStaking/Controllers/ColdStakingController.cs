@@ -66,7 +66,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 GetColdStakingInfoResponse model = this.ColdStakingManager.GetColdStakingInfo(request.WalletName);
 
                 this.logger.LogTrace("(-):'{0}'", model);
-
                 return this.Json(model);
             }
             catch (Exception e)
@@ -104,11 +103,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             {
                 var model = new CreateColdStakingAccountResponse
                 {
-                    AccountName = this.ColdStakingManager.CreateColdStakingAccount(request.WalletName, request.IsColdWalletAccount, request.WalletPassword).Name
+                    AccountName = this.ColdStakingManager.GetOrCreateColdStakingAccount(request.WalletName, request.IsColdWalletAccount, request.WalletPassword).Name
                 };
 
                 this.logger.LogTrace("(-):'{0}'", model);
-
                 return this.Json(model);
             }
             catch (Exception e)
@@ -146,14 +144,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             {
                 var model = new GetColdStakingAddressResponse
                 {
-                    Address = this.ColdStakingManager.GetColdStakingAddress(request.WalletName, request.IsColdWalletAddress)?.Address
+                    Address = this.ColdStakingManager.GetFirstUnusedColdStakingAddress(request.WalletName, request.IsColdWalletAddress)?.Address
                 };
 
                 if (model.Address == null)
                     throw new WalletException("The cold staking account does not exist.");
 
                 this.logger.LogTrace("(-):'{0}'", model);
-
                 return this.Json(model);
             }
             catch (Exception e)
@@ -202,7 +199,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 };
 
                 this.logger.LogTrace("(-):'{0}'", model);
-
                 return this.Json(model);
             }
             catch (Exception e)

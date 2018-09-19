@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
         // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
         private Dictionary<OutPoint, TransactionData> outpointLookup;
-        internal Dictionary<Script, HdAddress> keysLookup;
+        internal ScriptToAddressLookup scriptToAddressLookup;
 
         public WalletManager(
             ILoggerFactory loggerFactory,
@@ -135,8 +135,20 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.broadcasterManager.TransactionStateChanged += this.BroadcasterManager_TransactionStateChanged;
             }
 
-            this.keysLookup = new Dictionary<Script, HdAddress>();
+            this.scriptToAddressLookup = this.CreateAddressFromScriptLookup();
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
+        }
+
+        /// <summary>
+        /// Creates the <see cref="ScriptToAddressLookup"/> object to use.
+        /// </summary>
+        /// <remarks>
+        /// Override this method and the <see cref="ScriptToAddressLookup"/> object to provide a custom keys lookup.
+        /// </remarks>
+        /// <returns>A new <see cref="ScriptToAddressLookup"/> object for use by this class.</returns>
+        protected virtual ScriptToAddressLookup CreateAddressFromScriptLookup()
+        {
+            return new ScriptToAddressLookup();
         }
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
@@ -180,7 +192,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.WalletTipHash = this.LastReceivedBlockHash();
 
             // Save the wallets file every 5 minutes to help against crashes.
-            this.asyncLoop = this.asyncLoopFactory.Run("wallet persist job", token =>
+            this.asyncLoop = this.asyncLoopFactory.Run("Wallet persist job", token =>
             {
                 this.logger.LogTrace("()");
 
@@ -793,7 +805,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                IEnumerable<HdAddress> allAddresses = this.keysLookup.Values;
+                IEnumerable<HdAddress> allAddresses = this.scriptToAddressLookup.Values;
                 foreach (HdAddress address in allAddresses)
                 {
                     // Remove all the UTXO that have been reorged.
@@ -891,7 +903,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 foreach (TxOut utxo in transaction.Outputs)
                 {
                     // Check if the outputs contain one of our addresses.
-                    if (this.keysLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress _))
+                    if (this.scriptToAddressLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress _))
                     {
                         this.AddTransactionToWallet(transaction, utxo, blockHeight, block, isPropagated);
                         foundReceivingTrx = true;
@@ -914,7 +926,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                             return false;
 
                         // Check if the destination script is one of the wallet's.
-                        bool found = this.keysLookup.TryGetValue(o.ScriptPubKey, out HdAddress addr);
+                        bool found = this.scriptToAddressLookup.TryGetValue(o.ScriptPubKey, out HdAddress addr);
 
                         // Include the keys not included in our wallets (external payees).
                         if (!found)
@@ -965,7 +977,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Get the collection of transactions to add to.
             Script script = utxo.ScriptPubKey;
-            this.keysLookup.TryGetValue(script, out HdAddress address);
+            this.scriptToAddressLookup.TryGetValue(script, out HdAddress address);
             ICollection<TransactionData> addressTransactions = address.Transactions;
 
             // Check if a similar UTXO exists or not (same transaction ID and same index).
@@ -1051,7 +1063,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 nameof(spendingTransactionId), spendingTransactionId, nameof(spendingTransactionIndex), spendingTransactionIndex, nameof(blockHeight), blockHeight);
 
             // Get the transaction being spent.
-            TransactionData spentTransaction = this.keysLookup.Values.Distinct().SelectMany(v => v.Transactions)
+            TransactionData spentTransaction = this.scriptToAddressLookup.Values.Distinct().SelectMany(v => v.Transactions)
                 .SingleOrDefault(t => (t.Id == spendingTransactionId) && (t.Index == spendingTransactionIndex));
             if (spentTransaction == null)
             {
@@ -1340,9 +1352,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     IEnumerable<HdAddress> addresses = wallet.GetAllAddressesByCoinType(this.coinType);
                     foreach (HdAddress address in addresses)
                     {
-                        this.keysLookup[address.ScriptPubKey] = address;
+                        this.scriptToAddressLookup[address.ScriptPubKey] = address;
                         if (address.Pubkey != null)
-                            this.keysLookup[address.Pubkey] = address;
+                            this.scriptToAddressLookup[address.Pubkey] = address;
 
                         foreach (TransactionData transaction in address.Transactions)
                         {
@@ -1367,9 +1379,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 foreach (HdAddress address in addresses)
                 {
-                    this.keysLookup[address.ScriptPubKey] = address;
+                    this.scriptToAddressLookup[address.ScriptPubKey] = address;
                     if (address.Pubkey != null)
-                        this.keysLookup[address.Pubkey] = address;
+                        this.scriptToAddressLookup[address.Pubkey] = address;
                 }
             }
         }

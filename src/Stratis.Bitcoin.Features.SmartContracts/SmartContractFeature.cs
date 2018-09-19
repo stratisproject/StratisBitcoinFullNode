@@ -86,19 +86,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<StandardTransactionPolicy, SmartContractTransactionPolicy>();
 
                         // CONTRACT EXECUTION ---------------------------------------------------------------
-                        services.AddSingleton<InternalTransactionExecutorFactory>();
+                        services.AddSingleton<IInternalTransactionExecutorFactory, InternalTransactionExecutorFactory>();
                         services.AddSingleton<ISmartContractVirtualMachine, ReflectionVirtualMachine>();
                         services.AddSingleton<IAddressGenerator, AddressGenerator>();
                         services.AddSingleton<ILoader, ContractAssemblyLoader>();
                         services.AddSingleton<IContractModuleDefinitionReader, ContractModuleDefinitionReader>();
                         services.AddSingleton<IStateFactory, StateFactory>();
                         services.AddSingleton<SmartContractTransactionPolicy>();
+                        services.AddSingleton<IStateProcessor, StateProcessor>();
+                        services.AddSingleton<ISmartContractStateFactory, SmartContractStateFactory>();
 
                         // RECEIPTS -------------------------------------------------------------------------
                         services.AddSingleton<IReceiptRepository, PersistentReceiptRepository>();
 
                         // UTILS ----------------------------------------------------------------------------
                         services.AddSingleton<ISenderRetriever, SenderRetriever>();
+                        services.AddSingleton<IVersionProvider, SmartContractVersionProvider>();
 
                         ICallDataSerializer callDataSerializer = CallDataSerializer.Default;
                         services.AddSingleton(callDataSerializer);

@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -6,17 +6,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         public object Result { get; }
 
-        public Exception ExecutionException { get; }
+        public ContractErrorMessage ErrorMessage { get; }
 
         public string Type { get; }
 
         private VmExecutionResult(object result,
             string type = null,
-            Exception e = null)
+            ContractErrorMessage error = null)
         {
             this.Result = result;
             this.Type = type;
-            this.ExecutionException = e;
+            this.ErrorMessage = error;
         }
 
         public static VmExecutionResult Success(object result, string type)
@@ -24,9 +24,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return new VmExecutionResult(result, type);
         }
 
-        public static VmExecutionResult Error(Exception e)
+        public static VmExecutionResult Error(ContractErrorMessage error)
         {
-            return new VmExecutionResult(null, null, e);
+            return new VmExecutionResult(null, null, error);
         }
     }
 }

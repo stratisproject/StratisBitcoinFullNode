@@ -2,6 +2,7 @@
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -31,6 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 .UseWallet()
                 .AddPowPosMining()
                 .AddRPC()
+                .UseApi()
                 .MockIBD()
                 .SubstituteDateTimeProviderFor<MiningFeature>()
                 .Build();

@@ -1,7 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -21,13 +20,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public (Money, TxOut) Process(ContractTxData contractTxData,
             ulong mempoolFee, uint160 sender,
             Gas gasConsumed,
-            Exception exception)
+            bool outOfGas)
         {
             this.logger.LogTrace("(){0}:{1}", nameof(mempoolFee), mempoolFee);
 
             Money fee = mempoolFee;
 
-            if (exception is OutOfGasException)
+            if (outOfGas)
             {
                 this.logger.LogTrace("(-)[OUTOFGAS_EXCEPTION]");
                 return (fee, null);

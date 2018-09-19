@@ -14,19 +14,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         private readonly IBalanceRepository repository;
         private readonly IReadOnlyList<TransferInfo> internalTransfers;
-        private readonly ulong txAmount;
 
         public BalanceState(IBalanceRepository repository, ulong txAmount, IReadOnlyList<TransferInfo> internalTransfers)
         {
             this.repository = repository;
-            this.txAmount = txAmount;
+            this.TxAmount = txAmount;
             this.internalTransfers = internalTransfers;
         }
+        
+        public ulong TxAmount { get; }
 
         public ulong GetBalance(uint160 address)
         {
             return this.repository.GetCurrentBalance(address) 
-                   + this.txAmount 
+                   + this.TxAmount 
                    + this.GetPendingBalance(address);
         }
 

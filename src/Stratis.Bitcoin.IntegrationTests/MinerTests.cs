@@ -9,13 +9,11 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
@@ -25,7 +23,6 @@ using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.Mempool;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Networks;
@@ -142,7 +139,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
-                this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
+                var inMemoryCoinView = new InMemoryCoinView(this.chain.Tip.HashBlock);
+                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, new LoggerFactory());
 
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
@@ -173,17 +171,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings,
                     new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider)).Register();
 
-                this.consensus = new ConsensusManager(this.network, loggerFactory, chainState, new HeaderValidator(this.ConsensusRules, loggerFactory),
-                    new IntegrityValidator(this.ConsensusRules, loggerFactory), new PartialValidator(this.ConsensusRules, loggerFactory), new FullValidator(this.ConsensusRules, loggerFactory), new Checkpoints(),
-                    consensusSettings, this.ConsensusRules, new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(), peerBanning,
-                    new Mock<IInitialBlockDownloadState>().Object, this.chain, new Mock<IBlockPuller>().Object, null, new InvalidBlockHashStore(dateTimeProvider), new Mock<IConnectionManager>().Object);
+                this.consensus = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain);
 
                 await this.consensus.InitializeAsync(chainState.BlockStoreTip);
 
                 this.entry.Fee(11);
                 this.entry.Height(11);
 
-                var dateTimeProviderSet = new MemoryPoolTests.DateTimeProviderSet
+                var dateTimeProviderSet = new DateTimeProviderSet
                 {
                     time = dateTimeProvider.GetTime(),
                     timeutc = dateTimeProvider.GetUtcNow()
@@ -204,7 +199,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 for (int i = 0; i < this.blockinfo.Count; ++i)
                 {
                     Block block = this.network.CreateBlock();
-                    block.Header.HashPrevBlock = this.chain.Tip.HashBlock;
+                    block.Header.HashPrevBlock = this.consensus.Tip.HashBlock;
                     block.Header.Version = 1;
                     block.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
 
@@ -231,7 +226,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                     // Serialization sets the BlockSize property.
                     block = Block.Load(block.ToBytes(), this.network);
 
-                    await this.consensus.BlockMinedAsync(block);
+                    var res = await this.consensus.BlockMinedAsync(block);
+
+                    if(res == null)
+                        throw new InvalidOperationException();
 
                     blocks.Add(block);
                 }
@@ -514,7 +512,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             tx.AddOutput(new TxOut());
 
             // non - final txs in mempool
-            (context.DateTimeProvider as MemoryPoolTests.DateTimeProviderSet).time = context.chain.Tip.Header.Time + 1;
+            (context.DateTimeProvider as DateTimeProviderSet).time = context.chain.Tip.Header.Time + 1;
             //SetMockTime(chainActive.Tip().GetMedianTimePast() + 1);
             Transaction.LockTimeFlags flags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
             // height map
