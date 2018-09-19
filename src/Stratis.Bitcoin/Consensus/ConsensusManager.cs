@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -1252,11 +1253,12 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("()");
 
             log.AppendLine();
-            log.AppendLine("======Block Puller======");
+            log.AppendLine("======Consensus Manager======");
 
             lock (this.peerLock)
             {
-                log.AppendLine($"Unconsumed blocks: {this.chainedHeaderTree.UnconsumedBlocksCount} ({this.chainedHeaderTree.UnconsumedBlocksDataBytes} bytes)");
+                string unconsumedBlocks = this.chainedHeaderTree.UnconsumedBlocksCount.ToString("# ### ### ### ###");
+                log.AppendLine($"Unconsumed blocks: {unconsumedBlocks} ({this.chainedHeaderTree.UnconsumedBlocksDataBytes} bytes)");
             }
 
             this.logger.LogTrace("(-)");
