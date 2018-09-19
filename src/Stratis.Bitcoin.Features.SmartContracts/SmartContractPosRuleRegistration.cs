@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new WitnessCommitmentsRule(), // BIP141, BIP144
                 new BlockSizeRule(),
 
-                new PosBlockSignatureRepresentationRule(), // TODO: this rule needs to be implemented
+                new PosBlockSignatureRepresentationRule(),
 
                 // rules that are inside the method CheckBlock
                 new EnsureCoinbaseRule(),
