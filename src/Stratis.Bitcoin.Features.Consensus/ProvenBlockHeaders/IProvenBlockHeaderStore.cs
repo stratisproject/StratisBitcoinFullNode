@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -10,7 +8,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     /// <summary>
     /// Database of <see cref="ProvenBlockHeader"/>s.
     /// </summary>
-    public interface IProvenBlockHeaderStore
+    public interface IProvenBlockHeaderStore : IDisposable
     {
         /// <summary>
         /// Initializes the database table used by <see cref="ProvenBlockHeader"/>.

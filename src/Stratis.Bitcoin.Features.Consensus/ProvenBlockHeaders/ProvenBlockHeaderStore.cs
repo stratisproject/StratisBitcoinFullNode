@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -25,6 +27,16 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
         /// <summary>Specification of the network the node runs on - RegTest/TestNet/MainNet.</summary>
         private readonly Network network;
+
+        /// <summary>The highest stored block in the repository.</summary>
+        private ChainedHeader storeTip;
+
+        private readonly int threshold;
+
+        private readonly int thresholdWindow;
+
+        private readonly ConcurrentDictionary<uint256, ProvenBlockHeader> items = 
+            new ConcurrentDictionary<uint256, ProvenBlockHeader>();   
 
         /// <summary>Hash of the block which is currently the tip of the ChainedHeader.</summary>
         private uint256 blockHash;
@@ -70,9 +82,37 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 400);
         }
 
+        /// <summary>
+        /// Initializes the database table used by the <see cref="ProvenBlockHeader"/>.
+        /// </summary>
         public Task InitializeAsync()
         {
-            throw new NotImplementedException();
+            this.logger.LogTrace("()");
+
+            Task task = Task.Run(() =>
+            {
+                this.logger.LogTrace("()");
+
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                {
+                    transaction.ValuesLazyLoadingIsOn = false;
+                    transaction.SynchronizeTables("ProvenBlockHeader");
+
+                    Block genesis = this.network.GetGenesis();
+
+                    var load = new List<ProvenBlockHeader>();
+
+                    //TODO: Need to understand what to do in here as different stores do different things
+                    // see BlockRepository.InitializeAsync, BlockStoreQueue.InitializeAsync
+
+
+                }
+
+                this.logger.LogTrace("(-)");
+            });
+
+            this.logger.LogTrace("(-)");
+            return task;
         }
 
         public Task FlushAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -96,6 +136,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.dbreeze.Dispose();
+        }
+
         private void AddBenchStats(StringBuilder benchLog)
         {
             this.logger.LogTrace("()");
@@ -112,12 +158,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.latestPerformanceSnapShot = snapShot;
 
             this.logger.LogTrace("(-)");
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.dbreeze.Dispose();
         }
     }
 }
