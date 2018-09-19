@@ -19,9 +19,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Snapshot that is currently being populated.</summary>
         private ConsensusRulesPerformanceSnapshot currentSnapshot;
 
-        /// <summary>Last fully populated shapshot.</summary>
-        private ConsensusRulesPerformanceSnapshot previousSnapshot;
-
         public ConsensusRulesPerformanceCounter(IConsensus consensus)
         {
             this.registeredRules = new List<RuleItem>();
@@ -32,7 +29,6 @@ namespace Stratis.Bitcoin.Consensus
             this.RegisterRulesCollection(consensus.FullValidationRules.Select(x => x as IConsensusRuleBase), RuleType.Full);
 
             this.currentSnapshot = new ConsensusRulesPerformanceSnapshot(this.registeredRules);
-            this.previousSnapshot = null;
         }
 
         private void RegisterRulesCollection(IEnumerable<IConsensusRuleBase> rules, RuleType rulesType)
@@ -68,11 +64,11 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>Not thread-safe. Caller should ensure that it's not called from different threads at once.</remarks>
         public ConsensusRulesPerformanceSnapshot TakeSnapshot()
         {
-            var newShapShot = new ConsensusRulesPerformanceSnapshot(this.registeredRules);
-            this.previousSnapshot = this.currentSnapshot;
-            this.currentSnapshot = newShapShot;
+            var newSnapshot = new ConsensusRulesPerformanceSnapshot(this.registeredRules);
+            ConsensusRulesPerformanceSnapshot previousSnapshot = this.currentSnapshot;
+            this.currentSnapshot = newSnapshot;
 
-            return this.previousSnapshot;
+            return previousSnapshot;
         }
     }
 
