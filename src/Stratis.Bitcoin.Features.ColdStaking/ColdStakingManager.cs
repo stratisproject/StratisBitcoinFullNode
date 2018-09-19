@@ -316,7 +316,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// Creates a cold staking withdrawal <see cref="Transaction"/>.
         /// </summary>
         /// <remarks>
-        /// Cold staking withdrawal can only be performed on the wallet that is in the role of the cold staking cold wallet.
+        /// Cold staking withdrawal is performed on the wallet that is in the role of the cold staking cold wallet.
         /// </remarks>
         /// <param name="receivingAddress">The address that will receive the withdrawal.</param>
         /// <param name="walletName">The name of the wallet in the role of cold wallet.</param>
@@ -324,7 +324,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="amount">The amount to remove from cold staking.</param>
         /// <param name="feeAmount">The fee to pay for cold staking transaction withdrawal.</param>
         /// <returns>The <see cref="Transaction"/> for cold staking withdrawal.</returns>
-        /// <exception cref="WalletException">Thrown if any of the rules listed in the remarks section of this method are broken.</exception>
+        /// <exception cref="WalletException">Thrown if the receiving address is in a cold staking account in this wallet.</exception>
         internal Transaction GetColdStakingWithdrawalTransaction(string receivingAddress,
             string walletName, string walletPassword, Money amount, Money feeAmount)
         {
@@ -342,15 +342,15 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             Wallet.Wallet wallet = this.walletManager.GetWalletByName(walletName);
 
-            // Get/create the cold staking account.
-            HdAccount coldAccount = this.GetOrCreateColdStakingAccount(walletName, true, walletPassword);
+            // Get the cold staking account.
+            HdAccount coldAccount = this.GetColdStakingAccount(wallet, true);
             if (coldAccount == null)
             {
                 this.logger.LogTrace("(-)[COLDSTAKE_ACCOUNT_DOES_NOT_EXIST]");
                 throw new WalletException("The cold wallet account does not exist.");
             }
 
-            // The receivingAddress can't be a cold staking account.
+            // The receiving address can't be in a cold staking account in this wallet.
             bool isColdStakingAddress = coldAccount.ExternalAddresses.Concat(coldAccount.InternalAddresses).Select(a => a.Address.ToString()).Contains(receivingAddress);
             if (!isColdStakingAddress)
             {
