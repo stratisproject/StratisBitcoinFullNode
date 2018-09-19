@@ -5,17 +5,20 @@ using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
 {
+    /// <summary>
+    /// Injected into the <see cref="SmartContract"/> class. Spends the gas 
+    /// </summary>
     public class MeteredContractLogger : IContractLogger
     {
         private readonly IGasMeter gasMeter;
-        private readonly IContractLogHolder logHolder;
+        private readonly IContractLogger logger;
         private readonly Network network;
         private readonly IContractPrimitiveSerializer serializer;
 
-        public MeteredContractLogger(IGasMeter gasMeter, IContractLogHolder logHolder, Network network, IContractPrimitiveSerializer serializer)
+        public MeteredContractLogger(IGasMeter gasMeter, IContractLogger logger, Network network, IContractPrimitiveSerializer serializer)
         {
             this.gasMeter = gasMeter;
-            this.logHolder = logHolder;
+            this.logger = logger;
             this.network = network;
             this.serializer = serializer;
         }
@@ -27,7 +30,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
             this.gasMeter.Spend(GasPriceList.LogOperationCost(log.Topics, log.Data));
 
             // TODO: This is inefficient, it is deserializing the log more than once.
-            this.logHolder.Log<T>(smartContractState, toLog);
+            this.logger.Log<T>(smartContractState, toLog);
         }
     }
 }
