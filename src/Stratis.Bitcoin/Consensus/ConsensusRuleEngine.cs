@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Group of rules that are used during full validation (connection of a new block).</summary>
         private List<FullValidationConsensusRule> fullValidationRules;
 
-        private readonly NodeSettings NodeSettings;
+        public NodeSettings NodeSettings;
         
         protected ConsensusRuleEngine(
             Network network,

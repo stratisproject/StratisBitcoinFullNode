@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new WitnessCommitmentsRule(), // BIP141, BIP144
                     new BlockSizeRule(),
 
-                    new PosBlockContextRule(), // TODO: this rule needs to be implemented
+                    new PosBlockSignatureRepresentationRule(), // TODO: this rule needs to be implemented
 
                     // rules that are inside the method CheckBlock
                     new EnsureCoinbaseRule(),

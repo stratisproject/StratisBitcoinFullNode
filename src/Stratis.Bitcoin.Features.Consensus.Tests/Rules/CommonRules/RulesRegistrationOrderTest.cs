@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             partialValidationRules[3].Should().BeOfType<CoinbaseHeightActivationRule>();
             partialValidationRules[4].Should().BeOfType<WitnessCommitmentsRule>();
             partialValidationRules[5].Should().BeOfType<BlockSizeRule>();
-            partialValidationRules[6].Should().BeOfType<PosBlockContextRule>();
+            partialValidationRules[6].Should().BeOfType<PosBlockSignatureRepresentationRule>();
             partialValidationRules[7].Should().BeOfType<EnsureCoinbaseRule>();
             partialValidationRules[8].Should().BeOfType<CheckPowTransactionRule>();
             partialValidationRules[9].Should().BeOfType<CheckPosTransactionRule>();
