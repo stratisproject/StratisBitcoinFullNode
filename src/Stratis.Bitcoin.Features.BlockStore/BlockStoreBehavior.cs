@@ -37,9 +37,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private const int MaxBlocksToAnnounce = 8;
 
         private readonly ConcurrentChain chain;
-
-        private readonly IBlockStore blockStore;
-
+        
         private readonly IConsensusManager consensusManager;
 
         private ConsensusManagerBehavior consensusManagerBehavior;
@@ -78,15 +76,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
 
-        public BlockStoreBehavior(ConcurrentChain chain, IBlockStore blockStore, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager)
+        public BlockStoreBehavior(ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager)
         {
             Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(blockStore, nameof(blockStore));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(consensusManager, nameof(consensusManager));
 
             this.chain = chain;
-            this.blockStore = blockStore;
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
@@ -519,7 +515,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            var res = new BlockStoreBehavior(this.chain, this.blockStore, this.chainState, this.loggerFactory, this.consensusManager)
+            var res = new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload
