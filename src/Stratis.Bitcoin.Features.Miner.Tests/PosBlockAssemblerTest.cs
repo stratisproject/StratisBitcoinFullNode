@@ -428,6 +428,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
         private void SetupRulesEngine(ConcurrentChain chain)
         {
+            var dateTimeProvider = new DateTimeProvider();
+
             var posConsensusRules = new PosConsensusRuleEngine(
                 this.stratisTest,
                 this.LoggerFactory.Object,
@@ -440,7 +442,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new Mock<IStakeChain>().Object,
                 new Mock<IStakeValidator>().Object,
                 new Mock<IChainState>().Object,
-                new InvalidBlockHashStore(new DateTimeProvider()));
+                new InvalidBlockHashStore(dateTimeProvider),
+                new NodeStats(dateTimeProvider));
 
             posConsensusRules.Register();
 

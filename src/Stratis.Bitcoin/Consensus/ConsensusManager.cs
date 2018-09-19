@@ -7,7 +7,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.ValidationResults;
 using Stratis.Bitcoin.Consensus.Validators;
@@ -301,7 +300,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>
         /// Called after a peer was disconnected.
-        /// Informs underlying components about the even.
+        /// Informs underlying components about the event but only if the node is not being shut down at the moment.
         /// Processes any remaining blocks to download.
         /// </summary>
         /// <remarks>Have to be locked by <see cref="peerLock"/>.</remarks>
@@ -314,11 +313,21 @@ namespace Stratis.Bitcoin.Consensus
 
             if (removed)
             {
-                // TODO Use node lifetime here and don't call ProcessDownloadQueueLocked and chainedHeaderTree.PeerDisconnected
-                // on node shutdown. Otherwise we have big shutdown perf hit.
-                this.chainedHeaderTree.PeerDisconnected(peerId);
-                this.blockPuller.PeerDisconnected(peerId);
-                this.ProcessDownloadQueueLocked();
+                bool shuttingDown = this.nodeLifetime.ApplicationStopping.IsCancellationRequested;
+
+                // Update the components only in case we are not shutting down. In case we update CHT during
+                // shutdown there will be a huge performance hit when we have a lot of headers in front of our
+                // consensus and then disconnect last peer claiming such a chain. CHT will disconnect headers
+                // one by one. This is not needed during the shutdown.
+                if (!shuttingDown)
+                {
+                    this.chainedHeaderTree.PeerDisconnected(peerId);
+                    this.blockPuller.PeerDisconnected(peerId);
+                    this.ProcessDownloadQueueLocked();
+                }
+                else
+                    this.logger.LogDebug("Node is shutting down therefore underlying components won't be updated.");
+
             }
             else
                 this.logger.LogTrace("Peer {0} was already removed.", peerId);
@@ -590,7 +599,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>List of blocks that were disconnected.</returns>
         private async Task<List<ChainedHeaderBlock>> RewindToForkPointAsync(ChainedHeader fork, ChainedHeader oldTip)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}'", nameof(fork), fork, nameof(oldTip), oldTip);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(fork), fork, nameof(oldTip), oldTip);
 
             // This is sanity check and should never happen.
             if (fork.Height > oldTip.Height)
@@ -614,7 +623,23 @@ namespace Stratis.Bitcoin.Consensus
                     this.SetConsensusTipInternalLocked(current.Previous);
                 }
 
-                var disconnectedBlock = new ChainedHeaderBlock(current.Block, current);
+                Block block = current.Block;
+
+                if (block == null)
+                {
+                    this.logger.LogTrace("Block '{0}' wasn't cached. Loading it from the database.", current.HashBlock);
+                    block = await this.blockStore.GetBlockAsync(current.HashBlock).ConfigureAwait(false);
+
+                    if (block == null)
+                    {
+                        // Sanity check. Block being disconnected should always be in the block store before we rewind.
+                        this.logger.LogTrace("(-)[BLOCK_NOT_FOUND]");
+                        throw new Exception("Block that is about to be rewinded wasn't found in cache or database!");
+                    }
+                }
+
+                var disconnectedBlock = new ChainedHeaderBlock(block, current);
+
                 disconnectedBlocks.Add(disconnectedBlock);
 
                 this.signals.SignalBlockDisconnected(disconnectedBlock);
@@ -1225,8 +1250,6 @@ namespace Stratis.Bitcoin.Consensus
         public void Dispose()
         {
             this.logger.LogTrace("()");
-
-            this.partialValidator.Dispose();
 
             this.reorgLock.Dispose();
 

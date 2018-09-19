@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -16,13 +17,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ICallDataSerializer serializer;
         private readonly Network network;
         private readonly IStateFactory stateFactory;
+        private readonly IStateProcessor stateProcessor;
+        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
 
         public ReflectionSmartContractExecutorFactory(ILoggerFactory loggerFactory,
             ICallDataSerializer serializer,
             ISmartContractResultRefundProcessor refundProcessor,
             ISmartContractResultTransferProcessor transferProcessor,
             Network network,
-            IStateFactory stateFactory)
+            IStateFactory stateFactory,
+            IStateProcessor stateProcessor,
+            IContractPrimitiveSerializer contractPrimitiveSerializer)
         {
             this.loggerFactory = loggerFactory;
             this.refundProcessor = refundProcessor;
@@ -30,6 +35,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.serializer = serializer;
             this.network = network;
             this.stateFactory = stateFactory;
+            this.stateProcessor = stateProcessor;
+            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
         }
 
         /// <summary>
@@ -43,7 +50,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ISmartContractTransactionContext transactionContext)
         {
             return new Executor(this.loggerFactory, this.serializer, 
-                    stateRepository, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory);
+                    stateRepository, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor, this.contractPrimitiveSerializer);
         }
     }
 }
