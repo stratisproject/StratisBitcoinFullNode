@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Miner.Interfaces
         /// </summary>
         /// <param name="utxoStakeDescriptions">Description of coins in the wallet that will be used for staking.</param>
         /// <returns>Total balance from all UTXOs in the wallet that are mature.</returns>
-        Money GetMatureBalance(List<UtxoStakeDescription> utxoStakeDescriptions);
+        Task<Money> GetMatureBalanceAsync(List<UtxoStakeDescription> utxoStakeDescriptions);
 
         /// <summary>
         /// Estimates the total staking weight of the network.

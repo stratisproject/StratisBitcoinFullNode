@@ -28,13 +28,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public byte[] FetchBytes(uint160 address, byte[] key)
         {
             byte[] encodedKey = this.keyEncodingStrategy.GetBytes(key);
-            return this.stateDb.GetStorageValue(address, encodedKey);
+            byte[] value = this.stateDb.GetStorageValue(address, encodedKey);
+
+            Gas operationCost = GasPriceList.StorageRetrieveOperationCost(encodedKey, value);
+            this.gasMeter.Spend(operationCost);
+
+            return value;
         }
 
         public void StoreBytes(uint160 address, byte[] key, byte[] value)
         {
             byte[] encodedKey = this.keyEncodingStrategy.GetBytes(key);
-            Gas operationCost = GasPriceList.StorageOperationCost(
+            Gas operationCost = GasPriceList.StorageSaveOperationCost(
                 encodedKey,
                 value);
 

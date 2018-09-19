@@ -23,7 +23,7 @@ namespace NBitcoin
         public Money ProofOfStakeReward { get; }
 
         /// <inheritdoc />
-        public uint MaxReorgLength { get; }
+        public uint MaxReorgLength { get; private set; }
 
         /// <inheritdoc />
         public long MaxMoney { get; }

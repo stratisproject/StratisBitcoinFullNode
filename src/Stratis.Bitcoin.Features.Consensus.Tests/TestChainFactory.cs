@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.InitialBlockDownloadState = new InitialBlockDownloadState(testChainContext.ChainState, testChainContext.Network, consensusSettings, new Checkpoints());
 
             var inMemoryCoinView = new InMemoryCoinView(testChainContext.Chain.Tip.HashBlock);
-            var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, testChainContext.LoggerFactory);
+            var cachedCoinView = new CachedCoinView(inMemoryCoinView, DateTimeProvider.Default, testChainContext.LoggerFactory, new NodeStats(new DateTimeProvider()));
 
             var dataFolder = new DataFolder(TestBase.AssureEmptyDir(dataDir));
             testChainContext.PeerAddressManager =
@@ -124,12 +124,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.MockConnectionManager.Setup(s => s.ConnectionSettings).Returns(testChainContext.ConnectionSettings);
 
             testChainContext.ConnectionManager = testChainContext.MockConnectionManager.Object;
+            var dateTimeProvider = new DateTimeProvider();
 
             testChainContext.PeerBanning = new PeerBanning(testChainContext.ConnectionManager, testChainContext.LoggerFactory, testChainContext.DateTimeProvider, testChainContext.PeerAddressManager);
             var deployments = new NodeDeployments(testChainContext.Network, testChainContext.Chain);
             testChainContext.ConsensusRules = new PowConsensusRuleEngine(testChainContext.Network, testChainContext.LoggerFactory, testChainContext.DateTimeProvider,
-                testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints, cachedCoinView, testChainContext.ChainState, new InvalidBlockHashStore(new DateTimeProvider()))
-                .Register();
+                testChainContext.Chain, deployments, consensusSettings, testChainContext.Checkpoints, cachedCoinView, testChainContext.ChainState,
+                    new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider)).Register();
 
             testChainContext.HeaderValidator = new HeaderValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
             testChainContext.IntegrityValidator = new IntegrityValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);

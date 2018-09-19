@@ -464,7 +464,11 @@ namespace Stratis.Bitcoin.Consensus
                 }
             }
 
-            if (chainedHeaderBlocksToValidate != null)
+            // Partial validation should continue if:
+            //  1: There are more blocks to validate.
+            //  2: A full validation was done and succeeded.
+            bool fullValidationSucceeded = (connectBlocksResult != null) && connectBlocksResult.Succeeded;
+            if ((chainedHeaderBlocksToValidate != null) && fullValidationSucceeded)
             {
                 this.logger.LogTrace("Partial validation of {0} block will be started.", chainedHeaderBlocksToValidate.Count);
 
@@ -599,7 +603,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>List of blocks that were disconnected.</returns>
         private async Task<List<ChainedHeaderBlock>> RewindToForkPointAsync(ChainedHeader fork, ChainedHeader oldTip)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}'", nameof(fork), fork, nameof(oldTip), oldTip);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(fork), fork, nameof(oldTip), oldTip);
 
             // This is sanity check and should never happen.
             if (fork.Height > oldTip.Height)
@@ -623,7 +627,23 @@ namespace Stratis.Bitcoin.Consensus
                     this.SetConsensusTipInternalLocked(current.Previous);
                 }
 
-                var disconnectedBlock = new ChainedHeaderBlock(current.Block, current);
+                Block block = current.Block;
+
+                if (block == null)
+                {
+                    this.logger.LogTrace("Block '{0}' wasn't cached. Loading it from the database.", current.HashBlock);
+                    block = await this.blockStore.GetBlockAsync(current.HashBlock).ConfigureAwait(false);
+
+                    if (block == null)
+                    {
+                        // Sanity check. Block being disconnected should always be in the block store before we rewind.
+                        this.logger.LogTrace("(-)[BLOCK_NOT_FOUND]");
+                        throw new Exception("Block that is about to be rewinded wasn't found in cache or database!");
+                    }
+                }
+
+                var disconnectedBlock = new ChainedHeaderBlock(block, current);
+
                 disconnectedBlocks.Add(disconnectedBlock);
 
                 this.signals.SignalBlockDisconnected(disconnectedBlock);

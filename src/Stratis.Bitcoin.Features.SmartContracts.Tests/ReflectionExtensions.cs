@@ -21,5 +21,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             FieldInfo field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
             return field?.GetValue(obj);
         }
+
+        /// <summary>
+        /// Using reflection, sets the value of private field with this name on the supplied object. If no field is found, returns null.
+        /// </summary>
+        public static void SetPrivateFieldValue(this object obj, string fieldName, object value)
+        {
+            FieldInfo field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            field?.SetValue(obj, value);
+        }
     }
 }
