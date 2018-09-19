@@ -93,4 +93,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Null(result.ErrorMessage);
         }
     }
+
+    public class PersistenceStrategy : IPersistenceStrategy
+    {
+        private readonly IContractState stateDb;
+
+        public PersistenceStrategy(IContractState stateDb)
+        {
+            this.stateDb = stateDb;
+        }
+
+        public byte[] FetchBytes(uint160 address, byte[] key)
+        {
+            return this.stateDb.GetStorageValue(address, key);
+        }
+
+        public void StoreBytes(uint160 address, byte[] key, byte[] value)
+        {
+            this.stateDb.SetStorageValue(address, key, value);
+        }
+    }
 }
