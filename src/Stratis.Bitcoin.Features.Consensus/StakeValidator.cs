@@ -219,7 +219,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Min age requirement.
-            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, this.consensusOptions.GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1))
+            var options = this.network.Consensus.Options as PosConsensusOptions;
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, options.GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1))
             {
                 this.logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
                 ConsensusErrors.InvalidStakeDepth.Throw();
