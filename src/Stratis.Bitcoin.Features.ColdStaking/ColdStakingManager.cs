@@ -100,6 +100,15 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         }
 
         /// <summary>
+        /// Overrides the default <see cref="WalletManager.CreateAddressFromScriptLookup"/>.
+        /// </summary>
+        /// <returns>A new <see cref="ColdStakingAddressLookup"/> object for use by this class.</returns>
+        protected override ScriptToAddressLookup CreateAddressFromScriptLookup()
+        {
+            return new ColdStakingAddressLookup(this.network);
+        }
+
+        /// <summary>
         /// Returns information related to cold staking.
         /// </summary>
         /// <param name="walletName">The wallet to return the information for.</param>

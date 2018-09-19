@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         protected readonly CoinType coinType;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        private readonly Network network;
+        protected readonly Network network;
 
         /// <summary>The chain of headers.</summary>
         protected readonly ConcurrentChain chain;
