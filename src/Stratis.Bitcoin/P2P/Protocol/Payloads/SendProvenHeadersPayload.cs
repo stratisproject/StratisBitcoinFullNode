@@ -11,19 +11,21 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class SendProvenHeadersPayload : Payload
     {
         /// <summary>
-        /// A height from which proven headers should be received.
+        /// <see cref="RequireFromHeight"/>
         /// </summary>
-        private int height;
+        private int requireFromHeight;
 
         /// <summary>
-        /// Gets a height from which proven headers should be received.
+        /// Gets a height from which proven headers must be sent over the normal header.
+        /// Before that height sending normal headers is acceptable because they are checkpointed and therefore
+        /// don't require a proof of validity which proven headers supply.
         /// </summary>
-        public int FromHeight => this.height;
+        public int RequireFromHeight => this.requireFromHeight;
 
         /// <inheritdoc />
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            stream.ReadWrite(ref this.height);
+            stream.ReadWrite(ref this.requireFromHeight);
         }
     }
 }

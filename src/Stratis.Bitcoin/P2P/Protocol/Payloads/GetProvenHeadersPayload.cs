@@ -11,8 +11,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class GetProvenHeadersPayload : Payload
     {
         /// <summary>
-        /// A block locator which represents a compact structure of one's chain position which can be used to find
-        /// forks with another chain.
+        /// <see cref="BlockLocator"/>
         /// </summary>
         private BlockLocator blockLocator;
 
@@ -27,13 +26,17 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         }
 
         /// <summary>
-        /// Hash of the block after which constructing proven headers payload should stop.
+        /// <see cref="HashStop"/>
         /// </summary>
         private uint256 hashStop = uint256.Zero;
 
         /// <summary>
-        /// Gets a hash of the block after which constructing proven headers payload should stop.
+        /// Gets a hash after which no new headers should be sent withing the same message.
         /// </summary>
+        /// <remarks>
+        /// As an example, in case we are asked to send headers from block 1000 but hashStop is at block
+        /// 1200 the answer should contain 200 headers.
+        /// </remarks>
         public uint256 HashStop
         {
             get => this.hashStop;

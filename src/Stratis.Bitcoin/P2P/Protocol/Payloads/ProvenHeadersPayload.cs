@@ -11,14 +11,14 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     public class ProvenHeadersPayload : Payload
     {
         /// <summary>
-        /// A list of up to 2,000 proven headers.
+        /// <see cref="Headers"/>
         /// </summary>
-        private List<BlockHeader> headers = new List<BlockHeader>();
+        private List<ProvenBlockHeader> headers = new List<ProvenBlockHeader>();
 
         /// <summary>
         /// Gets a list of up to 2,000 proven headers.
         /// </summary>
-        public List<BlockHeader> Headers => this.headers;
+        public List<ProvenBlockHeader> Headers => this.headers;
 
         public ProvenHeadersPayload()
         {
