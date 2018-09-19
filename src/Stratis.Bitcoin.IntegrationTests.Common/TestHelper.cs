@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (numberOfBlocks == 0) throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
             HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
-            
+
             Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
             Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address).PrivateKey;
 
@@ -201,6 +201,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             return result;
         }
 
+        public static void Disconnect(CoreNode from, CoreNode to)
+        {
+            from.CreateRPCClient().RemoveNode(to.Endpoint);
+        }
+
         private class TransactionNode
         {
             public uint256 Hash = null;
@@ -242,6 +247,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             Connect(from, to);
             WaitLoop(() => AreNodesSynced(from, to));
+        }
+
+        public static bool IsNodeConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
+        {
+            return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint == isConnectedToNode.Endpoint);
         }
     }
 }
