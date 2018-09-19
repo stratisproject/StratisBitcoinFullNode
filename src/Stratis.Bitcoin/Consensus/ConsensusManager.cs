@@ -464,7 +464,9 @@ namespace Stratis.Bitcoin.Consensus
                 }
             }
 
-            if (chainedHeaderBlocksToValidate != null)
+            bool nextValidationNeeded = chainedHeaderBlocksToValidate != null;
+            bool fullValidationFailed = (connectBlocksResult != null) && !connectBlocksResult.Succeeded;
+            if (nextValidationNeeded && !fullValidationFailed)
             {
                 this.logger.LogTrace("Partial validation of {0} block will be started.", chainedHeaderBlocksToValidate.Count);
 
