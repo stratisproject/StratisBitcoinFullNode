@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
@@ -47,6 +46,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             SmartContractCompilationResult result = SmartContractCompiler.CompileFile("SmartContracts/InvalidImplicitAssembly.cs");
             Assert.False(result.Success);
+        }
+
+        [Fact]
+        public void SmartContract_Compiler_PerState()
+        {
+            SmartContractCompilationResult result = SmartContractCompiler.CompileFile("SmartContracts/PerState.cs");
+            IContractModuleDefinition decomp = SmartContractDecompiler.GetModuleDefinition(result.Compilation);
         }
 
         [Fact]
