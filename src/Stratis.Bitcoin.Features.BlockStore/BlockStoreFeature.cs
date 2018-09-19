@@ -65,16 +65,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 900);
         }
 
-        private void AddInlineStats(StringBuilder benchLogs)
+        private void AddInlineStats(StringBuilder log)
         {
             ChainedHeader highestBlock = this.chainState.BlockStoreTip;
 
             if (highestBlock != null)
             {
-                string log = $"BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + highestBlock.Height.ToString().PadRight(8) +
+                string logString = $"BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + highestBlock.Height.ToString().PadRight(8) +
                              $" BlockStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + highestBlock.HashBlock;
 
-                benchLogs.AppendLine(log);
+                log.AppendLine(logString);
             }
         }
 

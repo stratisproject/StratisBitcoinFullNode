@@ -252,15 +252,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private void AddComponentStats(StringBuilder benchLog)
+        private void AddComponentStats(StringBuilder log)
         {
             this.logger.LogTrace("()");
 
             if (this.storeTip != null)
             {
-                benchLog.AppendLine();
-                benchLog.AppendLine("======BlockStore======");
-                benchLog.AppendLine($"Batch Size: {this.currentBatchSizeBytes / 1000} kb / {BatchThresholdSizeBytes / 1000} kb  ({this.batch.Count} blocks)");
+                log.AppendLine();
+                log.AppendLine("======BlockStore======");
+                log.AppendLine($"Batch Size: {this.currentBatchSizeBytes / 1000} kb / {BatchThresholdSizeBytes / 1000} kb  ({this.batch.Count} blocks)");
             }
 
             this.logger.LogTrace("(-)");

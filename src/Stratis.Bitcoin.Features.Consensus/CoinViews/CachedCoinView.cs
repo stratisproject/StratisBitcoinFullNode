@@ -511,20 +511,20 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.logger.LogTrace("(-)");
         }
 
-        private void AddBenchStats(StringBuilder benchLog)
+        private void AddBenchStats(StringBuilder log)
         {
             this.logger.LogTrace("()");
 
-            benchLog.AppendLine("======CashedCoinView Bench======");
+            log.AppendLine("======CashedCoinView Bench======");
 
-            benchLog.AppendLine("Cache entries".PadRight(20) + this.cacheEntryCount);
+            log.AppendLine("Cache entries".PadRight(20) + this.cacheEntryCount);
 
             CachePerformanceSnapshot snapShot = this.performanceCounter.Snapshot();
 
             if (this.latestPerformanceSnapShot == null)
-                benchLog.AppendLine(snapShot.ToString());
+                log.AppendLine(snapShot.ToString());
             else
-                benchLog.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
+                log.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
 
             this.latestPerformanceSnapShot = snapShot;
 

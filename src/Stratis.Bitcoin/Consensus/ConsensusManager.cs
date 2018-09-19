@@ -141,6 +141,7 @@ namespace Stratis.Bitcoin.Consensus
             this.blockPuller = blockPuller;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1000);
         }
 
         /// <inheritdoc />
@@ -1221,7 +1222,7 @@ namespace Stratis.Bitcoin.Consensus
             return isConsideredSynced;
         }
 
-        private void AddInlineStats(StringBuilder benchLog)
+        private void AddInlineStats(StringBuilder log)
         {
             this.logger.LogTrace("()");
 
@@ -1235,13 +1236,28 @@ namespace Stratis.Bitcoin.Consensus
                 string headersLog = "Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + bestTip.Height.ToString().PadRight(8) +
                                     " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + bestTip.HashBlock;
 
-                benchLog.AppendLine(headersLog);
+                log.AppendLine(headersLog);
             }
 
             string consensusLog = "Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + this.Tip.Height.ToString().PadRight(8) +
                                   " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.Tip.HashBlock;
 
-            benchLog.AppendLine(consensusLog);
+            log.AppendLine(consensusLog);
+
+            this.logger.LogTrace("(-)");
+        }
+
+        private void AddComponentStats(StringBuilder log)
+        {
+            this.logger.LogTrace("()");
+
+            log.AppendLine();
+            log.AppendLine("======Block Puller======");
+
+            lock (this.peerLock)
+            {
+                // TODO
+            }
 
             this.logger.LogTrace("(-)");
         }
