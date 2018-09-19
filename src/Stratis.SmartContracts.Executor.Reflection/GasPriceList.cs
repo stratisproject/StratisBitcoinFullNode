@@ -55,6 +55,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return cost;
         }
 
+        /// <summary>
+        /// Gas cost to log an event inside a contract.
+        /// </summary>
         public static Gas LogOperationCost(IEnumerable<byte[]> topics, byte[] data)
         {
             int topicCost = topics.Select(x => x.Length * LogPerTopicByteCost).Sum();

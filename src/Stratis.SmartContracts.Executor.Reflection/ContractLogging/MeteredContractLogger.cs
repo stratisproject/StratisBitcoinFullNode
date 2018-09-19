@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
@@ -22,10 +23,10 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
         public void Log<T>(ISmartContractState smartContractState, T toLog)
         {
             var rawLog = new RawLog(smartContractState.Message.ContractAddress.ToUint160(this.network), toLog);
-            var log = rawLog.ToLog(this.serializer);
+            Log log = rawLog.ToLog(this.serializer);
+            this.gasMeter.Spend(GasPriceList.LogOperationCost(log.Topics, log.Data));
 
-            // TODO: GAS METER LOGGING.
-
+            // TODO: This is inefficient, it is deserializing the log more than once.
             this.logHolder.Log<T>(smartContractState, toLog);
         }
     }
