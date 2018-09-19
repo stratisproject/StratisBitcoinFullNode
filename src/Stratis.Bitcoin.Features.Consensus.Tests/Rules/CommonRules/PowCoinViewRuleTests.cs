@@ -6,6 +6,7 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -91,14 +92,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 var dateTimeProvider = new DateTimeProvider();
 
                 rule.Parent = new PowConsensusRuleEngine(
-                    KnownNetworks.RegTest,
+                    this.network,
                     new Mock<ILoggerFactory>().Object,
                     new Mock<IDateTimeProvider>().Object,
                     new ConcurrentChain(this.network),
-                    new NodeDeployments(KnownNetworks.RegTest, new ConcurrentChain(this.network)),
+                    new NodeDeployments(this.network, new ConcurrentChain(this.network)),
                     new ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, new Mock<IChainState>().Object,
                     new InvalidBlockHashStore(dateTimeProvider),
-                    new NodeStats(dateTimeProvider));
+                    new NodeStats(dateTimeProvider),
+                    new NodeSettings(this.network));
 
                 rule.Initialize();
 

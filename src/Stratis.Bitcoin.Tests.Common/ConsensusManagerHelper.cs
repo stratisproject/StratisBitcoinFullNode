@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Tests.Common
             if (consensusRules == null)
             {
                 consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings,
-                    new Checkpoints(), inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider)).Register();
+                    new Checkpoints(), inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), nodeSettings).Register();
             }
 
             consensusRules.Register();

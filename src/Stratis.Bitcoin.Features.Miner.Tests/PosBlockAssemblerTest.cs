@@ -443,7 +443,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new Mock<IStakeValidator>().Object,
                 new Mock<IChainState>().Object,
                 new InvalidBlockHashStore(dateTimeProvider),
-                new NodeStats(dateTimeProvider));
+                new NodeStats(dateTimeProvider),
+                new NodeSettings(this.stratisTest));
 
             posConsensusRules.Register();
 

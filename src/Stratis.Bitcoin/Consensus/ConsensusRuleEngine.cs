@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Primitives;
@@ -65,6 +66,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Group of rules that are used during full validation (connection of a new block).</summary>
         private List<FullValidationConsensusRule> fullValidationRules;
 
+        private readonly NodeSettings NodeSettings;
+        
         protected ConsensusRuleEngine(
             Network network,
             ILoggerFactory loggerFactory,
@@ -75,7 +78,8 @@ namespace Stratis.Bitcoin.Consensus
             ICheckpoints checkpoints,
             IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            NodeSettings nodeSettings)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -87,6 +91,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(invalidBlockHashStore, nameof(invalidBlockHashStore));
             Guard.NotNull(nodeStats, nameof(nodeStats));
+            Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.Network = network;
             this.Chain = chain;
@@ -102,6 +107,7 @@ namespace Stratis.Bitcoin.Consensus
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.NodeDeployments = nodeDeployments;
+            this.NodeSettings = nodeSettings;
 
             this.headerValidationRules = new List<HeaderValidationConsensusRule>();
             this.integrityValidationRules = new List<IntegrityValidationConsensusRule>();

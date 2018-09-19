@@ -7,6 +7,7 @@ using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -104,7 +105,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 Logger = this.logger.Object,
                 Parent = new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments,
                     this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object, this.stakeValidator.Object, this.chainState.Object,
-                    new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(this.dateTimeProvider.Object))
+                    new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(this.dateTimeProvider.Object), new NodeSettings(this.network))
             };
         }
     }
@@ -197,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public override TestConsensusRules InitializeConsensusRules()
         {
             return new TestConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments,
-                this.consensusSettings, this.checkpoints.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object));
+                this.consensusSettings, this.checkpoints.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object), new NodeSettings(this.network));
         }
     }
 
@@ -221,7 +222,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
             return new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain,
                 this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object));
+                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object), new NodeSettings(this.network));
         }
     }
 }

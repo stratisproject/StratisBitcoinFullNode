@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -31,8 +32,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// </summary>
         public PosConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments,
             ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IStakeChain stakeChain, IStakeValidator stakeValidator, IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats)
+            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, NodeSettings nodeSettings)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats, nodeSettings)
         {
             this.StakeChain = stakeChain;
             this.StakeValidator = stakeValidator;
