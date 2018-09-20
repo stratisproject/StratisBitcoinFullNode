@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -41,6 +42,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IBlockStoreQueue blockStoreQueue;
 
+        private readonly IConsensusManager consensusManager;
+
         public BlockStoreFeature(
             ConcurrentChain chain,
             IConnectionManager connectionManager,
@@ -50,7 +53,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StoreSettings storeSettings,
             IChainState chainState,
             IBlockStoreQueue blockStoreQueue,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            IConsensusManager consensusManager)
         {
             this.chain = chain;
             this.blockStoreQueue = blockStoreQueue;
@@ -61,6 +65,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.loggerFactory = loggerFactory;
             this.storeSettings = storeSettings;
             this.chainState = chainState;
+            this.consensusManager = consensusManager;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 900);
         }
@@ -82,7 +87,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.blockStoreQueue, this.chainState, this.loggerFactory));
+            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager));
 
             // Signal to peers that this node can serve blocks.
             this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network) | NetworkPeerServices.NODE_WITNESS;
