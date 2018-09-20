@@ -6,7 +6,6 @@ using NBitcoin.Rules;
 
 namespace Stratis.Bitcoin.Consensus.PerformanceCounters.Rules
 {
-
     /// <summary>Snapshot of rule's performance.</summary>
     public class ConsensusRulesPerformanceSnapshot
     {

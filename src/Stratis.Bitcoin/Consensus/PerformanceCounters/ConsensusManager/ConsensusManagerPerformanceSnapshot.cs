@@ -3,7 +3,6 @@ using System.Text;
 
 namespace Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager
 {
-
     /// <summary>Snapshot of <see cref="ConsensusManager"/> performance.</summary>
     public class ConsensusManagerPerformanceSnapshot
     {
