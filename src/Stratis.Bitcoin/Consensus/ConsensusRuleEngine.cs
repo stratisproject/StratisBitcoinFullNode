@@ -8,8 +8,8 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus.PerformanceCounters.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
