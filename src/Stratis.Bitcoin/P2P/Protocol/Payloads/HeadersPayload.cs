@@ -53,8 +53,8 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         {
             if (stream.Serializing)
             {
-                List<BlockHeaderWithTxCount> heardersOff = this.headers.Select(h => new BlockHeaderWithTxCount(h)).ToList();
-                stream.ReadWrite(ref heardersOff);
+                List<BlockHeaderWithTxCount> headersOff = this.headers.Select(h => new BlockHeaderWithTxCount(h)).ToList();
+                stream.ReadWrite(ref headersOff);
             }
             else
             {

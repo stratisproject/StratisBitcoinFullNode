@@ -54,7 +54,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public State(
             ISmartContractStateFactory smartContractStateFactory, 
-            IContractState repository,
+            IStateRepository repository,
             IContractLogHolder contractLogHolder,
             List<TransferInfo> internalTransfers,
             IBlock block,
@@ -92,12 +92,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.Nonce++;
         }
 
-        public IContractState ContractState { get; }
+        public IStateRepository ContractState { get; }
 
         /// <summary>
         /// Sets up a new <see cref="ISmartContractState"/> based on the current state.
         /// </summary>
-         public ISmartContractState CreateSmartContractState(IState state, GasMeter gasMeter, uint160 address, BaseMessage message, IContractState repository) 
+         public ISmartContractState CreateSmartContractState(IState state, GasMeter gasMeter, uint160 address, BaseMessage message, IStateRepository repository) 
         {
             return this.smartContractStateFactory.Create(state, gasMeter, address, message, repository);
         }

@@ -107,20 +107,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             Guard.NotEmpty(walletPassword, nameof(walletPassword));
             Guard.NotEmpty(accountName, nameof(accountName));
 
-            if (numberOfBlocks == 0) throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
+            if (numberOfBlocks == 0)
+                throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
-            HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
-            
-            Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
-            Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address).PrivateKey;
+            if (node.MinerSecret == null)
+            {
+                HdAddress unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
+                node.MinerHDAddress = unusedAddress;
 
-            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+                Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
+                Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
+                node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+            }
 
             var blockHashes = node.GenerateStratisWithMiner((int)numberOfBlocks);
 
             WaitForNodeToSync(node);
 
-            return (address, blockHashes);
+            return (node.MinerHDAddress, blockHashes);
         }
 
         /// <summary>
@@ -201,6 +205,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             return result;
         }
 
+        public static void Disconnect(CoreNode from, CoreNode to)
+        {
+            from.CreateRPCClient().RemoveNode(to.Endpoint);
+        }
+
         private class TransactionNode
         {
             public uint256 Hash = null;
@@ -242,6 +251,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             Connect(from, to);
             WaitLoop(() => AreNodesSynced(from, to));
+        }
+
+        public static bool IsNodeConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
+        {
+            return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint == isConnectedToNode.Endpoint);
         }
     }
 }

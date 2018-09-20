@@ -144,7 +144,10 @@ namespace Stratis.Bitcoin.BlockPulling
             this.averageSizeBytes.AddSample(blockSizeBytes);
             this.averageDelaySeconds.AddSample(adjustedDelay);
 
-            long speedPerSeconds = (long)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
+            long speedPerSeconds = 0;
+
+            if (this.averageDelaySeconds.Average > 0)
+                speedPerSeconds = (long)(this.averageSizeBytes.Average / this.averageDelaySeconds.Average);
 
             if (speedPerSeconds > MaxSpeedBytesPerSecond)
                 speedPerSeconds = MaxSpeedBytesPerSecond;

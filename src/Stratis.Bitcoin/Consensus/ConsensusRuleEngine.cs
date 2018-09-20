@@ -9,8 +9,8 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus.PerformanceCounters.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IInvalidBlockHashStore invalidBlockHashStore;
 
         /// <inheritdoc cref="ConsensusRulesPerformanceCounter"/>
-        private readonly ConsensusRulesPerformanceCounter performanceCounter;
+        private ConsensusRulesPerformanceCounter performanceCounter;
 
         /// <summary>Group of rules that are used during block header validation.</summary>
         private List<HeaderValidationConsensusRule> headerValidationRules;
@@ -113,7 +113,6 @@ namespace Stratis.Bitcoin.Consensus
             this.integrityValidationRules = new List<IntegrityValidationConsensusRule>();
             this.partialValidationRules = new List<PartialValidationConsensusRule>();
             this.fullValidationRules = new List<FullValidationConsensusRule>();
-            this.performanceCounter = new ConsensusRulesPerformanceCounter();
 
             nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 500);
         }
@@ -143,6 +142,9 @@ namespace Stratis.Bitcoin.Consensus
 
             this.fullValidationRules = this.Network.Consensus.FullValidationRules.Select(x => x as FullValidationConsensusRule).ToList();
             this.SetupConsensusRules(this.fullValidationRules.Select(x => x as ConsensusRuleBase));
+
+            // Registers all rules that might be executed to the performance counter.
+            this.performanceCounter = new ConsensusRulesPerformanceCounter(this.Network.Consensus);
 
             return this;
         }
@@ -175,7 +177,7 @@ namespace Stratis.Bitcoin.Consensus
             var validationContext = new ValidationContext { ChainedHeaderToValidate = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            this.ExecuteRules(this.headerValidationRules, ruleContext, RuleType.Header);
+            this.ExecuteRules(this.headerValidationRules, ruleContext);
 
             return validationContext;
         }
@@ -189,7 +191,7 @@ namespace Stratis.Bitcoin.Consensus
             var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            this.ExecuteRules(this.integrityValidationRules, ruleContext, RuleType.Integrity);
+            this.ExecuteRules(this.integrityValidationRules, ruleContext);
 
             return validationContext;
         }
@@ -203,7 +205,7 @@ namespace Stratis.Bitcoin.Consensus
             var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            await this.ExecuteRulesAsync(this.fullValidationRules, ruleContext, RuleType.Full).ConfigureAwait(false);
+            await this.ExecuteRulesAsync(this.fullValidationRules, ruleContext).ConfigureAwait(false);
 
             if (validationContext.Error != null)
                 this.HandleConsensusError(validationContext);
@@ -220,7 +222,7 @@ namespace Stratis.Bitcoin.Consensus
             var validationContext = new ValidationContext { BlockToValidate = block, ChainedHeaderToValidate = header };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
-            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext, RuleType.Partial).ConfigureAwait(false);
+            await this.ExecuteRulesAsync(this.partialValidationRules, ruleContext).ConfigureAwait(false);
 
             if (validationContext.Error != null)
                 this.HandleConsensusError(validationContext);
@@ -228,7 +230,7 @@ namespace Stratis.Bitcoin.Consensus
             return validationContext;
         }
 
-        private async Task ExecuteRulesAsync(IEnumerable<AsyncConsensusRule> asyncRules, RuleContext ruleContext, RuleType rulesType)
+        private async Task ExecuteRulesAsync(IEnumerable<AsyncConsensusRule> asyncRules, RuleContext ruleContext)
         {
             try
             {
@@ -236,7 +238,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 foreach (AsyncConsensusRule rule in asyncRules)
                 {
-                    using (this.performanceCounter.MeasureRuleExecutionTime(rule, rulesType))
+                    using (this.performanceCounter.MeasureRuleExecutionTime(rule))
                     {
                         await rule.RunAsync(ruleContext).ConfigureAwait(false);
                     }
@@ -274,7 +276,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        private void ExecuteRules(IEnumerable<SyncConsensusRule> rules, RuleContext ruleContext, RuleType rulesType)
+        private void ExecuteRules(IEnumerable<SyncConsensusRule> rules, RuleContext ruleContext)
         {
             try
             {
@@ -282,7 +284,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 foreach (SyncConsensusRule rule in rules)
                 {
-                    using (this.performanceCounter.MeasureRuleExecutionTime(rule, rulesType))
+                    using (this.performanceCounter.MeasureRuleExecutionTime(rule))
                     {
                         rule.Run(ruleContext);
                     }
@@ -328,7 +330,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("()");
 
-            benchLog.AppendLine(this.performanceCounter.ToString());
+            benchLog.AppendLine(this.performanceCounter.TakeSnapshot().ToString());
 
             this.logger.LogTrace("(-)");
         }
