@@ -93,7 +93,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     if (!tx.IsCoinBase)
                     {
                         this.CheckInputs(tx, view, index.Height);
-                        fees += view.GetValueIn(tx) - tx.TotalOut;
+
+                        if (!tx.IsCoinStake)
+                            fees += view.GetValueIn(tx) - tx.TotalOut;
+
                         var txData = new PrecomputedTransactionData(tx);
                         for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
                         {
@@ -250,25 +253,36 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
 
-            if (valueIn < transaction.TotalOut)
+            if (transaction.IsCoinStake)
             {
-                this.Logger.LogTrace("(-)[TX_IN_BELOW_OUT]");
-                ConsensusErrors.BadTransactionInBelowOut.Throw();
+                if ((valueIn + this.Consensus.ProofOfStakeReward) < transaction.TotalOut)
+                {
+                    this.Logger.LogTrace("(-)[TX_IN_BELOW_OUT]");
+                    ConsensusErrors.BadTransactionInBelowOut.Throw();
+                }
             }
-
-            // Tally transaction fees.
-            Money txFee = valueIn - transaction.TotalOut;
-            if (txFee < 0)
+            else
             {
-                this.Logger.LogTrace("(-)[NEGATIVE_FEE]");
-                ConsensusErrors.BadTransactionNegativeFee.Throw();
-            }
+                if (valueIn < transaction.TotalOut)
+                {
+                    this.Logger.LogTrace("(-)[TX_IN_BELOW_OUT]");
+                    ConsensusErrors.BadTransactionInBelowOut.Throw();
+                }
 
-            fees += txFee;
-            if (!this.MoneyRange(fees))
-            {
-                this.Logger.LogTrace("(-)[BAD_FEE]");
-                ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
+                // Tally transaction fees.
+                Money txFee = valueIn - transaction.TotalOut;
+                if (txFee < 0)
+                {
+                    this.Logger.LogTrace("(-)[NEGATIVE_FEE]");
+                    ConsensusErrors.BadTransactionNegativeFee.Throw();
+                }
+
+                fees += txFee;
+                if (!this.MoneyRange(fees))
+                {
+                    this.Logger.LogTrace("(-)[BAD_FEE]");
+                    ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
+                }
             }
 
             this.Logger.LogTrace("(-)");
