@@ -5,6 +5,7 @@ using Moq;
 using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.network.Consensus);
             ConsensusRuleEngine consensusRuleEngine = new PosConsensusRuleEngine(this.network, this.loggerFactory.Object, DateTimeProvider.Default,
                 this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object))
+                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new Mock<INodeStats>().Object)
                 .Register();
 
             var headerValidator = new HeaderValidator(consensusRuleEngine, this.loggerFactory.Object);
@@ -47,16 +48,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var partialValidator = new PartialValidator(consensusRuleEngine, this.loggerFactory.Object);
             var fullValidator = new FullValidator(consensusRuleEngine, this.loggerFactory.Object);
 
+            // Create the chained header tree.
+            var chainedHeaderTree = new ChainedHeaderTree(this.network, this.loggerFactory.Object, headerValidator, this.checkpoints.Object,
+                this.chainState.Object, new Mock<IFinalizedBlockInfo>().Object, this.consensusSettings, new InvalidBlockHashStore(new DateTimeProvider()));
+
             // Create consensus manager.
-            var consensus = new ConsensusManager(this.network, this.loggerFactory.Object, this.chainState.Object, headerValidator, integrityValidator,
-                partialValidator, fullValidator, this.checkpoints.Object, this.consensusSettings, consensusRuleEngine, new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(),
+            var consensus = new ConsensusManager(chainedHeaderTree, this.network, this.loggerFactory.Object, this.chainState.Object, integrityValidator,
+                partialValidator, fullValidator, consensusRuleEngine, new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(),
                 new Mock<IPeerBanning>().Object, initialBlockDownloadState, this.concurrentChain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
-                new InvalidBlockHashStore(new DateTimeProvider()), new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object);
+                new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new Mock<INodeLifetime>().Object);
 
             // Mock the coinviews "FetchCoinsAsync" method. We will use the "unspentOutputs" dictionary to track spendable outputs.
             this.coinView.Setup(d => d.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .Returns((uint256[] txIds, CancellationToken cancel) => Task.Run(() =>
-                {
+                .Returns((uint256[] txIds, CancellationToken cancel) => Task.Run(() => {
 
                     var result = new UnspentOutputs[txIds.Length];
 
@@ -67,8 +71,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                 }));
 
             // Mock the coinviews "GetTipHashAsync" method.
-            this.coinView.Setup(d => d.GetTipHashAsync(It.IsAny<CancellationToken>())).Returns(() => Task.Run(() =>
-            {
+            this.coinView.Setup(d => d.GetTipHashAsync(It.IsAny<CancellationToken>())).Returns(() => Task.Run(() => {
                 return this.concurrentChain.Tip.HashBlock;
             }));
 
