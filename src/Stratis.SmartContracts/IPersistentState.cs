@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts
 {
     /// <summary>
     /// Provides functionality for the saving and retrieval of objects inside smart contracts.
@@ -54,59 +52,5 @@ namespace Stratis.SmartContracts
         void SetSByte(string key, sbyte value);
 
         void SetStruct<T>(string key, T value) where T : struct;
-
-        /// <summary>
-        /// Initialise a mapping in the Key/Value store that uses the given key as its prefix.
-        /// </summary>        
-        ISmartContractMapping<byte> GetByteMapping(string name);
-
-        ISmartContractMapping<byte[]> GetByteArrayMapping(string name);
-
-        ISmartContractMapping<char> GetCharMapping(string name);
-
-        ISmartContractMapping<Address> GetAddressMapping(string name);
-
-        ISmartContractMapping<bool> GetBoolMapping(string name);
-
-        ISmartContractMapping<int> GetInt32Mapping(string name);
-
-        ISmartContractMapping<uint> GetUInt32Mapping(string name);
-
-        ISmartContractMapping<long> GetInt64Mapping(string name);
-
-        ISmartContractMapping<ulong> GetUInt64Mapping(string name);
-
-        ISmartContractMapping<string> GetStringMapping(string name);
-
-        ISmartContractMapping<sbyte> GetSByteMapping(string name);
-
-        ISmartContractMapping<T> GetStructMapping<T>(string name) where T : struct;
-
-        /// <summary>
-        /// Initialise a list in the Key/Value store that uses the given name as its prefix.
-        /// </summary>
-        ISmartContractList<byte> GetByteList(string name);
-
-        ISmartContractList<byte[]> GetByteArrayList(string name);
-
-        ISmartContractList<char> GetCharList(string name);
-
-        ISmartContractList<Address> GetAddressList(string name);
-
-        ISmartContractList<bool> GetBoolList(string name);
-
-        ISmartContractList<int> GetInt32List(string name);
-
-        ISmartContractList<uint> GetUInt32List(string name);
-
-        ISmartContractList<long> GetInt64List(string name);
-
-        ISmartContractList<ulong> GetUInt64List(string name);
-
-        ISmartContractList<string> GetStringList(string name);
-
-        ISmartContractList<sbyte> GetSByteList(string name);
-
-        ISmartContractList<T> GetStructList<T>(string name) where T : struct;
     }
 }

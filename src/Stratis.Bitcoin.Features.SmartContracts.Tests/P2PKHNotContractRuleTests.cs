@@ -51,7 +51,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 checkpoints.Object,
                 coinView.Object,
                 chainState.Object,
-                invalidBlockHashStore.Object
+                invalidBlockHashStore.Object,
+                new NodeStats(new DateTimeProvider())
             );
         }
 
@@ -95,8 +96,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     public class TestContractRulesEngine : PowConsensusRuleEngine, ISmartContractCoinviewRule
     {
         public TestContractRulesEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore) 
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore)
+            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats)
         {
         }
 

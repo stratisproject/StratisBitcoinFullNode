@@ -420,8 +420,8 @@ namespace Stratis.SmartContracts.IntegrationTests
 
 
         /*
-        * Tests the most basic end-to-end functionality of the Auction contract. 
-        * 
+        * Tests the most basic end-to-end functionality of the Auction contract.
+        *
         * NOTE: This tests the situation where a contract leaves itself with a 0 balance, and
         * hence hits 'ClearUnspent' in TransactionCondenser.cs. If about to remove this test,
         * ensure that we have this case covered in SmartContractMinerTests.cs.
