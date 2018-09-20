@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         /// <summary>
         /// <see cref="HashStop"/>
         /// </summary>
-        private uint256 hashStop = uint256.Zero;
+        private uint256 hashStop;
 
         /// <summary>
         /// Gets a hash after which no new headers should be sent withing the same message.
@@ -45,11 +45,13 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         public GetProvenHeadersPayload()
         {
+            this.HashStop = uint256.Zero;
         }
 
         public GetProvenHeadersPayload(BlockLocator locator)
         {
             this.BlockLocator = locator;
+            this.HashStop = uint256.Zero;
         }
 
         /// <inheritdoc />
