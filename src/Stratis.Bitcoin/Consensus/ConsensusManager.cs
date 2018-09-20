@@ -464,7 +464,12 @@ namespace Stratis.Bitcoin.Consensus
                 }
             }
 
-            if (chainedHeaderBlocksToValidate != null)
+            // Partial validation should continue if:
+            //  1: There are more blocks to validate.
+            //  2: A full validation did not fail (if full validation was needed).
+            bool nextValidationNeeded = chainedHeaderBlocksToValidate != null;
+            bool fullValidationFailed = (connectBlocksResult != null) && !connectBlocksResult.Succeeded;
+            if (nextValidationNeeded && !fullValidationFailed)
             {
                 this.logger.LogTrace("Partial validation of {0} block will be started.", chainedHeaderBlocksToValidate.Count);
 

@@ -205,6 +205,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             return result;
         }
 
+        public static void Disconnect(CoreNode from, CoreNode to)
+        {
+            from.CreateRPCClient().RemoveNode(to.Endpoint);
+        }
+
         private class TransactionNode
         {
             public uint256 Hash = null;
@@ -246,6 +251,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             Connect(from, to);
             WaitLoop(() => AreNodesSynced(from, to));
+        }
+
+        public static bool IsNodeConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
+        {
+            return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint == isConnectedToNode.Endpoint);
         }
     }
 }
