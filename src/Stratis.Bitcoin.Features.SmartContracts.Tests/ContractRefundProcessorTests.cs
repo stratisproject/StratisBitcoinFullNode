@@ -4,18 +4,18 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Exceptions;
+using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public sealed class SmartContractResultRefundProcessorTests
+    public sealed class ContractRefundProcessorTests
     {
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
         private readonly IContractRefundProcessor refundProcessor;
 
-        public SmartContractResultRefundProcessorTests()
+        public ContractRefundProcessorTests()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();

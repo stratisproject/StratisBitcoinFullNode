@@ -9,6 +9,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 

@@ -9,7 +9,7 @@ using MemoryDictionarySource = Stratis.Patricia.MemoryDictionarySource;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public class SmartContractRepositoryTests
+    public class StateRepositoryTests
     {
         private static readonly byte[] empty = new byte[0];
         private static readonly byte[] dog = Encoding.UTF8.GetBytes("dog");

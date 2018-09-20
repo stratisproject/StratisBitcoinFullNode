@@ -9,17 +9,18 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public class SmartContractResultTransferProcessorTests
+    public class ContractTransferProcessorTests
     {
         private readonly Network network;
         private readonly ILoggerFactory loggerFactory;
         private readonly ContractTransferProcessor transferProcessor;
 
-        public SmartContractResultTransferProcessorTests()
+        public ContractTransferProcessorTests()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();

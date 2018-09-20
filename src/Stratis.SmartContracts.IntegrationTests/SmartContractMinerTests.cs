@@ -34,6 +34,7 @@ using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
+using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 using Key = NBitcoin.Key;

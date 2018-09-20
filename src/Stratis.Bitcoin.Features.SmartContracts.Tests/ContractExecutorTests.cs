@@ -12,12 +12,13 @@ using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
+using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public sealed class SmartContractExecutorTests
+    public sealed class ContractExecutorTests
     {
         private const ulong BlockHeight = 0;
         private static readonly uint160 CoinbaseAddress = 0;
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly IStateProcessor stateProcessor;
         private readonly ISmartContractStateFactory smartContractStateFactory;
 
-        public SmartContractExecutorTests()
+        public ContractExecutorTests()
         {
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
             this.loggerFactory = new ExtendedLoggerFactory();

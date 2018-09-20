@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public class SmartContractCompilerTests
+    public class ContractCompilerTests
     {
         [Fact]
         public void SmartContract_Compiler_ReturnsFalse()

@@ -4,7 +4,6 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -20,7 +19,7 @@ using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 {
     public class P2PKHNotContractRuleTests
     {
