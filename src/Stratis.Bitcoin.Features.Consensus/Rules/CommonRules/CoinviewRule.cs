@@ -253,15 +253,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
 
-            if (transaction.IsCoinStake)
-            {
-                if ((valueIn + this.Consensus.ProofOfStakeReward) < transaction.TotalOut)
-                {
-                    this.Logger.LogTrace("(-)[TX_IN_BELOW_OUT]");
-                    ConsensusErrors.BadTransactionInBelowOut.Throw();
-                }
-            }
-            else
+            if (!transaction.IsCoinStake)
             {
                 if (valueIn < transaction.TotalOut)
                 {
