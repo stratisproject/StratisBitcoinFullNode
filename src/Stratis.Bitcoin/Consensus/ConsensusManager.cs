@@ -1287,12 +1287,31 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
+                string unconsumedBlocks = this.formatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
+
+                string unconsumedBytes = this.formatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
+                string maxUnconsumedBytes = this.formatBigNumber(MaxUnconsumedBlocksDataBytes);
+
                 double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)MaxUnconsumedBlocksDataBytes) * 100, 2);
 
-                log.AppendLine($"Unconsumed blocks: {this.chainedHeaderTree.UnconsumedBlocksCount} -- ({this.chainedHeaderTree.UnconsumedBlocksDataBytes} / {MaxUnconsumedBlocksDataBytes} bytes). Cache is filled by: {filledPercentage}%");
+                log.AppendLine($"Unconsumed blocks: {unconsumedBlocks} -- ({unconsumedBytes} / {maxUnconsumedBytes} bytes). Cache is filled by: {filledPercentage}%");
             }
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>Formats the big number.</summary>
+        /// <remarks><c>123456789</c> => <c>123 456 789</c></remarks>
+        private string formatBigNumber(long number)
+        {
+            string temp = number.ToString("N").Replace(',', ' ');
+
+            int index = temp.IndexOf(".00");
+
+            if (index != -1)
+                temp = temp.Substring(0, index);
+
+            return temp;
         }
 
         /// <inheritdoc />
