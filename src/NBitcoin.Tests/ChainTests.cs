@@ -232,10 +232,10 @@ namespace NBitcoin.Tests
 				}
 
 				{
-					//test scenario 4:
+					//test scenario 5:
 					//chain2 is at the same tip of chain1, no fork happened, tip point expected
 					//chain1) G a b c d e
-					//chain2) G a b c
+					//chain2) G a b c d e
 					var chain2 = new ConcurrentChain(this.network);
 					chain2.SetTip(tip);
 					this.AssertFork(chain1, chain2, tip);
