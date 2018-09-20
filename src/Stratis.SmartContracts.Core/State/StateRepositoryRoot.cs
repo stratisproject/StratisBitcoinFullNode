@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts.Core.State
             MultiCacheBase<ICachedSource<byte[], byte[]>> storageCache = new MultiStorageCache(this);
             ISource<byte[], byte[]> codeCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
             ISource<byte[], byte[]> unspentCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.SIMPLE);
-            SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]> unspentCacheCodec = new SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]>(unspentCache, new Serializers.NoSerializer<byte[]>(), Serializers.VinSerializer);
+            SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]> unspentCacheCodec = new SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]>(unspentCache, new Serializers.NoSerializer<byte[]>(), Serializers.ContractOutputSerializer);
             this.Init(accountStateCache, codeCache, storageCache, unspentCacheCodec);
         }
 

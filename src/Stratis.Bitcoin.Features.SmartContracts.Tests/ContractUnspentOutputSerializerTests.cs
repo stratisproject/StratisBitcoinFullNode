@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public class VinSerializerTests
+    public class ContractUnspentOutputSerializerTests
     {
         [Fact]
         public void VinSerialization()
@@ -18,8 +18,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 Value = (ulong)new Random().Next(100000)
             };
 
-            byte[] serialized = Serializers.VinSerializer.Serialize(vin);
-            ContractUnspentOutput deserialized = Serializers.VinSerializer.Deserialize(serialized);
+            byte[] serialized = Serializers.ContractOutputSerializer.Serialize(vin);
+            ContractUnspentOutput deserialized = Serializers.ContractOutputSerializer.Deserialize(serialized);
             Assert.Equal(vin.Hash, deserialized.Hash);
             Assert.Equal(vin.Nvout, deserialized.Nvout);
             Assert.Equal(vin.Value, deserialized.Value);
