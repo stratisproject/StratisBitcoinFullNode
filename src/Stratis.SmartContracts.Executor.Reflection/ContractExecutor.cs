@@ -12,7 +12,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Deserializes raw contract transaction data, creates an external create/call message, and applies the message to the state.
     /// </summary>
-    public class ExternalExecutor : IContractExecutor
+    public class ContractExecutor : IContractExecutor
     {
         private readonly ILogger logger;
         private readonly IStateRepository stateRoot;
@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly IStateProcessor stateProcessor;
         private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
 
-        public ExternalExecutor(ILoggerFactory loggerFactory,
+        public ContractExecutor(ILoggerFactory loggerFactory,
             ICallDataSerializer serializer,
             IStateRepository stateRoot,
             IContractRefundProcessor refundProcessor,

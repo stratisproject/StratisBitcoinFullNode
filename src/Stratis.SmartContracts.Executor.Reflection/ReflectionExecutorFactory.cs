@@ -50,7 +50,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IStateRepositoryRoot stateRepository,
             IContractTransactionContext transactionContext)
         {
-            return new ExternalExecutor(this.loggerFactory, this.serializer, 
+            return new ContractExecutor(this.loggerFactory, this.serializer, 
                     stateRepository, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor, this.contractPrimitiveSerializer);
         }
     }

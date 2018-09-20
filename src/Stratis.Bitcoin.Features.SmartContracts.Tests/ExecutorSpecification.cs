@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 context.TransactionHash))
             .Returns(stateMock.Object);
 
-            var sut = new ExternalExecutor(
+            var sut = new ContractExecutor(
                 loggerFactory,
                 callDataSerializer.Object,
                 contractStateRoot.Object,
