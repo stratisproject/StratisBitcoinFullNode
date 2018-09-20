@@ -3,7 +3,7 @@ using Mono.Cecil;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Compilation
 {
-    public static class SmartContractDecompiler
+    public static class ContractDecompiler
     {
         /// <summary>
         /// 

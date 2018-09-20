@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.SmartContracts.Core
 {
-    public class SmartContractTransactionContext : ISmartContractTransactionContext
+    public class ContractTransactionContext : IContractTransactionContext
     {
         private readonly ulong blockHeight;
 
@@ -74,7 +74,7 @@ namespace Stratis.SmartContracts.Core
             }
         }
 
-        public SmartContractTransactionContext(
+        public ContractTransactionContext(
             ulong blockHeight,
             uint160 coinbaseAddress,
             Money mempoolFee,

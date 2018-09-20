@@ -1,6 +1,6 @@
 ﻿namespace Stratis.SmartContracts.Core.State
 {
-    public interface IContractStateRoot : IContractState
+    public interface IStateRepositoryRoot : IStateRepository
     {
         byte[] Root { get; }
 
