@@ -63,9 +63,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <summary>Consensus' view of UTXO set.</summary>
         private readonly ICoinView coinView;
 
-        /// <summary>Defines a set of options that are used by the consensus rules of Proof Of Stake (POS).</summary>
-        private readonly PosConsensusOptions consensusOptions;
-
         /// <inheritdoc cref="Network"/>
         private readonly Network network;
 
@@ -82,7 +79,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chain = chain;
             this.coinView = coinView;
             this.network = network;
-            this.consensusOptions = network.Consensus.Options as PosConsensusOptions;
         }
 
         /// <inheritdoc/>
@@ -219,8 +215,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Min age requirement.
-            var options = this.network.Consensus.Options as PosConsensusOptions;
-            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, options.GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1))
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1))
             {
                 this.logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
                 ConsensusErrors.InvalidStakeDepth.Throw();
@@ -270,7 +265,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
-            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, this.consensusOptions.GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1))
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1))
             {
                 this.logger.LogTrace("(-)[LOW_COIN_AGE]");
                 ConsensusErrors.InvalidStakeDepth.Throw();
