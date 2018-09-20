@@ -478,6 +478,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion Exceptions
 
+        #region GetType
+
         [Fact]
         public void Validate_Determinism_GetType()
         {
@@ -491,6 +493,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
         }
+
+        #endregion
 
         #region GetHashCode
 
@@ -687,6 +691,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion
 
+        #region Nullable
+
+        [Fact]
+        public void Validate_Determinism_Nullable_Fails()
+        {
+            string adjustedSource = TestString.Replace(ReplaceCodeString, "int? test = null;").Replace(ReplaceReferencesString, "");
+
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.False(result.IsValid);
+        }
+
+        #endregion
+
         #region Recursion
 
         [Fact]
@@ -729,67 +751,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Validate_Determinism_SimpleContract()
         {
-            var adjustedSource = @"
-                using System;
-                using Stratis.SmartContracts;
-
-                public class Token : SmartContract
-                {
-                    public Token(ISmartContractState state): base(state) 
-                    {
-                        Owner = Message.Sender;
-                    }
-
-                    public Address Owner
-                    {
-                        get
-                        {
-                            return PersistentState.GetAddress(""Owner"");
-                        }
-                        private set
-                        {
-                            PersistentState.SetAddress(""Owner"", value);
-                        }
-                    }
-
-                    public ISmartContractMapping<ulong> Balances { get => PersistentState.GetUInt64Mapping(""Balances""); }
-
-                    public void Hash()
-                    {
-                        var hash = this.Keccak256(new byte[] {1, 2, 3});
-                    }
-
-                    public bool Mint(Address receiver, ulong amount)
-                    {                        
-                        Assert(Message.Sender == Owner);
-
-                        amount = amount + Block.Number;
-                        Balances[receiver] += amount;
-                        return true;
-                    }
-
-                    public bool Send(Address receiver, ulong amount)
-                    {
-                        Assert(Balances.Get(Message.Sender) < amount);
-
-                        Balances[receiver] += amount;
-                        Balances[Message.Sender] -= amount;
-                        return true;
-                    }
-
-                    public void GasTest()
-                    {
-                        ulong test = 1;
-                        while (true)
-                        {
-                            test++;
-                            test--;
-                        }
-                    }
-                }
-            ";
-
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(adjustedSource);
+            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/Token.cs");
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;
