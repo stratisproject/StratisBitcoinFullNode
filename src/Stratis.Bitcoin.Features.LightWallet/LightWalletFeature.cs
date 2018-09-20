@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         }
 
         /// <inheritdoc />
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
             this.connectionManager.Parameters.TemplateBehaviors.Add(new DropNodesBehaviour(this.chain, this.connectionManager, this.loggerFactory));
             this.walletSettings.IsLightWallet = true;
@@ -136,6 +136,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.walletFeePolicy.Start();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
+            return Task.CompletedTask;
         }
 
         public IAsyncLoop StartDeploymentsChecksLoop()

@@ -49,9 +49,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             byte[] key = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             byte[] value = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            Gas cost = (Gas)(GasPriceList.StorageGasCost * key.Length +  GasPriceList.StorageGasCost * value.Length);
+            Gas cost = (Gas)(GasPriceList.StoragePerByteSavedGasCost * key.Length +  GasPriceList.StoragePerByteSavedGasCost * value.Length);
 
-            Assert.Equal(cost, GasPriceList.StorageOperationCost(key, value));
+            Assert.Equal(cost, GasPriceList.StorageSaveOperationCost(key, value));
+        }
+
+        [Fact]
+        public void SmartContracts_GasPrice_TestStorageRetrievalPrices()
+        {
+            byte[] key = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            byte[] value = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            Gas cost = (Gas)(GasPriceList.StoragePerByteRetrievedGasCost * key.Length + GasPriceList.StoragePerByteRetrievedGasCost * value.Length);
+
+            Assert.Equal(cost, GasPriceList.StorageRetrieveOperationCost(key, value));
+        }
+
+        [Fact]
+        public void SmartContracts_GasPrice_TestLogPrices()
+        {
+            List<byte[]> topics = new List<byte[]>
+            {
+                new byte[]{ 1, 2, 3, 4, 5, 6 }
+            };
+            byte[] data = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            Gas cost = (Gas)(GasPriceList.LogPerTopicByteCost * topics[0].Length + GasPriceList.LogPerByteCost * data.Length);
+
+            Assert.Equal(cost, GasPriceList.LogOperationCost(topics, data));
         }
 
         [Fact]

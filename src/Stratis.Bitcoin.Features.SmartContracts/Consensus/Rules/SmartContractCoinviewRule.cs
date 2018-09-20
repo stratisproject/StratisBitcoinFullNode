@@ -52,9 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ChainedHeader index = context.ValidationContext.ChainedHeaderToValidate;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = ((UtxoRuleContext)context).UnspentOutputSet;
-
-            this.Parent.PerformanceCounter.AddProcessedBlocks(1);
-
+            
             // Start state from previous block's root
             this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes());
             IContractState trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
@@ -68,7 +66,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
             {
-                this.Parent.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
@@ -111,7 +108,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         var txData = new PrecomputedTransactionData(tx);
                         for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
                         {
-                            this.Parent.PerformanceCounter.AddProcessedInputs(1);
                             TxIn input = tx.Inputs[inputIndex];
                             int inputIndexCopy = inputIndex;
                             TxOut txout = view.GetOutputFor(input);

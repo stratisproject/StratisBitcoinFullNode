@@ -75,12 +75,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.Logger.LogTrace("Loading UTXO set of the new block.");
             utxoRuleContext.UnspentOutputSet = new UnspentOutputSet();
 
-            using (new StopwatchDisposable(o => this.Parent.PerformanceCounter.AddUTXOFetchingTime(o)))
-            {
-                uint256[] ids = this.GetIdsToFetch(context.ValidationContext.BlockToValidate, context.Flags.EnforceBIP30);
-                FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
-                utxoRuleContext.UnspentOutputSet.SetCoins(coins.UnspentOutputs);
-            }
+            uint256[] ids = this.GetIdsToFetch(context.ValidationContext.BlockToValidate, context.Flags.EnforceBIP30);
+            FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
+            utxoRuleContext.UnspentOutputSet.SetCoins(coins.UnspentOutputs);
         }
 
         /// <summary>

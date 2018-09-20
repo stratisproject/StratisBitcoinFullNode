@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>
         /// Initializes the DNS feature.
         /// </summary>
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
             this.logger.LogTrace("()");
 
@@ -121,6 +121,7 @@ namespace Stratis.Bitcoin.Features.Dns
             this.StartWhitelistRefreshLoop();
 
             this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
 
         /// <summary>

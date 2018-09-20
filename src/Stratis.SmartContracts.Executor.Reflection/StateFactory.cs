@@ -1,6 +1,8 @@
-﻿using NBitcoin;
+﻿using System.Collections.Generic;
+using NBitcoin;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -10,39 +12,21 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class StateFactory : IStateFactory
     {
         private readonly Network network;
-        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
-        private readonly ISmartContractVirtualMachine vm;
-        private readonly IAddressGenerator addressGenerator;
-        private readonly InternalTransactionExecutorFactory internalTransactionExecutorFactory;
+        private readonly IInternalTransactionExecutorFactory internalTransactionExecutorFactory;
+        private readonly ISmartContractStateFactory smartContractStateFactory;
 
-        public StateFactory(
-            Network network,
-            IContractPrimitiveSerializer contractPrimitiveSerializer,
-            ISmartContractVirtualMachine vm,
-            IAddressGenerator addressGenerator,
-            InternalTransactionExecutorFactory internalTransactionExecutorFactory
-        )
+        public StateFactory(Network network,
+            ISmartContractStateFactory smartContractStateFactory)
         {
             this.network = network;
-            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
-            this.vm = vm;
-            this.addressGenerator = addressGenerator;
-            this.internalTransactionExecutorFactory = internalTransactionExecutorFactory;
+            this.smartContractStateFactory = smartContractStateFactory;
         }
 
-        public IState Create(IContractStateRoot stateRoot, IBlock block, ulong txOutValue, uint256 transactionHash, Gas gasLimit)
+        public IState Create(IContractState stateRoot, IBlock block, ulong txOutValue, uint256 transactionHash)
         {
-            return new State(
-                this.contractPrimitiveSerializer,
-                this.internalTransactionExecutorFactory,
-                this.vm,
-                stateRoot,
-                block,
-                this.network,
-                txOutValue,
-                transactionHash,
-                this.addressGenerator,
-                gasLimit);
+            var logHolder = new ContractLogHolder(this.network);
+            var internalTransfers = new List<TransferInfo>();
+            return new State(this.smartContractStateFactory, stateRoot, logHolder, internalTransfers, block, this.network, txOutValue, transactionHash);
         }
     }
 }

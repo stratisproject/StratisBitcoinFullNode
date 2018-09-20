@@ -28,8 +28,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             await asyncLoop.Run(new CancellationTokenSource(800).Token, TimeSpan.FromMilliseconds(300)).RunningTask;
 
-            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting");
-            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping");
+            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting.");
+            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping.");
             this.AssertLog<OperationCanceledException>(this.FullNodeLogger, LogLevel.Critical, "This should not block the task from continuing.", "TestLoop threw an unhandled exception");
             Assert.Equal(1, this.iterationCount);
         }
@@ -44,8 +44,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             await asyncLoop.Run(TimeSpan.FromMilliseconds(330)).RunningTask;
 
-            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting");
-            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping");
+            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting.");
+            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping.");
             this.AssertLog<InvalidOperationException>(this.FullNodeLogger, LogLevel.Critical, "Cannot run more than 3 times.", "TestLoop threw an unhandled exception");
             Assert.Equal(3, this.iterationCount);
         }
@@ -60,8 +60,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             await asyncLoop.Run(new CancellationTokenSource(1500).Token, TimeSpan.FromMilliseconds(330)).RunningTask;
 
-            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting");
-            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping");
+            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting.");
+            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping.");
             this.AssertLog<InvalidOperationException>(this.FullNodeLogger, LogLevel.Critical, "Cannot run more than 3 times.", "TestLoop threw an unhandled exception");
             Assert.Equal(3, this.iterationCount);
         }
@@ -76,8 +76,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             await asyncLoop.Run(new CancellationTokenSource(1000).Token, TimeSpan.FromMilliseconds(330)).RunningTask;
 
-            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting");
-            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping");
+            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop starting.");
+            this.AssertLog(this.FullNodeLogger, LogLevel.Information, "TestLoop stopping.");
         }
 
         [Fact]
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             });
 
             Task loopRun = asyncLoop.Run(new CancellationTokenSource(5000).Token, TimeSpan.FromMilliseconds(1000)).RunningTask;
-            
+
             await loopRun;
 
             Assert.True(iterations >= 6);

@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
     public partial class SendingTransactionOverPolicyByteLimit : BddSpecification
     {
-        private SharedSteps sharedSteps;
+
         private NodeBuilder nodeBuilder;
         private Network network;
         private CoreNode firstNode;
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         protected override void BeforeTest()
         {
-            this.sharedSteps = new SharedSteps();
+
             this.network = KnownNetworks.RegTest;
             this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Amount = Money.COIN
             }).ToList();
 
-            this.transactionBuildContext = SharedSteps.CreateTransactionBuildContext(this.firstNode.FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, 101);
+            this.transactionBuildContext = TestHelper.CreateTransactionBuildContext(this.firstNode.FullNode.Network, WalletName, WalletAccountName, WalletPassword, nodeTwoRecipients, FeeType.Medium, 101);
 
             try
             {
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void MineBlocks(CoreNode node)
         {
-            this.sharedSteps.MineBlocks(this.CoinBaseMaturity * 2, node, WalletAccountName, WalletName, WalletPassword);
+            TestHelper.MineBlocks(this.firstNode, WalletName, WalletPassword, WalletAccountName, this.CoinBaseMaturity * 2);
         }
     }
 }
