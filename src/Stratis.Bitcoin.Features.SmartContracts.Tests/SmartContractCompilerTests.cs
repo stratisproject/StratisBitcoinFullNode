@@ -49,13 +49,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void SmartContract_Compiler_PerState()
-        {
-            SmartContractCompilationResult result = SmartContractCompiler.CompileFile("SmartContracts/PerState.cs");
-            IContractModuleDefinition decomp = SmartContractDecompiler.GetModuleDefinition(result.Compilation);
-        }
-
-        [Fact]
         public void SmartContract_Compiler_CanCompileMultipleFiles()
         {
             SmartContractCompilationResult result = SmartContractCompiler.CompileDirectory("SmartContracts", "MultipleFiles");
