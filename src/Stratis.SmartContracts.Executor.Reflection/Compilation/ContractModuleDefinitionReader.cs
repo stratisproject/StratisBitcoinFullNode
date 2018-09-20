@@ -5,7 +5,7 @@
         /// <inheritdoc />
         public IContractModuleDefinition Read(byte[] bytes)
         {
-            return SmartContractDecompiler.GetModuleDefinition(bytes, null);
+            return ContractDecompiler.GetModuleDefinition(bytes, null);
         }
     }
 }

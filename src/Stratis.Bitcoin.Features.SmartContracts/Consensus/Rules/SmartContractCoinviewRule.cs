@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             
             // Start state from previous block's root
             this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes());
-            IContractState trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
+            IStateRepository trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
 
             this.receipts = new List<Receipt>();
 
@@ -253,10 +253,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         protected void ExecuteContractTransaction(RuleContext context, Transaction transaction)
         {
-            ISmartContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
-            ISmartContractExecutor executor = this.ContractCoinviewRule.ExecutorFactory.CreateExecutor(this.ContractCoinviewRule.OriginalStateRoot, txContext);
+            IContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
+            IContractExecutor executor = this.ContractCoinviewRule.ExecutorFactory.CreateExecutor(this.ContractCoinviewRule.OriginalStateRoot, txContext);
 
-            ISmartContractExecutionResult result = executor.Execute(txContext);
+            IContractExecutionResult result = executor.Execute(txContext);
 
             var receipt = new Receipt(
                 new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root),
@@ -284,7 +284,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// Retrieves the context object to be given to the contract executor.
         /// </summary>
-        private ISmartContractTransactionContext GetSmartContractTransactionContext(RuleContext context, Transaction transaction)
+        private IContractTransactionContext GetSmartContractTransactionContext(RuleContext context, Transaction transaction)
         {
             ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainedHeaderToValidate.Height);
 
@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             Money mempoolFee = transaction.GetFee(((UtxoRuleContext)context).UnspentOutputSet);
 
-            return new SmartContractTransactionContext(blockHeight, getCoinbaseResult.Sender, mempoolFee, getSenderResult.Sender, transaction);
+            return new ContractTransactionContext(blockHeight, getCoinbaseResult.Sender, mempoolFee, getSenderResult.Sender, transaction);
         }
 
         /// <summary>

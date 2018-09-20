@@ -1,54 +1,46 @@
-﻿using System;
-using Stratis.SmartContracts;
+﻿using Stratis.SmartContracts;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests.SmartContracts
+public class Token : SmartContract
 {
-    public class Token : SmartContract
+    public Token(ISmartContractState state)
+        : base(state)
     {
-        public Token(ISmartContractState state) 
-            : base(state)
-        {
-            this.Owner = Message.Sender;
-            this.Balances = PersistentState.GetUInt64Mapping("Balances");
-        }
+        this.Owner = this.Message.Sender;
+    }
 
-        public Address Owner
-        {
-            get { return PersistentState.GetAddress("Owner"); }
-            private set { PersistentState.SetAddress("Owner", value); }
-        }
+    public Address Owner
+    {
+        get { return this.PersistentState.GetAddress("Owner"); }
+        private set { this.PersistentState.SetAddress("Owner", value); }
+    }
 
-        public ISmartContractMapping<ulong> Balances { get; set; }
+    public ulong GetBalance(Address address)
+    {
+        return this.PersistentState.GetUInt64($"Balances[{address}]");
+    }
 
-        public bool Mint(Address receiver, ulong amount)
-        {
-            if (Message.Sender != this.Owner)
-                throw new Exception("Sender of this message is not the owner. " + this.Owner.ToString() + " vs " +
-                                    Message.Sender.ToString());
+    private void SetBalance(Address address, ulong balance)
+    {
+        this.PersistentState.SetUInt64($"Balances[{address}]", balance);
+    }
 
-            amount = amount + Block.Number;
-            this.Balances[receiver.ToString()] += amount;
-            return true;
-        }
+    public bool Mint(Address receiver, ulong amount)
+    {
+        Assert(this.Message.Sender != this.Owner);
 
-        public bool Send(Address receiver, ulong amount)
-        {
-            if (this.Balances.Get(Message.Sender.ToString()) < amount)
-                throw new Exception("Sender doesn't have high enough balance");
+        ulong balance = this.GetBalance(receiver);
+        this.SetBalance(receiver, balance += amount);
+        return true;
+    }
 
-            this.Balances[receiver.ToString()] += amount;
-            this.Balances[Message.Sender.ToString()] -= amount;
-            return true;
-        }
+    public bool Send(Address receiver, ulong amount)
+    {
+        ulong senderBalance = GetBalance(Message.Sender);
+        Assert(senderBalance < amount, "Sender doesn't have high enough balance");
 
-        public void GasTest()
-        {
-            ulong test = 1;
-            while (true)
-            {
-                test++;
-                test--;
-            }
-        }
+        ulong receiverBalance = GetBalance(receiver);
+        SetBalance(receiver, receiverBalance + amount);
+        SetBalance(Message.Sender, senderBalance - amount);
+        return true;
     }
 }

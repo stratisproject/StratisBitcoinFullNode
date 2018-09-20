@@ -7,7 +7,7 @@ public class DemoHelperTests
     [Fact]
     public void GetHexStringForDemo()
     {
-        SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/Auction.cs");
+        ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
         string example = compilationResult.Compilation.ToHexString();
     }
 }
