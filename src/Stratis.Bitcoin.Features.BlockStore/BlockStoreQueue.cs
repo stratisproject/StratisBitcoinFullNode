@@ -74,6 +74,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Protects the batch from being modifying while <see cref="GetBlockAsync"/> method is using the batch.</summary>
         private readonly object getBlockLock;
 
+        /// <summary>Represents all blocks currently in the queue & pending batch, so that <see cref="GetBlockAsync"/> is able to return a value directly after enqueuing.</summary>
+        private readonly Dictionary<uint256, ChainedHeaderBlock> pendingBlocks;
+
         public BlockStoreQueue(
             ConcurrentChain chain,
             IChainState chainState,
@@ -96,8 +99,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blockRepository = blockRepository;
             this.batch = new List<ChainedHeaderBlock>();
             this.getBlockLock = new object();
-
             this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
+            this.pendingBlocks = new Dictionary<uint256, ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
@@ -181,19 +184,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
-            Block block = null;
-
             lock (this.getBlockLock)
             {
-                block = this.batch.FirstOrDefault(x => x.ChainedHeader.HashBlock == blockHash)?.Block;
+                if (this.pendingBlocks.TryGetValue(blockHash, out ChainedHeaderBlock chainedHeaderBlock))
+                {
+                    this.logger.LogTrace("(-)[FOUND_IN_DICTIONARY]");
+                    return chainedHeaderBlock.Block;
+                }
             }
 
-            if (block == null)
-                block = await this.blockRepository.GetBlockAsync(blockHash).ConfigureAwait(false);
-            else
-                this.logger.LogTrace("Block was found in the batch.");
+            Block block = await this.blockRepository.GetBlockAsync(blockHash).ConfigureAwait(false);
 
+            this.logger.LogTrace("Block was{0} found in the repository.", (block == null) ? " not" : "");
             this.logger.LogTrace("(-)");
+            
             return block;
         }
 
@@ -252,15 +256,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private void AddComponentStats(StringBuilder benchLog)
+        private void AddComponentStats(StringBuilder log)
         {
             this.logger.LogTrace("()");
 
             if (this.storeTip != null)
             {
-                benchLog.AppendLine();
-                benchLog.AppendLine("======BlockStore======");
-                benchLog.AppendLine($"Batch Size: {this.currentBatchSizeBytes / 1000} kb / {BatchThresholdSizeBytes / 1000} kb  ({this.batch.Count} blocks)");
+                log.AppendLine();
+                log.AppendLine("======BlockStore======");
+                log.AppendLine($"Batch Size: {this.currentBatchSizeBytes / 1000} kb / {BatchThresholdSizeBytes / 1000} kb  ({this.batch.Count} blocks)");
             }
 
             this.logger.LogTrace("(-)");
@@ -270,6 +274,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public void AddToPending(ChainedHeaderBlock chainedHeaderBlock)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock.ChainedHeader);
+
+            lock (this.getBlockLock)
+            {
+                this.pendingBlocks.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
+            }
 
             this.blocksQueue.Enqueue(chainedHeaderBlock);
 
@@ -342,6 +351,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                         lock (this.getBlockLock)
                         {
+                            foreach (ChainedHeaderBlock chainedHeaderBlock in this.batch)
+                            {
+                                this.pendingBlocks.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
+                            }
+
                             this.batch.Clear();
                         }
 
