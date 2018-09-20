@@ -11,16 +11,16 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
     /// If unsuccesssful, the emitted diagnostics will be present in <see cref="Diagnostics"/> 
     /// and <see cref="Success"/> will be false.
     /// </summary>
-    public class SmartContractCompilationResult
+    public class ContractCompilationResult
     {
-        private SmartContractCompilationResult(byte[] compilation)
+        private ContractCompilationResult(byte[] compilation)
         {
             this.Success = true;
             this.Compilation = compilation;
             this.Diagnostics = Enumerable.Empty<Diagnostic>();
         }
 
-        private SmartContractCompilationResult(IEnumerable<Diagnostic> emitResultDiagnostics)
+        private ContractCompilationResult(IEnumerable<Diagnostic> emitResultDiagnostics)
         {
             this.Success = false;
             this.Diagnostics = emitResultDiagnostics ?? Enumerable.Empty<Diagnostic>();
@@ -32,14 +32,14 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
         
         public bool Success { get; }
 
-        public static SmartContractCompilationResult Succeeded(byte[] toArray)
+        public static ContractCompilationResult Succeeded(byte[] toArray)
         {
-            return new SmartContractCompilationResult(toArray);
+            return new ContractCompilationResult(toArray);
         }
 
-        public static SmartContractCompilationResult Failed(IEnumerable<Diagnostic> emitResultDiagnostics)
+        public static ContractCompilationResult Failed(IEnumerable<Diagnostic> emitResultDiagnostics)
         {
-            return new SmartContractCompilationResult(emitResultDiagnostics);
+            return new ContractCompilationResult(emitResultDiagnostics);
         }
     }
 }

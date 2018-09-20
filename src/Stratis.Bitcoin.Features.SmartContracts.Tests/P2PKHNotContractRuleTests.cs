@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             uint160 walletAddress = new uint160(321);
 
-            var state = new Mock<IContractStateRoot>();
+            var state = new Mock<IStateRepositoryRoot>();
             state.Setup(x => x.GetAccountState(walletAddress)).Returns<AccountState>(null);
             this.rulesEngine.OriginalStateRoot = state.Object;
 
@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             uint160 contractAddress = new uint160(123);
 
-            var state = new Mock<IContractStateRoot>();
+            var state = new Mock<IStateRepositoryRoot>();
             state.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState()); // not null
             this.rulesEngine.OriginalStateRoot = state.Object;
 
@@ -101,9 +101,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
         }
 
-        public ISmartContractExecutorFactory ExecutorFactory => throw new NotImplementedException();
+        public IContractExecutorFactory ExecutorFactory => throw new NotImplementedException();
 
-        public IContractStateRoot OriginalStateRoot { get; set; }
+        public IStateRepositoryRoot OriginalStateRoot { get; set; }
 
         public IReceiptRepository ReceiptRepository => throw new NotImplementedException();
 

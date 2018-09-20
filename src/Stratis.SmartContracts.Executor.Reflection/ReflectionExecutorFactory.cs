@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -9,21 +10,21 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Spawns SmartContractExecutor instances
     /// </summary>
-    public class ReflectionSmartContractExecutorFactory : ISmartContractExecutorFactory
+    public class ReflectionExecutorFactory : IContractExecutorFactory
     {
         private readonly ILoggerFactory loggerFactory;
-        private readonly ISmartContractResultRefundProcessor refundProcessor;
-        private readonly ISmartContractResultTransferProcessor transferProcessor;
+        private readonly IContractRefundProcessor refundProcessor;
+        private readonly IContractTransferProcessor transferProcessor;
         private readonly ICallDataSerializer serializer;
         private readonly Network network;
         private readonly IStateFactory stateFactory;
         private readonly IStateProcessor stateProcessor;
         private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
 
-        public ReflectionSmartContractExecutorFactory(ILoggerFactory loggerFactory,
+        public ReflectionExecutorFactory(ILoggerFactory loggerFactory,
             ICallDataSerializer serializer,
-            ISmartContractResultRefundProcessor refundProcessor,
-            ISmartContractResultTransferProcessor transferProcessor,
+            IContractRefundProcessor refundProcessor,
+            IContractTransferProcessor transferProcessor,
             Network network,
             IStateFactory stateFactory,
             IStateProcessor stateProcessor,
@@ -45,11 +46,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// After the contract has been executed, it will process any fees and/or refunds.
         /// </para>
         /// </summary>
-        public ISmartContractExecutor CreateExecutor(
-            IContractStateRoot stateRepository,
-            ISmartContractTransactionContext transactionContext)
+        public IContractExecutor CreateExecutor(
+            IStateRepositoryRoot stateRepository,
+            IContractTransactionContext transactionContext)
         {
-            return new Executor(this.loggerFactory, this.serializer, 
+            return new ExternalExecutor(this.loggerFactory, this.serializer, 
                     stateRepository, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor, this.contractPrimitiveSerializer);
         }
     }

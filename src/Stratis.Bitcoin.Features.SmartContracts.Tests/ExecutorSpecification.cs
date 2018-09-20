@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var contractTxData = new ContractTxData(1, 1, (Gas) 1000, code);
             var refund = new Money(0);
             const ulong mempoolFee = 2UL; // MOQ doesn't like it when you use a type with implicit conversions (Money)
-            ISmartContractTransactionContext context = Mock.Of<ISmartContractTransactionContext>(c => 
+            IContractTransactionContext context = Mock.Of<IContractTransactionContext>(c => 
                 c.Data == code &&
                 c.MempoolFee == mempoolFee &&
                 c.Sender == uint160.One &&
@@ -44,12 +44,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var contractPrimitiveSerializer = new Mock<IContractPrimitiveSerializer>();
             var vmExecutionResult = VmExecutionResult.Success(null, null);
 
-            var contractStateRoot = new Mock<IContractState>();
-            var transferProcessor = new Mock<ISmartContractResultTransferProcessor>();
+            var contractStateRoot = new Mock<IStateRepository>();
+            var transferProcessor = new Mock<IContractTransferProcessor>();
             var stateProcessor = new Mock<IStateProcessor>();
 
             (Money refund, TxOut) refundResult = (refund, null);
-            var refundProcessor = new Mock<ISmartContractResultRefundProcessor>();
+            var refundProcessor = new Mock<IContractRefundProcessor>();
 
             refundProcessor
                 .Setup(r => r.Process(
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 context.TransactionHash))
             .Returns(stateMock.Object);
 
-            var sut = new Executor(
+            var sut = new ExternalExecutor(
                 loggerFactory,
                 callDataSerializer.Object,
                 contractStateRoot.Object,

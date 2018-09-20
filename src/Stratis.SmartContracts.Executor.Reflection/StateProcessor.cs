@@ -5,14 +5,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public class StateProcessor : IStateProcessor
     {
-        public StateProcessor(ISmartContractVirtualMachine vm,
+        public StateProcessor(IVirtualMachine vm,
             IAddressGenerator addressGenerator)
         {
             this.AddressGenerator = addressGenerator;
             this.Vm = vm;
         }
 
-        public ISmartContractVirtualMachine Vm { get; }
+        public IVirtualMachine Vm { get; }
 
         public IAddressGenerator AddressGenerator { get; }
 

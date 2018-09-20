@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.Tools.Sct
             console.WriteLine("Building ModuleDefinition...");
 
             compilation = validationServiceResult.CompilationResult.Compilation;
-            moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
+            moduleDefinition = ContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
             console.WriteLine("ModuleDefinition built successfully.");
 
             console.WriteLine();
@@ -37,7 +37,7 @@ namespace Stratis.SmartContracts.Tools.Sct
         private static void CompileContract(string source, IConsole console, ValidationServiceResult validationServiceResult)
         {
             console.WriteLine($"Compiling...");
-            validationServiceResult.CompilationResult = SmartContractCompiler.Compile(source);
+            validationServiceResult.CompilationResult = ContractCompiler.Compile(source);
             if (!validationServiceResult.CompilationResult.Success)
                 console.WriteLine("Compilation failed!");
             else
@@ -84,7 +84,7 @@ namespace Stratis.SmartContracts.Tools.Sct
 
     public sealed class ValidationServiceResult
     {
-        public SmartContractCompilationResult CompilationResult { get; set; }
+        public ContractCompilationResult CompilationResult { get; set; }
         public SmartContractValidationResult DeterminismValidationResult { get; set; }
         public SmartContractValidationResult FormatValidationResult { get; set; }
         public bool ConstructorExists { get; set; }

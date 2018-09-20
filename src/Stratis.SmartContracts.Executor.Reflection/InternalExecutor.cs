@@ -5,7 +5,7 @@ using Stratis.SmartContracts.Core;
 namespace Stratis.SmartContracts.Executor.Reflection
 {
     ///<inheritdoc/>
-    public sealed class InternalTransactionExecutor : IInternalTransactionExecutor
+    public sealed class InternalExecutor : IInternalTransactionExecutor
     {
         private const ulong DefaultGasLimit = GasPriceList.BaseCost * 2 - 1;
 
@@ -15,7 +15,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly IState state;
         private readonly IStateProcessor stateProcessor;
 
-        public InternalTransactionExecutor(ILoggerFactory loggerFactory, Network network, IState state,
+        public InternalExecutor(ILoggerFactory loggerFactory, Network network, IState state,
             IStateProcessor stateProcessor)
         {
             this.loggerFactory = loggerFactory;

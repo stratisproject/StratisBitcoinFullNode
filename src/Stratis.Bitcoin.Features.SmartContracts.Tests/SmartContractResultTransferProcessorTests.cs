@@ -17,14 +17,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     {
         private readonly Network network;
         private readonly ILoggerFactory loggerFactory;
-        private readonly SmartContractResultTransferProcessor transferProcessor;
+        private readonly ContractTransferProcessor transferProcessor;
 
         public SmartContractResultTransferProcessorTests()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
             this.network = new SmartContractsRegTest();
-            this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);
+            this.transferProcessor = new ContractTransferProcessor(this.loggerFactory, this.network);
         }
 
         /*
@@ -63,11 +63,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             uint160 contractAddress = new uint160(1);
 
             // No balance
-            var stateMock = new Mock<IContractState>();
+            var stateMock = new Mock<IStateRepository>();
             stateMock.Setup(x => x.GetUnspent(contractAddress)).Returns<ContractUnspentOutput>(null);
 
             // No tx value
-            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
 
             // No transfers
@@ -88,11 +88,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             uint160 contractAddress = new uint160(1);
 
             // No balance
-            var stateMock = new Mock<IContractState>();
+            var stateMock = new Mock<IStateRepository>();
             stateMock.Setup(x => x.GetUnspent(contractAddress)).Returns<ContractUnspentOutput>(null);
 
             // 100 tx value
-            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
 
             // No transfers
@@ -114,11 +114,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             uint160 receiverAddress = new uint160(2);
 
             // No balance
-            var stateMock = new Mock<IContractState>();
+            var stateMock = new Mock<IStateRepository>();
             stateMock.Setup(x => x.GetUnspent(contractAddress)).Returns<ContractUnspentOutput>(null);
 
             // No tx value
-            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
 
             // A transfer of 100
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             uint160 receiverAddress = new uint160(2);
 
             // No balance
-            var stateMock = new Mock<IContractState>();
+            var stateMock = new Mock<IStateRepository>();
             stateMock.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState
             {
                 CodeHash = new byte[32],
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             stateMock.Setup(x => x.GetUnspent(contractAddress)).Returns<ContractUnspentOutput>(null);
 
             // tx value 100
-            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
             txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
             txContextMock.SetupGet(p => p.Nvout).Returns(1);
@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             uint160 contractAddress = new uint160(1);
 
             // balance of 100
-            var stateMock = new Mock<IContractState>();
+            var stateMock = new Mock<IStateRepository>();
             stateMock.Setup(x => x.GetUnspent(contractAddress)).Returns(new ContractUnspentOutput
             {
                 Hash = new uint256(1),
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             });
 
             // No tx value
-            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
             txContextMock.SetupGet(p => p.Time).Returns(12345);
 
@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             uint160 contractAddress = new uint160(1);
 
             // Has balance
-            var stateMock = new Mock<IContractState>();
+            var stateMock = new Mock<IStateRepository>();
             stateMock.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState
             {
                 CodeHash = new byte[32],
@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             });
 
             // tx value 100
-            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
             txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
             txContextMock.SetupGet(p => p.Nvout).Returns(1);
@@ -285,7 +285,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             uint160 receiverAddress = new uint160(2);
 
             // Has balance
-            var stateMock = new Mock<IContractState>();
+            var stateMock = new Mock<IStateRepository>();
             stateMock.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState
             {
                 CodeHash = new byte[32],
@@ -301,7 +301,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             });
 
             // no tx value
-            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
             txContextMock.SetupGet(p => p.Time).Returns(12345);
 
@@ -343,7 +343,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             uint160 receiverAddress = new uint160(2);
 
             // Has balance
-            var stateMock = new Mock<IContractState>();
+            var stateMock = new Mock<IStateRepository>();
             stateMock.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState
             {
                 CodeHash = new byte[32],
@@ -359,7 +359,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             });
 
             // no tx value
-            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
             txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
             txContextMock.SetupGet(p => p.Nvout).Returns(1);
@@ -404,9 +404,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Transfers_With_0Value()
         {
             // Scenario where contract was not sent any funds, but did make a method call with value 0.
-            var stateMock = new Mock<IContractState>();
+            var stateMock = new Mock<IStateRepository>();
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
-            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
             var result = new SmartContractExecutionResult();
 
@@ -434,7 +434,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             uint160 thirdAddress = new uint160(3);
 
             // Has balance
-            var stateMock = new Mock<IContractState>();
+            var stateMock = new Mock<IStateRepository>();
             stateMock.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState
             {
                 CodeHash = new byte[32],
@@ -450,7 +450,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             });
 
             // no tx value
-            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
             txContextMock.SetupGet(p => p.Time).Returns(12345);
 
@@ -505,7 +505,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Create_Refund()
         {
-            var txContextMock = new Mock<ISmartContractTransactionContext>();
+            var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
             txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
             txContextMock.SetupGet(p => p.Nvout).Returns(1);

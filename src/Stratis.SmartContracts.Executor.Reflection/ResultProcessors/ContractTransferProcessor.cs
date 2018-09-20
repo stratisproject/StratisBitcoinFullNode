@@ -6,23 +6,23 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 
-namespace Stratis.SmartContracts.Executor.Reflection
+namespace Stratis.SmartContracts.Executor.Reflection.ResultProcessors
 {
-    public class SmartContractResultTransferProcessor : ISmartContractResultTransferProcessor
+    public class ContractTransferProcessor : IContractTransferProcessor
     {
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
 
-        public SmartContractResultTransferProcessor(ILoggerFactory loggerFactory, Network network)
+        public ContractTransferProcessor(ILoggerFactory loggerFactory, Network network)
         {
             this.loggerFactory = loggerFactory;
             this.network = network;
         }
 
         /// <inheritdoc />
-        public Transaction Process(IContractState stateSnapshot,
+        public Transaction Process(IStateRepository stateSnapshot,
             uint160 contractAddress,
-            ISmartContractTransactionContext transactionContext,
+            IContractTransactionContext transactionContext,
             IReadOnlyList<TransferInfo> internalTransfers,
             bool reversionRequired)
         {
@@ -63,7 +63,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// Should contract execution fail, we need to send the money, that was
         /// sent to contract, back to the contract's sender.
         /// </summary>
-        private Transaction CreateRefundTransaction(ISmartContractTransactionContext transactionContext)
+        private Transaction CreateRefundTransaction(IContractTransactionContext transactionContext)
         {
             Transaction tx = this.network.CreateTransaction();
             tx.Time = transactionContext.Time;

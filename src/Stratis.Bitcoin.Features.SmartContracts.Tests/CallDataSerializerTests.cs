@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 }"
             );
 
-            var carrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)5000);
+            var carrier = ContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)5000);
 
             var serializer = CallDataSerializer.Default;
 
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Char, '#'),
             };
 
-            var carrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)500000, methodParameters);
+            var carrier = ContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)500000, methodParameters);
 
             var serializer = CallDataSerializer.Default;
 
@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_CanSerialize_OP_CALLCONTRACT_WithoutMethodParameters()
         {
-            var smartContractCarrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, (Gas)500000);
+            var smartContractCarrier = ContractCarrier.CallContract(1, 100, "Execute", 1, (Gas)500000);
             
             var serializer = CallDataSerializer.Default;
 
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, new Address("mxKorCkWmtrPoekfWiMzERJPhaT13nnkMy"))
             };
 
-            var carrier = SmartContractCarrier.CallContract(1, 100, "Execute", 1, (Gas)500000, methodParameters);
+            var carrier = ContractCarrier.CallContract(1, 100, "Execute", 1, (Gas)500000, methodParameters);
 
             var serializer = CallDataSerializer.Default;
 
