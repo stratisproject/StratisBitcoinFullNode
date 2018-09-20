@@ -8,6 +8,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
@@ -22,7 +23,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.V2.Controllers
     public class TransactionStoreController : Controller
     {
         /// <summary>An interface for getting blocks asynchronously from the blockstore cache.</summary>
-        private readonly IBlockStoreCache blockStoreCache;
+        private readonly IBlockStore blockStoreCache;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -41,8 +42,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.V2.Controllers
 
         public TransactionStoreController(
             Network network,
-            ILoggerFactory loggerFactory, 
-            IBlockStoreCache blockStoreCache,
+            ILoggerFactory loggerFactory,
+            IBlockStore blockStoreCache,
             ConcurrentChain chain,
             IBlockRepository blockRepository,
             IChainState chainState)

@@ -1,25 +1,26 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using City.Networks;
-using NBitcoin;
-using NBitcoin.Networks;
-using NBitcoin.Protocol;
-using Stratis.Bitcoin;
-using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Api;
-using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Utilities;
-
-namespace City.Chain
+﻿namespace City.Chain
 {
+    using System;
+    using System.IO;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using City.Networks;
+    using NBitcoin;
+    using NBitcoin.Networks;
+    using NBitcoin.Protocol;
+    using Stratis.Bitcoin;
+    using Stratis.Bitcoin.Builder;
+    using Stratis.Bitcoin.Configuration;
+    using Stratis.Bitcoin.Features.Api;
+    using Stratis.Bitcoin.Features.BlockStore;
+    using Stratis.Bitcoin.Features.Consensus;
+    using Stratis.Bitcoin.Features.MemoryPool;
+    using Stratis.Bitcoin.Features.Miner;
+    using Stratis.Bitcoin.Features.RPC;
+    using Stratis.Bitcoin.Features.Wallet;
+    using Stratis.Bitcoin.Networks;
+    using Stratis.Bitcoin.Utilities;
+
     public class Program
     {
         private static void GenerateAddressKeyPair(Network network)
@@ -96,6 +97,33 @@ namespace City.Chain
                     network: network,
                     agent: "CityChain");
 
+                // Write the schema version, if not already exists.
+                var infoPath = System.IO.Path.Combine(nodeSettings.DataDir, "city.info");
+
+                if (!System.IO.File.Exists(infoPath))
+                {
+                    // For clients earlier than this version, the database already existed so we'll
+                    // write that it is currently version 100.
+                    var infoBuilder = new System.Text.StringBuilder();
+
+                    // If the chain exists from before, but we did not have .info file, the database is old version.
+                    if (System.IO.Directory.Exists(Path.Combine(nodeSettings.DataDir, "chain")))
+                    {
+                        infoBuilder.AppendLine("dbversion=100");
+                    }
+                    else
+                    {
+                        infoBuilder.AppendLine("dbversion=110");
+                    }
+
+                    File.WriteAllText(infoPath, infoBuilder.ToString());
+                }
+                else
+                {
+                    var fileConfig = new TextFileConfiguration(File.ReadAllText(infoPath));
+                    var dbversion = fileConfig.GetOrDefault<int>("dbversion", 110);
+                }
+
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
@@ -108,6 +136,7 @@ namespace City.Chain
                     //.AddSimpleWallet()
                     .UseApi()
                     //.UseApps()
+                    //.UseDns()
                     .AddRPC()
                     .Build();
 

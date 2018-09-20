@@ -122,13 +122,13 @@ namespace City.Networks
             this.DNSSeeds = new List<DNSSeedData>
             {
                 new DNSSeedData("testnode1.city-chain.org", "testnode1.city-chain.org"),
+                new DNSSeedData("testnode2.city-chain.org", "testnode2.city-chain.org"),
             };
 
             this.SeedNodes = new List<NetworkAddress>
             {
+                new NetworkAddress(IPAddress.Parse("13.73.143.193"), 24333),
                 new NetworkAddress(IPAddress.Parse("40.91.197.238"), 24333),
-                new NetworkAddress(IPAddress.Parse("40.91.197.238"), 25333),
-                new NetworkAddress(IPAddress.Parse("40.91.197.238"), 26333),
             };
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000fd5ab3150ba1f57dbbfb449b67f4d4a30a634d997b269eccb0a48dd7cd3d9"));

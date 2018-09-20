@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.WatchOnlyWallet;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace City.Chain.Features.SimpleWallet
@@ -35,7 +36,7 @@ namespace City.Chain.Features.SimpleWallet
         private readonly IBlockNotification blockNotification;
 
         /// <summary>An interface for getting blocks asynchronously from the blockstore cache.</summary>
-        public readonly IBlockStoreCache blockStoreCache;
+        public readonly IBlockStore blockStoreCache;
 
         private readonly Network network;
 
@@ -60,7 +61,7 @@ namespace City.Chain.Features.SimpleWallet
         public SimpleWalletManager(
             ILoggerFactory loggerFactory,
             ConcurrentChain chain,
-            IBlockStoreCache blockStoreCache,
+            IBlockStore blockStoreCache,
             INodeLifetime nodeLifetime,
             HubCommands hubCommands,
             IBlockNotification blockNotification)

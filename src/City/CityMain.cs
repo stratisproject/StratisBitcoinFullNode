@@ -140,9 +140,8 @@ namespace City.Networks
             this.DNSSeeds = new List<DNSSeedData>
             {
                 new DNSSeedData("node1.city-chain.org", "node1.city-chain.org"),
-                new DNSSeedData("node1.citychain.foundation", "node1.citychain.foundation"),
-                new DNSSeedData("10.0.0.122", "10.0.0.122"),
-                new DNSSeedData("10.0.0.192", "10.0.0.192")
+                new DNSSeedData("node2.city-chain.org", "node2.city-chain.org"),
+                new DNSSeedData("node.citychain.foundation", "node.citychain.foundation"),
             };
 
             string[] seedNodes = { "10.0.0.122", "10.0.0.192", "40.91.197.238" };

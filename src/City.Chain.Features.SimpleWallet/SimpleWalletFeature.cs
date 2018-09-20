@@ -7,6 +7,7 @@ using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.Notifications;
+using Stratis.Bitcoin.Signals;
 
 namespace City.Chain.Features.SimpleWallet
 {
@@ -49,8 +50,11 @@ namespace City.Chain.Features.SimpleWallet
         public override void Initialize()
         {
             // subscribe to receiving blocks and transactions
-            this.blockSubscriberdDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletService));
-            this.transactionSubscriberdDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletService));
+            //this.blockSubscriberdDisposable = this.signals.SubscribeForBlocksConnected(new SignalObserver(this.walletService));
+            //this.blockSubscriberdDisposable = this.signals.SubscribeForBlocksConnected(new SignalObserver(this.walletService));
+
+            //this.blockSubscriberdDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletService));
+            //this.transactionSubscriberdDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletService));
 
             //this.walletManager.Initialize();
             //this.fullNodeBuilder.Services, this.fullNode, this.apiSettings
