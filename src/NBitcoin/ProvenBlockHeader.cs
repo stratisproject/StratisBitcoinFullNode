@@ -63,6 +63,10 @@ namespace NBitcoin
         /// </summary>
         public BlockSignature Signature => this.signature;
 
+        public ProvenBlockHeader()
+        {
+        }
+
         public ProvenBlockHeader(PosBlock block)
         {
             if (block == null) throw new ArgumentNullException(nameof(block));

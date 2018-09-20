@@ -412,18 +412,18 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             return task;
         }
 
-        private void AddBenchStats(StringBuilder benchLog)
+        private void AddBenchStats(StringBuilder log)
         {
             this.logger.LogTrace("()");
 
-            benchLog.AppendLine("======DBreezeCoinView Bench======");
+            log.AppendLine("======DBreezeCoinView Bench======");
 
             BackendPerformanceSnapshot snapShot = this.performanceCounter.Snapshot();
 
             if (this.latestPerformanceSnapShot == null)
-                benchLog.AppendLine(snapShot.ToString());
+                log.AppendLine(snapShot.ToString());
             else
-                benchLog.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
+                log.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
 
             this.latestPerformanceSnapShot = snapShot;
 

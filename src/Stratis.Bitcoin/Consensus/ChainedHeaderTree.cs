@@ -41,6 +41,9 @@ namespace Stratis.Bitcoin.Consensus
         /// </remarks>
         long UnconsumedBlocksDataBytes { get; }
 
+        /// <summary>Total amount of unconsumed blocks.</summary>
+        long UnconsumedBlocksCount { get; }
+
         /// <summary>
         /// Initialize the tree with consensus tip.
         /// </summary>
@@ -163,6 +166,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public long UnconsumedBlocksDataBytes { get; private set; }
 
+        /// <inheritdoc />
+        public long UnconsumedBlocksCount { get; private set; }
+
         /// <summary>A special peer identifier that represents our local node.</summary>
         internal const int LocalPeerId = -1;
 
@@ -217,6 +223,7 @@ namespace Stratis.Bitcoin.Consensus
             this.peerIdsByTipHash = new Dictionary<uint256, HashSet<int>>();
             this.chainedHeadersByHash = new Dictionary<uint256, ChainedHeader>();
             this.UnconsumedBlocksDataBytes = 0;
+            this.UnconsumedBlocksCount = 0;
         }
 
         /// <inheritdoc />
@@ -447,6 +454,8 @@ namespace Stratis.Bitcoin.Consensus
             while (currentHeader != fork)
             {
                 this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
+                this.UnconsumedBlocksCount--;
+
                 this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
                 currentHeader = currentHeader.Previous;
             }
@@ -622,6 +631,8 @@ namespace Stratis.Bitcoin.Consensus
             if (header.Block != null)
             {
                 this.UnconsumedBlocksDataBytes -= header.Block.BlockSize.Value;
+                this.UnconsumedBlocksCount--;
+
                 this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", header.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
             }
 
@@ -643,6 +654,8 @@ namespace Stratis.Bitcoin.Consensus
             chainedHeader.Block = block;
 
             this.UnconsumedBlocksDataBytes += chainedHeader.Block.BlockSize.Value;
+            this.UnconsumedBlocksCount++;
+
             this.logger.LogTrace("Size of unconsumed block data is increased by {0}, new value is {1}.", chainedHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
 
             bool partialValidationRequired = chainedHeader.Previous.BlockValidationState == ValidationState.PartiallyValidated
