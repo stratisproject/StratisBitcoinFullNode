@@ -8,6 +8,7 @@ using DBreeze;
 using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin
@@ -78,6 +79,11 @@ namespace Stratis.Bitcoin
             this.queueUpdatedEvent = new AsyncManualResetEvent(false);
             this.cancellation = new CancellationTokenSource();
             this.finalizedBlockInfoPersistingTask = this.PersistFinalizedBlockInfoContinuouslyAsync();
+        }
+
+        public FinalizedBlockInfoRepository(DataFolder dataFolder, ILoggerFactory loggerFactory)
+            : this(dataFolder.FinalizedBlockInfoPath, loggerFactory)
+        {
         }
 
         private async Task PersistFinalizedBlockInfoContinuouslyAsync()

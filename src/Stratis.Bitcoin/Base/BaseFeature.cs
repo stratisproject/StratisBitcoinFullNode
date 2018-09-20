@@ -223,6 +223,12 @@ namespace Stratis.Bitcoin.Base
                 Directory.CreateDirectory(this.dataFolder.ChainPath);
             }
 
+            if (!Directory.Exists(this.dataFolder.FinalizedBlockInfoPath))
+            {
+                this.logger.LogInformation("Creating {0}.", this.dataFolder.FinalizedBlockInfoPath);
+                Directory.CreateDirectory(this.dataFolder.FinalizedBlockInfoPath);
+            }
+
             this.logger.LogInformation("Loading finalized block height.");
             await this.finalizedBlockInfoRepository.LoadFinalizedBlockInfoAsync(this.network).ConfigureAwait(false);
 
