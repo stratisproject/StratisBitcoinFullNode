@@ -420,68 +420,71 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            List<ChainedHeaderBlock> chainedHeaderBlocksToValidate;
-            ConnectBlocksResult connectBlocksResult = null;
-
-            using (await this.reorgLock.LockAsync().ConfigureAwait(false))
+            using (this.performanceCounter.MeasureTotalConnectionTime())
             {
-                bool fullValidationRequired;
+                List<ChainedHeaderBlock> chainedHeaderBlocksToValidate;
+                ConnectBlocksResult connectBlocksResult = null;
 
-                lock (this.peerLock)
+                using (await this.reorgLock.LockAsync().ConfigureAwait(false))
                 {
-                    chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out fullValidationRequired);
-                }
-
-                this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? "" : " NOT");
-
-                if (fullValidationRequired)
-                {
-                    connectBlocksResult = await this.FullyValidateLockedAsync(chainedHeader).ConfigureAwait(false);
-                }
-            }
-
-            if (connectBlocksResult != null)
-            {
-                if (connectBlocksResult.PeersToBan != null)
-                {
-                    var peersToBan = new List<INetworkPeer>();
+                    bool fullValidationRequired;
 
                     lock (this.peerLock)
                     {
-                        foreach (int peerId in connectBlocksResult.PeersToBan)
-                        {
-                            if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
-                                peersToBan.Add(peer);
-                        }
+                        chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out fullValidationRequired);
                     }
 
-                    this.logger.LogTrace("{0} peers will be banned.", peersToBan.Count);
+                    this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? "" : " NOT");
 
-                    foreach (INetworkPeer peer in peersToBan)
-                        this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, connectBlocksResult.BanDurationSeconds, connectBlocksResult.BanReason);
+                    if (fullValidationRequired)
+                    {
+                        connectBlocksResult = await this.FullyValidateLockedAsync(chainedHeader).ConfigureAwait(false);
+                    }
                 }
 
-                if (connectBlocksResult.ConsensusTipChanged)
-                    await this.NotifyBehaviorsOnConsensusTipChangedAsync().ConfigureAwait(false);
-
-                lock (this.peerLock)
+                if (connectBlocksResult != null)
                 {
-                    this.ProcessDownloadQueueLocked();
+                    if (connectBlocksResult.PeersToBan != null)
+                    {
+                        var peersToBan = new List<INetworkPeer>();
+
+                        lock (this.peerLock)
+                        {
+                            foreach (int peerId in connectBlocksResult.PeersToBan)
+                            {
+                                if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
+                                    peersToBan.Add(peer);
+                            }
+                        }
+
+                        this.logger.LogTrace("{0} peers will be banned.", peersToBan.Count);
+
+                        foreach (INetworkPeer peer in peersToBan)
+                            this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, connectBlocksResult.BanDurationSeconds, connectBlocksResult.BanReason);
+                    }
+
+                    if (connectBlocksResult.ConsensusTipChanged)
+                        await this.NotifyBehaviorsOnConsensusTipChangedAsync().ConfigureAwait(false);
+
+                    lock (this.peerLock)
+                    {
+                        this.ProcessDownloadQueueLocked();
+                    }
                 }
-            }
 
-            // Partial validation should continue if:
-            //  1: There are more blocks to validate.
-            //  2: A full validation was done and succeeded.
-            bool fullValidationSucceeded = (connectBlocksResult != null) && connectBlocksResult.Succeeded;
-            if ((chainedHeaderBlocksToValidate != null) && fullValidationSucceeded)
-            {
-                this.logger.LogTrace("Partial validation of {0} block will be started.", chainedHeaderBlocksToValidate.Count);
+                // Partial validation should continue if:
+                //  1: There are more blocks to validate.
+                //  2: A full validation was done and succeeded.
+                bool fullValidationSucceeded = (connectBlocksResult != null) && connectBlocksResult.Succeeded;
+                if ((chainedHeaderBlocksToValidate != null) && fullValidationSucceeded)
+                {
+                    this.logger.LogTrace("Partial validation of {0} block will be started.", chainedHeaderBlocksToValidate.Count);
 
-                // Start validating all next blocks that come after the current block,
-                // all headers in this list have the blocks present in the header.
-                foreach (ChainedHeaderBlock toValidate in chainedHeaderBlocksToValidate)
-                    this.partialValidator.StartPartialValidation(toValidate.ChainedHeader, toValidate.Block, this.OnPartialValidationCompletedCallbackAsync);
+                    // Start validating all next blocks that come after the current block,
+                    // all headers in this list have the blocks present in the header.
+                    foreach (ChainedHeaderBlock toValidate in chainedHeaderBlocksToValidate)
+                        this.partialValidator.StartPartialValidation(toValidate.ChainedHeader, toValidate.Block, this.OnPartialValidationCompletedCallbackAsync);
+                }
             }
 
             this.logger.LogTrace("(-)");
@@ -678,32 +681,35 @@ namespace Stratis.Bitcoin.Consensus
 
             foreach (ChainedHeaderBlock blockToConnect in blocksToConnect)
             {
-                connectBlockResult = await this.ConnectBlockAsync(blockToConnect).ConfigureAwait(false);
-
-                if (!connectBlockResult.Succeeded)
+                using (this.performanceCounter.MeasureBlockConnectionFV())
                 {
-                    connectBlockResult.LastValidatedBlockHeader = lastValidatedBlockHeader;
+                    connectBlockResult = await this.ConnectBlockAsync(blockToConnect).ConfigureAwait(false);
 
-                    this.logger.LogTrace("(-)[FAILED_TO_CONNECT]:'{0}'", connectBlockResult);
-                    return connectBlockResult;
-                }
-
-                lastValidatedBlockHeader = blockToConnect.ChainedHeader;
-
-                // Block connected successfully.
-                List<int> peersToResync = this.SetConsensusTip(blockToConnect.ChainedHeader);
-
-                await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
-
-                if (this.network.Consensus.MaxReorgLength != 0)
-                {
-                    int newFinalizedHeight = blockToConnect.ChainedHeader.Height - (int)this.network.Consensus.MaxReorgLength;
-
-                    if (newFinalizedHeight > 0)
+                    if (!connectBlockResult.Succeeded)
                     {
-                        uint256 newFinalizedHash = blockToConnect.ChainedHeader.GetAncestor(newFinalizedHeight).HashBlock;
+                        connectBlockResult.LastValidatedBlockHeader = lastValidatedBlockHeader;
 
-                        await this.finalizedBlockInfo.SaveFinalizedBlockHashAndHeightAsync(newFinalizedHash, newFinalizedHeight).ConfigureAwait(false);
+                        this.logger.LogTrace("(-)[FAILED_TO_CONNECT]:'{0}'", connectBlockResult);
+                        return connectBlockResult;
+                    }
+
+                    lastValidatedBlockHeader = blockToConnect.ChainedHeader;
+
+                    // Block connected successfully.
+                    List<int> peersToResync = this.SetConsensusTip(blockToConnect.ChainedHeader);
+
+                    await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
+
+                    if (this.network.Consensus.MaxReorgLength != 0)
+                    {
+                        int newFinalizedHeight = blockToConnect.ChainedHeader.Height - (int) this.network.Consensus.MaxReorgLength;
+
+                        if (newFinalizedHeight > 0)
+                        {
+                            uint256 newFinalizedHash = blockToConnect.ChainedHeader.GetAncestor(newFinalizedHeight).HashBlock;
+
+                            await this.finalizedBlockInfo.SaveFinalizedBlockHashAndHeightAsync(newFinalizedHash, newFinalizedHeight).ConfigureAwait(false);
+                        }
                     }
                 }
 

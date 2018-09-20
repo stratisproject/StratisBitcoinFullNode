@@ -18,6 +18,35 @@ namespace Stratis.Bitcoin.Consensus
             this.currentSnapshot = new ConsensusManagerPerformanceSnapshot();
         }
 
+        /// <summary>
+        /// Measures time to execute <c>OnPartialValidationSucceededAsync</c>.
+        /// </summary>
+        public IDisposable MeasureTotalConnectionTime()
+        {
+            var stopwatch = new StopwatchDisposable(elapsedTicks =>
+            {
+                ConsensusManagerPerformanceSnapshot snapshot = this.currentSnapshot;
+
+                Interlocked.Increment(ref snapshot.TotalConnectionTime.ExecutedTimes);
+                Interlocked.Add(ref snapshot.TotalConnectionTime.TotalDelayTicks, elapsedTicks);
+            });
+
+            return stopwatch;
+        }
+
+        public IDisposable MeasureBlockConnectionFV()
+        {
+            var stopwatch = new StopwatchDisposable(elapsedTicks =>
+            {
+                ConsensusManagerPerformanceSnapshot snapshot = this.currentSnapshot;
+
+                Interlocked.Increment(ref snapshot.ConnectBlockFV.ExecutedTimes);
+                Interlocked.Add(ref snapshot.ConnectBlockFV.TotalDelayTicks, elapsedTicks);
+            });
+
+            return stopwatch;
+        }
+
         public IDisposable MeasureBlockConnectedSignal()
         {
             var stopwatch = new StopwatchDisposable(elapsedTicks =>
@@ -59,6 +88,10 @@ namespace Stratis.Bitcoin.Consensus
     /// <summary>Snapshot of <see cref="ConsensusManager"/> performance.</summary>
     public class ConsensusManagerPerformanceSnapshot
     {
+        public readonly ExecutionTimesAndDelay TotalConnectionTime = new ExecutionTimesAndDelay();
+
+        public readonly ExecutionTimesAndDelay ConnectBlockFV = new ExecutionTimesAndDelay();
+
         public readonly ExecutionTimesAndDelay BlockDisconnectedSignal = new ExecutionTimesAndDelay();
 
         public readonly ExecutionTimesAndDelay BlockConnectedSignal = new ExecutionTimesAndDelay();
@@ -69,6 +102,10 @@ namespace Stratis.Bitcoin.Consensus
 
             builder.AppendLine();
             builder.AppendLine("======ConsensusManager Bench======");
+
+            builder.AppendLine($"Total connection time (FV, CHT upd, Rewind, Signaling): {this.TotalConnectionTime.GetAvgExecutionTimeMs()} ms");
+
+            builder.AppendLine($"Block connection (FV excluding rewind): {this.ConnectBlockFV.GetAvgExecutionTimeMs()} ms");
 
             builder.AppendLine($"Block connected signal: {this.BlockConnectedSignal.GetAvgExecutionTimeMs()} ms");
             builder.AppendLine($"Block disconnected signal: {this.BlockDisconnectedSignal.GetAvgExecutionTimeMs()} ms");
