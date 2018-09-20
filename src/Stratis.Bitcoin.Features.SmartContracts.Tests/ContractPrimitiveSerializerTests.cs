@@ -45,7 +45,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             TestType<int[]>(new int[] { 1, 2, 3 });
             TestType<long[]>(new long[] { long.MaxValue - 1, 23 });
             TestType<uint[]>(new uint[] { uint.MaxValue - 1, 1234 });
-
+            TestType<ulong[]>(new ulong[] { ulong.MaxValue - 1, 123 });
+            TestType<char[]>(new char[] { 'a', 'b', 'c' });
+            TestType<string[]>(new string[] { "test", "1", "2", "3" });
         }
 
         [Fact]
