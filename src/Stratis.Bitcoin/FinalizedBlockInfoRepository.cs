@@ -106,6 +106,9 @@ namespace Stratis.Bitcoin
 
                 lock (this.queueLock)
                 {
+                    // In case there are more than 1 items we take only the very last one.
+                    // There is no need to save each of them because they are sequential and
+                    // each new item has greater height than previous one.
                     while (this.finalizedBlockInfosToSave.Count != 0)
                         lastFinalizedBlock = this.finalizedBlockInfosToSave.Dequeue();
                 }
@@ -172,6 +175,9 @@ namespace Stratis.Bitcoin
                 return false;
             }
 
+            // Creating a new variable instead of assigning new value right away
+            // to this.finalizedBlockInfo is needed because before we enqueue it
+            // this.finalizedBlockInfo might change due to race condition.
             var finalizedInfo = new HashHeightPair(hash, height);
 
             this.finalizedBlockInfo = finalizedInfo;
