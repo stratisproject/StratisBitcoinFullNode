@@ -317,10 +317,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // TODO: bring logic from core
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
             {
-                // TODO: check if we need to add support for "not found"
                 ChainedHeaderBlock chainedHeaderBlock = await this.consensusManager.GetBlockDataAsync(item.Hash).ConfigureAwait(false);
 
-                if (chainedHeaderBlock.Block != null)
+                if (chainedHeaderBlock?.Block != null)
                 {
                     this.logger.LogTrace("Sending block '{0}' to peer '{1}'.", item.Hash, peer.RemoteSocketEndpoint);
 
