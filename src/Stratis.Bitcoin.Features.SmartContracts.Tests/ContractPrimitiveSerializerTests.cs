@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void PersistentState_CanSerializeAllTypes()
+        public void PersistentState_CanSerializeAllPrimitives()
         {
             TestType<Address>(new uint160(123456).ToAddress(this.network));
             TestType<bool>(true);
@@ -35,6 +35,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             TestType<byte[]>(new byte[] { 127, 123 });
             TestType<char>('c');
             TestType<string>("Test String");
+        }
+
+        [Fact]
+        public void PersistentState_CanSerializeDeserializeArrayOfAllPrimitives()
+        {
+            TestType<Address[]>(new Address[] { new uint160(123456).ToAddress(this.network), new uint160(1234567).ToAddress(this.network) });
+            TestType<bool[]>(new bool[] { true, false, true });
+            TestType<int[]>(new int[] { 1, 2, 3 });
+            TestType<long[]>(new long[] { long.MaxValue - 1, 23 });
+            TestType<uint[]>(new uint[] { uint.MaxValue - 1, 1234 });
+
         }
 
         [Fact]
