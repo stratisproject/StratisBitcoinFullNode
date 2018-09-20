@@ -14,26 +14,33 @@ public class Token : SmartContract
         private set { this.PersistentState.SetAddress("Owner", value); }
     }
 
-    public ISmartContractMapping<ulong> Balances
+    public ulong GetBalance(Address address)
     {
-        get => this.PersistentState.GetUInt64Mapping("Balances");
+        return this.PersistentState.GetUInt64($"Balances[{address}]");
+    }
+
+    private void SetBalance(Address address, ulong balance)
+    {
+        this.PersistentState.SetUInt64($"Balances[{address}]", balance);
     }
 
     public bool Mint(Address receiver, ulong amount)
     {
         Assert(this.Message.Sender != this.Owner);
 
-        amount = amount + this.Block.Number;
-        this.Balances[receiver.ToString()] += amount;
+        ulong balance = this.GetBalance(receiver);
+        this.SetBalance(receiver, balance += amount);
         return true;
     }
 
     public bool Send(Address receiver, ulong amount)
     {
-        Assert(this.Balances.Get(this.Message.Sender.ToString()) < amount);
+        ulong senderBalance = GetBalance(Message.Sender);
+        Assert(senderBalance < amount, "Sender doesn't have high enough balance");
 
-        this.Balances[receiver.ToString()] += amount;
-        this.Balances[this.Message.Sender.ToString()] -= amount;
+        ulong receiverBalance = GetBalance(receiver);
+        SetBalance(receiver, receiverBalance + amount);
+        SetBalance(Message.Sender, senderBalance - amount);
         return true;
     }
 }
