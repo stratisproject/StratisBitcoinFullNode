@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ConsensusManagerPerformanceSnapshot snapshot = this.currentSnapshot;
 
-                Interlocked.Increment(ref snapshot.TotalConnectionTime.ExecutedTimes);
+                Interlocked.Increment(ref snapshot.TotalConnectionTime.TotalExecutionsCount);
                 Interlocked.Add(ref snapshot.TotalConnectionTime.TotalDelayTicks, elapsedTicks);
             });
 
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ConsensusManagerPerformanceSnapshot snapshot = this.currentSnapshot;
 
-                Interlocked.Increment(ref snapshot.ConnectBlockFV.ExecutedTimes);
+                Interlocked.Increment(ref snapshot.ConnectBlockFV.TotalExecutionsCount);
                 Interlocked.Add(ref snapshot.ConnectBlockFV.TotalDelayTicks, elapsedTicks);
             });
 
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ConsensusManagerPerformanceSnapshot snapshot = this.currentSnapshot;
 
-                Interlocked.Increment(ref snapshot.BlockConnectedSignal.ExecutedTimes);
+                Interlocked.Increment(ref snapshot.BlockConnectedSignal.TotalExecutionsCount);
                 Interlocked.Add(ref snapshot.BlockConnectedSignal.TotalDelayTicks, elapsedTicks);
             });
 
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 ConsensusManagerPerformanceSnapshot snapshot = this.currentSnapshot;
 
-                Interlocked.Increment(ref snapshot.BlockDisconnectedSignal.ExecutedTimes);
+                Interlocked.Increment(ref snapshot.BlockDisconnectedSignal.TotalExecutionsCount);
                 Interlocked.Add(ref snapshot.BlockDisconnectedSignal.TotalDelayTicks, elapsedTicks);
             });
 
@@ -88,13 +88,13 @@ namespace Stratis.Bitcoin.Consensus
     /// <summary>Snapshot of <see cref="ConsensusManager"/> performance.</summary>
     public class ConsensusManagerPerformanceSnapshot
     {
-        public readonly ExecutionTimesAndDelay TotalConnectionTime = new ExecutionTimesAndDelay();
+        public readonly ExecutionsCountAndDelay TotalConnectionTime = new ExecutionsCountAndDelay();
 
-        public readonly ExecutionTimesAndDelay ConnectBlockFV = new ExecutionTimesAndDelay();
+        public readonly ExecutionsCountAndDelay ConnectBlockFV = new ExecutionsCountAndDelay();
 
-        public readonly ExecutionTimesAndDelay BlockDisconnectedSignal = new ExecutionTimesAndDelay();
+        public readonly ExecutionsCountAndDelay BlockDisconnectedSignal = new ExecutionsCountAndDelay();
 
-        public readonly ExecutionTimesAndDelay BlockConnectedSignal = new ExecutionTimesAndDelay();
+        public readonly ExecutionsCountAndDelay BlockConnectedSignal = new ExecutionsCountAndDelay();
 
         public override string ToString()
         {
@@ -114,20 +114,20 @@ namespace Stratis.Bitcoin.Consensus
         }
     }
 
-    public class ExecutionTimesAndDelay
+    public class ExecutionsCountAndDelay
     {
-        public int ExecutedTimes;
+        public int TotalExecutionsCount;
         public long TotalDelayTicks;
 
-        public ExecutionTimesAndDelay()
+        public ExecutionsCountAndDelay()
         {
-            this.ExecutedTimes = 0;
+            this.TotalExecutionsCount = 0;
             this.TotalDelayTicks = 0;
         }
 
         public double GetAvgExecutionTimeMs()
         {
-            return Math.Round((this.TotalDelayTicks / (double) this.ExecutedTimes) / 1000.0, 4);
+            return Math.Round((this.TotalDelayTicks / (double) this.TotalExecutionsCount) / 1000.0, 4);
         }
     }
 }
