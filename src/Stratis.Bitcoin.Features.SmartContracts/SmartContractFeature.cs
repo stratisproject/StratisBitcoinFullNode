@@ -31,6 +31,7 @@ using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
+using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -40,9 +41,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly IConsensusManager consensusManager;
         private readonly ILogger logger;
         private readonly Network network;
-        private readonly IContractStateRoot stateRoot;
+        private readonly IStateRepositoryRoot stateRoot;
 
-        public SmartContractFeature(IConsensusManager consensusLoop, ILoggerFactory loggerFactory, Network network, IContractStateRoot stateRoot)
+        public SmartContractFeature(IConsensusManager consensusLoop, ILoggerFactory loggerFactory, Network network, IStateRepositoryRoot stateRoot)
         {
             this.consensusManager = consensusLoop;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -85,15 +86,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         // STATE ----------------------------------------------------------------------------
                         services.AddSingleton<DBreezeContractStateStore>();
                         services.AddSingleton<NoDeleteContractStateSource>();
-                        services.AddSingleton<IContractStateRoot, ContractStateRoot>();
+                        services.AddSingleton<IStateRepositoryRoot, StateRepositoryRoot>();
 
                         // CONSENSUS ------------------------------------------------------------------------
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
                         services.AddSingleton<StandardTransactionPolicy, SmartContractTransactionPolicy>();
 
                         // CONTRACT EXECUTION ---------------------------------------------------------------
-                        services.AddSingleton<IInternalTransactionExecutorFactory, InternalTransactionExecutorFactory>();
-                        services.AddSingleton<ISmartContractVirtualMachine, ReflectionVirtualMachine>();
+                        services.AddSingleton<IInternalExecutorFactory, InternalExecutorFactory>();
+                        services.AddSingleton<IVirtualMachine, ReflectionVirtualMachine>();
                         services.AddSingleton<IAddressGenerator, AddressGenerator>();
                         services.AddSingleton<ILoader, ContractAssemblyLoader>();
                         services.AddSingleton<IContractModuleDefinitionReader, ContractModuleDefinitionReader>();
@@ -253,10 +254,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<ISmartContractValidator, SmartContractValidator>();
 
                         // Executor et al.
-                        services.AddSingleton<ISmartContractResultRefundProcessor, SmartContractResultRefundProcessor>();
-                        services.AddSingleton<ISmartContractResultTransferProcessor, SmartContractResultTransferProcessor>();
+                        services.AddSingleton<IContractRefundProcessor, ContractRefundProcessor>();
+                        services.AddSingleton<IContractTransferProcessor, ContractTransferProcessor>();
                         services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
-                        services.AddSingleton<ISmartContractExecutorFactory, ReflectionSmartContractExecutorFactory>();
+                        services.AddSingleton<IContractExecutorFactory, ReflectionExecutorFactory>();
                         services.AddSingleton<IMethodParameterSerializer, MethodParameterSerializer>();
                         services.AddSingleton<IContractPrimitiveSerializer, ContractPrimitiveSerializer>();
 

@@ -63,12 +63,14 @@ public class Auction : SmartContract
         }
     }
 
-    public ISmartContractMapping<ulong> ReturnBalances
+    public ulong GetBalance(Address address)
     {
-        get
-        {
-            return this.PersistentState.GetUInt64Mapping("ReturnBalances");
-        }
+        return this.PersistentState.GetUInt64($"Balances[{address}]");
+    }
+
+    private void SetBalance(Address address, ulong balance)
+    {
+        this.PersistentState.SetUInt64($"Balances[{address}]", balance);
     }
 
     public Auction(ISmartContractState smartContractState, ulong durationBlocks)
@@ -85,7 +87,8 @@ public class Auction : SmartContract
         Assert(this.Message.Value > this.HighestBid);
         if (this.HighestBid > 0)
         {
-            this.ReturnBalances[this.HighestBidder] = this.HighestBid;
+            // NOTE: There is a bug here - the return balance will overwrite the previous balance. Balances should be cumulative.
+            SetBalance(this.Message.Sender, this.HighestBid);
         }
         this.HighestBidder = this.Message.Sender;
         this.HighestBid = this.Message.Value;
@@ -93,12 +96,12 @@ public class Auction : SmartContract
 
     public bool Withdraw()
     {
-        ulong amount = this.ReturnBalances[this.Message.Sender];
+        ulong amount = GetBalance(this.Message.Sender);
         Assert(amount > 0);
-        this.ReturnBalances[this.Message.Sender] = 0;
+        SetBalance(this.Message.Sender, 0);
         ITransferResult transferResult = Transfer(this.Message.Sender, amount);
         if (!transferResult.Success)
-            this.ReturnBalances[this.Message.Sender] = amount;
+            this.SetBalance(this.Message.Sender, amount);
         return transferResult.Success;
     }
 

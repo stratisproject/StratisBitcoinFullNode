@@ -107,20 +107,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             Guard.NotEmpty(walletPassword, nameof(walletPassword));
             Guard.NotEmpty(accountName, nameof(accountName));
 
-            if (numberOfBlocks == 0) throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
+            if (numberOfBlocks == 0)
+                throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
-            HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
+            if (node.MinerSecret == null)
+            {
+                HdAddress unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
+                node.MinerHDAddress = unusedAddress;
 
-            Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
-            Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address).PrivateKey;
-
-            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+                Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
+                Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
+                node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+            }
 
             var blockHashes = node.GenerateStratisWithMiner((int)numberOfBlocks);
 
             WaitForNodeToSync(node);
 
-            return (address, blockHashes);
+            return (node.MinerHDAddress, blockHashes);
         }
 
         /// <summary>
