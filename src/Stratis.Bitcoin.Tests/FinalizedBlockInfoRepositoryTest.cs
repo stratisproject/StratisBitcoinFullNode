@@ -9,12 +9,10 @@ namespace Stratis.Bitcoin.Tests
     public class FinalizedBlockInfoRepositoryTest : TestBase
     {
         private readonly ILoggerFactory loggerFactory;
-        private readonly Network network;
 
         public FinalizedBlockInfoRepositoryTest() : base(KnownNetworks.StratisRegTest)
         {
             this.loggerFactory = new LoggerFactory();
-            this.network = KnownNetworks.StratisRegTest;
         }
 
         [Fact]
@@ -29,7 +27,7 @@ namespace Stratis.Bitcoin.Tests
 
             using (var repo = new FinalizedBlockInfoRepository(dir, this.loggerFactory))
             {
-                await repo.LoadFinalizedBlockInfoAsync(this.network);
+                await repo.LoadFinalizedBlockInfoAsync(this.Network);
                 Assert.Equal(777, repo.GetFinalizedBlockInfo().Height);
             }
         }
@@ -49,7 +47,7 @@ namespace Stratis.Bitcoin.Tests
 
             using (var repo = new FinalizedBlockInfoRepository(dir, this.loggerFactory))
             {
-                await repo.LoadFinalizedBlockInfoAsync(this.network);
+                await repo.LoadFinalizedBlockInfoAsync(this.Network);
                 Assert.Equal(777, repo.GetFinalizedBlockInfo().Height);
             }
         }
