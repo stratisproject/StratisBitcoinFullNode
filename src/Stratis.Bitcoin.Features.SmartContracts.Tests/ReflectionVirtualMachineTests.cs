@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new Block(1, TestAddress),
                 new Message(TestAddress, TestAddress, 0),
                 new PersistentState(
-                    null, //new PersistenceStrategy(this.state),
+                    new PersistenceStrategy(this.state),
                     context.ContractPrimitiveSerializer, TestAddress.ToUint160(this.network)),
                 context.ContractPrimitiveSerializer,
                 new GasMeter((Gas)5000000),

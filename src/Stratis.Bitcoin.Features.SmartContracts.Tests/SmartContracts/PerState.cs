@@ -3,7 +3,6 @@
 
 public class PerState : SmartContract
 {
-
     public int Auto { get; set; }
 
     public int Manual
@@ -28,25 +27,41 @@ public class PerState : SmartContract
         PersistentState.SetInt32($"Balance[{name}]", val);
     }
 
-    public void SetBalance2d(string name1, string name2, int val)
+    public int GetBalance(string name)
     {
-        PersistentState.SetInt32($"Balance[{name1}][{name2}]", val);
+        return PersistentState.GetInt32($"Balance[{name}]");
     }
 
-
-    public void AddBuyer()
+    public void SetAllowed(string name1, string name2, bool val)
     {
-        // add to a list
-
-        // increment a count
-
-        // need to be able to loop over
+        PersistentState.SetBool($"Allowed[{name1}][{name2}]", val);
     }
 
+    public bool GetAllowed(string name1, string name2)
+    {
+        return PersistentState.GetBool($"Allowed[{name1}][{name2}]");
+    }
 
+    public string GetBuyer(int index)
+    {
+        return PersistentState.GetString($"Buyers[{index}]");
+    }
 
+    public void AddBuyer(string buyer)
+    {
+        int currentCount = PersistentState.GetInt32("Buyers.Count");
+        PersistentState.SetString($"Buyers[{currentCount}]", buyer);
+        PersistentState.SetInt32("Buyers.Count", currentCount + 1);
+    }
 
-
-
-
+    public string[] GetAllBuyers()
+    {
+        int count = PersistentState.GetInt32("Buyers.Count");
+        string[] allBuyers = new string[count];
+        for(int i =0; i< count; i++)
+        {
+            allBuyers[i] = GetBuyer(i);
+        }
+        return allBuyers;
+    }
 }
