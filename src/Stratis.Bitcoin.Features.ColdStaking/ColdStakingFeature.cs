@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.ColdStaking.Controllers;
@@ -80,10 +82,18 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if this is not a Stratis network.</exception>
     public static class FullNodeBuilderColdStakingExtension
     {
         public static IFullNodeBuilder UseColdStaking(this IFullNodeBuilder fullNodeBuilder)
         {
+            // Ensure that this feature is only used on a Stratis network.
+            if (!fullNodeBuilder.Network.Consensus.IsProofOfStake)
+                throw new InvalidOperationException("Cold staking can only be used on a Stratis network.");
+
+            // Register the cold staking script template.
+            StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
