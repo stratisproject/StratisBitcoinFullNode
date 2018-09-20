@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Carries the output of a smart contract execution.
     /// </summary>
-    public sealed class SmartContractExecutionResult : ISmartContractExecutionResult
+    public sealed class SmartContractExecutionResult : IContractExecutionResult
     {
         /// <inheritdoc/>
         public uint160 NewContractAddress { get; set; }

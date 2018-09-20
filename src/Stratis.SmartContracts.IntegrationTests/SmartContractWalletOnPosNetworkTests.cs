@@ -50,10 +50,10 @@ namespace Stratis.SmartContracts.IntegrationTests
                 ulong gasPrice = 1;
                 int vmVersion = 1;
                 Gas gasLimit = (Gas)5000;
-                SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/TransferTestPos.cs");
+                ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTestPos.cs");
                 Assert.True(compilationResult.Success);
 
-                var contractCarrier = SmartContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
+                var contractCarrier = ContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
 
                 var contractCreateScript = new Script(contractCarrier.Serialize());
                 var txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
@@ -84,8 +84,8 @@ namespace Stratis.SmartContracts.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
                 // Ensure that boths nodes has the contract
-                IContractStateRoot senderState = scSender.FullNode.NodeService<IContractStateRoot>();
-                IContractStateRoot receiverState = scReceiver.FullNode.NodeService<IContractStateRoot>();
+                IStateRepositoryRoot senderState = scSender.FullNode.NodeService<IStateRepositoryRoot>();
+                IStateRepositoryRoot receiverState = scReceiver.FullNode.NodeService<IStateRepositoryRoot>();
                 IAddressGenerator addressGenerator = scSender.FullNode.NodeService<IAddressGenerator>();
 
                 uint160 tokenContractAddress = addressGenerator.GenerateAddress(transferContractTransaction.GetHash(), 0);
@@ -94,9 +94,9 @@ namespace Stratis.SmartContracts.IntegrationTests
                 scSender.FullNode.MempoolManager().Clear();
 
                 // Create a transfer token contract
-                compilationResult = SmartContractCompiler.CompileFile("SmartContracts/TransferTestPos.cs");
+                compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTestPos.cs");
                 Assert.True(compilationResult.Success);
-                contractCarrier = SmartContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
+                contractCarrier = ContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
                 contractCreateScript = new Script(contractCarrier.Serialize());
                 txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
@@ -130,7 +130,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 scSender.FullNode.MempoolManager().Clear();
 
                 // Create a call contract transaction which will transfer funds
-                contractCarrier = SmartContractCarrier.CallContract(1, tokenContractAddress, "Test", gasPrice, gasLimit);
+                contractCarrier = ContractCarrier.CallContract(1, tokenContractAddress, "Test", gasPrice, gasLimit);
                 Script contractCallScript = new Script(contractCarrier.Serialize());
                 txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {

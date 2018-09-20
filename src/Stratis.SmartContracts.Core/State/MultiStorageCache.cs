@@ -9,9 +9,9 @@ namespace Stratis.SmartContracts.Core.State
     /// </summary>
     public class MultiStorageCache : MultiCacheBase<ICachedSource<byte[], byte[]>>
     {
-        ContractStateRoot parentRepo;
+        StateRepositoryRoot parentRepo;
 
-        public MultiStorageCache(ContractStateRoot parentRepo) : base(null)
+        public MultiStorageCache(StateRepositoryRoot parentRepo) : base(null)
         {
             this.parentRepo = parentRepo;
         }
