@@ -2,7 +2,7 @@
 
 namespace Stratis.SmartContracts.Core
 {
-    public interface ISmartContractTransactionContext
+    public interface IContractTransactionContext
     {
         /// <summary>
         /// Hash of the currently executing transaction.

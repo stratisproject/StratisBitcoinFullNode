@@ -5,7 +5,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Defines how execution context for smart contract executor should be constructed.
     /// </summary>
-    public interface ISmartContractExecutionContext
+    public interface IContractExecutionContext
     {
         /// <summary>
         /// TODO: Add documentation.

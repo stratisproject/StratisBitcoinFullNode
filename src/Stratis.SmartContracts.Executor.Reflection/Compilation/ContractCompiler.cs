@@ -11,7 +11,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
     /// <summary>
     /// Helpful methods to handle compilation of .cs files.
     /// </summary>
-    public static class SmartContractCompiler
+    public static class ContractCompiler
     {
         private const string AssemblyName = "smartContract";
 
@@ -19,7 +19,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
         /// Get the compiled bytecode for the specified file.
         /// </summary>
         /// <param name="path"></param>
-        public static SmartContractCompilationResult CompileFile(string path)
+        public static ContractCompilationResult CompileFile(string path)
         {
             string source = File.ReadAllText(path);
             return Compile(source);
@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
         /// <summary>
         /// Compile all of the files in a directory, with the option of compiling a certain namespace.
         /// </summary>
-        public static SmartContractCompilationResult CompileDirectory(string path, string selectedNamespace = null)
+        public static ContractCompilationResult CompileDirectory(string path, string selectedNamespace = null)
         {
             // Get the syntax tree for every file in the given path.
             string[] files = Directory.GetFiles(path, "*.cs", SearchOption.AllDirectories);
@@ -56,13 +56,13 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
         /// Get the compiled bytecode for the specified C# source code.
         /// </summary>
         /// <param name="source"></param>
-        public static SmartContractCompilationResult Compile(string source)
+        public static ContractCompilationResult Compile(string source)
         {
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
             return Compile(new[] { syntaxTree });
         }
 
-        private static SmartContractCompilationResult Compile(IEnumerable<SyntaxTree> syntaxTrees)
+        private static ContractCompilationResult Compile(IEnumerable<SyntaxTree> syntaxTrees)
         {
             // @TODO - Use OptimizationLevel.Release once we switch to injecting compiler options
             CSharpCompilation compilation = CSharpCompilation.Create(
@@ -78,9 +78,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
             {
                 EmitResult emitResult = compilation.Emit(dllStream);
                 if (!emitResult.Success)
-                    return SmartContractCompilationResult.Failed(emitResult.Diagnostics);
+                    return ContractCompilationResult.Failed(emitResult.Diagnostics);
 
-                return SmartContractCompilationResult.Succeeded(dllStream.ToArray());
+                return ContractCompilationResult.Succeeded(dllStream.ToArray());
             }
         }
 

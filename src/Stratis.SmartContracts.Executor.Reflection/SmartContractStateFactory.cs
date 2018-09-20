@@ -10,7 +10,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         public SmartContractStateFactory(IContractPrimitiveSerializer serializer,
             Network network,
-            IInternalTransactionExecutorFactory internalTransactionExecutorFactory)
+            IInternalExecutorFactory internalTransactionExecutorFactory)
         {
             this.Serializer = serializer;
             this.Network = network;
@@ -19,12 +19,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public Network Network { get; }
         public IContractPrimitiveSerializer Serializer { get; }
-        public IInternalTransactionExecutorFactory InternalTransactionExecutorFactory { get; }
+        public IInternalExecutorFactory InternalTransactionExecutorFactory { get; }
 
         /// <summary>
         /// Sets up a new <see cref="ISmartContractState"/> based on the current state.
         /// </summary>        
-        public ISmartContractState Create(IState state, IGasMeter gasMeter, uint160 address, BaseMessage message, IContractState repository)
+        public ISmartContractState Create(IState state, IGasMeter gasMeter, uint160 address, BaseMessage message, IStateRepository repository)
         {
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
 

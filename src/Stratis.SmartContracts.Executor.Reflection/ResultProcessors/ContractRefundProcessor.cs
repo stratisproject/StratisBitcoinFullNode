@@ -1,18 +1,17 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 
-namespace Stratis.SmartContracts.Executor.Reflection
+namespace Stratis.SmartContracts.Executor.Reflection.ResultProcessors
 {
     /// <summary>
     /// This class processes the result from the <see cref="SmartContractExecutor"/> by calculating the fee
     /// and if applicable ,adding any refunds due.
     /// </summary>
-    public sealed class SmartContractResultRefundProcessor : ISmartContractResultRefundProcessor
+    public sealed class ContractRefundProcessor : IContractRefundProcessor
     {
         private readonly ILogger logger;
 
-        public SmartContractResultRefundProcessor(ILoggerFactory loggerFactory)
+        public ContractRefundProcessor(ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType());
         }

@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </list>
     /// </para>
     /// </summary>
-    public sealed class SmartContractCarrier
+    public sealed class ContractCarrier
     {
         /// <summary>The contract data provided with the transaction</summary>
         public ContractTxData ContractTxData { get; set; }
@@ -47,7 +47,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>The value of the transaction's output (should be one UTXO).</summary>
         public ulong Value { get; private set; }
 
-        public SmartContractCarrier(IMethodParameterSerializer serializer)
+        public ContractCarrier(IMethodParameterSerializer serializer)
         {
             this.serializer = serializer;
         }
@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Instantiates a <see cref="ScOpcodeType.OP_CREATECONTRACT"/> smart contract carrier.
         /// </summary>
-        public static SmartContractCarrier CreateContract(int vmVersion, byte[] contractExecutionCode, ulong gasPrice,
+        public static ContractCarrier CreateContract(int vmVersion, byte[] contractExecutionCode, ulong gasPrice,
             Gas gasLimit, string[] methodParameters = null)
         {
             if (contractExecutionCode == null)
@@ -66,7 +66,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParams);
 
-            var carrier = new SmartContractCarrier(new MethodParameterSerializer());
+            var carrier = new ContractCarrier(new MethodParameterSerializer());
             carrier.ContractTxData = callData;
 
             if (!string.IsNullOrWhiteSpace(methodParams))
@@ -77,14 +77,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Instantiates a <see cref="ScOpcodeType.OP_CALLCONTRACT"/> smart contract carrier.
         /// </summary>
-        public static SmartContractCarrier CallContract(int vmVersion, uint160 contractAddress, string methodName, ulong gasPrice, Gas gasLimit, string[] methodParameters = null)
+        public static ContractCarrier CallContract(int vmVersion, uint160 contractAddress, string methodName, ulong gasPrice, Gas gasLimit, string[] methodParameters = null)
         {
             if (string.IsNullOrWhiteSpace(methodName))
                 throw new SmartContractCarrierException(nameof(methodName) + " is null or empty");
 
             var serializer = new MethodParameterSerializer();
             string methodParams = GetMethodParams(serializer, methodParameters);
-            var carrier = new SmartContractCarrier(new MethodParameterSerializer());
+            var carrier = new ContractCarrier(new MethodParameterSerializer());
             carrier.ContractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParams);
             
             if (!string.IsNullOrWhiteSpace(methodParams))

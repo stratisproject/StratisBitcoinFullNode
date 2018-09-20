@@ -6,13 +6,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Factory for creating internal transaction executors
     /// </summary>
-    public sealed class InternalTransactionExecutorFactory : IInternalTransactionExecutorFactory
+    public sealed class InternalExecutorFactory : IInternalExecutorFactory
     {
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
         private readonly IStateProcessor stateProcessor;
 
-        public InternalTransactionExecutorFactory(ILoggerFactory loggerFactory, Network network, IStateProcessor stateProcessor)
+        public InternalExecutorFactory(ILoggerFactory loggerFactory, Network network, IStateProcessor stateProcessor)
         {
             this.loggerFactory = loggerFactory;
             this.network = network;
@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IInternalTransactionExecutor Create(IState state)
         {
-            return new InternalTransactionExecutor(this.loggerFactory, this.network, state, this.stateProcessor);
+            return new InternalExecutor(this.loggerFactory, this.network, state, this.stateProcessor);
         }
     }
 }

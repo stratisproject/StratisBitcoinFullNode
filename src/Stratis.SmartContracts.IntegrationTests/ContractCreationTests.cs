@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 TestHelper.MineBlocks(sender.CoreNode, 1, sender.WalletName, sender.Password, sender.AccountName);
 
-                SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/ContractCreation.cs");
+                ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ContractCreation.cs");
                 Assert.True(compilationResult.Success);
 
                 // Create contract and ensure code exists

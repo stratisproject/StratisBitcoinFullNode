@@ -22,7 +22,7 @@ namespace Stratis.SmartContracts.Core.State
     /// -If unsuccessful, just rollback() the particular changes that didn't work.
     /// 
     /// </summary>
-    public class ContractStateRoot : ContractState, IContractStateRoot
+    public class StateRepositoryRoot : StateRepository, IStateRepositoryRoot
     {
         public byte[] Root
         {
@@ -37,13 +37,13 @@ namespace Stratis.SmartContracts.Core.State
         private ICachedSource<byte[], byte[]> trieCache;
         private IPatriciaTrie stateTrie;
 
-        public ContractStateRoot() { }
+        public StateRepositoryRoot() { }
 
-        public ContractStateRoot(NoDeleteContractStateSource stateDS) : this(stateDS, null) { }
+        public StateRepositoryRoot(NoDeleteContractStateSource stateDS) : this(stateDS, null) { }
 
-        public ContractStateRoot(ISource<byte[], byte[]> stateDS) : this(stateDS, null) { }
+        public StateRepositoryRoot(ISource<byte[], byte[]> stateDS) : this(stateDS, null) { }
 
-        public ContractStateRoot(ISource<byte[], byte[]> stateDS, byte[] stateRoot)
+        public StateRepositoryRoot(ISource<byte[], byte[]> stateDS, byte[] stateRoot)
         {
             this.stateDS = stateDS;
             this.trieCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts.Core.State
             MultiCacheBase<ICachedSource<byte[], byte[]>> storageCache = new MultiStorageCache(this);
             ISource<byte[], byte[]> codeCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
             ISource<byte[], byte[]> unspentCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.SIMPLE);
-            SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]> unspentCacheCodec = new SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]>(unspentCache, new Serializers.NoSerializer<byte[]>(), Serializers.VinSerializer);
+            SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]> unspentCacheCodec = new SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]>(unspentCache, new Serializers.NoSerializer<byte[]>(), Serializers.ContractOutputSerializer);
             this.Init(accountStateCache, codeCache, storageCache, unspentCacheCodec);
         }
 
@@ -79,9 +79,9 @@ namespace Stratis.SmartContracts.Core.State
             this.Commit();
         }
 
-        public override IContractStateRoot GetSnapshotTo(byte[] stateRoot)
+        public override IStateRepositoryRoot GetSnapshotTo(byte[] stateRoot)
         {
-            return new ContractStateRoot(this.stateDS, stateRoot);
+            return new StateRepositoryRoot(this.stateDS, stateRoot);
         }
 
         public void SyncToRoot(byte[] root)

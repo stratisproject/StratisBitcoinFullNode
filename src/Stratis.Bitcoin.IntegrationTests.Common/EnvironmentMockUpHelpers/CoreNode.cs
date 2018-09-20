@@ -31,12 +31,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private readonly NetworkCredential creds;
         private readonly object lockObject = new object();
         private readonly ILoggerFactory loggerFactory;
-        public BitcoinSecret MinerSecret { get; private set; }
-        public HdAddress MinerSecretHDAddress { get; internal set; }
         private readonly NodeRunner runner;
         private List<Transaction> transactions = new List<Transaction>();
 
         public int ApiPort => int.Parse(this.ConfigParameters["apiport"]);
+        public BitcoinSecret MinerSecret { get; private set; }
+        public HdAddress MinerHDAddress { get; internal set; }
         public int ProtocolPort => int.Parse(this.ConfigParameters["port"]);
         public int RpcPort => int.Parse(this.ConfigParameters["rpcport"]);
 

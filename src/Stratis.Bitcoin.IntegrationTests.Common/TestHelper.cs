@@ -113,21 +113,19 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (node.MinerSecret == null)
             {
                 HdAddress unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
+                node.MinerHDAddress = unusedAddress;
 
                 Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
                 Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
-
                 node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
-                node.MinerSecretHDAddress = unusedAddress;
             }
 
             var script = new ReserveScript { ReserveFullNodeScript = node.MinerSecret.ScriptPubKey };
-
             var blockHashes = node.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(script, (ulong)numberOfBlocks, uint.MaxValue);
 
             WaitForNodeToSync(node);
 
-            return (node.MinerSecretHDAddress, blockHashes);
+            return (node.MinerHDAddress, blockHashes);
         }
 
         /// <summary>
