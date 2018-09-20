@@ -32,7 +32,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.contractState = new SmartContractState(
                 new Block(1, TestAddress),
                 new Message(TestAddress, TestAddress, 0),
-                new PersistentState(new PersistenceStrategy(this.state),
+                new PersistentState(
+                    new TestPersistenceStrategy(this.state),
                     context.ContractPrimitiveSerializer, TestAddress.ToUint160(this.network)),
                 context.ContractPrimitiveSerializer,
                 new GasMeter((Gas)5000000),
@@ -90,6 +91,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             VmExecutionResult result = this.vm.Create(this.state, this.contractState, contractExecutionCode, methodParameters);
 
             Assert.Null(result.ErrorMessage);
+        }
+    }
+
+    public class TestPersistenceStrategy : IPersistenceStrategy
+    {
+        private readonly IStateRepository stateDb;
+
+        public TestPersistenceStrategy(IStateRepository stateDb)
+        {
+            this.stateDb = stateDb;
+        }
+
+        public byte[] FetchBytes(uint160 address, byte[] key)
+        {
+            return this.stateDb.GetStorageValue(address, key);
+        }
+
+        public void StoreBytes(uint160 address, byte[] key, byte[] value)
+        {
+            this.stateDb.SetStorageValue(address, key, value);
         }
     }
 }
