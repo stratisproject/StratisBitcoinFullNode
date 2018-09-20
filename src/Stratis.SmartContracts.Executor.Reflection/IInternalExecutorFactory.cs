@@ -1,6 +1,6 @@
 ﻿namespace Stratis.SmartContracts.Executor.Reflection
 {
-    public interface IInternalTransactionExecutorFactory
+    public interface IInternalExecutorFactory
     {
         IInternalTransactionExecutor Create(IState state);
     }

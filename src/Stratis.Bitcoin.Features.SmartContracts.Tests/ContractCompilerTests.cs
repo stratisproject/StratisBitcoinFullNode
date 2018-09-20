@@ -7,12 +7,12 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public class SmartContractCompilerTests
+    public class ContractCompilerTests
     {
         [Fact]
         public void SmartContract_Compiler_ReturnsFalse()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile("Uncompilable");
+            ContractCompilationResult compilationResult = ContractCompiler.Compile("Uncompilable");
 
             Assert.False(compilationResult.Success);
             Assert.NotEmpty(compilationResult.Diagnostics);
@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_Compiler_ReturnsTrue()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile("class C{static void M(){}}");
+            ContractCompilationResult compilationResult = ContractCompiler.Compile("class C{static void M(){}}");
 
             Assert.True(compilationResult.Success);
             Assert.Empty(compilationResult.Diagnostics);
@@ -44,16 +44,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_Compiler_FailsOnImplicitInvalidAssemblyReference()
         {
-            SmartContractCompilationResult result = SmartContractCompiler.CompileFile("SmartContracts/InvalidImplicitAssembly.cs");
+            ContractCompilationResult result = ContractCompiler.CompileFile("SmartContracts/InvalidImplicitAssembly.cs");
             Assert.False(result.Success);
         }
 
         [Fact]
         public void SmartContract_Compiler_CanCompileMultipleFiles()
         {
-            SmartContractCompilationResult result = SmartContractCompiler.CompileDirectory("SmartContracts", "MultipleFiles");
+            ContractCompilationResult result = ContractCompiler.CompileDirectory("SmartContracts", "MultipleFiles");
             Assert.True(result.Success);
-            IContractModuleDefinition decomp = SmartContractDecompiler.GetModuleDefinition(result.Compilation);
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(result.Compilation);
             Assert.Contains(decomp.ModuleDefinition.Types, x => x.Name == "MultipleFiles1");
             Assert.Contains(decomp.ModuleDefinition.Types, x => x.Name == "MultipleFiles2");
         }

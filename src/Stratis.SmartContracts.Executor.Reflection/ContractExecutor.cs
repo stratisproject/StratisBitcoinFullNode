@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
+using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Block = Stratis.SmartContracts.Core.Block;
 
@@ -12,23 +12,23 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Deserializes raw contract transaction data, creates an external create/call message, and applies the message to the state.
     /// </summary>
-    public class Executor : ISmartContractExecutor
+    public class ContractExecutor : IContractExecutor
     {
         private readonly ILogger logger;
-        private readonly IContractState stateRoot;
-        private readonly ISmartContractResultRefundProcessor refundProcessor;
-        private readonly ISmartContractResultTransferProcessor transferProcessor;
+        private readonly IStateRepository stateRoot;
+        private readonly IContractRefundProcessor refundProcessor;
+        private readonly IContractTransferProcessor transferProcessor;
         private readonly ICallDataSerializer serializer;
         private readonly Network network;
         private readonly IStateFactory stateFactory;
         private readonly IStateProcessor stateProcessor;
         private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
 
-        public Executor(ILoggerFactory loggerFactory,
+        public ContractExecutor(ILoggerFactory loggerFactory,
             ICallDataSerializer serializer,
-            IContractState stateRoot,
-            ISmartContractResultRefundProcessor refundProcessor,
-            ISmartContractResultTransferProcessor transferProcessor,
+            IStateRepository stateRoot,
+            IContractRefundProcessor refundProcessor,
+            IContractTransferProcessor transferProcessor,
             Network network,
             IStateFactory stateFactory,
             IStateProcessor stateProcessor,
@@ -45,7 +45,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.contractPrimitiveSerializer = contractPrimitiveSerializer;
         }
 
-        public ISmartContractExecutionResult Execute(ISmartContractTransactionContext transactionContext)
+        public IContractExecutionResult Execute(IContractTransactionContext transactionContext)
         {
             this.logger.LogTrace("()");
 

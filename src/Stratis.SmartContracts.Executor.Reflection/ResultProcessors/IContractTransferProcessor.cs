@@ -4,19 +4,19 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 
-namespace Stratis.SmartContracts.Executor.Reflection
+namespace Stratis.SmartContracts.Executor.Reflection.ResultProcessors
 {
     /// <summary>
     /// Handles value transfers as a result of smart contract execution.
     /// </summary>
-    public interface ISmartContractResultTransferProcessor
+    public interface IContractTransferProcessor
     {
         /// <summary>
         /// Returns a single Transaction which accounts for value transfers that occurred during contract execution.
         /// </summary>
-        Transaction Process(IContractState stateSnapshot,
+        Transaction Process(IStateRepository stateSnapshot,
             uint160 contractAddress,
-            ISmartContractTransactionContext transactionContext,
+            IContractTransactionContext transactionContext,
             IReadOnlyList<TransferInfo> internalTransfers,
             bool reversionRequired);
     }

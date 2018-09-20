@@ -4,7 +4,6 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -20,7 +19,7 @@ using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 {
     public class P2PKHNotContractRuleTests
     {
@@ -61,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             uint160 walletAddress = new uint160(321);
 
-            var state = new Mock<IContractStateRoot>();
+            var state = new Mock<IStateRepositoryRoot>();
             state.Setup(x => x.GetAccountState(walletAddress)).Returns<AccountState>(null);
             this.rulesEngine.OriginalStateRoot = state.Object;
 
@@ -79,7 +78,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             uint160 contractAddress = new uint160(123);
 
-            var state = new Mock<IContractStateRoot>();
+            var state = new Mock<IStateRepositoryRoot>();
             state.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState()); // not null
             this.rulesEngine.OriginalStateRoot = state.Object;
 
@@ -101,9 +100,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
         }
 
-        public ISmartContractExecutorFactory ExecutorFactory => throw new NotImplementedException();
+        public IContractExecutorFactory ExecutorFactory => throw new NotImplementedException();
 
-        public IContractStateRoot OriginalStateRoot { get; set; }
+        public IStateRepositoryRoot OriginalStateRoot { get; set; }
 
         public IReceiptRepository ReceiptRepository => throw new NotImplementedException();
 

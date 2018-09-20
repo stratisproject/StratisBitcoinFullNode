@@ -12,12 +12,13 @@ using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
+using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public sealed class SmartContractExecutorTests
+    public sealed class ContractExecutorTests
     {
         private const ulong BlockHeight = 0;
         private static readonly uint160 CoinbaseAddress = 0;
@@ -27,12 +28,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
-        private readonly ISmartContractResultRefundProcessor refundProcessor;
-        private readonly IContractStateRoot state;
-        private readonly ISmartContractResultTransferProcessor transferProcessor;
+        private readonly IContractRefundProcessor refundProcessor;
+        private readonly IStateRepositoryRoot state;
+        private readonly IContractTransferProcessor transferProcessor;
         private readonly SmartContractValidator validator;
-        private IInternalTransactionExecutorFactory internalTxExecutorFactory;
-        private ISmartContractVirtualMachine vm;
+        private IInternalExecutorFactory internalTxExecutorFactory;
+        private IVirtualMachine vm;
         private readonly ICallDataSerializer serializer;
         private readonly StateFactory stateFactory;
         private readonly IAddressGenerator addressGenerator;
@@ -42,15 +43,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly IStateProcessor stateProcessor;
         private readonly ISmartContractStateFactory smartContractStateFactory;
 
-        public SmartContractExecutorTests()
+        public ContractExecutorTests()
         {
             this.keyEncodingStrategy = BasicKeyEncodingStrategy.Default;
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
             this.network = new SmartContractsRegTest();
-            this.refundProcessor = new SmartContractResultRefundProcessor(this.loggerFactory);
-            this.state = new ContractStateRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
-            this.transferProcessor = new SmartContractResultTransferProcessor(this.loggerFactory, this.network);
+            this.refundProcessor = new ContractRefundProcessor(this.loggerFactory);
+            this.state = new StateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            this.transferProcessor = new ContractTransferProcessor(this.loggerFactory, this.network);
             this.validator = new SmartContractValidator();
             this.addressGenerator = new AddressGenerator();
             this.assemblyLoader = new ContractAssemblyLoader();
@@ -58,7 +59,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.contractPrimitiveSerializer = new ContractPrimitiveSerializer(this.network);
             this.vm = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.network, this.assemblyLoader, this.moduleDefinitionReader);
             this.stateProcessor = new StateProcessor(this.vm, this.addressGenerator);
-            this.internalTxExecutorFactory = new InternalTransactionExecutorFactory(this.loggerFactory, this.network, this.stateProcessor);
+            this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.network, this.stateProcessor);
             this.smartContractStateFactory = new SmartContractStateFactory(this.contractPrimitiveSerializer, this.network, this.internalTxExecutorFactory);
             
             this.serializer = CallDataSerializer.Default;
@@ -70,14 +71,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void SmartContractExecutor_CallContract_Fails_ReturnFundsToSender()
         {
             //Get the contract execution code------------------------
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/ThrowExceptionContract.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ThrowExceptionContract.cs");
             Assert.True(compilationResult.Success);
             byte[] contractExecutionCode = compilationResult.Compilation;
             //-------------------------------------------------------
 
 
             //Call smart contract and add to transaction-------------
-            SmartContractCarrier carrier = SmartContractCarrier.CallContract(1, ToAddress, "ThrowException", 1, (Gas)5000);
+            ContractCarrier carrier = ContractCarrier.CallContract(1, ToAddress, "ThrowException", 1, (Gas)5000);
             var transactionCall = new Transaction();
             TxOut callTxOut = transactionCall.AddOutput(0, new Script(carrier.Serialize()));
             callTxOut.Value = 100;
@@ -89,9 +90,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.state.SetCode(new uint160(1), contractExecutionCode);
             this.state.SetContractType(new uint160(1), "ThrowExceptionContract");
 
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transactionCall);
+            IContractTransactionContext transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transactionCall);
             
-            var executor = new Executor(this.loggerFactory,
+            var executor = new ContractExecutor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
@@ -101,7 +102,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
 
-            ISmartContractExecutionResult result = executor.Execute(transactionContext);
+            IContractExecutionResult result = executor.Execute(transactionContext);
 
             Assert.True(result.Revert);
             Assert.NotNull(result.InternalTransaction);
@@ -116,15 +117,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContractExecutor_CallContract_DoesNotExist_Refund()
         {
-            SmartContractCarrier carrier = SmartContractCarrier.CallContract(1, ToAddress, "TestMethod", 1, (Gas) 10000);
+            ContractCarrier carrier = ContractCarrier.CallContract(1, ToAddress, "TestMethod", 1, (Gas) 10000);
 
             var transaction = new Transaction();
             TxOut txOut = transaction.AddOutput(0, new Script(carrier.Serialize()));
             txOut.Value = 100;
 
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), transaction);
+            IContractTransactionContext transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), transaction);
 
-            var executor = new Executor(this.loggerFactory,
+            var executor = new ContractExecutor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
@@ -134,24 +135,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
 
-            ISmartContractExecutionResult result = executor.Execute(transactionContext);
+            IContractExecutionResult result = executor.Execute(transactionContext);
             Assert.True(result.Revert);
         }
 
         [Fact]
         public void SME_CreateContract_ConstructorFails_Refund()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/ContractConstructorInvalid.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ContractConstructorInvalid.cs");
             Assert.True(compilationResult.Success);
             byte[] contractCode = compilationResult.Compilation;
 
-            SmartContractCarrier carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000);
+            ContractCarrier carrier = ContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000);
             var tx = new Transaction();
             tx.AddOutput(0, new Script(carrier.Serialize()));
 
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
+            IContractTransactionContext transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
-            var executor = new Executor(this.loggerFactory,
+            var executor = new ContractExecutor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
@@ -161,7 +162,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
 
-            ISmartContractExecutionResult result = executor.Execute(transactionContext);
+            IContractExecutionResult result = executor.Execute(transactionContext);
 
             Assert.NotNull(result.ErrorMessage);
             // Base cost + constructor cost (21 because that is number of gas to invoke Assert(false));
@@ -171,7 +172,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SME_CreateContract_MethodParameters_InvalidParameterCount()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/ContractInvalidParameterCount.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ContractInvalidParameterCount.cs");
             Assert.True(compilationResult.Success);
             byte[] contractCode = compilationResult.Compilation;
 
@@ -180,13 +181,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 5),
             };
 
-            SmartContractCarrier carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000, methodParameters);
+            ContractCarrier carrier = ContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000, methodParameters);
             var tx = new Transaction();
             tx.AddOutput(0, new Script(carrier.Serialize()));
 
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
+            IContractTransactionContext transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
-            var executor = new Executor(this.loggerFactory,
+            var executor = new ContractExecutor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
@@ -196,7 +197,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
 
-            ISmartContractExecutionResult result = executor.Execute(transactionContext);
+            IContractExecutionResult result = executor.Execute(transactionContext);
             Assert.NotNull(result.ErrorMessage);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
@@ -204,7 +205,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SME_CreateContract_MethodParameters_ParameterTypeMismatch()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/ContractMethodParameterTypeMismatch.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ContractMethodParameterTypeMismatch.cs");
             Assert.True(compilationResult.Success);
             byte[] contractCode = compilationResult.Compilation;
 
@@ -213,13 +214,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Bool, true),
             };
 
-            var carrier = SmartContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000, methodParameters);
+            var carrier = ContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000, methodParameters);
             var tx = new Transaction();
             tx.AddOutput(0, new Script(carrier.Serialize()));
 
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
+            IContractTransactionContext transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
-            var executor = new Executor(this.loggerFactory,
+            var executor = new ContractExecutor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
@@ -229,7 +230,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
 
-            ISmartContractExecutionResult result = executor.Execute(transactionContext);
+            IContractExecutionResult result = executor.Execute(transactionContext);
 
             Assert.NotNull(result.ErrorMessage);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
@@ -241,13 +242,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Create contract 1
 
             //Get the contract execution code------------------------
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/InfiniteLoop.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InfiniteLoop.cs");
             Assert.True(compilationResult.Success);
             byte[] contractExecutionCode = compilationResult.Compilation;
             //-------------------------------------------------------
 
             // Add contract creation code to transaction-------------
-            var carrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)3500);
+            var carrier = ContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)3500);
             var transaction = new Transaction();
             TxOut txOut = transaction.AddOutput(0, new Script(carrier.Serialize()));
             txOut.Value = 100;
@@ -255,9 +256,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             //Deserialize the contract from the transaction----------
             //and get the module definition
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
+            IContractTransactionContext transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
 
-            var executor = new Executor(this.loggerFactory,
+            var executor = new ContractExecutor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,
@@ -267,7 +268,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
 
-            ISmartContractExecutionResult result = executor.Execute(transactionContext);
+            IContractExecutionResult result = executor.Execute(transactionContext);
             uint160 address1 = result.NewContractAddress;
             //-------------------------------------------------------
 
@@ -275,14 +276,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Create contract 2
 
             //Get the contract execution code------------------------
-            compilationResult = SmartContractCompiler.CompileFile("SmartContracts/CallInfiniteLoopContract.cs");
+            compilationResult = ContractCompiler.CompileFile("SmartContracts/CallInfiniteLoopContract.cs");
             Assert.True(compilationResult.Success);
 
             contractExecutionCode = compilationResult.Compilation;
             //-------------------------------------------------------
 
             //Call smart contract and add to transaction-------------
-            carrier = SmartContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)3500);
+            carrier = ContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)3500);
             transaction = new Transaction();
             txOut = transaction.AddOutput(0, new Script(carrier.Serialize()));
             txOut.Value = 100;
@@ -292,7 +293,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //and get the module definition
             //-------------------------------------------------------
 
-            transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
+            transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
 
             result = executor.Execute(transactionContext);
 
@@ -307,14 +308,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, address1.ToAddress(this.network).Value),
             };
 
-            carrier = SmartContractCarrier.CallContract(1, address2, "CallInfiniteLoop", 1, gasLimit, parameters);
+            carrier = ContractCarrier.CallContract(1, address2, "CallInfiniteLoop", 1, gasLimit, parameters);
             transaction = new Transaction();
             txOut = transaction.AddOutput(0, new Script(carrier.Serialize()));
             txOut.Value = 100;
 
-            transactionContext = new SmartContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
+            transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
 
-            var callExecutor = new Executor(this.loggerFactory,
+            var callExecutor = new ContractExecutor(this.loggerFactory,
                 this.serializer,
                 this.state,
                 this.refundProcessor,

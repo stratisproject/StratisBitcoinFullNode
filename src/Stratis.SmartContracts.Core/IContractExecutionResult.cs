@@ -4,7 +4,7 @@ using Stratis.SmartContracts.Core.Receipts;
 
 namespace Stratis.SmartContracts.Core
 {
-    public interface ISmartContractExecutionResult
+    public interface IContractExecutionResult
     {
         /// <summary>
         /// If there is an error during execution it will be stored here.

@@ -1,12 +1,11 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
 
-namespace Stratis.SmartContracts.Executor.Reflection
+namespace Stratis.SmartContracts.Executor.Reflection.ResultProcessors
 {
     /// <summary>
     /// Handles refunds after smart contract execution.
     /// </summary>
-    public interface ISmartContractResultRefundProcessor
+    public interface IContractRefundProcessor
     {
         /// <summary>
         /// Returns the fee and refund transactions to account for gas refunds after contract execution.

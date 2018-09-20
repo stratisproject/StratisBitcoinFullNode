@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly ReflectionVirtualMachine vm;
 
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
-        private IContractState state;
+        private IStateRepository state;
         private SmartContractState contractState;
 
         public ReflectionVirtualMachineTests()
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void VM_ExecuteContract_WithoutParameters()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/StorageTest.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageTest.cs");
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void VM_ExecuteContract_WithParameters()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/StorageTest.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageTest.cs");
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void VM_CreateContract_WithParameters()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/Auction.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
@@ -96,9 +96,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
     public class TestPersistenceStrategy : IPersistenceStrategy
     {
-        private readonly IContractState stateDb;
+        private readonly IStateRepository stateDb;
 
-        public TestPersistenceStrategy(IContractState stateDb)
+        public TestPersistenceStrategy(IStateRepository stateDb)
         {
             this.stateDb = stateDb;
         }

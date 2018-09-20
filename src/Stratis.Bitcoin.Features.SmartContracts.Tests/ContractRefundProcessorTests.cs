@@ -4,23 +4,23 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Exceptions;
+using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
-    public sealed class SmartContractResultRefundProcessorTests
+    public sealed class ContractRefundProcessorTests
     {
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
-        private readonly ISmartContractResultRefundProcessor refundProcessor;
+        private readonly IContractRefundProcessor refundProcessor;
 
-        public SmartContractResultRefundProcessorTests()
+        public ContractRefundProcessorTests()
         {
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
             this.network = new SmartContractsRegTest();
-            this.refundProcessor = new SmartContractResultRefundProcessor(this.loggerFactory);
+            this.refundProcessor = new ContractRefundProcessor(this.loggerFactory);
         }
 
         [Fact]
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var contractAddress = new uint160(1);
 
-            var carrier = SmartContractCarrier.CallContract(1, contractAddress, "ThrowException", 1, (Gas)5000);
+            var carrier = ContractCarrier.CallContract(1, contractAddress, "ThrowException", 1, (Gas)5000);
             carrier.Sender = new uint160(2);
 
             (Money fee, TxOut refund) = this.refundProcessor.Process(carrier.ContractTxData, new Money(10500), carrier.Sender, (Gas)950, false);
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var contractAddress = new uint160(1);
 
-            var carrier = SmartContractCarrier.CallContract(1, contractAddress, "ThrowException", 1, (Gas)5000);
+            var carrier = ContractCarrier.CallContract(1, contractAddress, "ThrowException", 1, (Gas)5000);
             carrier.Sender = new uint160(2);
 
             (Money fee, TxOut refund) = this.refundProcessor.Process(carrier.ContractTxData, new Money(10500), carrier.Sender, (Gas)5000, false);
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var contractAddress = new uint160(1);
 
-            var carrier = SmartContractCarrier.CallContract(1, contractAddress, "ThrowException", 1, (Gas)5000);
+            var carrier = ContractCarrier.CallContract(1, contractAddress, "ThrowException", 1, (Gas)5000);
             carrier.Sender = new uint160(2);
 
             (Money fee, TxOut refund) = this.refundProcessor.Process(carrier.ContractTxData, new Money(10500), carrier.Sender, (Gas)5000, true);
