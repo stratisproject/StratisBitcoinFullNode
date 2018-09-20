@@ -271,6 +271,18 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             return res;
         }
 
+        [ActionName("getblock")]
+        [ActionDescription("Returns the block in hex, given a block hash.")]
+        public async Task<string> GetBlockAsync(uint256 blockHash)
+        {
+            this.logger.LogTrace("({0}:{1})", nameof(blockHash), blockHash);
+            Block block = await this.blockStore.GetBlockAsync(blockHash);
+            string blockHex = block.ToHex(this.Network);
+            this.logger.LogTrace("(-):{0}", blockHex);
+            return blockHex;
+        }
+
+        
         private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)
         {
             ChainedHeader block = null;
