@@ -704,7 +704,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (this.network.Consensus.MaxReorgLength != 0)
                     {
-                        int newFinalizedHeight = blockToConnect.ChainedHeader.Height - (int) this.network.Consensus.MaxReorgLength;
+                        int newFinalizedHeight = blockToConnect.ChainedHeader.Height - (int)this.network.Consensus.MaxReorgLength;
 
                         if (newFinalizedHeight > 0)
                         {
