@@ -13,8 +13,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErros.BadTransactionEmptyOutput">The transaction output is empty.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             if (context.SkipValidation)
+            {
+                this.Logger.LogTrace("(-)[SKIPPING]");
                 return Task.CompletedTask;
+            }
 
             Block block = context.ValidationContext.BlockToValidate;
 
@@ -22,11 +27,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             foreach (Transaction tx in block.Transactions)
                 this.CheckTransaction(tx);
 
+            this.Logger.LogTrace("()");
             return Task.CompletedTask;
         }
 
         public virtual void CheckTransaction(Transaction transaction)
         {
+            this.Logger.LogTrace("()");
+
             foreach (TxOut txout in transaction.Outputs)
             {
                 if (txout.IsEmpty && !transaction.IsCoinBase && !transaction.IsCoinStake)
@@ -35,6 +43,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     ConsensusErrors.BadTransactionEmptyOutput.Throw();
                 }
             }
+
+            this.Logger.LogTrace("(-)");
         }
     }
 }

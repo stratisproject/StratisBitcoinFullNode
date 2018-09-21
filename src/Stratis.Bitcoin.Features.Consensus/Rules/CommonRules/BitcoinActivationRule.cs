@@ -15,6 +15,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
         public override void Run(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             BlockHeader header = context.ValidationContext.ChainedHeaderToValidate.Header;
 
             int height = context.ValidationContext.ChainedHeaderToValidate.Height;
@@ -29,6 +31,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("(-)[BAD_VERSION]");
                 ConsensusErrors.BadVersion.Throw();
             }
+
+            this.Logger.LogTrace("(-)");
         }
     }
 }

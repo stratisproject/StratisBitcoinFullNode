@@ -22,8 +22,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadTransactionNullPrevout">Thrown if transaction contains a null prevout.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             if (context.SkipValidation)
+            {
+                this.Logger.LogTrace("(-)[SKIPPING]");
                 return Task.CompletedTask;
+            }
 
             Block block = context.ValidationContext.BlockToValidate;
             var options = this.Parent.Network.Consensus.Options;
@@ -32,6 +37,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             foreach (Transaction tx in block.Transactions)
                 this.CheckTransaction(this.Parent.Network, options, tx);
 
+            this.Logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 
