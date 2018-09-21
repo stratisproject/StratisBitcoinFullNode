@@ -174,16 +174,15 @@ namespace NBitcoin.Tests
 
             // Create the main chain with a commonChainSize blocks before the fork.
             int commonChainSize = 150000;
-            for (int i = 0; i < commonChainSize; i++) {
-	            this.AppendBlock(chain1);
-            }
+            for (int i = 0; i < commonChainSize; i++)
+                this.AppendBlock(chain1);
 
             ChainedHeader fork = this.AppendBlock(chain1);
 
             // Add some blocks from the fork point to the tip.
             int chain1AppendixSize = 100;
             for (int i = 0; i < chain1AppendixSize; i++)
-	            this.AppendBlock(chain1);
+                this.AppendBlock(chain1);
 
             // Tip of the chain1.
             ChainedHeader chain1Tip = chain1.Tip;
@@ -218,7 +217,7 @@ namespace NBitcoin.Tests
 
 	            var chain2ForkDepth = 200;
 	            for (int i = 0; i < chain2ForkDepth; i++)
-		            this.AppendBlock(chain2);
+                    this.AppendBlock(chain2);
 
 	            this.AssertFork(chain1, chain2, fork);
             }
