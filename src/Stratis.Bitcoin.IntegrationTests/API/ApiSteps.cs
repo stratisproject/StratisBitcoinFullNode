@@ -160,10 +160,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork);
             this.firstStratisPowApiNode.Start();
             this.firstStratisPowApiNode.NotInIBD().WithWallet();
-            //this.firstStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
 
             this.firstStratisPowApiNode.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
-            //this.firstStratisPowApiNode.SetDummyMinerSecret(new BitcoinSecret(new Key(), this.firstStratisPowApiNode.FullNode.Network));
             this.apiUri = this.firstStratisPowApiNode.FullNode.NodeService<ApiSettings>().ApiUri;
         }
 
@@ -172,7 +170,6 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork);
             this.secondStratisPowApiNode.Start();
             this.secondStratisPowApiNode.NotInIBD().WithWallet();
-            //this.secondStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
         }
 
         protected void a_block_is_mined_creating_spendable_coins()
@@ -199,7 +196,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var stakingRequest = new StartStakingRequest() { Name = WalletName, Password = WalletPassword };
 
-            this.stratisPosApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
+            this.stratisPosApiNode.WithWallet();
 
             var httpRequestContent = new StringContent(stakingRequest.ToString(), Encoding.UTF8, JsonContentType);
             this.response = this.httpClient.PostAsync($"{this.apiUri}{StartStakingUri}", httpRequestContent).GetAwaiter().GetResult();
@@ -244,7 +241,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private void calling_recover_via_extpubkey_for_account_1()
         {
             //NOTE: use legacy stratis xpub key format for this one to ensure that works too.
-            this.RecoverViaExtPubKey(WalletName, "xq5hcJV8uJDLaNytrg6FphHY1vdqxP1rCPhAmp4xZwpxzYyYEscYEujAmNR5NrPfy9vzQ6BajEqtFezcyRe4zcGHH3dR6BKaKov43JHd8UYhBVy", 1);
+            this.RecoverViaExtPubKey("Secondary_Wallet", "xq5hcJV8uJDLaNytrg6FphHY1vdqxP1rCPhAmp4xZwpxzYyYEscYEujAmNR5NrPfy9vzQ6BajEqtFezcyRe4zcGHH3dR6BKaKov43JHd8UYhBVy", 1);
         }
 
         private void RecoverViaExtPubKey(string walletName, string extPubKey, int accountIndex)
@@ -274,7 +271,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_wallet_is_created_without_private_key_for_account_1()
         {
-            this.CheckAccountExists(WalletName, 1);
+            this.CheckAccountExists("Secondary_Wallet", 1);
         }
 
         private void CheckAccountExists(string walletName, int accountIndex)
@@ -286,7 +283,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void calling_general_info()
         {
-            this.stratisPosApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
+            this.stratisPosApiNode.WithWallet();
             this.send_api_get_request($"{GeneralInfoUri}?name={WalletName}");
         }
 
@@ -335,7 +332,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private void calling_validateaddress()
         {
             string address = this.firstStratisPowApiNode.FullNode.WalletManager()
-                .GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccountName))
+                .GetUnusedAddress()
                 .ScriptPubKey.GetDestinationAddress(this.firstStratisPowApiNode.FullNode.Network).ToString();
             this.send_api_get_request($"{ValidateAddressUri}?address={address}");
         }

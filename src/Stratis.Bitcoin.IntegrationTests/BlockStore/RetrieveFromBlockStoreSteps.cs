@@ -136,8 +136,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void the_block_with_the_transaction_is_mined()
         {
-            this.blockWithTransactionId = TestHelper.MineBlocks(this.node, 1).BlockHashes.Single();
-            TestHelper.MineBlocks(this.node, 1);
+            this.blockWithTransactionId = TestHelper.MineBlocks(this.node, 2).BlockHashes[0];
             TestHelper.WaitForNodeToSync(this.node, this.transactionNode);
         }
 
