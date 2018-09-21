@@ -325,6 +325,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="feeAmount">The fee to pay for cold staking transaction withdrawal.</param>
         /// <returns>The <see cref="Transaction"/> for cold staking withdrawal.</returns>
         /// <exception cref="WalletException">Thrown if the receiving address is in a cold staking account in this wallet.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if the receiving address is invalid.</exception>
         internal Transaction GetColdStakingWithdrawalTransaction(string receivingAddress,
             string walletName, string walletPassword, Money amount, Money feeAmount)
         {
@@ -350,19 +351,18 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 throw new WalletException("The cold wallet account does not exist.");
             }
 
-            // The receiving address can't be in a cold staking account in this wallet.
-            bool isColdStakingAddress = coldAccount.ExternalAddresses.Concat(coldAccount.InternalAddresses).Select(a => a.Address.ToString()).Contains(receivingAddress);
-            if (!isColdStakingAddress)
+            // Prevent reusing cold stake addresses as regular withdrawal addresses.
+            if (coldAccount.ExternalAddresses.Concat(coldAccount.InternalAddresses).Select(a => a.Address.ToString()).Contains(receivingAddress))
             {
-                HdAccount hotAccount = this.GetColdStakingAccount(wallet, false);
-                if (hotAccount != null)
-                    isColdStakingAddress = hotAccount.ExternalAddresses.Concat(hotAccount.InternalAddresses).Select(a => a.Address.ToString()).Contains(receivingAddress);
+                this.logger.LogTrace("(-)[COLDSTAKE_INVALID_COLD_WALLET_ADDRESS_USAGE]");
+                throw new WalletException("You can't send the money to a cold staking cold wallet account.");
             }
 
-            if (isColdStakingAddress)
+            HdAccount hotAccount = this.GetColdStakingAccount(wallet, false);
+            if (hotAccount != null && hotAccount.ExternalAddresses.Concat(hotAccount.InternalAddresses).Select(a => a.Address.ToString()).Contains(receivingAddress))
             {
-                this.logger.LogTrace("(-)[COLDSTAKE_INVALID_RECEIVING_ADDRESS]");
-                throw new WalletException("You can't send the money to a cold staking account.");
+                this.logger.LogTrace("(-)[COLDSTAKE_INVALID_HOT_WALLET_ADDRESS_USAGE]");
+                throw new WalletException("You can't send the money to a cold staking hot wallet account.");
             }
 
             // Send the money to the receiving address.
@@ -392,7 +392,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
 
             // Map OutPoint to UnspentOutputReference.
-            Dictionary<OutPoint, UnspentOutputReference> mapOutPointToUnspent = this.walletManager.GetSpendableTransactionsInAccount(accountReference)
+            Dictionary<OutPoint, UnspentOutputReference> mapOutPointToUnspentOutput = this.walletManager.GetSpendableTransactionsInAccount(accountReference)
                 .ToDictionary(unspent => unspent.ToOutPoint(), unspent => unspent);
 
             // Set the cold staking scriptPubKey on the change output.
@@ -400,16 +400,16 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             if (changeOutput != null)
             {
                 // Find the largest input.
-                TxIn largestInput = transaction.Inputs.OrderByDescending(input => mapOutPointToUnspent[input.PrevOut].Transaction.Amount).Take(1).Single();
+                TxIn largestInput = transaction.Inputs.OrderByDescending(input => mapOutPointToUnspentOutput[input.PrevOut].Transaction.Amount).Take(1).Single();
 
                 // Set the scriptPubKey of the change output to the scriptPubKey of the largest input.
-                changeOutput.ScriptPubKey = mapOutPointToUnspent[largestInput.PrevOut].Transaction.ScriptPubKey;
+                changeOutput.ScriptPubKey = mapOutPointToUnspentOutput[largestInput.PrevOut].Transaction.ScriptPubKey;
             }
 
             // Add keys for signing inputs.
             foreach (TxIn input in transaction.Inputs)
             {
-                UnspentOutputReference unspent = mapOutPointToUnspent[input.PrevOut];
+                UnspentOutputReference unspent = mapOutPointToUnspentOutput[input.PrevOut];
                 context.TransactionBuilder.AddKeys(wallet.GetExtendedPrivateKeyForAddress(walletPassword, unspent.Address));
             }
 
