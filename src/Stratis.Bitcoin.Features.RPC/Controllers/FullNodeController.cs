@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Controllers.Models;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -271,18 +270,33 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             return res;
         }
 
+        /// <summary>
+        /// RPC method for returning a block.
+        /// Currently only supports raw (hex) format, Json format is not yet supported.
+        /// </summary>
+        /// <param name="blockHash">Hash of block to find.</param>
+        /// <param name="isJsonFormat">Whether to output in raw format or in Json format.</param>
+        /// <returns>The block according to format specified in <see cref="isJsonFormat"/></returns>
         [ActionName("getblock")]
         [ActionDescription("Returns the block in hex, given a block hash.")]
-        public async Task<string> GetBlockAsync(uint256 blockHash)
+        public async Task<object> GetBlockAsync(string blockHash, bool isJsonFormat = false)
         {
             this.logger.LogTrace("({0}:{1})", nameof(blockHash), blockHash);
-            Block block = await this.blockStore.GetBlockAsync(blockHash);
-            string blockHex = block.ToHex(this.Network);
-            this.logger.LogTrace("(-):{0}", blockHex);
-            return blockHex;
-        }
 
-        
+            Block block = await this.blockStore.GetBlockAsync(uint256.Parse(blockHash)).ConfigureAwait(false);
+
+            if (isJsonFormat)
+            {
+                this.logger.LogError("Json format serialization is not supported for RPC '{0}'.", nameof(this.GetBlockAsync));
+                throw new NotImplementedException();
+            }
+            else
+            {
+                this.logger.LogTrace("(-):'{0}'", block.ToHex(this.Network));
+                return block;
+            }
+        }
+       
         private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)
         {
             ChainedHeader block = null;
