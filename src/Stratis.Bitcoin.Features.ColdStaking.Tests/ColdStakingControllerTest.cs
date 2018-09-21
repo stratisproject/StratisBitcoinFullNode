@@ -712,7 +712,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             Assert.Equal((int)HttpStatusCode.BadRequest, error.Status);
             Assert.StartsWith($"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Features)}.{nameof(Wallet)}.{nameof(WalletException)}", error.Description);
-            Assert.StartsWith("You can't send the money to a cold staking account.", error.Message);
+            Assert.StartsWith("You can't send the money to a cold staking cold wallet account.", error.Message);
         }
 
 
