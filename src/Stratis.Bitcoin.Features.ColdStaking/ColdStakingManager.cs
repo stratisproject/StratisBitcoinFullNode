@@ -473,7 +473,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             lock (this.lockObject)
             {
                 res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations,
-                    a => a.Index == (isColdWalletAccount?ColdWalletAccountIndex:HotWalletAccountIndex)).ToArray();
+                    a => a.Index == (isColdWalletAccount ? ColdWalletAccountIndex : HotWalletAccountIndex)).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", res.Count());
