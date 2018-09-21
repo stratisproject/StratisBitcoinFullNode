@@ -33,7 +33,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             if (ColdStakingScriptTemplate.Instance.ExtractScriptPubKeyParameters(script, out KeyId hotPubKey, out KeyId coldPubKey))
             {
                 if (this.keysLookup.TryGetValue(hotPubKey.ScriptPubKey, out address))
+                {
+                    // Sanity check for a situation we can't handle with the current wallet manager.
+                    if (this.keysLookup.TryGetValue(coldPubKey.ScriptPubKey, out _))
+                        throw new Exception("Can't have cold wallet and hot wallet on the same instance.");
+
                     return true;
+                }
 
                 if (this.keysLookup.TryGetValue(coldPubKey.ScriptPubKey, out address))
                     return true;

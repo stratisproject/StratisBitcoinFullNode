@@ -160,10 +160,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets all the addresses contained in this wallet.
         /// </summary>
         /// <param name="coinType">Type of the coin.</param>
+        /// <param name="accountFilter">An optional filter for filtering the accounts being returned.</param>
         /// <returns>A list of all the addresses contained in this wallet.</returns>
-        public IEnumerable<HdAddress> GetAllAddressesByCoinType(CoinType coinType)
+        public IEnumerable<HdAddress> GetAllAddressesByCoinType(CoinType coinType, Func<HdAccount, bool> accountFilter = null)
         {
-            List<HdAccount> accounts = this.GetAccountsByCoinType(coinType).ToList();
+            List<HdAccount> accounts = this.GetAccountsByCoinType(coinType, accountFilter).ToList();
 
             var allAddresses = new List<HdAddress>();
             foreach (HdAccount account in accounts)
