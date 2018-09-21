@@ -132,6 +132,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeObserver", "RuntimeO
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.IntegrationTests", "Stratis.SmartContracts.IntegrationTests\Stratis.SmartContracts.IntegrationTests.csproj", "{BBE830D7-3AD3-41D9-8257-8CAA06F38E40}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.StratisD.Test", "Stratis.StratisD.Test\Stratis.StratisD.Test.csproj", "{5269F3AA-D77D-4518-825D-DA5B209EC073}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -346,6 +348,10 @@ Global
 		{BBE830D7-3AD3-41D9-8257-8CAA06F38E40}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BBE830D7-3AD3-41D9-8257-8CAA06F38E40}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BBE830D7-3AD3-41D9-8257-8CAA06F38E40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5269F3AA-D77D-4518-825D-DA5B209EC073}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5269F3AA-D77D-4518-825D-DA5B209EC073}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5269F3AA-D77D-4518-825D-DA5B209EC073}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5269F3AA-D77D-4518-825D-DA5B209EC073}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
