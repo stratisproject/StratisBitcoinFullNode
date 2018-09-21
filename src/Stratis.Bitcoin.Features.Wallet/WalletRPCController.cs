@@ -41,16 +41,24 @@ namespace Stratis.Bitcoin.Features.Wallet
             return uint256.Zero;
         }
 
+        /// <summary>
+        /// Broadcasts a raw transaction from hex to local node and network.
+        /// </summary>
+        /// <param name="hex">Raw transaction in hex.</param>
+        /// <returns>The transaction hash.</returns>
         [ActionName("sendrawtransaction")]
         [ActionDescription("Submits raw transaction (serialized, hex-encoded) to local node and network.")]
-        public async Task SendTransactionAsync(string hex)
+        public async Task<uint256> SendTransactionAsync(string hex)
         {
             this.logger.LogTrace("({0}:{1})", nameof(hex), hex);
 
             Transaction transaction = this.fullNode.Network.CreateTransaction(hex);
             await this.broadcasterManager.BroadcastTransactionAsync(transaction);
 
-            this.logger.LogTrace("(-)");
+            uint256 hash = transaction.GetHash();
+
+            this.logger.LogTrace("(-):{0}", hash);
+            return hash;
         }
              
         /// <summary>
