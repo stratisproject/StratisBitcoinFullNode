@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
@@ -12,6 +13,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Block = NBitcoin.Block;
@@ -117,7 +119,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// <summary>
         /// Send a normal transaction.
         /// </summary>
-        public WalletSendTransactionModel SendTransaction(Script scriptPubKey, Money amount)
+        public Result<WalletSendTransactionModel> SendTransaction(Script scriptPubKey, Money amount)
         {
             var txBuildContext = new TransactionBuildContext(this.chain.Network)
             {
@@ -131,8 +133,16 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             Transaction trx = (this.CoreNode.FullNode.NodeService<IWalletTransactionHandler>() as SmartContractWalletTransactionHandler).BuildTransaction(txBuildContext);
 
             // Broadcast to the other node.
-            JsonResult response = (JsonResult)this.smartContractWalletController.SendTransaction(new SendTransactionRequest(trx.ToHex()));
-            return (WalletSendTransactionModel)response.Value;
+
+            IActionResult result = this.smartContractWalletController.SendTransaction(new SendTransactionRequest(trx.ToHex()));
+            if (result is ErrorResult errorResult)
+            {
+                var errorResponse = (ErrorResponse)errorResult.Value;
+                return Result.Fail<WalletSendTransactionModel>(errorResponse.Errors[0].Message);
+            }
+
+            JsonResult response = (JsonResult) result;
+            return Result.Ok((WalletSendTransactionModel)response.Value);
         }
 
         /// <summary>

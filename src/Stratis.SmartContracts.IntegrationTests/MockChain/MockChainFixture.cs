@@ -12,7 +12,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             var sender = this.Chain.Nodes[0];
             var receiver = this.Chain.Nodes[1];
             var maturity = (int)this.Chain.Network.Consensus.CoinbaseMaturity;
-            sender.MineBlocks(maturity);
+            sender.MineBlocks(maturity + 1);
         }
 
         public void Dispose()

@@ -1,4 +1,9 @@
-﻿using Stratis.SmartContracts.IntegrationTests.MockChain;
+﻿using System;
+using CSharpFunctionalExtensions;
+using NBitcoin;
+using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.IntegrationTests.MockChain;
 using Xunit;
 namespace Stratis.SmartContracts.IntegrationTests
 {
@@ -18,7 +23,16 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void ContractTransaction_InvalidSerialization()
         {
-            // Not serialized in correct format (ie. vmversion, gaslimit, etc.), doesn't make it to mempool.
+            // Create poorly serialized transaction
+            var random = new Random();
+            byte[] bytes = new byte[101];
+            random.NextBytes(bytes);
+            bytes[0] = (byte) ScOpcodeType.OP_CALLCONTRACT;
+
+            // Send fails
+            Result<WalletSendTransactionModel> result = this.sender.SendTransaction(new Script(bytes), 25);
+            Assert.True(result.IsFailure);
+            Assert.Equal("Invalid ContractTxData format", result.Error); // TODO: const error message
         }
 
         [Fact]
