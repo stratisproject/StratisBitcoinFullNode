@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System.Linq;
+using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -48,7 +49,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static HdAddress GetUnusedAddress(this WalletManager walletManager)
         {
-            return walletManager.GetUnusedAddress();
+            var wallet = walletManager.Wallets.First();
+            var walletAccount = wallet.AccountsRoot.First().Accounts.First();
+            var walletAccountReference = new WalletAccountReference(wallet.Name, walletAccount.Name);
+            return walletManager.GetUnusedAddress(walletAccountReference);
         }
     }
 }
