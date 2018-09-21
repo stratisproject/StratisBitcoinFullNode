@@ -639,10 +639,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             this.Initialize();
             this.CreateMempoolManager();
 
-            this.walletManager.CreateWallet(walletPassword, walletName1, walletPassphrase, new Mnemonic(walletMnemonic1));
             this.walletManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
 
-            var wallet1 = this.walletManager.GetWalletByName(walletName1);
             var wallet2 = this.walletManager.GetWalletByName(walletName2);
 
             Transaction prevTran = this.AddSpendableColdstakingTransactionToWallet(wallet2);
@@ -677,6 +675,81 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             // Verify that the transaction would be accepted to the memory pool.
             var state = new MempoolValidationState(true);
             Assert.True(this.mempoolManager.Validator.AcceptToMemoryPool(state, transaction).GetAwaiter().GetResult(), "Transaction failed mempool validation.");
+        }
+
+        /// <summary>
+        /// Confirms that cold staking setup sending money to a cold staking account will raise an error.
+        /// </summary>
+        /// <remarks>
+        /// It is only possible to perform this test against the known wallet. Money can still be sent to
+        /// a cold staking account if it is in a different wallet.
+        /// </remarks>
+        [Fact]
+        public void ColdStakingWithdrawalToColdWalletAccountThrowsWalletException()
+        {
+            this.Initialize();
+            this.CreateMempoolManager();
+
+            this.walletManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
+
+            var wallet2 = this.walletManager.GetWalletByName(walletName2);
+
+            Transaction prevTran = this.AddSpendableColdstakingTransactionToWallet(wallet2);
+
+            HdAddress receivingAddress = this.coldStakingManager.GetOrCreateColdStakingAccount(walletName2, true, walletPassword).ExternalAddresses.First();
+
+            IActionResult result = this.coldStakingController.ColdStakingWithdrawal(new ColdStakingWithdrawalRequest
+            {
+                ReceivingAddress = receivingAddress.Address.ToString(),
+                WalletName = walletName2,
+                WalletPassword = walletPassword,
+                Amount = "100",
+                Fees = "0.01"
+            });
+
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Single(errorResponse.Errors);
+            ErrorModel error = errorResponse.Errors[0];
+
+            Assert.Equal((int)HttpStatusCode.BadRequest, error.Status);
+            Assert.StartsWith($"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Features)}.{nameof(Wallet)}.{nameof(WalletException)}", error.Description);
+            Assert.StartsWith("You can't send the money to a cold staking cold wallet account.", error.Message);
+        }
+
+
+        /// <summary>
+        /// Confirms that trying to withdraw money from a non-existent cold staking account will raise an error.
+        /// </summary>
+        [Fact]
+        public void ColdStakingWithdrawalFromNonExistingColdWalletAccountThrowsWalletException()
+        {
+            this.Initialize();
+            this.CreateMempoolManager();
+
+            this.walletManager.CreateWallet(walletPassword, walletName2, walletPassphrase, new Mnemonic(walletMnemonic2));
+
+            var wallet2 = this.walletManager.GetWalletByName(walletName2);
+
+            BitcoinPubKeyAddress receivingAddress = new Key().PubKey.GetAddress(this.Network);
+
+            IActionResult result = this.coldStakingController.ColdStakingWithdrawal(new ColdStakingWithdrawalRequest
+            {
+                ReceivingAddress = receivingAddress.ToString(),
+                WalletName = walletName2,
+                WalletPassword = walletPassword,
+                Amount = "100",
+                Fees = "0.01"
+            });
+
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Single(errorResponse.Errors);
+            ErrorModel error = errorResponse.Errors[0];
+
+            Assert.Equal((int)HttpStatusCode.BadRequest, error.Status);
+            Assert.StartsWith($"{nameof(Stratis)}.{nameof(Bitcoin)}.{nameof(Features)}.{nameof(Wallet)}.{nameof(WalletException)}", error.Description);
+            Assert.StartsWith("The cold wallet account does not exist.", error.Message);
         }
     }
 }
