@@ -33,7 +33,13 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             if (ColdStakingScriptTemplate.Instance.ExtractScriptPubKeyParameters(script, out KeyId hotPubKey, out KeyId coldPubKey))
             {
                 if (this.keysLookup.TryGetValue(hotPubKey.ScriptPubKey, out address))
+                {
+                    // Sanity check for a situation we can't handle with the current wallet manager.
+                    if (this.keysLookup.TryGetValue(coldPubKey.ScriptPubKey, out _))
+                        throw new Exception("Can't have cold wallet and hot wallet on the same instance.");
+
                     return true;
+                }
 
                 if (this.keysLookup.TryGetValue(coldPubKey.ScriptPubKey, out address))
                     return true;
@@ -62,13 +68,26 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 // and only record the address against that key.
                 if (ColdStakingScriptTemplate.Instance.ExtractScriptPubKeyParameters(script, out KeyId hotPubKey, out KeyId coldPubKey))
                 {
-                    if (value.ScriptPubKey.GetDestination(this.network) == hotPubKey)
+                    TxDestination destination = value.ScriptPubKey.GetDestination(this.network);
+
+                    if (destination == hotPubKey)
+                    {
                         this.keysLookup[hotPubKey.ScriptPubKey] = value;
-                    else if (value.ScriptPubKey.GetDestination(this.network) == coldPubKey)
+                    }
+                    else if (destination == coldPubKey)
+                    {
                         this.keysLookup[coldPubKey.ScriptPubKey] = value;
+                    }
+                    else
+                    {
+                        // This method should throw an exception if there is no relationship between the script and the address.
+                        throw new Exception("The address can't be matched to the script.");
+                    }
                 }
                 else
+                {
                     base[script] = value;
+                }
             }
         }
     }
