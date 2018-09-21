@@ -362,7 +362,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <returns>The <see cref="Transaction"/> for cold staking withdrawal.</returns>
         /// <exception cref="WalletException">Thrown if the receiving address is in a cold staking account in this wallet.</exception>
         /// <exception cref="ArgumentNullException">Thrown if the receiving address is invalid.</exception>
-        internal Transaction GetColdStakingWithdrawalTransaction(string receivingAddress,
+        internal Transaction GetColdStakingWithdrawalTransaction(IWalletTransactionHandler walletTransactionHandler, string receivingAddress,
             string walletName, string walletPassword, Money amount, Money feeAmount)
         {
             Guard.NotEmpty(receivingAddress, nameof(receivingAddress));
@@ -428,7 +428,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             Transaction transaction = walletTransactionHandler.BuildTransaction(context);
 
             // Map OutPoint to UnspentOutputReference.
-            Dictionary<OutPoint, UnspentOutputReference> mapOutPointToUnspentOutput = this.walletManager.GetSpendableTransactionsInAccount(accountReference)
+            Dictionary<OutPoint, UnspentOutputReference> mapOutPointToUnspentOutput = this.GetSpendableTransactionsInAccount(accountReference)
                 .ToDictionary(unspent => unspent.ToOutPoint(), unspent => unspent);
 
             // Set the cold staking scriptPubKey on the change output.
