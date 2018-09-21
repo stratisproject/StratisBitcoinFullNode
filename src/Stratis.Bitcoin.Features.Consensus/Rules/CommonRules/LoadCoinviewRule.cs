@@ -23,6 +23,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             uint256 oldBlockHash = context.ValidationContext.ChainedHeaderToValidate.Previous.HashBlock;
             uint256 nextBlockHash = context.ValidationContext.ChainedHeaderToValidate.HashBlock;
 
@@ -32,9 +34,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             var utxoRuleContext = context as UtxoRuleContext;
             await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash).ConfigureAwait(false);
 
-            // Use the default flush condition to decide if flush is required (currently set to every 60 seconds) 
+            // Use the default flush condition to decide if flush is required (currently set to every 60 seconds)
             if (this.PowParent.UtxoSet is CachedCoinView cachedCoinView)
                 await cachedCoinView.FlushAsync(false).ConfigureAwait(false);
+
+            this.Logger.LogTrace("(-)");
         }
     }
 
@@ -43,6 +47,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             // Check that the current block has not been reorged.
             // Catching a reorg at this point will not require a rewind.
             if (context.ValidationContext.BlockToValidate.Header.HashPrevBlock != this.Parent.ChainState.ConsensusTip.HashBlock)
@@ -61,6 +67,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             uint256[] ids = this.GetIdsToFetch(context.ValidationContext.BlockToValidate, context.Flags.EnforceBIP30);
             FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
             utxoRuleContext.UnspentOutputSet.SetCoins(coins.UnspentOutputs);
+
+            this.Logger.LogTrace("(-)");
         }
 
         /// <summary>

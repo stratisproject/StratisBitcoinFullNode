@@ -32,8 +32,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.ProofOfWorkTooHigh">The block's height is higher than the last allowed PoW block.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             if (context.SkipValidation)
+            {
+                this.Logger.LogTrace("(-)[SKIPPING]");
                 return Task.CompletedTask;
+            }
 
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
             this.Logger.LogTrace("Height of block is {0}, block timestamp is {1}, previous block timestamp is {2}, block version is 0x{3:x}.", chainedHeader.Height, chainedHeader.Header.Time, chainedHeader.Previous?.Header.Time, chainedHeader.Header.Version);
@@ -63,6 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 ConsensusErrors.StakeTimeViolation.Throw();
             }
 
+            this.Logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 

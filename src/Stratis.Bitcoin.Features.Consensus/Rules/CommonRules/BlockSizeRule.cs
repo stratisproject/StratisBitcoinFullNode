@@ -19,8 +19,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadBlockLength">The block does not contain any transactions.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             if (context.SkipValidation)
+            {
+                this.Logger.LogTrace("(-)[SKIPPING]");
                 return Task.CompletedTask;
+            }
 
             var options = this.Parent.Network.Consensus.Options;
 
@@ -46,6 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 ConsensusErrors.BadBlockLength.Throw();
             }
 
+            this.Logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -11,9 +12,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.InvalidPrevTip">The tip is invalid because a reorg has been detected.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             // Calculate the consensus flags and check they are valid.
             context.Flags = this.Parent.NodeDeployments.GetFlags(context.ValidationContext.ChainedHeaderToValidate);
 
+            this.Logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
     }
@@ -26,9 +30,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.InvalidPrevTip">The tip is invalid because a reorg has been detected.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             // Calculate the consensus flags and check they are valid.
             context.Flags = this.Parent.NodeDeployments.GetFlags(context.ValidationContext.ChainedHeaderToValidate);
 
+            this.Logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
     }

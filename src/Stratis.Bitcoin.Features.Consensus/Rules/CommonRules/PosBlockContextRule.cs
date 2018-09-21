@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -11,6 +12,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override Task RunAsync(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             // TODO: fix this validation code
 
             //// check proof-of-stake
@@ -39,6 +42,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             //        return false; // error("ProcessBlock(): EnsureLowS failed");
             //}
 
+            this.Logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
     }

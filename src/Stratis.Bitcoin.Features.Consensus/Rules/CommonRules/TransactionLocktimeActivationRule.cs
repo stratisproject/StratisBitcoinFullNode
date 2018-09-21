@@ -20,8 +20,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if one or more transactions are not finalized.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             if (context.SkipValidation)
+            {
+                this.Logger.LogTrace("(-)");
                 return Task.CompletedTask;
+            }
 
             DeploymentFlags deploymentFlags = context.Flags;
             int newHeight = context.ValidationContext.ChainedHeaderToValidate.Height;
@@ -42,6 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
 
+            this.Logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
     }

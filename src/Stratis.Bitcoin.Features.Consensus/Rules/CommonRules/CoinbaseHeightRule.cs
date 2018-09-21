@@ -22,8 +22,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadCoinbaseHeight">Thrown if coinbase doesn't start with serialized block height.</exception>
         public override Task RunAsync(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             if (context.SkipValidation)
+            {
+                this.Logger.LogTrace("(-)[SKIPPING]");
                 return Task.CompletedTask;
+            }
 
             int newHeight = context.ValidationContext.ChainedHeaderToValidate.Height;
             Block block = context.ValidationContext.BlockToValidate;
@@ -36,6 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 ConsensusErrors.BadCoinbaseHeight.Throw();
             }
 
+            this.Logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 
@@ -69,13 +75,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override Task RunAsync(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             DeploymentFlags deploymentFlags = context.Flags;
 
             if (deploymentFlags.EnforceBIP34)
             {
+                this.Logger.LogTrace("(-)[ENFORCING_BIP]");
                 return base.RunAsync(context);
             }
 
+            this.Logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
     }

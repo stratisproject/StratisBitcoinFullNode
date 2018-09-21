@@ -12,8 +12,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.HighHash"> Thrown if block doesn't have a valid PoS header.</exception>
         public override void Run(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             if (!context.ValidationContext.ChainedHeaderToValidate.Header.CheckProofOfWork())
+            {
+                this.Logger.LogTrace("(-)[INVALID_POW]");
                 ConsensusErrors.HighHash.Throw();
+            }
 
             Target nextWorkRequired = context.ValidationContext.ChainedHeaderToValidate.GetWorkRequired(this.Parent.Network.Consensus);
 
@@ -25,6 +30,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("(-)[BAD_DIFF_BITS]");
                 ConsensusErrors.BadDiffBits.Throw();
             }
+
+            this.Logger.LogTrace("(-)");
         }
     }
 }

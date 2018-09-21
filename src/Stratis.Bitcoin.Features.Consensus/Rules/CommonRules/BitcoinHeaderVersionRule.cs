@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Consensus.Rules;
+﻿using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 {
@@ -11,10 +12,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override void Run(RuleContext context)
         {
+            this.Logger.LogTrace("()");
+
             // This is a stub rule - all version numbers are valid except those rejected by BitcoinActivationRule based
             // on the combination of their block height and version number.
 
             // All networks need a HeaderVersionRule implementation, as ComputeBlockVersion is used for block creation.
+
+            this.Logger.LogTrace("(-)");
         }
     }
 }
