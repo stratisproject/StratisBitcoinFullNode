@@ -85,7 +85,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                     }
                 }
                 else
+                {
                     base[script] = value;
+                }
             }
         }
     }
