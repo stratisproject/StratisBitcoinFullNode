@@ -46,7 +46,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
-            if (node1.FullNode.GetBlockStoreTip().HashBlock != node2.FullNode.GetBlockStoreTip().HashBlock)
+            // Check that node1 tip exists in node2 store (either in disk or in the pending list) 
+            if (node1.FullNode.BlockStore().GetBlockAsync(node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+                return false;
+
+            // Check that node2 tip exists in node1 store (either in disk or in the pending list) 
+            if (node2.FullNode.BlockStore().GetBlockAsync(node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
                 return false;
 
             if (!ignoreMempool)
@@ -70,7 +75,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
-            if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.GetBlockStoreTip().HashBlock)
+            // Check that node1 tip exists in store (either in disk or in the pending list) 
+            if (node.FullNode.BlockStore().GetBlockAsync(node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
                 return false;
 
             if ((node.FullNode.WalletManager().ContainsWallets) &&

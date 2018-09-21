@@ -1305,7 +1305,12 @@ namespace Stratis.Bitcoin.Consensus
         private string formatBigNumber(long number)
         {
             string temp = number.ToString("N").Replace(',', ' ');
-            temp = temp.Substring(0, temp.IndexOf(".00"));
+
+            int index = temp.IndexOf(".00");
+
+            if (index != -1)
+                temp = temp.Substring(0, index);
+
             return temp;
         }
 
