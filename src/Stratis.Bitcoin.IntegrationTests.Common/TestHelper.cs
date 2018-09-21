@@ -40,6 +40,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
+            // If the nodes are at genesis they are considered synced.
+            if (node1.FullNode.Chain.Tip.Height == 0 && node2.FullNode.Chain.Tip.Height == 0)
+                return true;
+
             if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock)
                 return false;
 
@@ -75,6 +79,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool IsNodeSynced(CoreNode node)
         {
+            // If the node is at genesis it is considered synced.
+            if (node.FullNode.Chain.Tip.Height == 0)
+                return true;
+
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
