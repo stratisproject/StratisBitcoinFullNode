@@ -159,11 +159,11 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork);
             this.firstStratisPowApiNode.Start();
-            this.firstStratisPowApiNode.NotInIBD();
-            this.firstStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
+            this.firstStratisPowApiNode.NotInIBD().WithWallet();
+            //this.firstStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
 
             this.firstStratisPowApiNode.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
-            this.firstStratisPowApiNode.SetDummyMinerSecret(new BitcoinSecret(new Key(), this.firstStratisPowApiNode.FullNode.Network));
+            //this.firstStratisPowApiNode.SetDummyMinerSecret(new BitcoinSecret(new Key(), this.firstStratisPowApiNode.FullNode.Network));
             this.apiUri = this.firstStratisPowApiNode.FullNode.NodeService<ApiSettings>().ApiUri;
         }
 
@@ -171,8 +171,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork);
             this.secondStratisPowApiNode.Start();
-            this.secondStratisPowApiNode.NotInIBD();
-            this.secondStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
+            this.secondStratisPowApiNode.NotInIBD().WithWallet();
+            //this.secondStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
         }
 
         protected void a_block_is_mined_creating_spendable_coins()
@@ -192,8 +192,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void the_block_with_the_transaction_is_mined()
         {
-            this.block = TestHelper.MineBlocks(this.firstStratisPowApiNode, 1).BlockHashes[0];
-            TestHelper.MineBlocks(this.firstStratisPowApiNode, 1);
+            this.block = TestHelper.MineBlocks(this.firstStratisPowApiNode, 2).BlockHashes[0];
         }
 
         private void calling_startstaking()
