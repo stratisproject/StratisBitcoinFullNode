@@ -29,7 +29,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             random.NextBytes(bytes);
             bytes[0] = (byte) ScOpcodeType.OP_CALLCONTRACT;
 
-            // Send fails
+            // Send fails - doesn't even make it to mempool
             Result<WalletSendTransactionModel> result = this.sender.SendTransaction(new Script(bytes), 25);
             Assert.True(result.IsFailure);
             Assert.Equal("Invalid ContractTxData format", result.Error); // TODO: const error message
@@ -38,8 +38,17 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void ContractTransaction_InvalidByteCode()
         {
-            // Nonsensical bytecode - included in block but refund given, no contract deployed.
+            // Ensure fixture is funded.
+            this.sender.MineBlocks(1);
 
+            // Create transaction with random bytecode.
+            var random = new Random();
+            byte[] bytes = new byte[100];
+            random.NextBytes(bytes);
+            this.sender.SendCreateContractTransaction(bytes, 25);
+            var lastBlock = this.sender.GetLastBlock();
+
+            // Ensure that the contract wasn't created, funds were returned. Anythign else etc etc
         }
 
         [Fact]
