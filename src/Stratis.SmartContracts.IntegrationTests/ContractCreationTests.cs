@@ -4,10 +4,10 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.Bitcoin.IntegrationTests.Common.MockChain;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.IntegrationTests.MockChain;
 using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests
@@ -24,10 +24,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void Test_CatCreation()
         {
-            using (MockChain chain = new MockChain(2))
+            using (Chain chain = new Chain(2))
             {
-                MockChainNode sender = chain.Nodes[0];
-                MockChainNode receiver = chain.Nodes[1];
+                Node sender = chain.Nodes[0];
+                Node receiver = chain.Nodes[1];
 
                 TestHelper.MineBlocks(sender.CoreNode, sender.WalletName, sender.Password, sender.AccountName, 1);
 
