@@ -428,7 +428,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         */
 
         [Fact]
-        public void Chain_AuctionTest()
+        public void MockChain_AuctionTest()
         {
             var network = new SmartContractsRegTest(); // ew hack. TODO: Expose from Chain or Node.
 
@@ -465,7 +465,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 // Call contract and ensure owner is now highest bidder
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("Bid", response.NewContractAddress, 2);
                 receiver.WaitMempoolCount(1);
-                TestHelper.MineBlocks(receiver.CoreNode, receiver.WalletName, receiver.Password, receiver.AccountName, 1);
+                receiver.MineBlocks(1);
                 Assert.Equal(sender.GetStorageValue(response.NewContractAddress, "Owner"), sender.GetStorageValue(response.NewContractAddress, "HighestBidder"));
 
                 // Wait 20 blocks and end auction and check for transaction to victor
