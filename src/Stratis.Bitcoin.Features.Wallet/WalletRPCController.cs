@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -51,10 +52,22 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.logger.LogTrace("(-)");
         }
-
+             
+        /// <summary>
+        /// RPC method that gets a new address for receiving payments.
+        /// </summary>
+        /// <returns>The new address.</returns>
+        /// <remarks>
+        /// NOTE: This RPC method needs to just return a string, but uses a somewhat convoluted method of achieving this.
+        /// A return value of string for ASP.NET does not get serialized properly into <seealso cref="RPCResponse"/> so used an 
+        /// object with a custom JsonConverter to achieve proper RPC serialization of a string. 
+        /// 
+        /// I'm not sure whether this is a bug in the RPCMiddleware or whether it's an issue with ASP.NET in general.
+        /// <seealso cref="NewAddressModelConverter"/>.
+        /// </remarks>
         [ActionName("getnewaddress")]
         [ActionDescription("Returns a new wallet address for receiving payments.")]
-        public string GetNewAddress()
+        public NewAddressModel GetNewAddress()
         {
             this.logger.LogTrace("()");
 
@@ -62,7 +75,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             string base58Address = hdAddress.Address;
 
             this.logger.LogTrace("(-):{0}", base58Address);
-            return base58Address;
+            return new NewAddressModel(base58Address);
         }
 
         private WalletAccountReference GetAccount()
