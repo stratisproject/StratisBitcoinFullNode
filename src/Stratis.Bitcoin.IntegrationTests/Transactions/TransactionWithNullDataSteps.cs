@@ -62,11 +62,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
         private void a_sending_and_a_receiving_wallet()
         {
-            this.receiverAddress = this.receiverNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.walletName, this.walletAccount));
+            this.receiverAddress = this.receiverNode.FullNode.WalletManager().GetUnusedAddress();
             this.sendingWallet = this.receiverNode.FullNode.WalletManager().GetWalletByName(this.walletName);
 
-            this.sendingWalletAccountReference = new WalletAccountReference(this.walletName, this.walletAccount);
-            this.senderAddress = this.senderNode.FullNode.WalletManager().GetUnusedAddress(this.sendingWalletAccountReference);
+            this.senderAddress = this.senderNode.FullNode.WalletManager().GetUnusedAddress();
             this.sendingWallet = this.senderNode.FullNode.WalletManager().GetWalletByName(this.walletName);
         }
 
@@ -117,8 +116,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         }
         private void the_block_is_mined()
         {
-            this.blockWithOpReturnId = TestHelper.MineBlocks(this.senderNode, 1).BlockHashes.Single();
-            TestHelper.MineBlocks(this.senderNode, 1);
+            this.blockWithOpReturnId = TestHelper.MineBlocks(this.senderNode, 2).BlockHashes[0];
 
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.senderNode, this.receiverNode));
         }
