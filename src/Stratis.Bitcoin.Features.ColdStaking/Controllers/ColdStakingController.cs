@@ -201,5 +201,53 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
+
+        /// <summary>
+        /// Spends funds from the cold staking wallet account back to a normal wallet addresses. It is expected that this
+        /// spend will be detected by both the hot wallet and cold wallet and reduce the amount available for cold staking.
+        /// </summary>
+        /// <param name="request">A <see cref="ColdStakingWithdrawalRequest"/> object containing the cold staking withdrawal parameters.</param>
+        /// <returns>A <see cref="ColdStakingWithdrawalResponse"/> object containing the hex representation of the transaction.</returns>
+        /// <seealso cref="ColdStakingManager.GetColdStakingScript(ScriptId, ScriptId)"/>
+        [Route("cold-staking-withdrawal")]
+        [HttpPost]
+        public IActionResult ColdStakingWithdrawal([FromBody]ColdStakingWithdrawalRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            this.logger.LogTrace("({0}:'{1}')", nameof(request), request);
+
+            // Checks the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                this.logger.LogTrace("(-)[MODEL_STATE_INVALID]");
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                Money amount = Money.Parse(request.Amount);
+                Money feeAmount = Money.Parse(request.Fees);
+
+                Transaction transaction = this.coldStakingManager.GetColdStakingWithdrawalTransaction(
+                    request.ReceivingAddress, request.WalletName, request.WalletPassword,
+                    amount, feeAmount);
+
+                var model = new ColdStakingWithdrawalResponse
+                {
+                    TransactionHex = transaction.ToHex()
+                };
+
+                this.logger.LogTrace("(-):'{0}'", model);
+
+                return this.Json(model);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.logger.LogTrace("(-)[ERROR]");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
     }
 }
