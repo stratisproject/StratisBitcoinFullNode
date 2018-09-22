@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             return checkLowS ?
                 ScriptEvaluationContext.IsLowDerSignature(block.BlockSignature.Signature) :
-                ScriptEvaluationContext.IsValidSignatureEncoding(block.BlockSignature.Signature);
+                ScriptEvaluationContext.IsValidSignatureEncoding(block.BlockSignature.Signature, false);
         }
 
         public static bool EnsureLowS(BlockSignature blockSignature)
