@@ -6,9 +6,6 @@
       staticLogger="FodyNlogAdapter.Log"
       traceConstructors="false"
       traceProperties="false">
-      <TraceOn namespace="Stratis.Bitcoin.Base+*" class="private" method="private" />
-	  <!--
-			<TraceOn namespace="Root+*" class="public" method="public" />
-	  -->
+      <TraceOn namespace="Stratis.Bitcoin+*" class="private" method="private" />
   </Tracer>  
 </Weavers>
