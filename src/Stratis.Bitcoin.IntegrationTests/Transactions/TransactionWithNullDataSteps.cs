@@ -24,14 +24,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private Features.Wallet.Wallet sendingWallet;
         private HdAddress senderAddress;
         private HdAddress receiverAddress;
-        private WalletAccountReference sendingWalletAccountReference;
         private Transaction transaction;
         private uint256 blockWithOpReturnId;
 
         private readonly string walletAccount = "account 0";
         private readonly string walletName = "mywallet";
         private readonly string walletPassword = "password";
-        private readonly string passphrase = "p@ssphr@se";
         private readonly string opReturnContent = "extra informations!";
         private readonly int transferAmount = 31415;
 
@@ -97,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
             var maturity = (int)this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
             var transactionBuildContext = new TransactionBuildContext(this.senderNode.FullNode.Network)
             {
-                AccountReference = this.sendingWalletAccountReference,
+                AccountReference = new WalletAccountReference(this.walletName, this.walletAccount),
                 MinConfirmations = maturity,
                 OpReturnData = this.opReturnContent,
                 WalletPassword = this.walletPassword,
