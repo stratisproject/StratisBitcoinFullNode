@@ -125,7 +125,11 @@ namespace Stratis.Bitcoin.Utilities
                 return HashHeightPair.Load(bytes);
 
             if (type == typeof(ProvenBlockHeader))
-                return ProvenBlockHeader.Load(bytes, this.Network);
+            {
+                var provenBlockHeader = new ProvenBlockHeader();
+                provenBlockHeader.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
+                return provenBlockHeader;
+            }
 
             throw new NotSupportedException();
         }

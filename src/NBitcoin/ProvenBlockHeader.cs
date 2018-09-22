@@ -104,19 +104,5 @@ namespace NBitcoin
         {
             return this.GetHash().ToString();
         }
-
-        public static ProvenBlockHeader Load(byte[] bytes, Network network)
-        {
-            if (bytes == null)
-                throw new ArgumentNullException(nameof(bytes));
-
-            if (network == null)
-                throw new ArgumentNullException(nameof(network));
-
-            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeader();
-            provenBlockHeader.ReadWrite(bytes, network.Consensus.ConsensusFactory);
-
-            return provenBlockHeader;
-        }
     }
 }
