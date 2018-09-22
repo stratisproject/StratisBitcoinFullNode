@@ -183,6 +183,12 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             return (IList<ReceiptResponse>)response.Value;
         }
 
+        public ReceiptResponse GetReceipt(string txHash)
+        {
+            JsonResult response = (JsonResult)this.smartContractsController.GetReceipt(txHash);
+            return (ReceiptResponse)response.Value;
+        }
+
         /// <summary>
         /// Sends a call contract transaction. Note that before this transaction can be mined it will need to reach the mempool.
         /// You will likely want to call 'WaitMempoolCount' after this.

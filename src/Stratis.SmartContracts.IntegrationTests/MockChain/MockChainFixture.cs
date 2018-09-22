@@ -9,10 +9,13 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         public MockChainFixture()
         {
             this.Chain = new Chain(2);
-            var sender = this.Chain.Nodes[0];
-            var receiver = this.Chain.Nodes[1];
+            var node1 = this.Chain.Nodes[0];
+            var node2 = this.Chain.Nodes[1];
             var maturity = (int)this.Chain.Network.Consensus.CoinbaseMaturity;
-            sender.MineBlocks(maturity + 1);
+
+            // Fund both nodes with the minimum to have something to spend.
+            node1.MineBlocks(maturity + 1);
+            node2.MineBlocks(maturity + 1);
         }
 
         public void Dispose()

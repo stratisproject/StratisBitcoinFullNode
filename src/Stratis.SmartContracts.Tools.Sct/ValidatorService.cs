@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.Tools.Sct
             console.WriteLine("Building ModuleDefinition...");
 
             compilation = validationServiceResult.CompilationResult.Compilation;
-            moduleDefinition = ContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
+            moduleDefinition = ContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver()).Value;
             console.WriteLine("ModuleDefinition built successfully.");
 
             console.WriteLine();
