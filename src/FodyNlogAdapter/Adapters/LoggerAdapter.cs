@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
@@ -49,13 +50,15 @@ namespace FodyNlogAdapter.Adapters
                     var parameters = new StringBuilder();
                     for (int i = 0; i < paramNames.Length; i++)
                     {
-                        parameters.AppendFormat("{0}={1}", paramNames[i], this.GetRenderedFormat(paramValues[i], NullString));
-                        if (i < paramNames.Length - 1) parameters.Append(", ");
+                        parameters.Append(this.RenderVariable(paramValues[i], paramNames[i]));
+
+                        if (i < paramNames.Length - 1)
+                            parameters.Append(",");
                     }
 
                     string argInfo = parameters.ToString();
                     propDict["arguments"] = argInfo;
-                    message = $"Entered into {methodInfo} ({argInfo}).";
+                    message = $"({argInfo})";
                 }
                 else
                 {
@@ -79,8 +82,10 @@ namespace FodyNlogAdapter.Adapters
                     var parameters = new StringBuilder();
                     for (int i = 0; i < paramNames.Length; i++)
                     {
-                        parameters.AppendFormat("{0}={1}", this.FixSpecialParameterName(paramNames[i] ?? "$return"), this.GetRenderedFormat(paramValues[i], NullString));
-                        if (i < paramNames.Length - 1) parameters.Append(", ");
+                        parameters.Append(this.RenderVariable(paramValues[i], paramNames[i]));
+
+                        if (i < paramNames.Length - 1)
+                            parameters.Append(", ");
                     }
                     returnValue = parameters.ToString();
                     propDict["arguments"] = returnValue;
@@ -91,7 +96,9 @@ namespace FodyNlogAdapter.Adapters
                 propDict["endTicks"] = endTicks;
                 propDict["timeTaken"] = timeTaken;
 
-                this.LogTrace(LogLevel.Trace, methodInfo, message: $"({returnValue}). Elapsed: {timeTaken:0.00} ms.",
+                string message = (returnValue == null) ? "(-)" : $"(-){returnValue}";
+
+                this.LogTrace(LogLevel.Trace, methodInfo, message: $"{message}; Elapsed: {timeTaken:0.00} ms.",
                     exception: null, properties: propDict);
             }
         }
@@ -139,15 +146,22 @@ namespace FodyNlogAdapter.Adapters
             return sb.ToString();
         }
 
-        private string GetRenderedFormat(object message, string stringRepresentationOfNull = "")
+        /// <summary>Renders variable depending on it's type.</summary>
+        /// <remarks>Override formats for different messages here.</remarks>
+        private string RenderVariable(object variable, string variableName)
         {
-            if (message == null)
-                return stringRepresentationOfNull;
+            string varName = variableName ?? "*";
 
-            if (message is string)
-                return (string)message;
+            if (variable == null)
+                return $"{varName}={NullString}";
 
-            return message.ToString();
+            if (variable is string s)
+                return $"{varName}='{s}'";
+
+            if (variable is IList list)
+                return $"{varName}.Count={list.Count}";
+
+            return $"{varName}={variable}";
         }
 
         private void LogTrace(LogLevel level, string methodInfo, string message, Exception exception = null, Dictionary<string, object> properties = null)
