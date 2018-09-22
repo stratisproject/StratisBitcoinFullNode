@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Weavers>
+  <Tracer adapterAssembly="FodyNlogAdapter"
+      logManager="FodyNlogAdapter.Adapters.LogManagerAdapter"      
+      logger="FodyNlogAdapter.Adapters.LoggerAdapter"
+      staticLogger="FodyNlogAdapter.Log"
+      traceConstructors="false"
+      traceProperties="false">
+      <TraceOn namespace="Stratis.Bitcoin.Base+*" class="private" method="private" />
+	  <!--
+			<TraceOn namespace="Root+*" class="public" method="public" />
+	  -->
+  </Tracer>  
+</Weavers>
