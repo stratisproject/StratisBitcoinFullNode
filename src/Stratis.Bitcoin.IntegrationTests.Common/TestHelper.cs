@@ -40,19 +40,26 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
+            // If the nodes are at genesis they are considered synced.
+            if (node1.FullNode.Chain.Tip.Height == 0 && node2.FullNode.Chain.Tip.Height == 0)
+                return true;
+
             if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock)
                 return false;
 
             if (node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
-            // Check that node1 tip exists in node2 store (either in disk or in the pending list) 
-            if (node1.FullNode.BlockStore().GetBlockAsync(node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
-                return false;
+            if (node1.FullNode.Chain.Tip.Height > 0 && node2.FullNode.Chain.Tip.Height > 0)
+            {
+                // Check that node1 tip exists in node2 store (either in disk or in the pending list) 
+                if (node1.FullNode.BlockStore().GetBlockAsync(node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+                    return false;
 
-            // Check that node2 tip exists in node1 store (either in disk or in the pending list) 
-            if (node2.FullNode.BlockStore().GetBlockAsync(node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
-                return false;
+                // Check that node2 tip exists in node1 store (either in disk or in the pending list) 
+                if (node2.FullNode.BlockStore().GetBlockAsync(node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+                    return false;
+            }
 
             if (!ignoreMempool)
             {
@@ -72,12 +79,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool IsNodeSynced(CoreNode node)
         {
+            // If the node is at genesis it is considered synced.
+            if (node.FullNode.Chain.Tip.Height == 0)
+                return true;
+
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
             // Check that node1 tip exists in store (either in disk or in the pending list) 
-            if (node.FullNode.BlockStore().GetBlockAsync(node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
-                return false;
+            if (node.FullNode.Chain.Tip.Height > 0)
+                if (node.FullNode.BlockStore().GetBlockAsync(node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+                    return false;
 
             if ((node.FullNode.WalletManager().ContainsWallets) &&
                 (node.FullNode.Chain.Tip.HashBlock != node.FullNode.WalletManager().WalletTipHash))

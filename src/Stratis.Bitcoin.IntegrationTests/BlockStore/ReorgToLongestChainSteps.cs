@@ -26,7 +26,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string AccountZero = "account 0";
         private const string WalletZero = "mywallet";
         private const string WalletPassword = "password";
-        private const string WalletPassphrase = "phrase";
 
         public ReorgToLongestChainSpecification(ITestOutputHelper output) : base(output)
         {

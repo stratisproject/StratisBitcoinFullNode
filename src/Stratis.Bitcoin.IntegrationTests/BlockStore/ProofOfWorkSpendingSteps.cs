@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet;
@@ -37,7 +36,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
             this.network = KnownNetworks.RegTest;
-
         }
 
         protected override void AfterTest()
@@ -55,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.receivingStratisBitcoinNode.Start();
             this.receivingStratisBitcoinNode.NotInIBD().WithWallet();
 
-            TestHelper.ConnectAndSync(this.sendingStratisBitcoinNode, this.receivingStratisBitcoinNode);
+            TestHelper.Connect(this.sendingStratisBitcoinNode, this.receivingStratisBitcoinNode);
 
             this.coinbaseMaturity = (int)this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity;
         }
@@ -77,8 +75,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void spending_the_coins_from_original_block()
         {
-            HdAddress sendtoAddress = this.receivingStratisBitcoinNode.FullNode.WalletManager()
-                .GetUnusedAddresses(new WalletAccountReference(WalletName, WalletAccountName), 2).ElementAt(1);
+            HdAddress sendtoAddress = this.receivingStratisBitcoinNode.FullNode.WalletManager().GetUnusedAddress();
 
             try
             {

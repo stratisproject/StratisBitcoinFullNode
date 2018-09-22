@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public IChainState ChainState { get; set; }
 
-        public IFinalizedBlockInfo FinalizedBlockInfo { get; set; }
+        public IFinalizedBlockInfoRepository FinalizedBlockInfo { get; set; }
 
         public IInitialBlockDownloadState InitialBlockDownloadState { get; set; }
 
