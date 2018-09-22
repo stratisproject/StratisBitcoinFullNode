@@ -80,8 +80,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 loggerFactory,
                 network,
                 chain,
-                // Not used by wallet manager. Pass a non-null dummy value.
-                NodeSettings.Default(network),
                 walletSettings,
                 dataFolder,
                 walletFeePolicy,
