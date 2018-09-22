@@ -63,11 +63,6 @@ namespace NBitcoin
         /// </summary>
         public BlockSignature Signature => this.signature;
 
-        /// <summary>
-        /// Determines if the header has been saved to the disk.
-        /// </summary>
-        private bool inStore;
-
         public ProvenBlockHeader() { }
 
         public ProvenBlockHeader(PosBlock block)
@@ -96,7 +91,6 @@ namespace NBitcoin
             stream.ReadWrite(ref this.merkleProof);
             stream.ReadWrite(ref this.signature);
             stream.ReadWrite(ref this.coinstake);
-            stream.ReadWrite(ref this.inStore);
         }
 
         /// <inheritdoc />
