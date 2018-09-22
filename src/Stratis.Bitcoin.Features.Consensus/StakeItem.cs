@@ -8,6 +8,8 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public BlockStake BlockStake;
 
+        public ProvenBlockHeader ProvenBlockHeader;
+
         public bool InStore;
 
         public long Height;

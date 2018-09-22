@@ -124,6 +124,9 @@ namespace Stratis.Bitcoin.Utilities
             if (type == typeof(HashHeightPair))
                 return HashHeightPair.Load(bytes);
 
+            if (type == typeof(ProvenBlockHeader))
+                return ProvenBlockHeader.Load(bytes, this.Network);
+
             throw new NotSupportedException();
         }
     }

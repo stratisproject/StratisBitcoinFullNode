@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Tests.Common.Logging
 {
@@ -17,6 +18,22 @@ namespace Stratis.Bitcoin.Tests.Common.Logging
             this.RPCLogger = new Mock<ILogger>();
             this.Logger = new Mock<ILogger>();
             this.LoggerFactory = new Mock<ILoggerFactory>();
+
+            Initialise();
+        }
+
+        public LogsTestBase(Network network) : base(network)
+        {
+            this.FullNodeLogger = new Mock<ILogger>();
+            this.RPCLogger = new Mock<ILogger>();
+            this.Logger = new Mock<ILogger>();
+            this.LoggerFactory = new Mock<ILoggerFactory>();
+
+            Initialise();
+        }
+
+        private void Initialise()
+        {
             this.LoggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                .Returns(this.Logger.Object);
             this.LoggerFactory.Setup(l => l.CreateLogger(typeof(FullNode).FullName))

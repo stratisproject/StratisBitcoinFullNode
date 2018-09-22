@@ -63,6 +63,13 @@ namespace NBitcoin
         /// </summary>
         public BlockSignature Signature => this.signature;
 
+        /// <summary>
+        /// Determines if the header has been saved to the disk.
+        /// </summary>
+        private bool inStore;
+
+        public ProvenBlockHeader() { }
+
         public ProvenBlockHeader(PosBlock block)
         {
             if (block == null) throw new ArgumentNullException(nameof(block));
@@ -89,12 +96,27 @@ namespace NBitcoin
             stream.ReadWrite(ref this.merkleProof);
             stream.ReadWrite(ref this.signature);
             stream.ReadWrite(ref this.coinstake);
+            stream.ReadWrite(ref this.inStore);
         }
 
         /// <inheritdoc />
         public override string ToString()
         {
             return this.GetHash().ToString();
+        }
+
+        public static ProvenBlockHeader Load(byte[] bytes, Network network)
+        {
+            if (bytes == null)
+                throw new ArgumentNullException(nameof(bytes));
+
+            if (network == null)
+                throw new ArgumentNullException(nameof(network));
+
+            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeader();
+            provenBlockHeader.ReadWrite(bytes, network.Consensus.ConsensusFactory);
+
+            return provenBlockHeader;
         }
     }
 }
