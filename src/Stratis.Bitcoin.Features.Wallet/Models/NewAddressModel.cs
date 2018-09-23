@@ -1,10 +1,11 @@
 ﻿using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Stratis.Bitcoin.Controllers.Converters;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {
-    [JsonConverter(typeof(NewAddressModelConverter))]
+    [JsonConverter(typeof(ToStringJsonConverter))]
     public class NewAddressModel
     {
         public string Address { get; set; }
@@ -17,25 +18,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public override string ToString()
         {
             return this.Address;
-        }
-    }
-
-
-    public class NewAddressModelConverter : JsonConverter
-    {
-        public override bool CanConvert(Type objectType)
-        {
-            return (objectType == typeof(NewAddressModel));
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            return new NewAddressModel(JToken.Load(reader).ToString());
-        }
-
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            JToken.FromObject(value.ToString()).WriteTo(writer);
         }
     }
 }

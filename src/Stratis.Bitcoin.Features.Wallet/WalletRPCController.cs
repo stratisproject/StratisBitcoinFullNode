@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// object with a custom JsonConverter to achieve proper RPC serialization of a string. 
         /// 
         /// I'm not sure whether this is a bug in the RPCMiddleware or whether it's an issue with ASP.NET in general.
-        /// <seealso cref="NewAddressModelConverter"/>.
+        /// <seealso cref="ToStringJsonConverter"/>.
         /// </remarks>
         [ActionName("getnewaddress")]
         [ActionDescription("Returns a new wallet address for receiving payments.")]
