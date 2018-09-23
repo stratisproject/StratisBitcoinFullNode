@@ -17,14 +17,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Used to instantiate smart contracts using reflection and then execute certain methods and their parameters.
     /// </summary>
-    public class ReflectionVirtualMachine : ISmartContractVirtualMachine
+    public class ReflectionVirtualMachine : IVirtualMachine
     {
         private readonly ILogger logger;
         private readonly Network network;
         private readonly ISmartContractValidator validator;
         private readonly ILoader assemblyLoader;
         private readonly IContractModuleDefinitionReader moduleDefinitionReader;
-        public static int VmVersion = 1;
+        public const int VmVersion = 1;
+        public const long MemoryUnitLimit = 100_000; 
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             ILoggerFactory loggerFactory,
@@ -42,13 +43,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a new instance of a smart contract by invoking the contract's constructor
         /// </summary>
-        public VmExecutionResult Create(IContractState repository, ISmartContractState contractState, byte[] contractCode, object[] parameters, string typeName = null)
+        public VmExecutionResult Create(IStateRepository repository, ISmartContractState contractState, byte[] contractCode, object[] parameters, string typeName = null)
         {
             this.logger.LogTrace("()");
 
             string typeToInstantiate;
             ContractByteCode code;
-            
+
             // Decompile the contract execution code and validate it.
             using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode))
             {
@@ -64,8 +65,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
 
-                var observer = new Observer(contractState.GasMeter);
-                var rewriter = new ObserverRewriter(observer); 
+                var observer = new Observer(contractState.GasMeter, MemoryUnitLimit);
+                var rewriter = new ObserverRewriter(observer);
                 moduleDefinition.Rewrite(rewriter);
 
                 code = moduleDefinition.ToByteCode();
@@ -104,9 +105,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_SUCCEEDED]");
-            
+
             this.logger.LogTrace("(-):{0}={1}", nameof(contract.Address), contract.Address);
-            
+
             return VmExecutionResult.Success(invocationResult.Return, typeToInstantiate);
         }
 
@@ -121,7 +122,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode))
             {
-                var observer = new Observer(contractState.GasMeter);
+                var observer = new Observer(contractState.GasMeter, MemoryUnitLimit);
                 var rewriter = new ObserverRewriter(observer);
                 moduleDefinition.Rewrite(rewriter);
                 code = moduleDefinition.ToByteCode();
@@ -166,7 +167,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         private Result<IContract> Load(
             ContractByteCode byteCode,
-            string typeName, 
+            string typeName,
             uint160 address,
             ISmartContractState contractState)
         {

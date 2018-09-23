@@ -10,7 +10,7 @@ namespace Stratis.SmartContracts.Core.State
     public static class Serializers
     {
         public static AccountStateSerializer AccountSerializer { get; } = new AccountStateSerializer();
-        public static StoredVinSerializer VinSerializer { get; } = new StoredVinSerializer();
+        public static ContractUnspentOutputSerializer ContractOutputSerializer { get; } = new ContractUnspentOutputSerializer();
 
         public class AccountStateSerializer : ISerializer<AccountState, byte[]>
         {
@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts.Core.State
             }
         }
 
-        public class StoredVinSerializer : ISerializer<ContractUnspentOutput, byte[]>
+        public class ContractUnspentOutputSerializer : ISerializer<ContractUnspentOutput, byte[]>
         {
             public byte[] Serialize(ContractUnspentOutput obj)
             {

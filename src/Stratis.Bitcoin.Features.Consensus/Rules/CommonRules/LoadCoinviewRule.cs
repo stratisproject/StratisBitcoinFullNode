@@ -32,26 +32,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             var utxoRuleContext = context as UtxoRuleContext;
             await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash).ConfigureAwait(false);
 
-            bool forceFlush = this.FlushRequired(context.ValidationContext.ChainedHeaderToValidate);
+            // Use the default flush condition to decide if flush is required (currently set to every 60 seconds) 
             if (this.PowParent.UtxoSet is CachedCoinView cachedCoinView)
-                await cachedCoinView.FlushAsync(forceFlush).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Calculates if coinview flush is required.
-        /// </summary>
-        /// <remarks>
-        /// For blockchains with max reorg property flush is required when consensus tip is less than max reorg blocks behind the chain tip.
-        /// If there is no max reorg property - flush is required when consensus tip timestamp is less than <see cref="FlushRequiredThresholdSeconds"/> behind the adjusted time.
-        /// </remarks>
-        private bool FlushRequired(ChainedHeader tip)
-        {
-            if (tip.Header.Time > this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() - FlushRequiredThresholdSeconds)
-            {
-                return true;
-            }
-
-            return false;
+                await cachedCoinView.FlushAsync(false).ConfigureAwait(false);
         }
     }
 
@@ -75,12 +58,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             this.Logger.LogTrace("Loading UTXO set of the new block.");
             utxoRuleContext.UnspentOutputSet = new UnspentOutputSet();
 
-            using (new StopwatchDisposable(o => this.Parent.PerformanceCounter.AddUTXOFetchingTime(o)))
-            {
-                uint256[] ids = this.GetIdsToFetch(context.ValidationContext.BlockToValidate, context.Flags.EnforceBIP30);
-                FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
-                utxoRuleContext.UnspentOutputSet.SetCoins(coins.UnspentOutputs);
-            }
+            uint256[] ids = this.GetIdsToFetch(context.ValidationContext.BlockToValidate, context.Flags.EnforceBIP30);
+            FetchCoinsResponse coins = await this.PowParent.UtxoSet.FetchCoinsAsync(ids).ConfigureAwait(false);
+            utxoRuleContext.UnspentOutputSet.SetCoins(coins.UnspentOutputs);
         }
 
         /// <summary>

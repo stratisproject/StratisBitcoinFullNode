@@ -37,13 +37,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
+            // If the nodes are at genesis they are considered synced.
+            if (node1.FullNode.Chain.Tip.Height == 0 && node2.FullNode.Chain.Tip.Height == 0)
+                return true;
+
             if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock)
                 return false;
 
             if (node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
-            if (node1.FullNode.GetBlockStoreTip().HashBlock != node2.FullNode.GetBlockStoreTip().HashBlock)
+            // Check that node1 tip exists in node2 store (either in disk or in the pending list) 
+            if (node1.FullNode.BlockStore().GetBlockAsync(node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+                return false;
+
+            // Check that node2 tip exists in node1 store (either in disk or in the pending list) 
+            if (node2.FullNode.BlockStore().GetBlockAsync(node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
                 return false;
 
             if (!ignoreMempool)
@@ -64,10 +73,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool IsNodeSynced(CoreNode node)
         {
+            // If the node is at genesis it is considered synced.
+            if (node.FullNode.Chain.Tip.Height == 0)
+                return true;
+
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
-            if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.GetBlockStoreTip().HashBlock)
+            // Check that node1 tip exists in store (either in disk or in the pending list) 
+            if (node.FullNode.BlockStore().GetBlockAsync(node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
                 return false;
 
             if ((node.FullNode.WalletManager().ContainsWallets) &&
@@ -107,20 +121,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             Guard.NotEmpty(walletPassword, nameof(walletPassword));
             Guard.NotEmpty(accountName, nameof(accountName));
 
-            if (numberOfBlocks == 0) throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
+            if (numberOfBlocks == 0)
+                throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
-            HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
-            
-            Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
-            Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address).PrivateKey;
+            if (node.MinerSecret == null)
+            {
+                HdAddress unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
+                node.MinerHDAddress = unusedAddress;
 
-            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+                Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
+                Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
+                node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+            }
 
             var blockHashes = node.GenerateStratisWithMiner((int)numberOfBlocks);
 
             WaitForNodeToSync(node);
 
-            return (address, blockHashes);
+            return (node.MinerHDAddress, blockHashes);
         }
 
         /// <summary>
@@ -201,6 +219,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             return result;
         }
 
+        public static void Disconnect(CoreNode from, CoreNode to)
+        {
+            from.CreateRPCClient().RemoveNode(to.Endpoint);
+        }
+
         private class TransactionNode
         {
             public uint256 Hash = null;
@@ -242,6 +265,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             Connect(from, to);
             WaitLoop(() => AreNodesSynced(from, to));
+        }
+
+        public static bool IsNodeConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
+        {
+            return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint == isConnectedToNode.Endpoint);
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
@@ -37,14 +38,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
         private readonly BackendPerformanceCounter performanceCounter;
 
-        /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
-        public BackendPerformanceCounter PerformanceCounter
-        {
-            get { return this.performanceCounter; }
-        }
-
-        /// <summary>Provider of time functions.</summary>
-        protected readonly IDateTimeProvider dateTimeProvider;
+        private BackendPerformanceSnapshot latestPerformanceSnapShot;
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -53,8 +47,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="dataFolder">Information about path locations to important folders and files on disk.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
-        public DBreezeCoinView(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-            : this(network, dataFolder.CoinViewPath, dateTimeProvider, loggerFactory)
+        public DBreezeCoinView(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats)
+            : this(network, dataFolder.CoinViewPath, dateTimeProvider, loggerFactory, nodeStats)
         {
         }
 
@@ -65,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="folder">Path to the folder with coinview database files.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
-        public DBreezeCoinView(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public DBreezeCoinView(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
@@ -76,8 +70,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dbreeze = new DBreezeEngine(folder);
             this.network = network;
-            this.dateTimeProvider = dateTimeProvider;
-            this.performanceCounter = new BackendPerformanceCounter(this.dateTimeProvider);
+            this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
+
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 400);
         }
 
         /// <summary>
@@ -149,11 +144,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     transaction.SynchronizeTables("BlockHash", "Coins");
                     transaction.ValuesLazyLoadingIsOn = false;
 
-                    using (new StopwatchDisposable(o => this.PerformanceCounter.AddQueryTime(o)))
+                    using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
                     {
                         uint256 blockHash = this.GetTipHash(transaction);
                         var result = new UnspentOutputs[txIds.Length];
-                        this.PerformanceCounter.AddQueriedEntities(txIds.Length);
+                        this.performanceCounter.AddQueriedEntities(txIds.Length);
 
                         int i = 0;
                         foreach (uint256 input in txIds)
@@ -227,7 +222,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     transaction.SynchronizeTables("BlockHash", "Coins", "Rewind");
                     //transaction.Technical_SetTable_OverwriteIsNotAllowed("Coins"); // Why it was there and what is it for? No one knows.
 
-                    using (new StopwatchDisposable(o => this.PerformanceCounter.AddInsertTime(o)))
+                    using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
                     {
                         uint256 current = this.GetTipHash(transaction);
                         if (current != oldBlockHash)
@@ -266,7 +261,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     }
                 }
 
-                this.PerformanceCounter.AddInsertedEntities(insertedEntities);
+                this.performanceCounter.AddInsertedEntities(insertedEntities);
                 this.logger.LogTrace("(-)");
             });
 
@@ -415,6 +410,24 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             });
 
             return task;
+        }
+
+        private void AddBenchStats(StringBuilder log)
+        {
+            this.logger.LogTrace("()");
+
+            log.AppendLine("======DBreezeCoinView Bench======");
+
+            BackendPerformanceSnapshot snapShot = this.performanceCounter.Snapshot();
+
+            if (this.latestPerformanceSnapShot == null)
+                log.AppendLine(snapShot.ToString());
+            else
+                log.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
+
+            this.latestPerformanceSnapShot = snapShot;
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />

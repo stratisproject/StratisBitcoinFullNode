@@ -9,6 +9,8 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -25,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var contractTxData = new ContractTxData(1, 1, (Gas) 1000, code);
             var refund = new Money(0);
             const ulong mempoolFee = 2UL; // MOQ doesn't like it when you use a type with implicit conversions (Money)
-            ISmartContractTransactionContext context = Mock.Of<ISmartContractTransactionContext>(c => 
+            IContractTransactionContext context = Mock.Of<IContractTransactionContext>(c => 
                 c.Data == code &&
                 c.MempoolFee == mempoolFee &&
                 c.Sender == uint160.One &&
@@ -40,13 +42,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Setup(s => s.Deserialize(It.IsAny<byte[]>()))
                 .Returns(Result.Ok(contractTxData));
 
+            var contractPrimitiveSerializer = new Mock<IContractPrimitiveSerializer>();
             var vmExecutionResult = VmExecutionResult.Success(null, null);
 
-            var contractStateRoot = new Mock<IContractStateRoot>();
-            var transferProcessor = new Mock<ISmartContractResultTransferProcessor>();
+            var contractStateRoot = new Mock<IStateRepository>();
+            var transferProcessor = new Mock<IContractTransferProcessor>();
+            var stateProcessor = new Mock<IStateProcessor>();
 
             (Money refund, TxOut) refundResult = (refund, null);
-            var refundProcessor = new Mock<ISmartContractResultRefundProcessor>();
+            var refundProcessor = new Mock<IContractRefundProcessor>();
 
             refundProcessor
                 .Setup(r => r.Process(
@@ -60,28 +64,34 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var stateTransitionResult = StateTransitionResult.Ok(gasConsumed, newContractAddress, vmExecutionResult.Result);
 
             var internalTransfers = new List<TransferInfo>().AsReadOnly();
+
+            var snapshot = new Mock<IState>();
+
             var stateMock = new Mock<IState>();
-            stateMock.Setup(s => s.Apply(It.IsAny<ExternalCreateMessage>()))                
-                .Returns(stateTransitionResult);
+            stateMock.Setup(s => s.ContractState).Returns(contractStateRoot.Object);
             stateMock.SetupGet(p => p.InternalTransfers).Returns(internalTransfers);
+            stateMock.Setup(s => s.Snapshot()).Returns(snapshot.Object);
+            
+            stateProcessor.Setup(s => s.Apply(snapshot.Object, It.IsAny<ExternalCreateMessage>())).Returns(stateTransitionResult);
 
             var stateFactory = new Mock<IStateFactory>();
             stateFactory.Setup(sf => sf.Create(
                 contractStateRoot.Object,
                 It.IsAny<IBlock>(),
                 context.TxOutValue,
-                context.TransactionHash,
-                contractTxData.GasLimit))
+                context.TransactionHash))
             .Returns(stateMock.Object);
 
-            var sut = new Executor(
+            var sut = new ContractExecutor(
                 loggerFactory,
                 callDataSerializer.Object,
                 contractStateRoot.Object,
                 refundProcessor.Object,
                 transferProcessor.Object,
                 network,
-                stateFactory.Object);
+                stateFactory.Object,
+                stateProcessor.Object,
+                contractPrimitiveSerializer.Object);
 
             sut.Execute(context);
 
@@ -92,12 +102,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     contractStateRoot.Object,
                     It.IsAny<IBlock>(),
                     context.TxOutValue,
-                    context.TransactionHash,
-                    contractTxData.GasLimit),
+                    context.TransactionHash),
                 Times.Once);
 
-            stateMock.Verify(sm => sm
-                .Apply(It.IsAny<ExternalCreateMessage>()), Times.Once);
+            // We only apply the message to the snapshot.
+            stateProcessor.Verify(sm => sm.Apply(snapshot.Object, It.IsAny<ExternalCreateMessage>()), Times.Once);
+
+            // Must transition to the snapshot.
+            stateMock.Verify(sm => sm.TransitionTo(snapshot.Object), Times.Once);
 
             transferProcessor.Verify(t => t
                 .Process(

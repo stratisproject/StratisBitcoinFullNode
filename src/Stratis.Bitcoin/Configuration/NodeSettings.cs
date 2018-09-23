@@ -151,12 +151,15 @@ namespace Stratis.Bitcoin.Configuration
                     throw new ConfigurationException("Invalid combination of regtest and testnet.");
 
                 if (protocolVersion == ProtocolVersion.ALT_PROTOCOL_VERSION)
-                    this.Network = testNet ? NetworkRegistration.Register(new StratisTest()) : regTest ? NetworkRegistration.Register(new StratisRegTest()) : NetworkRegistration.Register(new StratisMain());
+                    this.Network = testNet ? new StratisTest() : regTest ? new StratisRegTest() : new StratisMain();
                 else
-                    this.Network = testNet ? NetworkRegistration.Register(new BitcoinTest()) : regTest ? NetworkRegistration.Register(new BitcoinRegTest()) : NetworkRegistration.Register(new BitcoinMain());
+                    this.Network = testNet ? new BitcoinTest() : regTest ? new BitcoinRegTest() : new BitcoinMain();
 
                 this.Logger.LogDebug("Network set to '{0}'.", this.Network.Name);
             }
+
+            // Ensure the network being used is registered and we have the correct Network object reference.
+            this.Network = NetworkRegistration.Register(this.Network);
 
             // Set the full data directory path.
             if (this.DataDir == null)
