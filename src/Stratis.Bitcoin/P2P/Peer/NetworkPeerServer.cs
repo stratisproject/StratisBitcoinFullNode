@@ -81,7 +81,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             ConnectionManagerSettings connectionManagerSettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{localEndPoint}] ");
-            this.logger.LogTrace("({0}:{1},{2}:{3},{4}:{5})", nameof(network), network, nameof(localEndPoint), localEndPoint, nameof(externalEndPoint), externalEndPoint, nameof(version), version);
 
             this.networkPeerFactory = networkPeerFactory;
             this.networkPeerDisposer = new NetworkPeerDisposer(loggerFactory);
@@ -106,8 +105,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.acceptTask = Task.CompletedTask;
 
             this.logger.LogTrace("Network peer server ready to listen on '{0}'.", this.LocalEndpoint);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -220,8 +217,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>When criteria is met returns <c>true</c>, to allow connection.</returns>
         private bool AllowClientConnection(TcpClient tcpClient)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(tcpClient), tcpClient.Client.RemoteEndPoint);
-
             if (this.networkPeerDisposer.ConnectedPeersCount >= MaxConnectionThreshold)
             {
                 this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:false");
@@ -245,8 +240,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.logger.LogTrace("Node '{0}' is not white listed during initial block download.", clientRemoteEndPoint);
-
-            this.logger.LogTrace("(-):false");
+            
             return false;
         }
     }

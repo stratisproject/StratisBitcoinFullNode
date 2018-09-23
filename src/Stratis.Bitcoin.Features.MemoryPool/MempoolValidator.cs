@@ -201,7 +201,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public async Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(tx), tx?.GetHash());
             try
             {
                 var vHashTxToUncache = new List<uint256>();

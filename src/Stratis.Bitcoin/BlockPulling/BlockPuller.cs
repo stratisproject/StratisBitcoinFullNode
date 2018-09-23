@@ -256,8 +256,6 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc />
         public void RequestPeerServices(NetworkPeerServices services)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(services), services);
-
             var peerIdsToRemove = new List<int>();
 
             lock (this.peerLock)
@@ -469,9 +467,6 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <remarks>Have to be locked by <see cref="queueLock"/>.</remarks>
         private void ProcessQueueLocked(Queue<DownloadJob> jobsQueue, List<AssignedDownload> newAssignments, List<uint256> failedHashes, int emptySlots = int.MaxValue)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}.{4}:{5},{6}.{7}:{8},{9}:{10})", nameof(jobsQueue), nameof(jobsQueue.Count), jobsQueue.Count, nameof(newAssignments), nameof(newAssignments.Count), newAssignments.Count,
-                nameof(failedHashes), nameof(failedHashes.Count), failedHashes.Count, nameof(emptySlots), emptySlots);
-
             while ((jobsQueue.Count > 0) && (emptySlots > 0))
             {
                 DownloadJob jobToAssign = jobsQueue.Peek();
@@ -496,8 +491,6 @@ namespace Stratis.Bitcoin.BlockPulling
                 if (jobToAssign.Headers.Count == 0)
                     jobsQueue.Dequeue();
             }
-
-            this.logger.LogTrace("(-):{0}.{1}={2},{3}.{4}={5}", nameof(newAssignments), nameof(newAssignments.Count), newAssignments.Count, nameof(failedHashes), nameof(failedHashes.Count), failedHashes.Count);
         }
 
         /// <summary>

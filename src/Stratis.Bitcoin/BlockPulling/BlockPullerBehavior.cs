@@ -130,8 +130,6 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc/>
         public void AddSample(long blockSizeBytes, double delaySinceRequestedSeconds)
         {
-            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(blockSizeBytes), blockSizeBytes, nameof(delaySinceRequestedSeconds), delaySinceRequestedSeconds);
-
             double adjustedDelay = delaySinceRequestedSeconds;
 
             if (this.lastDeliveryTime != null)
@@ -153,8 +151,6 @@ namespace Stratis.Bitcoin.BlockPulling
                 speedPerSeconds = MaxSpeedBytesPerSecond;
 
             this.SpeedBytesPerSecond = speedPerSeconds;
-
-            this.logger.LogTrace("(-):{0}={1}", nameof(this.SpeedBytesPerSecond), this.SpeedBytesPerSecond);
         }
 
         /// <inheritdoc/>

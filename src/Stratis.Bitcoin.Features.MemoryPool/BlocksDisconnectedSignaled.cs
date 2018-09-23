@@ -25,11 +25,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock);
-
             this.AddBackToMempoolAsync(chainedHeaderBlock.Block).ConfigureAwait(false).GetAwaiter().GetResult();
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

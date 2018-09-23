@@ -66,15 +66,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="cancellationToken">Cancellation token.</param>
         private Task OnEnqueueAsync(INetworkPeer peer, CancellationToken cancellationToken)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(peer), peer.RemoteSocketAddress);
-
             this.onPeerDisposed?.Invoke(peer);
 
             peer.Dispose();
 
             this.connectedPeers.TryRemove(peer.Connection.Id, out INetworkPeer unused);
-
-            this.logger.LogTrace("(-)");
+            
             return Task.CompletedTask;
         }
 
@@ -82,11 +79,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="peer">Peer which disposal should be safely handled.</param>
         public void OnPeerDisconnectedHandler(INetworkPeer peer)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(peer), peer.RemoteSocketAddress);
-
             this.peersToDispose.Enqueue(peer);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

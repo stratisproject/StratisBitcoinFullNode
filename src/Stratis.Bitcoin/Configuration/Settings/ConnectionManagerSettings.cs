@@ -45,7 +45,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConnectionManagerSettings).FullName);
-            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             this.Connect = new List<IPEndPoint>();
             this.AddNode = new List<IPEndPoint>();

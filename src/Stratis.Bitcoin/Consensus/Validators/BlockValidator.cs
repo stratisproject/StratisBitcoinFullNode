@@ -93,11 +93,8 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// <inheritdoc />
         public ValidationContext ValidateHeader(ChainedHeader chainedHeader)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
-
             ValidationContext result = this.consensusRules.HeaderValidation(chainedHeader);
-
-            this.logger.LogTrace("(-):'{0}'", result);
+            
             return result;
         }
     }
@@ -117,8 +114,6 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// <inheritdoc />
         public ValidationContext VerifyBlockIntegrity(ChainedHeader header, Block block)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(header), header, nameof(block), block);
-
             ValidationContext result = this.consensusRules.IntegrityValidation(header, block);
 
             this.logger.LogTrace("(-):'{0}'", result);
@@ -218,11 +213,8 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// <inheritdoc />
         public async Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(header), header, nameof(block), block);
-
             ValidationContext result = await this.consensusRules.FullValidationAsync(header, block).ConfigureAwait(false);
-
-            this.logger.LogTrace("(-):'{0}'", result);
+            
             return result;
         }
     }

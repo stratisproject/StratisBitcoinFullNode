@@ -178,8 +178,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public async Task<Block> GetBlockAsync(uint256 blockHash)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
-
             lock (this.getBlockLock)
             {
                 if (this.pendingBlocks.TryGetValue(blockHash, out ChainedHeaderBlock chainedHeaderBlock))
@@ -192,8 +190,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Block block = await this.blockRepository.GetBlockAsync(blockHash).ConfigureAwait(false);
 
             this.logger.LogTrace("Block was{0} found in the repository.", (block == null) ? " not" : "");
-            this.logger.LogTrace("(-)");
-            
             return block;
         }
 

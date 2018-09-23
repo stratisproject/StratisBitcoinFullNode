@@ -308,24 +308,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public bool AddUnchecked(uint256 hash, TxMempoolEntry entry, bool validFeeEstimate = true)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}',{5}:{6})", nameof(hash), hash, nameof(entry), nameof(entry.TransactionHash), entry?.TransactionHash, nameof(validFeeEstimate), validFeeEstimate);
-
             //LOCK(cs);
             var setAncestors = new SetEntries();
             long nNoLimit = long.MaxValue;
             string dummy;
             this.CalculateMemPoolAncestors(entry, setAncestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy);
             bool returnVal = this.AddUnchecked(hash, entry, setAncestors, validFeeEstimate);
-
-            this.logger.LogTrace("(-):{0}", returnVal);
+            
             return returnVal;
         }
 
         /// <inheritdoc />
         public bool AddUnchecked(uint256 hash, TxMempoolEntry entry, SetEntries setAncestors, bool validFeeEstimate = true)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}',{5}.{6}:{7},{8}:{9})", nameof(hash), hash, nameof(entry), nameof(entry.TransactionHash), entry?.TransactionHash, nameof(setAncestors), nameof(setAncestors.Count), setAncestors?.Count, nameof(validFeeEstimate), validFeeEstimate);
-
             //LOCK(cs);
             this.MapTx.Add(entry);
             this.mapLinks.Add(entry, new TxLinks { Parents = new SetEntries(), Children = new SetEntries() });
@@ -380,7 +375,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.vTxHashes.Add(entry, tx.GetWitHash());
             //entry.vTxHashesIdx = vTxHashes.size() - 1;
 
-            this.logger.LogTrace("(-):true");
             return true;
         }
 
@@ -434,13 +428,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private SetEntries GetMemPoolParents(TxMempoolEntry entry)
         {
             Guard.NotNull(entry, nameof(entry));
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(entry), nameof(entry.TransactionHash), entry.TransactionHash);
 
             Guard.Assert(this.MapTx.ContainsKey(entry.TransactionHash));
             TxLinks it = this.mapLinks.TryGet(entry);
             Guard.Assert(it != null);
 
-            this.logger.LogTrace("(-):{0}={1}", nameof(it.Parents.Count), it.Parents?.Count);
             return it.Parents;
         }
 
@@ -452,13 +444,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private SetEntries GetMemPoolChildren(TxMempoolEntry entry)
         {
             Guard.NotNull(entry, nameof(entry));
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(entry), nameof(entry.TransactionHash), entry.TransactionHash);
 
             Guard.Assert(this.MapTx.ContainsKey(entry.TransactionHash));
             TxLinks it = this.mapLinks.TryGet(entry);
             Guard.Assert(it != null);
-
-            this.logger.LogTrace("(-):{0}={1}", nameof(it.Children.Count), it.Children?.Count);
+            
             return it.Children;
         }
 
@@ -974,8 +964,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public FeeRate GetMinFee(long sizelimit)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(sizelimit), sizelimit);
-
             //LOCK(cs);
             if (!this.blockSinceLastRollingFeeBump || this.rollingMinimumFeeRate == 0)
             {
@@ -1004,7 +992,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             double ret = Math.Max(this.rollingMinimumFeeRate, this.minReasonableRelayFee.FeePerK.Satoshi);
-            this.logger.LogTrace("(-):{0}", ret);
+
             return new FeeRate(new Money((int)ret));
         }
 

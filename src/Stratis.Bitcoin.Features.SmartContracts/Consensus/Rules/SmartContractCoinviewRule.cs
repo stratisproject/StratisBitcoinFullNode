@@ -326,8 +326,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         private void ValidateRefunds(TxOut refund, Transaction coinbaseTransaction)
         {
-            this.Logger.LogTrace("({0}:{1})", nameof(refund), refund);
-
             TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
             if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
             {
@@ -338,8 +336,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
 
             this.refundCounter++;
-
-            this.Logger.LogTrace("(-){0}:{1}", nameof(this.refundCounter), this.refundCounter);
         }
 
         /// <inheritdoc/>

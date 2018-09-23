@@ -43,14 +43,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(WalletSettings).FullName);
-            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false, this.logger);
             this.UnusedAddressesBuffer = config.GetOrDefault<int>("walletaddressbuffer", 20, this.logger);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

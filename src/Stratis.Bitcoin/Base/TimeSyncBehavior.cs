@@ -199,8 +199,6 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public bool AddTimeData(IPAddress peerAddress, TimeSpan offsetSample, bool isInboundConnection)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(peerAddress), peerAddress, nameof(offsetSample), offsetSample.TotalSeconds, nameof(isInboundConnection), isInboundConnection);
-
             bool res = false;
 
             bool startWarningLoopNow = false;
@@ -249,7 +247,6 @@ namespace Stratis.Bitcoin.Base
             if (startWarningLoopNow)
                 this.StartWarningLoop();
 
-            this.logger.LogTrace("(-):{0}", res);
             return res;
         }
 
@@ -432,8 +429,6 @@ namespace Stratis.Bitcoin.Base
         /// </remarks>
         private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
             if (message.Message.Payload is VerAckPayload verack)
             {
                 IPAddress address = peer.RemoteSocketAddress;

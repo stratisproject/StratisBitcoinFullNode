@@ -64,8 +64,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         /// <inheritdoc />
         public override void CheckBlockReward(RuleContext context, Money fees, int height, NBitcoin.Block block)
         {
-            this.Logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(fees), fees, nameof(height), height);
-
             if (BlockStake.IsProofOfStake(block))
             {
                 var posRuleContext = context as PosRuleContext;
@@ -89,15 +87,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
                     ConsensusErrors.BadCoinbaseAmount.Throw();
                 }
             }
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
-            this.Logger.LogTrace("()");
-
             if (this.generatedTransaction != null)
             {
                 base.ValidateGeneratedTransaction(transaction);
@@ -126,15 +120,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             base.ExecuteContractTransaction(context, transaction);
 
             base.UpdateUTXOSet(context, transaction);
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public override void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {
-            this.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
-
             base.CheckCoinbaseMaturity(coins, spendHeight);
 
             if (coins.IsCoinstake)
@@ -146,8 +136,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
                     ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Throw();
                 }
             }
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -158,8 +146,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         /// <exception cref="ConsensusErrors.SetStakeEntropyBitFailed">Thrown if failed to set stake entropy bit.</exception>
         private void CheckAndComputeStake(RuleContext context)
         {
-            this.Logger.LogTrace("()");
-
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
             NBitcoin.Block block = context.ValidationContext.BlockToValidate;
 
@@ -216,8 +202,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
                 this.Logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
             }
             else this.Logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedHeader.Height, lastCheckpointHeight);
-
-            this.Logger.LogTrace("(-)[OK]");
         }
 
         /// <inheritdoc />
