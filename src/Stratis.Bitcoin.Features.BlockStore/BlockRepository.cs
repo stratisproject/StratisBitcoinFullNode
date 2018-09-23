@@ -445,6 +445,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         res = blockRow.Value;
                 }
 
+                // If searching for genesis block, return it.
+                if (res == null && hash == this.network.GenesisHash)
+                {
+                    res = this.network.GetGenesis();
+                }
+
                 this.logger.LogTrace("(-):{0}", res);
                 return res;
             });
