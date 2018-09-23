@@ -40,7 +40,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             //Transfer from constructor
         }
 
-        [Fact]
+        [Fact(Skip = "TODO")]
         public void InternalTransfer_Create_WithValueTransfer()
         {
             //Create with value transfer
