@@ -16,25 +16,25 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.receiver = this.mockChain.Nodes[1];
         }
 
-        [Fact]
+        [Fact(Skip = "TODO")]
         public void InternalTransfer_ToWalletAddress()
         {
             //Transfer to human
         }
 
-        [Fact]
+        [Fact(Skip = "TODO")]
         public void InternalTransfer_ToContractAddress()
         {
             //Transfer to contract
         }
 
-        [Fact]
+        [Fact(Skip = "TODO")]
         public void InternalTransfer_BetweenContracts()
         {
             //Method calls back and forth between 2 contracts
         }
 
-        [Fact]
+        [Fact(Skip = "TODO")]
         public void InternalTransfer_FromConstructor()
         {
             //Transfer from constructor
