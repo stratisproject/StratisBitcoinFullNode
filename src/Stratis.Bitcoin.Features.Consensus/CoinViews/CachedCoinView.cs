@@ -166,8 +166,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <inheritdoc />
         public async Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.logger.LogTrace("()");
-
             if (this.blockHash == null)
             {
                 FetchCoinsResponse response = await this.FetchCoinsAsync(new uint256[0], cancellationToken).ConfigureAwait(false);
@@ -175,8 +173,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.innerBlockHash = response.BlockHash;
                 this.blockHash = this.innerBlockHash;
             }
-
-            this.logger.LogTrace("(-):'{0}'", this.blockHash);
+            
             return this.blockHash;
         }
 
@@ -184,7 +181,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public async Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
         {
             Guard.NotNull(txIds, nameof(txIds));
-            this.logger.LogTrace("({0}.{1}:{2})", nameof(txIds), nameof(txIds.Length), txIds.Length);
 
             FetchCoinsResponse result = null;
             var outputs = new UnspentOutputs[txIds.Length];
@@ -248,7 +244,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 await this.EvictAsync().ConfigureAwait(false);
             }
 
-            this.logger.LogTrace("(-):*.{0}='{1}',*.{2}.{3}={4}", nameof(result.BlockHash), result.BlockHash, nameof(result.UnspentOutputs), nameof(result.UnspentOutputs.Length), result.UnspentOutputs.Length);
             return result;
         }
 
@@ -262,8 +257,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </remarks>
         public async Task FlushAsync(bool force = true)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(force), force);
-
             DateTime now = this.dateTimeProvider.GetUtcNow();
             if (!force && ((now - this.lastCacheFlushTime).TotalSeconds < CacheFlushTimeIntervalSeconds))
             {
@@ -308,8 +301,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
 
             this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -318,8 +309,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         private async Task EvictAsync()
         {
-            this.logger.LogTrace("()");
-
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
                 // TODO: Do not create new random source every time.
@@ -336,8 +325,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     }
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -346,7 +333,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
             Guard.NotNull(unspentOutputs, nameof(unspentOutputs));
-            this.logger.LogTrace("({0}.Count():{1},{2}.Count():{3},{4}:'{5}',{6}:'{7}')", nameof(unspentOutputs), unspentOutputs.Count(), nameof(originalOutputs), originalOutputs?.Count(), nameof(oldBlockHash), oldBlockHash, nameof(nextBlockHash), nextBlockHash);
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
@@ -423,15 +409,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 this.cachedRewindDataList.Add(rewindData);
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public async Task<uint256> Rewind()
         {
-            this.logger.LogTrace("()");
-
             if (this.innerBlockHash == null)
                 this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
 
@@ -462,16 +444,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 this.innerBlockHash = hash;
                 this.blockHash = hash;
-
-                this.logger.LogTrace("(-):'{0}'", hash);
+                
                 return hash;
             }
         }
 
         private void RestoreOutputs(RewindData rewindData)
         {
-            this.logger.LogTrace("()");
-
             foreach (UnspentOutputs unspentToRestore in rewindData.OutputsToRestore)
             {
                 this.logger.LogTrace("Outputs of transaction ID '{0}' will be restored.", unspentToRestore.TransactionId);
@@ -494,27 +473,19 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.cachedUtxoItems.Add(unspentToRestore.TransactionId, cacheItem);
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         private void RemoveTransactions(RewindData rewindData)
         {
-            this.logger.LogTrace("()");
-
             foreach (uint256 transactionToRemove in rewindData.TransactionsToRemove)
             {
                 this.logger.LogTrace("Attempt to remove transaction with ID '{0}'.", transactionToRemove);
                 this.cachedUtxoItems.Remove(transactionToRemove);
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         private void AddBenchStats(StringBuilder log)
         {
-            this.logger.LogTrace("()");
-
             log.AppendLine("======CashedCoinView Bench======");
 
             log.AppendLine("Cache entries".PadRight(20) + this.cacheEntryCount);
@@ -527,8 +498,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 log.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
 
             this.latestPerformanceSnapShot = snapShot;
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
