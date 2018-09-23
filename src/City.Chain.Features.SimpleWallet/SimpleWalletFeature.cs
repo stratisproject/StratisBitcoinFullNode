@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using City.Chain.Features.SimpleWallet.Notifications;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,8 +47,7 @@ namespace City.Chain.Features.SimpleWallet
             this.walletSettings = walletSettings;
         }
         
-        /// <inheritdoc />
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
             // subscribe to receiving blocks and transactions
             //this.blockSubscriberdDisposable = this.signals.SubscribeForBlocksConnected(new SignalObserver(this.walletService));
@@ -80,7 +80,9 @@ namespace City.Chain.Features.SimpleWallet
             }).UseUrls(this.walletSettings.GetUrls()).Build();
 
             this.webHost.Start();  //.Run();
-            
+
+            return Task.CompletedTask;
+
             //Program.CreateWebHostBuilder(null).ConfigureServices(collection => { }).Build().Run();
             //this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.apiSettings);
         }

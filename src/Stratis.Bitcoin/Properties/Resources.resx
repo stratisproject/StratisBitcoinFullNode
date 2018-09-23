@@ -120,50 +120,58 @@
   <data name="AsciiLogo" xml:space="preserve">
     <value>
 
-     .d8888b. 88888888888 8888888b.         d8888 88888888888 8888888  .d8888b. 
-    d88P  Y88b    888     888   Y88b       d88888     888       888   d88P  Y88b
-    Y88b.         888     888    888      d88P888     888       888   Y88b.     
-     "Y888b.      888     888   d88P     d88P 888     888       888    "Y888b.  
-        "Y88b.    888     8888888P"     d88P  888     888       888       "Y88b.
-          "888    888     888 T88b     d88P   888     888       888         "888
-    Y88b  d88P    888     888  T88b   d8888888888     888       888   Y88b  d88P
-     "Y8888P"     888     888   T88b d88P     888     888     8888888  "Y8888P" 
+  .d8888b.  d8b 888                   .d8888b.  888               d8b          
+ d88P  Y88b Y8P 888                  d88P  Y88b 888               Y8P          
+ 888    888     888                  888    888 888                            
+ 888        888 888888 888  888      888        88888b.   8888b.  888 88888b.  
+ 888        888 888    888  888      888        888 "88b     "88b 888 888 "88b 
+ 888    888 888 888    888  888      888    888 888  888 .d888888 888 888  888 
+ Y88b  d88P 888 Y88b.  Y88b 888      Y88b  d88P 888  888 888  888 888 888  888 
+  "Y8888P"  888  "Y888  "Y88888       "Y8888P"  888  888 "Y888888 888 888  888 
+                            888                                                
+                       Y8b d88P                                                
+                        "Y88P"                                                 
 
-················································································
-················································································
-······································STRAT·····································
-···································STRATISSTRAT·································
-·······························STRATISS····STRATIS······························
-····························STRATIS···········STRATISS··························
-·························STRATIS··················STRATIS·······················
-·····················STRATISS························STRATISS···················
-··················STRATIS································STRATIS················
-···············STRATIS······································STRATIS·············
-···········STRATIS··············································STRATIS·········
-········STRATIS····················································STRATISS·····
-····STRATISS···························································STRATIS··
-··STRATIS································································STRAT··
-··STRATISST··························································STRATISS···
-··STRA··STRATIS···················································STRATIS·······
-··STRA·····STRATISS············································STRATIS··········
-··STRA·········STRATIS·····································STRATIS··············
-··STRATI··········STRATISS······························STRATIS··········STRAT··
-····STRATIS···········STRATIS·······················STRATIS··········STRATISST··
-·······STRATISS··········STRATISS················STRATIS·········STRATISS··STR··
-···········STRATIS···········STRATIS·········STRATIST·········STRATIST·····STR··
-·····S········STRATIS···········STRATIS··STRATISS··········STRATIS········STRA··
-····STRATIS·······STRATIS···········STRATISST··········STRATISS·········STRATI··
-······STRATIS········STRATIS···········STR··········STRATIS·········STRATIS·····
-·········STRATISS········STRATIS················STRATISS·········STRATIS········
-·············STRATIS········STRATIS··········STRATIS·········STRATIS············
-················STRATIS·········STRATIS··STRATISS·········STRATIS···············
-···················STRATISS········STRATISSTR·········STRATISS··················
-·······················STRATIS········STRA·········STRATIS······················
-··························STRATISS·············STRATISS·························
-······························STRATIS·······STRATIS·····························
-·································STRATISSTRATISS································
-·····································STRATIS····································
-················································································
+MMMMMMMMMMMMMMMMMMMMMMMMWWNXXK00OOOOkkkkkkkkOOOO00KKXNWWMMMMMMMMMMMMMMMMMMMMMMMM
+MMMMMMMMMMMMMMMMMMMMWNXK0OOkkkkkkkkkkkkkkkkkkkkkkkkkkkO0KXNWMMMMMMMMMMMMMMMMMMMM
+MMMMMMMMMMMMMMMMMWXK0OkkkkkkkkkkkkkkkOOOOOOOOkkkkkkkkkkkkkO0KXWMMMMMMMMMMMMMMMMM
+MMMMMMMMMMMMMMWNKOkkkkkkkkkkkkkkkkkkl;;;;;;;lkkkkkkkkkkkkkkkkkOKXWMMMMMMMMMMMMMM
+MMMMMMMMMMMMWX0OkkkkkkkkkkkkkkOOkkxd,       'dkkOOOkkkkkkkkkkkkkk0XNMMMMMMMMMMMM
+MMMMMMMMMMWKOkkkkkkkkkkkkOOxoc:,'...         ...,:coxkOkkkkkkkkkkkkOKNMMMMMMMMMM
+MMMMMMMMWXOkkkkkkkkkkkOko:,.                        .':okOkkkkkkkkkkkOKWMMMMMMMM
+MMMMMMWN0kkkkkkkkkkOko:.          ;ddooooooodx:         .;okOkkkkkkkkkk0XWMMMMMM
+MMMMMWKOkkkkkkkkkOkl'           ..oOc.......:Od.           'cxOkkkkkkkkkOKWMMMMM
+MMMMN0kkkkkkkkkOkl.         .;codddl'       .oxxol;.         .ckOkkkkkkkkk0NMMMM
+MMMN0kkkkkkkkkOd'        .:dxdc;..            ..,cdxd:.        .okkkkkkkkkk0NMMM
+MMN0kkkkkkkkOkc.       'lkx:.                      .:dko'        :kOkkkkkkkk0NMM
+MWKkkkkkkkkOk;       .lkd,.                           ,dko.       ,xOkkkkkkkk0WM
+WKkkkkkkkkOk;       ,xk:.        .':clloollc:,.         ;xk;       ,xOkkkkkkkkKW
+N0kkkkkkkOk:       :Od'       .;oxOOOkkkkkkOOOxo;.       .oOc       ;kOkkkkkkkON
+KkkkkkkkkOo.      ;Od.       ;xOkkkkkkkkkkkkkkkkOx:.      .oOc.......oOkkkkkkkkK
+0kkkkkkkOk,      .xk'      .lOkkkkkkkkkkkkkkkkkkkkOo.      'dOkxxxxxxxkkkkkkkkk0
+OkkkkkkkOd.      cOc      .lOkkkkkkkkkkkkkkkkkkkkkkkxoooooodxkkkkkkkkkkkkkkkkkkO
+kkkkkkkkOl.     .dk'      ,kOkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkOc      .xx.      cOkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+kkkkkkkkOc      .xk'      :kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+OkkkkkkkOo.     .oO;      .xOkkkkkkkkkkkkkkkkkkkkkkkkOOOOOOOkkkkkkkkkkkkkkkkkkkO
+OkkkkkkkOx'      ;Oo.      ;kOkkkkkkkkkkkkkkkkkkkkkkl;;;;;;:dOOOOOkOOkkkkkkkkkkO
+0kkkkkkkkO:      .oO:       ,xOkkkkkkkkkkkkkkkkkkOx;       ,kxcccccccdkkkkkkkkk0
+XOkkkkkkkOx'      .dO;       .:xOOkkkkkkkkkkkkOOxc.       ,kx'      .dOkkkkkkkkX
+W0kkkkkkkkOo.      .dOc.       .,coxkkOOOOkkxdl,.        :kd.      .lOkkkkkkkk0N
+MXOkkkkkkkkOl.      .ckd,          ..',,,,'..          'dkl.      .cOkkkkkkkkOXM
+MWXOkkkkkkkkOo.       'okd,.                        .,okd'       .lOkkkkkkkkOXWM
+MMWXOkkkkkkkkOx,        'lxxl,.                  .'cxkl'        'dOkkkkkkkkOKWMM
+MMMWXOkkkkkkkkOkl.        .,ldxoc:'.        .,;coxxl;.        .ckOkkkkkkkkOKWMMM
+MMMMWXOkkkkkkkkkOxc.         ..;ckk,       ,kkoc;..         .:xOkkkkkkkkkOXWMMMM
+MMMMMMN0kkkkkkkkkkOxl,.         .lOdcccccccd0l            'cxOkkkkkkkkkk0NMMMMMM
+MMMMMMMWXOkkkkkkkkkkOkdc'.       ';;;;;;;;;;;.        .':dkOkkkkkkkkkkOXWMMMMMMM
+MMMMMMMMMNKOkkkkkkkkkkkOkxl:,..                  ..':lxkOkkkkkkkkkkkOKNMMMMMMMMM
+MMMMMMMMMMMNKOkkkkkkkkkkkkkOkkdocc;.       .,;:cldkkOkkkkkkkkkkkkkOKNWMMMMMMMMMM
+MMMMMMMMMMMMMWX0OkkkkkkkkkkkkkkkkOk;      .:OOOkkkkkkkkkkkkkkkkO0XWWMMMMMMMMMMMM
+MMMMMMMMMMMMMMMWNK0OkkkkkkkkkkkkkkkxdddddddxkkkkkkkkkkkkkkkkO0KNWMMMMMMMMMMMMMMM
+MMMMMMMMMMMMMMMMMMWNXK0OkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkO0KXNWMMMMMMMMMMMMMMMMMM
+MMMMMMMMMMMMMMMMMMMMMMWNXK00OOkkkkkkkkkkkkkkkkkkkkOO00KXNWMMMMMMMMMMMMMMMMMMMMMM
+MMMMMMMMMMMMMMMMMMMMMMMMMMMWNXKK0OOOkkkkkkkkOOO00KXNWMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 
 </value>
