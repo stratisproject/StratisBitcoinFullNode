@@ -149,8 +149,6 @@ namespace Stratis.Bitcoin.Consensus.Validators
 
         private async Task OnEnqueueAsync(PartialValidationItem item, CancellationToken cancellationtoken)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(item), item);
-
             ValidationContext result = await this.consensusRules.PartialValidationAsync(item.ChainedHeader, item.Block).ConfigureAwait(false);
 
             try
@@ -162,33 +160,24 @@ namespace Stratis.Bitcoin.Consensus.Validators
                 this.logger.LogCritical("Partial validation callback threw an exception: {0}.", exception.ToString());
                 throw;
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void StartPartialValidation(ChainedHeader header, Block block, OnPartialValidationCompletedAsyncCallback onPartialValidationCompletedAsyncCallback)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(header), header, nameof(block), block);
-
             this.asyncQueue.Enqueue(new PartialValidationItem()
             {
                 ChainedHeader = header,
                 Block = block,
                 PartialValidationCompletedAsyncCallback = onPartialValidationCompletedAsyncCallback
             });
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public async Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(header), header, nameof(block), block);
-
             ValidationContext result = await this.consensusRules.PartialValidationAsync(header, block).ConfigureAwait(false);
-
-            this.logger.LogTrace("(-):'{0}'", result);
+            
             return result;
         }
 
