@@ -47,8 +47,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IContractExecutionResult Execute(IContractTransactionContext transactionContext)
         {
-            this.logger.LogTrace("()");
-
             // Deserialization can't fail because this has already been through SmartContractFormatRule.
             Result<ContractTxData> callDataDeserializationResult = this.serializer.Deserialize(transactionContext.Data);
             ContractTxData callData = callDataDeserializationResult.Value;

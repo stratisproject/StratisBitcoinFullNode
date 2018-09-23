@@ -25,24 +25,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
         /// <inheritdoc />
         public override void Initialize()
         {
-            this.Logger.LogTrace("()");
-
             base.Initialize();
 
             this.consensus = this.Parent.Network.Consensus;
             this.smartContractPosParent = (SmartContractPosConsensusRuleEngine)this.Parent;
             this.stakeChain = this.smartContractPosParent.StakeChain;
             this.stakeValidator = this.smartContractPosParent.StakeValidator;
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         /// <summary>Compute and store the stake proofs.</summary>
         public override async Task RunAsync(RuleContext context)
         {
-            this.Logger.LogTrace("()");
-
             this.blockTxsProcessed = new List<Transaction>();
             this.refundCounter = 1;
 
@@ -51,8 +45,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             await base.RunAsync(context);
 
             await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeaderToValidate, (context as PosRuleContext).BlockStake).ConfigureAwait(false);
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
