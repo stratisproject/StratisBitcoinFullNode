@@ -97,7 +97,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>List of transaction information.</returns>
         public List<TxMempoolInfo> InfoAll()
         {
-            this.logger.LogTrace("()");
             // TODO: DepthAndScoreComparator
 
             var infoList = this.memPool.MapTx.DescendantScore.Select(item => new TxMempoolInfo
@@ -108,7 +107,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 FeeDelta = item.ModifiedFee - item.Fee
             }).ToList();
 
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(infoList.Count), infoList.Count);
             return infoList;
         }
 
@@ -126,7 +124,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="fileName">Filename to load from.</param>
         internal async Task LoadPoolAsync(string fileName = null)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(fileName), fileName);
             if (this.mempoolPersistence != null && this.memPool?.MapTx != null && this.Validator != null)
             {
                 this.logger.LogInformation("Loading Memory Pool.");
@@ -137,7 +134,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 this.logger.LogInformation("Unable to load memory pool cache from '{0}'.", fileName);
             }
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -146,8 +142,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Memory pool save result.</returns>
         internal MemPoolSaveResult SavePool()
         {
-            this.logger.LogTrace("()");
-
             if (this.mempoolPersistence == null)
             {
                 this.logger.LogTrace("(-)[NON_SUCCESS]");
@@ -155,7 +149,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             MemPoolSaveResult saveResult = this.mempoolPersistence.Save(this.network, this.memPool);
 
-            this.logger.LogTrace("(-):'{0}'", saveResult);
             return saveResult;
         }
 

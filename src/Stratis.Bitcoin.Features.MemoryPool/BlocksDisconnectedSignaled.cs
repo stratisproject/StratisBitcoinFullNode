@@ -39,14 +39,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="block">The disconnected block containing the transactions.</param>
         private async Task AddBackToMempoolAsync(Block block)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
-
             var state = new MempoolValidationState(true);
 
             await this.mempoolLock.WriteAsync(async () =>
             {
-                this.logger.LogTrace("()");
-
                 foreach (Transaction transaction in block.Transactions)
                 {
                     if (transaction.IsProtocolTransaction())
@@ -59,11 +55,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     else
                         this.logger.LogTrace("Transaction with hash '{0}' accepted back to mempool.", transaction.GetHash());
                 }
-
-                this.logger.LogTrace("(-)");
+                
             }).ConfigureAwait(false);
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

@@ -120,23 +120,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         protected override void AttachCore()
         {
-            this.logger.LogTrace("()");
-
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
             this.isPeerWhitelistedForRelay = this.AttachedPeer.Behavior<IConnectionManagerBehavior>().Whitelisted && this.mempoolManager.mempoolSettings.WhiteListRelay;
             this.isBlocksOnlyMode = !this.connectionManager.ConnectionSettings.RelayTxes && !this.isPeerWhitelistedForRelay;
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         protected override void DetachCore()
         {
-            this.logger.LogTrace("()");
-
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -547,8 +539,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         public async Task SendTrickleAsync()
         {
-            this.logger.LogTrace("()");
-
             INetworkPeer peer = this.AttachedPeer;
             if (peer == null)
             {
@@ -620,8 +610,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     return;
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
     }
 }
