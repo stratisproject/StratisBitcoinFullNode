@@ -7,5 +7,7 @@
       traceConstructors="false"
       traceProperties="false">
       <TraceOn namespace="Stratis.Bitcoin+*" class="private" method="private" />
+      <NoTrace namespace="*.Tests+*" />
+      <NoTrace namespace="*.IntegrationTests+*" />
   </Tracer>  
 </Weavers>
