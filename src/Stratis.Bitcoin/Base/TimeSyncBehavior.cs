@@ -273,8 +273,6 @@ namespace Stratis.Bitcoin.Base
         /// </remarks>
         private void RecalculateTimeOffsetLocked()
         {
-            this.logger.LogTrace("()");
-
             if (this.outboundTimestampOffsets.Count >= MinOutboundSampleCount)
             {
                 this.logger.LogTrace("We have {0} outbound samples and {1} inbound samples.", this.outboundTimestampOffsets.Count, this.inboundSampleSources.Count);
@@ -309,8 +307,6 @@ namespace Stratis.Bitcoin.Base
                 }
             }
             else this.logger.LogTrace("We have {0} outbound samples, which is below required minimum of {1} outbound samples.", this.outboundTimestampOffsets.Count, MinOutboundSampleCount);
-
-            this.logger.LogTrace("(-):{0}={1}", nameof(this.timeOffset), this.timeOffset.TotalSeconds);
         }
 
         /// <summary>
@@ -318,12 +314,8 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         private void StartWarningLoop()
         {
-            this.logger.LogTrace("()");
-
             this.warningLoop = this.asyncLoopFactory.Run($"{nameof(TimeSyncBehavior)}.WarningLoop", token =>
             {
-                this.logger.LogTrace("()");
-
                 if (!this.SwitchedOffLimitReached)
                 {
                     bool timeOffsetWrong = false;

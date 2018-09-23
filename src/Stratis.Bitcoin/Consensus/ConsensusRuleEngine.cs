@@ -252,8 +252,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Adds block hash to a list of failed header unless specific consensus error was used that doesn't require block banning.</summary>
         private void HandleConsensusError(ValidationContext validationContext)
         {
-            this.logger.LogTrace("()");
-
             // This error will be handled in ConsensusManager.
             // The block shouldn't be banned because it might be valid, it's just we need to redownload it including witness data.
             if (validationContext.Error == ConsensusErrors.BadWitnessNonceSize)
@@ -266,8 +264,6 @@ namespace Stratis.Bitcoin.Consensus
 
             this.logger.LogTrace("Marking '{0}' invalid.", hashToBan);
             this.invalidBlockHashStore.MarkInvalid(hashToBan, validationContext.RejectUntil);
-
-            this.logger.LogTrace("(-)");
         }
 
         private void ExecuteRules(IEnumerable<SyncConsensusRule> rules, RuleContext ruleContext)
@@ -322,11 +318,7 @@ namespace Stratis.Bitcoin.Consensus
 
         private void AddBenchStats(StringBuilder benchLog)
         {
-            this.logger.LogTrace("()");
-
             benchLog.AppendLine(this.performanceCounter.TakeSnapshot().ToString());
-
-            this.logger.LogTrace("(-)");
         }
     }
 

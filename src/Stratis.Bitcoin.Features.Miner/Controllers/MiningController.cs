@@ -113,8 +113,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         {
             const string noWalletMessage = "No wallet found";
             const string noAccountMessage = "No account found on wallet";
-
-            this.logger.LogTrace("()");
+            
 
             string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
             if (walletName == null)
@@ -131,8 +130,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             }
 
             var res = new WalletAccountReference(walletName, account.Name);
-
-            this.logger.LogTrace("(-):'{0}'", res);
+            
             return res;
         }
     }

@@ -126,8 +126,6 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public PeerAddress SelectPeer()
         {
-            this.logger.LogTrace("()");
-
             PeerAddress peerAddress = null;
 
             List<PeerAddress> peers = this.SelectPreferredPeers()
@@ -137,10 +135,9 @@ namespace Stratis.Bitcoin.P2P
             if (peers.Any())
             {
                 peerAddress = this.Random(peers);
-                this.logger.LogTrace("(-):'{0}'", peerAddress.Endpoint);
             }
             else
-                this.logger.LogTrace("(-)[NO_PEER]");
+                this.logger.LogTrace("There is no peer.");
 
             return peerAddress;
         }
@@ -222,30 +219,23 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public bool HasAllPeersReachedConnectionThreshold()
         {
-            this.logger.LogTrace("()");
-
             IEnumerable<PeerAddress> notBanned = this.NotBanned();
 
             int attemptedReachedThresholdCount = notBanned.Count(p => p.ConnectionAttempts == PeerAddress.AttemptThreshold);
             bool areAllPeersReachedThreshold = attemptedReachedThresholdCount == notBanned.Count();
-
-            this.logger.LogTrace("(-):{0}={1}", nameof(areAllPeersReachedThreshold), areAllPeersReachedThreshold);
+            
             return areAllPeersReachedThreshold;
         }
 
         /// <inheritdoc/>
         public void ResetConnectionAttemptsOnNotBannedPeers()
         {
-            this.logger.LogTrace("()");
-
             List<PeerAddress> notBanned = this.NotBanned().ToList();
             this.logger.LogTrace("Resetting attempts for {0} addresses.", notBanned.Count);
 
             // Reset attempts for all the peers since we've ran out of options.
             foreach (PeerAddress peer in notBanned)
                 peer.ResetAttempts();
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>

@@ -115,8 +115,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         public void Listen()
         {
-            this.logger.LogTrace("()");
-
             try
             {
                 this.tcpListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
@@ -128,8 +126,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogTrace("Exception occurred: {0}", e.ToString());
                 throw;
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -137,8 +133,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// </summary>
         private async Task AcceptClientsAsync()
         {
-            this.logger.LogTrace("()");
-
             this.logger.LogTrace("Accepting incoming connections.");
 
             try
@@ -188,15 +182,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.logger.LogDebug("Exception occurred: {0}", e.ToString());
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            this.logger.LogTrace("()");
-
             this.serverCancel.Cancel();
 
             this.logger.LogTrace("Stopping TCP listener.");
@@ -209,8 +199,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogInformation("Waiting for {0} connected clients to finish.", this.networkPeerDisposer.ConnectedPeersCount);
 
             this.networkPeerDisposer.Dispose();
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

@@ -76,15 +76,13 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             this.logger.LogTrace("(-):*.{0}={1}", nameof(res.Count), res.Count);
             return res;
         }
-   
+
         /// <summary>
         /// Finds first available wallet and its account.
         /// </summary>
         /// <returns>Reference to wallet account.</returns>
         private WalletAccountReference GetAccount()
         {
-            this.logger.LogTrace("()");
-
             string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
             if (walletName == null)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
@@ -95,7 +93,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
 
             var res = new WalletAccountReference(walletName, account.Name);
 
-            this.logger.LogTrace("(-):'{0}'", res);
             return res;
         }
     }

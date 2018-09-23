@@ -101,8 +101,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <inheritdoc />
         public void Dispose()
         {
-            this.logger.LogTrace("()");
-
             this.peersToDispose.Dispose();
 
             foreach (INetworkPeer peer in this.connectedPeers.Values)
@@ -115,8 +113,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.connectedPeers.Clear();
-
-            this.logger.LogTrace("(-)");
         }
     }
 }
