@@ -139,12 +139,13 @@ namespace City.Networks
 
             this.DNSSeeds = new List<DNSSeedData>
             {
-                new DNSSeedData("node1.city-chain.org", "node1.city-chain.org"),
-                new DNSSeedData("node2.city-chain.org", "node2.city-chain.org"),
-                new DNSSeedData("node.citychain.foundation", "node.citychain.foundation"),
+                new DNSSeedData("city-chain.org", "seed.city-chain.org"),
+                new DNSSeedData("citychain.foundation", "seed.citychain.foundation"),
+                new DNSSeedData("liberstad.com", "seed.liberstad.com"),
+                new DNSSeedData("city-coin.org", "seed.city-coin.org")
             };
 
-            string[] seedNodes = { "10.0.0.122", "10.0.0.192", "40.91.197.238" };
+            string[] seedNodes = { "13.73.143.193", "40.115.2.6", "13.66.158.6" };
             this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000007e4aff2b770e876ac1bc2d5317f15c2505b1f8e58423febf0913bd0cc34"));

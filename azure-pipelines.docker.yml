@@ -1,0 +1,8 @@
+pool:
+  vmImage: 'Ubuntu-16.04' # other options: 'macOS-10.13', 'VS2017-Win2016'
+
+- script: docker build -t $(dockerId)/$(imageName) .  # add options to this command to meet your needs
+
+- script: |
+    docker login -u $(dockerId) -p $(dockerPassword)
+    docker push $(dockerId)/$(imageName)
