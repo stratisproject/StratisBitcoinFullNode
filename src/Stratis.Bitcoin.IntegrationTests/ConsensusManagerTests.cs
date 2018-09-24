@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 syncer.NotInIBD();
 
                 // MinerA mines to height 15.
-                TestHelper.MineBlocks(minerA, walletName, walletPassword, walletAccount, 15);
+                TestHelper.MineBlocks(minerA, 15);
 
                 // Sync the network to height 15.
                 TestHelper.Connect(syncer, minerA);
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Miner A stakes a coin that increases the network height to 16.
                 var minter = minerA.FullNode.NodeService<IPosMinting>();
-                minter.Stake(new WalletSecret() { WalletName = walletName, WalletPassword = walletPassword });
+                minter.Stake(new WalletSecret() { WalletName = "mywallet", WalletPassword = "password" });
 
                 TestHelper.WaitLoop(() =>
                 {
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 syncer.NotInIBD();
 
                 // MinerA mines to height 20.
-                TestHelper.MineBlocks(minerA, walletName, walletPassword, walletAccount, 20);
+                TestHelper.MineBlocks(minerA, 20);
 
                 // Sync the network to height 20.
                 TestHelper.Connect(syncer, minerA);
@@ -176,10 +176,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(syncer));
 
                 // MinerA continues to mine to height 45.
-                TestHelper.MineBlocks(minerA, walletName, walletPassword, walletAccount, 25);
+                TestHelper.MineBlocks(minerA, 25);
 
                 // MinerB continues to mine to height 65.
-                TestHelper.MineBlocks(minerB, walletName, walletPassword, walletAccount, 45);
+                TestHelper.MineBlocks(minerB, 45);
 
                 // Syncer now connects to both miners causing a MaxReorgViolation exception to be thrown
                 // on Miner B.
