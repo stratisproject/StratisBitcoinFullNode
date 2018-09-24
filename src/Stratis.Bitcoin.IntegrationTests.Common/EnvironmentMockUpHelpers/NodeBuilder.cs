@@ -155,22 +155,33 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return dataFolderName;
         }
 
-        public void StartAll()
+        public void StartAll(bool enableLogs = false)
         {
             foreach (CoreNode node in this.Nodes.Where(n => n.State == CoreNodeState.Stopped))
             {
                 node.Start();
             }
 
-            // disabled logs for testing.
-            LogManager.Configuration.LoggingRules.Clear();
-            LogManager.ReconfigExistingLoggers();
+            if (enableLogs)
+            {
+                if (!LogManager.IsLoggingEnabled())
+                    LogManager.EnableLogging();
+            }
+            else
+            {
+                if (LogManager.IsLoggingEnabled())
+                    LogManager.DisableLogging();
+            }
         }
 
         public void Dispose()
         {
             foreach (CoreNode node in this.Nodes)
                 node.Kill();
+
+            // Logs are static so clear them after every run.
+            LogManager.Configuration.LoggingRules.Clear();
+            LogManager.ReconfigExistingLoggers();
         }
     }
 }
