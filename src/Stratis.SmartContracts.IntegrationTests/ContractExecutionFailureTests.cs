@@ -97,7 +97,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
         [Fact]
-        public void ContractTransaction_NonDeterministicByteCode()
+        public void ContractTransaction_ValidationFailure()
         {
             // Ensure fixture is funded.
             this.node1.MineBlocks(1);
@@ -106,11 +106,11 @@ namespace Stratis.SmartContracts.IntegrationTests
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
-            // Create transaction with random bytecode.
-            var random = new Random();
-            byte[] bytes = new byte[100];
-            random.NextBytes(bytes);
-            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(bytes, amount);
+            // Create transaction with non-deterministic bytecode.
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/NonDeterministicContract.cs");
+            Assert.True(compilationResult.Success);
+
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
             Block lastBlock = this.node1.GetLastBlock();
