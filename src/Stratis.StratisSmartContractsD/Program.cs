@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using NBitcoin;
-using NBitcoin.Networks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -27,8 +25,7 @@ namespace Stratis.StratisSmartContractsD
         {
             try
             {
-                Network network = NetworkRegistration.Register(new SmartContractPosTest());
-                NodeSettings nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, "StratisSC", args: args);
+                NodeSettings nodeSettings = new NodeSettings(new SmartContractPosTest(), ProtocolVersion.ALT_PROTOCOL_VERSION, "StratisSC", args: args);
 
                 Bitcoin.IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
@@ -47,7 +44,7 @@ namespace Stratis.StratisSmartContractsD
             }
             catch (Exception ex)
             {
-                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
+                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.ToString());
             }
         }
     }

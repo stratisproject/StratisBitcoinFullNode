@@ -173,6 +173,11 @@ namespace NBitcoin
         {
             this.FromBytes(bytes);
         }
+
+        public override bool IsProtocolTransaction()
+        {
+            return this.IsCoinStake || this.IsCoinBase;
+        }
     }
 
     /// <summary>
@@ -195,6 +200,11 @@ namespace NBitcoin
         public override BlockHeader CreateBlockHeader()
         {
             return new PosBlockHeader();
+        }
+
+        public ProvenBlockHeader CreateProvenBlockHeader(PosBlock block)
+        {
+            return new ProvenBlockHeader(block);
         }
 
         /// <inheritdoc />
@@ -250,7 +260,7 @@ namespace NBitcoin
             return hash;
         }
 
-        /// /// <inheritdoc />
+        /// <inheritdoc />
         public override uint256 GetPoWHash()
         {
             return HashX13.Instance.Hash(this.ToBytes());

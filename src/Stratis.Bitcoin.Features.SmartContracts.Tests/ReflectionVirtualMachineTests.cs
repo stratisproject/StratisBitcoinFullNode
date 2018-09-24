@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly ReflectionVirtualMachine vm;
 
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
-        private IContractState state;
+        private IStateRepository state;
         private SmartContractState contractState;
 
         public ReflectionVirtualMachineTests()
@@ -32,7 +32,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.contractState = new SmartContractState(
                 new Block(1, TestAddress),
                 new Message(TestAddress, TestAddress, 0),
-                new PersistentState(new PersistenceStrategy(this.state),
+                new PersistentState(
+                    new TestPersistenceStrategy(this.state),
                     context.ContractPrimitiveSerializer, TestAddress.ToUint160(this.network)),
                 context.ContractPrimitiveSerializer,
                 new GasMeter((Gas)5000000),
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void VM_ExecuteContract_WithoutParameters()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/StorageTest.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageTest.cs");
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
@@ -56,14 +57,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 callData,
                 contractExecutionCode, "StorageTest");
 
-            Assert.Null(result.ExecutionException);
+            Assert.Null(result.ErrorMessage);
             Assert.True((bool)result.Result);
         }
 
         [Fact]
         public void VM_ExecuteContract_WithParameters()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/StorageTest.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageTest.cs");
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
@@ -74,14 +75,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 callData,
                 contractExecutionCode, "StorageTest");
 
-            Assert.Null(result.ExecutionException);
+            Assert.Null(result.ErrorMessage);
             Assert.Equal(methodParameters[0], result.Result);
         }
 
         [Fact]
         public void VM_CreateContract_WithParameters()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/Auction.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
@@ -89,7 +90,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             VmExecutionResult result = this.vm.Create(this.state, this.contractState, contractExecutionCode, methodParameters);
 
-            Assert.Null(result.ExecutionException);
+            Assert.Null(result.ErrorMessage);
+        }
+    }
+
+    public class TestPersistenceStrategy : IPersistenceStrategy
+    {
+        private readonly IStateRepository stateDb;
+
+        public TestPersistenceStrategy(IStateRepository stateDb)
+        {
+            this.stateDb = stateDb;
+        }
+
+        public byte[] FetchBytes(uint160 address, byte[] key)
+        {
+            return this.stateDb.GetStorageValue(address, key);
+        }
+
+        public void StoreBytes(uint160 address, byte[] key, byte[] value)
+        {
+            this.stateDb.SetStorageValue(address, key, value);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.P2P.Peer;
@@ -9,10 +10,13 @@ namespace Stratis.Bitcoin.Consensus
     /// <summary>
     /// TODO add a big nice comment.
     /// </summary>
-    public interface IConsensusManager
+    public interface IConsensusManager : IDisposable
     {
         /// <summary>The current tip of the chain that has been validated.</summary>
         ChainedHeader Tip { get; }
+
+        /// <summary>The collection of rules.</summary>
+        IConsensusRuleEngine ConsensusRules { get; }
 
         /// <summary>
         /// Set the tip of <see cref="ConsensusManager"/>, if the given <paramref name="chainTip"/> is not equal to <see cref="Tip"/>
@@ -32,6 +36,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Information about consumed headers.</returns>
         /// <exception cref="ConnectHeaderException">Thrown when first presented header can't be connected to any known chain in the tree.</exception>
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
+        /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         ConnectNewHeadersResult HeadersPresented(INetworkPeer peer, List<BlockHeader> headers, bool triggerDownload = true);
 
         /// <summary>
@@ -52,6 +58,19 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="blockHashes">The block hashes to download.</param>
         /// <param name="onBlockDownloadedCallback">The callback that will be called for each downloaded block.</param>
         Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback);
+
+        /// <summary>Loads the block data from <see cref="chainedHeaderTree"/> or block store if it's enabled.</summary>
+        /// <param name="blockHash">The block hash.</param>
+        Task<ChainedHeaderBlock> GetBlockDataAsync(uint256 blockHash);
+
+        /// <summary>
+        /// A new block was mined by the node and is attempted to connect to tip.
+        /// </summary>
+        /// <param name="block">Block that was mined.</param>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
+        /// <exception cref="ConsensusException">Thrown if partial or full validation failed or if full validation wasn't required.</exception>
+        /// <returns><see cref="ChainedHeader"/> of a block that was mined.</returns>
+        Task<ChainedHeader> BlockMinedAsync(Block block);
     }
 
     /// <summary>

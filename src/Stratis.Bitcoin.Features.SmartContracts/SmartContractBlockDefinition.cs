@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -23,28 +22,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         private uint160 coinbaseAddress;
         private readonly ICoinView coinView;
-        private readonly ISmartContractExecutorFactory executorFactory;
+        private readonly IContractExecutorFactory executorFactory;
         private readonly ILogger logger;
         private readonly List<TxOut> refundOutputs;
         private readonly List<Receipt> receipts;
-        private readonly IContractStateRoot stateRoot;
-        private IContractStateRoot stateSnapshot;
+        private readonly IStateRepositoryRoot stateRoot;
+        private IStateRepositoryRoot stateSnapshot;
         private readonly ISenderRetriever senderRetriever;
 
         public SmartContractBlockDefinition(
             IBlockBufferGenerator blockBufferGenerator,
             ICoinView coinView,
-            IConsensusLoop consensusLoop,
+            IConsensusManager consensusManager,
             IDateTimeProvider dateTimeProvider,
-            ISmartContractExecutorFactory executorFactory,
+            IContractExecutorFactory executorFactory,
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
             MinerSettings minerSettings,
             Network network,
             ISenderRetriever senderRetriever,
-            IContractStateRoot stateRoot)
-            : base(consensusLoop, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
+            IStateRepositoryRoot stateRoot)
+            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.coinView = coinView;
             this.executorFactory = executorFactory;
@@ -89,7 +88,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                 // We HAVE to first execute the smart contract contained in the transaction
                 // to ensure its validity before we can add it to the block.
-                ISmartContractExecutionResult result = this.ExecuteSmartContract(mempoolEntry);
+                IContractExecutionResult result = this.ExecuteSmartContract(mempoolEntry);
                 this.AddTransactionToBlock(mempoolEntry.Transaction);
                 this.UpdateBlockStatistics(mempoolEntry);
                 this.UpdateTotalFees(result.Fee);
@@ -123,7 +122,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             this.coinbaseAddress = getSenderResult.Sender;
 
-            this.stateSnapshot = this.stateRoot.GetSnapshotTo(((SmartContractBlockHeader)this.ConsensusLoop.Tip.Header).HashStateRoot.ToBytes());
+            this.stateSnapshot = this.stateRoot.GetSnapshotTo(((SmartContractBlockHeader)this.ConsensusManager.Tip.Header).HashStateRoot.ToBytes());
 
             this.refundOutputs.Clear();
             this.receipts.Clear();
@@ -178,7 +177,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private void UpdateLogsBloom(SmartContractBlockHeader scHeader)
         {
             Bloom logsBloom = new Bloom();
-            foreach(Receipt receipt in this.receipts)
+            foreach (Receipt receipt in this.receipts)
             {
                 logsBloom.Or(receipt.Bloom);
             }
@@ -189,7 +188,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// Execute the contract and add all relevant fees and refunds to the block.
         /// </summary>
         /// <remarks>TODO: At some point we need to change height to a ulong.</remarks>
-        private ISmartContractExecutionResult ExecuteSmartContract(TxMempoolEntry mempoolEntry)
+        private IContractExecutionResult ExecuteSmartContract(TxMempoolEntry mempoolEntry)
         {
             this.logger.LogTrace("()");
 
@@ -197,9 +196,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));
 
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext((ulong)this.height, this.coinbaseAddress, mempoolEntry.Fee, getSenderResult.Sender, mempoolEntry.Transaction);
-            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
-            ISmartContractExecutionResult result = executor.Execute(transactionContext);
+            IContractTransactionContext transactionContext = new ContractTransactionContext((ulong)this.height, this.coinbaseAddress, mempoolEntry.Fee, getSenderResult.Sender, mempoolEntry.Transaction);
+            IContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
+            IContractExecutionResult result = executor.Execute(transactionContext);
 
             // As we're not storing receipts, can use only consensus fields. 
             var receipt = new Receipt(

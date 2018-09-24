@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -14,10 +15,11 @@ using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
-    public sealed class SmartContractWalletFeature : FullNodeFeature, INodeStats, IFeatureStats
+    public sealed class SmartContractWalletFeature : FullNodeFeature
     {
         private IDisposable blockSubscriberDisposable;
         private readonly BroadcasterBehavior broadcasterBehavior;
@@ -45,7 +47,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             ILoggerFactory loggerFactory,
             Signals.Signals signals,
             IWalletManager walletManager,
-            IWalletSyncManager walletSyncManager)
+            IWalletSyncManager walletSyncManager,
+            INodeStats nodeStats)
         {
             this.broadcasterBehavior = broadcasterBehavior;
             this.chain = chain;
@@ -54,28 +57,29 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.logger = loggerFactory.CreateLogger(this.GetType().Name);
             this.walletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
+
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline);
         }
 
-        /// <inheritdoc />
-        public void AddFeatureStats(StringBuilder benchLog)
+        private void AddComponentStats(StringBuilder log)
         {
             IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
 
             if (walletNames.Any())
             {
-                benchLog.AppendLine();
-                benchLog.AppendLine("======Wallets======");
+                log.AppendLine();
+                log.AppendLine("======Wallets======");
 
                 foreach (string walletName in walletNames)
                 {
                     IEnumerable<UnspentOutputReference> items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
-                    benchLog.AppendLine("Wallet[SC]: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
+                    log.AppendLine("Wallet[SC]: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
                 }
             }
         }
 
-        /// <inheritdoc />
-        public void AddNodeStats(StringBuilder benchLogs)
+        private void AddInlineStats(StringBuilder log)
         {
             if (this.walletManager is WalletManager walletManager)
             {
@@ -83,15 +87,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 ChainedHeader block = this.chain.GetBlock(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
-                benchLogs.AppendLine("Wallet[SC].Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                log.AppendLine("Wallet[SC].Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                         (walletManager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
                                         (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
             }
         }
 
         /// <inheritdoc />
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
+            this.logger.LogTrace("()");
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
 
@@ -101,6 +106,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
             this.logger.LogInformation("Smart Contract Feature Wallet Injected.");
+            this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
@@ -16,9 +17,10 @@ namespace Stratis.Bitcoin.Tests.Builder
     {
         public class DummyFeature : FullNodeFeature
         {
-            public override void Initialize()
+            public override Task InitializeAsync()
             {
                 // nothing.
+                return Task.CompletedTask;
             }
         }
 

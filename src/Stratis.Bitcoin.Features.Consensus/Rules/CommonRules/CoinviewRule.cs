@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
@@ -16,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// <exception cref="ConsensusErrors.BadTransactionNonFinal">Thrown if transaction's height or time is lower then provided by SequenceLock for this block.</exception>
     /// <exception cref="ConsensusErrors.BadBlockSigOps">Thrown if signature operation cost is greater then maximum block signature operation cost.</exception>
     /// <exception cref="ConsensusErrors.BadTransactionScriptError">Thrown if not all inputs are valid (no double spends, scripts & sigs, amounts).</exception>
-    public abstract class CoinViewRule : ConsensusRule
+    public abstract class CoinViewRule : FullValidationConsensusRule
     {
         /// <summary>Consensus options.</summary>
         public ConsensusOptions ConsensusOptions { get; private set; }
@@ -40,20 +41,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            Block block = context.ValidationContext.Block;
-            ChainedHeader index = context.ValidationContext.ChainedHeader;
+            Block block = context.ValidationContext.BlockToValidate;
+            ChainedHeader index = context.ValidationContext.ChainedHeaderToValidate;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = (context as UtxoRuleContext).UnspentOutputSet;
-
-            this.Parent.PerformanceCounter.AddProcessedBlocks(1);
 
             long sigOpsCost = 0;
             Money fees = Money.Zero;
             var checkInputs = new List<Task<bool>>();
             for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
             {
-                this.Parent.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
+
                 if (!context.SkipValidation)
                 {
                     if (!this.IsProtocolTransaction(tx))
@@ -98,7 +97,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         var txData = new PrecomputedTransactionData(tx);
                         for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
                         {
-                            this.Parent.PerformanceCounter.AddProcessedInputs(1);
                             TxIn input = tx.Inputs[inputIndex];
                             int inputIndexCopy = inputIndex;
                             TxOut txout = view.GetOutputFor(input);
@@ -152,7 +150,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            ChainedHeader index = context.ValidationContext.ChainedHeader;
+            ChainedHeader index = context.ValidationContext.ChainedHeaderToValidate;
             UnspentOutputSet view = (context as UtxoRuleContext).UnspentOutputSet;
 
             view.Update(transaction, index.Height);

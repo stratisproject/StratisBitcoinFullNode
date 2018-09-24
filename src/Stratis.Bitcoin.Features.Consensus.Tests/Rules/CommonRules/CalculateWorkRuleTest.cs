@@ -1,50 +1,47 @@
-﻿using System;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
-using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class CalculateWorkRuleTest : TestConsensusRulesUnitTestBase
     {
-        public CalculateWorkRuleTest()
-        {
-        }
-
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorExceptionAsync()
+        public void Run_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsHighHashConsensusErrorException()
         {
             Block block = this.network.CreateBlock();
+
+            this.concurrentChain.SetTip(ChainedHeadersHelper.CreateConsecutiveHeaders(10, this.concurrentChain.Tip).Last());
+
             this.ruleContext.ValidationContext = new ValidationContext()
             {
-                Block = block,
-                ChainedHeader = this.concurrentChain.GetBlock(4)
+                BlockToValidate = block,
+                ChainedHeaderToValidate = this.concurrentChain.GetBlock(4)
             };
-            this.ruleContext.MinedBlock = false;
 
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyPowRule>().RunAsync(this.ruleContext));
+            var exception = Assert.Throws<ConsensusErrorException>(() =>
+                this.consensusRules.RegisterRule<CheckDifficultyPowRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.HighHash, exception.ConsensusError);
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsBadDiffBitsConsensusErrorExceptionAsync()
+        public void Run_ProofOfWorkBlock_CheckPow_InValidPow_ThrowsBadDiffBitsConsensusErrorException()
         {
-            Block block = this.network.CreateBlock();
+            Block block = TestRulesContextFactory.MineBlock(KnownNetworks.RegTest, this.concurrentChain);
+
             this.ruleContext.ValidationContext = new ValidationContext()
             {
-                Block = block,
-                ChainedHeader = this.concurrentChain.GetBlock(0)
+                BlockToValidate = block,
+                ChainedHeaderToValidate = new ChainedHeader(block.Header, block.Header.GetHash(), this.concurrentChain.GetBlock(block.Header.HashPrevBlock))
             };
-            this.ruleContext.MinedBlock = true;
 
-            block.Header.Bits = this.ruleContext.ValidationContext.ChainedHeader.GetWorkRequired(this.network.Consensus) + 1;
-
-            ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => this.consensusRules.RegisterRule<CheckDifficultyPowRule>().RunAsync(this.ruleContext));
+            var exception = Assert.Throws<ConsensusErrorException>(() =>
+                this.consensusRules.RegisterRule<CheckDifficultyPowRule>().Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadDiffBits, exception.ConsensusError);
         }

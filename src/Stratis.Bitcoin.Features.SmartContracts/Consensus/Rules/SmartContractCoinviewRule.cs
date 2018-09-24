@@ -20,7 +20,6 @@ using Stratis.SmartContracts.Core.Util;
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     /// <inheritdoc />
-    [FullValidationRule]
     public abstract class SmartContractCoinviewRule : CoinViewRule
     {
         protected List<Transaction> blockTxsProcessed;
@@ -49,16 +48,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.Logger.LogTrace("()");
 
             this.blockTxsProcessed = new List<Transaction>();
-            NBitcoin.Block block = context.ValidationContext.Block;
-            ChainedHeader index = context.ValidationContext.ChainedHeader;
+            NBitcoin.Block block = context.ValidationContext.BlockToValidate;
+            ChainedHeader index = context.ValidationContext.ChainedHeaderToValidate;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = ((UtxoRuleContext)context).UnspentOutputSet;
-
-            this.Parent.PerformanceCounter.AddProcessedBlocks(1);
-
+            
             // Start state from previous block's root
-            this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ConsensusTip.Header).HashStateRoot.ToBytes());
-            IContractState trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
+            this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes());
+            IStateRepository trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
 
             this.receipts = new List<Receipt>();
 
@@ -69,7 +66,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
             {
-                this.Parent.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
@@ -112,7 +108,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         var txData = new PrecomputedTransactionData(tx);
                         for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
                         {
-                            this.Parent.PerformanceCounter.AddProcessedInputs(1);
                             TxIn input = tx.Inputs[inputIndex];
                             int inputIndexCopy = inputIndex;
                             TxOut txout = view.GetOutputFor(input);
@@ -258,10 +253,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         protected void ExecuteContractTransaction(RuleContext context, Transaction transaction)
         {
-            ISmartContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
-            ISmartContractExecutor executor = this.ContractCoinviewRule.ExecutorFactory.CreateExecutor(this.ContractCoinviewRule.OriginalStateRoot, txContext);
+            IContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
+            IContractExecutor executor = this.ContractCoinviewRule.ExecutorFactory.CreateExecutor(this.ContractCoinviewRule.OriginalStateRoot, txContext);
 
-            ISmartContractExecutionResult result = executor.Execute(txContext);
+            IContractExecutionResult result = executor.Execute(txContext);
 
             var receipt = new Receipt(
                 new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root),
@@ -271,15 +266,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 txContext.Sender,
                 result.To,
                 result.NewContractAddress,
-                !result.Revert
+                !result.Revert,
+                result.ErrorMessage
             )
             {
-                BlockHash = context.ValidationContext.Block.GetHash()
+                BlockHash = context.ValidationContext.BlockToValidate.GetHash()
             };
 
             this.receipts.Add(receipt);
 
-            ValidateRefunds(result.Refund, context.ValidationContext.Block.Transactions[0]);
+            ValidateRefunds(result.Refund, context.ValidationContext.BlockToValidate.Transactions[0]);
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;
@@ -288,23 +284,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// Retrieves the context object to be given to the contract executor.
         /// </summary>
-        private ISmartContractTransactionContext GetSmartContractTransactionContext(RuleContext context, Transaction transaction)
+        private IContractTransactionContext GetSmartContractTransactionContext(RuleContext context, Transaction transaction)
         {
-            ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainedHeader.Height);
+            ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainedHeaderToValidate.Height);
 
-            GetSenderResult getSenderResult = this.ContractCoinviewRule.SenderRetriever.GetSender(transaction, ((PowConsensusRules)this.Parent).UtxoSet, this.blockTxsProcessed);
+            GetSenderResult getSenderResult = this.ContractCoinviewRule.SenderRetriever.GetSender(transaction, ((PowConsensusRuleEngine)this.Parent).UtxoSet, this.blockTxsProcessed);
 
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-sender", getSenderResult.Error));
 
-            Script coinbaseScriptPubKey = context.ValidationContext.Block.Transactions[0].Outputs[0].ScriptPubKey;
+            Script coinbaseScriptPubKey = context.ValidationContext.BlockToValidate.Transactions[0].Outputs[0].ScriptPubKey;
             GetSenderResult getCoinbaseResult = this.ContractCoinviewRule.SenderRetriever.GetAddressFromScript(coinbaseScriptPubKey);
             if (!getCoinbaseResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-coinbase", getCoinbaseResult.Error));
 
             Money mempoolFee = transaction.GetFee(((UtxoRuleContext)context).UnspentOutputSet);
 
-            return new SmartContractTransactionContext(blockHeight, getCoinbaseResult.Sender, mempoolFee, getSenderResult.Sender, transaction);
+            return new ContractTransactionContext(blockHeight, getCoinbaseResult.Sender, mempoolFee, getSenderResult.Sender, transaction);
         }
 
         /// <summary>

@@ -1,12 +1,13 @@
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Notifications.Controllers;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -15,6 +16,9 @@ using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {
+    // =================================================================
+    // TODO: This class is broken and the logic needs to be redesigned, this effects light wallet.
+    // =================================================================
     /// <summary>
     /// Feature enabling the broadcasting of blocks.
     /// </summary>
@@ -23,8 +27,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         private readonly IBlockNotification blockNotification;
 
         private readonly IConnectionManager connectionManager;
-
-        private readonly LookaheadBlockPuller blockPuller;
+        private readonly IConsensusManager consensusManager;
 
         private readonly IChainState chainState;
 
@@ -33,23 +36,25 @@ namespace Stratis.Bitcoin.Features.Notifications
         private readonly ILoggerFactory loggerFactory;
 
         public BlockNotificationFeature(IBlockNotification blockNotification, IConnectionManager connectionManager,
-            LookaheadBlockPuller blockPuller, IChainState chainState, ConcurrentChain chain, ILoggerFactory loggerFactory)
+            IConsensusManager consensusManager, IChainState chainState, ConcurrentChain chain, ILoggerFactory loggerFactory)
         {
             this.blockNotification = blockNotification;
             this.connectionManager = connectionManager;
-            this.blockPuller = blockPuller;
+            this.consensusManager = consensusManager;
             this.chainState = chainState;
             this.chain = chain;
             this.loggerFactory = loggerFactory;
         }
 
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
-            connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
+            //connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             this.blockNotification.Start();
             this.chainState.ConsensusTip = this.chain.Tip;
+
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -73,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Notifications
                 .FeatureServices(services =>
                 {
                     services.AddSingleton<IBlockNotification, BlockNotification>();
-                    services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>());
+                    //services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>());
                     services.AddSingleton<NotificationsController>();
                 });
             });

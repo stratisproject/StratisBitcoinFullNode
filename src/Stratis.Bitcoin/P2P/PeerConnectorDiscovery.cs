@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.P2P
             // effectively override the connector's burst mode.
             if (peer == null)
             {
-                this.logger.LogTrace("Peer selection failed, executing selection delay...");
+                this.logger.LogTrace("Peer selection failed, executing selection delay.");
                 await Task.Delay(2000, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
             }
             else

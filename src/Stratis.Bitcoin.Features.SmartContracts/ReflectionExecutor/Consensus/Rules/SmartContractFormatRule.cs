@@ -16,7 +16,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
     /// <summary>
     /// Validates that the supplied transaction satoshis are greater than the gas budget satoshis in the contract invocation
     /// </summary>
-    [PartialValidationRule]
     public class SmartContractFormatRule : UtxoStoreConsensusRule, ISmartContractMempoolRule
     {
         public const ulong GasLimitMaximum = 5_000_000;
@@ -29,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
 
         public override Task RunAsync(RuleContext context)
         {
-            Block block = context.ValidationContext.Block;
+            Block block = context.ValidationContext.BlockToValidate;
 
             foreach (Transaction transaction in block.Transactions.Where(x => !x.IsCoinBase && !x.IsCoinStake))
             {
@@ -69,7 +68,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 new ConsensusError("invalid-calldata-format", string.Format("Invalid {0} format", typeof(ContractTxData).Name)).Throw();
             }
 
-            var callData = callDataDeserializationResult.Value;
+            ContractTxData callData = callDataDeserializationResult.Value;
 
             if (callData.GasPrice < GasPriceMinimum)
             {
@@ -93,7 +92,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
 
             if (callData.GasLimit > GasLimitMaximum)
             {
-                // Supplied gas limit is too high - at a certain point we deem that a contract is taking up too much time. 
+                // Supplied gas limit is too high - at a certain point we deem that a contract is taking up too much time.
                 this.ThrowGasGreaterThanHardLimit();
             }
 

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -19,10 +19,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
     /// <summary>
     /// Extension of consensus rules that provide access to a store based on UTXO (Unspent transaction outputs).
     /// </summary>
-    public sealed class SmartContractPowConsensusRuleEngine : PowConsensusRules, ISmartContractCoinviewRule
+    public sealed class SmartContractPowConsensusRuleEngine : PowConsensusRuleEngine, ISmartContractCoinviewRule
     {
-        public ISmartContractExecutorFactory ExecutorFactory { get; private set; }
-        public IContractStateRoot OriginalStateRoot { get; private set; }
+        public IContractExecutorFactory ExecutorFactory { get; private set; }
+        public IStateRepositoryRoot OriginalStateRoot { get; private set; }
         public IReceiptRepository ReceiptRepository { get; private set; }
         public ISenderRetriever SenderRetriever { get; private set; }
 
@@ -31,16 +31,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
             IDateTimeProvider dateTimeProvider,
-            ISmartContractExecutorFactory executorFactory,
+            IContractExecutorFactory executorFactory,
             ILoggerFactory loggerFactory,
             Network network,
             NodeDeployments nodeDeployments,
-            IContractStateRoot originalStateRoot,
-            ILookaheadBlockPuller puller,
+            IStateRepositoryRoot originalStateRoot,
             IReceiptRepository receiptRepository,
             ISenderRetriever senderRetriever,
-            ICoinView utxoSet)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, puller)
+            ICoinView utxoSet,
+            IChainState chainState,
+            IInvalidBlockHashStore invalidBlockHashStore,
+            INodeStats nodeStats)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats)
         {
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;
@@ -49,9 +51,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
         }
 
         /// <inheritdoc />
-        public override RuleContext CreateRuleContext(ValidationContext validationContext, ChainedHeader consensusTip)
+        public override RuleContext CreateRuleContext(ValidationContext validationContext)
         {
-            return new PowRuleContext(validationContext, this.Network.Consensus, consensusTip, this.DateTimeProvider.GetTimeOffset());
+            return new PowRuleContext(validationContext, this.DateTimeProvider.GetTimeOffset());
         }
     }
 }

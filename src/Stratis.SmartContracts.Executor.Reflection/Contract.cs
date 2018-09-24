@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using NBitcoin;
+using RuntimeObserver;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -169,28 +170,37 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 return ContractInvocationResult.Success(result);
             }
-            catch (ArgumentException argumentException)
-            {
-                // Parameters do not match
-                // This should not happen
-                return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterTypesDontMatch, argumentException);
-            }
-            catch (TargetInvocationException targetException) when (!(targetException.InnerException is OutOfGasException))
-            {
-                // Method threw an exception that was not an OutOfGasException
-                return ContractInvocationResult.Failure(ContractInvocationErrorType.MethodThrewException, targetException);
-            }
-            catch (TargetInvocationException targetException) when (targetException.InnerException is OutOfGasException)
-            {
-                // Method threw an exception that was an OutOfGasException
-                return ContractInvocationResult.Failure(ContractInvocationErrorType.OutOfGas);
-            }
             catch (TargetParameterCountException parameterException)
             {
                 // Parameter count incorrect
                 // This should not happen
-                return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterCountIncorrect, parameterException);
-            }            
+                return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterCountIncorrect);
+            }
+            catch (ArgumentException argumentException)
+            {
+                // Parameters do not match
+                // This should not happen
+                return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterTypesDontMatch);
+            }
+            catch (TargetInvocationException targetException) 
+            when (!(targetException.InnerException is OutOfGasException) 
+            && !(targetException.InnerException is MemoryConsumptionException))
+            {
+                // Method threw an exception that was not an OutOfGasException or a MemoryConsumptionException
+                // TODO: OutofGas and MemoryConsumption exceptions should inherit from same base 'ResourceTrackingException'
+                // which can be tracked here.
+                return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.MethodThrewException, targetException.InnerException);
+            }
+            catch (TargetInvocationException targetException) when (targetException.InnerException is OutOfGasException)
+            {
+                // Method threw an OutOfGasException
+                return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.OutOfGas, targetException.InnerException);
+            }
+            catch (TargetInvocationException targetException) when (targetException.InnerException is MemoryConsumptionException)
+            {
+                // Method threw a MemoryConsumptionException
+                return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.OverMemoryLimit, targetException.InnerException);
+            }
         }
 
         /// <summary>

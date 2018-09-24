@@ -1,15 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -33,34 +31,40 @@ using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
+using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public sealed class SmartContractFeature : FullNodeFeature
     {
-        private readonly IConsensusLoop consensusLoop;
+        private readonly IConsensusManager consensusManager;
         private readonly ILogger logger;
         private readonly Network network;
-        private readonly IContractStateRoot stateRoot;
+        private readonly IStateRepositoryRoot stateRoot;
 
-        public SmartContractFeature(IConsensusLoop consensusLoop, ILoggerFactory loggerFactory, Network network, IContractStateRoot stateRoot)
+        public SmartContractFeature(IConsensusManager consensusLoop, ILoggerFactory loggerFactory, Network network, IStateRepositoryRoot stateRoot)
         {
-            this.consensusLoop = consensusLoop;
+            this.consensusManager = consensusLoop;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.stateRoot = stateRoot;
         }
 
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
+            this.logger.LogTrace("()");
+
             if (this.network.Consensus.IsProofOfStake)
                 Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPosConsensusFactory);
             else
                 Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPowConsensusFactory);
 
-            this.stateRoot.SyncToRoot(((SmartContractBlockHeader)this.consensusLoop.Chain.Tip.Header).HashStateRoot.ToBytes());
+            this.stateRoot.SyncToRoot(((SmartContractBlockHeader)this.consensusManager.Tip.Header).HashStateRoot.ToBytes());
+
             this.logger.LogInformation("Smart Contract Feature Injected.");
+            this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
     }
 
@@ -82,26 +86,29 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         // STATE ----------------------------------------------------------------------------
                         services.AddSingleton<DBreezeContractStateStore>();
                         services.AddSingleton<NoDeleteContractStateSource>();
-                        services.AddSingleton<IContractStateRoot, ContractStateRoot>();
+                        services.AddSingleton<IStateRepositoryRoot, StateRepositoryRoot>();
 
                         // CONSENSUS ------------------------------------------------------------------------
                         services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
                         services.AddSingleton<StandardTransactionPolicy, SmartContractTransactionPolicy>();
 
                         // CONTRACT EXECUTION ---------------------------------------------------------------
-                        services.AddSingleton<InternalTransactionExecutorFactory>();
-                        services.AddSingleton<ISmartContractVirtualMachine, ReflectionVirtualMachine>();
+                        services.AddSingleton<IInternalExecutorFactory, InternalExecutorFactory>();
+                        services.AddSingleton<IVirtualMachine, ReflectionVirtualMachine>();
                         services.AddSingleton<IAddressGenerator, AddressGenerator>();
                         services.AddSingleton<ILoader, ContractAssemblyLoader>();
                         services.AddSingleton<IContractModuleDefinitionReader, ContractModuleDefinitionReader>();
                         services.AddSingleton<IStateFactory, StateFactory>();
                         services.AddSingleton<SmartContractTransactionPolicy>();
+                        services.AddSingleton<IStateProcessor, StateProcessor>();
+                        services.AddSingleton<ISmartContractStateFactory, SmartContractStateFactory>();
 
                         // RECEIPTS -------------------------------------------------------------------------
                         services.AddSingleton<IReceiptRepository, PersistentReceiptRepository>();
 
                         // UTILS ----------------------------------------------------------------------------
                         services.AddSingleton<ISenderRetriever, SenderRetriever>();
+                        services.AddSingleton<IVersionProvider, SmartContractVersionProvider>();
 
                         ICallDataSerializer callDataSerializer = CallDataSerializer.Default;
                         services.AddSingleton(callDataSerializer);
@@ -118,7 +125,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public static IFullNodeBuilder UseSmartContractConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
-            LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -127,26 +133,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 .DependOn<SmartContractFeature>()
                 .FeatureServices(services =>
                 {
-                    fullNodeBuilder.Network.Consensus.Options = new ConsensusOptions();
-
-                    services.AddSingleton<ICheckpoints, Checkpoints>();
                     services.AddSingleton<ConsensusOptions, ConsensusOptions>();
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<ICoinView, CachedCoinView>();
-
-                    services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>());
-
-                    services.AddSingleton<IConsensusLoop, ConsensusLoop>()
-                        .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
-                        .AddSingleton<IGetUnspentTransaction, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop);
-                    services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                     services.AddSingleton<ConsensusController>();
-                    services.AddSingleton<ConsensusStats>();
-                    services.AddSingleton<ConsensusSettings>();
+                    services.AddSingleton<IConsensusRuleEngine, SmartContractPowConsensusRuleEngine>();
 
-                    services.AddSingleton<IConsensusRules, SmartContractPowConsensusRuleEngine>();
-
-                    fullNodeBuilder.Network.Consensus.Rules = new SmartContractPowRuleRegistration().GetRules();
+                    new SmartContractPowRuleRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                 });
             });
 
@@ -159,7 +152,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public static IFullNodeBuilder UseSmartContractPosConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
-            LoggingConfiguration.RegisterFeatureClass<ConsensusStats>("bench");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
@@ -167,25 +159,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .AddFeature<ConsensusFeature>()
                     .FeatureServices(services =>
                     {
-                        fullNodeBuilder.Network.Consensus.Options = new PosConsensusOptions();
-
-                        services.AddSingleton<ICheckpoints, Checkpoints>();
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
-                        services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>());
-                        services.AddSingleton<IConsensusLoop, ConsensusLoop>()
-                            .AddSingleton<INetworkDifficulty, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop)
-                            .AddSingleton<IGetUnspentTransaction, ConsensusLoop>(provider => provider.GetService<IConsensusLoop>() as ConsensusLoop);
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
-                        services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<ConsensusStats>();
-                        services.AddSingleton<ConsensusSettings>();
+                        services.AddSingleton<IConsensusRuleEngine, SmartContractPosConsensusRuleEngine>();
 
-                        services.AddSingleton<IConsensusRules, SmartContractPosConsensusRuleEngine>();
-
-                        fullNodeBuilder.Network.Consensus.Rules = new SmartContractPosRuleRegistration().GetRules();
+                        new SmartContractPosRuleRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                     });
             });
 
@@ -273,10 +254,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<ISmartContractValidator, SmartContractValidator>();
 
                         // Executor et al.
-                        services.AddSingleton<ISmartContractResultRefundProcessor, SmartContractResultRefundProcessor>();
-                        services.AddSingleton<ISmartContractResultTransferProcessor, SmartContractResultTransferProcessor>();
+                        services.AddSingleton<IContractRefundProcessor, ContractRefundProcessor>();
+                        services.AddSingleton<IContractTransferProcessor, ContractTransferProcessor>();
                         services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
-                        services.AddSingleton<ISmartContractExecutorFactory, ReflectionSmartContractExecutorFactory>();
+                        services.AddSingleton<IContractExecutorFactory, ReflectionExecutorFactory>();
                         services.AddSingleton<IMethodParameterSerializer, MethodParameterSerializer>();
                         services.AddSingleton<IContractPrimitiveSerializer, ContractPrimitiveSerializer>();
 

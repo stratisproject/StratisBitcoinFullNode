@@ -19,43 +19,6 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         [Fact]
-        public async Task FinalizedHeightSavedOnDiskAsync()
-        {
-            string dir = CreateTestDir(this);
-
-            using (var repo = new ChainRepository(dir, new LoggerFactory()))
-            {
-                await repo.SaveFinalizedBlockHeightAsync(777);
-            }
-
-            using (var repo = new ChainRepository(dir, new LoggerFactory()))
-            {
-                await repo.LoadFinalizedBlockHeightAsync();
-                Assert.Equal(777, repo.GetFinalizedBlockHeight());
-            }
-        }
-
-        [Fact]
-        public async Task FinalizedHeightCantBeDecreasedAsync()
-        {
-            string dir = CreateTestDir(this);
-
-            using (var repo = new ChainRepository(dir, new LoggerFactory()))
-            {
-                await repo.SaveFinalizedBlockHeightAsync(777);
-                await repo.SaveFinalizedBlockHeightAsync(555);
-
-                Assert.Equal(777, repo.GetFinalizedBlockHeight());
-            }
-
-            using (var repo = new ChainRepository(dir, new LoggerFactory()))
-            {
-                await repo.LoadFinalizedBlockHeightAsync();
-                Assert.Equal(777, repo.GetFinalizedBlockHeight());
-            }
-        }
-
-        [Fact]
         public void SaveWritesChainToDisk()
         {
             string dir = CreateTestDir(this);
@@ -110,7 +73,7 @@ namespace Stratis.Bitcoin.Tests.Base
             using (var repo = new ChainRepository(dir, new LoggerFactory()))
             {
                 var testChain = new ConcurrentChain(KnownNetworks.StratisRegTest);
-                repo.LoadAsync(testChain).GetAwaiter().GetResult();
+                testChain.SetTip(repo.LoadAsync(testChain.Genesis).GetAwaiter().GetResult());
                 Assert.Equal(tip, testChain.Tip);
             }
         }

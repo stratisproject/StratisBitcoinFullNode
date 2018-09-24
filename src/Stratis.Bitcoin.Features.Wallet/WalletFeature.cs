@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using NBitcoin.Policy;
@@ -19,6 +20,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -26,8 +28,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// Wallet feature for the full node.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
-    /// <seealso cref="Stratis.Bitcoin.Interfaces.INodeStats" />
-    public class WalletFeature : FullNodeFeature, INodeStats, IFeatureStats
+    public class WalletFeature : FullNodeFeature
     {
         private readonly IWalletSyncManager walletSyncManager;
 
@@ -68,7 +69,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             IConnectionManager connectionManager,
             BroadcasterBehavior broadcasterBehavior,
             NodeSettings nodeSettings,
-            WalletSettings walletSettings)
+            WalletSettings walletSettings,
+            INodeStats nodeStats)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
@@ -78,6 +80,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.broadcasterBehavior = broadcasterBehavior;
             this.nodeSettings = nodeSettings;
             this.walletSettings = walletSettings;
+
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 800);
         }
 
         /// <summary>
@@ -99,8 +104,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             WalletSettings.BuildDefaultConfigurationFile(builder, network);
         }
 
-        /// <inheritdoc />
-        public void AddNodeStats(StringBuilder benchLogs)
+        private void AddInlineStats(StringBuilder log)
         {
             var walletManager = this.walletManager as WalletManager;
 
@@ -110,32 +114,31 @@ namespace Stratis.Bitcoin.Features.Wallet
                 ChainedHeader block = this.chain.GetBlock(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
-                benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                log.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                         (walletManager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
                                         (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
             }
         }
 
-        /// <inheritdoc />
-        public void AddFeatureStats(StringBuilder benchLog)
+        private void AddComponentStats(StringBuilder log)
         {
             IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
 
             if (walletNames.Any())
             {
-                benchLog.AppendLine();
-                benchLog.AppendLine("======Wallets======");
+                log.AppendLine();
+                log.AppendLine("======Wallets======");
 
                 foreach (string walletName in walletNames)
                 {
                     IEnumerable<UnspentOutputReference> items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
-                    benchLog.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
+                    log.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
                 }
             }
         }
 
         /// <inheritdoc />
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
             // subscribe to receiving blocks and transactions
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
@@ -145,6 +148,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletSyncManager.Start();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
+
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
