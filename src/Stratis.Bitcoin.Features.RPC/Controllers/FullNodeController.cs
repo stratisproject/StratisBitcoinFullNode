@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
             if (trx == null)
             {
-                trx = this.blockStore != null ? await this.blockStore.GetTrxAsync(trxid) : null;
+                trx = this.blockStore != null ? await this.blockStore.GetTransactionByIdAsync(trxid) : null;
             }
 
             if (trx == null)
@@ -275,7 +275,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             ChainedHeader block = null;
 
-            uint256 blockid = this.blockStore != null ? await this.blockStore.GetTrxBlockIdAsync(trxid) : null;
+            uint256 blockid = this.blockStore != null ? await this.blockStore.GetBlockIdByTransactionIdAsync(trxid) : null;
             if (blockid != null)
                 block = this.Chain?.GetBlock(blockid);
 

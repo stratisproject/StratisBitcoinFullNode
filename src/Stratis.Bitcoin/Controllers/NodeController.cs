@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Controllers
                 Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(txid).ConfigureAwait(false) : null;
                 if (trx == null)
                 {
-                    trx = this.blockStore != null ? await this.blockStore.GetTrxAsync(txid).ConfigureAwait(false) : null;
+                    trx = this.blockStore != null ? await this.blockStore.GetTransactionByIdAsync(txid).ConfigureAwait(false) : null;
                 }
 
                 if (trx == null)
@@ -387,7 +387,7 @@ namespace Stratis.Bitcoin.Controllers
 
             ChainedHeader block = null;
             var blockStore = fullNode.NodeFeature<IBlockStore>();
-            uint256 blockid = blockStore != null ? await blockStore.GetTrxBlockIdAsync(trxid).ConfigureAwait(false) : null;
+            uint256 blockid = blockStore != null ? await blockStore.GetBlockIdByTransactionIdAsync(trxid).ConfigureAwait(false) : null;
             if (blockid != null)
             {
                 block = chain?.GetBlock(blockid);
