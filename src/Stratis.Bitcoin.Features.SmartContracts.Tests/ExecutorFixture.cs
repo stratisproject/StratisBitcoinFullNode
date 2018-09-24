@@ -6,6 +6,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -17,8 +18,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     public class ExecutorFixture
     {
         public const ulong MempoolFee = 2UL; // MOQ doesn't like it when you use a type with implicit conversions (Money)
-        public Money Refund = new Money(0);
+        public Money Fee = new Money(0);
+        public TxOut Refund = new TxOut(Money.Zero, new Script());
         public byte[] Data = new byte[] { 0x11, 0x22, 0x33 };
+        public Transaction InternalTransaction = new Transaction();
 
         public ExecutorFixture(ContractTxData txData)
         {
@@ -41,8 +44,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.CallDataSerializer = callDataSerializer;
 
             this.ContractPrimitiveSerializer = new Mock<IContractPrimitiveSerializer>();
-            this.ContractStateRoot = new Mock<IStateRepository>();            
-            this.TransferProcessor = new Mock<IContractTransferProcessor>();
+            this.ContractStateRoot = new Mock<IStateRepository>();
+
+            var transferProcessor = new Mock<IContractTransferProcessor>();
+            transferProcessor
+                .Setup(t => t.Process(
+                    It.IsAny<IStateRepository>(),
+                    It.IsAny<uint160>(),
+                    It.IsAny<IContractTransactionContext>(),
+                    It.IsAny<IReadOnlyList<TransferInfo>>(),
+                    It.IsAny<bool>()
+                ))
+                .Returns(this.InternalTransaction);
+            this.TransferProcessor = transferProcessor;
 
             var refundProcessor = new Mock<IContractRefundProcessor>();
             refundProcessor
@@ -52,16 +66,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     this.ContractTransactionContext.Sender,
                     It.IsAny<Gas>(),
                     It.IsAny<bool>()))
-                .Returns((this.Refund, null));            
+                .Returns((this.Fee, this.Refund));            
             this.RefundProcessor = refundProcessor;
             
             this.StateProcessor = new Mock<IStateProcessor>();
 
-            this.State = new Mock<IState>();
-            this.State.Setup(s => s.ContractState).Returns(this.ContractStateRoot.Object);
-            this.State.SetupGet(p => p.InternalTransfers).Returns(new List<TransferInfo>().AsReadOnly());
-            this.State.Setup(s => s.Snapshot()).Returns(Mock.Of<IState>());
-            
+            var state = new Mock<IState>();
+            state.Setup(s => s.ContractState).Returns(this.ContractStateRoot.Object);
+            state.SetupGet(p => p.InternalTransfers).Returns(new List<TransferInfo>().AsReadOnly());
+            state.Setup(s => s.Snapshot()).Returns(Mock.Of<IState>());
+            state.Setup(s => s.GetLogs(this.ContractPrimitiveSerializer.Object))
+                .Returns(new List<Log>());
+            this.State = state;
+
             var stateFactory = new Mock<IStateFactory>();
             stateFactory.Setup(sf => sf.Create(
                     this.ContractStateRoot.Object,
