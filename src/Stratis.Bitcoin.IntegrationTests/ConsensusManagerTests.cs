@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // MinerA continues to mine to height 45.
                 TestHelper.MineBlocks(minerA, walletName, walletPassword, walletAccount, 25);
 
-                // MinerA continues to mine to height 65.
+                // MinerB continues to mine to height 65.
                 TestHelper.MineBlocks(minerB, walletName, walletPassword, walletAccount, 45);
 
                 // Syncer now connects to both miners causing a MaxReorgViolation exception to be thrown
