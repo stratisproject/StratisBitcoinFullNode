@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly Signals.Signals signals;
         private readonly IPeerBanning peerBanning;
         private readonly IBlockStore blockStore;
-        private readonly IFinalizedBlockInfo finalizedBlockInfo;
+        private readonly IFinalizedBlockInfoRepository finalizedBlockInfo;
         private readonly IBlockPuller blockPuller;
         private readonly IIntegrityValidator integrityValidator;
         private readonly INodeLifetime nodeLifetime;
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Consensus
             IPartialValidator partialValidator,
             IFullValidator fullValidator,
             IConsensusRuleEngine consensusRules,
-            IFinalizedBlockInfo finalizedBlockInfo,
+            IFinalizedBlockInfoRepository finalizedBlockInfo,
             Signals.Signals signals,
             IPeerBanning peerBanning,
             IInitialBlockDownloadState ibdState,
@@ -710,7 +710,7 @@ namespace Stratis.Bitcoin.Consensus
                         {
                             uint256 newFinalizedHash = blockToConnect.ChainedHeader.GetAncestor(newFinalizedHeight).HashBlock;
 
-                            await this.finalizedBlockInfo.SaveFinalizedBlockHashAndHeightAsync(newFinalizedHash, newFinalizedHeight).ConfigureAwait(false);
+                            this.finalizedBlockInfo.SaveFinalizedBlockHashAndHeight(newFinalizedHash, newFinalizedHeight);
                         }
                     }
                 }

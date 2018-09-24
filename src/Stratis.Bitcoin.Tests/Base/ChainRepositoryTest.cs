@@ -19,43 +19,6 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         [Fact]
-        public async Task FinalizedHeightSavedOnDiskAsync()
-        {
-            string dir = CreateTestDir(this);
-
-            using (var repo = new ChainRepository(dir, new LoggerFactory()))
-            {
-                await repo.SaveFinalizedBlockHashAndHeightAsync(uint256.One, 777);
-            }
-
-            using (var repo = new ChainRepository(dir, new LoggerFactory()))
-            {
-                await repo.LoadFinalizedBlockInfoAsync(new StratisMain());
-                Assert.Equal(777, repo.GetFinalizedBlockInfo().Height);
-            }
-        }
-
-        [Fact]
-        public async Task FinalizedHeightCantBeDecreasedAsync()
-        {
-            string dir = CreateTestDir(this);
-
-            using (var repo = new ChainRepository(dir, new LoggerFactory()))
-            {
-                await repo.SaveFinalizedBlockHashAndHeightAsync(uint256.One, 777);
-                await repo.SaveFinalizedBlockHashAndHeightAsync(uint256.One, 555);
-
-                Assert.Equal(777, repo.GetFinalizedBlockInfo().Height);
-            }
-
-            using (var repo = new ChainRepository(dir, new LoggerFactory()))
-            {
-                await repo.LoadFinalizedBlockInfoAsync(new StratisMain());
-                Assert.Equal(777, repo.GetFinalizedBlockInfo().Height);
-            }
-        }
-
-        [Fact]
         public void SaveWritesChainToDisk()
         {
             string dir = CreateTestDir(this);

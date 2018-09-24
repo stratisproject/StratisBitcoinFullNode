@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ICheckpoints checkpoints;
         private readonly IChainState chainState;
         private readonly ConsensusSettings consensusSettings;
-        private readonly IFinalizedBlockInfo finalizedBlockInfo;
+        private readonly IFinalizedBlockInfoRepository finalizedBlockInfo;
         private readonly IInvalidBlockHashStore invalidHashesStore;
 
         /// <inheritdoc />
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Consensus
             IHeaderValidator headerValidator,
             ICheckpoints checkpoints,
             IChainState chainState,
-            IFinalizedBlockInfo finalizedBlockInfo,
+            IFinalizedBlockInfoRepository finalizedBlockInfo,
             ConsensusSettings consensusSettings,
             IInvalidBlockHashStore invalidHashesStore)
         {
