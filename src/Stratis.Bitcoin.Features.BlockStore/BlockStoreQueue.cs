@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly object blocksCacheLock;
 
         /// <summary>Represents all blocks currently in the queue & pending batch, so that <see cref="GetBlockAsync"/> is able to return a value directly after enqueuing.</summary>
-        /// <remarks>All access should be protected by <see cref="blocksCacheLock"/>.</remarks>
+        /// <remarks>Write access should be protected by <see cref="blocksCacheLock"/>.</remarks>
         private readonly Dictionary<uint256, ChainedHeaderBlock> pendingBlocksCache;
 
         public BlockStoreQueue(
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     if (tx != null)
                     {
-                        this.logger.LogTrace("Transaction '{0}' was found in the batch.", trxid);
+                        this.logger.LogTrace("Transaction '{0}' was found in the pending blocks cache.", trxid);
                         return Task.FromResult(tx);
                     }
                 }
@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         uint256 blockId = chainedHeaderBlock.Block.GetHash();
 
-                        this.logger.LogTrace("Block Id '{0}' with tx '{1}' was found in the batch.", blockId, trxid);
+                        this.logger.LogTrace("Block Id '{0}' with tx '{1}' was found in the pending blocks cache.", blockId, trxid);
                         return Task.FromResult(blockId);
                     }
                 }
