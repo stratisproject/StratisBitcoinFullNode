@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync((Transaction)null)
                 .Verifiable();
-            this.blockStore.Setup(b => b.GetTrxAsync(txId))
+            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
                 .ReturnsAsync((Transaction)null)
                 .Verifiable();
             this.controller = new NodeController(this.fullNode.Object, this.LoggerFactory.Object,
@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync((Transaction)null);
             Transaction transaction = this.CreateTransaction();
-            this.blockStore.Setup(b => b.GetTrxAsync(txId))
+            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
                 .ReturnsAsync(transaction);
             this.controller = new NodeController(this.fullNode.Object, this.LoggerFactory.Object,
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         {
             var txId = new uint256(12142124);
             Transaction transaction = this.CreateTransaction();
-            this.blockStore.Setup(b => b.GetTrxAsync(txId))
+            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
                 .ReturnsAsync(transaction);
             string txid = txId.ToString();
 
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         {
             var txId = new uint256(12142124);
             Transaction transaction = this.CreateTransaction();
-            this.blockStore.Setup(b => b.GetTrxAsync(txId))
+            this.blockStore.Setup(b => b.GetTransactionByIdAsync(txId))
                 .ReturnsAsync(transaction);
             this.controller = new NodeController(this.fullNode.Object, this.LoggerFactory.Object,
                 this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public async Task GetRawTransactionAsync_PooledTransactionAndBlockStoreServiceNotAvailable_ReturnsNullAsync()
         {
             var txId = new uint256(12142124);
-            this.blockStore.Setup(f => f.GetTrxAsync(txId))
+            this.blockStore.Setup(f => f.GetTransactionByIdAsync(txId))
                 .ReturnsAsync((Transaction)null)
                 .Verifiable();
             this.controller = new NodeController(this.fullNode.Object, this.LoggerFactory.Object,
@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
             var blockStore = new Mock<IBlockStore>();
-            blockStore.Setup(b => b.GetTrxBlockIdAsync(txId))
+            blockStore.Setup(b => b.GetBlockIdByTransactionIdAsync(txId))
                 .ReturnsAsync(block.HashBlock);
             this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
                 .Returns(blockStore.Object);
@@ -255,7 +255,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
                 .ReturnsAsync(transaction);
 
             var blockStore = new Mock<IBlockStore>();
-            blockStore.Setup(b => b.GetTrxBlockIdAsync(txId))
+            blockStore.Setup(b => b.GetBlockIdByTransactionIdAsync(txId))
                 .ReturnsAsync(block.HashBlock);
             this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
                 .Returns(blockStore.Object);
@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
                 .ReturnsAsync(transaction);
             var blockStore = new Mock<IBlockStore>();
-            blockStore.Setup(b => b.GetTrxBlockIdAsync(txId))
+            blockStore.Setup(b => b.GetBlockIdByTransactionIdAsync(txId))
                 .ReturnsAsync((uint256)null);
             this.fullNode.Setup(f => f.NodeFeature<IBlockStore>(false))
                 .Returns(blockStore.Object);

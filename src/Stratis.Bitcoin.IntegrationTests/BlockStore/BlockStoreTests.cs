@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
                     foreach (Transaction transaction in block.Transactions)
                     {
-                        Transaction trx = blockRepository.GetTrxAsync(transaction.GetHash()).GetAwaiter().GetResult();
+                        Transaction trx = blockRepository.GetTransactionByIdAsync(transaction.GetHash()).GetAwaiter().GetResult();
                         Assert.True(trx.ToBytes().SequenceEqual(transaction.ToBytes()));
                     }
                 }
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 Assert.NotNull(bestBlock1);
 
                 // get the block coinbase trx
-                Transaction trx = stratisNode2.FullNode.BlockStore().GetTrxAsync(bestBlock1.Transactions.First().GetHash()).Result;
+                Transaction trx = stratisNode2.FullNode.BlockStore().GetTransactionByIdAsync(bestBlock1.Transactions.First().GetHash()).Result;
                 Assert.NotNull(trx);
                 Assert.Equal(bestBlock1.Transactions.First().GetHash(), trx.GetHash());
             }

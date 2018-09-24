@@ -155,16 +155,16 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void trying_to_retrieve_the_transactions_by_Id_from_the_blockstore()
         {
-            this.retrievedTransaction = this.node.FullNode.BlockStore().GetTrxAsync(this.transaction.GetHash()).GetAwaiter().GetResult();
-            this.wontRetrieveTransaction = this.node.FullNode.BlockStore().GetTrxAsync(this.wrongTransactionId).GetAwaiter().GetResult();
+            this.retrievedTransaction = this.node.FullNode.BlockStore().GetTransactionByIdAsync(this.transaction.GetHash()).GetAwaiter().GetResult();
+            this.wontRetrieveTransaction = this.node.FullNode.BlockStore().GetTransactionByIdAsync(this.wrongTransactionId).GetAwaiter().GetResult();
         }
 
         private void trying_to_retrieve_the_block_containing_the_transactions_from_the_blockstore()
         {
             this.retrievedBlockId = this.node.FullNode.BlockStore()
-                .GetTrxBlockIdAsync(this.transaction.GetHash()).GetAwaiter().GetResult();
+                .GetBlockIdByTransactionIdAsync(this.transaction.GetHash()).GetAwaiter().GetResult();
             this.wontRetrieveBlockId = this.node.FullNode.BlockStore()
-                .GetTrxAsync(this.wrongTransactionId).GetAwaiter().GetResult();
+                .GetTransactionByIdAsync(this.wrongTransactionId).GetAwaiter().GetResult();
         }
 
         private void real_blocks_should_be_retrieved()
