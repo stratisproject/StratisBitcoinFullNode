@@ -19,10 +19,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>Specification of the network the node runs on - RegTest/TestNet/MainNet.</summary>
         private readonly Network network;
 
-        private readonly ProvenBlockHeader provenBlockHeader;
-
+        /// <summary>Thread safe class representing a chain of headers from genesis.</summary>
         private readonly ConcurrentChain chain;
 
+        /// <summary>Database repository storing <see cref="ProvenBlockHeader"></see>s.</summary>
         private readonly IProvenBlockHeaderRepository provenBlockHeaderRepository;
 
         private readonly int threshold;
@@ -35,22 +35,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>Lock object to protect access to <see cref="ProvenBlockHeader"/>.</summary>
         private readonly AsyncLock lockobj;
 
-        public long Count
-        {
-            get
-            {
-                return this.items.Count();
-            }
-        }
-
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - RegTest/TestNet/MainNet.</param>
-        /// <param name="chain">XXXXXXXXXXXXXXXXXXXXXXXXX</param>
+        /// <param name="chain">Thread safe class representing a chain of headers from genesis</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
-        /// <param name="provenBlockHeaderRepository">XXXXXXXX7XXXXXXXXXXXXXXXXX</param>
+        /// <param name="provenBlockHeaderRepository">Persistent interface of the <see cref="ProvenBlockHeader"></see> DBreeze repository.</param>
         public ProvenBlockHeaderStore(Network network, ConcurrentChain chain, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IProvenBlockHeaderRepository provenBlockHeaderRepository)
         {
             Guard.NotNull(network, nameof(network));

@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
-using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -15,6 +14,9 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
+    /// <summary>
+    /// Persistent implementation of the <see cref="ProvenBlockHeader"></see> DBreeze repository.
+    /// </summary>
     public class ProvenBlockHeaderRepository : IProvenBlockHeaderRepository
     {
         /// <summary>Instance logger.</summary>

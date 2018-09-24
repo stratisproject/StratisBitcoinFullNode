@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             string folder = CreateTestDir(this);
             uint256 blockId;
 
-            // Initialise the repository - should set-up a default blockHash (blockId) and ProvenBlockHeader.
+            // Initialise the repository - this will set-up the genesis blockHash (blockId).
             using (IProvenBlockHeaderRepository repository = this.SetupRepository(this.Network, folder))
             {
                 // Check the BlockHash (blockId) exists.
@@ -63,6 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 txn.Commit();
             }
 
+            // Add a couple of ProvenBlockHeaders into the database via PutAsync().
             var items = new List<StakeItem>
             {
                 new StakeItem
@@ -85,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 task.Wait();
             }
 
-            // Add ProvenBlockHeader to the database.
+            // Check the above items exits in the database.
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
@@ -106,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             ProvenBlockHeader provenBlockHeaderIn = CreateNewProvenBlockHeaderMock();
 
-            // unsorted list
+            // Build up list of items not sorted - BlockId's are the wrong way around.
             var items = new List<StakeItem>
             {
                 new StakeItem
@@ -121,13 +122,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 },
             };
 
+            // Put the items in the repository.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
                 Task task = repo.PutAsync(items);
                 task.Wait();
             }
 
-            // Add ProvenBlockHeader to the database.
+            // Check the ProvenBlockHeader exists in the database - and are in sorted order.
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
@@ -138,7 +140,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
                 provenBlockHeaderAll.Keys.Count.Should().Be(2);
 
-                // check items are now sorted - items[1] was added last about but should appear first and vice versa.
+                // Check items are sorted - item[1] was added last in the above code, check that item is now first.
                 provenBlockHeaderAll.FirstOrDefault().Key.Equals(items[1].BlockId.ToBytes());
                 provenBlockHeaderAll.LastOrDefault().Key.Equals(items[0].BlockId.ToBytes());
             }
@@ -152,6 +154,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             ProvenBlockHeader provenBlockHeader = CreateNewProvenBlockHeaderMock();
             uint256 hash = provenBlockHeader.GetHash();
 
+            // Setup item and insert into the database.
             var item = new List<StakeItem>
             {
                 new StakeItem
@@ -169,6 +172,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 txn.Commit();
             }
 
+            // Query the repository for the item that was inserted in the above code.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
                 Task task = repo.GetAsync(item);

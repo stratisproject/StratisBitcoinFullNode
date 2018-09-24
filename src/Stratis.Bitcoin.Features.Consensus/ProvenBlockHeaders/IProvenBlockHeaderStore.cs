@@ -45,10 +45,5 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task FlushAsync(CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
-        /// Returns items currently loaded in the <see cref="ProvenBlockHeaderStore"/>. 
-        /// </summary>
-        long Count { get; }
     }
 }

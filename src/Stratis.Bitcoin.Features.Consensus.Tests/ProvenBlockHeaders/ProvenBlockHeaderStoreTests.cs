@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -61,8 +62,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 task = store.LoadAsync();
                 task.Wait();
 
-                store.Count.Should().Be(itemCounter);
-            }            
+                items.Count.Should().Be(itemCounter);
+                items.Should().BeOfType<List<StakeItem>>();
+                items.ForEach(i => i.ProvenBlockHeader.Should().NotBeNull());
+                items.ForEach(i => i.InStore.Should().BeTrue());
+            }
         }
 
         private IProvenBlockHeaderStore SetupStore(Network network, string folder)
