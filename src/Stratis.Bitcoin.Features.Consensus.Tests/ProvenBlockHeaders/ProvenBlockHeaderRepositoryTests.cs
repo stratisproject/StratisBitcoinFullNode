@@ -21,8 +21,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         private const string ProvenBlockHeaderTable = "ProvenBlockHeader";
         private const string BlockHashTable = "BlockHash";
 
+        private readonly NodeStats nodeStats;
+
+
         public ProvenBlockHeaderRepositoryTests() : base(KnownNetworks.StratisTest)
         {
+            this.nodeStats = new NodeStats(DateTimeProvider.Default);
             this.loggerFactory = new Mock<ILoggerFactory>();            
         }
 
@@ -128,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
         private IProvenBlockHeaderRepository SetupRepository(Network network, string folder)
         {
-            var repo = new ProvenBlockHeaderRepository(network, folder, DateTimeProvider.Default, this.LoggerFactory.Object);
+            var repo = new ProvenBlockHeaderRepository(network, folder, DateTimeProvider.Default, this.LoggerFactory.Object, nodeStats);
 
             repo.InitializeAsync().GetAwaiter().GetResult();
 
