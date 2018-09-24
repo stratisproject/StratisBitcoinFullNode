@@ -55,6 +55,33 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             return tx;
         }
 
+        public Transaction CreateColdStakingWithdrawalTransaction(Wallet.Wallet wallet, string password, HdAddress spendingAddress, PubKey destinationPubKey, Script changeScript, Money amount, Money fee)
+        {
+            TransactionData spendingTransaction = spendingAddress.Transactions.ElementAt(0);
+            var coin = new Coin(spendingTransaction.Id, (uint)spendingTransaction.Index, spendingTransaction.Amount, spendingTransaction.ScriptPubKey);
+
+            Key privateKey = Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
+
+            Script script = destinationPubKey.ScriptPubKey;
+
+            var builder = new TransactionBuilder(wallet.Network);
+            builder.Extensions.Add(new ColdStakingBuilderExtension(false));
+            Transaction tx = builder
+                .AddCoins(new List<Coin> { coin })
+                .AddKeys(new ExtKey(privateKey, wallet.ChainCode).Derive(new KeyPath(spendingAddress.HdPath)).GetWif(wallet.Network))
+                .Send(script, amount)
+                .SetChange(changeScript)
+                .SendFees(fee)
+                .BuildTransaction(true);
+
+            if (!builder.Verify(tx))
+            {
+                throw new WalletException("Could not build transaction, please make sure you entered the correct data.");
+            }
+
+            return tx;
+        }
+
         /// <summary>
         /// Creates a spendable transaction and spends its outputs to a cold staking script.
         /// Tests whether the original wallet, hot wallet and cold wallet record the expected information.
@@ -204,6 +231,65 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal(transaction.GetHash(), destinationHotAddressResult.Id);
             Assert.Equal(transaction.Outputs[1].Value, destinationHotAddressResult.Amount);
             Assert.Equal(transaction.Outputs[1].ScriptPubKey, destinationHotAddressResult.ScriptPubKey);
+
+            // Try withdrawing from the cold staking setup.
+            Wallet.Wallet withdrawalWallet = this.walletFixture.GenerateBlankWallet("myWithDrawalWallet", "password");
+            (ExtKey ExtKey, string ExtPubKey) withdrawalAccountKeys = WalletTestsHelpers.GenerateAccountKeys(wallet, "password", "m/44'/0'/0'");
+
+            (PubKey PubKey, BitcoinPubKeyAddress Address) withdrawalKeys = WalletTestsHelpers.GenerateAddressKeys(withdrawalWallet, withdrawalAccountKeys.ExtPubKey, "0/0");
+
+            // Withdrawing to this address.
+            var withdrawalAddress = new HdAddress
+            {
+                Index = 0,
+                HdPath = $"m/44'/0'/0'/0/0",
+                Address = withdrawalKeys.Address.ToString(),
+                Pubkey = withdrawalKeys.PubKey.ScriptPubKey,
+                ScriptPubKey = withdrawalKeys.Address.ScriptPubKey,
+                Transactions = new List<TransactionData>()
+            };
+
+            withdrawalWallet.AccountsRoot.ElementAt(0).Accounts.Add(new HdAccount
+            {
+                Index = 0,
+                Name = "account 0",
+                HdPath = "m/44'/0'/0'",
+                ExtendedPubKey = accountKeys.ExtPubKey,
+                ExternalAddresses = new List<HdAddress> { withdrawalAddress },
+                InternalAddresses = new List<HdAddress> { }
+            });
+
+            // Will spend from the cold stake address and send the change back to the same address.
+            var coldStakeAddress = coldWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
+            Transaction withdrawalTransaction = this.CreateColdStakingWithdrawalTransaction(coldWallet, "password", coldStakeAddress,
+                withdrawalKeys.PubKey, ColdStakingScriptTemplate.Instance.GenerateScriptPubKey(destinationColdKeys.PubKey.Hash, destinationHotKeys.PubKey.Hash),
+                new Money(750), new Money(262));
+
+            // Wallet manager for the wallet receiving the funds.
+            var walletManager3 = new ColdStakingManager(this.Network, chainInfo.chain, new Mock<WalletSettings>().Object, dataFolder, walletFeePolicy.Object,
+                new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
+            walletManager3.Wallets.Add(withdrawalWallet);
+            walletManager3.LoadKeysLookupLock();
+
+            // Process the transaction in the cold wallet manager.
+            walletManager1.ProcessTransaction(withdrawalTransaction);
+
+            // Process the transaction in the receiving wallet manager.
+            walletManager3.ProcessTransaction(withdrawalTransaction);
+
+            // Verify that the transaction has been recorded in the withdrawal wallet.
+            Assert.Equal(1, withdrawalWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.Count);
+            TransactionData withdrawalAddressResult = withdrawalWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.ElementAt(0);
+            Assert.Equal(withdrawalTransaction.GetHash(), withdrawalAddressResult.Id);
+            Assert.Equal(withdrawalTransaction.Outputs[1].Value, withdrawalAddressResult.Amount);
+            Assert.Equal(withdrawalTransaction.Outputs[1].ScriptPubKey, withdrawalAddressResult.ScriptPubKey);
+
+            // Verify that the transaction has been recorded in the cold wallet.
+            Assert.Equal(2, coldWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.Count);
+            TransactionData coldAddressResult = coldWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.ElementAt(1);
+            Assert.Equal(withdrawalTransaction.GetHash(), coldAddressResult.Id);
+            Assert.Equal(withdrawalTransaction.Outputs[0].Value, coldAddressResult.Amount);
+            Assert.Equal(withdrawalTransaction.Outputs[0].ScriptPubKey, coldAddressResult.ScriptPubKey);
         }
     }
 }
