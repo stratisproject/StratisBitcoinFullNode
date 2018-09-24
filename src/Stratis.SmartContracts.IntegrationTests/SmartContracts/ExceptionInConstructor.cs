@@ -11,6 +11,7 @@ public class ExceptionInConstructor : SmartContract
         Transfer(new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn"), 1);
 
         // Create storage that ultimately shouldn't be persisted due to failure. 
+        PersistentState.SetBool("Test", true);
 
         // Throw (unexpected) OutOfIndexException
         var array = new int[25];
