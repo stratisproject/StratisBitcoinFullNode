@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             ContractCompilationResult result = ContractCompiler.CompileDirectory("SmartContracts", "MultipleFiles");
             Assert.True(result.Success);
-            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(result.Compilation);
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(result.Compilation).Value;
             Assert.Contains(decomp.ModuleDefinition.Types, x => x.Name == "MultipleFiles1");
             Assert.Contains(decomp.ModuleDefinition.Types, x => x.Name == "MultipleFiles2");
         }

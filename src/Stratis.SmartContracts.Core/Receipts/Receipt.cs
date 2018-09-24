@@ -90,7 +90,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             uint160 newContractAddress,
             bool success,
             string errorMessage) 
-            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, from, to, newContractAddress, success, null)
+            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, from, to, newContractAddress, success, errorMessage)
         { }
 
         /// <summary>
