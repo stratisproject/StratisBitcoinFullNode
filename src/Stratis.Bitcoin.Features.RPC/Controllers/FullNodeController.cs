@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Controllers.Models;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -120,6 +119,25 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             }
             else
                 return new TransactionBriefModel(trx);
+        }
+
+        /// <summary>
+        /// Decodes a transaction from its raw hexadecimal format.
+        /// </summary>
+        /// <param name="hex">The raw transaction hex.</param>
+        /// <returns>A <see cref="TransactionVerboseModel"/> or <c>null</c> if the transaction could not be decoded.</returns>
+        [ActionName("decoderawtransaction")]
+        [ActionDescription("Decodes a serialized transaction hex string into a JSON object describing the transaction.")]
+        public TransactionModel DecodeRawTransaction(string hex)
+        {
+            try
+            {
+                return new TransactionVerboseModel(this.FullNode.Network.CreateTransaction(hex), this.Network);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         /// <summary>
