@@ -1,118 +1,119 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DBreeze;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
     public class ProvenBlockHeaderStore : IProvenBlockHeaderStore, IDisposable
     {
-        /// <summary>Database key under which the block hash of the ChainedHeader's current tip is stored.</summary>
-        private static readonly byte[] blockHashKey = new byte[0];
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
-
-        /// <summary>Access to DBreeze database.</summary>
-        private readonly DBreezeEngine dbreeze;
 
         /// <summary>Specification of the network the node runs on - RegTest/TestNet/MainNet.</summary>
         private readonly Network network;
 
-        /// <summary>The highest stored block in the repository.</summary>
-        private ChainedHeader storeTip;
+        private readonly ProvenBlockHeader provenBlockHeader;
+
+        private readonly ConcurrentChain chain;
+
+        private readonly IProvenBlockHeaderRepository provenBlockHeaderRepository;
 
         private readonly int threshold;
 
         private readonly int thresholdWindow;
 
         private readonly ConcurrentDictionary<uint256, ProvenBlockHeader> items = 
-            new ConcurrentDictionary<uint256, ProvenBlockHeader>();   
+            new ConcurrentDictionary<uint256, ProvenBlockHeader>();
 
-        /// <summary>Hash of the block which is currently the tip of the ChainedHeader.</summary>
-        private uint256 blockHash;
+        /// <summary>Lock object to protect access to <see cref="ProvenBlockHeader"/>.</summary>
+        private readonly AsyncLock lockobj;
 
-        /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
-        private readonly BackendPerformanceCounter performanceCounter;
-        private BackendPerformanceSnapshot latestPerformanceSnapShot;
-
-        /// <summary>
-        /// Initializes a new instance of the object.
-        /// </summary>
-        /// <param name="network">Specification of the network the node runs on - RegTest/TestNet/MainNet.</param>
-        /// <param name="dataFolder">Information about path locations to important folders and files on disk.</param>
-        /// <param name="dateTimeProvider">Provider of time functions.</param>
-        /// <param name="loggerFactory">Factory to create a logger for this type.</param>
-        /// <param name="nodeStats">Registers an action used to append node stats when collected.</param>
-        public ProvenBlockHeaderStore(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats)
-            : this(network, dataFolder.ProvenBlockHeaderPath, dateTimeProvider, loggerFactory, nodeStats)
+        public long Count
         {
+            get
+            {
+                return this.items.Count();
+            }
         }
 
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - RegTest/TestNet/MainNet.</param>
-        /// <param name="folder"><see cref="ProvenBlockHeaderStore"/> folder path to the DBreeze database files.</param>
+        /// <param name="chain">XXXXXXXXXXXXXXXXXXXXXXXXX</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
-        /// <param name="nodeStats">Registers an action used to append node stats when collected.</param>
-        public ProvenBlockHeaderStore(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats)
+        /// <param name="provenBlockHeaderRepository">XXXXXXXX7XXXXXXXXXXXXXXXXX</param>
+        public ProvenBlockHeaderStore(Network network, ConcurrentChain chain, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, IProvenBlockHeaderRepository provenBlockHeaderRepository)
         {
             Guard.NotNull(network, nameof(network));
-            Guard.NotNull(folder, nameof(folder));
-
-            // Create the ProvenBlockHeaderStore if it doesn't exist.
-            Directory.CreateDirectory(folder);
+            Guard.NotNull(chain, nameof(chain));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.dbreeze = new DBreezeEngine(folder);
             this.network = network;
-            this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
-
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 400);
+            this.chain = chain;
+            this.provenBlockHeaderRepository = provenBlockHeaderRepository;
+            this.threshold = 5000; // Count of items in memory.
+            this.thresholdWindow = Convert.ToInt32(this.threshold * 0.4); // A window threshold.
+            this.lockobj = new AsyncLock();
         }
 
         /// <summary>
-        /// Initializes the database table used by the <see cref="ProvenBlockHeader"/>.
+        /// Loads <see cref="ProvenBlockHeader"/> items from disk.
         /// </summary>
-        public Task InitializeAsync()
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task LoadAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             this.logger.LogTrace("()");
 
-            Task task = Task.Run(() =>
+            uint256 hash = await this.provenBlockHeaderRepository.GetTipHashAsync().ConfigureAwait(false);
+            ChainedHeader next = this.chain.GetBlock(hash);
+
+            using (await this.lockobj.LockAsync(cancellationToken).ConfigureAwait(false))
             {
-                this.logger.LogTrace("()");
-
-                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                if (next == null)
                 {
-                    transaction.ValuesLazyLoadingIsOn = false;
-                    transaction.SynchronizeTables("ProvenBlockHeader");
-
-                    Block genesis = this.network.GetGenesis();
-
-                    var load = new List<ProvenBlockHeader>();
-
-                    //TODO: Need to understand what to do in here as different stores do different things
-                    // see BlockRepository.InitializeAsync, BlockStoreQueue.InitializeAsync
-
-
+                    this.logger.LogTrace("(-)[NULL_NEXT_CHAINED_HEADER]");
+                    return;
                 }
 
-                this.logger.LogTrace("(-)");
-            });
+                var load = new List<StakeItem>();
+
+                while (next != null)
+                {
+                    load.Add(new StakeItem
+                    {
+                        BlockId = next.HashBlock,
+                        Height = next.Height,
+                    });
+
+                    if ((load.Count >= this.threshold) || next.Previous == null)
+                        break;
+
+                    next = next.Previous;
+                }
+
+                await this.provenBlockHeaderRepository.GetAsync(load).ConfigureAwait(false);
+
+                // All ProvenBlockHeader items should be in store.
+                if (load.Any(l => l.ProvenBlockHeader == null))
+                {
+                    this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADER_INFO_MISSING]");
+                    throw new ConfigurationException("Missing proven block header information, delete the data folder and re-download the chain");
+                }
+
+                foreach (StakeItem stakeItem in load)
+                    this.items.TryAdd(stakeItem.BlockId, stakeItem.ProvenBlockHeader);
+            }
 
             this.logger.LogTrace("(-)");
-            return task;
         }
 
         public Task FlushAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -134,30 +135,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public Task SetAsync(ProvenBlockHeader provenBlockHeader, CancellationToken cancellationToken = default(CancellationToken))
         {
             throw new NotImplementedException();
-        }
+        }        
 
         /// <inheritdoc />
         public void Dispose()
         {
-            this.dbreeze.Dispose();
-        }
-
-        private void AddBenchStats(StringBuilder benchLog)
-        {
-            this.logger.LogTrace("()");
-
-            benchLog.AppendLine("======ProvenBlockHeaderStore Bench======");
-
-            BackendPerformanceSnapshot snapShot = this.performanceCounter.Snapshot();
-
-            if (this.latestPerformanceSnapShot == null)
-                benchLog.AppendLine(snapShot.ToString());
-            else
-                benchLog.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
-
-            this.latestPerformanceSnapShot = snapShot;
-
-            this.logger.LogTrace("(-)");
+            this.lockobj.Dispose();
         }
     }
 }

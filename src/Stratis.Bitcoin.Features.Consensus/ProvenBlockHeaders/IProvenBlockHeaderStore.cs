@@ -11,10 +11,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     public interface IProvenBlockHeaderStore : IDisposable
     {
         /// <summary>
-        /// Initializes the database table used by <see cref="ProvenBlockHeader"/>.
+        /// Initialize the <see cref="ProvenBlockHeader"/> store.
         /// </summary>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
-        Task InitializeAsync();
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        Task LoadAsync(CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Get a <see cref="ProvenBlockHeader"/> corresponding to a block.
@@ -36,14 +36,19 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         /// <param name="provenBlockHeader"><see cref="ProvenBlockHeader"/> to add to the internal concurrent dictionary.</param>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task SetAsync(ProvenBlockHeader provenBlockHeader, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Flushes the internal dictionary and saves any new items into the <see cref="ProvenBlockHeaderStore"/>. 
         /// </summary>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task FlushAsync(CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <summary>
+        /// Returns items currently loaded in the <see cref="ProvenBlockHeaderStore"/>. 
+        /// </summary>
+        long Count { get; }
     }
 }
