@@ -13,10 +13,6 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         private readonly Network network;
 
-        private const string walletAccount = "account 0";
-        private const string walletName = "mywallet";
-        private const string walletPassword = "123456";
-
         public ConsensusManagerTests()
         {
             this.network = new StratisRegTest();
@@ -49,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 syncer.NotInIBD();
 
                 // MinerA mines to height 10.
-                TestHelper.MineBlocks(minerA, walletName, walletPassword, walletAccount, 10);
+                TestHelper.MineBlocks(minerA, 10);
 
                 // Sync the network to height 10.
                 TestHelper.Connect(syncer, minerA);
@@ -65,10 +61,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(syncer));
 
                 // Miner A continues to mine to height 20 whilst disconnected.
-                TestHelper.MineBlocks(minerA, walletName, walletPassword, walletAccount, 10);
+                TestHelper.MineBlocks(minerA, 10);
 
                 // Miner B continues to mine to height 14 whilst disconnected.
-                TestHelper.MineBlocks(minerB, walletName, walletPassword, walletAccount, 4);
+                TestHelper.MineBlocks(minerB, 4);
 
                 // Syncer now connects to both miners causing a re-org to occur for Miner B back to height 10
                 TestHelper.Connect(minerA, syncer);

@@ -46,8 +46,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
             this.nodeBuilder.StartAll();
             this.nodeA.NotInIBD().WithWallet();
-            this.nodeB.NotInIBD().WithWallet();
-            this.nodeC.NotInIBD().WithWallet();
+            this.nodeB.NotInIBD();
+            this.nodeC.NotInIBD();
 
             this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.CoinbaseMaturity;
         }
@@ -55,9 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         protected void nodeA_mines_coins_that_are_spendable()
         {
             // add some coins to nodeA
-            this.nodeA.SetDummyMinerSecret(new BitcoinSecret(new Key(), this.nodeA.FullNode.Network));
-            this.nodeA.GenerateStratisWithMiner(this.coinbaseMaturity + 1);
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodeA));
+            TestHelper.MineBlocks(this.nodeA, this.coinbaseMaturity + 1);
         }
 
         protected void nodeA_connects_to_nodeB()
