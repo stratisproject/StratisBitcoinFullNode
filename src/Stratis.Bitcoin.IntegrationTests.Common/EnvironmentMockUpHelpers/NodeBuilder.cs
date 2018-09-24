@@ -212,8 +212,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 do
                 {
                     LogManager.EnableLogging();
-                }
-                while (!LogManager.IsLoggingEnabled());
+                } while (!LogManager.IsLoggingEnabled());
             }
 
             return this;
@@ -234,8 +233,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 do
                 {
                     LogManager.DisableLogging();
-                }
-                while (LogManager.IsLoggingEnabled());
+                } while (LogManager.IsLoggingEnabled());
             }
 
             return this;
