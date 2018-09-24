@@ -30,7 +30,7 @@ namespace Stratis.StratisD
                     .UseBlockStore()
                     .UsePosConsensus()
                     .UseMempool()
-                    .UseWallet()
+                    .UseColdStakingWallet()
                     .AddPowPosMining()
                     .UseApi()
                     .UseApps()
