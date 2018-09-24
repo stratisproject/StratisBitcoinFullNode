@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
@@ -34,17 +35,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public void InitializesGenesisProvenBlockHeaderOnFirstLoad()
         {
             string folder = CreateTestDir(this);
+            uint256 blockId;
 
+            // Initialise the repository - should set-up a default blockHash (blockId) and ProvenBlockHeader.
             using (IProvenBlockHeaderRepository repository = this.SetupRepository(this.Network, folder))
             {
-            }
+                // Check the BlockHash (blockId) exists.
+                Task<uint256> TipHashtask = repository.GetTipHashAsync();
+                TipHashtask.Wait();
 
-            using (var engine = new DBreezeEngine(folder))
-            {
-                DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
-                Row<byte[], uint256> row = transaction.Select<byte[], uint256>(BlockHashTable, new byte[0]);
-
-                row.Value.Should().Be(this.Network.GetGenesis().GetHash());
+                blockId = TipHashtask.Result;
+                blockId.Should().Be(this.Network.GetGenesis().GetHash());
             }
         }
 
@@ -64,19 +65,25 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 txn.Commit();
             }
 
-            var item = new List<StakeItem>
+            var items = new List<StakeItem>
             {
                 new StakeItem
                 {
                     BlockId = blockInHash,
                     Height = 1,
                     ProvenBlockHeader = provenBlockHeaderIn
-                }
+                },
+                new StakeItem
+                {
+                    BlockId = uint256.One,
+                    Height = 2,
+                    ProvenBlockHeader = provenBlockHeaderIn
+                },
             };
 
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                Task task = repo.PutAsync(item);
+                Task task = repo.PutAsync(items);
                 task.Wait();
             }
 
@@ -87,10 +94,55 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 txn.SynchronizeTables(ProvenBlockHeaderTable);
                 txn.ValuesLazyLoadingIsOn = false;
 
-                var blockOut = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockInHash.ToBytes()).Value;
+                var blockOut = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockInHash.ToBytes(false)).Value;
 
                 blockOut.Should().NotBeNull();
                 blockOut.GetHash().Should().Be(blockInHash);
+            }
+        }
+
+        [Fact]
+        public void PutAsyncWritesProvenBlockHeadersInSortedOrder()
+        {
+            string folder = CreateTestDir(this);
+
+            ProvenBlockHeader provenBlockHeaderIn = CreateNewProvenBlockHeaderMock();
+
+            // unsorted list
+            var items = new List<StakeItem>
+            {
+                new StakeItem
+                {
+                    BlockId = uint256.One,
+                    ProvenBlockHeader = provenBlockHeaderIn
+                },
+                new StakeItem
+                {
+                    BlockId = uint256.Zero,
+                    ProvenBlockHeader = provenBlockHeaderIn
+                },
+            };
+
+            using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
+            {
+                Task task = repo.PutAsync(items);
+                task.Wait();
+            }
+
+            // Add ProvenBlockHeader to the database.
+            using (var engine = new DBreezeEngine(folder))
+            {
+                DBreeze.Transactions.Transaction txn = engine.GetTransaction();
+                txn.SynchronizeTables(ProvenBlockHeaderTable);
+                txn.ValuesLazyLoadingIsOn = false;
+
+                var provenBlockHeaderAll = txn.SelectDictionary<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable);
+
+                provenBlockHeaderAll.Keys.Count.Should().Be(2);
+
+                // check items are now sorted - items[1] was added last about but should appear first and vice versa.
+                provenBlockHeaderAll.FirstOrDefault().Key.Equals(items[1].BlockId.ToBytes());
+                provenBlockHeaderAll.LastOrDefault().Key.Equals(items[0].BlockId.ToBytes());
             }
         }
 
@@ -132,9 +184,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
         private IProvenBlockHeaderRepository SetupRepository(Network network, string folder)
         {
-            var repo = new ProvenBlockHeaderRepository(network, folder, DateTimeProvider.Default, this.LoggerFactory.Object, nodeStats);
+            var repo = new ProvenBlockHeaderRepository(network, folder, DateTimeProvider.Default, this.LoggerFactory.Object, this.nodeStats);
 
-            repo.InitializeAsync().GetAwaiter().GetResult();
+            Task task = repo.InitializeAsync();
+            task.Wait();
 
             return repo;
         }
