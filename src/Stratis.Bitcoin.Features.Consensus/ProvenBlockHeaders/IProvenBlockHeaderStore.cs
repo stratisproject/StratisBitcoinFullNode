@@ -34,10 +34,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Adds a <see cref="ProvenBlockHeader"/> to the internal concurrent dictionary. 
         /// </summary>
+        /// <param name="chainedHeader">A BlockHeader chained with all its ancestors</param>
         /// <param name="provenBlockHeader"><see cref="ProvenBlockHeader"/> to add to the internal concurrent dictionary.</param>
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task SetAsync(ProvenBlockHeader provenBlockHeader, CancellationToken cancellationToken = default(CancellationToken));
+        Task SetAsync(ChainedHeader chainedHeader, ProvenBlockHeader provenBlockHeader, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Flushes the internal dictionary and saves any new items into the <see cref="ProvenBlockHeaderStore"/>. 

@@ -29,8 +29,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
         private readonly int thresholdWindow;
 
-        private readonly ConcurrentDictionary<uint256, ProvenBlockHeader> items = 
-            new ConcurrentDictionary<uint256, ProvenBlockHeader>();
+        private readonly ConcurrentDictionary<uint256, StakeItem> items =
+            new ConcurrentDictionary<uint256, StakeItem>();
 
         /// <summary>Lock object to protect access to <see cref="ProvenBlockHeader"/>.</summary>
         private readonly AsyncLock lockobj;
@@ -102,32 +102,101 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
 
                 foreach (StakeItem stakeItem in load)
-                    this.items.TryAdd(stakeItem.BlockId, stakeItem.ProvenBlockHeader);
+                    this.items.TryAdd(stakeItem.BlockId, stakeItem);
             }
 
             this.logger.LogTrace("(-)");
         }
 
-        public Task FlushAsync(CancellationToken cancellationToken = default(CancellationToken))
+        /// <inheritdoc />
+        public async Task FlushAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            // Pop some items to remove a window of 10 % of the threshold.
-            throw new NotImplementedException();
+            this.logger.LogTrace("()");
+
+            int count = this.items.Count;
+
+            if (count > this.threshold)
+            {
+                // Push to store all items that are not already persisted.
+                ICollection<StakeItem> entries = this.items.Values;
+
+                await this.provenBlockHeaderRepository.PutAsync(entries.Where(w => !w.InStore)).ConfigureAwait(false);
+
+                // Pop some items to remove a window of 10 % of the threshold.
+                ConcurrentDictionary<uint256, StakeItem> select = this.items;
+
+                IEnumerable<KeyValuePair<uint256, StakeItem>> items = select.OrderBy(o => o.Value.Height).Take(this.thresholdWindow);
+
+                StakeItem unused;
+
+                foreach (KeyValuePair<uint256, StakeItem> item in items)
+                    this.items.TryRemove(item.Key, out unused);
+            }
+
+            this.logger.LogTrace("(-)");
         }
 
-        public Task<ProvenBlockHeader> GetAsync(uint256 blockId, CancellationToken cancellationToken = default(CancellationToken))
+        /// <inheritdoc />
+        public async Task<ProvenBlockHeader> GetAsync(uint256 blockId, CancellationToken cancellationToken = default(CancellationToken))
         {
-            throw new NotImplementedException();
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockId), blockId);
+
+            List<StakeItem> item = new List<StakeItem>
+            {
+                new StakeItem
+                {
+                    BlockId = blockId
+                }
+            };
+
+            await this.provenBlockHeaderRepository.GetAsync(item, cancellationToken).ConfigureAwait(false);
+
+            var provenBlockHeader = item.FirstOrDefault().ProvenBlockHeader;
+
+            if (provenBlockHeader != null)
+                this.logger.LogTrace("(-):*.{0}='{1}'", nameof(provenBlockHeader), provenBlockHeader);
+            else
+                this.logger.LogTrace("(-):null");
+
+            Guard.Assert(provenBlockHeader != null);
+
+            return provenBlockHeader;
         }
 
-        public Task<ProvenBlockHeader> GetTipAsync(CancellationToken cancellationToken = default(CancellationToken))
+        /// <inheritdoc />
+        public async Task<ProvenBlockHeader> GetTipAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            throw new NotImplementedException();
+            uint256 blockId = await this.provenBlockHeaderRepository.GetTipHashAsync(cancellationToken).ConfigureAwait(false);
+
+            return await this.GetAsync(blockId).ConfigureAwait(false);
         }
 
-        public Task SetAsync(ProvenBlockHeader provenBlockHeader, CancellationToken cancellationToken = default(CancellationToken))
+        /// <inheritdoc />
+        public async Task SetAsync(ChainedHeader chainedHeader, ProvenBlockHeader provenBlockHeader, CancellationToken cancellationToken = default(CancellationToken))
         {
-            throw new NotImplementedException();
-        }        
+            this.logger.LogTrace("({0}:'{1}')", nameof(provenBlockHeader), provenBlockHeader);
+
+            if (this.items.ContainsKey(chainedHeader.HashBlock))
+            {
+                this.logger.LogTrace("(-)[ALREADY_EXISTS]");
+                return;
+            }
+
+            var item = new StakeItem
+            {
+                BlockId = chainedHeader.HashBlock,
+                Height = chainedHeader.Height,
+                ProvenBlockHeader = provenBlockHeader,
+                InStore = false
+            };
+
+            bool added = this.items.TryAdd(chainedHeader.HashBlock, item);
+
+            if (added)
+                await this.FlushAsync(cancellationToken).ConfigureAwait(false);
+
+            this.logger.LogTrace("(-)");
+        }
 
         /// <inheritdoc />
         public void Dispose()
