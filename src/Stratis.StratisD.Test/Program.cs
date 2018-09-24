@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
+using Stratis.StratisD.Test.Networks;
 
 namespace Stratis.StratisD.Test
 {
@@ -24,17 +25,17 @@ namespace Stratis.StratisD.Test
             try
             {
                 Network network = null;
-                if (args.Contains("-network=StratisRegPosTest"))
-                    network = new Networks.StratisRegPosTest();
+                if (args.Contains("-network=StratisPosTestNetwork"))
+                    network = new StratisPosTestNetwork();
 
-                if (args.Contains("-network=StratisRegPowTest"))
-                    network = new Networks.StratisRegPowTest();
+                if (args.Contains("-network=StratisPowTestNetwork"))
+                    network = new StratisPowTestNetwork();
 
                 if (network == null)
                 {
                     Console.WriteLine("No network has been specified.");
-                    Console.WriteLine("For proof of stake network use: -network=StratisRegPosTest");
-                    Console.WriteLine("For proof of work network use: -network=StratisRegPowTest");
+                    Console.WriteLine("For a proof of stake network use: -network=StratisPosTestNetwork");
+                    Console.WriteLine("For a proof of work network use: -network=StratisPowTestNetwork");
                 }
 
                 var nodeSettings = new NodeSettings(network: network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);

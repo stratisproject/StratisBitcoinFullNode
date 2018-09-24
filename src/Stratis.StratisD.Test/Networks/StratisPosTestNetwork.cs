@@ -1,45 +1,46 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 
 namespace Stratis.StratisD.Test.Networks
 {
-    public class StratisRegPowTest : Network
+    public sealed class StratisPosTestNetwork : Network
     {
-        public StratisRegPowTest()
+        public StratisPosTestNetwork()
         {
             var messageStart = new byte[4];
-            messageStart[0] = 0x70;
-            messageStart[1] = 0x71;
-            messageStart[2] = 0x72;
-            messageStart[3] = 0x73;
+            messageStart[0] = 0x64;
+            messageStart[1] = 0x65;
+            messageStart[2] = 0x66;
+            messageStart[3] = 0x67;
             uint magic = BitConverter.ToUInt32(messageStart, 0);
 
-            this.RootFolderName = StratisNodeTestNetwork.StratisRootFolderName;
-            this.DefaultConfigFilename = StratisNodeTestNetwork.StratisDefaultConfigFilename;
-            this.Name = "StratisRegPowTest";
+            this.RootFolderName = StratisTestNetwork.StratisRootFolderName;
+            this.DefaultConfigFilename = StratisTestNetwork.StratisDefaultConfigFilename;
+            this.Name = "StratisRegPosTest";
             this.Magic = magic;
-            this.DefaultPort = 18555;
-            this.RPCPort = 18552;
+            this.DefaultPort = 18666;
+            this.RPCPort = 18662;
             this.MinTxFee = 0;
             this.FallbackFee = 0;
             this.MinRelayTxFee = 0;
             this.CoinTicker = "TSTRAT";
-            this.MaxTipAge = StratisNodeTestNetwork.StratisDefaultMaxTipAgeInSeconds;
+            this.MaxTipAge = StratisTestNetwork.StratisDefaultMaxTipAgeInSeconds;
 
             var powLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
-            var consensusFactory = new ConsensusFactory();
+            var consensusFactory = new PosConsensusFactory();
 
             // Create the genesis block.
             this.GenesisTime = 1470467000;
             this.GenesisNonce = 1;
-            this.GenesisBits = 0x1e0fffff;
+            this.GenesisBits = 0x207fffff;
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
-            this.Genesis = StratisNodeTestNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+            this.Genesis = StratisTestNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
 
             // Taken from StratisX.
             var consensusOptions = new PosConsensusOptions(
@@ -62,34 +63,34 @@ namespace Stratis.StratisD.Test.Networks
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
                 coinType: 105,
-                hashGenesisBlock: this.Genesis.Header.GetHash(),
+                hashGenesisBlock: this.Genesis.GetHash(),
                 subsidyHalvingInterval: 210000,
-                majorityEnforceBlockUpgrade: 51,
-                majorityRejectBlockOutdated: 75,
-                majorityWindow: 100,
+                majorityEnforceBlockUpgrade: 750,
+                majorityRejectBlockOutdated: 950,
+                majorityWindow: 1000,
                 buriedDeployments: buriedDeployments,
                 bip9Deployments: bip9Deployments,
-                bip34Hash: new uint256("0x0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8"),
-                ruleChangeActivationThreshold: 1512, // 75% for testchains
+                bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
+                ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 100,
                 defaultAssumeValid: null,
                 maxMoney: long.MaxValue,
-                coinbaseMaturity: 5,
+                coinbaseMaturity: 10,
                 premineHeight: 2,
                 premineReward: Money.Coins(98000000),
-                proofOfWorkReward: Money.Coins(50),
+                proofOfWorkReward: Money.Coins(4),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(20),
                 powAllowMinDifficultyBlocks: true,
-                powNoRetargeting: false,
-                powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), // Set extremely low difficulty for now.
-                minimumChainWork: uint256.Zero,
-                isProofOfStake: false,
+                powNoRetargeting: true,
+                powLimit: powLimit,
+                minimumChainWork: null,
+                isProofOfStake: true,
                 lastPowBlock: default,
-                proofOfStakeLimit: null,
-                proofOfStakeLimitV2: null,
-                proofOfStakeReward: Money.Zero
+                proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
+                proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
+                proofOfStakeReward: Money.COIN
             );
 
             this.Base58Prefixes = new byte[12][];
