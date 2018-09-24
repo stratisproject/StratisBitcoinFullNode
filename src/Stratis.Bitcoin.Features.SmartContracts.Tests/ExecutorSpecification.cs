@@ -14,12 +14,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var contractTxData = new ContractTxData(1, 1, (Gas) 1000, new byte[] { 0xAA, 0xBB, 0xCC });
 
-            var vmExecutionResult = VmExecutionResult.Success(new object(), null);
+            VmExecutionResult vmExecutionResult = VmExecutionResult.Success(new object(), null);
 
-            var stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Result);
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Result);
 
             var fixture = new ExecutorFixture(contractTxData);
-            var snapshot = fixture.State.Object.Snapshot();
+            IState snapshot = fixture.State.Object.Snapshot();
 
             fixture.StateProcessor
                 .Setup(s => s.Apply(snapshot, It.IsAny<ExternalCreateMessage>()))
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             fixture.RefundProcessor.Verify(t => t
                     .Process(
                         contractTxData,
-                        ExecutorFixture.MempoolFee,
+                        fixture.MempoolFee,
                         fixture.ContractTransactionContext.Sender,
                         It.IsAny<Gas>(),
                         false),
@@ -89,10 +89,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var contractTxData = new ContractTxData(1, 1, (Gas)1000, new byte[] { 0xAA, 0xBB, 0xCC });
             
-            var stateTransitionResult = StateTransitionResult.Fail((Gas) 100, new ContractErrorMessage("Error"));
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas) 100, new ContractErrorMessage("Error"));
             
             var fixture = new ExecutorFixture(contractTxData);
-            var snapshot = fixture.State.Object.Snapshot();
+            IState snapshot = fixture.State.Object.Snapshot();
 
             fixture.StateProcessor
                 .Setup(s => s.Apply(snapshot, It.IsAny<ExternalCreateMessage>()))
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             fixture.RefundProcessor.Verify(t => t
                     .Process(
                         contractTxData,
-                        ExecutorFixture.MempoolFee,
+                        fixture.MempoolFee,
                         fixture.ContractTransactionContext.Sender,
                         It.IsAny<Gas>(),
                         false),
@@ -166,12 +166,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var parameters = new object[] { };
             var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", "", parameters);
 
-            var vmExecutionResult = VmExecutionResult.Success(new object(), null);
+            VmExecutionResult vmExecutionResult = VmExecutionResult.Success(new object(), null);
 
-            var stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Result);
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Result);
 
             var fixture = new ExecutorFixture(contractTxData);
-            var snapshot = fixture.State.Object.Snapshot();
+            IState snapshot = fixture.State.Object.Snapshot();
 
             fixture.StateProcessor
                 .Setup(s => s.Apply(snapshot, It.IsAny<ExternalCallMessage>()))
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             fixture.RefundProcessor.Verify(t => t
                     .Process(
                         contractTxData,
-                        ExecutorFixture.MempoolFee,
+                        fixture.MempoolFee,
                         fixture.ContractTransactionContext.Sender,
                         It.IsAny<Gas>(),
                         false),
@@ -247,10 +247,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var parameters = new object[] { };
             var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", "", parameters);
 
-            var stateTransitionResult = StateTransitionResult.Fail((Gas)100, new ContractErrorMessage("Error"));
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)100, new ContractErrorMessage("Error"));
 
             var fixture = new ExecutorFixture(contractTxData);
-            var snapshot = fixture.State.Object.Snapshot();
+            IState snapshot = fixture.State.Object.Snapshot();
 
             fixture.StateProcessor
                 .Setup(s => s.Apply(snapshot, It.IsAny<ExternalCallMessage>()))
@@ -303,7 +303,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             fixture.RefundProcessor.Verify(t => t
                     .Process(
                         contractTxData,
-                        ExecutorFixture.MempoolFee,
+                        fixture.MempoolFee,
                         fixture.ContractTransactionContext.Sender,
                         stateTransitionResult.GasConsumed,
                         false),
