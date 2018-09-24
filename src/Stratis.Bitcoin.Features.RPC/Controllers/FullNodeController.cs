@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Returns the block in hex, given a block hash.")]
         public async Task<object> GetBlockAsync(string blockHash, bool isJsonFormat = false)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(blockHash), blockHash);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
             Block block = await this.blockStore.GetBlockAsync(uint256.Parse(blockHash)).ConfigureAwait(false);
 

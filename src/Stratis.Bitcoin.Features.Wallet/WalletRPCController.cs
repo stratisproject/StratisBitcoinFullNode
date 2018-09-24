@@ -50,29 +50,22 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Submits raw transaction (serialized, hex-encoded) to local node and network.")]
         public async Task<uint256> SendTransactionAsync(string hex)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(hex), hex);
+            this.logger.LogTrace("({0}:'{1}')", nameof(hex), hex);
 
             Transaction transaction = this.fullNode.Network.CreateTransaction(hex);
             await this.broadcasterManager.BroadcastTransactionAsync(transaction);
 
             uint256 hash = transaction.GetHash();
 
-            this.logger.LogTrace("(-):{0}", hash);
+            this.logger.LogTrace("(-):'{0}'", hash);
             return hash;
         }
              
         /// <summary>
         /// RPC method that gets a new address for receiving payments.
+        /// Uses the first wallet and account.
         /// </summary>
         /// <returns>The new address.</returns>
-        /// <remarks>
-        /// NOTE: This RPC method needs to just return a string, but uses a somewhat convoluted method of achieving this.
-        /// A return value of string for ASP.NET does not get serialized properly into <seealso cref="RPCResponse"/> so used an 
-        /// object with a custom JsonConverter to achieve proper RPC serialization of a string. 
-        /// 
-        /// I'm not sure whether this is a bug in the RPCMiddleware or whether it's an issue with ASP.NET in general.
-        /// <seealso cref="ToStringJsonConverter"/>.
-        /// </remarks>
         [ActionName("getnewaddress")]
         [ActionDescription("Returns a new wallet address for receiving payments.")]
         public NewAddressModel GetNewAddress()
@@ -82,7 +75,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             HdAddress hdAddress = this.walletManager.GetUnusedAddress(this.GetAccount());
             string base58Address = hdAddress.Address;
 
-            this.logger.LogTrace("(-):{0}", base58Address);
+            this.logger.LogTrace("(-):'{0}'", base58Address);
             return new NewAddressModel(base58Address);
         }
 
