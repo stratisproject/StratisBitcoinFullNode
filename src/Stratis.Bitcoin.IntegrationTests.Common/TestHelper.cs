@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
             var blockHashes = node.GenerateStratisWithMiner((int)numberOfBlocks);
 
-            WaitForNodeToSync(node);
+            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(node));
 
             return (node.MinerHDAddress, blockHashes);
         }
