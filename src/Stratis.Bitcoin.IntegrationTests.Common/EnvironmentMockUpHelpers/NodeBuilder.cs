@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         /// <summary>
         /// Creates a node builder instance and disable logs.
-        /// To enable logs look the WithLogsEnabled method.
+        /// To enable logs look the <see cref="WithLogsEnabled"/>  method.
         /// </summary>
         /// <param name="testFolderPath">The test folder path.</param>
         /// <returns>A NodeBuilder instance.</returns>
@@ -186,8 +186,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>
-        /// By default, logs are disabled when using Create() method, so using this fluent method, the caller can enable the logs at will.
+        /// By default, logs are disabled when using <see cref="Create(string)"/> or <see cref="Create(object, string)"/> methods,
+        /// so using this fluent method, the caller can enable the logs at will.
         /// </summary>
+        /// <returns>Current <see cref="NodeBuilder"/> instance, used for fluent API style</returns>
         /// <example>
         /// //default use (without logs)
         /// using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -201,7 +203,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         ///     //your test code here
         /// }
         /// </example>
-        /// <returns>Current NodeBuilder instance, used for fluent API style</returns>
         public NodeBuilder WithLogsEnabled()
         {
             if (!LogManager.IsLoggingEnabled())
@@ -214,15 +215,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 }
                 while (!LogManager.IsLoggingEnabled());
             }
+
             return this;
         }
 
         /// <summary>
         /// If logs have been enabled by calling WithLogsEnabled you can disable it manually by colling this method.
-        /// If the test is running within an "using block" where the nodebuilder is created, without using WithLogsEnabled,
+        /// If the test is running within an "using block" where the nodebuilder is created, without using <see cref="WithLogsEnabled"/>,
         /// you shouldn't need to call this method.
         /// </summary>
-        /// <returns>Current NodeBuilder instance, used for fluent API style</returns>
+        /// <returns>Current <see cref="NodeBuilder"/> instance, used for fluent API style</returns>
         public NodeBuilder WithLogsDisabled()
         {
             if (LogManager.IsLoggingEnabled())
@@ -235,6 +237,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 }
                 while (LogManager.IsLoggingEnabled());
             }
+
             return this;
         }
     }
