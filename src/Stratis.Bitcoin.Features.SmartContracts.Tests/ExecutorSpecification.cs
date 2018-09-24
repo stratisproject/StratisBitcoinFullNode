@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var contractTxData = new ContractTxData(1, 1, (Gas) 1000, new byte[] { 0xAA, 0xBB, 0xCC });
 
-            var vmExecutionResult = VmExecutionResult.Success(null, null);
+            var vmExecutionResult = VmExecutionResult.Success(new object(), null);
 
             var stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Result);
 
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 fixture.StateProcessor.Object,
                 fixture.ContractPrimitiveSerializer.Object);
 
-            sut.Execute(fixture.ContractTransactionContext);
+            IContractExecutionResult result = sut.Execute(fixture.ContractTransactionContext);
 
             fixture.CallDataSerializer.Verify(s => s.Deserialize(fixture.ContractTransactionContext.Data), Times.Once);
             
@@ -71,6 +71,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         It.IsAny<Gas>(),
                         false),
                 Times.Once);
+
+            Assert.Null(result.To);
+            Assert.Equal(stateTransitionResult.Success.ContractAddress, result.NewContractAddress);
+            Assert.Null(result.ErrorMessage);
+            Assert.False(result.Revert);
+            Assert.Equal(stateTransitionResult.GasConsumed, result.GasConsumed);
+            Assert.Equal(stateTransitionResult.Success.ExecutionResult, result.Return);
+            Assert.Equal(fixture.InternalTransaction, result.InternalTransaction);
+            Assert.Equal(fixture.Fee, (Money)result.Fee);
+            Assert.Equal(fixture.Refund, result.Refund);
+            Assert.Equal(fixture.State.Object.GetLogs(fixture.ContractPrimitiveSerializer.Object), result.Logs);
         }
 
         [Fact]
@@ -98,7 +109,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 fixture.StateProcessor.Object,
                 fixture.ContractPrimitiveSerializer.Object);
 
-            sut.Execute(fixture.ContractTransactionContext);
+            IContractExecutionResult result = sut.Execute(fixture.ContractTransactionContext);
 
             fixture.CallDataSerializer.Verify(s => s.Deserialize(fixture.Data), Times.Once);
 
@@ -136,6 +147,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         It.IsAny<Gas>(),
                         false),
                 Times.Once);
+
+            Assert.Null(result.To);
+            Assert.Null(result.NewContractAddress);
+            Assert.Equal(stateTransitionResult.Error.VmError, result.ErrorMessage);
+            Assert.True(result.Revert);
+            Assert.Equal(stateTransitionResult.GasConsumed, result.GasConsumed);
+            Assert.Null(result.Return);
+            Assert.Equal(fixture.InternalTransaction, result.InternalTransaction);
+            Assert.Equal(fixture.Fee, (Money)result.Fee);
+            Assert.Equal(fixture.Refund, result.Refund);
+            Assert.Equal(fixture.State.Object.GetLogs(fixture.ContractPrimitiveSerializer.Object), result.Logs);
         }
 
         [Fact]
@@ -144,7 +166,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var parameters = new object[] { };
             var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", "", parameters);
 
-            var vmExecutionResult = VmExecutionResult.Success(null, null);
+            var vmExecutionResult = VmExecutionResult.Success(new object(), null);
 
             var stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Result);
 
@@ -166,7 +188,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 fixture.StateProcessor.Object,
                 fixture.ContractPrimitiveSerializer.Object);
 
-            sut.Execute(fixture.ContractTransactionContext);
+            IContractExecutionResult result = sut.Execute(fixture.ContractTransactionContext);
 
             fixture.CallDataSerializer.Verify(s => s.Deserialize(fixture.ContractTransactionContext.Data), Times.Once);
 
@@ -206,6 +228,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         It.IsAny<Gas>(),
                         false),
                 Times.Once);
+
+            Assert.Equal(contractTxData.ContractAddress, result.To);
+            Assert.Null(result.NewContractAddress);
+            Assert.Null(result.ErrorMessage);
+            Assert.False(result.Revert);
+            Assert.Equal(stateTransitionResult.GasConsumed, result.GasConsumed);
+            Assert.Equal(stateTransitionResult.Success.ExecutionResult, result.Return);
+            Assert.Equal(fixture.InternalTransaction, result.InternalTransaction);
+            Assert.Equal(fixture.Fee, (Money)result.Fee);
+            Assert.Equal(fixture.Refund, result.Refund);
+            Assert.Equal(fixture.State.Object.GetLogs(fixture.ContractPrimitiveSerializer.Object), result.Logs);
         }
 
         [Fact]
