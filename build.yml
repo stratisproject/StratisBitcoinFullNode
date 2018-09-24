@@ -4,6 +4,7 @@ parameters:
   name: ''
   queue: ''
   platform: ''
+  reason: '$(Build.Reason)'
   arch: 'x64' # Only overriden by 32-bit Windows
   configuration: 'Release' # Only do debug if specified
 
@@ -35,6 +36,19 @@ phases:
       zipAfterPublish: false
       modifyOutputPath: false
       arguments: ${{ format('-c {0} -r {1}-{2} -v m', parameters.configuration, parameters.platform, parameters.arch) }}
+
+  # Run all unit tests, by applying the "*.Tests.csproj" filter it should avoid IntegrationTests projects.
+  # Only run tests on Linux.
+  - task: DotNetCoreCLI@2
+    displayName: dotnet test
+    #condition: and(succeeded(), eq(variables['parameters.platform'], 'linux')) # Unable to get condition to work.
+    inputs:
+      command: test
+      ${{ if eq(parameters.reason, 'Schedule') }}:
+        projects: '**/*.Tests.csproj'
+      ${{ if ne(parameters.reason, 'Schedule') }}:
+        projects: '**/City.*.Tests.csproj'
+      arguments: ${{ format('-c {0} -v m', parameters.configuration) }}
 
   - task: ArchiveFiles@2
     displayName: archive

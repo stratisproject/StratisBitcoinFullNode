@@ -27,10 +27,10 @@
         {
             Key privateKey;
             privateKey = new Key();
-            var AddressString = privateKey.PubKey.GetAddress(network).ToString();
+            var addressString = privateKey.PubKey.GetAddress(network).ToString();
             var privateKeyString = privateKey.GetWif(network).ToWif().ToString();
 
-            Console.WriteLine(AddressString);
+            Console.WriteLine(addressString);
             Console.WriteLine(privateKeyString);
         }
 
