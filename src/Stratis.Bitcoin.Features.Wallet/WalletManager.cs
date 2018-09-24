@@ -92,7 +92,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             ILoggerFactory loggerFactory,
             Network network,
             ConcurrentChain chain,
-            NodeSettings settings,
             WalletSettings walletSettings,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
@@ -105,7 +104,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(settings, nameof(settings));
             Guard.NotNull(walletSettings, nameof(walletSettings));
             Guard.NotNull(dataFolder, nameof(dataFolder));
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));

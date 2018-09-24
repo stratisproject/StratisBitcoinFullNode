@@ -80,8 +80,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 loggerFactory,
                 network,
                 chain,
-                // Not used by wallet manager. Pass a non-null dummy value.
-                NodeSettings.Default(network),
                 walletSettings,
                 dataFolder,
                 walletFeePolicy,
@@ -473,7 +471,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             lock (this.lockObject)
             {
                 res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations,
-                    a => a.Index == (isColdWalletAccount?ColdWalletAccountIndex:HotWalletAccountIndex)).ToArray();
+                    a => a.Index == (isColdWalletAccount ? ColdWalletAccountIndex : HotWalletAccountIndex)).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", res.Count());
