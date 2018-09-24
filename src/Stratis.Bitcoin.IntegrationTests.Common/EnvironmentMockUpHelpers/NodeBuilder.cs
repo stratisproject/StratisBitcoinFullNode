@@ -164,12 +164,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
             if (enableLogs)
             {
-                if (!LogManager.IsLoggingEnabled())
+                while (!LogManager.IsLoggingEnabled())
                     LogManager.EnableLogging();
             }
             else
             {
-                if (LogManager.IsLoggingEnabled())
+                while (LogManager.IsLoggingEnabled())
                     LogManager.DisableLogging();
             }
         }
