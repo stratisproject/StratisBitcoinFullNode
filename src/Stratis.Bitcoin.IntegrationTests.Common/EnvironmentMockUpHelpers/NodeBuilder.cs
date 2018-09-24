@@ -41,13 +41,25 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public static NodeBuilder Create(object caller, [CallerMemberName] string callingMethod = null)
         {
             string testFolderPath = TestBase.CreateTestDir(caller, callingMethod);
-            return new NodeBuilder(testFolderPath);
+            return CreateNodeBuilder(testFolderPath);
         }
 
         public static NodeBuilder Create(string testDirectory)
         {
             string testFolderPath = TestBase.CreateTestDir(testDirectory);
-            return new NodeBuilder(testFolderPath);
+            return CreateNodeBuilder(testFolderPath);
+        }
+
+        /// <summary>
+        /// Creates a node builder instance and disable logs.
+        /// To enable logs look the WithLogsEnabled method.
+        /// </summary>
+        /// <param name="testFolderPath">The test folder path.</param>
+        /// <returns>A NodeBuilder instance.</returns>
+        private static NodeBuilder CreateNodeBuilder(string testFolderPath)
+        {
+            return new NodeBuilder(testFolderPath)
+                .WithLogsDisabled();
         }
 
         private static string GetBitcoinCorePath(string version)
@@ -149,28 +161,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             string hash = Guid.NewGuid().ToString("N").Substring(0, 7);
             string numberedFolderName = string.Join(
                 ".",
-                new[] {hash, folderName}.Where(s => s != null));
+                new[] { hash, folderName }.Where(s => s != null));
             string dataFolderName = Path.Combine(this.rootFolder, numberedFolderName);
 
             return dataFolderName;
         }
 
-        public void StartAll(bool enableLogs = false)
+        public void StartAll()
         {
             foreach (CoreNode node in this.Nodes.Where(n => n.State == CoreNodeState.Stopped))
             {
                 node.Start();
-            }
-
-            if (enableLogs)
-            {
-                while (!LogManager.IsLoggingEnabled())
-                    LogManager.EnableLogging();
-            }
-            else
-            {
-                while (LogManager.IsLoggingEnabled())
-                    LogManager.DisableLogging();
             }
         }
 
@@ -182,6 +183,59 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             // Logs are static so clear them after every run.
             LogManager.Configuration.LoggingRules.Clear();
             LogManager.ReconfigExistingLoggers();
+        }
+
+        /// <summary>
+        /// By default, logs are disabled when using Create() method, so using this fluent method, the caller can enable the logs at will.
+        /// </summary>
+        /// <example>
+        /// //default use (without logs)
+        /// using (NodeBuilder builder = NodeBuilder.Create(this))
+        /// {
+        ///     //your test code here
+        /// }
+        ///
+        /// //with logs enabled
+        /// using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
+        /// {
+        ///     //your test code here
+        /// }
+        /// </example>
+        /// <returns>Current NodeBuilder instance, used for fluent API style</returns>
+        public NodeBuilder WithLogsEnabled()
+        {
+            if (!LogManager.IsLoggingEnabled())
+            {
+                // NLog Enable/Disable logging is based on internal counter, so to be sure to have enabled logs, must to
+                // keep calling EnableLogging until IsLoggingEnabled returns true.
+                do
+                {
+                    LogManager.EnableLogging();
+                }
+                while (!LogManager.IsLoggingEnabled());
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// If logs have been enabled by calling WithLogsEnabled you can disable it manually by colling this method.
+        /// If the test is running within an "using block" where the nodebuilder is created, without using WithLogsEnabled,
+        /// you shouldn't need to call this method.
+        /// </summary>
+        /// <returns>Current NodeBuilder instance, used for fluent API style</returns>
+        public NodeBuilder WithLogsDisabled()
+        {
+            if (LogManager.IsLoggingEnabled())
+            {
+                // NLog Enable/Disable logging is based on internal counter, so to be sure to have enabled logs, must to
+                // keep calling DisableLogging until IsLoggingEnabled returns false.
+                do
+                {
+                    LogManager.DisableLogging();
+                }
+                while (LogManager.IsLoggingEnabled());
+            }
+            return this;
         }
     }
 }
