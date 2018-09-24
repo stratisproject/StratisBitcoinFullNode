@@ -198,6 +198,27 @@ namespace Stratis.Bitcoin.Tests.Controllers
         }
 
         [Fact]
+        public void DecodeRawTransaction_ReturnsTransaction()
+        {
+            var txId = new uint256(12142124);
+            this.pooledTransaction.Setup(p => p.GetTransaction(txId))
+                .ReturnsAsync((Transaction)null);
+            Transaction transaction = this.CreateTransaction();
+
+            this.controller = new NodeController(this.fullNode.Object, this.LoggerFactory.Object,
+                this.dateTimeProvider.Object, this.chainState.Object, this.nodeSettings,
+                this.connectionManager.Object, this.chain, this.network, this.pooledTransaction.Object,
+                this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object, this.blockStore.Object);
+
+            var json = (JsonResult)this.controller.DecodeRawTransaction(new DecodeRawTransactionModel() { RawHex = transaction.ToHex() });
+            var resultModel = (TransactionVerboseModel)json.Value;
+
+            Assert.NotNull(json);
+            var model = Assert.IsType<TransactionVerboseModel>(resultModel);
+            Assert.Equal(transaction.ToHex(), model.Hex);
+        }
+
+        [Fact]
         public async Task GetTaskAsync_Verbose_ReturnsTransactionVerboseModelAsync()
         {
             this.chainState.Setup(c => c.ConsensusTip)

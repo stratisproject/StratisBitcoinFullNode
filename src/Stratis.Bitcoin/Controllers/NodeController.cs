@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Bitcoin.Utilities.ModelStateErrors;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -245,6 +246,31 @@ namespace Stratis.Bitcoin.Controllers
                 {
                     return this.Json(new TransactionBriefModel(trx));
                 }
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Return the JSON representation for a given transaction in hex format.
+        /// </summary>
+        /// <param name="rawHex">The raw hexadecimal form of the transaction.</param>
+        /// <returns>The JSON representation of the transaction.</returns>
+        [HttpPost]
+        [Route("decoderawtransaction")]
+        public IActionResult DecodeRawTransaction([FromBody] DecodeRawTransactionModel request)
+        {
+            try
+            {
+                if (!this.ModelState.IsValid)
+                {
+                    return ModelStateErrors.BuildErrorResponse(this.ModelState);
+                }
+
+                return this.Json(new TransactionVerboseModel(this.network.CreateTransaction(request.RawHex), this.network));
             }
             catch (Exception e)
             {
