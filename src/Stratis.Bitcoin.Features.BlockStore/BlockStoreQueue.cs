@@ -171,12 +171,42 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public Task<Transaction> GetTransactionByIdAsync(uint256 trxid)
         {
+            lock (this.blocksCacheLock)
+            {
+                foreach (ChainedHeaderBlock chainedHeaderBlock in this.pendingBlocksCache.Values)
+                {
+                    Transaction tx = chainedHeaderBlock.Block.Transactions.FirstOrDefault(x => x.GetHash() == trxid);
+
+                    if (tx != null)
+                    {
+                        this.logger.LogTrace("Transaction '{0}' was found in the batch.", trxid);
+                        return Task.FromResult(tx);
+                    }
+                }
+            }
+
             return this.blockRepository.GetTransactionByIdAsync(trxid);
         }
 
         /// <inheritdoc/>
         public Task<uint256> GetBlockIdByTransactionIdAsync(uint256 trxid)
         {
+            lock (this.blocksCacheLock)
+            {
+                foreach (ChainedHeaderBlock chainedHeaderBlock in this.pendingBlocksCache.Values)
+                {
+                    bool exists = chainedHeaderBlock.Block.Transactions.Any(x => x.GetHash() == trxid);
+
+                    if (exists)
+                    {
+                        uint256 blockId = chainedHeaderBlock.Block.GetHash();
+
+                        this.logger.LogTrace("Block Id '{0}' with tx '{1}' was found in the batch.", blockId, trxid);
+                        return Task.FromResult(blockId);
+                    }
+                }
+            }
+
             return this.blockRepository.GetBlockIdByTransactionIdAsync(trxid);
         }
 
