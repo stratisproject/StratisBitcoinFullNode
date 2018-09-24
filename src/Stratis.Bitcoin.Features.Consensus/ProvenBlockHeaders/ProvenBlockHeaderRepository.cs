@@ -112,7 +112,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public Task GetAsync(IEnumerable<StakeItem> stakeItems, CancellationToken cancellationToken = default(CancellationToken))
         {
             Guard.NotNull(stakeItems, nameof(stakeItems));
-
             this.logger.LogTrace("({0}:'{1}')", nameof(stakeItems), stakeItems);
 
             Task task = Task.Run(() =>
@@ -274,7 +273,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <returns><see cref="StakeItem"/> enumerator.</returns>
         private IEnumerable<StakeItem> SortProvenHeaders(DBreeze.Transactions.Transaction txn, IEnumerable<StakeItem> stakeItems)
         {
-            var bytesLisyComparer = new ByteListComparer();
             var stakeDict = new Dictionary<uint256, StakeItem>();
 
             foreach(StakeItem item in stakeItems)
@@ -283,9 +281,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             }
 
             List<KeyValuePair<uint256, StakeItem>> stakeItemList = stakeDict.ToList();
-            stakeItemList.Sort((pair1, pair2) => bytesLisyComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
+            stakeItemList.Sort((pair1, pair2) => pair1.Value.Height.CompareTo(pair2.Value.Height));
 
-            foreach(KeyValuePair<uint256, StakeItem> stakeItem in stakeItemList)
+            foreach (KeyValuePair<uint256, StakeItem> stakeItem in stakeItemList)
             {
                 StakeItem outStakeItem = stakeItem.Value;
 

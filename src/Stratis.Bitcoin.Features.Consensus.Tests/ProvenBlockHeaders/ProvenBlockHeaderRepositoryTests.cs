@@ -1,9 +1,7 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
-using DBreeze.DataTypes;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -28,7 +26,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public ProvenBlockHeaderRepositoryTests() : base(KnownNetworks.StratisTest)
         {
             this.nodeStats = new NodeStats(DateTimeProvider.Default);
-            this.loggerFactory = new Mock<ILoggerFactory>();            
+            this.loggerFactory = new Mock<ILoggerFactory>();
         }
 
         [Fact]
