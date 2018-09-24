@@ -13,11 +13,11 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.Common.MockChain;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.IntegrationTests.MockChain;
 using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests
@@ -35,10 +35,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void SendAndReceiveCorrectly()
         {
-            using (MockChain chain = new MockChain(2))
+            using (Chain chain = new Chain(2))
             {
-                MockChainNode scSender = chain.Nodes[0];
-                MockChainNode scReceiver = chain.Nodes[1];
+                Node scSender = chain.Nodes[0];
+                Node scReceiver = chain.Nodes[1];
 
                 // Mining adds coins to wallet.
                 var maturity = (int) chain.Network.Consensus.CoinbaseMaturity;
@@ -430,12 +430,12 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void MockChain_AuctionTest()
         {
-            var network = new SmartContractsRegTest(); // ew hack. TODO: Expose from MockChain or MockChainNode.
+            var network = new SmartContractsRegTest(); // ew hack. TODO: Expose from Chain or Node.
 
-            using (MockChain chain = new MockChain(2))
+            using (Chain chain = new Chain(2))
             {
-                MockChainNode sender = chain.Nodes[0];
-                MockChainNode receiver = chain.Nodes[1];
+                Node sender = chain.Nodes[0];
+                Node receiver = chain.Nodes[1];
 
                 TestHelper.MineBlocks(sender.CoreNode, sender.WalletName, sender.Password, sender.AccountName, 1);
 
@@ -465,7 +465,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 // Call contract and ensure owner is now highest bidder
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("Bid", response.NewContractAddress, 2);
                 receiver.WaitMempoolCount(1);
-                TestHelper.MineBlocks(receiver.CoreNode, receiver.WalletName, receiver.Password, receiver.AccountName, 1);
+                receiver.MineBlocks(1);
                 Assert.Equal(sender.GetStorageValue(response.NewContractAddress, "Owner"), sender.GetStorageValue(response.NewContractAddress, "HighestBidder"));
 
                 // Wait 20 blocks and end auction and check for transaction to victor
@@ -482,10 +482,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void Create_WithFunds()
         {
-            using (MockChain chain = new MockChain(2))
+            using (Chain chain = new Chain(2))
             {
-                MockChainNode sender = chain.Nodes[0];
-                MockChainNode receiver = chain.Nodes[1];
+                Node sender = chain.Nodes[0];
+                Node receiver = chain.Nodes[1];
 
                 // Mine some coins so we have balance
                 int maturity = (int) chain.Network.Consensus.CoinbaseMaturity;

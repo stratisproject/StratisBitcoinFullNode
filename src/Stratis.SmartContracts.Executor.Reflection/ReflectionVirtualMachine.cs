@@ -50,8 +50,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
             string typeToInstantiate;
             ContractByteCode code;
 
-            // Decompile the contract execution code and validate it.
-            using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode))
+            // Decompile the contract execution code
+            Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(contractCode);
+            if (moduleResult.IsFailure)
+            {
+                this.logger.LogTrace("(-)[CONTRACT_BYTECODE_INVALID]");
+                return VmExecutionResult.Error(new ContractErrorMessage("Contract bytecode is not valid IL."));
+            }
+
+            // Validate contract execution code
+            using (IContractModuleDefinition moduleDefinition = moduleResult.Value)
             {
                 SmartContractValidationResult validation = moduleDefinition.Validate(this.validator);
 
@@ -120,7 +128,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             ContractByteCode code;
 
-            using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode))
+            // Code we're loading from database - can assume it's valid.
+            using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode).Value)
             {
                 var observer = new Observer(contractState.GasMeter, MemoryUnitLimit);
                 var rewriter = new ObserverRewriter(observer);
