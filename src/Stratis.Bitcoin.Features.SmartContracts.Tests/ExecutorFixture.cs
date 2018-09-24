@@ -61,9 +61,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var refundProcessor = new Mock<IContractRefundProcessor>();
             refundProcessor
                 .Setup(r => r.Process(
-                    txData,
-                    this.MempoolFee,
-                    this.ContractTransactionContext.Sender,
+                    It.IsAny<ContractTxData>(),
+                    It.IsAny<ulong>(),
+                    It.IsAny<uint160>(),
                     It.IsAny<Gas>(),
                     It.IsAny<bool>()))
                 .Returns((this.Fee, this.Refund));            
@@ -81,10 +81,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var stateFactory = new Mock<IStateFactory>();
             stateFactory.Setup(sf => sf.Create(
-                    this.ContractStateRoot.Object,
+                    It.IsAny<IStateRepository>(),
                     It.IsAny<IBlock>(),
-                    this.ContractTransactionContext.TxOutValue,
-                    this.ContractTransactionContext.TransactionHash))
+                    It.IsAny<ulong>(),
+                    It.IsAny<uint256>()))
                 .Returns(this.State.Object);
             this.StateFactory = stateFactory;
         }
