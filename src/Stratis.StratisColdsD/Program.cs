@@ -12,10 +12,9 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.StratisD
+namespace Stratis.StratisColdsD
 {
     public class Program
     {
@@ -30,7 +29,7 @@ namespace Stratis.StratisD
                     .UseBlockStore()
                     .UsePosConsensus()
                     .UseMempool()
-                    .UseWallet()
+                    .UseColdStakingWallet()
                     .AddPowPosMining()
                     .UseApi()
                     .UseApps()

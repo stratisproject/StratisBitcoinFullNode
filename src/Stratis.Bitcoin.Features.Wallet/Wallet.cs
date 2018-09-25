@@ -16,6 +16,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Account numbers greater or equal to this number are reserved for special purpose account indexes.</summary>
         public const int SpecialPurposeAccountIndexesStart = 100_000_000;
 
+        /// <summary>Filter for identifying normal wallet accounts.</summary>
+        public static Func<HdAccount, bool> NormalAccounts = a => a.Index < SpecialPurposeAccountIndexesStart;
+
         /// <summary>
         /// Initializes a new instance of the wallet.
         /// </summary>
@@ -79,10 +82,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets the accounts the wallet has for this type of coin.
         /// </summary>
         /// <param name="coinType">Type of the coin.</param>
+        /// <param name="accountFilter">An optional filter for filtering the accounts being returned.</param>
         /// <returns>The accounts in the wallet corresponding to this type of coin.</returns>
-        public IEnumerable<HdAccount> GetAccountsByCoinType(CoinType coinType)
+        public IEnumerable<HdAccount> GetAccountsByCoinType(CoinType coinType, Func<HdAccount, bool> accountFilter = null)
         {
-            return this.AccountsRoot.Where(a => a.CoinType == coinType).SelectMany(a => a.Accounts);
+            return this.AccountsRoot.Where(a => a.CoinType == coinType).SelectMany(a => a.Accounts).Where(accountFilter ?? NormalAccounts);
         }
 
         /// <summary>
@@ -275,10 +279,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="coinType">Type of the coin to get transactions from.</param>
         /// <param name="currentChainHeight">Height of the current chain, used in calculating the number of confirmations.</param>
         /// <param name="confirmations">The number of confirmations required to consider a transaction spendable.</param>
+        /// <param name="accountFilter">An optional filter for filtering the accounts being returned.</param>
         /// <returns>A collection of spendable outputs.</returns>
-        public IEnumerable<UnspentOutputReference> GetAllSpendableTransactions(CoinType coinType, int currentChainHeight, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetAllSpendableTransactions(CoinType coinType, int currentChainHeight, int confirmations = 0, Func<HdAccount, bool> accountFilter = null)
         {
-            IEnumerable<HdAccount> accounts = this.GetAccountsByCoinType(coinType);
+            IEnumerable<HdAccount> accounts = this.GetAccountsByCoinType(coinType, accountFilter);
 
             return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network, confirmations));
         }
@@ -331,7 +336,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.Accounts == null)
                 return null;
 
-            List<HdAccount> unusedAccounts = this.Accounts.Where(acc => !acc.ExternalAddresses.Any() && !acc.InternalAddresses.Any()).ToList();
+            List<HdAccount> unusedAccounts = this.Accounts.Where(Wallet.NormalAccounts).Where(acc => !acc.ExternalAddresses.Any() && !acc.InternalAddresses.Any()).ToList();
             if (!unusedAccounts.Any())
                 return null;
 

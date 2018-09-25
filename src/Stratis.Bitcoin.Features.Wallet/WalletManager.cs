@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// A lock object that protects access to the <see cref="Wallet"/>.
         /// Any of the collections inside Wallet must be synchronized using this lock.
         /// </summary>
-        private readonly object lockObject;
+        protected readonly object lockObject;
 
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -50,13 +50,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         public ConcurrentBag<Wallet> Wallets { get; }
 
         /// <summary>The type of coin used in this manager.</summary>
-        private readonly CoinType coinType;
+        protected readonly CoinType coinType;
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
-        private readonly Network network;
+        protected readonly Network network;
 
         /// <summary>The chain of headers.</summary>
-        private readonly ConcurrentChain chain;
+        protected readonly ConcurrentChain chain;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -92,7 +92,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             ILoggerFactory loggerFactory,
             Network network,
             ConcurrentChain chain,
-            NodeSettings settings,
             WalletSettings walletSettings,
             DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
@@ -105,7 +104,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(settings, nameof(settings));
             Guard.NotNull(walletSettings, nameof(walletSettings));
             Guard.NotNull(dataFolder, nameof(dataFolder));
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));

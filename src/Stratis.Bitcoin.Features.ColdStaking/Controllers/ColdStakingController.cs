@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.ColdStaking.Models;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
@@ -17,20 +18,26 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
     [Route("api/[controller]")]
     public class ColdStakingController : Controller
     {
-        private readonly ColdStakingManager coldStakingManager;
+        public ColdStakingManager ColdStakingManager { get; private set; }
+        private readonly IWalletTransactionHandler walletTransactionHandler;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         public ColdStakingController(
             ILoggerFactory loggerFactory,
-            ColdStakingManager coldStakingManager)
+            IWalletManager walletManager,
+            IWalletTransactionHandler walletTransactionHandler)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(coldStakingManager, nameof(coldStakingManager));
+            Guard.NotNull(walletManager, nameof(walletManager));
+            Guard.NotNull(walletTransactionHandler, nameof(walletTransactionHandler));
 
-            this.coldStakingManager = coldStakingManager;
+            this.ColdStakingManager = walletManager as ColdStakingManager;
+            Guard.NotNull(this.ColdStakingManager, nameof(this.ColdStakingManager));
+
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.walletTransactionHandler = walletTransactionHandler;
         }
 
         /// <summary>
@@ -56,7 +63,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
 
             try
             {
-                GetColdStakingInfoResponse model = this.coldStakingManager.GetColdStakingInfo(request.WalletName);
+                GetColdStakingInfoResponse model = this.ColdStakingManager.GetColdStakingInfo(request.WalletName);
 
                 this.logger.LogTrace("(-):'{0}'", model);
                 return this.Json(model);
@@ -96,7 +103,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             {
                 var model = new CreateColdStakingAccountResponse
                 {
-                    AccountName = this.coldStakingManager.GetOrCreateColdStakingAccount(request.WalletName, request.IsColdWalletAccount, request.WalletPassword).Name
+                    AccountName = this.ColdStakingManager.GetOrCreateColdStakingAccount(request.WalletName, request.IsColdWalletAccount, request.WalletPassword).Name
                 };
 
                 this.logger.LogTrace("(-):'{0}'", model);
@@ -137,7 +144,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             {
                 var model = new GetColdStakingAddressResponse
                 {
-                    Address = this.coldStakingManager.GetFirstUnusedColdStakingAddress(request.WalletName, request.IsColdWalletAddress)?.Address
+                    Address = this.ColdStakingManager.GetFirstUnusedColdStakingAddress(request.WalletName, request.IsColdWalletAddress)?.Address
                 };
 
                 if (model.Address == null)
@@ -182,9 +189,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 Money amount = Money.Parse(request.Amount);
                 Money feeAmount = Money.Parse(request.Fees);
 
-                Transaction transaction = this.coldStakingManager.GetColdStakingSetupTransaction(request.ColdWalletAddress,
-                    request.HotWalletAddress, request.WalletName, request.WalletAccount, request.WalletPassword,
-                    amount, feeAmount);
+                Transaction transaction = this.ColdStakingManager.GetColdStakingSetupTransaction(
+                    this.walletTransactionHandler, request.ColdWalletAddress, request.HotWalletAddress,
+                    request.WalletName, request.WalletAccount, request.WalletPassword, amount, feeAmount);
 
                 var model = new SetupColdStakingResponse
                 {
@@ -229,9 +236,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
                 Money amount = Money.Parse(request.Amount);
                 Money feeAmount = Money.Parse(request.Fees);
 
-                Transaction transaction = this.coldStakingManager.GetColdStakingWithdrawalTransaction(
-                    request.ReceivingAddress, request.WalletName, request.WalletPassword,
-                    amount, feeAmount);
+                Transaction transaction = this.ColdStakingManager.GetColdStakingWithdrawalTransaction(this.walletTransactionHandler,
+                    request.ReceivingAddress, request.WalletName, request.WalletPassword, amount, feeAmount);
 
                 var model = new ColdStakingWithdrawalResponse
                 {
