@@ -303,7 +303,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.True(receipt.GasUsed == 0); // TODO: THIS IS WRONG. Will fix in future work.
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
-            Assert.StartsWith(StateTransitionErrors.NoCode, receipt.Error);
+            Assert.Equal(StateTransitionErrors.NoCode, receipt.Error);
             Assert.Equal(nonExistentAddress, receipt.To);
         }
 
