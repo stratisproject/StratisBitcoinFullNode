@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
-            Block block = await this.blockStore.GetBlockAsync(uint256.Parse(blockHash)).ConfigureAwait(false);
+            Block block = this.blockStore != null ? await this.blockStore.GetBlockAsync(uint256.Parse(blockHash)).ConfigureAwait(false) : null;
 
             if (isJsonFormat)
             {
@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             }
             else
             {
-                this.logger.LogTrace("(-):'{0}'", block.ToHex(this.Network));
+                this.logger.LogTrace("(-):'{0}'", block?.ToHex(this.Network));
                 return block;
             }
         }

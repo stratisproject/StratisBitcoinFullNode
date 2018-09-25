@@ -20,9 +20,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 var node = builder.CreateStratisPowNode(KnownNetworks.RegTest);
                 builder.StartAll();
                 RPCClient rpcClient = node.CreateRPCClient();
-                node.NotInIBD();
-                node.SetDummyMinerSecret(new BitcoinSecret(new Key(), node.FullNode.Network));
-                node.GenerateStratisWithMiner(2);
+                node.NotInIBD().WithWallet();               
+                TestHelper.MineBlocks(node, 2);               
                 TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == 2);
 
                 uint256 blockId = rpcClient.GetBestBlockHash();

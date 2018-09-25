@@ -82,11 +82,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         private WalletAccountReference GetAccount()
         {
             //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
-            string w = this.walletManager.GetWalletsNames().FirstOrDefault();
-            if (w == null)
+            string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
+            if (walletName == null)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
-            HdAccount account = this.walletManager.GetAccounts(w).FirstOrDefault();
-            return new WalletAccountReference(w, account.Name);
+            HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
+            return new WalletAccountReference(walletName, account.Name);
         }
     }
 }
