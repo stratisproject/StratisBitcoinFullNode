@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public async virtual Task InitializeAsync(uint256 blockHash = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task InitializeAsync(uint256 blockHash = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.logger.LogTrace("()");
 
@@ -189,7 +189,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
+            this.logger.LogTrace("()");
+
             this.TipHash = await this.provenBlockHeaderRepository.GetTipHashAsync(cancellationToken).ConfigureAwait(false);
+
+            this.logger.LogTrace("(-)");
 
             return this.TipHash;
         }
@@ -197,7 +201,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task<ProvenBlockHeader> GetTipAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
+            this.logger.LogTrace("()");
+
             this.TipHash = await this.GetTipHashAsync(cancellationToken);
+
+            this.logger.LogTrace("(-)");
 
             return await this.GetAsync(this.TipHash).ConfigureAwait(false);
         }
@@ -300,6 +308,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         private async Task SaveBatchAsync()
         {
             this.logger.LogTrace("()");
+
             if (this.batch.Count != 0)
             {
                 using (await this.lockobj.LockAsync().ConfigureAwait(false))
@@ -310,17 +319,21 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
 
                 this.currentBatchSizeBytes = 0;
-
-                this.logger.LogTrace("(-)");
             }
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Sets the internal store tip and exposes the store tip to other components through the chain state.</summary>
         /// <param name="newTip">Tip to set the <see cref="ChainedHeader"/> store and the <see cref="IChainState.BlockStoreTip"/>.</param>
         private void SetStoreTip(ChainedHeader newTip)
         {
+            this.logger.LogTrace("()");
+
             this.storeTip = newTip;
             this.chainState.BlockStoreTip = newTip;
+
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />

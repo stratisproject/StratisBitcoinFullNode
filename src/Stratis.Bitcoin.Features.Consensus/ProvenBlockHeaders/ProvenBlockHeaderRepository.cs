@@ -86,8 +86,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public Task InitializeAsync(uint256 blockHash = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.logger.LogTrace("()");
-
             Task task = Task.Run(() =>
             {
                 this.logger.LogTrace("()");
@@ -106,8 +104,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 this.logger.LogTrace("(-)");
             }, cancellationToken);
 
-            this.logger.LogTrace("(-)");
-
             return task;
         }
 
@@ -115,8 +111,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public Task GetAsync(IEnumerable<StakeItem> stakeItems, CancellationToken cancellationToken = default(CancellationToken))
         {
             Guard.NotNull(stakeItems, nameof(stakeItems));
-            this.logger.LogTrace("({0}:'{1}')", nameof(stakeItems), stakeItems);
-
+  
             Task task = Task.Run(() =>
             {
                 this.logger.LogTrace("({0}.Count():{1})", nameof(stakeItems), stakeItems.Count());
@@ -154,7 +149,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public Task PutAsync(IEnumerable<StakeItem> stakeItems, CancellationToken cancellationToken = default(CancellationToken))
         {
             Guard.NotNull(stakeItems, nameof(stakeItems));
-            this.logger.LogTrace("({0}:'{1}')", nameof(stakeItems), stakeItems);
 
             Task task = Task.Run(() =>
             {
@@ -249,8 +243,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="stakeItems">List of <see cref="StakeItem"/>s.</param>
         private void InsertProvenHeaders(DBreeze.Transactions.Transaction txn, IEnumerable<StakeItem> stakeItems)
         {
-            this.logger.LogTrace("()");
-
             this.logger.LogTrace("({0}.Count():{1})", nameof(stakeItems), stakeItems.Count());
 
             IEnumerable<StakeItem> sortedStakeItems = this.SortProvenHeaders(txn, stakeItems);
@@ -308,7 +300,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <returns>True if the items exists in the database.</returns>
         private bool ProvenBlockHeaderExists(DBreeze.Transactions.Transaction txn, uint256 blockId)
         {
-            this.logger.LogTrace("()");
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockId), blockId);
 
             Row<byte[], ProvenBlockHeader> row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockId.ToBytes());
              
