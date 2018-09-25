@@ -217,9 +217,37 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
-        [Fact(Skip = "")]
+        [Fact]
         public void ExternalCall_Code_Null()
         {
+            var gasLimit = (Gas)(GasPriceList.BaseCost + 100000);
+
+            var externalCallMessage = new ExternalCallMessage(
+                uint160.Zero,
+                uint160.Zero,
+                0,
+                gasLimit,
+                new MethodCall("Test")
+            );
+
+            this.contractStateRoot
+                .Setup(sr => sr.GetCode(externalCallMessage.To))
+                .Returns((byte[]) null);            
+
+            var state = new Mock<IState>();
+            state.SetupGet(s => s.ContractState).Returns(this.contractStateRoot.Object);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, externalCallMessage);
+
+            this.contractStateRoot.Verify(sr => sr.GetCode(externalCallMessage.To), Times.Once);            
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Null(result.Error.VmError);
+            Assert.Equal(StateTransitionErrorKind.NoCode, result.Error.Kind);
+            Assert.Equal((Gas) 0, result.GasConsumed);
         }
 
         [Fact]
