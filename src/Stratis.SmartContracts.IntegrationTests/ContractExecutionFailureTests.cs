@@ -37,6 +37,8 @@ namespace Stratis.SmartContracts.IntegrationTests
         // TODO: Nonce Behaviour.
 
         // TODO: Calls to methods with incorrect parameters
+
+        // TODO: Calls to private methods.
         
 
         [Fact]
@@ -309,7 +311,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Equal(nonExistentAddress, receipt.To);
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public void ContractTransaction_MethodDoesntExist()
         {
             // Ensure fixture is funded.
@@ -356,7 +358,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
-            Assert.Equal(StateTransitionErrors.NoMethodName, receipt.Error);
+            Assert.Equal(ContractInvocationErrors.MethodDoesNotExist, receipt.Error);
             Assert.Equal(preResponse.NewContractAddress, receipt.To);
         }
     }
