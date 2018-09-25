@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -162,7 +163,28 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public static StateTransitionResult Fail(Gas gasConsumed, StateTransitionErrorKind kind)
         {
-            return new StateTransitionResult(new StateTransitionError(gasConsumed, kind, null));
+            string error = GetErrorFromKind(kind);
+
+            return new StateTransitionResult(new StateTransitionError(gasConsumed, kind, new ContractErrorMessage(error)));
+        }
+
+        private static string GetErrorFromKind(StateTransitionErrorKind kind)
+        {
+            switch (kind)
+            {
+                case StateTransitionErrorKind.InsufficientBalance:
+                    return StateTransitionErrors.InsufficientBalance;
+                case StateTransitionErrorKind.InsufficientGas:
+                    return StateTransitionErrors.InsufficientGas;
+                case StateTransitionErrorKind.NoCode:
+                    return StateTransitionErrors.NoCode;
+                case StateTransitionErrorKind.NoMethodName:
+                    return StateTransitionErrors.NoMethodName;
+                case StateTransitionErrorKind.OutOfGas:
+                    return StateTransitionErrors.OutOfGas;
+            }
+
+            throw new NotSupportedException("Error should not be VMError and should have an error message assigned.");
         }
     }
 }
