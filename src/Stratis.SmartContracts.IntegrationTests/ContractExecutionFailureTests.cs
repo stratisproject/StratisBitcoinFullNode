@@ -36,6 +36,9 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         // TODO: Nonce Behaviour.
 
+        // TODO: Calls to methods with incorrect parameters
+        
+
         [Fact]
         public void ContractTransaction_InvalidSerialization()
         {
@@ -309,7 +312,52 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact(Skip = "TODO")]
         public void ContractTransaction_MethodDoesntExist()
         {
-            // Contract method doesn't exist
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/EmptyContract.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+            this.node1.WaitMempoolCount(1);
+            this.node1.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
+
+            double amount = 25;
+            Money senderBalanceBefore = this.node1.WalletSpendableBalance;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+
+            BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("MethodThatDoesntExist", preResponse.NewContractAddress, amount);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            Block lastBlock = this.node1.GetLastBlock();
+
+            // Blocks progressed
+            Assert.NotEqual(currentHash, lastBlock.GetHash());
+
+            // Block contains a refund transaction
+            Assert.Equal(3, lastBlock.Transactions.Count);
+            Transaction refundTransaction = lastBlock.Transactions[2];
+            Assert.Single(refundTransaction.Outputs); // No transfers persisted
+            uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
+            Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
+            Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
+
+            // Amount was refunded to wallet, minus fee
+            Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee);
+
+            // Receipt is correct
+            ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
+            Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
+            Assert.Empty(receipt.Logs);
+            Assert.False(receipt.Success);
+            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Null(receipt.NewContractAddress);
+            Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
+            Assert.Equal(StateTransitionErrors.NoMethodName, receipt.Error);
+            Assert.Equal(preResponse.NewContractAddress, receipt.To);
         }
     }
 }
