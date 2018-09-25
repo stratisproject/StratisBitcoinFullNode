@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.StratisD
+namespace Stratis.StratisColdsD
 {
     public class Program
     {
