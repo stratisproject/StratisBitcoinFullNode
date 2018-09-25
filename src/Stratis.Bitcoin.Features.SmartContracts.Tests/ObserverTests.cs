@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private const ulong Value = 0;
 
         private readonly ObserverRewriter rewriter;
-        private readonly IContractState repository;
+        private readonly IStateRepository repository;
         private readonly Network network;
         private readonly IContractModuleDefinitionReader moduleReader;
         private readonly ContractAssemblyLoader assemblyLoader;
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void TestGasInjector()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(TestSource);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(TestSource);
             Assert.True(compilationResult.Success);
 
             byte[] originalAssemblyBytes = compilationResult.Compilation;
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var callData = new MethodCall("TestMethod", new object[] { 1 });
 
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
             
             module.Rewrite(this.rewriter);
 
@@ -179,14 +179,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void TestGasInjector_OutOfGasFails()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/OutOfGasTest.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/OutOfGasTest.cs");
             Assert.True(compilationResult.Success);
 
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
             var callData = new MethodCall("UseAllGas");
 
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
 
             module.Rewrite(this.rewriter);
 
@@ -205,13 +205,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContracts_GasInjector_SingleParamConstructorGasInjectedSuccess()
         {
-            SmartContractCompilationResult compilationResult =
-                SmartContractCompiler.Compile(TestSingleConstructorSource);
+            ContractCompilationResult compilationResult =
+                ContractCompiler.Compile(TestSingleConstructorSource);
 
             Assert.True(compilationResult.Success);
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
 
             module.Rewrite(this.rewriter);
 
@@ -232,13 +232,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContracts_GasInjector_MultipleParamConstructorGasInjectedSuccess()
         {
-            SmartContractCompilationResult compilationResult =
-                SmartContractCompiler.Compile(TestMultipleConstructorSource);
+            ContractCompilationResult compilationResult =
+                ContractCompiler.Compile(TestMultipleConstructorSource);
 
             Assert.True(compilationResult.Success);
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
 
             module.Rewrite(this.rewriter);
 
@@ -257,14 +257,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void TestGasInjector_ContractMethodWithRecursion_GasInjectionSucceeds()
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile("SmartContracts/Recursion.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Recursion.cs");
             Assert.True(compilationResult.Success);
 
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
             var callData = new MethodCall(nameof(Recursion.DoRecursion));
 
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
 
             module.Rewrite(this.rewriter);
 
@@ -377,12 +377,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private IContract GetContractAfterRewrite(string filename)
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile(filename);
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile(filename);
             Assert.True(compilationResult.Success);
 
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
 
             module.Rewrite(this.rewriter);
 

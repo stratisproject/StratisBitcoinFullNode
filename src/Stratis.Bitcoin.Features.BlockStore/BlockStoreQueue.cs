@@ -65,14 +65,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly AsyncQueue<ChainedHeaderBlock> blocksQueue;
 
         /// <summary>Batch of blocks which should be saved in the database.</summary>
-        /// <remarks>Write access should be protected by <see cref="getBlockLock"/>.</remarks>
+        /// <remarks>Write access should be protected by <see cref="blocksCacheLock"/>.</remarks>
         private readonly List<ChainedHeaderBlock> batch;
 
         /// <summary>Task that runs <see cref="DequeueBlocksContinuouslyAsync"/>.</summary>
         private Task dequeueLoopTask;
 
         /// <summary>Protects the batch from being modifying while <see cref="GetBlockAsync"/> method is using the batch.</summary>
-        private readonly object getBlockLock;
+        private readonly object blocksCacheLock;
+
+        /// <summary>Represents all blocks currently in the queue & pending batch, so that <see cref="GetBlockAsync"/> is able to return a value directly after enqueuing.</summary>
+        /// <remarks>Write access should be protected by <see cref="blocksCacheLock"/>.</remarks>
+        private readonly Dictionary<uint256, ChainedHeaderBlock> pendingBlocksCache;
 
         public BlockStoreQueue(
             ConcurrentChain chain,
@@ -95,9 +99,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chain = chain;
             this.blockRepository = blockRepository;
             this.batch = new List<ChainedHeaderBlock>();
-            this.getBlockLock = new object();
-
+            this.blocksCacheLock = new object();
             this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
+            this.pendingBlocksCache = new Dictionary<uint256, ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
@@ -165,15 +169,45 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public Task<Transaction> GetTrxAsync(uint256 trxid)
+        public Task<Transaction> GetTransactionByIdAsync(uint256 trxid)
         {
-            return this.blockRepository.GetTrxAsync(trxid);
+            lock (this.blocksCacheLock)
+            {
+                foreach (ChainedHeaderBlock chainedHeaderBlock in this.pendingBlocksCache.Values)
+                {
+                    Transaction tx = chainedHeaderBlock.Block.Transactions.FirstOrDefault(x => x.GetHash() == trxid);
+
+                    if (tx != null)
+                    {
+                        this.logger.LogTrace("Transaction '{0}' was found in the pending blocks cache.", trxid);
+                        return Task.FromResult(tx);
+                    }
+                }
+            }
+
+            return this.blockRepository.GetTransactionByIdAsync(trxid);
         }
 
         /// <inheritdoc/>
-        public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
+        public Task<uint256> GetBlockIdByTransactionIdAsync(uint256 trxid)
         {
-            return this.blockRepository.GetTrxBlockIdAsync(trxid);
+            lock (this.blocksCacheLock)
+            {
+                foreach (ChainedHeaderBlock chainedHeaderBlock in this.pendingBlocksCache.Values)
+                {
+                    bool exists = chainedHeaderBlock.Block.Transactions.Any(x => x.GetHash() == trxid);
+
+                    if (exists)
+                    {
+                        uint256 blockId = chainedHeaderBlock.Block.GetHash();
+
+                        this.logger.LogTrace("Block Id '{0}' with tx '{1}' was found in the pending blocks cache.", blockId, trxid);
+                        return Task.FromResult(blockId);
+                    }
+                }
+            }
+
+            return this.blockRepository.GetBlockIdByTransactionIdAsync(trxid);
         }
 
         /// <inheritdoc/>
@@ -181,19 +215,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
 
-            Block block = null;
-
-            lock (this.getBlockLock)
+            lock (this.blocksCacheLock)
             {
-                block = this.batch.FirstOrDefault(x => x.ChainedHeader.HashBlock == blockHash)?.Block;
+                if (this.pendingBlocksCache.TryGetValue(blockHash, out ChainedHeaderBlock chainedHeaderBlock))
+                {
+                    this.logger.LogTrace("(-)[FOUND_IN_DICTIONARY]");
+                    return chainedHeaderBlock.Block;
+                }
             }
 
-            if (block == null)
-                block = await this.blockRepository.GetBlockAsync(blockHash).ConfigureAwait(false);
-            else
-                this.logger.LogTrace("Block was found in the batch.");
+            Block block = await this.blockRepository.GetBlockAsync(blockHash).ConfigureAwait(false);
 
+            this.logger.LogTrace("Block was{0} found in the repository.", (block == null) ? " not" : "");
             this.logger.LogTrace("(-)");
+
             return block;
         }
 
@@ -252,15 +287,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("(-)");
         }
 
-        private void AddComponentStats(StringBuilder benchLog)
+        private void AddComponentStats(StringBuilder log)
         {
             this.logger.LogTrace("()");
 
             if (this.storeTip != null)
             {
-                benchLog.AppendLine();
-                benchLog.AppendLine("======BlockStore======");
-                benchLog.AppendLine($"Batch Size: {this.currentBatchSizeBytes / 1000} kb / {BatchThresholdSizeBytes / 1000} kb  ({this.batch.Count} blocks)");
+                log.AppendLine();
+                log.AppendLine("======BlockStore======");
+                log.AppendLine($"Batch Size: {this.currentBatchSizeBytes / 1000} kb / {BatchThresholdSizeBytes / 1000} kb  ({this.batch.Count} blocks)");
             }
 
             this.logger.LogTrace("(-)");
@@ -270,6 +305,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public void AddToPending(ChainedHeaderBlock chainedHeaderBlock)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeaderBlock), chainedHeaderBlock.ChainedHeader);
+
+            lock (this.blocksCacheLock)
+            {
+                this.pendingBlocksCache.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
+            }
 
             this.blocksQueue.Enqueue(chainedHeaderBlock);
 
@@ -319,7 +359,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // Set the dequeue task to null so it can be assigned on the next iteration.
                     dequeueTask = null;
 
-                    lock (this.getBlockLock)
+                    lock (this.blocksCacheLock)
                     {
                         this.batch.Add(item);
                     }
@@ -340,8 +380,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         await this.SaveBatchAsync().ConfigureAwait(false);
 
-                        lock (this.getBlockLock)
+                        lock (this.blocksCacheLock)
                         {
+                            foreach (ChainedHeaderBlock chainedHeaderBlock in this.batch)
+                            {
+                                this.pendingBlocksCache.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
+                            }
+
                             this.batch.Clear();
                         }
 

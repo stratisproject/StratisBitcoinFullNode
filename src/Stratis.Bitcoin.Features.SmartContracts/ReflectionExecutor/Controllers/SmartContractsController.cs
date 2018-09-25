@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly ConcurrentChain chain;
         private readonly ILogger logger;
         private readonly Network network;
-        private readonly IContractStateRoot stateRoot;
+        private readonly IStateRepositoryRoot stateRoot;
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IAddressGenerator addressGenerator;
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
-            IContractStateRoot stateRoot,
+            IStateRepositoryRoot stateRoot,
             IWalletManager walletManager,
             IWalletTransactionHandler walletTransactionHandler,
             IAddressGenerator addressGenerator,
@@ -309,11 +309,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
 
-            SmartContractCarrier carrier;
+            ContractCarrier carrier;
             if (request.Parameters != null && request.Parameters.Any())
-                carrier = SmartContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), gasPrice, new Gas(gasLimit), request.Parameters);
+                carrier = ContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), gasPrice, new Gas(gasLimit), request.Parameters);
             else
-                carrier = SmartContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), gasPrice, new Gas(gasLimit));
+                carrier = ContractCarrier.CreateContract(ReflectionVirtualMachine.VmVersion, request.ContractCode.HexToByteArray(), gasPrice, new Gas(gasLimit));
 
             HdAddress senderAddress = null;
             if (!string.IsNullOrWhiteSpace(request.Sender))
@@ -364,11 +364,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ulong gasLimit = ulong.Parse(request.GasLimit);
             uint160 addressNumeric = new Address(request.ContractAddress).ToUint160(this.network);
 
-            SmartContractCarrier carrier;
+            ContractCarrier carrier;
             if (request.Parameters != null && request.Parameters.Any())
-                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, addressNumeric, request.MethodName, gasPrice, new Gas(gasLimit), request.Parameters);
+                carrier = ContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, addressNumeric, request.MethodName, gasPrice, new Gas(gasLimit), request.Parameters);
             else
-                carrier = SmartContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, addressNumeric, request.MethodName, gasPrice, new Gas(gasLimit));
+                carrier = ContractCarrier.CallContract(ReflectionVirtualMachine.VmVersion, addressNumeric, request.MethodName, gasPrice, new Gas(gasLimit));
 
             HdAddress senderAddress = null;
             if (!string.IsNullOrWhiteSpace(request.Sender))

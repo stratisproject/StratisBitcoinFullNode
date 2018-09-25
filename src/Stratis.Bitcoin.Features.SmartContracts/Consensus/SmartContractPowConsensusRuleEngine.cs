@@ -21,8 +21,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
     /// </summary>
     public sealed class SmartContractPowConsensusRuleEngine : PowConsensusRuleEngine, ISmartContractCoinviewRule
     {
-        public ISmartContractExecutorFactory ExecutorFactory { get; private set; }
-        public IContractStateRoot OriginalStateRoot { get; private set; }
+        public IContractExecutorFactory ExecutorFactory { get; private set; }
+        public IStateRepositoryRoot OriginalStateRoot { get; private set; }
         public IReceiptRepository ReceiptRepository { get; private set; }
         public ISenderRetriever SenderRetriever { get; private set; }
 
@@ -31,11 +31,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
             IDateTimeProvider dateTimeProvider,
-            ISmartContractExecutorFactory executorFactory,
+            IContractExecutorFactory executorFactory,
             ILoggerFactory loggerFactory,
             Network network,
             NodeDeployments nodeDeployments,
-            IContractStateRoot originalStateRoot,
+            IStateRepositoryRoot originalStateRoot,
             IReceiptRepository receiptRepository,
             ISenderRetriever senderRetriever,
             ICoinView utxoSet,

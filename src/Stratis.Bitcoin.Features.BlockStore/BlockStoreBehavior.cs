@@ -12,6 +12,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
@@ -36,8 +37,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private const int MaxBlocksToAnnounce = 8;
 
         private readonly ConcurrentChain chain;
-
-        private readonly IBlockStore blockStore;
+        
+        private readonly IConsensusManager consensusManager;
 
         private ConsensusManagerBehavior consensusManagerBehavior;
 
@@ -75,17 +76,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
 
-        public BlockStoreBehavior(ConcurrentChain chain, IBlockStore blockStore, IChainState chainState, ILoggerFactory loggerFactory)
+        public BlockStoreBehavior(ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager)
         {
             Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(blockStore, nameof(blockStore));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(consensusManager, nameof(consensusManager));
 
             this.chain = chain;
-            this.blockStore = blockStore;
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
+            this.consensusManager = consensusManager;
 
             this.CanRespondToGetBlocksPayload = true;
             this.CanRespondToGetDataPayload = true;
@@ -316,15 +317,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // TODO: bring logic from core
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
             {
-                // TODO: check if we need to add support for "not found"
-                Block block = await this.blockStore.GetBlockAsync(item.Hash).ConfigureAwait(false);
+                ChainedHeaderBlock chainedHeaderBlock = await this.consensusManager.GetBlockDataAsync(item.Hash).ConfigureAwait(false);
 
-                if (block != null)
+                if (chainedHeaderBlock?.Block != null)
                 {
                     this.logger.LogTrace("Sending block '{0}' to peer '{1}'.", item.Hash, peer.RemoteSocketEndpoint);
 
                     //TODO strip block of witness if node does not support
-                    await peer.SendMessageAsync(new BlockPayload(block.WithOptions(this.chain.Network.Consensus.ConsensusFactory, peer.SupportedTransactionOptions))).ConfigureAwait(false);
+                    await peer.SendMessageAsync(new BlockPayload(chainedHeaderBlock.Block.WithOptions(this.chain.Network.Consensus.ConsensusFactory, peer.SupportedTransactionOptions))).ConfigureAwait(false);
                 }
 
                 // If the peer is syncing using "getblocks" message we are supposed to send
@@ -514,7 +514,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.logger.LogTrace("()");
 
-            var res = new BlockStoreBehavior(this.chain, this.blockStore, this.chainState, this.loggerFactory)
+            var res = new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload

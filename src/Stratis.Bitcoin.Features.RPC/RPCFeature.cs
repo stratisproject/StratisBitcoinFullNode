@@ -99,7 +99,6 @@ namespace Stratis.Bitcoin.Features.RPC
                 .Build();
 
                 this.fullNode.RPCHost.Start();
-                this.fullNode.Resources.Add(this.fullNode.RPCHost);
                 this.logger.LogInformation("RPC Server listening on: " + Environment.NewLine + string.Join(Environment.NewLine, this.rpcSettings.GetUrls()));
             }
             else
