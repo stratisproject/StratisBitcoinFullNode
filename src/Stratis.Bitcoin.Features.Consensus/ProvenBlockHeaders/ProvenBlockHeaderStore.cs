@@ -114,10 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>
-        /// Loads <see cref="ProvenBlockHeader"/> items from disk.
-        /// </summary>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <inheritdoc />
         public async Task LoadAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             this.logger.LogTrace("()");
@@ -189,6 +186,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             return provenBlockHeader;
         }
 
+        /// <inheritdoc />
         public async Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             this.TipHash = await this.provenBlockHeaderRepository.GetTipHashAsync(cancellationToken).ConfigureAwait(false);
