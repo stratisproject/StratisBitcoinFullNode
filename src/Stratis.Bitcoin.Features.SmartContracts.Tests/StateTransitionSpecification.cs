@@ -407,7 +407,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal((Gas)0, result.GasConsumed);
         }
 
-        [Fact]
+        [Fact(Skip = "TODO")]
         public void Create_Out_Of_Gas_Error()
         {
         }
@@ -491,7 +491,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
         }
 
-        [Fact]
+        [Fact(Skip = "TODO")]
         public void Call_Out_Of_Gas_Error()
         {
         }
