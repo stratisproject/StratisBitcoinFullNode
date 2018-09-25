@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public void InitializesGenesisProvenBlockHeaderOnFirstLoad()
+        public async Task InitializesGenesisProvenBlockHeaderOnFirstLoadAsync()
         {
             string folder = CreateTestDir(this);
             uint256 blockId;
@@ -39,16 +39,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             using (IProvenBlockHeaderRepository repository = this.SetupRepository(this.Network, folder))
             {
                 // Check the BlockHash (blockId) exists.
-                Task<uint256> TipHashtask = repository.GetTipHashAsync();
-                TipHashtask.Wait();
+                uint256 TipHashtask = await repository.GetTipHashAsync();
 
-                blockId = TipHashtask.Result;
+                blockId = TipHashtask;
                 blockId.Should().Be(this.Network.GetGenesis().GetHash());
             }
         }
 
         [Fact]
-        public void PutAsyncWritesProvenBlockHeaderAndSavesBlockHash()
+        public async Task PutAsyncWritesProvenBlockHeaderAndSavesBlockHashAsync()
         {
             string folder = CreateTestDir(this);
 
@@ -82,8 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                Task task = repo.PutAsync(items);
-                task.Wait();
+                await repo.PutAsync(items);
             }
 
             // Check the above items exits in the database.
@@ -101,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public void PutAsyncWritesProvenBlockHeadersInSortedOrder()
+        public async Task PutAsyncWritesProvenBlockHeadersInSortedOrderAsync()
         {
             string folder = CreateTestDir(this);
 
@@ -125,8 +123,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             // Put the items in the repository.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                Task task = repo.PutAsync(items);
-                task.Wait();
+                await repo.PutAsync(items);
             }
 
             // Check the ProvenBlockHeader exists in the database - and are in sorted order.
@@ -147,14 +144,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public void GetAsyncReadsProvenBlockHeaderFromTheDatabase()
+        public async Task GetAsyncReadsProvenBlockHeaderFromTheDatabaseAsync()
         {
             string folder = CreateTestDir(this);
 
             ProvenBlockHeader provenBlockHeader = CreateNewProvenBlockHeaderMock();
             uint256 hash = provenBlockHeader.GetHash();
 
-            // Setup item and insert into the database.
+            // Set-up item and insert into the database.
             var item = new List<StakeItem>
             {
                 new StakeItem
@@ -175,8 +172,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             // Query the repository for the item that was inserted in the above code.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                Task task = repo.GetAsync(item);
-                task.Wait();
+                await repo.GetAsync(item);
             }
 
             item[0].ProvenBlockHeader.Should().NotBeNull();

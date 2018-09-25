@@ -63,6 +63,9 @@ namespace NBitcoin
         /// </summary>
         public BlockSignature Signature => this.signature;
 
+        /// <summary>The size of the ProvenBlockHeader in bytes.</summary>
+        public long HeaderSize { get; protected set; }
+
         public ProvenBlockHeader() { }
 
         public ProvenBlockHeader(PosBlock block)
@@ -91,6 +94,8 @@ namespace NBitcoin
             stream.ReadWrite(ref this.merkleProof);
             stream.ReadWrite(ref this.signature);
             stream.ReadWrite(ref this.coinstake);
+
+            this.HeaderSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
         }
 
         /// <inheritdoc />

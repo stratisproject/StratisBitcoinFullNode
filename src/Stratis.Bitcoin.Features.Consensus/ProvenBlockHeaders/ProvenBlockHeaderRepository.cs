@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public Task InitializeAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public Task InitializeAsync(uint256 blockHash = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             this.logger.LogTrace("()");
 
@@ -91,13 +91,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogTrace("()");
 
-                uint256 genesisHash = this.network.GetGenesis().GetHash();
+                uint256 blockId = blockHash == null ? this.network.GetGenesis().GetHash() : blockHash;
 
                 using (DBreeze.Transactions.Transaction txn = this.dbreeze.GetTransaction())
                 {
                     if (this.GetTipHash(txn) == null)
                     {
-                        this.SetTipHash(txn, genesisHash);
+                        this.SetTipHash(txn, blockId);
                         txn.Commit();
                     }
                 }
@@ -190,6 +190,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
                     tipHash = this.GetTipHash(transaction);
+
                 }
 
                 this.logger.LogTrace("(-):'{0}'", tipHash);

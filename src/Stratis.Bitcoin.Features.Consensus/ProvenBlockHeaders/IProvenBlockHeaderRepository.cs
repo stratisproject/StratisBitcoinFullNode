@@ -12,8 +12,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     public interface IProvenBlockHeaderRepository : IDisposable
     {
         /// <summary>Loads <see cref="ProvenBlockHeader"/> items from the database.</summary>
+        /// <param name="blockHash">BlockId to initial the database with.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task InitializeAsync(CancellationToken cancellationToken = default(CancellationToken));
+        Task InitializeAsync(uint256 blockHash = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary> Retrieves the block hash of the current <see cref="ProvenBlockHeader"/> tip.</summary>
         /// <returns>Block hash of the current tip of the <see cref="ProvenBlockHeader"/>.</returns>
