@@ -87,7 +87,7 @@ namespace Stratis.StratisD.Test.Networks
                 powLimit: powLimit,
                 minimumChainWork: null,
                 isProofOfStake: true,
-                lastPowBlock: default,
+                lastPowBlock: 100,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeReward: Money.COIN
