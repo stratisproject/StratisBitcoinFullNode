@@ -319,6 +319,60 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void InternalCreate_Vm_Error()
         {
+            var newContractAddress = uint160.One;
+
+            var vmExecutionResult = VmExecutionResult.Error(new ContractErrorMessage("Error"));
+
+            // Code must have a length to pass precondition checks.
+            var code = new byte[1];
+            var typeName = "Test";
+
+            var internalCreateMessage = new InternalCreateMessage(
+                uint160.Zero,
+                10,
+                (Gas)(GasPriceList.BaseCost + 100000),
+                new object[] { },
+                typeName
+            );
+
+            this.vm.Setup(v =>
+                    v.Create(It.IsAny<IStateRepository>(),
+                        It.IsAny<ISmartContractState>(),
+                        It.IsAny<byte[]>(),
+                        It.IsAny<object[]>(),
+                        It.IsAny<string>()))
+                .Returns(vmExecutionResult);
+
+            // Need to return code for the sender
+            this.contractStateRoot
+                .Setup(sr => sr.GetCode(internalCreateMessage.From))
+                .Returns(code);
+
+            var state = new Mock<IState>();
+            state.Setup(s => s.GetBalance(internalCreateMessage.From)).Returns(internalCreateMessage.Amount + 1);
+            state.SetupGet(s => s.ContractState).Returns(this.contractStateRoot.Object);
+            state.Setup(s => s.GenerateAddress(It.IsAny<IAddressGenerator>())).Returns(newContractAddress);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, internalCreateMessage);
+        
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<GasMeter>(), newContractAddress, internalCreateMessage, this.contractStateRoot.Object));
+
+            this.vm.Verify(
+                v => v.Create(
+                    this.contractStateRoot.Object,
+                    It.IsAny<ISmartContractState>(), 
+                    code,
+                    internalCreateMessage.Parameters,
+                    internalCreateMessage.Type),
+                Times.Once);
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Equal(result.Error.VmError, vmExecutionResult.ErrorMessage);
+            Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
+            Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
         [Fact(Skip = "")]
