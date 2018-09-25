@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         }
 
         [Fact]
-        public void StartMining_PowNetwork_ReturnsSuccess()
+        public void GenerateBlocksOn_PowNetwork_ReturnsSuccess()
         {
             var powNode = new Mock<IFullNode>();
 
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         }
 
         [Fact]
-        public void StartMining_PosNetwork_ConsensusTip_IsBeforeLastPowBlock_ReturnsSuccess()
+        public void GenerateBlocksOn_PosNetwork_ConsensusTip_IsBeforeLastPowBlock_ReturnsSuccess()
         {
             var consensusManager = new Mock<IConsensusManager>();
             consensusManager.Setup(cm => cm.Tip).Returns(new ChainedHeader(this.network.Consensus.ConsensusFactory.CreateBlockHeader(), new uint256(0), this.network.Consensus.LastPOWBlock - 1));
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         }
 
         [Fact]
-        public void StartMining_PosNetwork_ConsensusTip_IsAfterLastPowBlock_ReturnsError()
+        public void GenerateBlocksOn_PosNetwork_ConsensusTip_IsAfterLastPowBlock_ReturnsError()
         {
             var consensusManager = new Mock<IConsensusManager>();
             consensusManager.Setup(cm => cm.Tip).Returns(new ChainedHeader(this.network.Consensus.ConsensusFactory.CreateBlockHeader(), new uint256(0), this.network.Consensus.LastPOWBlock + 1));
