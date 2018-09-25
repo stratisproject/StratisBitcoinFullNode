@@ -375,9 +375,36 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
-        [Fact(Skip = "")]
+        [Fact]
         public void InternalCreate_Balance_Error()
         {
+            var typeName = "Test";
+
+            var internalCreateMessage = new InternalCreateMessage(
+                uint160.Zero,
+                10,
+                (Gas)(GasPriceList.BaseCost + 100000),
+                new object[] { },
+                typeName
+            );
+            
+            var state = new Mock<IState>();
+
+            // Setup the balance with less than the required amount.
+            state.Setup(s => s.GetBalance(internalCreateMessage.From))
+                .Returns(internalCreateMessage.Amount - 1);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, internalCreateMessage);
+            
+            state.Verify(s => s.GetBalance(internalCreateMessage.From));
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Null(result.Error.VmError);
+            Assert.Equal(StateTransitionErrorKind.InsufficientBalance, result.Error.Kind);
+            Assert.Equal((Gas)0, result.GasConsumed);
         }
 
         [Fact]
