@@ -399,9 +399,35 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Null(result.ReturnValue);
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public void Transfer_GasRemaining_Error()
         {
+            ulong amount = 100UL;
+            var to = new Address("Sj2p6ZRHdLvywyi43HYoE4bu2TF1nvavjR");
+
+            var fixture = new InternalExecutorTestFixture();
+
+            fixture.SetGasMeterLimitBelow((Gas) InternalExecutor.DefaultGasLimit);
+
+            var internalExecutor = new InternalExecutor(
+                fixture.LoggerFactory,
+                fixture.Network,
+                fixture.State.Object,
+                fixture.StateProcessor.Object);
+
+            ITransferResult result = internalExecutor.Transfer(fixture.SmartContractState, to, amount);
+
+            fixture.State.Verify(s => s.Snapshot(), Times.Never);
+
+            fixture.StateProcessor.Verify(sp =>
+                sp.Apply(fixture.Snapshot, It.IsAny<ContractTransferMessage>()), Times.Never);
+
+            fixture.State.Verify(s => s.TransitionTo(fixture.Snapshot), Times.Never);
+
+            fixture.GasMeter.Verify(g => g.Spend(It.IsAny<Gas>()), Times.Never);
+
+            Assert.False(result.Success);
+            Assert.Null(result.ReturnValue);
         }
     }
 }
