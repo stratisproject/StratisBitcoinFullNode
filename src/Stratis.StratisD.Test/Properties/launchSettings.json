@@ -2,7 +2,7 @@
   "profiles": {
     "Stratis.StratisD.Test": {
       "commandName": "Project",
-      "commandLineArgs": "-network=StratisPowTestNetwork - testnet"
+      "commandLineArgs": "-network=StratisPosTestNetwork - testnet"
     }
   }
 }

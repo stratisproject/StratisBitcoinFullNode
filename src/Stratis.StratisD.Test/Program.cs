@@ -41,30 +41,31 @@ namespace Stratis.StratisD.Test
                 var nodeSettings = new NodeSettings(network: network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
                 IFullNode node = null;
+                IFullNodeBuilder builder = null;
+
+                builder = new FullNodeBuilder()
+                            .UseNodeSettings(nodeSettings)
+                            .UseBlockStore();
+
                 if (network.Consensus.IsProofOfStake)
-                    node = new FullNodeBuilder()
-                        .UseNodeSettings(nodeSettings)
-                        .UseBlockStore()
-                        .UsePosConsensus()
-                        .UseMempool()
-                        .UseWallet()
-                        .AddPowPosMining()
-                        .UseApi()
-                        .AddRPC()
-                        .Build();
+                {
+                    builder = builder
+                            .UsePosConsensus()
+                            .AddPowPosMining();
+                }
                 else
                 {
-                    node = new FullNodeBuilder()
-                        .UseNodeSettings(nodeSettings)
-                        .UseBlockStore()
-                        .UsePowConsensus()
-                        .UseMempool()
-                        .UseWallet()
-                        .AddMining()
-                        .UseApi()
-                        .AddRPC()
-                        .Build();
+                    builder = builder
+                            .UsePowConsensus()
+                            .AddMining();
                 }
+
+                node = builder
+                            .UseMempool()
+                            .UseWallet()
+                            .UseApi()
+                            .AddRPC()
+                            .Build();
 
                 if (node != null)
                     await node.RunAsync();
