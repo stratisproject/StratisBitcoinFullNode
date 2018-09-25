@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(KnownNetworks.RegTest));
         public IConsensusManager ConsensusManager;
         public readonly Mock<IConsensusRuleEngine> ConsensusRulesEngine = new Mock<IConsensusRuleEngine>();
-        public Mock<IFinalizedBlockInfo> FinalizedBlockMock = new Mock<IFinalizedBlockInfo>();
+        public Mock<IFinalizedBlockInfoRepository> FinalizedBlockMock = new Mock<IFinalizedBlockInfoRepository>();
 
         public readonly Mock<IInitialBlockDownloadState> ibdState = new Mock<IInitialBlockDownloadState>();
         internal ChainedHeader InitialChainTip;

@@ -4,10 +4,10 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.Bitcoin.IntegrationTests.Common.MockChain;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.IntegrationTests.MockChain;
 using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests
@@ -24,12 +24,12 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void Test_CatCreation()
         {
-            using (MockChain chain = new MockChain(2))
+            using (Chain chain = new Chain(2))
             {
-                MockChainNode sender = chain.Nodes[0];
-                MockChainNode receiver = chain.Nodes[1];
+                Node sender = chain.Nodes[0];
+                Node receiver = chain.Nodes[1];
 
-                TestHelper.MineBlocks(sender.CoreNode, sender.WalletName, sender.Password, sender.AccountName, 1);
+                TestHelper.MineBlocks(sender.CoreNode, 1, sender.WalletName, sender.Password, sender.AccountName);
 
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ContractCreation.cs");
                 Assert.True(compilationResult.Success);
@@ -37,15 +37,15 @@ namespace Stratis.SmartContracts.IntegrationTests
                 // Create contract and ensure code exists
                 BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0);
                 receiver.WaitMempoolCount(1);
-                TestHelper.MineBlocks(receiver.CoreNode, receiver.WalletName, receiver.Password, receiver.AccountName, 2);
+                receiver.MineBlocks(2);
                 Assert.NotNull(receiver.GetCode(response.NewContractAddress));
                 Assert.NotNull(sender.GetCode(response.NewContractAddress));
 
                 // Call contract and ensure internal contract was created.
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("CreateCat", response.NewContractAddress, 0);
                 receiver.WaitMempoolCount(1);
-                TestHelper.MineBlocks(receiver.CoreNode, receiver.WalletName, receiver.Password, receiver.AccountName, 1);
-                chain.WaitForAllNodesToSync();
+                receiver.MineBlocks(1);
+                
                 Assert.Equal(1, BitConverter.ToInt32(sender.GetStorageValue(response.NewContractAddress, "CatCounter")));
                 uint160 lastCreatedCatAddress =  new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));
                 uint160 expectedCreatedCatAddress = this.addressGenerator.GenerateAddress(callResponse.TransactionId, 0);
@@ -63,7 +63,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 const double amount = 20;
                 BuildCallContractTransactionResponse callResponse2 = sender.SendCallContractTransaction("CreateCatWithFunds", response.NewContractAddress, amount);
                 receiver.WaitMempoolCount(1);
-                TestHelper.MineBlocks(receiver.CoreNode, receiver.WalletName, receiver.Password, receiver.AccountName, 1);
+                receiver.MineBlocks(1);
 
                 // Check created contract has expected balance.
                 lastCreatedCatAddress = new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));
