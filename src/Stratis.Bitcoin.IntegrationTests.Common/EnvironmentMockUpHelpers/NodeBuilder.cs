@@ -52,10 +52,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         /// <summary>
         /// Creates a node builder instance and disable logs.
-        /// To enable logs look the <see cref="WithLogsEnabled"/>  method.
+        /// To enable logs please refer to the <see cref="WithLogsEnabled"/> method.
         /// </summary>
         /// <param name="testFolderPath">The test folder path.</param>
-        /// <returns>A NodeBuilder instance.</returns>
+        /// <returns>A <see cref="NodeBuilder"/> instance with logs disabled.</returns>
         private static NodeBuilder CreateNodeBuilder(string testFolderPath)
         {
             return new NodeBuilder(testFolderPath)
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         /// <summary>
         /// By default, logs are disabled when using <see cref="Create(string)"/> or <see cref="Create(object, string)"/> methods,
-        /// so using this fluent method, the caller can enable the logs at will.
+        /// by using this fluent method the caller can enable the logs at will.
         /// </summary>
         /// <returns>Current <see cref="NodeBuilder"/> instance, used for fluent API style</returns>
         /// <example>
@@ -205,35 +205,29 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// </example>
         public NodeBuilder WithLogsEnabled()
         {
-            if (!LogManager.IsLoggingEnabled())
+            // NLog Enable/Disable logging is based on internal counter. To ensure logs are enabled
+            // keep calling EnableLogging until IsLoggingEnabled returns true.
+            while (!LogManager.IsLoggingEnabled())
             {
-                // NLog Enable/Disable logging is based on internal counter, so to be sure to have enabled logs, must to
-                // keep calling EnableLogging until IsLoggingEnabled returns true.
-                do
-                {
-                    LogManager.EnableLogging();
-                } while (!LogManager.IsLoggingEnabled());
+                LogManager.EnableLogging();
             }
 
             return this;
         }
 
         /// <summary>
-        /// If logs have been enabled by calling WithLogsEnabled you can disable it manually by colling this method.
+        /// If logs have been enabled by calling WithLogsEnabled you can disable it manually by calling this method.
         /// If the test is running within an "using block" where the nodebuilder is created, without using <see cref="WithLogsEnabled"/>,
         /// you shouldn't need to call this method.
         /// </summary>
-        /// <returns>Current <see cref="NodeBuilder"/> instance, used for fluent API style</returns>
+        /// <returns>Current <see cref="NodeBuilder"/> instance, used for fluent API style.</returns>
         public NodeBuilder WithLogsDisabled()
         {
-            if (LogManager.IsLoggingEnabled())
+            // NLog Enable/Disable logging is based on internal counter. To ensure logs are disabled
+            // keep calling DisableLogging until IsLoggingEnabled returns false.
+            while (LogManager.IsLoggingEnabled())
             {
-                // NLog Enable/Disable logging is based on internal counter, so to be sure to have enabled logs, must to
-                // keep calling DisableLogging until IsLoggingEnabled returns false.
-                do
-                {
-                    LogManager.DisableLogging();
-                } while (LogManager.IsLoggingEnabled());
+                LogManager.DisableLogging();
             }
 
             return this;
