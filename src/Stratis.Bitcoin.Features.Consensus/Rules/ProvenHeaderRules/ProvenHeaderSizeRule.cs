@@ -20,24 +20,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             if (context.SkipValidation || !this.IsProvenHeaderActivated(context))
                 return;
 
-            if (!this.IsProvenHeader(context))
-                return;
+            var header = (ProvenBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Header;
 
-            var header = context.ValidationContext.ChainedHeaderToValidate.Header;
+            // TODO: replace with maximum proven header size
+            uint maxProvenHeaderSerializedSize = this.PosParent.Network.Consensus.Options.MaxBlockSerializedSize;
 
-            using (var ms = new MemoryStream())
+            if (header.HeaderSize == null || header.HeaderSize > maxProvenHeaderSerializedSize)
             {
-                header.ReadWrite(new BitcoinStream(ms, true));
-                byte[] bytes = ms.ToArray();
-
-                // TODO: replace with maximum proven header size
-                uint maxProvenHeaderSerializedSize = this.PosParent.Network.Consensus.Options.MaxBlockSerializedSize;
-                
-                if (bytes.Length > maxProvenHeaderSerializedSize)
-                {
-                    this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_SIZE]");
-                    ConsensusErrors.ProvenHeaderSize.Throw();
-                }
+                this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_SIZE]");
+                ConsensusErrors.ProvenHeaderSize.Throw();
             }
         }
     }

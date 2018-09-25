@@ -75,6 +75,5 @@
 
         // Proven header validation errors.
         public static readonly ConsensusError ProvenHeaderSize = new ConsensusError("proven-header-size", "proven header size must be less than 1,000,512 bytes");
-        public static readonly ConsensusError ProvenHeaderVersion = new ConsensusError("proven-header-version", "proven header version rejected");
     }
 }

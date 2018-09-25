@@ -23,15 +23,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             if (context.SkipValidation || !this.IsProvenHeaderActivated(context))
                 return;
 
-            if (!this.IsProvenHeader(context))
-                return;
-
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
             
             if (chainedHeader.Header.Version < 8)
             {
                 this.Logger.LogTrace("(-)[BAD_VERSION]");
-                ConsensusErrors.ProvenHeaderVersion.Throw();
+                ConsensusErrors.BadVersion.Throw();
             }
         }
     }

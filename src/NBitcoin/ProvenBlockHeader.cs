@@ -66,6 +66,9 @@ namespace NBitcoin
         /// </summary>
         public BlockSignature Signature => this.signature;
 
+        /// <summary>The size of the proven block header in bytes, the header must be serialized for this property to be set.</summary>
+        public long? HeaderSize { get; protected set; }
+
         public ProvenBlockHeader()
         {
         }
@@ -83,6 +86,7 @@ namespace NBitcoin
             this.Version = block.Header.Version;
 
             // Set additional properties.
+            this.HeaderSize = null;
             this.signature = block.BlockSignature;
             this.coinstake = block.Transactions[1];
 
@@ -96,6 +100,8 @@ namespace NBitcoin
             stream.ReadWrite(ref this.merkleProof);
             stream.ReadWrite(ref this.signature);
             stream.ReadWrite(ref this.coinstake);
+
+            this.HeaderSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
         }
 
         /// <inheritdoc />
