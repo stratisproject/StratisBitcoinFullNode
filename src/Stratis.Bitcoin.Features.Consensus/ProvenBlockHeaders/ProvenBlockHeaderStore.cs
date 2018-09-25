@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task InitializeAsync(uint256 blockHash = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            this.logger.LogTrace("()");
+            this.logger.LogInformation("Initializing {0}.", nameof(ProvenBlockHeaderStore));
 
             await this.provenBlockHeaderRepository.InitializeAsync(blockHash, cancellationToken).ConfigureAwait(false);
 
