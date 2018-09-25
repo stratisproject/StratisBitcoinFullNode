@@ -232,9 +232,51 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(stateTransitionResult.Success.ExecutionResult, result.ReturnValue);
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public void Call_StateTransition_Error()
         {
+            ulong amount = 100UL;
+            var to = new Address("Sj2p6ZRHdLvywyi43HYoE4bu2TF1nvavjR");
+            var method = "Test";
+            var parameters = new object[] { };
+            var gasLimit = (Gas)100_000;
+
+            var fixture = new InternalExecutorTestFixture();
+
+            fixture.SetGasMeterLimitAbove(gasLimit);
+
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)1000, new ContractErrorMessage("Error"));
+
+            fixture.StateProcessor
+                .Setup(sp => sp.Apply(It.IsAny<IState>(), It.IsAny<InternalCallMessage>()))
+                .Returns(stateTransitionResult);
+
+            var internalExecutor = new InternalExecutor(
+                fixture.LoggerFactory,
+                fixture.Network,
+                fixture.State.Object,
+                fixture.StateProcessor.Object);
+
+            ITransferResult result = internalExecutor.Call(fixture.SmartContractState, to, amount, method, parameters, gasLimit);
+
+            fixture.State.Verify(s => s.Snapshot(), Times.Once);
+
+            fixture.StateProcessor.Verify(sp =>
+                sp.Apply(fixture.Snapshot, It.Is<InternalCallMessage>(m =>
+                    m.Amount == amount &&
+                    m.Method.Name == method &&
+                    m.Method.Parameters == parameters &&
+                    m.GasLimit == gasLimit &&
+                    m.From == fixture.FromAddress &&
+                    m.To == to.ToUint160(fixture.Network)
+                )));
+
+            fixture.State.Verify(s => s.TransitionTo(fixture.Snapshot), Times.Never);
+
+            fixture.GasMeter.Verify(g => g.Spend(stateTransitionResult.GasConsumed), Times.Once);
+
+            Assert.False(result.Success);
+            Assert.Null(result.ReturnValue);
         }
 
         [Fact(Skip = "TODO")]
