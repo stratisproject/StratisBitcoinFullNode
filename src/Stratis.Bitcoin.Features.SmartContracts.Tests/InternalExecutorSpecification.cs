@@ -58,6 +58,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             this.GasMeter.SetupGet(g => g.GasAvailable).Returns((Gas)(minimum + 1));
         }
+
+        public void SetGasMeterLimitBelow(Gas maximum)
+        {
+            this.GasMeter.SetupGet(g => g.GasAvailable).Returns((Gas)(maximum - 1));
+        }
     }
 
     public class InternalExecutorSpecification
@@ -150,9 +155,34 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(default(Address), result.NewContractAddress);
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public void Create_GasRemaining_Error()
         {
+            ulong amount = 100UL;
+            var parameters = new object[] { };
+            var gasLimit = (Gas)100_000;
+
+            var fixture = new InternalExecutorTestFixture();
+
+            fixture.SetGasMeterLimitBelow(gasLimit);
+
+            var internalExecutor = new InternalExecutor(
+                fixture.LoggerFactory,
+                fixture.Network,
+                fixture.State.Object,
+                fixture.StateProcessor.Object);
+
+            ICreateResult result = internalExecutor.Create<string>(fixture.SmartContractState, amount, parameters, gasLimit);
+
+            fixture.State.Verify(s => s.Snapshot(), Times.Never);
+
+            fixture.StateProcessor.Verify(sp =>
+                sp.Apply(fixture.Snapshot, It.IsAny<InternalCreateMessage>()), Times.Never);
+
+            fixture.State.Verify(s => s.TransitionTo(fixture.Snapshot), Times.Never);
+
+            Assert.False(result.Success);
+            Assert.Equal(default(Address), result.NewContractAddress);
         }
 
         [Fact(Skip = "TODO")]
