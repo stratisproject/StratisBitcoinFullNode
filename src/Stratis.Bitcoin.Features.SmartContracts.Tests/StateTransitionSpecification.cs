@@ -564,9 +564,37 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal((Gas)0, result.GasConsumed);
         }
 
-        [Fact(Skip = "")]
+        [Fact]
         public void InternalCall_Code_Null()
         {
+            var internalCallMessage = new InternalCallMessage(
+                uint160.One,
+                uint160.Zero,
+                10,
+                (Gas)(GasPriceList.BaseCost + 100000),
+                new MethodCall("Test", new object[] { })
+            );
+
+            this.contractStateRoot
+                .Setup(sr => sr.GetCode(internalCallMessage.To))
+                .Returns((byte[])null);
+
+            var state = new Mock<IState>();
+            state.Setup(s => s.GetBalance(internalCallMessage.From))
+                .Returns(internalCallMessage.Amount + 1);
+            state.SetupGet(s => s.ContractState).Returns(this.contractStateRoot.Object);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, internalCallMessage);
+
+            this.contractStateRoot.Verify(sr => sr.GetCode(internalCallMessage.To), Times.Once);
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Null(result.Error.VmError);
+            Assert.Equal(StateTransitionErrorKind.NoCode, result.Error.Kind);
+            Assert.Equal((Gas)0, result.GasConsumed);
         }
 
         [Fact(Skip = "TODO")]
