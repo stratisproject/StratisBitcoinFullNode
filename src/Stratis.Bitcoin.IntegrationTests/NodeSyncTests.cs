@@ -395,5 +395,63 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(firstNode.FullNode.Chain.Tip.HashBlock, minerNode.FullNode.Chain.Tip.HashBlock);
             }
         }
+
+        [Fact]
+        public void ChainReorg_Fork_Occurs_Node_Reorgs_Then_Old_Chain_Becomes_Longer_Then_Node_Reorg_Back()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var minerA = builder.CreateStratisPowNode(this.powNetwork);
+                var minerB = builder.CreateStratisPowNode(this.powNetwork);
+                var syncer = builder.CreateStratisPowNode(this.powNetwork);
+
+                builder.StartAll();
+
+                minerA.NotInIBD().WithWallet();
+                minerB.NotInIBD().WithWallet();
+                syncer.NotInIBD();
+
+                // MinerA mines to height 10.
+                TestHelper.MineBlocks(minerA, 10);
+
+                // Sync the network to height 10.
+                TestHelper.Connect(syncer, minerA);
+                TestHelper.Connect(syncer, minerB);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
+
+                // Disconnect Miner B and ensure node is disconnected.
+                TestHelper.Disconnect(syncer, minerB);
+
+                // Miner A and syncer continues to mine to height 20.
+                TestHelper.MineBlocks(minerA, 10);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
+
+                // Miner B continues to mine to height 30 on a new and longer chain whilst disconnected.
+                TestHelper.MineBlocks(minerB, 20);
+
+                // Disconnect syncer from Miner A.
+                TestHelper.Disconnect(syncer, minerA);
+
+                // Connect syncer to Miner B, now syncer will reorg 10 blocks back and sync back up to height 30 (same as miner B).
+                TestHelper.ConnectAndSync(syncer, minerB);
+
+                // Miner A mines to height 40.
+                TestHelper.MineBlocks(minerA, 20);
+
+                // Disconnect syncer from Miner B.
+                TestHelper.Disconnect(syncer, minerB);
+
+                // Connect syncer to Miner A, now syncer will reorg 10 blocks back and sync back up to height 40 (same as miner A).
+                TestHelper.ConnectAndSync(syncer, minerA);
+
+                // Bring miner B on the longest chain.
+                TestHelper.ConnectAndSync(syncer, minerB);
+
+                Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 40);
+                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 40);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 40);
+            }
+        }
     }
 }
