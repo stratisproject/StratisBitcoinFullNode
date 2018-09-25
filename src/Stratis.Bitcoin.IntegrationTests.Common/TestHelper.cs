@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.P2P.Peer;
@@ -37,6 +40,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
+            // If the nodes are at genesis they are considered synced.
+            if (node1.FullNode.Chain.Tip.Height == 0 && node2.FullNode.Chain.Tip.Height == 0)
+                return true;
+
             if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock)
                 return false;
 
@@ -69,10 +76,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool IsNodeSynced(CoreNode node)
         {
+            // If the node is at genesis it is considered synced.
+            if (node.FullNode.Chain.Tip.Height == 0)
+                return true;
+
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
             // Check that node1 tip exists in store (either in disk or in the pending list) 
+
             if (node.FullNode.BlockStore().GetBlockAsync(node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
                 return false;
 
@@ -106,12 +118,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             nodes.Skip(1).ToList().ForEach(node => WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
         }
 
-        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, string walletName, string walletPassword, string accountName, int numberOfBlocks)
+        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0")
         {
             Guard.NotNull(node, nameof(node));
-            Guard.NotEmpty(walletName, nameof(walletName));
-            Guard.NotEmpty(walletPassword, nameof(walletPassword));
-            Guard.NotEmpty(accountName, nameof(accountName));
 
             if (numberOfBlocks == 0)
                 throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
@@ -126,9 +135,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
             }
 
-            var blockHashes = node.GenerateStratisWithMiner((int)numberOfBlocks);
+            var script = new ReserveScript { ReserveFullNodeScript = node.MinerSecret.ScriptPubKey };
+            var blockHashes = node.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(script, (ulong)numberOfBlocks, uint.MaxValue);
 
-            WaitForNodeToSync(node);
+            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(node));
 
             return (node.MinerHDAddress, blockHashes);
         }

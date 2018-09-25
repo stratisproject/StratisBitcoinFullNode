@@ -97,7 +97,6 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);
-
         }
 
         [Fact]

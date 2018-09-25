@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
+using NLog;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
@@ -154,11 +155,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return dataFolderName;
         }
 
-        public void StartAll()
+        public void StartAll(bool enableLogs = false)
         {
             foreach (CoreNode node in this.Nodes.Where(n => n.State == CoreNodeState.Stopped))
             {
                 node.Start();
+            }
+
+            if (enableLogs)
+            {
+                while (!LogManager.IsLoggingEnabled())
+                    LogManager.EnableLogging();
+            }
+            else
+            {
+                while (LogManager.IsLoggingEnabled())
+                    LogManager.DisableLogging();
             }
         }
 
@@ -166,6 +178,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             foreach (CoreNode node in this.Nodes)
                 node.Kill();
+
+            // Logs are static so clear them after every run.
+            LogManager.Configuration.LoggingRules.Clear();
+            LogManager.ReconfigExistingLoggers();
         }
     }
 }
