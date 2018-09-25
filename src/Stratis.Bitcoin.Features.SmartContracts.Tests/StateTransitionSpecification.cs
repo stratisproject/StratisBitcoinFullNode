@@ -476,9 +476,62 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
-        [Fact(Skip = "")]
+        [Fact]
         public void InternalCall_Vm_Error()
         {
+            var vmExecutionResult = VmExecutionResult.Error(new ContractErrorMessage("Error"));
+
+            // Code must have a length to pass precondition checks.
+            var code = new byte[1];
+            var typeName = "Test";
+
+            var internalCallMessage = new InternalCallMessage(
+                uint160.One,
+                uint160.Zero,
+                10,
+                (Gas)(GasPriceList.BaseCost + 100000),
+                new MethodCall("Test", new object[] { })
+            );
+
+            this.vm.Setup(v => v.ExecuteMethod(
+                    It.IsAny<ISmartContractState>(),
+                    internalCallMessage.Method,
+                    code,
+                    typeName))
+                .Returns(vmExecutionResult);
+
+            this.contractStateRoot
+                .Setup(sr => sr.GetCode(internalCallMessage.To))
+                .Returns(code);
+
+            this.contractStateRoot
+                .Setup(sr => sr.GetContractType(internalCallMessage.To))
+                .Returns(typeName);
+
+            var state = new Mock<IState>();
+            state.Setup(s => s.GetBalance(internalCallMessage.From))
+                .Returns(internalCallMessage.Amount + 1);
+            state.SetupGet(s => s.ContractState).Returns(this.contractStateRoot.Object);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, internalCallMessage);
+
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<GasMeter>(), internalCallMessage.To, internalCallMessage, this.contractStateRoot.Object));
+
+            this.vm.Verify(
+                v => v.ExecuteMethod(
+                    It.IsAny<ISmartContractState>(),
+                    internalCallMessage.Method,
+                    code,
+                    typeName),
+                Times.Once);
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Equal(result.Error.VmError, vmExecutionResult.ErrorMessage);
+            Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
+            Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
         [Fact(Skip = "")]
