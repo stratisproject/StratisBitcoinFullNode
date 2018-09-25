@@ -217,6 +217,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
+        [Fact(Skip = "")]
+        public void ExternalCall_Code_Null()
+        {
+        }
+
         [Fact]
         public void InternalCreate_Success()
         {
@@ -284,6 +289,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void InternalCreate_Vm_Error()
+        {
+        }
+
+        [Fact(Skip = "")]
+        public void InternalCreate_Balance_Error()
+        {
+        }
+
+        [Fact]
         public void InternalCall_Success()
         {
             // The difference between an internal and an external call:
@@ -347,6 +362,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
+        [Fact(Skip = "")]
+        public void InternalCall_Vm_Error()
+        {
+        }
+
+        [Fact(Skip = "")]
+        public void InternalCall_Balance_Error()
+        {
+        }
+
+        [Fact(Skip = "")]
+        public void InternalCall_Code_Null()
+        {
+        }
+
         [Fact]
         public void Contract_Transfer_To_Other_Contract_Success()
         {
@@ -407,6 +437,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(contractTransferMessage.To, result.Success.ContractAddress);
             Assert.Equal(vmExecutionResult.Result, result.Success.ExecutionResult);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
+        }
+
+        [Fact(Skip = "")]
+        public void Contract_Transfer_To_Other_Contract_VM_Error()
+        {
+        }
+
+        [Fact(Skip = "")]
+        public void Contract_Transfer_To_Other_Contract_Balance_Error()
+        {
         }
 
         [Fact]
