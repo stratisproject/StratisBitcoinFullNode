@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
@@ -21,15 +22,26 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     public class MiningController : Controller
     {
         private const string exceptionOccurredMessage = "Exception occurred: {0}";
-        private readonly IFullNode fullNode;
+
+        private readonly IConsensusManager consensusManager;
         private readonly ILogger logger;
+        private readonly MiningFeature miningFeature;
+        private readonly Network network;
+        private readonly IPowMining powMining;
+        private readonly IWalletManager walletManager;
 
-        public MiningController(IFullNode fullNode)
+        public MiningController(IConsensusManager consensusManager, IFullNode fullNode, ILoggerFactory loggerFactory, Network network, IPowMining powMining, IWalletManager walletManager)
         {
-            Guard.NotNull(fullNode, nameof(fullNode));
+            Guard.NotNull(consensusManager, nameof(consensusManager));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(network, nameof(network));
 
-            this.fullNode = fullNode;
-            this.logger = fullNode.NodeService<ILoggerFactory>().CreateLogger(this.GetType().FullName);
+            this.consensusManager = consensusManager;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.miningFeature = fullNode.NodeFeature<MiningFeature>();
+            this.network = network;
+            this.powMining = powMining;
+            this.walletManager = walletManager;
         }
 
         /// <summary>
@@ -47,9 +59,9 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
 
             try
             {
-                if (this.fullNode.Network.Consensus.IsProofOfStake &&
-                    this.fullNode.NodeService<IConsensusManager>(false).Tip.Height > this.fullNode.Network.Consensus.LastPOWBlock)
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", string.Format("This is a POS node and it's consensus tip is higher that the allowed last POW block height of {0}", this.fullNode.Network.Consensus.LastPOWBlock));
+                if (this.network.Consensus.IsProofOfStake &&
+                    this.consensusManager.Tip.Height > this.network.Consensus.LastPOWBlock)
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", string.Format("This is a POS node and it's consensus tip is higher that the allowed last POW block height of {0}", this.network.Consensus.LastPOWBlock));
 
                 if (!this.ModelState.IsValid)
                 {
@@ -65,11 +77,11 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                 this.logger.LogTrace("({0}:{1})", nameof(request.BlockCount), blockCount);
 
                 WalletAccountReference accountReference = this.GetAccount();
-                HdAddress address = this.fullNode.NodeService<IWalletManager>().GetUnusedAddress(accountReference);
+                HdAddress address = this.walletManager.GetUnusedAddress(accountReference);
 
                 var generateBlocksModel = new GenerateBlocksModel
                 {
-                    Blocks = this.fullNode.NodeService<IPowMining>().GenerateBlocks(new ReserveScript(address.Pubkey), (ulong)blockCount, int.MaxValue)
+                    Blocks = this.powMining.GenerateBlocks(new ReserveScript(address.Pubkey), (ulong)blockCount, int.MaxValue)
                 };
 
                 this.logger.LogTrace("(-):*.{0}={1}", "Generated block count", generateBlocksModel.Blocks.Count);
@@ -89,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         {
             try
             {
-                this.fullNode.NodeFeature<MiningFeature>().StopMining();
+                this.miningFeature.StopMining();
                 return this.Ok();
             }
             catch (Exception e)
@@ -110,14 +122,14 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
 
             this.logger.LogTrace("()");
 
-            string walletName = this.fullNode.NodeService<IWalletManager>().GetWalletsNames().FirstOrDefault();
+            string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
             if (walletName == null)
             {
                 this.logger.LogError(exceptionOccurredMessage, noWalletMessage);
                 throw new Exception(noWalletMessage);
             }
 
-            HdAccount account = this.fullNode.NodeService<IWalletManager>().GetAccounts(walletName).FirstOrDefault();
+            HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
             if (account == null)
             {
                 this.logger.LogError(exceptionOccurredMessage, noAccountMessage);

@@ -46,9 +46,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         {
             var consensusManager = new Mock<IConsensusManager>();
             consensusManager.Setup(cm => cm.Tip).Returns(new ChainedHeader(this.network.Consensus.ConsensusFactory.CreateBlockHeader(), new uint256(0), this.network.Consensus.LastPOWBlock - 1));
-            this.fullNode.Setup(i => i.NodeService<IConsensusManager>(false)).Returns(consensusManager.Object);
 
-            var controller = new MiningController(this.fullNode.Object);
+            var controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, new Mock<IPowMining>().Object, new Mock<IWalletManager>().Object);
 
             IActionResult result = blockCount == null ?
                 controller.StartMining(new MiningRequest()) :
@@ -69,9 +68,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         {
             var consensusManager = new Mock<IConsensusManager>();
             consensusManager.Setup(cm => cm.Tip).Returns(new ChainedHeader(this.network.Consensus.ConsensusFactory.CreateBlockHeader(), new uint256(0), this.network.Consensus.LastPOWBlock - 1));
-            this.fullNode.Setup(i => i.NodeService<IConsensusManager>(false)).Returns(consensusManager.Object);
 
-            var controller = new MiningController(this.fullNode.Object);
+            var controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, new Mock<IPowMining>().Object, new Mock<IWalletManager>().Object);
             controller.ModelState.AddModelError("key", "error message");
 
             IActionResult result = controller.StartMining(new MiningRequest());
@@ -90,22 +88,20 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         public void StartMining_PowNetwork_ReturnsSuccess()
         {
             var powNode = new Mock<IFullNode>();
-            powNode.Setup(i => i.Network).Returns(KnownNetworks.RegTest);
-            powNode.Setup(i => i.NodeService<ILoggerFactory>(false)).Returns(this.loggerFactory);
+
+            var consensusManager = new Mock<IConsensusManager>();
 
             var walletManager = new Mock<IWalletManager>();
             walletManager.Setup(f => f.GetWalletsNames()).Returns(new List<string> { wallet });
             walletManager.Setup(f => f.GetAccounts(wallet)).Returns(new List<HdAccount> { new HdAccount { Name = account } });
             HdAddress address = WalletTestsHelpers.CreateAddress();
             walletManager.Setup(f => f.GetUnusedAddress(new WalletAccountReference(wallet, account))).Returns(address);
-            powNode.Setup(i => i.NodeService<IWalletManager>(false)).Returns(walletManager.Object);
 
             var powMining = new Mock<IPowMining>();
             powMining.Setup(f => f.GenerateBlocks(It.Is<ReserveScript>(r => r.ReserveFullNodeScript == address.Pubkey), 1, int.MaxValue)).Returns(new List<uint256> { new uint256(1255632623) });
             powNode.Setup(f => f.NodeFeature<MiningFeature>(false)).Returns(new MiningFeature(KnownNetworks.RegTest, new MinerSettings(Configuration.NodeSettings.Default()), Configuration.NodeSettings.Default(), this.loggerFactory, new Mock<ITimeSyncBehaviorState>().Object, powMining.Object, null));
-            powNode.Setup(i => i.NodeService<IPowMining>(false)).Returns(powMining.Object);
 
-            var controller = new MiningController(powNode.Object);
+            var controller = new MiningController(consensusManager.Object, powNode.Object, this.loggerFactory, KnownNetworks.RegTest, powMining.Object, walletManager.Object);
 
             IActionResult result = controller.StartMining(new MiningRequest { BlockCount = 1 });
 
@@ -123,22 +119,18 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         {
             var consensusManager = new Mock<IConsensusManager>();
             consensusManager.Setup(cm => cm.Tip).Returns(new ChainedHeader(this.network.Consensus.ConsensusFactory.CreateBlockHeader(), new uint256(0), this.network.Consensus.LastPOWBlock - 1));
-            this.fullNode.Setup(i => i.NodeService<IConsensusManager>(false)).Returns(consensusManager.Object);
 
             var walletManager = new Mock<IWalletManager>();
             walletManager.Setup(f => f.GetWalletsNames()).Returns(new List<string> { wallet });
             walletManager.Setup(f => f.GetAccounts(wallet)).Returns(new List<HdAccount> { new HdAccount { Name = account } });
             HdAddress address = WalletTestsHelpers.CreateAddress();
             walletManager.Setup(f => f.GetUnusedAddress(new WalletAccountReference(wallet, account))).Returns(address);
-            this.fullNode.Setup(i => i.NodeService<IWalletManager>(false)).Returns(walletManager.Object);
 
             var powMining = new Mock<IPowMining>();
             powMining.Setup(f => f.GenerateBlocks(It.Is<ReserveScript>(r => r.ReserveFullNodeScript == address.Pubkey), 1, int.MaxValue)).Returns(new List<uint256> { new uint256(1255632623) });
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(false)).Returns(new MiningFeature(this.network, new MinerSettings(Configuration.NodeSettings.Default()), Configuration.NodeSettings.Default(), this.loggerFactory, new Mock<ITimeSyncBehaviorState>().Object, powMining.Object, null));
 
-            this.fullNode.Setup(i => i.NodeService<IPowMining>(false)).Returns(powMining.Object);
-
-            var controller = new MiningController(this.fullNode.Object);
+            var controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, powMining.Object, walletManager.Object);
 
             IActionResult result = controller.StartMining(new MiningRequest { BlockCount = 1 });
 
@@ -158,7 +150,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             consensusManager.Setup(cm => cm.Tip).Returns(new ChainedHeader(this.network.Consensus.ConsensusFactory.CreateBlockHeader(), new uint256(0), this.network.Consensus.LastPOWBlock + 1));
             this.fullNode.Setup(i => i.NodeService<IConsensusManager>(false)).Returns(consensusManager.Object);
 
-            var controller = new MiningController(this.fullNode.Object);
+            var controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, new Mock<IPowMining>().Object, new Mock<IWalletManager>().Object);
 
             IActionResult result = controller.StartMining(new MiningRequest { BlockCount = 1 });
 
@@ -175,10 +167,12 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         [Fact]
         public void StopMining_ReturnsSuccess()
         {
+            var consensusManager = new Mock<IConsensusManager>();
             var powMining = new Mock<IPowMining>();
+
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(false)).Returns(new MiningFeature(this.network, new MinerSettings(Configuration.NodeSettings.Default()), Configuration.NodeSettings.Default(), this.loggerFactory, new Mock<ITimeSyncBehaviorState>().Object, powMining.Object, null));
 
-            var controller = new MiningController(this.fullNode.Object);
+            var controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, new Mock<IPowMining>().Object, new Mock<IWalletManager>().Object);
 
             IActionResult result = controller.StopMining();
 
