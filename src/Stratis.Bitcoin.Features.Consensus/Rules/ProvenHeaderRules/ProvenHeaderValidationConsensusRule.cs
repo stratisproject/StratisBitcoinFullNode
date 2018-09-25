@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <c>true</c> if proven header height is past the activation height for the corresponding network;
         /// otherwise, <c>false</c>.
         /// </returns>
-        public bool IsProvenHeaderActived(RuleContext context)
+        public bool IsProvenHeaderActivated(RuleContext context)
         {
             if (this.PosParent.Network is StratisMain)
             {

@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         {
             Guard.NotNull(context.ValidationContext.ChainedHeaderToValidate, nameof(context.ValidationContext.ChainedHeaderToValidate));
 
-            if (context.SkipValidation || !this.IsProvenHeaderActived(context))
+            if (context.SkipValidation || !this.IsProvenHeaderActivated(context))
                 return;
 
             if (!this.IsProvenHeader(context))
