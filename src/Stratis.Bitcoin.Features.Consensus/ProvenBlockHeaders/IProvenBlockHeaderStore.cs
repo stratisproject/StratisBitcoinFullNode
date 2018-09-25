@@ -12,12 +12,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     {
         /// <summary>Loads <see cref="ProvenBlockHeader"/> items from the database.</summary>
         /// <param name="blockHash">BlockId to initial the database with.</param>
+        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task InitializeAsync(uint256 blockHash = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Initialize the <see cref="ProvenBlockHeader"/> store.
         /// </summary>
+        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task LoadAsync(CancellationToken cancellationToken = default(CancellationToken));
 

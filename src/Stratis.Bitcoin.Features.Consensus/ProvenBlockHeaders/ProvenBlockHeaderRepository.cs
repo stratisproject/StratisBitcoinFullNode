@@ -34,6 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>Database key under which the block hash of the <see cref="ProvenBlockHeader"/> tip is stored.</summary>
         private static readonly byte[] blockHashKey = new byte[0];
 
+        /// <summary>DBreeze table names.</summary>
         private const string ProvenBlockHeaderTable = "ProvenBlockHeader";
         private const string BlockHashTable = "BlockHash";
 

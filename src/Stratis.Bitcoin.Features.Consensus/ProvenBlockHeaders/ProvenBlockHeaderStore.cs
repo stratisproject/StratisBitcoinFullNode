@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <summary>
-        /// Dequeues the blocks continuously and saves them to the database when max batch size is reached or timer ran out.
+        /// Dequeues the blocks continuously and saves them to the database when the maximum batch size is reached or timer ran out.
         /// </summary>
         /// <remarks>Batch is always saved on shutdown.</remarks>
         private async Task DequeueContinuouslyAsync()
@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
 
                 // Save batch if timer ran out or we've dequeued a new block and reached the consensus tip
-                // or the max batch size is reached or the node is shutting down.
+                // or the maximum batch size is reached or the node is shutting down.
                 if (dequeueTask.Status == TaskStatus.RanToCompletion)
                 {
                     StakeItem item = dequeueTask.Result;
