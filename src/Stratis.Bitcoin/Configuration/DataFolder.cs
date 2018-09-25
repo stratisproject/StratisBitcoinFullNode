@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.Configuration
             this.CoinViewPath = Path.Combine(path, "coinview");
             this.AddressManagerFilePath = path;
             this.ChainPath = Path.Combine(path, "chain");
+            this.FinalizedBlockInfoPath = Path.Combine(path, "finalizedBlock");
             this.BlockPath = Path.Combine(path, "blocks");
             this.IndexPath = Path.Combine(path, "index");
             this.RpcCookieFile = Path.Combine(path, ".cookie");
@@ -50,6 +51,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Path to the folder with node's chain repository database files.</summary>
         /// <seealso cref="Base.BaseFeature.StartChain"/>
         public string ChainPath { get; internal set; }
+
+        /// <summary>Path to the folder with node's finalized block info repository database files.</summary>
+        public string FinalizedBlockInfoPath { get; internal set; }
 
         /// <summary>Path to the folder with block repository database files.</summary>
         /// <seealso cref="Features.BlockStore.BlockRepository.BlockRepository"/>

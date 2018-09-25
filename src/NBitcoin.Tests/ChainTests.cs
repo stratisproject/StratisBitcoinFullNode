@@ -170,21 +170,65 @@ namespace NBitcoin.Tests
         [Trait("UnitTest", "UnitTest")]
         public void CanFindFork()
         {
-            var chain = new ConcurrentChain(this.network);
-            var chain2 = new ConcurrentChain(this.network);
+            var chain1 = new ConcurrentChain(this.network);
 
-            this.AppendBlock(chain);
-            ChainedHeader fork = this.AppendBlock(chain);
-            ChainedHeader tip = this.AppendBlock(chain);
+            // Create the main chain with a commonChainSize blocks before the fork.
+            int commonChainSize = 150000;
+            for (int i = 0; i < commonChainSize; i++)
+                this.AppendBlock(chain1);
 
-            this.AssertFork(chain, chain2, chain.Genesis);
-            chain2 = new ConcurrentChain(this.networkTest);
-            this.AssertFork(chain, chain2, null);
-            chain2 = new ConcurrentChain(this.network);
-            chain2.SetTip(fork);
-            this.AssertFork(chain, chain2, fork);
-            chain2.SetTip(tip);
-            this.AssertFork(chain, chain2, tip);
+            ChainedHeader fork = this.AppendBlock(chain1);
+
+            // Add some blocks from the fork point to the tip.
+            int chain1AppendixSize = 100;
+            for (int i = 0; i < chain1AppendixSize; i++)
+                this.AppendBlock(chain1);
+
+            // Tip of the chain1.
+            ChainedHeader chain1Tip = chain1.Tip;
+
+            {
+	            // Test scenario 1:
+	            // chain2 is empty, so the fork point is supposed to be the Genesis.
+	            var chain2 = new ConcurrentChain(this.network);
+	            this.AssertFork(chain1, chain2, chain1.Genesis);
+            }
+
+            {
+	            // Test scenario 2:
+	            // chain2 is a chain on another network, null expected.
+	            var chain2 = new ConcurrentChain(this.networkTest);
+	            this.AssertFork(chain1, chain2, null);
+            }
+
+            {
+	            // Test scenario 3:
+	            // chain2 is a subset of chain1 and stops at the fork point "c", fork point expected.
+	            var chain2 = new ConcurrentChain(this.network);
+	            chain2.SetTip(fork);
+	            this.AssertFork(chain1, chain2, fork);
+            }
+
+            {
+	            // Test scenario 4:
+	            // chain2 is a forked chain (at the fork point "c") that has other blocks on top of it, fork point expected.
+	            var chain2 = new ConcurrentChain(this.network);
+	            chain2.SetTip(fork);
+
+	            var chain2ForkDepth = 200;
+	            for (int i = 0; i < chain2ForkDepth; i++)
+                    this.AppendBlock(chain2);
+
+	            this.AssertFork(chain1, chain2, fork);
+            }
+
+            {
+	            // Test scenario 5:
+	            // chain2 is at the same tip of chain1, no fork happened, tip point expected.
+	            var chain2 = new ConcurrentChain(this.network);
+	            chain2.SetTip(chain1Tip);
+	            this.AssertFork(chain1, chain2, chain1Tip);
+            }
         }
 
         private void AssertFork(ConcurrentChain chain, ConcurrentChain chain2, ChainedHeader expectedFork)
@@ -430,7 +474,7 @@ namespace NBitcoin.Tests
             Assert.NotNull(side.GetBlock(sideb.HashBlock));
         }
 
-        /// <summary> 
+        /// <summary>
         /// Adapted from bitcoin core test, verify GetAncestor is using skip list in <see cref="ChainedHeader"/>.
         /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/test/skiplist_tests.cpp"/>
         /// </summary>
@@ -470,7 +514,7 @@ namespace NBitcoin.Tests
             }
         }
 
-        /// <summary> 
+        /// <summary>
         /// Adapted from bitcoin core test, verify GetLocator is using skip list in <see cref="ChainedHeader"/>.
         /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/master/src/test/skiplist_tests.cpp"/>
         /// </summary>

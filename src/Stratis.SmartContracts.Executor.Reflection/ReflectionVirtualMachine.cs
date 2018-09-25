@@ -17,7 +17,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Used to instantiate smart contracts using reflection and then execute certain methods and their parameters.
     /// </summary>
-    public class ReflectionVirtualMachine : ISmartContractVirtualMachine
+    public class ReflectionVirtualMachine : IVirtualMachine
     {
         private readonly ILogger logger;
         private readonly Network network;
@@ -43,15 +43,23 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a new instance of a smart contract by invoking the contract's constructor
         /// </summary>
-        public VmExecutionResult Create(IContractState repository, ISmartContractState contractState, byte[] contractCode, object[] parameters, string typeName = null)
+        public VmExecutionResult Create(IStateRepository repository, ISmartContractState contractState, byte[] contractCode, object[] parameters, string typeName = null)
         {
             this.logger.LogTrace("()");
 
             string typeToInstantiate;
             ContractByteCode code;
 
-            // Decompile the contract execution code and validate it.
-            using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode))
+            // Decompile the contract execution code
+            Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(contractCode);
+            if (moduleResult.IsFailure)
+            {
+                this.logger.LogTrace("(-)[CONTRACT_BYTECODE_INVALID]");
+                return VmExecutionResult.Error(new ContractErrorMessage("Contract bytecode is not valid IL."));
+            }
+
+            // Validate contract execution code
+            using (IContractModuleDefinition moduleDefinition = moduleResult.Value)
             {
                 SmartContractValidationResult validation = moduleDefinition.Validate(this.validator);
 
@@ -120,7 +128,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             ContractByteCode code;
 
-            using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode))
+            // Code we're loading from database - can assume it's valid.
+            using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode).Value)
             {
                 var observer = new Observer(contractState.GasMeter, MemoryUnitLimit);
                 var rewriter = new ObserverRewriter(observer);

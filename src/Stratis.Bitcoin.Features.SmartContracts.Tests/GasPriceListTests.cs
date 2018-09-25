@@ -65,6 +65,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void SmartContracts_GasPrice_TestLogPrices()
+        {
+            List<byte[]> topics = new List<byte[]>
+            {
+                new byte[]{ 1, 2, 3, 4, 5, 6 }
+            };
+            byte[] data = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            Gas cost = (Gas)(GasPriceList.LogPerTopicByteCost * topics[0].Length + GasPriceList.LogPerByteCost * data.Length);
+
+            Assert.Equal(cost, GasPriceList.LogOperationCost(topics, data));
+        }
+
+        [Fact]
         public void SmartContracts_GasPrice_TestMethodCallPrices()
         {
             var module = typeof(object).Module.FullyQualifiedName;

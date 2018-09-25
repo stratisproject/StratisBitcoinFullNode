@@ -110,8 +110,8 @@ namespace Stratis.Bitcoin.Base
         private readonly IBlockPuller blockPuller;
         private readonly IBlockStore blockStore;
 
-        /// <inheritdoc cref="IFinalizedBlockInfo"/>
-        private readonly IFinalizedBlockInfo finalizedBlockInfo;
+        /// <inheritdoc cref="IFinalizedBlockInfoRepository"/>
+        private readonly IFinalizedBlockInfoRepository finalizedBlockInfoRepository;
 
         /// <inheritdoc cref="IPartialValidator"/>
         private readonly IPartialValidator partialValidator;
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Base
             IChainState chainState,
             IConnectionManager connectionManager,
             IChainRepository chainRepository,
-            IFinalizedBlockInfo finalizedBlockInfo,
+            IFinalizedBlockInfoRepository finalizedBlockInfo,
             IDateTimeProvider dateTimeProvider,
             IAsyncLoopFactory asyncLoopFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
-            this.finalizedBlockInfo = Guard.NotNull(finalizedBlockInfo, nameof(finalizedBlockInfo));
+            this.finalizedBlockInfoRepository = Guard.NotNull(finalizedBlockInfo, nameof(finalizedBlockInfo));
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
@@ -223,8 +223,14 @@ namespace Stratis.Bitcoin.Base
                 Directory.CreateDirectory(this.dataFolder.ChainPath);
             }
 
+            if (!Directory.Exists(this.dataFolder.FinalizedBlockInfoPath))
+            {
+                this.logger.LogInformation("Creating {0}.", this.dataFolder.FinalizedBlockInfoPath);
+                Directory.CreateDirectory(this.dataFolder.FinalizedBlockInfoPath);
+            }
+
             this.logger.LogInformation("Loading finalized block height.");
-            await this.finalizedBlockInfo.LoadFinalizedBlockInfoAsync(this.network).ConfigureAwait(false);
+            await this.finalizedBlockInfoRepository.LoadFinalizedBlockInfoAsync(this.network).ConfigureAwait(false);
 
             this.logger.LogInformation("Loading chain.");
             ChainedHeader chainTip = await this.chainRepository.LoadAsync(this.chain.Genesis).ConfigureAwait(false);
@@ -303,6 +309,9 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogInformation("Disposing chain repository.");
             this.chainRepository.Dispose();
 
+            this.logger.LogInformation("Disposing finalized block info repository.");
+            this.finalizedBlockInfoRepository.Dispose();
+
             this.logger.LogInformation("Disposing block store.");
             this.blockStore.Dispose();
         }
@@ -338,7 +347,8 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
                     services.AddSingleton<IInvalidBlockHashStore, InvalidBlockHashStore>();
                     services.AddSingleton<IChainState, ChainState>();
-                    services.AddSingleton<IChainRepository, ChainRepository>().AddSingleton<IFinalizedBlockInfo, ChainRepository>(provider => provider.GetService<IChainRepository>() as ChainRepository);
+                    services.AddSingleton<IChainRepository, ChainRepository>();
+                    services.AddSingleton<IFinalizedBlockInfoRepository, FinalizedBlockInfoRepository>();
                     services.AddSingleton<ITimeSyncBehaviorState, TimeSyncBehaviorState>();
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
                     services.AddSingleton<NodeDeployments>();

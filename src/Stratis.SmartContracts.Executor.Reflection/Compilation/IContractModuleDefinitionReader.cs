@@ -1,10 +1,12 @@
-﻿namespace Stratis.SmartContracts.Executor.Reflection.Compilation
+﻿using CSharpFunctionalExtensions;
+
+namespace Stratis.SmartContracts.Executor.Reflection.Compilation
 {
     public interface IContractModuleDefinitionReader
     {
         /// <summary>
         /// Reads a <see cref="IContractModuleDefinition"/> from the given byte code.
         /// </summary>
-        IContractModuleDefinition Read(byte[] bytes);
+        Result<IContractModuleDefinition> Read(byte[] bytes);
     }
 }

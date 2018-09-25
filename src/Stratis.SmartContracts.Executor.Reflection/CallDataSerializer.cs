@@ -23,40 +23,48 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         public Result<ContractTxData> Deserialize(byte[] smartContractBytes)
-        { 
-            var byteCursor = 1;
-            var takeLength = 0;
-
-            var type = smartContractBytes[0];
-
-            var vmVersion = Deserialize<int>(smartContractBytes, ref byteCursor, ref takeLength);
-            var gasPrice = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
-            var gasLimit = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
-
-            if (IsCallContract(type))
+        {
+            try
             {
-                var contractAddress = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
-                var methodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
-                var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+                var byteCursor = 1;
+                var takeLength = 0;
 
-                var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
+                var type = smartContractBytes[0];
 
-                var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw, methodParameters);
-                return Result.Ok(callData);
+                var vmVersion = Deserialize<int>(smartContractBytes, ref byteCursor, ref takeLength);
+                var gasPrice = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
+                var gasLimit = (Gas)Deserialize<ulong>(smartContractBytes, ref byteCursor, ref takeLength);
+
+                if (IsCallContract(type))
+                {
+                    var contractAddress = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
+                    var methodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+                    var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+
+                    var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
+
+                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw, methodParameters);
+                    return Result.Ok(callData);
+                }
+
+                if (IsCreateContract(type))
+                {
+                    var contractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
+                    var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+
+                    var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
+
+                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw, methodParameters);
+                    return Result.Ok(callData);
+                }
+            }
+            catch (Exception e)
+            {
+                // TODO: Avoid this catch all exceptions
+                return Result.Fail<ContractTxData>("Error deserializing calldata. " + e.Message);
             }
 
-            if (IsCreateContract(type))
-            {
-                var contractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
-                var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
-
-                var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
-
-                var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw, methodParameters);
-                return Result.Ok(callData);
-            }
-
-            return Result.Fail<ContractTxData>("Error deserializing calldata");
+            return Result.Fail<ContractTxData>("Error deserializing calldata. Incorrect first byte.");
         }
 
         private static bool IsCreateContract(byte type)

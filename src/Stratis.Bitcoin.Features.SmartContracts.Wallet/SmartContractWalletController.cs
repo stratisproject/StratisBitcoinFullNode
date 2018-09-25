@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         }
 
         /// <summary>
-        //// Retrieves a string that represents the receiving address for an output.For smart contract transactions,
+        /// Retrieves a string that represents the receiving address for an output.For smart contract transactions,
         /// returns the opcode that was sent i.e.OP_CALL or OP_CREATE
         /// </summary>
         private string GetAddressFromScriptPubKey(TxOut output)

@@ -13,21 +13,21 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
     {
         public IContractModuleDefinition CompileFileToModuleDef(FileInfo file)
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile(file.FullName);
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile(file.FullName);
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;
-            IContractModuleDefinition decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
             return decomp;
         }
 
         public IContractModuleDefinition CompileToModuleDef(string source)
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(source);
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;
-            IContractModuleDefinition decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
             return decomp;
         }
 
