@@ -16,4 +16,4 @@ COPY city.conf.docker /root/.citychain/city/CityTest/city.conf
 
 EXPOSE 24333 24334 24335 24336
 
-ENTRYPOINT ["dotnet", "City.Chain.dll"]
+ENTRYPOINT ["dotnet", "City.Chain.dll", "-testnet"]

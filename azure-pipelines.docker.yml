@@ -2,7 +2,7 @@ pool:
   vmImage: 'Ubuntu-16.04'
 
 steps:
-  - script: docker build -f Docker/City.Chain/Dockerfile -t $(dockerId)/$(imageName) ./Docker/City.Chain/
+  - script: docker build -f Docker/$(imageFolder)/Dockerfile -t $(dockerId)/$(imageName) ./Docker/$(imageFolder)/
   - script: |
       docker login -u $(dockerId) -p $(dockerPassword)
       docker push $(dockerId)/$(imageName)
