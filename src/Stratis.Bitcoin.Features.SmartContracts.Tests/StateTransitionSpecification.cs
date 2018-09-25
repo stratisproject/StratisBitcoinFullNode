@@ -327,6 +327,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void Create_Out_Of_Gas_Error()
+        {
+        }
+
+        [Fact]
         public void InternalCall_Success()
         {
             // The difference between an internal and an external call:
@@ -402,6 +407,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         [Fact(Skip = "")]
         public void InternalCall_Code_Null()
+        {
+        }
+
+        [Fact]
+        public void Call_Out_Of_Gas_Error()
         {
         }
 
