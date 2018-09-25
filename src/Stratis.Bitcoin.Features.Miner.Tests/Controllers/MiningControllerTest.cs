@@ -50,8 +50,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             var controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, new Mock<IPowMining>().Object, new Mock<IWalletManager>().Object);
 
             IActionResult result = blockCount == null ?
-                controller.StartMining(new MiningRequest()) :
-                controller.StartMining(new MiningRequest { BlockCount = (int)blockCount });
+                controller.Generate(new MiningRequest()) :
+                controller.Generate(new MiningRequest { BlockCount = (int)blockCount });
 
             var errorResult = Assert.IsType<ErrorResult>(result);
             var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             var controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, new Mock<IPowMining>().Object, new Mock<IWalletManager>().Object);
             controller.ModelState.AddModelError("key", "error message");
 
-            IActionResult result = controller.StartMining(new MiningRequest());
+            IActionResult result = controller.Generate(new MiningRequest());
 
             var errorResult = Assert.IsType<ErrorResult>(result);
             var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
 
             var controller = new MiningController(consensusManager.Object, powNode.Object, this.loggerFactory, KnownNetworks.RegTest, powMining.Object, walletManager.Object);
 
-            IActionResult result = controller.StartMining(new MiningRequest { BlockCount = 1 });
+            IActionResult result = controller.Generate(new MiningRequest { BlockCount = 1 });
 
             powMining.VerifyAll();
             walletManager.VerifyAll();
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
 
             var controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, powMining.Object, walletManager.Object);
 
-            IActionResult result = controller.StartMining(new MiningRequest { BlockCount = 1 });
+            IActionResult result = controller.Generate(new MiningRequest { BlockCount = 1 });
 
             powMining.VerifyAll();
             walletManager.VerifyAll();
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
 
             var controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, new Mock<IPowMining>().Object, new Mock<IWalletManager>().Object);
 
-            IActionResult result = controller.StartMining(new MiningRequest { BlockCount = 1 });
+            IActionResult result = controller.Generate(new MiningRequest { BlockCount = 1 });
 
             var errorResult = Assert.IsType<ErrorResult>(result);
             var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(405, error.Status);
             Assert.Equal("Method not allowed", error.Message);
-            Assert.Equal(string.Format("This is a POS node and it's consensus tip is higher that the allowed last POW block height of {0}", this.network.Consensus.LastPOWBlock), error.Description);
+            Assert.Equal(string.Format("This is a POS node and it's consensus tip is higher than the allowed LastPowBlock height of {0}", this.network.Consensus.LastPOWBlock), error.Description);
         }
 
         [Fact]

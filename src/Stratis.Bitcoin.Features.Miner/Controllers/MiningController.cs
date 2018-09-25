@@ -51,9 +51,9 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <returns>List of block header hashes of newly mined blocks.</returns>
         /// <remarks>It is possible that less than the required number of blocks will be mined because the generating function only
         /// tries all possible header nonces values.</remarks>
-        [Route("startmining")]
+        [Route("generate")]
         [HttpPost]
-        public IActionResult StartMining([FromBody]MiningRequest request)
+        public IActionResult Generate([FromBody]MiningRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             {
                 if (this.network.Consensus.IsProofOfStake &&
                     this.consensusManager.Tip.Height > this.network.Consensus.LastPOWBlock)
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", string.Format("This is a POS node and it's consensus tip is higher that the allowed last POW block height of {0}", this.network.Consensus.LastPOWBlock));
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", string.Format("This is a POS node and it's consensus tip is higher than the allowed LastPowBlock height of {0}", this.network.Consensus.LastPOWBlock));
 
                 if (!this.ModelState.IsValid)
                 {
