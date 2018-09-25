@@ -8,6 +8,10 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
@@ -28,6 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private int repositorySavesCount = 0;
         private int repositoryTotalBlocksSaved = 0;
         private int repositoryTotalBlocksDeleted = 0;
+        private Random random;
 
         private Dictionary<uint256, Block> listOfSavedBlocks;
 
@@ -40,6 +45,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             var serializer = new DBreezeSerializer();
             serializer.Initialize(new StratisMain());
+
+            this.random = new Random();
 
             this.listOfSavedBlocks = new Dictionary<uint256, Block>();
             this.listOfSavedBlocks.Add(uint256.One, Block.Parse(this.testBlockHex, KnownNetworks.StratisMain));
@@ -383,6 +390,77 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             {
                 await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             }).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task RetrieveBlocksFromCacheAsync()
+        {
+            List<ChainedHeaderBlock> chainedHeaderBlocks = this.AddBlocksToBlockStoreQueue();
+
+            // Try to get 10 random blocks.
+            for (int i = 0; i < 10; i++)
+            {
+                int blockIndex = this.random.Next(0, chainedHeaderBlocks.Count);
+
+                Block blockToFind = chainedHeaderBlocks[blockIndex].Block;
+
+                Block foundBlock = await this.blockStoreQueue.GetBlockAsync(blockToFind.GetHash());
+                Assert.Equal(foundBlock, blockToFind);
+            }
+        }
+
+        [Fact]
+        public async Task RetrieveTransactionByIdFromCacheAsync()
+        {
+            List<ChainedHeaderBlock> chainedHeaderBlocks = this.AddBlocksToBlockStoreQueue();
+
+            // Try to get 10 random transactions.
+            for (int i = 0; i < 10; i++)
+            {
+                int blockIndex = this.random.Next(0, chainedHeaderBlocks.Count);
+
+                Transaction txToFind = chainedHeaderBlocks[blockIndex].Block.Transactions.First();
+
+                Transaction foundTx = await this.blockStoreQueue.GetTransactionByIdAsync(txToFind.GetHash());
+                Assert.Equal(txToFind, foundTx);
+            }
+        }
+
+        [Fact]
+        public async Task RetrieveBlockIdByTxIdFromCacheAsync()
+        {
+            List<ChainedHeaderBlock> chainedHeaderBlocks = this.AddBlocksToBlockStoreQueue();
+
+            // Try to get 10 random block ids.
+            for (int i = 0; i < 10; i++)
+            {
+                int blockIndex = this.random.Next(0, chainedHeaderBlocks.Count);
+
+                Transaction txToFind = chainedHeaderBlocks[blockIndex].Block.Transactions.First();
+
+                uint256 foundBlockHash = await this.blockStoreQueue.GetBlockIdByTransactionIdAsync(txToFind.GetHash());
+                Assert.Equal(chainedHeaderBlocks[blockIndex].Block.GetHash(), foundBlockHash);
+            }
+        }
+
+        private List<ChainedHeaderBlock> AddBlocksToBlockStoreQueue(int blocksCount = 500)
+        {
+            var chainedHeaderBlocks = new List<ChainedHeaderBlock>(blocksCount);
+
+            for (int i = 0; i < blocksCount; i++)
+            {
+                Block block = TransactionsHelper.CreateDummyBlockWithTransaction(this.network, this.chain.Tip);
+
+                var header = new ChainedHeader(block.Header, block.GetHash(), this.chain.Tip);
+
+                this.chain.SetTip(header);
+                chainedHeaderBlocks.Add(new ChainedHeaderBlock(block, header));
+            }
+
+            foreach (ChainedHeaderBlock chainedHeaderBlock in chainedHeaderBlocks)
+                this.blockStoreQueue.AddToPending(chainedHeaderBlock);
+
+            return chainedHeaderBlocks;
         }
     }
 }

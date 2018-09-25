@@ -465,7 +465,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 // Call contract and ensure owner is now highest bidder
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("Bid", response.NewContractAddress, 2);
                 receiver.WaitMempoolCount(1);
-                TestHelper.MineBlocks(receiver.CoreNode, 1, receiver.WalletName, receiver.Password, receiver.AccountName);
+                receiver.MineBlocks(1);
                 Assert.Equal(sender.GetStorageValue(response.NewContractAddress, "Owner"), sender.GetStorageValue(response.NewContractAddress, "HighestBidder"));
 
                 // Wait 20 blocks and end auction and check for transaction to victor
