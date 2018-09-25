@@ -34,16 +34,16 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         private static Func<HdAccount, bool> coldStakingAccounts = a => a.Index >= Wallet.Wallet.SpecialPurposeAccountIndexesStart;
 
         /// <summary>The account index of the cold wallet account.</summary>
-        private const int ColdWalletAccountIndex = Wallet.Wallet.SpecialPurposeAccountIndexesStart + 0;
+        internal const int ColdWalletAccountIndex = Wallet.Wallet.SpecialPurposeAccountIndexesStart + 0;
 
         /// <summary>The account name of the cold wallet account.</summary>
-        private const string ColdWalletAccountName = "coldStakingColdAddresses";
+        internal const string ColdWalletAccountName = "coldStakingColdAddresses";
 
         /// <summary>The account index of the hot wallet account.</summary>
-        private const int HotWalletAccountIndex = Wallet.Wallet.SpecialPurposeAccountIndexesStart + 1;
+        internal const int HotWalletAccountIndex = Wallet.Wallet.SpecialPurposeAccountIndexesStart + 1;
 
         /// <summary>The account name of the hot wallet account.</summary>
-        private const string HotWalletAccountName = "coldStakingHotAddresses";
+        internal const string HotWalletAccountName = "coldStakingHotAddresses";
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
