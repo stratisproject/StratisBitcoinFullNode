@@ -113,6 +113,18 @@
         public const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
 
         /// <summary>
+        /// Proven headers activation height for the mainnet.
+        /// TODO: Set it to the real value once it is known.
+        /// </summary>
+        public const int ProvenHeadersActivationHeightMainnet = 20_000_000;
+
+        /// <summary>
+        /// Proven headers activation height for the testnet.
+        /// TODO: Set it to the real value once it is known.
+        /// </summary>
+        public const int ProvenHeadersActivationHeightTestnet = 10_000_000;
+
+        /// <summary>
         /// Initializes the default values.
         /// </summary>
         public PosConsensusOptions()

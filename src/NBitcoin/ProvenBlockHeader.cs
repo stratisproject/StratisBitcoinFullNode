@@ -31,6 +31,9 @@ namespace NBitcoin
     /// </remarks>
     public class ProvenBlockHeader : PosBlockHeader
     {
+        /// <inheritdoc />
+        public override int CurrentVersion => 8;
+
         /// <summary>
         /// Coinstake transaction.
         /// </summary>
