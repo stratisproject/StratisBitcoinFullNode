@@ -34,6 +34,8 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         // Also check that validation and base cost fees are being applied correctly.
 
+        // TODO: Nonce Behaviour.
+
         [Fact]
         public void ContractTransaction_InvalidSerialization()
         {
@@ -178,7 +180,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Block contains a refund transaction
             Assert.Equal(3, lastBlock.Transactions.Count);
             Transaction refundTransaction = lastBlock.Transactions[2];
-            Assert.Single(refundTransaction.Outputs); // No refunds persisted
+            Assert.Single(refundTransaction.Outputs); // No transfers persisted
             uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
             Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
@@ -235,7 +237,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Block contains a refund transaction
             Assert.Equal(3, lastBlock.Transactions.Count);
             Transaction refundTransaction = lastBlock.Transactions[2];
-            Assert.Single(refundTransaction.Outputs); // No refunds persisted
+            Assert.Single(refundTransaction.Outputs); // No transfers persisted
             uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
             Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
@@ -257,10 +259,51 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Equal(preResponse.NewContractAddress, receipt.To);
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public void ContractTransaction_AddressDoesntExist()
         {
-            // Contract address doesn't exist
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            double amount = 25;
+            Money senderBalanceBefore = this.node1.WalletSpendableBalance;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+
+            // Send call to non-existent address
+            string nonExistentAddress = new uint160(0).ToAddress(this.mockChain.Network);
+            Assert.Null(this.node1.GetCode(nonExistentAddress));
+            BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("Method", nonExistentAddress, amount);
+
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            Block lastBlock = this.node1.GetLastBlock();
+
+            // Blocks progressed
+            Assert.NotEqual(currentHash, lastBlock.GetHash());
+
+            // Block contains a refund transaction
+            Assert.Equal(3, lastBlock.Transactions.Count);
+            Transaction refundTransaction = lastBlock.Transactions[2];
+            Assert.Single(refundTransaction.Outputs); // No transfers
+            uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
+            Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
+            Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
+
+            // Amount was refunded to wallet, minus fee
+            Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee);
+
+            // Receipt is correct
+            ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
+            Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
+            Assert.Empty(receipt.Logs);
+            Assert.False(receipt.Success);
+            Assert.True(receipt.GasUsed == 0); // TODO: THIS IS WRONG. Will fix in future work.
+            Assert.Null(receipt.NewContractAddress);
+            Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
+            Assert.Equal(StateTransitionErrors.NoCode, receipt.Error);
+            Assert.Equal(nonExistentAddress, receipt.To);
         }
 
         [Fact(Skip = "TODO")]

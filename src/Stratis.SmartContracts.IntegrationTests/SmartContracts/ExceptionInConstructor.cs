@@ -18,7 +18,6 @@ public class ExceptionInConstructor : SmartContract
         int value = array[26];
     }
 
-
     public struct ArbitraryLog
     {
         [Index]
