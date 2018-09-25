@@ -1,6 +1,6 @@
 ﻿namespace Stratis.SmartContracts.Executor.Reflection
 {
-    public class StateTransitionErrors
+    public static class StateTransitionErrors
     {
         public const string InsufficientBalance = "Insufficient balance.";
         public const string InsufficientGas = "Insufficient gas.";
