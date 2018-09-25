@@ -106,9 +106,48 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(stateTransitionResult.Success.ContractAddress.ToAddress(fixture.Network), result.NewContractAddress);
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public void Create_StateTransition_Error()
         {
+            ulong amount = 100UL;
+            var parameters = new object[] { };
+            var gasLimit = (Gas)100_000;
+
+            var fixture = new InternalExecutorTestFixture();
+
+            fixture.SetGasMeterLimitAbove(gasLimit);
+
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)1000, new ContractErrorMessage("Error"));
+
+            fixture.StateProcessor
+                .Setup(sp => sp.Apply(It.IsAny<IState>(), It.IsAny<InternalCreateMessage>()))
+                .Returns(stateTransitionResult);
+
+            var internalExecutor = new InternalExecutor(
+                fixture.LoggerFactory,
+                fixture.Network,
+                fixture.State.Object,
+                fixture.StateProcessor.Object);
+
+            ICreateResult result = internalExecutor.Create<string>(fixture.SmartContractState, amount, parameters, gasLimit);
+
+            fixture.State.Verify(s => s.Snapshot(), Times.Once);
+
+            fixture.StateProcessor.Verify(sp =>
+                sp.Apply(fixture.Snapshot, It.Is<InternalCreateMessage>(m =>
+                    m.Amount == amount &&
+                    m.Parameters == parameters &&
+                    m.GasLimit == gasLimit &&
+                    m.From == fixture.FromAddress &&
+                    m.Type == typeof(string).Name
+                )));
+
+            fixture.State.Verify(s => s.TransitionTo(fixture.Snapshot), Times.Never);
+
+            fixture.GasMeter.Verify(g => g.Spend(stateTransitionResult.GasConsumed));
+
+            Assert.False(result.Success);
+            Assert.Equal(default(Address), result.NewContractAddress);
         }
 
         [Fact(Skip = "TODO")]
