@@ -303,7 +303,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain_After_Connecting_Some_Blocks_And_Fail_Then_Revert_Back()
+        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain_Then_Connect_Blocks_And_Fail_Then_Revert_Back()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -355,7 +355,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain_After_Not_Connecting_Some_Blocks_And_Fail_Then_Revert_Back()
+        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain_Then_With_No_Connected_Blocks_And_Fail_Then_Revert_Back()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -393,13 +393,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                 engine.Register();
 
                 // Connect syncer to Miner B, reorg should fail.
-                TestHelper.ConnectAndSync(syncer, minerB);
+                TestHelper.Connect(syncer, minerB);
 
                 // Miner B should become disconnected.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, minerB));
 
                 // Make sure syncer rolled back
-                Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 30);
+                Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 20);
 
                 // Check syncer is still synced with Miner A
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
