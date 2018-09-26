@@ -383,6 +383,8 @@ public class Test : SmartContract
             var result = validator.Validate(decomp.ModuleDefinition);
 
             Assert.False(result.IsValid);
+            Assert.Single(result.Errors);
+            Assert.IsType<NewObjValidator.NewObjValidationResult>(result.Errors.First());
         }
 
         [Fact]
@@ -418,7 +420,7 @@ public class Test : SmartContract
             var result = validator.Validate(decomp.ModuleDefinition);
 
             Assert.True(result.IsValid);
-    }
+        }
 
         [Fact]
         public void SmartContract_ValidateFormat_NewArray_Succeeds()
@@ -448,7 +450,6 @@ public class Test : SmartContract
 
             Assert.True(result.IsValid);
         }
-
 
         [Fact]
         public void SmartContract_ValidateFormat_NewShortArray_Succeeds()
