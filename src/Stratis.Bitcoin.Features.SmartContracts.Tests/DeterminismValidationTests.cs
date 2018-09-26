@@ -571,6 +571,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         #endregion
 
+        #region Inheritance
+
+        // It's not necessarily a requirement that contract inheritance isn't allowed in the long run,
+        // but this test allows us to see the currently expected functionality and track changes.
+
+        [Fact]
+        public void Validate_Determinism_Inheritance_Fails()
+        {
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Inheritance.cs");
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.False(result.IsValid);
+        }
+
+        #endregion
+
         #region KnownBadMethodCall
 
         [Fact]
