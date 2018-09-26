@@ -62,7 +62,13 @@ namespace Stratis.Bitcoin.Features.Consensus
                     return;
                 }
 
-                currentHeader = currentHeader.Next[0];
+                currentHeader = currentHeader.Next.FirstOrDefault();
+
+                if (currentHeader == null)
+                {
+                    this.logger.LogTrace("(-)[NO_NEXT_HEADER]");
+                    return;
+                }
             }
 
             Block block = currentHeader.Block;
@@ -80,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             this.logger.LogDebug("Far from tip: {0}", farFromTip);
 
-            if (idsToFetch.Length != 0 && !cancellation.IsCancellationRequested && farFromTip)
+            if (idsToFetch.Length != 0 && farFromTip)
             {
                 await this.coinview.FetchCoinsAsync(idsToFetch, cancellation).ConfigureAwait(false);
 
