@@ -1,8 +1,13 @@
-﻿using Stratis.SmartContracts;
+﻿
+using Stratis.SmartContracts;
 
-public class ExceptionInConstructor : SmartContract
+public class ExceptionInMethod : SmartContract
 {
-    public ExceptionInConstructor(ISmartContractState smartContractState) : base(smartContractState)
+    public ExceptionInMethod(ISmartContractState smartContractState) : base(smartContractState)
+    {
+    }
+
+    public void Method()
     {
         // Create log that ultimately shouldn't be persisted due to failure.
         Log(new ArbitraryLog { Id = 1 });
@@ -13,7 +18,7 @@ public class ExceptionInConstructor : SmartContract
         // Create storage that ultimately shouldn't be persisted due to failure. 
         PersistentState.SetBool("Test", true);
 
-        // Throw (unexpected) OutOfIndexException
+        // Throws OutOfIndexException
         var array = new int[25];
         int value = array[26];
     }
@@ -24,3 +29,4 @@ public class ExceptionInConstructor : SmartContract
         public int Id;
     }
 }
+

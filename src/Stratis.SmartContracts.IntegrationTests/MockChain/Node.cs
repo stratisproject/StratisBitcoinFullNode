@@ -102,9 +102,9 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// <summary>
         /// Mine the given number of blocks. The block reward will go to this node's MinerAddress.
         /// </summary>
-        public void MineBlocks(int num)
+        public void MineBlocks(int amountOfBlocks)
         {
-            this.CoreNode.GenerateStratisWithMiner(num);
+            TestHelper.MineBlocks(this.CoreNode, amountOfBlocks, this.WalletName, this.Password, this.AccountName);
             this.chain.WaitForAllNodesToSync();
         }
 
