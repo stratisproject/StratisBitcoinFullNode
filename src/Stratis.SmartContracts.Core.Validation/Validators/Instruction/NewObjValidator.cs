@@ -19,7 +19,6 @@ namespace Stratis.SmartContracts.Core.Validation
             // OpCodes.Initobj is only be used to create value types, so we only need to check Newobj.
             // Ref. https://docs.microsoft.com/en-US/dotnet/api/system.reflection.emit.opcodes.newobj?view=netcore-2.1
             // Ref. https://docs.microsoft.com/en-US/dotnet/api/system.reflection.emit.opcodes.initobj?view=netcore-2.1
-
             if (instruction.OpCode.Code == Code.Newobj)
             {
                 if (instruction.Operand is MethodReference methodRef)
