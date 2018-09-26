@@ -18,6 +18,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// How many blocks ahead prefetching will look.
         /// When header at height X is dequeued block with header at height <c>X + Lookahead</c> will be prefetched in case block data is downloaded.
         /// </summary>
+        /// TODO maybe make it dynamic so the value is increased when we are too close to the tip after prefetching was completed
+        /// and decreased if we are too far from the tip.
         private const int Lookahead = 20;
 
         /// <summary>Queue of headers that were added when block associated with such header was fully validated.</summary>
