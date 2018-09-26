@@ -23,7 +23,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         private IProvenBlockHeaderRepository provenBlockHeaderRepository;
         private readonly IChainState chainState;
         private readonly Mock<INodeLifetime> nodeLifetime;
-
         private readonly string Folder;
 
         public ProvenBlockHeaderStoreTests() : base(KnownNetworks.StratisTest)
@@ -64,12 +63,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             chainedHeader.HashBlock.Should().Be(this.network.GetGenesis().GetHash());
         }
 
-
         [Fact]
         public void LoadItems()
         {
-            // Put 4 items to in the repository.
+            // Put 4 items to in the repository - items created in constructor.
             var items = new List<StakeItem>();
+
             var itemCounter = 0;
 
             ChainedHeader chainedHeader = this.concurrentChain.Tip;
@@ -105,12 +104,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
         private IProvenBlockHeaderStore SetupStore(Network network, string folder)
         {
-            var store = new ProvenBlockHeaderStore(
-                network, this.concurrentChain, DateTimeProvider.Default, 
-                this.LoggerFactory.Object, this.provenBlockHeaderRepository, 
+            return new ProvenBlockHeaderStore(
+                network, this.concurrentChain, DateTimeProvider.Default,
+                this.LoggerFactory.Object, this.provenBlockHeaderRepository,
                 this.nodeLifetime.Object, this.chainState);
-
-            return store;
         }
 
         private ConcurrentChain GenerateChainWithHeight(int blockAmount)
