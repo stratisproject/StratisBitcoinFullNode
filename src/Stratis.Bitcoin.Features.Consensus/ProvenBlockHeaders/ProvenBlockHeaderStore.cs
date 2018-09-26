@@ -90,7 +90,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.provenBlockHeaderRepository = provenBlockHeaderRepository;
             this.nodeLifetime = nodeLifetime;
             this.chainState = chainState;
-
             this.lockobj = new AsyncLock();
             this.batch = new List<StakeItem>();
             this.stakeItemQueue = new AsyncQueue<StakeItem>();
@@ -104,11 +103,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             await this.provenBlockHeaderRepository.InitializeAsync(blockHash, cancellationToken).ConfigureAwait(false);
 
             this.TipHash = await this.GetTipHashAsync(cancellationToken).ConfigureAwait(false);
+
             this.logger.LogDebug("Initialized ProvenBlockHader block tip at '{0}'.", this.TipHash);
 
             this.SetStoreTip(this.chain.GetBlock(this.TipHash));
 
             this.currentBatchSizeBytes = 0;
+
             this.dequeueLoopTask = this.DequeueContinuouslyAsync();
 
             this.logger.LogTrace("(-)");
@@ -120,6 +121,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.logger.LogTrace("()");
 
             uint256 hash = await this.provenBlockHeaderRepository.GetTipHashAsync().ConfigureAwait(false);
+
             ChainedHeader next = this.chain.GetBlock(hash);
 
             using (await this.lockobj.LockAsync(cancellationToken).ConfigureAwait(false))
@@ -214,6 +216,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public void AddToPending(ChainedHeader chainedHeader, ProvenBlockHeader provenBlockHeader)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(provenBlockHeader), provenBlockHeader);
+
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             var item = new StakeItem
@@ -238,6 +241,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.logger.LogTrace("()");
 
             Task<StakeItem> dequeueTask = null;
+
             Task timerTask = null;
 
             while(!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
@@ -331,6 +335,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.logger.LogTrace("()");
 
             this.storeTip = newTip;
+
             this.chainState.BlockStoreTip = newTip;
 
             this.logger.LogTrace("(-)");

@@ -102,6 +102,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
 
                 this.logger.LogTrace("(-)");
+
             }, cancellationToken);
 
             return task;
@@ -119,6 +120,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 using (DBreeze.Transactions.Transaction txn = this.dbreeze.GetTransaction())
                 {
                     txn.SynchronizeTables(ProvenBlockHeaderTable);
+
                     txn.ValuesLazyLoadingIsOn = false;
 
                     using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
@@ -167,6 +169,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
 
                 this.logger.LogTrace("(-)");
+
             }, cancellationToken);
 
             return task;
@@ -189,7 +192,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
 
                 this.logger.LogTrace("(-):'{0}'", tipHash);
+
                 return tipHash;
+
             }, cancellationToken);
 
             return task;
@@ -231,6 +236,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.logger.LogTrace("({0}:'{1}')", nameof(blockId), blockId);
 
             this.blockHash = blockId;
+
             txn.Insert<byte[], uint256>(BlockHashTable, blockHashKey, blockId);
 
             this.logger.LogTrace("(-)");
@@ -277,6 +283,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             }
 
             List<KeyValuePair<uint256, StakeItem>> stakeItemList = stakeDict.ToList();
+
             stakeItemList.Sort((pair1, pair2) => pair1.Value.Height.CompareTo(pair2.Value.Height));
 
             foreach (KeyValuePair<uint256, StakeItem> stakeItem in stakeItemList)
@@ -285,6 +292,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 // Check if the header already exists in the database.
                 Row<byte[], ProvenBlockHeader> headerRow = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, outStakeItem.BlockId.ToBytes());
+
                 if (!headerRow.Exists)
                 {
                     yield return outStakeItem;
