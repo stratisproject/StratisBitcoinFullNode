@@ -40,7 +40,6 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         // TODO: Calls to private methods.
         
-
         [Fact]
         public void ContractTransaction_InvalidSerialization()
         {
