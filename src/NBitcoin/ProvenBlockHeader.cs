@@ -61,13 +61,13 @@ namespace NBitcoin
         /// </summary>
         public BlockSignature Signature => this.signature;
 
-        /// <summary>Gets the size of the merkle proof in bytes, the header must be serialized for this property to be set.</summary>
+        /// <summary>Gets the size of the merkle proof in bytes, the header must be serialized or deserialized for this property to be set.</summary>
         public long? MerkleProofSize { get; protected set; }
 
-        /// <summary>Gets the size of the signature in bytes, the header must be serialized for this property to be set.</summary>
+        /// <summary>Gets the size of the signature in bytes, the header must be serialized or deserialized for this property to be set.</summary>
         public long? SignatureSize { get; protected set; }
 
-        /// <summary>Gets the size of the coinstake in bytes, the header must be serialized for this property to be set.</summary>
+        /// <summary>Gets the size of the coinstake in bytes, the header must be serialized or deserialized for this property to be set.</summary>
         public long? CoinstakeSize { get; protected set; }
 
         public ProvenBlockHeader()

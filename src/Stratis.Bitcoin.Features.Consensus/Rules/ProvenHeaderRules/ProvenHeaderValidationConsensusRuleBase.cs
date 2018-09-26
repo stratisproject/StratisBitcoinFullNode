@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
     /// Base rule to be used by all proven header validation rules. 
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Consensus.Rules.HeaderValidationConsensusRule" />
-    public abstract class ProvenHeaderValidationConsensusRule : HeaderValidationConsensusRule
+    public abstract class ProvenHeaderValidationConsensusRuleBase : HeaderValidationConsensusRule
     {
         /// <summary>Allow access to the POS parent.</summary>
         protected PosConsensusRuleEngine PosParent;
