@@ -29,7 +29,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 Node sender = chain.Nodes[0];
                 Node receiver = chain.Nodes[1];
 
-                TestHelper.MineBlocks(sender.CoreNode, 1, sender.WalletName, sender.Password, sender.AccountName);
+                sender.MineBlocks(1);
 
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ContractCreation.cs");
                 Assert.True(compilationResult.Success);
