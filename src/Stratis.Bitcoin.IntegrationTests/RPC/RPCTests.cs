@@ -214,6 +214,27 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             Assert.StartsWith("[" + Environment.NewLine + "  \"", resp);
         }
 
+        /// <summary>
+        /// Tests that RPC method 'SendRawTransaction' can be called with a new transaction.
+        /// </summary>
+        [Fact]
+        public void SendRawTransaction()
+        {
+            var tx = new Transaction();
+            tx.Outputs.Add(new TxOut(Money.Coins(1.0m), new Key()));
+            this.rpcTestFixture.RpcClient.SendRawTransaction(tx);
+        }
+
+        /// <summary>
+        /// Tests that RPC method 'GetNewAddress' can be called and returns an address.
+        /// </summary>
+        [Fact]
+        public void GetNewAddress()
+        {
+            BitcoinAddress address = this.rpcTestFixture.RpcClient.GetNewAddress();
+            Assert.NotNull(address);            
+        }
+
         // TODO: implement the RPC methods used below
         //[Fact]
         //public void RawTransactionIsConformsToRPC()
@@ -241,15 +262,6 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         //public void TryEstimateFeeRate()
         //{
         //    Assert.Null(this.rpcTestFixture.RpcClient.TryEstimateFeeRate(1));
-        //}
-
-        //[Fact]
-        //public void CanGetTransactionBlockFromRPC()
-        //{
-        //    uint256 blockId = this.rpcTestFixture.RpcClient.GetBestBlockHash();
-        //    RPCBlock block = this.rpcTestFixture.RpcClient.GetRPCBlockAsync(blockId).Result;
-        //    Assert.NotNull(block);
-        //    Assert.Equal(blockId, uint.Parse(block.hash));
         //}
 
         //[Fact]
