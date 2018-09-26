@@ -7,7 +7,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     ///<inheritdoc/>
     public sealed class InternalExecutor : IInternalTransactionExecutor
     {
-        private const ulong DefaultGasLimit = GasPriceList.BaseCost * 2 - 1;
+        public const ulong DefaultGasLimit = GasPriceList.BaseCost * 2 - 1;
 
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
