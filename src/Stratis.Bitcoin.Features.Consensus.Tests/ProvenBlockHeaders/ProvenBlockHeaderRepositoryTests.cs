@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task GetAsyncReadsProvenBlockHeaderFromTheDatabaseAsync()
+        public async Task GetAsyncReadsProvenBlockHeaderFromDatabaseAndDoesNotOverwriteOnFirstLoadAsync()
         {
             string folder = CreateTestDir(this);
 
@@ -166,13 +166,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
                 txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, item[0].BlockId.ToBytes(false), item[0].ProvenBlockHeader);
+                txn.Insert<byte[], uint256>(BlockHashTable, new byte[0], item[0].BlockId);
                 txn.Commit();
             }
 
             // Query the repository for the item that was inserted in the above code.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                await repo.GetAsync(item);
+                await repo.GetAsync(item).ConfigureAwait(false);
             }
 
             item[0].ProvenBlockHeader.Should().NotBeNull();

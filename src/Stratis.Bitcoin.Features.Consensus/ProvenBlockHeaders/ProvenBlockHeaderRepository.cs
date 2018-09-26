@@ -89,13 +89,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             Task task = Task.Run(() =>
             {
                 this.logger.LogInformation("Initializing {0}.", nameof(ProvenBlockHeaderRepository));
-
-                uint256 blockId = blockHash ?? this.network.GetGenesis().GetHash();
-
+                
                 using (DBreeze.Transactions.Transaction txn = this.dbreeze.GetTransaction())
                 {
                     if (this.GetTipHash(txn) == null)
                     {
+                        uint256 blockId = blockHash ?? this.network.GetGenesis().GetHash();
+
                         this.SetTipHash(txn, blockId);
                         txn.Commit();
                     }
