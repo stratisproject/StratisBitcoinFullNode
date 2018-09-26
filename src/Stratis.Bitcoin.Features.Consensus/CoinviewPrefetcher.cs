@@ -81,15 +81,19 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return;
             }
 
+            bool farFromTip = currentHeader.Height > this.chain.Tip.Height + Lookahead/2;
+
+            if (!farFromTip)
+            {
+                this.logger.LogDebug("Far from tip is false! Skipping prefetching.");
+                this.logger.LogTrace("(-)[TOO_CLOSE_TO_PREFETCH]");
+                return;
+            }
+
             bool enforceBIP30 = DeploymentFlags.EnforceBIP30ForBlock(currentHeader);
             uint256[] idsToFetch = this.coinviewHelper.GetIdsToFetch(block, enforceBIP30);
 
-            bool farFromTip = currentHeader.Height > this.chain.Tip.Height + 2;
-
-            if (!farFromTip)
-                this.logger.LogDebug("Far from tip is false!");
-
-            if (idsToFetch.Length != 0 && farFromTip)
+            if (idsToFetch.Length != 0)
             {
                 await this.coinview.FetchCoinsAsync(idsToFetch, cancellation).ConfigureAwait(false);
 
