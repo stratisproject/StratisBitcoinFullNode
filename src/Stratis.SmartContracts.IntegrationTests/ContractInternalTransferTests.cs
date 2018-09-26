@@ -54,7 +54,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 nameof(BasicTransfer.SendToAddress),
                 preResponse.NewContractAddress,
                 amount,
-                parameters: parameters);
+                parameters);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
 
@@ -75,16 +75,19 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Amount in wallet is reduced by amount sent and fee.
             Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee + new Money((long)amount, MoneyUnit.BTC));
 
+            // Contract doesn't maintain any balance
+            Assert.Equal((ulong) 0, this.node1.GetContractBalance(preResponse.NewContractAddress));
+
             // Receipt is correct
             ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
             Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
-            Assert.Empty(receipt.Logs);
-            Assert.False(receipt.Success);
+            Assert.Empty(receipt.Logs); // TODO: Could add logs to this test
+            Assert.True(receipt.Success);
             Assert.True(receipt.GasUsed > GasPriceList.BaseCost);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
-            Assert.StartsWith("System.IndexOutOfRangeException", receipt.Error);
+            Assert.Null(receipt.Error);
             Assert.Equal(preResponse.NewContractAddress, receipt.To);
         }
 
