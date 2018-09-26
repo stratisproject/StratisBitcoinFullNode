@@ -97,6 +97,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                         uint256 blockId = blockHash ?? this.network.GetGenesis().GetHash();
 
                         this.SetTipHash(txn, blockId);
+
                         txn.Commit();
                     }
                 }
@@ -188,9 +189,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    transaction.ValuesLazyLoadingIsOn = false;
                     tipHash = this.GetTipHash(transaction);
-
                 }
 
                 this.logger.LogTrace("(-):'{0}'", tipHash);
@@ -224,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 if (row.Exists)
                     this.blockHash = row.Value;
 
-                txn.ValuesLazyLoadingIsOn = true;
+                txn.ValuesLazyLoadingIsOn = false;
             }
 
             return this.blockHash;
