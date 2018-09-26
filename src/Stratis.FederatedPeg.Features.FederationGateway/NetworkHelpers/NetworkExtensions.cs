@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
+using Stratis.Bitcoin.Networks;
 using Stratis.Sidechains.Networks;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers
@@ -11,8 +12,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers
     public static class NetworkExtensions
     {
         public static readonly List<string> MainChainNames = new List<Network> {
-            Network.StratisMain, Network.StratisTest, Network.StratisRegTest,
-            Network.Main, Network.TestNet, Network.RegTest
+            new StratisMain(), new StratisTest(), new StratisRegTest(),
+            new BitcoinMain(), new BitcoinTest(), new BitcoinRegTest()
         }.Select(n => n.Name.ToLower()).ToList();
 
         public static Chain ToChain(this Network network)
@@ -22,12 +23,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers
 
         public static Network ToCounterChainNetwork(this Network network)
         {
-            if (network == Network.StratisMain) return ApexNetwork.Main;
-            if (network == Network.StratisTest) return ApexNetwork.Test;
-            if (network == Network.StratisRegTest) return ApexNetwork.RegTest;
-            if (network == ApexNetwork.Main) return Network.StratisMain;
-            if (network == ApexNetwork.Test) return Network.StratisTest;
-            if (network == ApexNetwork.RegTest) return Network.StratisRegTest;
+            if (network.Name.ToLower() == MainChainNames[0]) return ApexNetwork.Main;
+            if (network.Name.ToLower() == MainChainNames[1]) return ApexNetwork.Test;
+            if (network.Name.ToLower() == MainChainNames[2]) return ApexNetwork.RegTest;
+            if (network.Name.ToLower() == ApexNetwork.Main.Name.ToLower()) return new StratisMain();
+            if (network.Name.ToLower() == ApexNetwork.Test.Name.ToLower()) return new StratisTest();
+            if (network.Name.ToLower() == ApexNetwork.RegTest.Name.ToLower()) return new StratisRegTest();
             throw new System.ArgumentException("Unknown network.");
         }
     }

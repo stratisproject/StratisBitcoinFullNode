@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Sidechains.Networks;
 
@@ -38,19 +39,21 @@ namespace Stratis.SidechainD
                     args = args.Concat(new[] { "apiport=38225" }).ToArray();
                 }
 
-                NodeSettings nodeSettings = new NodeSettings(ApexNetwork.Test, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                var network = new ApexTest();
+                NodeSettings nodeSettings = new NodeSettings(network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
                 string[] seedNodes = { "104.211.178.243", "51.144.35.218", "65.52.5.149", "51.140.231.125", "13.70.81.5" };
-                ApexNetwork.Test.SeedNodes.AddRange(ConvertToNetworkAddresses(seedNodes, ApexNetwork.Test.DefaultPort).ToList());
+                network.SeedNodes.AddRange(ConvertToNetworkAddresses(seedNodes, network.DefaultPort).ToList());
 
                 var node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
                     .UsePowConsensus()
                     .UseMempool()
-                    .AddRPC()
                     .UseWallet()
+                    //.AddPowPosMining()
                     .UseApi()
+                    .AddRPC()
                     .Build();
 
                 if (node != null)

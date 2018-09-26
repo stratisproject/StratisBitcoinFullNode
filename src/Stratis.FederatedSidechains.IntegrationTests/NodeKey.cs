@@ -31,6 +31,7 @@ namespace Stratis.FederatedSidechains.IntegrationTests
 
         public string Name => Chain.ToString() + Role + Index;
         public string Password => nameof(Password) + Name;
+        public string Passphrase => nameof(Passphrase) + Name;
         public string WalletName => NamingConstants.Wallet + Name;
 
         public FederationMemberKey AsFederationMemberKey()

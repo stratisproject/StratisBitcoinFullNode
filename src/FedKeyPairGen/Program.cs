@@ -2,6 +2,7 @@
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Networks;
 using Stratis.Sidechains.Networks;
 
 namespace FedKeyPairGen
@@ -131,7 +132,7 @@ namespace FedKeyPairGen
             Console.WriteLine("Sidechan P2SH: " + sidechainMultisigAddress.ScriptPubKey);
             Console.WriteLine("Sidechain Multisig address: " + sidechainMultisigAddress);
 
-            BitcoinAddress mainchainMultisigAddress = payToMultiSig.Hash.GetAddress(Network.StratisTest);
+            BitcoinAddress mainchainMultisigAddress = payToMultiSig.Hash.GetAddress(new StratisTest());
             Console.WriteLine("Mainchain P2SH: " + mainchainMultisigAddress.ScriptPubKey);
             Console.WriteLine("Mainchain Multisig address: " + mainchainMultisigAddress);
         }

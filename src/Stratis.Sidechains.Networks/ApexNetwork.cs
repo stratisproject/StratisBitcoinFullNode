@@ -1,4 +1,6 @@
-﻿using NBitcoin;
+﻿using System;
+using System.Threading;
+using NBitcoin;
 using NBitcoin.DataEncoders;
 
 namespace Stratis.Sidechains.Networks
@@ -10,11 +12,15 @@ namespace Stratis.Sidechains.Networks
         public const string TestNetworkName = ChainName + "Test";
         public const string RegTestNetworkName = ChainName + "RegTest";
 
-        public static Network Main => Network.GetNetwork(MainNetworkName) ?? Network.Register(new ApexMain());
+        private static Lazy<Network> main = new Lazy<Network>(() => new ApexMain(), LazyThreadSafetyMode.PublicationOnly);
+        private static Lazy<Network> test = new Lazy<Network>(() => new ApexTest(), LazyThreadSafetyMode.PublicationOnly);
+        private static Lazy<Network> regTest = new Lazy<Network>(() => new ApexRegTest(), LazyThreadSafetyMode.PublicationOnly);
 
-        public static Network Test => Network.GetNetwork(TestNetworkName) ?? Network.Register(new ApexTest());
+        public static Network Main => main.Value;
 
-        public static Network RegTest => Network.GetNetwork(RegTestNetworkName) ?? Network.Register(new ApexRegTest());
+        public static Network Test => test.Value;
+
+        public static Network RegTest => regTest.Value;
 
         public static Block CreateGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {

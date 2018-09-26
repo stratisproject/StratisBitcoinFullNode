@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using NBitcoin;
+using Stratis.Bitcoin.Networks;
 using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 using Stratis.Sidechains.Networks;
 using Xunit;
@@ -12,43 +13,37 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void correctly_identify_mainchain()
         {
-            //reg test
-            var network = Network.StratisRegTest;
-            var chain = network.ToChain();
+            var stratisRegTest = new StratisRegTest();
+            var chain = stratisRegTest.ToChain();
             chain.Should().Be(Chain.Mainchain);
             chain.Should().NotBe(Chain.Sidechain);
 
-            //testnet
-            network = Network.StratisTest;
-            chain = network.ToChain();
+            var stratisTest = new StratisTest();
+            chain = stratisTest.ToChain();
             chain.Should().Be(Chain.Mainchain);
             chain.Should().NotBe(Chain.Sidechain);
 
-            //mainnet
-            network = Network.StratisMain;
-            chain = network.ToChain();
+            var stratisMain = new StratisMain();
+            chain = stratisMain.ToChain();
             chain.Should().Be(Chain.Mainchain);
             chain.Should().NotBe(Chain.Sidechain);
         }
 
         [Fact]
         public void correctly_identify_sidechain()
-        {
-            //reg test	
-            var network = ApexNetwork.RegTest;
-            var chain = network.ToChain();
+        {	
+            var apexRegTest = new ApexRegTest();
+            var chain = apexRegTest.ToChain();
             chain.Should().Be(Chain.Sidechain);
             chain.Should().NotBe(Chain.Mainchain);
 
-            //testnet	
-            network = ApexNetwork.Test;
-            chain = network.ToChain();
+            var apexTest = new ApexTest();
+            chain = apexTest.ToChain();
             chain.Should().Be(Chain.Sidechain);
             chain.Should().NotBe(Chain.Mainchain);
 
-            //mainnet	
-            network = ApexNetwork.Main;
-            chain = network.ToChain();
+            var apexMain = new ApexMain();
+            chain = apexMain.ToChain();
             chain.Should().Be(Chain.Sidechain);
             chain.Should().NotBe(Chain.Mainchain);
         }

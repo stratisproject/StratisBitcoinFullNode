@@ -1,6 +1,5 @@
 ﻿using System;
 using NBitcoin;
-using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 
@@ -70,7 +69,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
         public Transaction GetFullTransaction(Network network)
         {
-            return Transaction.Load(this.Hex, network);
+            return Transaction.Parse(this.Hex, RawFormat.BlockExplorer, network);
         }
 
         public bool IsSpendable()

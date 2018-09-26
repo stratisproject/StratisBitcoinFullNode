@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.Sidechains.Networks;
@@ -40,7 +41,7 @@ namespace Stratis.FederationGatewayD
                 if (isSidechainNode == isMainchainNode) throw new ArgumentException(
                     $"Gateway node needs to be started specifiying either a {SidechainArgument} or a {MainchainArgument} argument");
 
-                var network = isMainchainNode ? Network.StratisTest : ApexNetwork.Test; 
+                var network = isMainchainNode ? new StratisTest() : ApexNetwork.Test; 
                 var nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
                 var node = isMainchainNode
