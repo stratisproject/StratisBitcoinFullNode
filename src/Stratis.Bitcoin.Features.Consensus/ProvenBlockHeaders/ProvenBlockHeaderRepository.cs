@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
+using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -229,6 +230,43 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
+        public Task DeleteAsync(uint256 newTip, List<uint256> blockIds)
+        {
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newTip), newTip, nameof(blockIds), nameof(blockIds.Count), blockIds?.Count);
+
+            Guard.NotNull(newTip, nameof(newTip));
+
+            Guard.NotNull(blockIds, nameof(blockIds));
+
+            Task task = Task.Run(() =>
+            {
+                this.logger.LogTrace("()");
+
+                using (DBreeze.Transactions.Transaction txn = this.dbreeze.GetTransaction())
+                {
+                    txn.SynchronizeTables(BlockHashTable, ProvenBlockHeaderTable);
+
+                    txn.ValuesLazyLoadingIsOn = false;
+
+                    foreach (uint256 blockId in blockIds)
+                        txn.RemoveKey<byte[]>(ProvenBlockHeaderTable, blockId.ToBytes(false));
+
+                    this.SetTipHash(txn, newTip);
+
+                    txn.Commit();
+
+                    txn.ValuesLazyLoadingIsOn = true;
+                }
+
+                this.logger.LogTrace("(-)");
+            });
+
+            this.logger.LogTrace("(-)");
+
+            return task;
+        }
+
+        /// <inheritdoc />
         public void Dispose()
         {
             this.dbreeze?.Dispose();
@@ -355,6 +393,43 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.logger.LogTrace("(-):{0}", row.Exists);
 
             return row.Exists;
+        }
+
+        private List<ProvenBlockHeader> GetProvenBlockHeadersByBlockId(DBreeze.Transactions.Transaction txn, List<uint256> blockIds)
+        {
+            this.logger.LogTrace("({0}.{1}:{2})", nameof(blockIds), nameof(blockIds.Count), blockIds?.Count);
+
+            var results = new Dictionary<uint256, ProvenBlockHeader>();
+
+            // Access hash keys in sorted order.
+            var byteListComparer = new ByteListComparer();
+
+            List<(uint256, byte[])> keys = blockIds.Select(hash => (hash, hash.ToBytes())).ToList();
+
+            keys.Sort((key1, key2) => byteListComparer.Compare(key1.Item2, key2.Item2));
+
+            foreach ((uint256, byte[]) key in keys)
+            {
+                Row<byte[], ProvenBlockHeader> blockRow = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, key.Item2);
+
+                if (blockRow.Exists)
+                {
+                    results[key.Item1] = blockRow.Value;
+
+                    this.logger.LogTrace("Block hash '{0}' loaded from the store.", key.Item1);
+                }
+                else
+                {
+                    results[key.Item1] = null;
+
+                    this.logger.LogTrace("Block hash '{0}' not found in the store.", key.Item1);
+                }
+            }
+
+            this.logger.LogTrace("(-):{0}", results.Count);
+
+            // Return the result in the order that the hashes were presented.
+            return blockIds.Select(hash => results[hash]).ToList();
         }
 
         private void AddBenchStats(StringBuilder benchLog)

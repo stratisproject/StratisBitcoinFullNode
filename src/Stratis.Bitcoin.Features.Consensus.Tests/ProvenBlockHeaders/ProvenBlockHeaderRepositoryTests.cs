@@ -249,6 +249,58 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             }
         }
 
+        [Fact]
+        public async Task DeleteAsync_RemovesProvenBlockHeadersAsync()
+        {
+            string folder = CreateTestDir(this);
+
+            ProvenBlockHeader provenBlockHeaderIn = CreateNewProvenBlockHeaderMock();
+
+            var items = new List<StakeItem>
+            {
+                new StakeItem
+                {
+                    BlockId = uint256.One,
+                    ProvenBlockHeader = provenBlockHeaderIn
+                },
+                new StakeItem
+                {
+                    BlockId = uint256.Zero,
+                    ProvenBlockHeader = provenBlockHeaderIn
+                },
+            };
+
+            using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
+            {
+                // Add 2 items to the database.  Also 1 item added during initialization.
+                await repo.PutAsync(items).ConfigureAwait(false);
+
+                items[0].ProvenBlockHeader.Should().NotBeNull();
+                items[0].InStore.Should().BeTrue();
+                items[1].ProvenBlockHeader.Should().NotBeNull();
+                items[1].InStore.Should().BeTrue();
+
+                await repo.DeleteAsync(uint256.One, items.Select(i => i.BlockId).ToList());
+            }
+
+            // Check the ProvenBlockHeader exists in the database - and are in sorted order.
+            using (var engine = new DBreezeEngine(folder))
+            {
+                DBreeze.Transactions.Transaction txn = engine.GetTransaction();
+
+                txn.SynchronizeTables(ProvenBlockHeaderTable);
+
+                txn.ValuesLazyLoadingIsOn = false;
+
+                var row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, items[0].BlockId.ToBytes(false));
+
+                row.Exists.Should().BeFalse();
+
+                row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, items[1].BlockId.ToBytes(false));
+
+                row.Exists.Should().BeFalse();
+            }
+        }
 
         private IProvenBlockHeaderRepository SetupRepository(Network network, string folder)
         {

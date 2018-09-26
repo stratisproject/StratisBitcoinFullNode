@@ -42,5 +42,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="blockId">The block hash.</param>
         /// <returns><c>true</c> if the block hash can be found in the database, otherwise return <c>false</c>.</returns>
         Task<bool> ExistsAsync(uint256 blockId);
+
+        /// <summary>
+        /// Delete <see cref="ProvenBlockHeader"/> items.
+        /// </summary>
+        /// <param name="newTip">Hash and height of the new repository's tip.</param>
+        /// <param name="blockIds">List of all block hashes to be deleted.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        Task DeleteAsync(uint256 newTip, List<uint256> blockIds);
     }
 }
