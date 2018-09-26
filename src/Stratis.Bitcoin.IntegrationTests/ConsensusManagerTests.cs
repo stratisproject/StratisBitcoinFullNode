@@ -439,6 +439,5 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 10);
             }
         }
-
     }
 }
