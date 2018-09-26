@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
-using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 
@@ -56,7 +55,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// Gets or sets the full transaction object.
         /// </summary>
         [JsonIgnore]
-        public Transaction Transaction => Transaction.Parse(this.Hex);
+        public Transaction Transaction => Transaction.Parse(this.Hex, RawFormat.BlockExplorer);
 
         /// <summary>
         /// Determines whether this transaction being spent is confirmed.

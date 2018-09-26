@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -14,6 +15,7 @@ using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Controllers;
 using Stratis.FederatedPeg.Features.FederationGateway.CounterChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
@@ -29,7 +31,7 @@ using BlockObserver = Stratis.FederatedPeg.Features.FederationGateway.Notificati
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
-    internal class FederationGatewayFeature : FullNodeFeature, INodeStats, IFeatureStats
+    internal class FederationGatewayFeature : FullNodeFeature
     {
         private readonly ICrossChainTransactionMonitor crossChainTransactionMonitor;
 
@@ -70,7 +72,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             Network network,
             ConcurrentChain chain,
             IMonitorChainSessionManager monitorChainSessionManager, 
-            ICounterChainSessionManager counterChainSessionManager)
+            ICounterChainSessionManager counterChainSessionManager,
+            INodeStats nodeStats)
         {
             this.loggerFactory = loggerFactory;
             this.crossChainTransactionMonitor = crossChainTransactionMonitor;
@@ -89,12 +92,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             // add our payload
             var payloadProvider = (PayloadProvider)this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider));
             payloadProvider.AddPayload(typeof(RequestPartialTransactionPayload));
+
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
+            nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 800);
         }
 
-        public override void Initialize()
+        public override async Task InitializeAsync()
         {
             // Subscribe to receiving blocks and transactions.
-            this.blockSubscriberDisposable = this.signals.SubscribeForBlocks(new BlockObserver(this.walletSyncManager, this.crossChainTransactionMonitor));
+            this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager, this.crossChainTransactionMonitor));
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new Notifications.TransactionObserver(this.walletSyncManager));
             
             this.crossChainTransactionMonitor.Initialize(federationGatewaySettings);
@@ -110,7 +116,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             }
             
             var networkPeerConnectionParameters = this.connectionManager.Parameters;
-            networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.crossChainTransactionMonitor, this.federationWalletManager, this.counterChainSessionManager, this.network, this.federationGatewaySettings ));
+            networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.crossChainTransactionMonitor, this.federationWalletManager, this.counterChainSessionManager, this.network, this.federationGatewaySettings));
         }
 
         public override void Dispose()
@@ -122,7 +128,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         }
 
         /// <inheritdoc />
-        public void AddNodeStats(StringBuilder benchLogs)
+        public void AddInlineStats(StringBuilder benchLogs)
         {
             if (federationWalletManager == null) return;
             int height = this.federationWalletManager.LastBlockHeight();
@@ -135,7 +141,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                                  (federationWallet != null ? (" Federation Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
         }
 
-        public void AddFeatureStats(StringBuilder benchLog)
+        public void AddComponentStats(StringBuilder benchLog)
         {
             benchLog.AppendLine();
             benchLog.AppendLine("====== Federation Wallet ======");

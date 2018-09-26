@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
@@ -10,7 +11,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
     /// Observer that passes notifications indicating the arrival of new <see cref="Block"/>s
     /// onto the CrossChainTransactionMonitor.
     /// </summary>
-    internal sealed class BlockObserver : SignalObserver<Block>
+    internal class BlockObserver : SignalObserver<ChainedHeaderBlock>
     {
         // The monitor we pass the new blocks onto.
         private readonly ICrossChainTransactionMonitor crossChainTransactionMonitor;
@@ -35,10 +36,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         /// When a block is received it is passed to the monitor.
         /// </summary>
         /// <param name="block">The new block.</param>
-        protected override void OnNextCore(Block block)
+        protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
         {
-            crossChainTransactionMonitor.ProcessBlock(block);
-            walletSyncManager.ProcessBlock(block);
+            crossChainTransactionMonitor.ProcessBlock(chainedHeaderBlock.Block);
+            walletSyncManager.ProcessBlock(chainedHeaderBlock.Block);
         }
     }
 }

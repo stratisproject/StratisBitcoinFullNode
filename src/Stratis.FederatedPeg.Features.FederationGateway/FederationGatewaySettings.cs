@@ -28,7 +28,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 throw new ConfigurationException($"could not find {RedeemScriptParam} configuration parameter");
             this.RedeemScript = new Script(redeemScriptRaw);
             this.MultiSigAddress = RedeemScript.Hash.GetAddress(nodeSettings.Network);
-            var payToMultisigScriptParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(nodeSettings.Network, this.RedeemScript);
+            var payToMultisigScriptParams = PayToMultiSigTemplate.Instance.ExtractScriptPubKeyParameters(this.RedeemScript);
             this.MultiSigM = payToMultisigScriptParams.SignatureCount;
             this.MultiSigN = payToMultisigScriptParams.PubKeys.Length;
             this.FederationPublicKeys = payToMultisigScriptParams.PubKeys;

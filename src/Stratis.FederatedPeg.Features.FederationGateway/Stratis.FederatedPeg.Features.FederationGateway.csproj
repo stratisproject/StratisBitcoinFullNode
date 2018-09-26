@@ -12,9 +12,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Stratis.Bitcoin" Version="1.1.13-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="1.1.13-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.1.13-beta" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.2.1-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="1.2.1-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.2.1-beta" />
   </ItemGroup>
 
   <ItemGroup>

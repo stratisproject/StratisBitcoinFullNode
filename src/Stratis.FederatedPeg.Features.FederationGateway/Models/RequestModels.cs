@@ -4,9 +4,9 @@ using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
 using System.Text;
 using NBitcoin;
-using NBitcoin.JsonConverters;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Models
 {
