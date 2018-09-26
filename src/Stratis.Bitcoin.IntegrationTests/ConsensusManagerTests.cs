@@ -303,7 +303,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain_Then_Connect_Blocks_And_Fail_Then_Revert_Back()
+        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain__With_Connected_Blocks_And_Fail_Then_Revert_Back()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -355,7 +355,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain_Then_With_No_Connected_Blocks_And_Fail_Then_Revert_Back()
+        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain__With__No_Connected_Blocks_And_Fail_Then_Revert_Back()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -387,7 +387,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Miner B continues to mine to height 30 on a new and longer chain whilst disconnected.
                 TestHelper.MineBlocks(minerB, 20);
 
-                // Inject a rule that will fail at block 15 of the new chain
+                // Inject a rule that will fail at block 11 of the new chain
                 ConsensusRuleEngine engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
                 syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(11));
                 engine.Register();
@@ -421,7 +421,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 minerA.NotInIBD().WithWallet();
                 syncer.NotInIBD();
 
-                // MinerA mines to height 10.
+                // Miner A mines to height 11.
                 TestHelper.MineBlocks(minerA, 11);
 
                 // Inject a rule that will fail at block 11 of the new chain
@@ -432,7 +432,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Connect syncer to Miner B, reorg should fail.
                 TestHelper.Connect(syncer, minerA);
 
-                // Syncer should diconnect from miner A after the failed block.
+                // Syncer should disconnect from miner A after the failed block.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, minerA));
 
                 // Make sure syncer rolled back
