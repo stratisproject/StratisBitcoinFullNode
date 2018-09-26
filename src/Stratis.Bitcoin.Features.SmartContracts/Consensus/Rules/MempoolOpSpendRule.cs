@@ -1,7 +1,5 @@
 ﻿using System.Linq;
-using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
 
@@ -14,13 +12,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
     {
         public void CheckTransaction(MempoolValidationContext context)
         {
-            if (context.Transaction.Inputs.Any(x => ContainsOpSpend(x.ScriptSig)) || context.Transaction.Outputs.Any(x => ContainsOpSpend(x.ScriptPubKey)))
+            if (context.Transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend()) || context.Transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractSpend()))
                 Throw();
-        }
-
-        private static bool ContainsOpSpend(Script script)
-        {
-            return script.ToOps().Any(x => (byte)x.Code == (byte)ScOpcodeType.OP_SPEND);
         }
 
         private void Throw()
