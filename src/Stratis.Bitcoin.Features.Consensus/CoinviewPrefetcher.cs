@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// How many blocks ahead prefetching will look.
         /// When header at height X is dequeued block with header at height <c>X + Lookahead</c> will be prefetched in case block data is downloaded.
         /// </summary>
-        private const int Lookahead = 5;
+        private const int Lookahead = 20;
 
         /// <summary>Queue of headers that were added when block associated with such header was fully validated.</summary>
         private readonly AsyncQueue<ChainedHeader> headersQueue;
@@ -84,13 +84,14 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             bool farFromTip = currentHeader.Height > this.chain.Tip.Height + 2;
 
-            this.logger.LogDebug("Far from tip: {0}", farFromTip);
+            if (!farFromTip)
+                this.logger.LogDebug("Far from tip is false!");
 
             if (idsToFetch.Length != 0 && farFromTip)
             {
                 await this.coinview.FetchCoinsAsync(idsToFetch, cancellation).ConfigureAwait(false);
 
-                this.logger.LogDebug("{0} ids were prefetched.", idsToFetch.Length);
+                this.logger.LogTrace("{0} ids were prefetched.", idsToFetch.Length);
             }
         }
 
