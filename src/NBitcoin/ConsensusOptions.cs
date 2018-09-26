@@ -125,6 +125,21 @@
         public const int ProvenHeadersActivationHeightTestnet = 10_000_000;
 
         /// <summary>
+        /// Maximum coinstake serialized size in bytes.
+        /// </summary>
+        public const int MaxCoinstakeSerializedSize = 1_000_000;
+
+        /// <summary>
+        /// Maximum signature serialized size in bytes.
+        /// </summary>
+        public const int MaxBlockSignatureSerializedSize = 80;
+
+        /// <summary>
+        /// Maximum merkle proof serialized size in bytes.
+        /// </summary>
+        public const int MaxMerkleProofSerializedSize = 512;
+
+        /// <summary>
         /// Initializes the default values.
         /// </summary>
         public PosConsensusOptions()
