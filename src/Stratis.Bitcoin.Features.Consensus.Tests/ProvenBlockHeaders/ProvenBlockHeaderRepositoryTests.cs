@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task PutAsyncWritesProvenBlockHeaderAndSavesBlockHashAsync()
+        public async Task PutAsync_WritesProvenBlockHeaderAndSavesBlockHashAsync()
         {
             string folder = CreateTestDir(this);
 
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task PutAsyncWritesProvenBlockHeadersInSortedOrderAsync()
+        public async Task PutAsync_WritesProvenBlockHeadersInSortedOrderAsync()
         {
             string folder = CreateTestDir(this);
 
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task GetAsyncReadsProvenBlockHeaderFromDatabaseAndDoesNotOverwriteOnFirstLoadAsync()
+        public async Task GetAsync_ReadsProvenBlockHeaderFromDatabaseAndDoesNotOverwriteOnFirstLoadAsync()
         {
             string folder = CreateTestDir(this);
 
@@ -179,6 +179,38 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             item[0].ProvenBlockHeader.Should().NotBeNull();
             item[0].InStore.Should().BeTrue();
             uint256.Parse(item[0].ProvenBlockHeader.ToString()).Should().Be(hash);
+        }
+
+        [Fact]
+        public async Task GetAsync_WithWrongBlockIdReturnsNullAsync()
+        {
+            string folder = CreateTestDir(this);
+
+            // Set-up item and insert into the database.
+            var item = new List<StakeItem>
+            {
+                new StakeItem { BlockId = uint256.Zero }
+            };
+
+            using (var engine = new DBreezeEngine(folder))
+            {
+                DBreeze.Transactions.Transaction txn = engine.GetTransaction();
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, item[0].BlockId.ToBytes(false), item[0].ProvenBlockHeader);
+                txn.Insert<byte[], uint256>(BlockHashTable, new byte[0], item[0].BlockId);
+                txn.Commit();
+            }
+
+            // Select a different blockId
+            item[0].BlockId = uint256.One;
+
+            // Query the repository for the item that was inserted in the above code.
+            using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
+            {
+                await repo.GetAsync(item).ConfigureAwait(false);
+            }
+
+            item[0].ProvenBlockHeader.Should().BeNull();
+            item[0].InStore.Should().BeFalse();
         }
 
         private IProvenBlockHeaderRepository SetupRepository(Network network, string folder)
