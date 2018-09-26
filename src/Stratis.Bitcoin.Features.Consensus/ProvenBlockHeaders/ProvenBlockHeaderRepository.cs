@@ -140,6 +140,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                         }
                     }
 
+                    txn.ValuesLazyLoadingIsOn = true;
+
                     this.logger.LogTrace("(-)");
                 }
             }, cancellationToken);
@@ -215,10 +217,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             if (this.blockHash == null)
             {
+                txn.ValuesLazyLoadingIsOn = false;
+
                 Row<byte[], uint256> row = txn.Select<byte[], uint256>(BlockHashTable, blockHashKey);
 
                 if (row.Exists)
                     this.blockHash = row.Value;
+
+                txn.ValuesLazyLoadingIsOn = true;
             }
 
             return this.blockHash;
@@ -286,6 +292,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             stakeItemList.Sort((pair1, pair2) => pair1.Value.Height.CompareTo(pair2.Value.Height));
 
+            txn.ValuesLazyLoadingIsOn = false;
+
             foreach (KeyValuePair<uint256, StakeItem> stakeItem in stakeItemList)
             {
                 StakeItem outStakeItem = stakeItem.Value;
@@ -298,6 +306,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     yield return outStakeItem;
                 }
             }
+
+            txn.ValuesLazyLoadingIsOn = true;
         }
 
         /// <summary>
@@ -310,8 +320,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(blockId), blockId);
 
+            txn.ValuesLazyLoadingIsOn = false;
+
             Row<byte[], ProvenBlockHeader> row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockId.ToBytes());
-             
+
+            txn.ValuesLazyLoadingIsOn = true;
+        
             this.logger.LogTrace("(-):{0}", row.Exists);
 
             return row.Exists;
