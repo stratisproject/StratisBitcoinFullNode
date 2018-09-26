@@ -12,7 +12,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus
 {
     /// <summary>Fetches coins for blocks that are likely to be validated in the near future to speedup full validation.</summary>
-    public class CoinviewPrefetchManager : IDisposable
+    public class CoinviewPrefetcher : IDisposable
     {
         /// <summary>
         /// How many blocks ahead prefetching will look.
@@ -25,16 +25,19 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         private readonly ICoinView coinview;
 
-        private readonly CoinviewHelprer coinviewHelper;
+        private readonly CoinviewHelper coinviewHelper;
+
+        private readonly ConcurrentChain chain;
 
         private readonly ILogger logger;
 
-        public CoinviewPrefetchManager(ICoinView coinview, ILoggerFactory loggerFactory)
+        public CoinviewPrefetcher(ICoinView coinview, ConcurrentChain chain, ILoggerFactory loggerFactory)
         {
             this.coinview = coinview;
+            this.chain = chain;
 
             this.headersQueue = new AsyncQueue<ChainedHeader>(this.OnHeaderEnqueuedAsync);
-            this.coinviewHelper = new CoinviewHelprer();
+            this.coinviewHelper = new CoinviewHelper();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -50,9 +53,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Go Lookahead blocks ahead of current header and get block for prefetching.
             // There might be several blocks at height of header.Height + Lookahead but
             // only first one will be prefetched since prefetching is in place mostly to
-            // speed up IBD in which we can have only one chain on Stratis since we have
-            // checkpoints and several chains on BTC but it's a rare case because creating
-            // alternative chains requires PoW which is expensive.
+            // speed up IBD.
             for (int i = 0; i < Lookahead; i++)
             {
                 if (currentHeader.Next.Count == 0)
@@ -63,8 +64,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
                 currentHeader = currentHeader.Next[0];
             }
-
-            //TODO skip prefetching if CT is ahead of block that we want to prefetch
 
             Block block = currentHeader.Block;
 
@@ -77,7 +76,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             bool enforceBIP30 = DeploymentFlags.EnforceBIP30ForBlock(currentHeader);
             uint256[] idsToFetch = this.coinviewHelper.GetIdsToFetch(block, enforceBIP30);
 
-            if (idsToFetch.Length != 0 && !cancellation.IsCancellationRequested)
+            bool farFromTip = currentHeader.Height > this.chain.Tip.Height + 2;
+
+            this.logger.LogDebug("Far from tip: {0}", farFromTip);
+
+            if (idsToFetch.Length != 0 && !cancellation.IsCancellationRequested && farFromTip)
             {
                 await this.coinview.FetchCoinsAsync(idsToFetch, cancellation).ConfigureAwait(false);
 

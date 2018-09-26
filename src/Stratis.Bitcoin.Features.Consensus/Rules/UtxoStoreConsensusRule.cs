@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>Allow access to the POS parent.</summary>
         protected PowConsensusRuleEngine PowParent;
 
-        protected CoinviewHelprer coinviewHelper;
+        protected CoinviewHelper coinviewHelper;
 
         /// <inheritdoc />
         public override void Initialize()
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             this.PowParent = this.Parent as PowConsensusRuleEngine;
             Guard.NotNull(this.PowParent, nameof(this.PowParent));
 
-            this.coinviewHelper = new CoinviewHelprer();
+            this.coinviewHelper = new CoinviewHelper();
         }
     }
 }

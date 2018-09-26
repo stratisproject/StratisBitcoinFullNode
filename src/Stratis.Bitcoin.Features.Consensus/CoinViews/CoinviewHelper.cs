@@ -4,7 +4,7 @@ using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
-    public class CoinviewHelprer
+    public class CoinviewHelper
     {
         /// <summary>
         /// Gets transactions identifiers that need to be fetched from store for specified block.
