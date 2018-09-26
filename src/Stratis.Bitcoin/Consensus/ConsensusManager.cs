@@ -685,6 +685,14 @@ namespace Stratis.Bitcoin.Consensus
             {
                 using (this.performanceCounter.MeasureBlockConnectionFV())
                 {
+                    if (blockToConnect.ChainedHeader.Block == null)
+                    {
+                        // In some rare cases block can be null.
+                        // This can happen after a reorg failed and
+                        // we are trying to reconnect the old chain
+                        blockToConnect.ChainedHeader.Block = blockToConnect.Block;
+                    }
+
                     connectBlockResult = await this.ConnectBlockAsync(blockToConnect).ConfigureAwait(false);
 
                     if (!connectBlockResult.Succeeded)

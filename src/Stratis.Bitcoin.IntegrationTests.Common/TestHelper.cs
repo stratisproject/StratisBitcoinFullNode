@@ -265,10 +265,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             WaitLoop(() => IsNodeConnectedTo(from, to));
         }
 
-        public static void ConnectAndSync(CoreNode from, CoreNode to)
+        public static void ConnectAndSync(CoreNode from, params CoreNode[] to)
         {
-            Connect(from, to);
-            WaitLoop(() => AreNodesSynced(from, to));
+            foreach (CoreNode coreNode in to)
+                Connect(from, coreNode);
+
+            foreach (CoreNode coreNode in to)
+                WaitLoop(() => AreNodesSynced(from, coreNode));
         }
 
         public static bool IsNodeConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
