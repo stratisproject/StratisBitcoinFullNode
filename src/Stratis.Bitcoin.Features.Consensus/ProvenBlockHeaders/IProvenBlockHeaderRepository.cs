@@ -35,5 +35,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task PutAsync(IEnumerable<StakeItem> stakeItems, CancellationToken cancellationToken = default(CancellationToken));
+
+        /// <summary>
+        /// Determine if a <see cref="ProvenBlockHeader"/> already exists in the database.
+        /// </summary>
+        /// <param name="blockId">The block hash.</param>
+        /// <returns><c>true</c> if the block hash can be found in the database, otherwise return <c>false</c>.</returns>
+        Task<bool> ExistsAsync(uint256 blockId);
     }
 }

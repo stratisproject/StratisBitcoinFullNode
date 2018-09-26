@@ -213,6 +213,43 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             item[0].InStore.Should().BeFalse();
         }
 
+        [Fact]
+        public async Task ExistsAsync_WithExistingProvenBlockHeaderReturnsTrueAsync()
+        {
+            string folder = CreateTestDir(this);
+
+            ProvenBlockHeader provenBlockHeader = CreateNewProvenBlockHeaderMock();
+            uint256 hash = provenBlockHeader.GetHash();
+
+            // Set-up item and insert into the database.
+            var item = new List<StakeItem>
+            {
+                new StakeItem
+                {
+                    BlockId = hash,
+                    Height = 1,
+                    ProvenBlockHeader = provenBlockHeader
+                }
+            };
+
+            using (var engine = new DBreezeEngine(folder))
+            {
+                DBreeze.Transactions.Transaction txn = engine.GetTransaction();
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, item[0].BlockId.ToBytes(false), item[0].ProvenBlockHeader);
+                txn.Insert<byte[], uint256>(BlockHashTable, new byte[0], item[0].BlockId);
+                txn.Commit();
+            }
+
+            // Query the repository for the item that was inserted in the above code.
+            using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
+            {
+                bool result = await repo.ExistsAsync(item[0].BlockId).ConfigureAwait(false);
+
+                result.Should().BeTrue();
+            }
+        }
+
+
         private IProvenBlockHeaderRepository SetupRepository(Network network, string folder)
         {
             var repo = new ProvenBlockHeaderRepository(network, folder, DateTimeProvider.Default, this.LoggerFactory.Object, this.nodeStats);

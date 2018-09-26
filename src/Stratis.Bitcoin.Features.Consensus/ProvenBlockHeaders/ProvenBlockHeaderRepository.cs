@@ -202,6 +202,33 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
+        public Task<bool> ExistsAsync(uint256 blockId)
+        {
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockId), blockId);
+
+            Guard.NotNull(blockId, nameof(blockId));
+
+            Task<bool> task = Task.Run(() =>
+            {
+                this.logger.LogTrace("()");
+
+                using (DBreeze.Transactions.Transaction txn = this.dbreeze.GetTransaction())
+                {
+                    Row<byte[], ProvenBlockHeader> blockRow = 
+                        txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockId.ToBytes(false));
+
+                    this.logger.LogTrace("(-):{0}", blockRow.Exists);
+
+                    return blockRow.Exists;
+                }
+            });
+
+            this.logger.LogTrace("(-)");
+
+            return task;
+        }
+
+        /// <inheritdoc />
         public void Dispose()
         {
             this.dbreeze?.Dispose();
