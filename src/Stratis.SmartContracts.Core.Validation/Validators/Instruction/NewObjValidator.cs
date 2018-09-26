@@ -11,7 +11,7 @@ namespace Stratis.SmartContracts.Core.Validation
     /// </summary>
     public class NewObjValidator : IInstructionValidator
     {
-        public static readonly string ErrorType = "New Objects Are Supported";
+        public static readonly string ErrorType = "Creation Of New Objects Is Not Supported";
 
         public IEnumerable<ValidationResult> Validate(Instruction instruction, MethodDefinition method)
         {
