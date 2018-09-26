@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             {
                 if (!entry.Value.IsDirty && entry.Value.ExistInInner)
                 {
-                    if (this.random.Next() % 3 == 0)
+                    if ((this.random.Next() % 3) == 0)
                     {
                         this.logger.LogTrace("Transaction ID '{0}' selected to be removed from the cache.", entry.Key);
                         this.cachedUtxoItems.Remove(entry.Key);
