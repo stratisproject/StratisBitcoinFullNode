@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public async Task<ValidationContext> FullValidationAsync(ChainedHeader header, Block block)
+        public virtual async Task<ValidationContext> FullValidationAsync(ChainedHeader header, Block block)
         {
             Guard.NotNull(header, nameof(header));
             Guard.NotNull(block, nameof(block));
