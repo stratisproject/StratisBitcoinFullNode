@@ -117,8 +117,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 .Skip(1).First();
         }
 
-        private void charlie_mines_this_block()
+        private void charlie_waits_for_the_trx_and_mines_this_block()
         {
+            TestHelper.WaitLoop(() => this.charlieNode.FullNode.MempoolManager().GetTransaction(this.shorterChainTransaction.GetHash()).Result != null);
+
             TestHelper.MineBlocks(this.charlieNode, 1);
             TestHelper.WaitForNodeToSync(this.bobNode, this.charlieNode, this.daveNode);
         }
