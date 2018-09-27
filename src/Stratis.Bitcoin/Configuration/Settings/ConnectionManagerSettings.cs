@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
     {
         /// <summary>Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).</summary>
         public const int DefaultMisbehavingBantimeSeconds = 24 * 60 * 60;
+        public const int DefaultMisbehavingBantimeSecondsTestnet = 10 * 60;
         public const int DefaultMaxOutboundConnections = 8;
 
         /// <summary>Maximum number of AgentPrefix characters to use in the Agent value.</summary>
@@ -117,7 +118,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
                 this.ExternalEndpoint = new IPEndPoint(IPAddress.Loopback, this.Port);
             }
 
-            this.BanTimeSeconds = config.GetOrDefault<int>("bantime", ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds, this.logger);
+            this.BanTimeSeconds = config.GetOrDefault<int>("bantime", nodeSettings.Network.IsTest() ? DefaultMisbehavingBantimeSecondsTestnet : DefaultMisbehavingBantimeSeconds, this.logger);
             this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", ConnectionManagerSettings.DefaultMaxOutboundConnections, this.logger);
             this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1, this.logger);
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true, this.logger);
