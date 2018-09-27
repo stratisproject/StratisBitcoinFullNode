@@ -106,20 +106,20 @@
     /// </summary>
     public class PosConsensusOptions : ConsensusOptions
     {
-        /// <summary>Coinstake minimal confirmations softfork activation height for the mainnet.</summary>
+        /// <summary>Coinstake minimal confirmations softfork activation height for mainnet.</summary>
         public const int CoinstakeMinConfirmationActivationHeightMainnet = 1005000;
 
-        /// <summary>Coinstake minimal confirmations softfork activation height for the testnet.</summary>
+        /// <summary>Coinstake minimal confirmations softfork activation height for testnet.</summary>
         public const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
 
         /// <summary>
-        /// Proven headers activation height for the mainnet.
+        /// Proven headers activation height for mainnet.
         /// TODO: Set it to the real value once it is known.
         /// </summary>
         public const int ProvenHeadersActivationHeightMainnet = 20_000_000;
 
         /// <summary>
-        /// Proven headers activation height for the testnet.
+        /// Proven headers activation height for testnet.
         /// TODO: Set it to the real value once it is known.
         /// </summary>
         public const int ProvenHeadersActivationHeightTestnet = 10_000_000;

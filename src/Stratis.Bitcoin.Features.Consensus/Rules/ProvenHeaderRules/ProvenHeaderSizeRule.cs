@@ -17,24 +17,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         {
             Guard.NotNull(context.ValidationContext.ChainedHeaderToValidate, nameof(context.ValidationContext.ChainedHeaderToValidate));
 
-            if (context.SkipValidation || !this.IsProvenHeaderActivated(context))
+            int height = context.ValidationContext.ChainedHeaderToValidate.Height;
+
+            if (context.SkipValidation || !this.IsProvenHeaderActivated(height))
                 return;
 
             var header = (ProvenBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Header;
 
-            if (header.MerkleProofSize == null || header.MerkleProofSize > PosConsensusOptions.MaxMerkleProofSerializedSize)
+            if ((header.MerkleProofSize == null) || (header.MerkleProofSize > PosConsensusOptions.MaxMerkleProofSerializedSize))
             {
                 this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_MERKLE_PROOF_SIZE]");
                 ConsensusErrors.BadProvenHeaderMerkleProofSize.Throw();
             }
 
-            if (header.CoinstakeSize == null || header.CoinstakeSize > PosConsensusOptions.MaxCoinstakeSerializedSize)
+            if ((header.CoinstakeSize == null) || (header.CoinstakeSize > PosConsensusOptions.MaxCoinstakeSerializedSize))
             {
                 this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_COINSTAKE_SIZE]");
                 ConsensusErrors.BadProvenHeaderCoinstakeSize.Throw();
             }
 
-            if (header.SignatureSize == null || header.SignatureSize > PosConsensusOptions.MaxBlockSignatureSerializedSize)
+            if ((header.SignatureSize == null) || (header.SignatureSize > PosConsensusOptions.MaxBlockSignatureSerializedSize))
             {
                 this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_SIGNATURE_SIZE]");
                 ConsensusErrors.BadProvenHeaderSignatureSize.Throw();

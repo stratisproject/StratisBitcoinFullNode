@@ -25,21 +25,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <summary>
         /// Determines whether proven headers are activated based on the proven header activation height and applicable network.
         /// </summary>
-        /// <param name="context">The rule context.</param>
+        /// <param name="height">The height of the header.</param>
         /// <returns>
         /// <c>true</c> if proven header height is past the activation height for the corresponding network;
         /// otherwise, <c>false</c>.
         /// </returns>
-        public bool IsProvenHeaderActivated(RuleContext context)
+        public bool IsProvenHeaderActivated(int height)
         {
             if (this.PosParent.Network is StratisMain)
             {
-                return context.ValidationContext.ChainedHeaderToValidate.Height >= PosConsensusOptions.ProvenHeadersActivationHeightMainnet;
+                return height >= PosConsensusOptions.ProvenHeadersActivationHeightMainnet;
             }
 
             if (this.PosParent.Network is StratisTest)
             {
-                return context.ValidationContext.ChainedHeaderToValidate.Height >= PosConsensusOptions.ProvenHeadersActivationHeightTestnet;
+                return height >= PosConsensusOptions.ProvenHeadersActivationHeightTestnet;
             }
 
             return false;
@@ -48,11 +48,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <summary>
         /// Determines whether header is a proven header.
         /// </summary>
-        /// <param name="context">The rule context.</param>
+        /// <param name="header">The block header.</param>
         /// <returns><c>true</c> if header is a <see cref="ProvenBlockHeader"/>.</returns>
-        public bool IsProvenHeader(RuleContext context)
+        public bool IsProvenHeader(BlockHeader header)
         {
-            return context.ValidationContext.ChainedHeaderToValidate.Header is ProvenBlockHeader;
+            return header is ProvenBlockHeader;
         }
     }
 }
