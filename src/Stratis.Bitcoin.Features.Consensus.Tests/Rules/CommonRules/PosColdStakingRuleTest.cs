@@ -92,6 +92,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             // Execute the rule and check the outcome against what is expected.
             var rule = this.CreateRule<PosColdStakingRule>();
 
+            // Initialize the rule context.
             posRuleContext.ValidationContext.ChainedHeaderToValidate = this.concurrentChain.Tip;
             posRuleContext.CoinStakeInputs = coinstakeTransaction.Inputs.ToDictionary(txin => txin, txin => posRuleContext.UnspentOutputSet.GetOutputFor(txin));
             posRuleContext.TotalCoinStakeValueIn = posRuleContext.CoinStakeInputs.Sum(a => a.Value?.Value ?? 0);
