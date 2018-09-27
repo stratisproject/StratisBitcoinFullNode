@@ -2,7 +2,6 @@
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -42,8 +41,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
                 new Mock<ICoinView>().Object,
                 new Mock<IChainState>().Object,
                 new InvalidBlockHashStore(dateTimeProvider),
-                new NodeStats(dateTimeProvider),
-                new NodeSettings(network));
+                new NodeStats(dateTimeProvider));
 
             var feature = new ReflectionVirtualMachineFeature(loggerFactory, network);
             feature.InitializeAsync().GetAwaiter().GetResult();

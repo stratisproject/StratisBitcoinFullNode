@@ -2,7 +2,6 @@
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -42,9 +41,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             ICoinView utxoSet,
             IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore,
-            INodeStats nodeStats,
-            NodeSettings nodeSettings)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats, nodeSettings)
+            INodeStats nodeStats)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats)
         {
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;

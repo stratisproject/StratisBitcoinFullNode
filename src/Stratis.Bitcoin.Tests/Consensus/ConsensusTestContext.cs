@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var hashStore = new InvalidBlockHashStore(dateTimeProvider);
             var powConsensusRulesEngine = new PowConsensusRuleEngine(this.Network, extendedLoggerFactory, dateTimeProvider, chain,
                 new NodeDeployments(this.Network, chain), this.ConsensusSettings, this.Checkpoints.Object, new Mock<ICoinView>().Object,
-                this.ChainState.Object, hashStore, new NodeStats(dateTimeProvider), new NodeSettings(this.Network));
+                this.ChainState.Object, hashStore, new NodeStats(dateTimeProvider));
 
             this.PartialValidation = new PartialValidator(powConsensusRulesEngine, extendedLoggerFactory);
             this.FullValidation = new FullValidator(powConsensusRulesEngine, extendedLoggerFactory);

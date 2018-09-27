@@ -223,8 +223,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                     this.cachedCoinView,
                     chainState,
                     new InvalidBlockHashStore(DateTimeProvider.Default),
-                    new NodeStats(new DateTimeProvider()),
-                    this.NodeSettings)
+                    new NodeStats(new DateTimeProvider()))
                     .Register();
 
                 this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain, ruleRegistration: new SmartContractPowRuleRegistration(), consensusRules: this.consensusRules);
