@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// <param name="outputScriptPubKeysDiffer">Tests the scenario where some of the output scriptPubKeys differ.</param>
         /// <param name="badSecondOutput">Tests the scenario where the second output is not an OP_RETURN followed by some data.</param>
         /// <param name="inputsExceedOutputs">Tests the scenario where the input amount exceeds the output amount.</param>
+        /// <param name="inputsWithoutOutputs">Tests the scenario where the some inputs have no incoming outputs.</param>
         /// <param name="expectedError">The error expected by running this test. Set to <c>null</c> if no error is expected.</param>
         private async Task PosColdStakingRuleTestHelperAsync(bool isColdCoinStake, bool inputScriptPubKeysDiffer, bool outputScriptPubKeysDiffer,
             bool badSecondOutput, bool inputsExceedOutputs, bool inputsWithoutOutputs, ConsensusError expectedError)
