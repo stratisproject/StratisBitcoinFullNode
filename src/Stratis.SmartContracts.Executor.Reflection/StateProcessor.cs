@@ -90,6 +90,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
             // This needs to happen after the base fee is charged, which is why it's in here.
+            // TODO - Remove this check. It isn't possible for the method name to be null.
             if (message.Method.Name == null)
             {
                 return StateTransitionResult.Fail(gasMeter.GasConsumed, StateTransitionErrorKind.NoMethodName);

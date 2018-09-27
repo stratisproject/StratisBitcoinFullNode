@@ -99,29 +99,6 @@ public class Test : SmartContract
         }
 
         [Fact]
-        public void SmartContractValidator_Should_Allow_New_TransferFundsToContract()
-        {
-            const string source = @"using System;
-                                            using Stratis.SmartContracts;
-
-                                            public class Test : SmartContract
-                                            {
-                                                public struct A {}
-
-                                                public Test(ISmartContractState state)
-                                                    : base(state) { }
-
-                                                public void B() { var test = new TransferFundsToContract(); }
-                                            }";
-
-            var decompilation = CompileToModuleDef(source);
-
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
-
-            Assert.Empty(result.Errors);
-        }
-
-        [Fact]
         public void SmartContractValidator_Should_Not_Allow_New()
         {
             const string source = @"using System;
