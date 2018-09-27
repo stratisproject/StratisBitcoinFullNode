@@ -2453,12 +2453,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainHeader = chainTip;
             while (chainHeader.Height > forkedBlockHeader.Height)
             {
-                // Header has no block pointer.
-                Assert.Null(chainHeader.Block);
-
-                // Header block data availability == headers only.
-                Assert.Equal(BlockDataAvailabilityState.HeaderOnly, chainHeader.BlockDataAvailability);
-
                 // Status of headers for the blocks that were reorged away is fully validated.
                 Assert.Equal(ValidationState.FullyValidated, chainHeader.BlockValidationState);
 
