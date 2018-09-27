@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using NBitcoin;
+using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
@@ -139,6 +140,12 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Receiver contract now has balance
             Assert.Equal((ulong) new Money((int) amount, MoneyUnit.BTC), this.node1.GetContractBalance(receiveResponse.NewContractAddress));
 
+            // Receiver contract stored to state
+            Assert.Equal(new byte[]{1}, this.node1.GetStorageValue(receiveResponse.NewContractAddress, BasicReceive.ReceiveKey));
+
+            // Log was stored - bloom filter should be non-zero
+            Assert.NotEqual(new Bloom(), ((SmartContractBlockHeader) lastBlock.Header).LogsBloom);
+
             // Block contains a condensing transaction
             Assert.Equal(3, lastBlock.Transactions.Count);
             Transaction condensingTransaction = lastBlock.Transactions[2];
@@ -157,7 +164,8 @@ namespace Stratis.SmartContracts.IntegrationTests
             ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
             Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
-            Assert.Empty(receipt.Logs); // TODO: Could add logs to this test
+            Assert.Single(receipt.Logs);
+            Assert.Equal(receiveResponse.NewContractAddress, receipt.Logs[0].Address);
             Assert.True(receipt.Success);
             Assert.True(receipt.GasUsed > GasPriceList.BaseCost);
             Assert.Null(receipt.NewContractAddress);
