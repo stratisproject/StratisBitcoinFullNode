@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -132,30 +131,27 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     return;
                 }
 
-                var load = new List<StakeItem>();
+                var blockIds = new List<uint256>();
 
                 while (next != null)
                 {
-                    load.Add(new StakeItem
-                    {
-                        BlockId = next.HashBlock,
-                        Height = next.Height,
-                    });
+                    blockIds.Add(next.HashBlock);
 
                     next = next.Previous;
                 }
 
-                await this.provenBlockHeaderRepository.GetAsync(load).ConfigureAwait(false);
+                IEnumerable<StakeItem> stakeItems = new List<StakeItem>();
+
+                stakeItems = await this.provenBlockHeaderRepository.GetAsync(blockIds).ConfigureAwait(false);
 
                 // All ProvenBlockHeader items should be in store.
-                if (load.Any(l => l.ProvenBlockHeader == null))
+                if (stakeItems.Any(l => l.ProvenBlockHeader == null))
                 {
                     this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADER_INFO_MISSING]");
                     throw new ConfigurationException("Missing proven block header information, delete the data folder and re-download the chain");
                 }
 
-                foreach (StakeItem stakeItem in load)
-                    this.stakeItemQueue.Enqueue(stakeItem);
+                stakeItems.ToList().ForEach(s => this.stakeItemQueue.Enqueue(s));
             }
 
             this.logger.LogTrace("(-)");
@@ -166,17 +162,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(blockId), blockId);
 
-            List<StakeItem> item = new List<StakeItem>
-            {
-                new StakeItem
-                {
-                    BlockId = blockId
-                }
-            };
+            IEnumerable<StakeItem> stakeItems = new List<StakeItem>();
 
-            await this.provenBlockHeaderRepository.GetAsync(item).ConfigureAwait(false);
+            stakeItems = await this.provenBlockHeaderRepository.GetAsync(new List<uint256>() { blockId }).ConfigureAwait(false);
 
-            var provenBlockHeader = item.FirstOrDefault().ProvenBlockHeader;
+            var provenBlockHeader = stakeItems.FirstOrDefault().ProvenBlockHeader;
 
             if (provenBlockHeader != null)
                 this.logger.LogTrace("(-):*.{0}='{1}'", nameof(provenBlockHeader), provenBlockHeader);
@@ -219,15 +209,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            var item = new StakeItem
+            this.stakeItemQueue.Enqueue(new StakeItem
             {
                 BlockId = chainedHeader.HashBlock,
                 Height = chainedHeader.Height,
                 ProvenBlockHeader = provenBlockHeader,
                 InStore = false
-            };
-
-            this.stakeItemQueue.Enqueue(item);
+            });
 
             this.logger.LogTrace("(-)");
         }

@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
@@ -91,60 +90,67 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogInformation("Initializing {0}.", nameof(ProvenBlockHeaderRepository));
                 
-                using (DBreeze.Transactions.Transaction txn = this.dbreeze.GetTransaction())
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    if (this.GetTipHash(txn) == null)
+                    if (this.GetTipHash(transaction) == null)
                     {
                         uint256 blockId = blockHash ?? this.network.GetGenesis().GetHash();
 
-                        this.SetTipHash(txn, blockId);
+                        this.SetTipHash(transaction, blockId);
 
-                        txn.Commit();
+                        transaction.Commit();
                     }
                 }
 
                 this.logger.LogTrace("(-)");
-
             });
 
             return task;
         }
 
         /// <inheritdoc />
-        public Task GetAsync(IEnumerable<StakeItem> stakeItems)
+        public Task<List<StakeItem>> GetAsync(IEnumerable<uint256> blockIds)
         {
-            Guard.NotNull(stakeItems, nameof(stakeItems));
-  
-            Task task = Task.Run(() =>
+            Guard.NotNull(blockIds, nameof(blockIds));
+
+            Task<List<StakeItem>> task = Task.Run(() =>
             {
-                this.logger.LogTrace("({0}.Count():{1})", nameof(stakeItems), stakeItems.Count());
+                this.logger.LogTrace("({0}.Count():{1})", nameof(blockIds), blockIds.Count());
 
-                using (DBreeze.Transactions.Transaction txn = this.dbreeze.GetTransaction())
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    txn.SynchronizeTables(ProvenBlockHeaderTable);
+                    List<StakeItem> stakeItems = new List<StakeItem>();
 
-                    txn.ValuesLazyLoadingIsOn = false;
+                    transaction.SynchronizeTables(ProvenBlockHeaderTable);
+
+                    transaction.ValuesLazyLoadingIsOn = false;
 
                     using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
                     {
-                        foreach (StakeItem stakeItem in stakeItems)
+                        foreach (uint256 blockId in blockIds)
                         {
-                            this.logger.LogTrace("Loading ProvenBlockHeader hash '{0}' from the database.", stakeItem.BlockId);
+                            this.logger.LogTrace("Loading ProvenBlockHeader hash '{0}' from the database.", blockId);
 
                             Row<byte[], ProvenBlockHeader> row =
-                                txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, stakeItem.BlockId.ToBytes(false));
+                                transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockId.ToBytes(false));
 
                             if (row.Exists)
                             {
-                                stakeItem.ProvenBlockHeader = row.Value;
-                                stakeItem.InStore = true;
+                                stakeItems.Add(new StakeItem
+                                {
+                                    BlockId = blockId,
+                                    ProvenBlockHeader = row.Value,
+                                    InStore = true,
+                                });
                             }
                         }
                     }
 
-                    txn.ValuesLazyLoadingIsOn = true;
+                    transaction.ValuesLazyLoadingIsOn = true;
 
                     this.logger.LogTrace("(-)");
+
+                    return stakeItems;
                 }
             });
 
@@ -160,20 +166,19 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogTrace("({0}.Count():{1})", nameof(stakeItems), stakeItems.Count());
 
-                using (DBreeze.Transactions.Transaction txn = this.dbreeze.GetTransaction())
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    txn.SynchronizeTables(BlockHashTable, ProvenBlockHeaderTable);
+                    transaction.SynchronizeTables(BlockHashTable, ProvenBlockHeaderTable);
 
                     using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
                     {
-                        this.InsertProvenHeaders(txn, stakeItems);
+                        this.InsertProvenHeaders(transaction, stakeItems);
 
-                        txn.Commit();
+                        transaction.Commit();
                     }
                 }
 
                 this.logger.LogTrace("(-)");
-
             });
 
             return task;
@@ -196,7 +201,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 this.logger.LogTrace("(-):'{0}'", tipHash);
 
                 return tipHash;
-
             });
 
             return task;
@@ -213,10 +217,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogTrace("()");
 
-                using (DBreeze.Transactions.Transaction txn = this.dbreeze.GetTransaction())
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     Row<byte[], ProvenBlockHeader> blockRow = 
-                        txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockId.ToBytes(false));
+                        transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockId.ToBytes(false));
 
                     this.logger.LogTrace("(-):{0}", blockRow.Exists);
 
@@ -242,20 +246,20 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogTrace("()");
 
-                using (DBreeze.Transactions.Transaction txn = this.dbreeze.GetTransaction())
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    txn.SynchronizeTables(BlockHashTable, ProvenBlockHeaderTable);
+                    transaction.SynchronizeTables(BlockHashTable, ProvenBlockHeaderTable);
 
-                    txn.ValuesLazyLoadingIsOn = false;
+                    transaction.ValuesLazyLoadingIsOn = false;
 
                     foreach (uint256 blockId in blockIds)
-                        txn.RemoveKey<byte[]>(ProvenBlockHeaderTable, blockId.ToBytes(false));
+                        transaction.RemoveKey<byte[]>(ProvenBlockHeaderTable, blockId.ToBytes(false));
 
-                    this.SetTipHash(txn, newTip);
+                    this.SetTipHash(transaction, newTip);
 
-                    txn.Commit();
+                    transaction.Commit();
 
-                    txn.ValuesLazyLoadingIsOn = true;
+                    transaction.ValuesLazyLoadingIsOn = true;
                 }
 
                 this.logger.LogTrace("(-)");
@@ -266,29 +270,23 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             return task;
         }
 
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.dbreeze?.Dispose();
-        }
-
         /// <summary>
         /// Obtains a block hash of the current tip.
         /// </summary>
-        /// <param name="txn">Open DBreeze transaction.</param>
+        /// <param name="transaction">Open DBreeze transaction.</param>
         /// <returns>Hash of blocks current tip.</returns>
-        private uint256 GetTipHash(DBreeze.Transactions.Transaction txn)
+        private uint256 GetTipHash(DBreeze.Transactions.Transaction transaction)
         {
             if (this.blockHash == null)
             {
-                txn.ValuesLazyLoadingIsOn = false;
+                transaction.ValuesLazyLoadingIsOn = false;
 
-                Row<byte[], uint256> row = txn.Select<byte[], uint256>(BlockHashTable, blockHashKey);
+                Row<byte[], uint256> row = transaction.Select<byte[], uint256>(BlockHashTable, blockHashKey);
 
                 if (row.Exists)
                     this.blockHash = row.Value;
 
-                txn.ValuesLazyLoadingIsOn = false;
+                transaction.ValuesLazyLoadingIsOn = false;
             }
 
             return this.blockHash;
@@ -297,9 +295,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Set's the tip to a new block hash.  ### re word ###
         /// </summary>
-        /// <param name="txn">Open DBreeze transaction.</param>
+        /// <param name="transaction">Open DBreeze transaction.</param>
         /// <param name="blockId">Hash of the block to become the new tip.</param>
-        private void SetTipHash(DBreeze.Transactions.Transaction txn, uint256 blockId)
+        private void SetTipHash(DBreeze.Transactions.Transaction transaction, uint256 blockId)
         {
             Guard.NotNull(blockId, nameof(blockId));
 
@@ -307,7 +305,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             this.blockHash = blockId;
 
-            txn.Insert<byte[], uint256>(BlockHashTable, blockHashKey, blockId);
+            transaction.Insert<byte[], uint256>(BlockHashTable, blockHashKey, blockId);
 
             this.logger.LogTrace("(-)");
         }
@@ -315,23 +313,23 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Retrieves <see cref="ProvenBlockHeader"/>s from <see cref="StakeItem"/>s, and adds them to the database.
         /// </summary>
-        /// <param name="txn">Open DBreeze transaction.</param>
+        /// <param name="transaction">Open DBreeze transaction.</param>
         /// <param name="stakeItems">List of <see cref="StakeItem"/>s.</param>
-        private void InsertProvenHeaders(DBreeze.Transactions.Transaction txn, IEnumerable<StakeItem> stakeItems)
+        private void InsertProvenHeaders(DBreeze.Transactions.Transaction transaction, IEnumerable<StakeItem> stakeItems)
         {
             this.logger.LogTrace("({0}.Count():{1})", nameof(stakeItems), stakeItems.Count());
 
-            IEnumerable<StakeItem> sortedStakeItems = this.SortProvenHeaders(txn, stakeItems);
+            IEnumerable<StakeItem> sortedStakeItems = this.SortProvenHeaders(transaction, stakeItems);
 
             foreach (StakeItem stakeItem in sortedStakeItems)
             {
                 if (!stakeItem.InStore)
                 {
-                    txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, stakeItem.BlockId.ToBytes(false), stakeItem.ProvenBlockHeader);
+                    transaction.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, stakeItem.BlockId.ToBytes(false), stakeItem.ProvenBlockHeader);
                     stakeItem.InStore = true;
                 }
 
-                this.SetTipHash(txn, stakeItem.BlockId);
+                this.SetTipHash(transaction, stakeItem.BlockId);
             }
 
             this.logger.LogTrace("(-)");
@@ -340,30 +338,28 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Sorts <see cref="ProvenBlockHeader"/>s.
         /// </summary>
-        /// <param name="txn">Open DBreeze transaction.</param>
+        /// <param name="transaction">Open DBreeze transaction.</param>
         /// <param name="stakeItems">List of <see cref="StakeItem"/>s.</param>
         /// <returns><see cref="StakeItem"/> enumerator.</returns>
-        private IEnumerable<StakeItem> SortProvenHeaders(DBreeze.Transactions.Transaction txn, IEnumerable<StakeItem> stakeItems)
+        private IEnumerable<StakeItem> SortProvenHeaders(DBreeze.Transactions.Transaction transaction, IEnumerable<StakeItem> stakeItems)
         {
             var stakeDict = new Dictionary<uint256, StakeItem>();
 
             foreach(StakeItem item in stakeItems)
-            {
                 stakeDict[item.BlockId] = item;
-            }
 
             List<KeyValuePair<uint256, StakeItem>> stakeItemList = stakeDict.ToList();
 
             stakeItemList.Sort((pair1, pair2) => pair1.Value.Height.CompareTo(pair2.Value.Height));
 
-            txn.ValuesLazyLoadingIsOn = false;
+            transaction.ValuesLazyLoadingIsOn = false;
 
             foreach (KeyValuePair<uint256, StakeItem> stakeItem in stakeItemList)
             {
                 StakeItem outStakeItem = stakeItem.Value;
 
                 // Check if the header already exists in the database.
-                Row<byte[], ProvenBlockHeader> headerRow = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, outStakeItem.BlockId.ToBytes());
+                Row<byte[], ProvenBlockHeader> headerRow = transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, outStakeItem.BlockId.ToBytes());
 
                 if (!headerRow.Exists)
                 {
@@ -371,31 +367,31 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
             }
 
-            txn.ValuesLazyLoadingIsOn = true;
+            transaction.ValuesLazyLoadingIsOn = true;
         }
 
         /// <summary>
         /// Checks whether a <see cref="ProvenBlockHeader"/> exists in the database.
         /// </summary>
-        /// <param name="txn">Open DBreeze transaction.</param>
+        /// <param name="transaction">Open DBreeze transaction.</param>
         /// <param name="blockId">Block hash key to search on.</param>
         /// <returns>True if the items exists in the database.</returns>
-        private bool ProvenBlockHeaderExists(DBreeze.Transactions.Transaction txn, uint256 blockId)
+        private bool ProvenBlockHeaderExists(DBreeze.Transactions.Transaction transaction, uint256 blockId)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(blockId), blockId);
 
-            txn.ValuesLazyLoadingIsOn = false;
+            transaction.ValuesLazyLoadingIsOn = false;
 
-            Row<byte[], ProvenBlockHeader> row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockId.ToBytes());
+            Row<byte[], ProvenBlockHeader> row = transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockId.ToBytes());
 
-            txn.ValuesLazyLoadingIsOn = true;
+            transaction.ValuesLazyLoadingIsOn = true;
         
             this.logger.LogTrace("(-):{0}", row.Exists);
 
             return row.Exists;
         }
 
-        private List<ProvenBlockHeader> GetProvenBlockHeadersByBlockId(DBreeze.Transactions.Transaction txn, List<uint256> blockIds)
+        private List<ProvenBlockHeader> GetProvenBlockHeadersByBlockId(DBreeze.Transactions.Transaction transaction, List<uint256> blockIds)
         {
             this.logger.LogTrace("({0}.{1}:{2})", nameof(blockIds), nameof(blockIds.Count), blockIds?.Count);
 
@@ -410,7 +406,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             foreach ((uint256, byte[]) key in keys)
             {
-                Row<byte[], ProvenBlockHeader> blockRow = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, key.Item2);
+                Row<byte[], ProvenBlockHeader> blockRow = transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, key.Item2);
 
                 if (blockRow.Exists)
                 {
@@ -448,6 +444,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.latestPerformanceSnapShot = snapShot;
 
             this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.dbreeze?.Dispose();
         }
     }
 }
