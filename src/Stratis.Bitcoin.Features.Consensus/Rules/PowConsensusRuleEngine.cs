@@ -19,6 +19,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>The consensus db, containing all unspent UTXO in the chain.</summary>
         public ICoinView UtxoSet { get; }
 
+        private readonly CoinviewPrefetcher prefetcher;
+
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
@@ -28,6 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, chainState, invalidBlockHashStore, nodeStats)
         {
             this.UtxoSet = utxoSet;
+            this.prefetcher = new CoinviewPrefetcher(this.UtxoSet, chain, loggerFactory);
         }
 
         /// <inheritdoc />
@@ -57,8 +60,24 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             return ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner).InitializeAsync();
         }
 
+        public override async Task<ValidationContext> FullValidationAsync(ChainedHeader header, Block block)
+        {
+            ValidationContext result = await base.FullValidationAsync(header, block).ConfigureAwait(false);
+
+            if ((result != null) && (result.Error == null))
+            {
+                // Notify prefetch manager about block that was validated so prefetch manager
+                // can decide what coins we will most likely need for full validation in the near future.
+                this.prefetcher.Prefetch(header);
+            }
+
+            return result;
+        }
+
         public override void Dispose()
         {
+            this.prefetcher.Dispose();
+
             var cache = this.UtxoSet as CachedCoinView;
             if (cache != null)
             {
