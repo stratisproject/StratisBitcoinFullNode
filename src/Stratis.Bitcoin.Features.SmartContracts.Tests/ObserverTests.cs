@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var callData = new MethodCall("TestMethod", new object[] { 1 });
 
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
             
             module.Rewrite(this.rewriter);
 
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var callData = new MethodCall("UseAllGas");
 
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
 
             module.Rewrite(this.rewriter);
 
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
 
             module.Rewrite(this.rewriter);
 
@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
 
             module.Rewrite(this.rewriter);
 
@@ -264,7 +264,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var callData = new MethodCall(nameof(Recursion.DoRecursion));
 
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
 
             module.Rewrite(this.rewriter);
 
@@ -382,7 +382,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             byte[] originalAssemblyBytes = compilationResult.Compilation;
 
-            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes);
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
 
             module.Rewrite(this.rewriter);
 

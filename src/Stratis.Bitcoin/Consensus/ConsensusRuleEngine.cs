@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public ValidationContext HeaderValidation(ChainedHeader header)
+        public virtual ValidationContext HeaderValidation(ChainedHeader header)
         {
             Guard.NotNull(header, nameof(header));
 
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public ValidationContext IntegrityValidation(ChainedHeader header, Block block)
+        public virtual ValidationContext IntegrityValidation(ChainedHeader header, Block block)
         {
             Guard.NotNull(header, nameof(header));
             Guard.NotNull(block, nameof(block));
@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public async Task<ValidationContext> FullValidationAsync(ChainedHeader header, Block block)
+        public virtual async Task<ValidationContext> FullValidationAsync(ChainedHeader header, Block block)
         {
             Guard.NotNull(header, nameof(header));
             Guard.NotNull(block, nameof(block));
@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public async Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block)
+        public virtual async Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block)
         {
             Guard.NotNull(header, nameof(header));
             Guard.NotNull(block, nameof(block));
