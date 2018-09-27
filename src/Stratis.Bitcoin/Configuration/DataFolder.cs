@@ -82,8 +82,7 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Path to the folder with smart contract state database files.</summary>
         public string SmartContractStatePath { get; set; }
 
-        /// <summary>ProvenBlockHeaderStore folder path to the DBreeze database files.</summary>
-        /// <seealso cref="Bitcoin.Features.Consensus.ProvenBlockHeaders.ProvenBlockHeaderStore"/>
+        /// <summary>Path to the folder for <see cref="Bitcoin.Features.Consensus.ProvenBlockHeaders.ProvenBlockHeader"/> items database files.</summary>
         public string ProvenBlockHeaderPath { get; set; }
 
         /// <summary>Path to Stratis applications</summary>
