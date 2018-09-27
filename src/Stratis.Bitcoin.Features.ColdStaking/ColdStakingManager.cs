@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.BuilderExtensions;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -11,6 +12,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.ColdStaking.Tests")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests")]
 
 namespace Stratis.Bitcoin.Features.ColdStaking
 {
@@ -104,6 +106,32 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         protected override ScriptToAddressLookup CreateAddressFromScriptLookup()
         {
             return new ColdStakingAddressLookup(this.network);
+        }
+
+        /// <inheritdoc />
+        public override Dictionary<string, ScriptTemplate> GetValidStakingTemplates()
+        {
+            Dictionary<string, ScriptTemplate> templates = base.GetValidStakingTemplates();
+            templates["ColdStaking"] = ColdStakingScriptTemplate.Instance;
+            return templates;
+        }
+
+        // <inheritdoc />
+        public override IEnumerable<BuilderExtension> GetTransactionBuilderExtensionsForStaking()
+        {
+            return base.GetTransactionBuilderExtensionsForStaking().Concat(new List<BuilderExtension> { new ColdStakingBuilderExtension(true) });
+        }
+
+        /// <summary>
+        /// Gets all the spendable transactions in a wallet from the accounts participating in staking.
+        /// </summary>
+        /// <param name="walletName">Name of the wallet to get the transactions from.</param>
+        /// <param name="confirmations">Number of confirmation required.</param>
+        /// <returns>An enumeration of <see cref="UnspentOutputReference"/> objects.</returns>
+        public override IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWalletForStaking(string walletName, int confirmations = 0)
+        {
+            return this.GetSpendableTransactionsInWallet(walletName, confirmations,
+                a => (a.Index < Wallet.Wallet.SpecialPurposeAccountIndexesStart) || (a.Index == ColdStakingManager.HotWalletAccountIndex));
         }
 
         /// <summary>

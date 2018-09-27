@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 
@@ -58,11 +57,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 return Task.CompletedTask;
             }
 
-            var utxoRuleContext = context as UtxoRuleContext;
-            UnspentOutputSet view = utxoRuleContext.UnspentOutputSet;
+            var posRuleContext = context as PosRuleContext;
+            UnspentOutputSet view = posRuleContext.UnspentOutputSet;
 
-            // Verify that GetOutputFor returns non-null for all inputs.
-            if (!view.HaveInputs(coinstakeTransaction))
+            // Verify that all inputs map to incoming outputs.
+            if (coinstakeTransaction.Inputs.Any(i => !posRuleContext.CoinStakeInputs.ContainsKey(i)))
             {
                 this.Logger.LogTrace("(-)[COLDSTAKE_INPUTS_WITHOUT_OUTPUTS]");
                 ConsensusErrors.BadColdstakeInputs.Throw();
@@ -70,10 +69,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Check that ScriptPubKeys of all inputs of this transaction are the same. If they are not, the script fails.
             // Due to this being a coinstake transaction we know if will have at least one input.
-            Script scriptPubKey = view.GetOutputFor(coinstakeTransaction.Inputs[0]).ScriptPubKey;
+            Script scriptPubKey = posRuleContext.CoinStakeInputs[coinstakeTransaction.Inputs[0]].ScriptPubKey;
             for (int i = 1; i < coinstakeTransaction.Inputs.Count; i++)
             {
-                if (scriptPubKey != view.GetOutputFor(coinstakeTransaction.Inputs[i]).ScriptPubKey)
+                if (scriptPubKey != posRuleContext.CoinStakeInputs[coinstakeTransaction.Inputs[i]].ScriptPubKey)
                 {
                     this.Logger.LogTrace("(-)[BAD_COLDSTAKE_INPUTS]");
                     ConsensusErrors.BadColdstakeInputs.Throw();
@@ -105,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Check that the sum of values of all inputs is smaller or equal to the sum of values of all outputs. If this does
             // not hold, the script fails.
-            if (view.GetValueIn(coinstakeTransaction) > coinstakeTransaction.TotalOut)
+            if (posRuleContext.TotalCoinStakeValueIn > coinstakeTransaction.TotalOut)
             {
                 this.Logger.LogTrace("(-)[COLDSTAKE_INPUTS_EXCEED_OUTPUTS]");
                 ConsensusErrors.BadColdstakeAmount.Throw();

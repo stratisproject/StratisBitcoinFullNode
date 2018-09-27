@@ -7,6 +7,7 @@ using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.BuilderExtensions;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -147,6 +148,20 @@ namespace Stratis.Bitcoin.Features.Wallet
         protected virtual ScriptToAddressLookup CreateAddressFromScriptLookup()
         {
             return new ScriptToAddressLookup();
+        }
+
+        /// <inheritdoc />
+        public virtual Dictionary<string, ScriptTemplate> GetValidStakingTemplates()
+        {
+            return new Dictionary<string, ScriptTemplate> {
+                { "P2PK", PayToPubkeyTemplate.Instance },
+                { "P2PKH", PayToPubkeyHashTemplate.Instance } };
+        }
+
+        // <inheritdoc />
+        public virtual IEnumerable<BuilderExtension> GetTransactionBuilderExtensionsForStaking()
+        {
+            return new List<BuilderExtension>();
         }
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
@@ -755,6 +770,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0)
         {
+            return this.GetSpendableTransactionsInWallet(walletName, confirmations, Wallet.NormalAccounts);
+        }
+
+        public virtual IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWalletForStaking(string walletName, int confirmations = 0)
+        {
+            return this.GetSpendableTransactionsInWallet(walletName, confirmations);
+        }
+
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations, Func<HdAccount, bool> accountFilter)
+        {
             Guard.NotEmpty(walletName, nameof(walletName));
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(walletName), walletName, nameof(confirmations), confirmations);
 
@@ -762,7 +787,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             UnspentOutputReference[] res = null;
             lock (this.lockObject)
             {
-                res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations).ToArray();
+                res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations, accountFilter).ToArray();
             }
 
             this.logger.LogTrace("(-):*.Count={0}", res.Count());
