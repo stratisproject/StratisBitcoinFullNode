@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(11));
                 engine.Register();
 
-                // Connect syncer to Miner B, reorg should fail.
+                // Connect syncer to Miner A, reorg should fail.
                 TestHelper.Connect(syncer, minerA);
 
                 // Syncer should disconnect from miner A after the failed block.
