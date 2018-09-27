@@ -12,31 +12,27 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     {
         /// <summary>Loads <see cref="ProvenBlockHeader"/> items from the database.</summary>
         /// <param name="blockHash">BlockId to initial the database with.</param>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task InitializeAsync(uint256 blockHash = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task InitializeAsync(uint256 blockHash = null);
 
         /// <summary>
         /// Initialize the <see cref="ProvenBlockHeader"/> store.
         /// </summary>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task LoadAsync(CancellationToken cancellationToken = default(CancellationToken));
+        Task LoadAsync();
 
         /// <summary>
         /// Get a <see cref="ProvenBlockHeader"/> corresponding to a block.
         /// </summary>
         /// <param name="blockId">Id used to retrieve the <see cref="ProvenBlockHeader"/>.</param>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns><see cref="ProvenBlockHeader"/> retrieved from the <see cref="ProvenBlockHeaderStore"/>.</returns>
-        Task<ProvenBlockHeader> GetAsync(uint256 blockId, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ProvenBlockHeader> GetAsync(uint256 blockId);
 
         /// <summary>
         /// Retrieves the <see cref="ProvenBlockHeader"/> of the current tip.
         /// </summary>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns><see cref="ProvenBlockHeader"/></returns>
-        Task<ProvenBlockHeader> GetTipAsync(CancellationToken cancellationToken = default(CancellationToken));
+        Task<ProvenBlockHeader> GetTipAsync();
 
         /// <summary>
         /// Adds a <see cref="ProvenBlockHeader"/> to the internal concurrent dictionary. 
@@ -53,8 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
         /// <summary> Retrieves the block hash of the current <see cref="ProvenBlockHeader"/> tip.</summary>
         /// <returns>Block hash of the current tip of the <see cref="ProvenBlockHeader"/>.</returns>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns>A <see cref="uint256"/> representing the asynchronous operation.</returns>
-        Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken));
+        Task<uint256> GetTipHashAsync();
     }
 }

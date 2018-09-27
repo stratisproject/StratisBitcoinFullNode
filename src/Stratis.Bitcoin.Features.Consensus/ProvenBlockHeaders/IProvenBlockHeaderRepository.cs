@@ -13,28 +13,24 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     {
         /// <summary>Loads <see cref="ProvenBlockHeader"/> items from the database.</summary>
         /// <param name="blockHash">BlockId to initial the database with.</param>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task InitializeAsync(uint256 blockHash = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task InitializeAsync(uint256 blockHash = null);
 
         /// <summary> Retrieves the block hash of the current <see cref="ProvenBlockHeader"/> tip.</summary>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken));
+        Task<uint256> GetTipHashAsync();
 
         /// <summary>
         /// Retrieves <see cref="ProvenBlockHeader"/> items from the database.
         /// </summary>
         /// <param name="stakeItems">Proof of stake items which includes <see cref="ProvenBlockHeader"/>.</param>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task GetAsync(IEnumerable<StakeItem> stakeItems, CancellationToken cancellationToken = default(CancellationToken));
+        Task GetAsync(IEnumerable<StakeItem> stakeItems);
 
         /// <summary>Persists <see cref="ProvenBlockHeader"/> items to the database.</summary>
         /// <param name="stakeItems">Proof of stake items which includes <see cref="ProvenBlockHeader"/>.</param>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task PutAsync(IEnumerable<StakeItem> stakeItems, CancellationToken cancellationToken = default(CancellationToken));
+        Task PutAsync(IEnumerable<StakeItem> stakeItems);
 
         /// <summary>
         /// Determine if a <see cref="ProvenBlockHeader"/> already exists in the database.

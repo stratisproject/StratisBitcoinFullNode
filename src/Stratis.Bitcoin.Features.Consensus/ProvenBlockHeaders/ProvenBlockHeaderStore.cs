@@ -96,13 +96,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public async Task InitializeAsync(uint256 blockHash = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task InitializeAsync(uint256 blockHash = null)
         {
             this.logger.LogInformation("Initializing {0}.", nameof(ProvenBlockHeaderStore));
 
-            await this.provenBlockHeaderRepository.InitializeAsync(blockHash, cancellationToken).ConfigureAwait(false);
+            await this.provenBlockHeaderRepository.InitializeAsync(blockHash).ConfigureAwait(false);
 
-            this.TipHash = await this.GetTipHashAsync(cancellationToken).ConfigureAwait(false);
+            this.TipHash = await this.GetTipHashAsync().ConfigureAwait(false);
 
             this.logger.LogDebug("Initialized ProvenBlockHader block tip at '{0}'.", this.TipHash);
 
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public async Task LoadAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task LoadAsync()
         {
             this.logger.LogTrace("()");
 
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             ChainedHeader next = this.chain.GetBlock(hash);
 
-            using (await this.lockobj.LockAsync(cancellationToken).ConfigureAwait(false))
+            using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
                 if (next == null)
                 {
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public async Task<ProvenBlockHeader> GetAsync(uint256 blockId, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ProvenBlockHeader> GetAsync(uint256 blockId)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(blockId), blockId);
 
@@ -174,7 +174,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
             };
 
-            await this.provenBlockHeaderRepository.GetAsync(item, cancellationToken).ConfigureAwait(false);
+            await this.provenBlockHeaderRepository.GetAsync(item).ConfigureAwait(false);
 
             var provenBlockHeader = item.FirstOrDefault().ProvenBlockHeader;
 
@@ -189,11 +189,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public async Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<uint256> GetTipHashAsync()
         {
             this.logger.LogTrace("()");
 
-            this.TipHash = await this.provenBlockHeaderRepository.GetTipHashAsync(cancellationToken).ConfigureAwait(false);
+            this.TipHash = await this.provenBlockHeaderRepository.GetTipHashAsync().ConfigureAwait(false);
 
             this.logger.LogTrace("(-)");
 
@@ -201,11 +201,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public async Task<ProvenBlockHeader> GetTipAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ProvenBlockHeader> GetTipAsync()
         {
             this.logger.LogTrace("()");
 
-            this.TipHash = await this.GetTipHashAsync(cancellationToken);
+            this.TipHash = await this.GetTipHashAsync();
 
             this.logger.LogTrace("(-)");
 
@@ -236,6 +236,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// Dequeues the blocks continuously and saves them to the database when the maximum batch size is reached or timer ran out.
         /// </summary>
         /// <remarks>Batch is always saved on shutdown.</remarks>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private async Task DequeueContinuouslyAsync()
         {
             this.logger.LogTrace("()");
@@ -301,19 +302,20 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     // Start timer if it is not started already.
                     timerTask = timerTask ?? Task.Delay(BatchMaxSaveIntervalSeconds * 1000, this.nodeLifetime.ApplicationStopping);
                 }
-            }
 
-            await this.SaveBatchAsync().ConfigureAwait(false);
+                await this.SaveBatchAsync().ConfigureAwait(false);
+            }
 
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>Saves items to the <see cref="ProvenBlockHeaderRepository"/>.</summary>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
         private async Task SaveBatchAsync()
         {
             this.logger.LogTrace("()");
 
-            if (this.batch.Count != 0)
+            if ((this.batch.Count != 0) && (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested))
             {
                 using (await this.lockobj.LockAsync().ConfigureAwait(false))
                 {

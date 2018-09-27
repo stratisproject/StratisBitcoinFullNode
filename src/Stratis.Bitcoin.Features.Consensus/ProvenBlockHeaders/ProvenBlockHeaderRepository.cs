@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public Task InitializeAsync(uint256 blockHash = null, CancellationToken cancellationToken = default(CancellationToken))
+        public Task InitializeAsync(uint256 blockHash = null)
         {
             Task task = Task.Run(() =>
             {
@@ -105,13 +105,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 this.logger.LogTrace("(-)");
 
-            }, cancellationToken);
+            });
 
             return task;
         }
 
         /// <inheritdoc />
-        public Task GetAsync(IEnumerable<StakeItem> stakeItems, CancellationToken cancellationToken = default(CancellationToken))
+        public Task GetAsync(IEnumerable<StakeItem> stakeItems)
         {
             Guard.NotNull(stakeItems, nameof(stakeItems));
   
@@ -146,13 +146,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     this.logger.LogTrace("(-)");
                 }
-            }, cancellationToken);
+            });
 
             return task;
         }
 
         /// <inheritdoc />
-        public Task PutAsync(IEnumerable<StakeItem> stakeItems, CancellationToken cancellationToken = default(CancellationToken))
+        public Task PutAsync(IEnumerable<StakeItem> stakeItems)
         {
             Guard.NotNull(stakeItems, nameof(stakeItems));
 
@@ -174,13 +174,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 this.logger.LogTrace("(-)");
 
-            }, cancellationToken);
+            });
 
             return task;
         }
 
         /// <inheritdoc />
-        public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public Task<uint256> GetTipHashAsync()
         {
             Task<uint256> task = Task.Run(() =>
             {
@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 return tipHash;
 
-            }, cancellationToken);
+            });
 
             return task;
         }
