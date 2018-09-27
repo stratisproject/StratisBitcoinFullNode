@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -49,7 +50,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             prevTransaction.Outputs.Add(new TxOut(25, inputScriptPubKeysDiffer ? scriptPubKey2 : scriptPubKey1));
 
             // Record the spendable outputs.
-            (this.ruleContext as UtxoRuleContext).UnspentOutputSet.Update(prevTransaction, 0);
+            var posRuleContext = this.ruleContext as PosRuleContext;
+            posRuleContext.UnspentOutputSet.Update(prevTransaction, 0);
 
             // Create cold coin stake transaction.
             Transaction coinstakeTransaction = this.network.CreateTransaction();
@@ -86,10 +88,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.True(BlockStake.IsProofOfStake(block));
 
             this.concurrentChain.SetTip(block.Header);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate = this.concurrentChain.Tip;
 
             // Execute the rule and check the outcome against what is expected.
             var rule = this.CreateRule<PosColdStakingRule>();
+
+            posRuleContext.ValidationContext.ChainedHeaderToValidate = this.concurrentChain.Tip;
+            posRuleContext.CoinStakeInputs = coinstakeTransaction.Inputs.ToDictionary(txin => txin, txin => posRuleContext.UnspentOutputSet.GetOutputFor(txin));
+            posRuleContext.TotalCoinStakeValueIn = posRuleContext.CoinStakeInputs.Sum(a => a.Value?.Value ?? 0);
 
             // If an error is expeected then capture the error and compare it against the expected error.
             if (expectedError != null)

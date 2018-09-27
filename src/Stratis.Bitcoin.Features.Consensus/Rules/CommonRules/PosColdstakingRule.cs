@@ -58,7 +58,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             var posRuleContext = context as PosRuleContext;
-            UnspentOutputSet view = posRuleContext.UnspentOutputSet;
 
             // Verify that all inputs map to incoming outputs.
             if (coinstakeTransaction.Inputs.Any(i => !posRuleContext.CoinStakeInputs.ContainsKey(i)))
@@ -72,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             Script scriptPubKey = posRuleContext.CoinStakeInputs[coinstakeTransaction.Inputs[0]].ScriptPubKey;
             for (int i = 1; i < coinstakeTransaction.Inputs.Count; i++)
             {
-                if (scriptPubKey != posRuleContext.CoinStakeInputs[coinstakeTransaction.Inputs[i]].ScriptPubKey)
+                if (scriptPubKey != posRuleContext.CoinStakeInputs[coinstakeTransaction.Inputs[i]]?.ScriptPubKey)
                 {
                     this.Logger.LogTrace("(-)[BAD_COLDSTAKE_INPUTS]");
                     ConsensusErrors.BadColdstakeInputs.Throw();
