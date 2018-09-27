@@ -11,14 +11,14 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    /// <summary>Fetches coins for blocks that are likely to be validated in the near future to speedup full validation.</summary>
+    /// <summary>Fetches coins for blocks that are likely to be validated in the near future to speed-up full validation.</summary>
     public class CoinviewPrefetcher : IDisposable
     {
         /// <summary>
-        /// How many blocks ahead prefetching will look.
-        /// When header at height X is dequeued block with header at height <c>X + Lookahead</c> will be prefetched in case block data is downloaded.
+        /// How many blocks ahead pre-fetching will look.
+        /// When header at height X is dequeued block with header at height <c>X + Lookahead</c> will be pre-fetching in case block data is downloaded.
         /// </summary>
-        /// TODO maybe make it dynamic so the value is increased when we are too close to the tip after prefetching was completed
+        /// TODO maybe make it dynamic so the value is increased when we are too close to the tip after pre-fetching was completed
         /// and decreased if we are too far from the tip.
         private const int Lookahead = 20;
 
@@ -44,17 +44,17 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <summary>
-        /// Prefetches UTXOs for a block and some blocks with higher height.
-        /// Prefetching is done on the background.
+        /// Pre-fetches UTXOs for a block and some blocks with higher height.
+        /// pre-fetching is done on the background.
         /// </summary>
-        /// <param name="header">Header of a block that is about to be partially validated and requires prefetching.</param>
+        /// <param name="header">Header of a block that is about to be partially validated and requires pre-fetching.</param>
         private async Task OnHeaderEnqueuedAsync(ChainedHeader header, CancellationToken cancellation)
         {
             ChainedHeader currentHeader = header;
 
-            // Go Lookahead blocks ahead of current header and get block for prefetching.
+            // Go Lookahead blocks ahead of current header and get block for pre-fetching.
             // There might be several blocks at height of header.Height + Lookahead but
-            // only first one will be prefetched since prefetching is in place mostly to
+            // only first one will be pre-fetched since pre-fetching is in place mostly to
             // speed up IBD.
             for (int i = 0; i < Lookahead; i++)
             {
@@ -81,11 +81,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return;
             }
 
-            bool farFromTip = currentHeader.Height > this.chain.Tip.Height + Lookahead/2;
+            bool farFromTip = currentHeader.Height > this.chain.Tip.Height + (Lookahead / 2);
 
             if (!farFromTip)
             {
-                this.logger.LogDebug("Far from tip is false! Skipping prefetching.");
+                this.logger.LogDebug("Block selected for pre-fetching is too close to the tip! Skipping pre-fetching.");
                 this.logger.LogTrace("(-)[TOO_CLOSE_TO_PREFETCH]");
                 return;
             }
@@ -97,15 +97,15 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 await this.coinview.FetchCoinsAsync(idsToFetch, cancellation).ConfigureAwait(false);
 
-                this.logger.LogTrace("{0} ids were prefetched.", idsToFetch.Length);
+                this.logger.LogTrace("{0} ids were pre-fetched.", idsToFetch.Length);
             }
         }
 
         /// <summary>
-        /// Prefetches UTXOs for a block and some blocks with higher height.
-        /// Prefetching is done on the background.
+        /// Pre-fetches UTXOs for a block and some blocks with higher height.
+        /// Pre-fetching is done on the background.
         /// </summary>
-        /// <param name="header">Header of a block that was fully validated and requires prefetching.</param>
+        /// <param name="header">Header of a block that was fully validated and requires pre-fetching.</param>
         public void Prefetch(ChainedHeader header)
         {
             this.headersQueue.Enqueue(header);
