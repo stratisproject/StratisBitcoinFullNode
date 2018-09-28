@@ -2418,7 +2418,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         /// have no block pointers and block data availability == headers only.
         /// </summary>
         [Fact]
-        public void NodeHasReorg_ReorganisedHeaders_HaveNoBlockPointers_BlockDataAvailability_SetToHeadersOnly()
+        public void NodeHasReorg_ReorganisedHeaders_BlockDataAvailability()
         {
             const int depthOfReorg = 5;
             const int heightOfFork = 5;
