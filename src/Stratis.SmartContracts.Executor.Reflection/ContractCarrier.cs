@@ -32,20 +32,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>The method parameters that will be passed to the <see cref="MethodName"/> when the contract is executed.</summary>
         public object[] MethodParameters { get; private set; }
 
-        /// <summary>The index of the <see cref="TxOut"/> where the smart contract exists.</summary>
-        public uint Nvout { get; private set; }
-
         /// <summary>The serializer we use to serialize the method parameters.</summary>
         private readonly IMethodParameterSerializer serializer;
 
         /// <summary>The initiator of the the smart contract. TODO: Make set private.</summary>
         public uint160 Sender { get; set; }
-
-        /// <summary>The transaction hash that this smart contract references.</summary>
-        public uint256 TransactionHash { get; private set; }
-
-        /// <summary>The value of the transaction's output (should be one UTXO).</summary>
-        public ulong Value { get; private set; }
 
         public ContractCarrier(IMethodParameterSerializer serializer)
         {
