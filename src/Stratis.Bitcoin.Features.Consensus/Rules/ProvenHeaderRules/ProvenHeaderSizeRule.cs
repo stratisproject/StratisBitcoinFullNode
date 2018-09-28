@@ -10,8 +10,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
     /// Rule to check if the serialized sizes of the proven header components, such as merkle proof (max 512 bytes),
     /// signature (max 80 bytes) and coinstake (max 1,000,000 bytes), do not exceed maximum possible size allocation.
     /// </summary>
-    /// <seealso cref="ProvenHeaderValidationConsensusRuleBase" />
-    public class ProvenHeaderSizeRule : ProvenHeaderValidationConsensusRuleBase
+    /// <seealso cref="ProvenHeaderRuleBase" />
+    public class ProvenHeaderSizeRule : ProvenHeaderRuleBase
     {
         public override void Run(RuleContext context)
         {
