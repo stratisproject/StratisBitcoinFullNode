@@ -81,7 +81,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
                 reportData.Add(validationData);
 
                 Console.WriteLine($"Compiling...");
-                SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
+                ContractCompilationResult compilationResult = ContractCompiler.Compile(source);
 
                 validationData.CompilationSuccess = compilationResult.Success;
 
@@ -107,7 +107,7 @@ namespace Stratis.SmartContracts.Tools.Sct.Validation
 
                 Console.WriteLine("Building ModuleDefinition");
 
-                IContractModuleDefinition moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
+                IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver()).Value;
 
                 Console.WriteLine("ModuleDefinition built successfully");
                 Console.WriteLine();

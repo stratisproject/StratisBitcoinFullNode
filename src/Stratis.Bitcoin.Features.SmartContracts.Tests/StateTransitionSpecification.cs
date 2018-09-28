@@ -11,23 +11,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class StateTransitionSpecification
     {
-        private readonly Mock<IContractState> trackedState;
-        private readonly Mock<IContractStateRoot> contractStateRoot;
+        private readonly Mock<IStateRepository> trackedState;
+        private readonly Mock<IStateRepositoryRoot> contractStateRoot;
         private readonly Mock<IAddressGenerator> addressGenerator;
-        private readonly Mock<ISmartContractVirtualMachine> vm;
-        private readonly Mock<IContractState> trackedState2;
+        private readonly Mock<IVirtualMachine> vm;
+        private readonly Mock<IStateRepository> trackedState2;
 
         public StateTransitionSpecification()
         {
-            this.trackedState = new Mock<IContractState>();
-            this.contractStateRoot = new Mock<IContractStateRoot>();
+            this.trackedState = new Mock<IStateRepository>();
+            this.contractStateRoot = new Mock<IStateRepositoryRoot>();
             this.contractStateRoot.Setup(c => c.StartTracking())
                 .Returns(this.trackedState.Object);
-            this.trackedState2 = new Mock<IContractState>();
+            this.trackedState2 = new Mock<IStateRepository>();
             this.trackedState.Setup(c => c.StartTracking())
                 .Returns(this.trackedState2.Object);
             this.addressGenerator = new Mock<IAddressGenerator>();
-            this.vm = new Mock<ISmartContractVirtualMachine>();
+            this.vm = new Mock<IVirtualMachine>();
         }
 
         [Fact]
@@ -218,6 +218,39 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void ExternalCall_Code_Null()
+        {
+            var gasLimit = (Gas)(GasPriceList.BaseCost + 100000);
+
+            var externalCallMessage = new ExternalCallMessage(
+                uint160.Zero,
+                uint160.Zero,
+                0,
+                gasLimit,
+                new MethodCall("Test")
+            );
+
+            this.contractStateRoot
+                .Setup(sr => sr.GetCode(externalCallMessage.To))
+                .Returns((byte[]) null);            
+
+            var state = new Mock<IState>();
+            state.SetupGet(s => s.ContractState).Returns(this.contractStateRoot.Object);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, externalCallMessage);
+
+            this.contractStateRoot.Verify(sr => sr.GetCode(externalCallMessage.To), Times.Once);            
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Null(result.Error.VmError);
+            Assert.Equal(StateTransitionErrorKind.NoCode, result.Error.Kind);
+            Assert.Equal((Gas) 0, result.GasConsumed);
+        }
+
+        [Fact]
         public void InternalCreate_Success()
         {
             // The difference between an internal and an external create:
@@ -281,6 +314,102 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(newContractAddress, result.Success.ContractAddress);
             Assert.Equal(vmExecutionResult.Result, result.Success.ExecutionResult);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
+        }
+
+        [Fact]
+        public void InternalCreate_Vm_Error()
+        {
+            var newContractAddress = uint160.One;
+
+            var vmExecutionResult = VmExecutionResult.Error(new ContractErrorMessage("Error"));
+
+            // Code must have a length to pass precondition checks.
+            var code = new byte[1];
+            var typeName = "Test";
+
+            var internalCreateMessage = new InternalCreateMessage(
+                uint160.Zero,
+                10,
+                (Gas)(GasPriceList.BaseCost + 100000),
+                new object[] { },
+                typeName
+            );
+
+            this.vm.Setup(v =>
+                    v.Create(It.IsAny<IStateRepository>(),
+                        It.IsAny<ISmartContractState>(),
+                        It.IsAny<byte[]>(),
+                        It.IsAny<object[]>(),
+                        It.IsAny<string>()))
+                .Returns(vmExecutionResult);
+
+            // Need to return code for the sender
+            this.contractStateRoot
+                .Setup(sr => sr.GetCode(internalCreateMessage.From))
+                .Returns(code);
+
+            var state = new Mock<IState>();
+            state.Setup(s => s.GetBalance(internalCreateMessage.From)).Returns(internalCreateMessage.Amount + 1);
+            state.SetupGet(s => s.ContractState).Returns(this.contractStateRoot.Object);
+            state.Setup(s => s.GenerateAddress(It.IsAny<IAddressGenerator>())).Returns(newContractAddress);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, internalCreateMessage);
+        
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<GasMeter>(), newContractAddress, internalCreateMessage, this.contractStateRoot.Object));
+
+            this.vm.Verify(
+                v => v.Create(
+                    this.contractStateRoot.Object,
+                    It.IsAny<ISmartContractState>(), 
+                    code,
+                    internalCreateMessage.Parameters,
+                    internalCreateMessage.Type),
+                Times.Once);
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Equal(result.Error.VmError, vmExecutionResult.ErrorMessage);
+            Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
+            Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
+        }
+
+        [Fact]
+        public void InternalCreate_Balance_Error()
+        {
+            var typeName = "Test";
+
+            var internalCreateMessage = new InternalCreateMessage(
+                uint160.Zero,
+                10,
+                (Gas)(GasPriceList.BaseCost + 100000),
+                new object[] { },
+                typeName
+            );
+            
+            var state = new Mock<IState>();
+
+            // Setup the balance with less than the required amount.
+            state.Setup(s => s.GetBalance(internalCreateMessage.From))
+                .Returns(internalCreateMessage.Amount - 1);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, internalCreateMessage);
+            
+            state.Verify(s => s.GetBalance(internalCreateMessage.From));
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Null(result.Error.VmError);
+            Assert.Equal(StateTransitionErrorKind.InsufficientBalance, result.Error.Kind);
+            Assert.Equal((Gas)0, result.GasConsumed);
+        }
+
+        [Fact(Skip = "TODO")]
+        public void Create_Out_Of_Gas_Error()
+        {
         }
 
         [Fact]
@@ -348,6 +477,132 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void InternalCall_Vm_Error()
+        {
+            var vmExecutionResult = VmExecutionResult.Error(new ContractErrorMessage("Error"));
+
+            // Code must have a length to pass precondition checks.
+            var code = new byte[1];
+            var typeName = "Test";
+
+            var internalCallMessage = new InternalCallMessage(
+                uint160.One,
+                uint160.Zero,
+                10,
+                (Gas)(GasPriceList.BaseCost + 100000),
+                new MethodCall("Test", new object[] { })
+            );
+
+            this.vm.Setup(v => v.ExecuteMethod(
+                    It.IsAny<ISmartContractState>(),
+                    internalCallMessage.Method,
+                    code,
+                    typeName))
+                .Returns(vmExecutionResult);
+
+            this.contractStateRoot
+                .Setup(sr => sr.GetCode(internalCallMessage.To))
+                .Returns(code);
+
+            this.contractStateRoot
+                .Setup(sr => sr.GetContractType(internalCallMessage.To))
+                .Returns(typeName);
+
+            var state = new Mock<IState>();
+            state.Setup(s => s.GetBalance(internalCallMessage.From))
+                .Returns(internalCallMessage.Amount + 1);
+            state.SetupGet(s => s.ContractState).Returns(this.contractStateRoot.Object);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, internalCallMessage);
+
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<GasMeter>(), internalCallMessage.To, internalCallMessage, this.contractStateRoot.Object));
+
+            this.vm.Verify(
+                v => v.ExecuteMethod(
+                    It.IsAny<ISmartContractState>(),
+                    internalCallMessage.Method,
+                    code,
+                    typeName),
+                Times.Once);
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Equal(result.Error.VmError, vmExecutionResult.ErrorMessage);
+            Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
+            Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
+        }
+
+        [Fact]
+        public void InternalCall_Balance_Error()
+        {
+            var internalCallMessage = new InternalCallMessage(
+                uint160.One,
+                uint160.Zero,
+                10,
+                (Gas)(GasPriceList.BaseCost + 100000),
+                new MethodCall("Test", new object[] { })
+            );
+
+            var state = new Mock<IState>();
+
+            // Setup the balance with less than the required amount.
+            state.Setup(s => s.GetBalance(internalCallMessage.From))
+                .Returns(internalCallMessage.Amount - 1);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, internalCallMessage);
+
+            state.Verify(s => s.GetBalance(internalCallMessage.From));
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Null(result.Error.VmError);
+            Assert.Equal(StateTransitionErrorKind.InsufficientBalance, result.Error.Kind);
+            Assert.Equal((Gas)0, result.GasConsumed);
+        }
+
+        [Fact]
+        public void InternalCall_Code_Null()
+        {
+            var internalCallMessage = new InternalCallMessage(
+                uint160.One,
+                uint160.Zero,
+                10,
+                (Gas)(GasPriceList.BaseCost + 100000),
+                new MethodCall("Test", new object[] { })
+            );
+
+            this.contractStateRoot
+                .Setup(sr => sr.GetCode(internalCallMessage.To))
+                .Returns((byte[])null);
+
+            var state = new Mock<IState>();
+            state.Setup(s => s.GetBalance(internalCallMessage.From))
+                .Returns(internalCallMessage.Amount + 1);
+            state.SetupGet(s => s.ContractState).Returns(this.contractStateRoot.Object);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, internalCallMessage);
+
+            this.contractStateRoot.Verify(sr => sr.GetCode(internalCallMessage.To), Times.Once);
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Null(result.Error.VmError);
+            Assert.Equal(StateTransitionErrorKind.NoCode, result.Error.Kind);
+            Assert.Equal((Gas)0, result.GasConsumed);
+        }
+
+        [Fact(Skip = "TODO")]
+        public void Call_Out_Of_Gas_Error()
+        {
+        }
+
+        [Fact]
         public void Contract_Transfer_To_Other_Contract_Success()
         {
             // There is code at the destination address, which causes an internal call to the receive method
@@ -407,6 +662,92 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(contractTransferMessage.To, result.Success.ContractAddress);
             Assert.Equal(vmExecutionResult.Result, result.Success.ExecutionResult);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
+        }
+
+        [Fact]
+        public void Contract_Transfer_To_Other_Contract_VM_Error()
+        {
+            var vmExecutionResult = VmExecutionResult.Error(new ContractErrorMessage("Error"));
+
+            // Code must have a length to pass precondition checks.
+            var code = new byte[1];
+            var typeName = "Test";
+
+            var contractTransferMessage = new ContractTransferMessage(
+                uint160.One,
+                uint160.Zero,
+                10,
+                (Gas)(GasPriceList.BaseCost + 100000)
+            );
+
+            this.vm.Setup(v => v.ExecuteMethod(
+                    It.IsAny<ISmartContractState>(),
+                    contractTransferMessage.Method,
+                    code,
+                    typeName))
+                .Returns(vmExecutionResult);
+
+            this.contractStateRoot
+                .Setup(sr => sr.GetCode(contractTransferMessage.To))
+                .Returns(code);
+
+            this.contractStateRoot
+                .Setup(sr => sr.GetContractType(contractTransferMessage.To))
+                .Returns(typeName);
+
+            var state = new Mock<IState>();
+            state.Setup(s => s.GetBalance(contractTransferMessage.From))
+                .Returns(contractTransferMessage.Amount + 1);
+            state.SetupGet(s => s.ContractState).Returns(this.contractStateRoot.Object);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, contractTransferMessage);
+
+            state.Verify(s => s.CreateSmartContractState(state.Object, It.IsAny<GasMeter>(), contractTransferMessage.To, contractTransferMessage, this.contractStateRoot.Object));
+
+            this.vm.Verify(
+                v => v.ExecuteMethod(
+                    It.IsAny<ISmartContractState>(),
+                    contractTransferMessage.Method,
+                    code,
+                    typeName),
+                Times.Once);
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Equal(result.Error.VmError, vmExecutionResult.ErrorMessage);
+            Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
+            Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
+        }
+
+        [Fact]
+        public void Contract_Transfer_To_Other_Contract_Balance_Error()
+        {
+            var contractTransferMessage = new ContractTransferMessage(
+                uint160.One,
+                uint160.Zero,
+                10,
+                (Gas)(GasPriceList.BaseCost + 100000)
+            );
+
+            var state = new Mock<IState>();
+
+            // Setup the balance with less than the required amount.
+            state.Setup(s => s.GetBalance(contractTransferMessage.From))
+                .Returns(contractTransferMessage.Amount - 1);
+
+            var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
+
+            StateTransitionResult result = stateProcessor.Apply(state.Object, contractTransferMessage);
+
+            state.Verify(s => s.GetBalance(contractTransferMessage.From));
+
+            Assert.True(result.IsFailure);
+            Assert.NotNull(result.Error);
+            Assert.Null(result.Error.VmError);
+            Assert.Equal(StateTransitionErrorKind.InsufficientBalance, result.Error.Kind);
+            Assert.Equal((Gas)0, result.GasConsumed);
         }
 
         [Fact]

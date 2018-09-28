@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             And(mining_continues_to_maturity_to_allow_spend);
             And(jing_loses_connection_to_others_but_carries_on_mining);
             And(bob_creates_a_transaction_and_broadcasts);
-            And(charlie_mines_this_block);
+            And(charlie_waits_for_the_trx_and_mines_this_block);
             And(dave_confirms_transaction_is_present);
             And(meanwhile_jings_chain_advanced_ahead_of_the_others);
             When(jings_connection_comes_back);

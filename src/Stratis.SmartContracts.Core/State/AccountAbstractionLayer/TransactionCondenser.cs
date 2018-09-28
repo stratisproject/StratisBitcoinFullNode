@@ -23,7 +23,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// <summary>
         /// Reference to the current smart contract state.
         /// </summary>
-        private readonly IContractState stateRepository;
+        private readonly IStateRepository stateRepository;
 
         /// <summary>
         /// Address of the contract that was just called or created.
@@ -33,7 +33,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// <summary>
         /// Context for the transaction that has just been executed.
         /// </summary>
-        private readonly ISmartContractTransactionContext transactionContext;
+        private readonly IContractTransactionContext transactionContext;
 
         /// <summary>
         /// All of the transfers that happened internally inside of the contract execution.
@@ -52,7 +52,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
         private readonly Network network;
 
-        public TransactionCondenser(uint160 contractAddress, ILoggerFactory loggerFactory, IReadOnlyList<TransferInfo> transfers, IContractState stateRepository, Network network, ISmartContractTransactionContext transactionContext)
+        public TransactionCondenser(uint160 contractAddress, ILoggerFactory loggerFactory, IReadOnlyList<TransferInfo> transfers, IStateRepository stateRepository, Network network, IContractTransactionContext transactionContext)
         {
             this.contractAddress = contractAddress;
             this.logger = loggerFactory.CreateLogger(this.GetType().Name);
@@ -166,12 +166,11 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             AccountState accountState = this.stateRepository.GetAccountState(address);
             if (accountState != null)
             {
-                byte[] pushOp = Op.GetPushOp(address.ToBytes()).ToBytes();
                 var s = new List<byte>
                 {
                     (byte) ScOpcodeType.OP_INTERNALCONTRACTTRANSFER
                 };
-                s.AddRange(pushOp);
+                s.AddRange(address.ToBytes());
 
                 return new Script(s);
             }

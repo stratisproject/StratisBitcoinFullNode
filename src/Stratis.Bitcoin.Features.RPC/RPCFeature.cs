@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -60,8 +61,10 @@ namespace Stratis.Bitcoin.Features.RPC
             builder.AppendLine("#rpcallowip=127.0.0.1");
         }
 
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
+            this.logger.LogTrace("()");
+
             if (this.rpcSettings.Server)
             {
                 // TODO: The web host wants to create IServiceProvider, so build (but not start)
@@ -96,13 +99,15 @@ namespace Stratis.Bitcoin.Features.RPC
                 .Build();
 
                 this.fullNode.RPCHost.Start();
-                this.fullNode.Resources.Add(this.fullNode.RPCHost);
                 this.logger.LogInformation("RPC Server listening on: " + Environment.NewLine + string.Join(Environment.NewLine, this.rpcSettings.GetUrls()));
             }
             else
             {
                 this.logger.LogInformation("RPC Server is off based on configuration.");
             }
+
+            this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
     }
 

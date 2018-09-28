@@ -92,7 +92,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Information about the current state of the blockchain that is passed into the virtual machine.
     /// </summary>
-    public sealed class SmartContractExecutionContext : ISmartContractExecutionContext
+    public sealed class SmartContractExecutionContext : IContractExecutionContext
     {
         /// <inheritdoc/>
         public IBlock Block { get; }

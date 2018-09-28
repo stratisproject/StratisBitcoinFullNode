@@ -30,6 +30,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (o is byte[] bytes)
                 return bytes;
 
+            if (o is Array array)
+                return SerializeArray(array);
+
             if (o is byte b1)
                 return new byte[] { b1 };
 
@@ -116,6 +119,20 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return RLP.EncodeList(toEncode.ToArray());
         }
 
+        private byte[] SerializeArray(Array array)
+        {
+            List<byte[]> toEncode = new List<byte[]>();
+
+            for(int i=0; i< array.Length; i++)
+            {
+                object value = array.GetValue(i);
+                byte[] serialized = Serialize(value);
+                toEncode.Add(RLP.EncodeElement(serialized));
+            }
+
+            return RLP.EncodeList(toEncode.ToArray());
+        }
+
         public T Deserialize<T>(byte[] stream)
         {
             object deserialized = Deserialize(typeof(T), stream);
@@ -132,6 +149,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             if (type == typeof(byte[]))
                 return stream;
+
+            if (type.IsArray)
+                return DeserializeArray(type.GetElementType(), stream);
 
             if (type == typeof(byte))
                 return stream[0];
@@ -217,6 +237,20 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             {
                 byte[] fieldBytes = collection[i].RLPData;
                 fields[i].SetValue(ret, Deserialize(fields[i].FieldType, fieldBytes));
+            }
+
+            return ret;
+        }
+
+        private object DeserializeArray(Type elementType, byte[] bytes)
+        {
+            RLPCollection collection = (RLPCollection)RLP.Decode(bytes)[0];
+
+            var ret = Array.CreateInstance(elementType, collection.Count);
+
+            for(int i=0; i< collection.Count; i++)
+            {
+                ret.SetValue(Deserialize(elementType, collection[i].RLPData), i);
             }
 
             return ret;

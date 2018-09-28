@@ -36,9 +36,6 @@ namespace Stratis.Bitcoin
         /// <summary>Node command line and configuration file settings.</summary>
         public NodeSettings Settings { get; private set; }
 
-        /// <summary>List of disposable resources that the node uses.</summary>
-        public List<IDisposable> Resources { get; private set; }
-
         /// <summary>Information about the best chain.</summary>
         public IChainState ChainBehaviorState { get; private set; }
 
@@ -80,6 +77,10 @@ namespace Stratis.Bitcoin
 
         /// <see cref="INodeStats"/>
         private INodeStats nodeStats { get; set; }
+
+        private IAsyncLoop periodicLogLoop;
+
+        private IAsyncLoop periodicBenchmarkLoop;
 
         /// <inheritdoc />
         public INodeLifetime NodeLifetime
@@ -195,10 +196,6 @@ namespace Stratis.Bitcoin
             if (this.State == FullNodeState.Disposing || this.State == FullNodeState.Disposed)
                 throw new ObjectDisposedException(nameof(FullNode));
 
-            if (this.Resources != null)
-                throw new InvalidOperationException("node has already started.");
-
-            this.Resources = new List<IDisposable>();
             this.nodeLifetime = this.Services.ServiceProvider.GetRequiredService<INodeLifetime>() as NodeLifetime;
             this.fullNodeFeatureExecutor = this.Services.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
 
@@ -233,7 +230,7 @@ namespace Stratis.Bitcoin
         /// </summary>
         private void StartPeriodicLog()
         {
-            IAsyncLoop periodicLogLoop = this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
+            this.periodicLogLoop = this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
             {
                 string stats = this.nodeStats.GetStats();
 
@@ -246,7 +243,19 @@ namespace Stratis.Bitcoin
             repeatEvery: TimeSpans.FiveSeconds,
             startAfter: TimeSpans.FiveSeconds);
 
-            this.Resources.Add(periodicLogLoop);
+            this.periodicBenchmarkLoop = this.AsyncLoopFactory.Run("PeriodicBenchmarkLog", (cancellation) =>
+            {
+                if (this.InitialBlockDownloadState.IsInitialBlockDownload())
+                {
+                    string benchmark = this.nodeStats.GetBenchmark();
+                    this.logger.LogInformation(benchmark);
+                }
+
+                return Task.CompletedTask;
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpan.FromSeconds(17),
+            startAfter: TimeSpan.FromSeconds(17));
         }
 
         public string LastLogOutput { get; private set; }
@@ -267,11 +276,12 @@ namespace Stratis.Bitcoin
             this.logger.LogInformation("Disposing connection manager.");
             this.ConnectionManager.Dispose();
 
-            foreach (IDisposable disposable in this.Resources)
-            {
-                this.logger.LogInformation($"{disposable.GetType().Name}.");
-                disposable.Dispose();
-            }
+            this.logger.LogInformation("Disposing RPC host.");
+            this.RPCHost?.Dispose();
+
+            this.logger.LogInformation("Disposing periodic logging loops.");
+            this.periodicLogLoop?.Dispose();
+            this.periodicBenchmarkLoop?.Dispose();
 
             // Fire the NodeFeatureExecutor.Stop.
             this.logger.LogInformation("Disposing the full node feature executor.");

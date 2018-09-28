@@ -10,17 +10,12 @@ namespace Stratis.Bitcoin.Builder
     /// <summary>
     /// Starts and stops all features registered with a full node.
     /// </summary>
-    public interface IFullNodeFeatureExecutor
+    public interface IFullNodeFeatureExecutor : IDisposable
     {
         /// <summary>
         /// Starts all registered features of the associated full node.
         /// </summary>
         void Initialize();
-
-        /// <summary>
-        /// Stops all registered features of the associated full node.
-        /// </summary>
-        void Dispose();
     }
 
     /// <summary>
@@ -56,7 +51,7 @@ namespace Stratis.Bitcoin.Builder
             try
             {
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
-                this.Execute(service => service.Initialize());
+                this.Execute(service => service.InitializeAsync().GetAwaiter().GetResult());
             }
             catch
             {
