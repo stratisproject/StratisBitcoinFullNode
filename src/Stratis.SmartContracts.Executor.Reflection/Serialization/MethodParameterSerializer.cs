@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 sb.Add(string.Format("{0}#{1}", (int)GetPrimitiveType(obj), obj));
             }
 
-            return Encoding.UTF8.GetBytes(this.ToRaw(sb.ToArray()));
+            return Encoding.UTF8.GetBytes(this.EscapeAndJoin(sb.ToArray()));
         }
 
         private static MethodParameterDataType GetPrimitiveType(object o)
@@ -73,20 +73,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
-        /// <inheritdoc />
-        public byte[] ToBytes(string rawMethodParameters)
-        {
-            return Encoding.UTF8.GetBytes(rawMethodParameters);
-        }
-
-        public object[] ToObjects(byte[] parameters)
-        {
-            return this.ToObjects(Encoding.UTF8.GetString(parameters));
-        }
-
         public object[] ToObjects(string[] parameters)
         {
-            return this.ToObjects(this.ToRaw(parameters));
+            return this.ToObjects(this.EscapeAndJoin(parameters));
         }
 
         /// <inheritdoc />
@@ -148,7 +137,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         }
 
         /// <inheritdoc />
-        public string ToRaw(string[] parameters)
+        private string EscapeAndJoin(string[] parameters)
         {
             IEnumerable<string> escaped = this.EscapePipesAndHashes(parameters);
             return string.Join('|', escaped);
