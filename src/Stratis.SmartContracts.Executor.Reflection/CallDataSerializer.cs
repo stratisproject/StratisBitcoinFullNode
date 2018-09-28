@@ -14,13 +14,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         // TODO this is ugly but there is poor DI support for rules so we can't inject it yet
         public static ICallDataSerializer Default = new CallDataSerializer(new MethodParameterSerializer());
 
-        private readonly IMethodParameterSerializer methodParamSerializer;
+        public IMethodParameterSerializer MethodParamSerializer { get; }
 
         private const int intLength = sizeof(int);
 
         public CallDataSerializer(IMethodParameterSerializer methodParameterSerializer)
         {
-            this.methodParamSerializer = methodParameterSerializer;
+            this.MethodParamSerializer = methodParameterSerializer;
         }
 
         public Result<ContractTxData> Deserialize(byte[] smartContractBytes)
@@ -89,7 +89,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 bytes.AddRange(PrefixLength(contractTxData.ContractExecutionCode));
 
             if (!string.IsNullOrWhiteSpace(contractTxData.MethodParametersRaw))
-                bytes.AddRange(PrefixLength(this.methodParamSerializer.ToBytes(contractTxData.MethodParametersRaw)));
+                bytes.AddRange(PrefixLength(this.MethodParamSerializer.ToBytes(contractTxData.MethodParametersRaw)));
             else
                 bytes.AddRange(BitConverter.GetBytes(0));
 
@@ -122,7 +122,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             object[] methodParameters = null;
 
             if (!string.IsNullOrWhiteSpace(methodParametersRaw))
-                methodParameters = this.methodParamSerializer.ToObjects(methodParametersRaw);
+                methodParameters = this.MethodParamSerializer.ToObjects(methodParametersRaw);
             return methodParameters;
         }
 
