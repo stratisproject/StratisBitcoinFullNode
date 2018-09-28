@@ -14,6 +14,6 @@
         /// Converts the input method parameters to an object array when the carrier is created or called.
         /// </summary>
         /// <param name="methodParameters">A pipe joined representation string of unescaped method parameters.</param>
-        object[] ToObjects(string methodParameters);
+        object[] ToObjects(byte[] methodParameters);
     }
 }

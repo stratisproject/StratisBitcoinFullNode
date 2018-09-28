@@ -40,7 +40,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 {
                     var contractAddress = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
                     var methodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
-                    var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+                    var methodParametersRaw = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
 
                     var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
 
@@ -51,7 +51,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 if (IsCreateContract(type))
                 {
                     var contractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
-                    var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+                    var methodParametersRaw = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
 
                     var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
 
@@ -117,11 +117,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return type == (byte)ScOpcodeType.OP_CALLCONTRACT;
         }
 
-        private object[] DeserializeMethodParameters(string methodParametersRaw)
+        private object[] DeserializeMethodParameters(byte[] methodParametersRaw)
         {
             object[] methodParameters = null;
 
-            if (!string.IsNullOrWhiteSpace(methodParametersRaw))
+            if (methodParametersRaw != null && methodParametersRaw.Length > 0)
                 methodParameters = this.MethodParamSerializer.ToObjects(methodParametersRaw);
             return methodParameters;
         }

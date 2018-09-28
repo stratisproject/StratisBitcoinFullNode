@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using DBreeze.Utils;
 using NBitcoin;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
@@ -75,11 +74,17 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public object[] ToObjects(string[] parameters)
         {
-            return this.ToObjects(this.EscapeAndJoin(parameters));
+            return StringToObjects(this.EscapeAndJoin(parameters));
         }
 
         /// <inheritdoc />
-        public object[] ToObjects(string parameters)
+        public object[] ToObjects(byte[] parameterBytes)
+        {
+            var parameters = Encoding.UTF8.GetString(parameterBytes);
+            return StringToObjects(parameters);
+        }
+
+        private static object[] StringToObjects(string parameters)
         {
             string[] split = Regex.Split(parameters, @"(?<!(?<!\\)*\\)\|").ToArray();
 
