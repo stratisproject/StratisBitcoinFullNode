@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
@@ -9,7 +9,6 @@ using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
@@ -31,20 +30,19 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>Database key under which the <see cref="ProvenBlockHeader"/> item is stored.</summary>
         private static readonly byte[] provenBlockHeaderKey = new byte[0];
 
-        /// <summary>Database key under which the block hash of the <see cref="ProvenBlockHeader"/> tip is stored.</summary>
-        private static readonly byte[] blockHashKey = new byte[0];
+        /// <summary>Database key under which the block hash and height of a <see cref="ProvenBlockHeader"/> tip is stored.</summary>
+        private static readonly byte[] blockHashHeightKey = new byte[0];
 
         /// <summary>DBreeze table names.</summary>
         private const string ProvenBlockHeaderTable = "ProvenBlockHeader";
-        private const string BlockHashTable = "BlockHash";
+        private const string BlockHashHeightTable = "BlockHashHeight";
 
-        /// <summary>Hash of the block which is currently the tip of the <see cref="ProvenBlockHeader"/>.</summary>
-        private uint256 blockHash;
+        /// <summary>Height of the block which is currently the tip of the <see cref="ProvenBlockHeader"/>.</summary>
+        private HashHeightPair blockHashHeightPair;
+
+        /// <summary>Current <see cref="ProvenBlockHeader"/> tip.</summary>
+        private ProvenBlockHeader provenBlockHeaderTip;
         
-        /// <summary>Performance counter to measure performance of the database insert and query operations.</summary>
-        private readonly BackendPerformanceCounter performanceCounter;
-        private BackendPerformanceSnapshot latestPerformanceSnapShot;
-
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
@@ -52,9 +50,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="dataFolder">Information about path locations to important folders and files on disk.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
-        /// <param name="nodeStats">Registers an action used to append node stats when collected.</param>
         public ProvenBlockHeaderRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats)
-            : this(network, dataFolder.ProvenBlockHeaderPath, dateTimeProvider, loggerFactory, nodeStats)
+            : this(network, dataFolder.ProvenBlockHeaderPath, dateTimeProvider, loggerFactory)
         {
         }
 
@@ -65,8 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="folder"><see cref="ProvenBlockHeaderStore"/> folder path to the DBreeze database files.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
-        /// <param name="nodeStats">Registers an action used to append node stats when collected.</param>
-        public ProvenBlockHeaderRepository(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats)
+        public ProvenBlockHeaderRepository(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(folder, nameof(folder));
@@ -78,25 +74,23 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             this.dbreeze = new DBreezeEngine(folder);
             this.network = network;
-            this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
-
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 400);
         }
 
         /// <inheritdoc />
-        public Task InitializeAsync(uint256 blockHash = null)
+        public Task InitializeAsync()
         {
             Task task = Task.Run(() =>
             {
                 this.logger.LogInformation("Initializing {0}.", nameof(ProvenBlockHeaderRepository));
-                
+
+                Block genesis = this.network.GetGenesis();
+
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    if (this.GetTipHash(transaction) == null)
+                    if (this.GetTipHashHeight(transaction) == null)
                     {
-                        uint256 blockId = blockHash ?? this.network.GetGenesis().GetHash();
-
-                        this.SetTipHash(transaction, blockId);
+                        // set to genesis
+                        this.SetTip(transaction, new HashHeightPair(genesis.GetHash(), 0));
 
                         transaction.Commit();
                     }
@@ -108,49 +102,36 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             return task;
         }
 
-        /// <inheritdoc />
-        public Task<List<StakeItem>> GetAsync(IEnumerable<uint256> blockIds)
+        public Task<Dictionary<int, ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight)
         {
-            Guard.NotNull(blockIds, nameof(blockIds));
-
-            Task<List<StakeItem>> task = Task.Run(() =>
+            Task<Dictionary<int, ProvenBlockHeader>> task = Task.Run(() =>
             {
-                this.logger.LogTrace("({0}.Count():{1})", nameof(blockIds), blockIds.Count());
+                this.logger.LogTrace("({0}:'{1}')", nameof(fromBlockHeight), fromBlockHeight);
+                this.logger.LogTrace("({0}:'{1}')", nameof(toBlockHeight), toBlockHeight);
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    List<StakeItem> stakeItems = new List<StakeItem>();
+                    var items = new Dictionary<int, ProvenBlockHeader>();
 
                     transaction.SynchronizeTables(ProvenBlockHeaderTable);
 
                     transaction.ValuesLazyLoadingIsOn = false;
 
-                    using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
+                    this.logger.LogTrace("Loading ProvenBlockHeaders from block height '{0}' to '{1}  from the database.",
+                        fromBlockHeight, toBlockHeight);
+
+                    for (int i = fromBlockHeight; i <= toBlockHeight; i++)
                     {
-                        foreach (uint256 blockId in blockIds)
-                        {
-                            this.logger.LogTrace("Loading ProvenBlockHeader hash '{0}' from the database.", blockId);
+                        Row<byte[], ProvenBlockHeader> row =
+                            transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, i.ToBytes(false));
 
-                            Row<byte[], ProvenBlockHeader> row =
-                                transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockId.ToBytes(false));
-
-                            if (row.Exists)
-                            {
-                                stakeItems.Add(new StakeItem
-                                {
-                                    BlockId = blockId,
-                                    ProvenBlockHeader = row.Value,
-                                    InStore = true,
-                                });
-                            }
-                        }
+                        if (row.Exists)
+                            items.Add(i, row.Value);
                     }
-
-                    transaction.ValuesLazyLoadingIsOn = true;
 
                     this.logger.LogTrace("(-)");
 
-                    return stakeItems;
+                    return items;
                 }
             });
 
@@ -158,24 +139,63 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public Task PutAsync(IEnumerable<StakeItem> stakeItems)
+        public Task<ProvenBlockHeader> GetAsync(int blockHeight)
         {
-            Guard.NotNull(stakeItems, nameof(stakeItems));
+            Guard.NotNull(blockHeight, nameof(blockHeight));
 
-            Task task = Task.Run(() =>
+            Task<ProvenBlockHeader> task = Task.Run(() =>
             {
-                this.logger.LogTrace("({0}.Count():{1})", nameof(stakeItems), stakeItems.Count());
+                this.logger.LogTrace("({0}:'{1}')", nameof(blockHeight), blockHeight);
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    transaction.SynchronizeTables(BlockHashTable, ProvenBlockHeaderTable);
+                    ProvenBlockHeader header = null;
 
-                    using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
-                    {
-                        this.InsertProvenHeaders(transaction, stakeItems);
+                    transaction.SynchronizeTables(ProvenBlockHeaderTable);
 
-                        transaction.Commit();
-                    }
+                    transaction.ValuesLazyLoadingIsOn = false;
+
+                    this.logger.LogTrace("Loading ProvenBlockHeader hash '{0}' from the database.", blockHeight);
+
+                    Row<byte[], ProvenBlockHeader> row =
+                        transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeight.ToBytes(false));
+
+                    if (row.Exists)
+                        header = row.Value;
+
+                    this.logger.LogTrace("(-)");
+
+                    return header;
+                }
+            });
+
+            return task;
+        }
+
+        /// <inheritdoc />
+        public Task PutAsync(List<ProvenBlockHeader> headers, HashHeightPair newTip)  
+        {
+            Guard.NotNull(headers, nameof(headers));
+            Guard.NotNull(newTip, nameof(newTip));
+
+            if ((this.provenBlockHeaderTip != null) && (newTip.Hash != this.provenBlockHeaderTip.HashPrevBlock))
+            {
+                this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
+                throw new InvalidOperationException("Invalid newTip block hash.");
+            }
+
+            Task task = Task.Run(() =>
+            {
+                this.logger.LogTrace("({0}.Count():{1})", nameof(headers), headers.Count());
+
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                {
+                    transaction.SynchronizeTables(BlockHashHeightTable, ProvenBlockHeaderTable);
+
+                    this.InsertHeaders(transaction, headers, newTip);
+                    this.SetTip(transaction, newTip);
+
+                    transaction.Commit();
                 }
 
                 this.logger.LogTrace("(-)");
@@ -185,33 +205,33 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public Task<uint256> GetTipHashAsync()
+        public Task<HashHeightPair> GetTipHashHeightAsync()
         {
-            Task<uint256> task = Task.Run(() =>
+            Task<HashHeightPair> task = Task.Run(() =>
             {
                 this.logger.LogTrace("()");
 
-                uint256 tipHash;
+                HashHeightPair tip;
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    tipHash = this.GetTipHash(transaction);
+                    tip = this.GetTipHashHeight(transaction);
                 }
 
-                this.logger.LogTrace("(-):'{0}'", tipHash);
+                this.logger.LogTrace("(-):'{0}'", tip);
 
-                return tipHash;
+                return tip;
             });
 
             return task;
         }
 
         /// <inheritdoc />
-        public Task<bool> ExistsAsync(uint256 blockId)
+        public Task<bool> ExistsAsync(int blockHeight)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockId), blockId);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHeight), blockHeight);
 
-            Guard.NotNull(blockId, nameof(blockId));
+            Guard.NotNull(blockHeight, nameof(blockHeight));
 
             Task<bool> task = Task.Run(() =>
             {
@@ -219,12 +239,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    Row<byte[], ProvenBlockHeader> blockRow = 
-                        transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockId.ToBytes(false));
+                    transaction.ValuesLazyLoadingIsOn = false;
 
-                    this.logger.LogTrace("(-):{0}", blockRow.Exists);
+                    bool rowExists = this.ProvenBlockHeaderExists(transaction, blockHeight);
 
-                    return blockRow.Exists;
+                    this.logger.LogTrace("(-):{0}", rowExists);
+
+                    return rowExists;
                 }
             });
 
@@ -234,13 +255,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public Task DeleteAsync(uint256 newTip, List<uint256> blockIds)
+        public Task DeleteAsync(HashHeightPair newTip, List<int> blockHeights)  // pull everything from the last height
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newTip), newTip, nameof(blockIds), nameof(blockIds.Count), blockIds?.Count);
+            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newTip), newTip, nameof(blockHeights), nameof(blockHeights.Count), blockHeights?.Count);
 
             Guard.NotNull(newTip, nameof(newTip));
 
-            Guard.NotNull(blockIds, nameof(blockIds));
+            Guard.NotNull(blockHeights, nameof(blockHeights));
 
             Task task = Task.Run(() =>
             {
@@ -248,18 +269,16 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    transaction.SynchronizeTables(BlockHashTable, ProvenBlockHeaderTable);
+                    transaction.SynchronizeTables(BlockHashHeightTable, ProvenBlockHeaderTable);
 
                     transaction.ValuesLazyLoadingIsOn = false;
 
-                    foreach (uint256 blockId in blockIds)
-                        transaction.RemoveKey<byte[]>(ProvenBlockHeaderTable, blockId.ToBytes(false));
+                    foreach (int blockHeight in blockHeights)
+                        transaction.RemoveKey<byte[]>(ProvenBlockHeaderTable, blockHeight.ToBytes(false));
 
-                    this.SetTipHash(transaction, newTip);
+                    this.SetTip(transaction, newTip);
 
                     transaction.Commit();
-
-                    transaction.ValuesLazyLoadingIsOn = true;
                 }
 
                 this.logger.LogTrace("(-)");
@@ -271,179 +290,95 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <summary>
-        /// Obtains a block hash of the current tip.
+        /// Obtains a block hash and height of the current tip.
         /// </summary>
         /// <param name="transaction">Open DBreeze transaction.</param>
-        /// <returns>Hash of blocks current tip.</returns>
-        private uint256 GetTipHash(DBreeze.Transactions.Transaction transaction)
+        /// <returns><see cref="HashHeightPair"/> of current <see cref="ProvenBlockHeader"/> tip.</returns>
+        private HashHeightPair GetTipHashHeight(DBreeze.Transactions.Transaction transaction)
         {
-            if (this.blockHash == null)
+            HashHeightPair tip = this.blockHashHeightPair;
+
+            if (tip == null)
             {
                 transaction.ValuesLazyLoadingIsOn = false;
 
-                Row<byte[], uint256> row = transaction.Select<byte[], uint256>(BlockHashTable, blockHashKey);
+                Row<byte[], HashHeightPair> row = transaction.Select<byte[], HashHeightPair>(BlockHashHeightTable, blockHashHeightKey);
 
                 if (row.Exists)
-                    this.blockHash = row.Value;
-
-                transaction.ValuesLazyLoadingIsOn = false;
+                    this.blockHashHeightPair = row.Value;
             }
 
-            return this.blockHash;
+            return this.blockHashHeightPair;
         }
 
         /// <summary>
-        /// Set's the tip to a new block hash.  ### re word ###
+        /// Set's the hash and height tip of the new <see cref="ProvenBlockHeader"/>.  
         /// </summary>
         /// <param name="transaction">Open DBreeze transaction.</param>
-        /// <param name="blockId">Hash of the block to become the new tip.</param>
-        private void SetTipHash(DBreeze.Transactions.Transaction transaction, uint256 blockId)
+        /// <param name="newTip">Hash height pair of the new block tip.</param>
+        private void SetTip(DBreeze.Transactions.Transaction transaction, HashHeightPair newTip)
         {
-            Guard.NotNull(blockId, nameof(blockId));
+            Guard.NotNull(newTip, nameof(newTip));
 
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockId), blockId);
+            this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
 
-            this.blockHash = blockId;
+            this.blockHashHeightPair = newTip;
 
-            transaction.Insert<byte[], uint256>(BlockHashTable, blockHashKey, blockId);
+            transaction.Insert<byte[], HashHeightPair>(BlockHashHeightTable, blockHashHeightKey, newTip);
 
             this.logger.LogTrace("(-)");
         }
 
         /// <summary>
-        /// Retrieves <see cref="ProvenBlockHeader"/>s from <see cref="StakeItem"/>s, and adds them to the database.
+        /// Inserts <see cref="ProvenBlockHeader"/> items into to the database.
         /// </summary>
         /// <param name="transaction">Open DBreeze transaction.</param>
-        /// <param name="stakeItems">List of <see cref="StakeItem"/>s.</param>
-        private void InsertProvenHeaders(DBreeze.Transactions.Transaction transaction, IEnumerable<StakeItem> stakeItems)
+        /// <param name="headers">List of <see cref="ProvenBlockHeader"/> items to save.</param>
+        /// <param name="newTip">Hash and height of the new repository's tip.</param>
+        private void InsertHeaders(DBreeze.Transactions.Transaction transaction, List<ProvenBlockHeader> headers, HashHeightPair newTip)
         {
-            this.logger.LogTrace("({0}.Count():{1})", nameof(stakeItems), stakeItems.Count());
+            this.logger.LogTrace("({0}.Count():{1})", nameof(headers), headers.Count());
 
-            IEnumerable<StakeItem> sortedStakeItems = this.SortProvenHeaders(transaction, stakeItems);
+            int tipHeight = newTip.Height;
 
-            foreach (StakeItem stakeItem in sortedStakeItems)
+            var headerDict = new Dictionary<int, ProvenBlockHeader>();
+
+            // Gather headers.
+            foreach (ProvenBlockHeader header in headers)
             {
-                if (!stakeItem.InStore)
-                {
-                    transaction.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, stakeItem.BlockId.ToBytes(false), stakeItem.ProvenBlockHeader);
-                    stakeItem.InStore = true;
-                }
-
-                this.SetTipHash(transaction, stakeItem.BlockId);
+                headerDict[tipHeight] = header;
+                tipHeight--;
             }
+
+            var sortedHeaders = headerDict.ToList();
+            sortedHeaders.Sort((pair1, pair2) => pair1.Key.CompareTo(pair2.Key));
+
+            foreach (KeyValuePair<int, ProvenBlockHeader> header in sortedHeaders)
+            {
+                transaction.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, header.Key.ToBytes(false), header.Value);
+            }
+
+            // Store the latest ProvenBlockHeader in memory.
+            this.provenBlockHeaderTip = headerDict.Values.LastOrDefault();
 
             this.logger.LogTrace("(-)");
-        }
-
-        /// <summary>
-        /// Sorts <see cref="ProvenBlockHeader"/>s.
-        /// </summary>
-        /// <param name="transaction">Open DBreeze transaction.</param>
-        /// <param name="stakeItems">List of <see cref="StakeItem"/>s.</param>
-        /// <returns><see cref="StakeItem"/> enumerator.</returns>
-        private IEnumerable<StakeItem> SortProvenHeaders(DBreeze.Transactions.Transaction transaction, IEnumerable<StakeItem> stakeItems)
-        {
-            var stakeDict = new Dictionary<uint256, StakeItem>();
-
-            foreach(StakeItem item in stakeItems)
-                stakeDict[item.BlockId] = item;
-
-            List<KeyValuePair<uint256, StakeItem>> stakeItemList = stakeDict.ToList();
-
-            stakeItemList.Sort((pair1, pair2) => pair1.Value.Height.CompareTo(pair2.Value.Height));
-
-            transaction.ValuesLazyLoadingIsOn = false;
-
-            foreach (KeyValuePair<uint256, StakeItem> stakeItem in stakeItemList)
-            {
-                StakeItem outStakeItem = stakeItem.Value;
-
-                // Check if the header already exists in the database.
-                Row<byte[], ProvenBlockHeader> headerRow = transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, outStakeItem.BlockId.ToBytes());
-
-                if (!headerRow.Exists)
-                {
-                    yield return outStakeItem;
-                }
-            }
-
-            transaction.ValuesLazyLoadingIsOn = true;
         }
 
         /// <summary>
         /// Checks whether a <see cref="ProvenBlockHeader"/> exists in the database.
         /// </summary>
         /// <param name="transaction">Open DBreeze transaction.</param>
-        /// <param name="blockId">Block hash key to search on.</param>
+        /// <param name="blockHeight">Block height key to search on.</param>
         /// <returns>True if the items exists in the database.</returns>
-        private bool ProvenBlockHeaderExists(DBreeze.Transactions.Transaction transaction, uint256 blockId)
+        private bool ProvenBlockHeaderExists(DBreeze.Transactions.Transaction transaction, int blockHeight)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockId), blockId);
+            this.logger.LogTrace("({0}:'{1}')", nameof(blockHeight), blockHeight);
 
-            transaction.ValuesLazyLoadingIsOn = false;
-
-            Row<byte[], ProvenBlockHeader> row = transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockId.ToBytes());
-
-            transaction.ValuesLazyLoadingIsOn = true;
+            Row<byte[], ProvenBlockHeader> row = transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeight.ToBytes(false));
         
             this.logger.LogTrace("(-):{0}", row.Exists);
 
             return row.Exists;
-        }
-
-        private List<ProvenBlockHeader> GetProvenBlockHeadersByBlockId(DBreeze.Transactions.Transaction transaction, List<uint256> blockIds)
-        {
-            this.logger.LogTrace("({0}.{1}:{2})", nameof(blockIds), nameof(blockIds.Count), blockIds?.Count);
-
-            var results = new Dictionary<uint256, ProvenBlockHeader>();
-
-            // Access hash keys in sorted order.
-            var byteListComparer = new ByteListComparer();
-
-            List<(uint256, byte[])> keys = blockIds.Select(hash => (hash, hash.ToBytes())).ToList();
-
-            keys.Sort((key1, key2) => byteListComparer.Compare(key1.Item2, key2.Item2));
-
-            foreach ((uint256, byte[]) key in keys)
-            {
-                Row<byte[], ProvenBlockHeader> blockRow = transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, key.Item2);
-
-                if (blockRow.Exists)
-                {
-                    results[key.Item1] = blockRow.Value;
-
-                    this.logger.LogTrace("Block hash '{0}' loaded from the store.", key.Item1);
-                }
-                else
-                {
-                    results[key.Item1] = null;
-
-                    this.logger.LogTrace("Block hash '{0}' not found in the store.", key.Item1);
-                }
-            }
-
-            this.logger.LogTrace("(-):{0}", results.Count);
-
-            // Return the result in the order that the hashes were presented.
-            return blockIds.Select(hash => results[hash]).ToList();
-        }
-
-        private void AddBenchStats(StringBuilder benchLog)
-        {
-            this.logger.LogTrace("()");
-
-            benchLog.AppendLine("======ProvenBlockHeaderRepository Bench======");
-
-            BackendPerformanceSnapshot snapShot = this.performanceCounter.Snapshot();
-
-            if (this.latestPerformanceSnapShot == null)
-                benchLog.AppendLine(snapShot.ToString());
-            else
-                benchLog.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
-
-            this.latestPerformanceSnapShot = snapShot;
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
+using DBreeze.Utils;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -20,12 +21,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         private const string ProvenBlockHeaderTable = "ProvenBlockHeader";
         private const string BlockHashTable = "BlockHash";
 
-        private readonly NodeStats nodeStats;
-
-
         public ProvenBlockHeaderRepositoryTests() : base(KnownNetworks.StratisTest)
         {
-            this.nodeStats = new NodeStats(DateTimeProvider.Default);
             this.loggerFactory = new Mock<ILoggerFactory>();
         }
 
@@ -33,16 +30,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task InitializesGenesisProvenBlockHeaderOnFirstLoadAsync()
         {
             string folder = CreateTestDir(this);
-            uint256 blockId;
 
             // Initialise the repository - this will set-up the genesis blockHash (blockId).
             using (IProvenBlockHeaderRepository repository = this.SetupRepository(this.Network, folder))
             {
                 // Check the BlockHash (blockId) exists.
-                uint256 TipHashtask = await repository.GetTipHashAsync();
+                HashHeightPair TipHashtask = await repository.GetTipHashHeightAsync();
 
-                blockId = TipHashtask;
-                blockId.Should().Be(this.Network.GetGenesis().GetHash());
+                TipHashtask.Height.Should().Be(0);
             }
         }
 
@@ -52,78 +47,43 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             string folder = CreateTestDir(this);
 
             ProvenBlockHeader provenBlockHeaderIn = CreateNewProvenBlockHeaderMock();
-            uint256 blockInHash = provenBlockHeaderIn.GetHash();
 
-            // Add the ProvenBlockHeader block hash to the database.
-            using (var engine = new DBreezeEngine(folder))
-            {
-                DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], uint256>(BlockHashTable, new byte[0], blockInHash);
-                txn.Commit();
-            }
-
-            // Add a couple of ProvenBlockHeaders into the database via PutAsync().
-            var items = new List<StakeItem>
-            {
-                new StakeItem
-                {
-                    BlockId = blockInHash,
-                    Height = 1,
-                    ProvenBlockHeader = provenBlockHeaderIn
-                },
-                new StakeItem
-                {
-                    BlockId = uint256.One,
-                    Height = 2,
-                    ProvenBlockHeader = provenBlockHeaderIn
-                },
-            };
+            var blockHashHieghtPair = new HashHeightPair(new uint256(), 1);
+            var items = new List<ProvenBlockHeader> { provenBlockHeaderIn };
 
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                await repo.PutAsync(items);
+                await repo.PutAsync(items, blockHashHieghtPair);
             }
 
-            // Check the above items exits in the database.
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
                 txn.SynchronizeTables(ProvenBlockHeaderTable);
                 txn.ValuesLazyLoadingIsOn = false;
 
-                var blockOut = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockInHash.ToBytes(false)).Value;
+                var headerOut = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHashHieghtPair.Height.ToBytes(false)).Value;
 
-                blockOut.Should().NotBeNull();
-                blockOut.GetHash().Should().Be(blockInHash);
+                headerOut.Should().NotBeNull();
+                headerOut.GetHash().Should().Be(provenBlockHeaderIn.GetHash());
             }
         }
 
         [Fact]
-        public async Task PutAsync_WritesProvenBlockHeadersInSortedOrderAsync()
+        public async Task PutAsync_WritesMultipleProvenBlockHeadersAsync()
         {
             string folder = CreateTestDir(this);
 
-            ProvenBlockHeader provenBlockHeaderIn = CreateNewProvenBlockHeaderMock();
+            PosBlock posBlock = CreatePosBlockMock();
+            ProvenBlockHeader header1 = CreateNewProvenBlockHeaderMock(posBlock);
+            ProvenBlockHeader header2 = CreateNewProvenBlockHeaderMock(posBlock);
 
-            // Build up list of items not sorted - BlockId's are the wrong way around.
-            var items = new List<StakeItem>
-            {
-                new StakeItem
-                {
-                    BlockId = uint256.One,
-                    ProvenBlockHeader = provenBlockHeaderIn
-                },
-                new StakeItem
-                {
-                    BlockId = uint256.Zero,
-                    ProvenBlockHeader = provenBlockHeaderIn
-                },
-            };
+            var items = new List<ProvenBlockHeader> { header1, header2 };
 
             // Put the items in the repository.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                await repo.PutAsync(items);
+                await repo.PutAsync(items, new HashHeightPair(new uint256(), items.Count));
             }
 
             // Check the ProvenBlockHeader exists in the database - and are in sorted order.
@@ -133,13 +93,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 txn.SynchronizeTables(ProvenBlockHeaderTable);
                 txn.ValuesLazyLoadingIsOn = false;
 
-                var provenBlockHeaderAll = txn.SelectDictionary<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable);
+                var headersOut = txn.SelectDictionary<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable);
 
-                provenBlockHeaderAll.Keys.Count.Should().Be(2);
-
-                // Check items are sorted - item[1] was added last in the above code, check that item is now first.
-                provenBlockHeaderAll.FirstOrDefault().Key.Equals(items[1].BlockId.ToBytes());
-                provenBlockHeaderAll.LastOrDefault().Key.Equals(items[0].BlockId.ToBytes());
+                headersOut.Keys.Count.Should().Be(2);
+                headersOut.First().Value.GetHash().Should().Be(items[0].GetHash());
+                headersOut.Last().Value.GetHash().Should().Be(items[1].GetHash());
             }
         }
 
@@ -148,70 +106,78 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         {
             string folder = CreateTestDir(this);
 
-            ProvenBlockHeader provenBlockHeader = CreateNewProvenBlockHeaderMock();
-            uint256 hash = provenBlockHeader.GetHash();
+            ProvenBlockHeader headerIn = CreateNewProvenBlockHeaderMock();
 
-            // Set-up item and insert into the database.
-            var inItem = new List<StakeItem>
-            {
-                new StakeItem
-                {
-                    BlockId = hash,
-                    Height = 1,
-                    ProvenBlockHeader = provenBlockHeader
-                }
-            };
+            int blockHeight = 1;
 
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, inItem[0].BlockId.ToBytes(false), inItem[0].ProvenBlockHeader);
-                txn.Insert<byte[], uint256>(BlockHashTable, new byte[0], inItem[0].BlockId);
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeight.ToBytes(false), headerIn);
                 txn.Commit();
             }
-
-            var outItem = new List<StakeItem>();
 
             // Query the repository for the item that was inserted in the above code.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                outItem = await repo.GetAsync(new List<uint256>() { inItem[0].BlockId }).ConfigureAwait(false);
-            }
+                var headerOut = await repo.GetAsync(blockHeight).ConfigureAwait(false);
 
-            outItem.FirstOrDefault().ProvenBlockHeader.Should().NotBeNull();
-            outItem.FirstOrDefault().InStore.Should().BeTrue();
-            uint256.Parse(outItem.FirstOrDefault().ProvenBlockHeader.ToString()).Should().Be(hash);
+                headerOut.Should().NotBeNull();
+                uint256.Parse(headerOut.ToString()).Should().Be(headerOut.GetHash());
+            }
         }
 
         [Fact]
-        public async Task GetAsync_WithWrongBlockIdReturnsNullAsync()
+        public async Task GetAsync_ReadsMultipleProvenBlockHeaderFromDatabaseAndDoesNotOverwriteOnFirstLoadAsync()
         {
             string folder = CreateTestDir(this);
 
-            // Set-up item and insert into the database.
-            var inItem = new List<StakeItem>
-            {
-                new StakeItem { BlockId = uint256.Zero }
-            };
+            PosBlock posBlock = CreatePosBlockMock();
+            ProvenBlockHeader header1 = CreateNewProvenBlockHeaderMock(posBlock);
+            ProvenBlockHeader header2 = CreateNewProvenBlockHeaderMock(posBlock);
 
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, inItem[0].BlockId.ToBytes(false), inItem[0].ProvenBlockHeader);
-                txn.Insert<byte[], uint256>(BlockHashTable, new byte[0], inItem[0].BlockId);
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 1.ToBytes(false), header1);
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 2.ToBytes(false), header2);
                 txn.Commit();
             }
-
-            var outItem = new List<StakeItem>();
 
             // Query the repository for the item that was inserted in the above code.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                // Select a different blockId
-                outItem = await repo.GetAsync(new List<uint256>() { uint256.One }).ConfigureAwait(false);
-            }
+                Dictionary<int, ProvenBlockHeader> headersOut = await repo.GetAsync(1, 2).ConfigureAwait(false);
 
-            outItem.Count().Should().Be(0);
+                headersOut.Count.Should().Be(2);
+                headersOut.First().Value.GetHash().Should().Be(header1.GetHash());
+                headersOut.Last().Value.GetHash().Should().Be(header2.GetHash());
+            }
+        }
+
+        [Fact]
+        public async Task GetAsync_WithWrongBlockHeightReturnsNullAsync()
+        {
+            string folder = CreateTestDir(this);
+
+            using (var engine = new DBreezeEngine(folder))
+            {
+                DBreeze.Transactions.Transaction txn = engine.GetTransaction();
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 1.ToBytes(false), CreateNewProvenBlockHeaderMock());
+                txn.Insert<byte[], HashHeightPair>(BlockHashTable, new byte[0], new HashHeightPair(new uint256(), 1));
+                txn.Commit();
+            }
+            
+            using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
+            {
+                // Select a different block height.
+                ProvenBlockHeader outHeader = await repo.GetAsync(2).ConfigureAwait(false);
+                outHeader.Should().BeNull();
+
+                // Select the original item inserted into the table
+                outHeader = await repo.GetAsync(1).ConfigureAwait(false);
+                outHeader.Should().NotBeNull();
+            }
         }
 
         [Fact]
@@ -220,32 +186,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             string folder = CreateTestDir(this);
 
             ProvenBlockHeader provenBlockHeader = CreateNewProvenBlockHeaderMock();
-            uint256 hash = provenBlockHeader.GetHash();
-
-            // Set-up item and insert into the database.
-            var item = new List<StakeItem>
-            {
-                new StakeItem
-                {
-                    BlockId = hash,
-                    Height = 1,
-                    ProvenBlockHeader = provenBlockHeader
-                }
-            };
+            int blockHeight = 1;
 
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, item[0].BlockId.ToBytes(false), item[0].ProvenBlockHeader);
-                txn.Insert<byte[], uint256>(BlockHashTable, new byte[0], item[0].BlockId);
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeight.ToBytes(false), provenBlockHeader);
                 txn.Commit();
             }
 
             // Query the repository for the item that was inserted in the above code.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                bool result = await repo.ExistsAsync(item[0].BlockId).ConfigureAwait(false);
-
+                bool result = await repo.ExistsAsync(blockHeight).ConfigureAwait(false);
                 result.Should().BeTrue();
             }
         }
@@ -255,36 +208,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         {
             string folder = CreateTestDir(this);
 
-            ProvenBlockHeader provenBlockHeaderIn = CreateNewProvenBlockHeaderMock();
+            ProvenBlockHeader headerIn = CreateNewProvenBlockHeaderMock();
 
-            var items = new List<StakeItem>
-            {
-                new StakeItem
-                {
-                    BlockId = uint256.One,
-                    ProvenBlockHeader = provenBlockHeaderIn
-                },
-                new StakeItem
-                {
-                    BlockId = uint256.Zero,
-                    ProvenBlockHeader = provenBlockHeaderIn
-                },
-            };
+            var items = new List<ProvenBlockHeader> { headerIn, headerIn, };
 
+            int[] blockHeights = { 1, 2 };
+            var newTip = new HashHeightPair(new uint256(), blockHeights.Count());
+
+            // Add items and verify they exist.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                // Add 2 items to the database.  Also 1 item added during initialization.
-                await repo.PutAsync(items).ConfigureAwait(false);
-
-                items[0].ProvenBlockHeader.Should().NotBeNull();
-                items[0].InStore.Should().BeTrue();
-                items[1].ProvenBlockHeader.Should().NotBeNull();
-                items[1].InStore.Should().BeTrue();
-
-                await repo.DeleteAsync(uint256.One, items.Select(i => i.BlockId).ToList());
+                await repo.PutAsync(items, newTip).ConfigureAwait(false);
             }
 
-            // Check the ProvenBlockHeader exists in the database - and are in sorted order.
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
@@ -293,19 +229,38 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
                 txn.ValuesLazyLoadingIsOn = false;
 
-                var row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, items[0].BlockId.ToBytes(false));
+                var row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeights[0].ToBytes(false));
+                row.Exists.Should().BeTrue();
 
+                row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeights[1].ToBytes(false));
+                row.Exists.Should().BeTrue();
+            }
+
+            // Delete the items and verify they no longer exist.
+            using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
+            {
+                await repo.DeleteAsync(new HashHeightPair(new uint256(), 3), blockHeights.ToList());
+            }
+
+            using (var engine = new DBreezeEngine(folder))
+            {
+                DBreeze.Transactions.Transaction txn = engine.GetTransaction();
+
+                txn.SynchronizeTables(ProvenBlockHeaderTable);
+
+                txn.ValuesLazyLoadingIsOn = false;
+
+                var row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeights[0].ToBytes(false));
                 row.Exists.Should().BeFalse();
 
-                row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, items[1].BlockId.ToBytes(false));
-
+                row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeights[1].ToBytes(false));
                 row.Exists.Should().BeFalse();
             }
         }
 
         private IProvenBlockHeaderRepository SetupRepository(Network network, string folder)
         {
-            var repo = new ProvenBlockHeaderRepository(network, folder, DateTimeProvider.Default, this.LoggerFactory.Object, this.nodeStats);
+            var repo = new ProvenBlockHeaderRepository(network, folder, DateTimeProvider.Default, this.LoggerFactory.Object);
 
             Task task = repo.InitializeAsync();
             task.Wait();

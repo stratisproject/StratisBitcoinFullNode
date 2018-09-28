@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Threading;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
@@ -10,23 +11,31 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     /// </summary>
     public interface IProvenBlockHeaderStore : IDisposable
     {
-        /// <summary>Loads <see cref="ProvenBlockHeader"/> items from the database.</summary>
-        /// <param name="blockHash">BlockId to initial the database with.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task InitializeAsync(uint256 blockHash = null);
-
         /// <summary>
-        /// Initialize the <see cref="ProvenBlockHeader"/> store.
+        /// Loads <see cref="ProvenBlockHeader"/> items from the database.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        Task InitializeAsync();
+
+        /// <summary>
+        /// Load <see cref="ProvenBlockHeader"/> items into the store.
+        /// </summary>
         Task LoadAsync();
 
         /// <summary>
         /// Get a <see cref="ProvenBlockHeader"/> corresponding to a block.
         /// </summary>
-        /// <param name="blockId">Id used to retrieve the <see cref="ProvenBlockHeader"/>.</param>
+        /// <param name="blockHeight">Height used to retrieve the <see cref="ProvenBlockHeader"/>.</param>
         /// <returns><see cref="ProvenBlockHeader"/> retrieved from the <see cref="ProvenBlockHeaderStore"/>.</returns>
-        Task<ProvenBlockHeader> GetAsync(uint256 blockId);
+        Task<ProvenBlockHeader> GetAsync(int blockHeight);
+
+        /// <summary>
+        /// Retrieves <see cref="ProvenBlockHeader"/> items.
+        /// </summary>
+        /// <param name="fromBlockHeight">Block height to start querying from.</param>
+        /// <param name="toBlockHeight">Block height to stop querying to.</param>
+        /// <returns>A dictionary of <see cref="ProvenBlockHeader"/> items by block height key.</returns>
+        Task<Dictionary<int, ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight);
 
         /// <summary>
         /// Retrieves the <see cref="ProvenBlockHeader"/> of the current tip.
@@ -37,19 +46,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Adds a <see cref="ProvenBlockHeader"/> to the internal concurrent dictionary. 
         /// </summary>
-        /// <param name="chainedHeader">A BlockHeader chained with all its ancestors</param>
-        /// <param name="provenBlockHeader"><see cref="ProvenBlockHeader"/> to add to the internal concurrent dictionary.</param>
-        void AddToPending(ChainedHeader chainedHeader, ProvenBlockHeader provenBlockHeader);
+        /// <param name="provenBlockHeader">A <see cref="ProvenBlockHeader"/> item to add.</param>
+        /// <param name="newTip">Block hash and height pair associated against the <see cref="ProvenBlockHeader"/> item.</param>
+        void AddToPending(ProvenBlockHeader provenBlockHeader, HashHeightPair newTip);       
 
-        /// <summary>
-        /// Flushes the internal dictionary and saves any new items into the <see cref="ProvenBlockHeaderStore"/>. 
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation that allows aborting the operation at any stage.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-
-        /// <summary> Retrieves the block hash of the current <see cref="ProvenBlockHeader"/> tip.</summary>
-        /// <returns>Block hash of the current tip of the <see cref="ProvenBlockHeader"/>.</returns>
-        /// <returns>A <see cref="uint256"/> representing the asynchronous operation.</returns>
-        Task<uint256> GetTipHashAsync();
+        /// <summary> Retrieves the block height of the current <see cref="ProvenBlockHeader"/> tip.</summary>
+        /// <returns>Block height of the current tip of the <see cref="ProvenBlockHeader"/>.</returns>
+        Task<HashHeightPair> GetTipHashHeightAsync();
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
@@ -10,40 +11,51 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     /// </summary>
     public interface IProvenBlockHeaderRepository : IDisposable
     {
-        /// <summary>Loads <see cref="ProvenBlockHeader"/> items from the database.</summary>
-        /// <param name="blockHash">BlockId to initial the database with.</param>
+        /// <summary>
+        /// Initializes <see cref="ProvenBlockHeader"/> items database.
+        /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task InitializeAsync(uint256 blockHash = null);
-
-        /// <summary> Retrieves the block hash of the current <see cref="ProvenBlockHeader"/> tip.</summary>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task<uint256> GetTipHashAsync();
+        Task InitializeAsync();
 
         /// <summary>
         /// Retrieves <see cref="ProvenBlockHeader"/> items from the database.
         /// </summary>
-        /// <param name="blockIds">Block hashes used to query the database.</param>
-        /// <returns>Proof of stake items which include the returned <see cref="ProvenBlockHeader"/> from disk.</returns>
-        Task<List<StakeItem>> GetAsync(IEnumerable<uint256> blockIds);
+        /// <param name="fromBlockHeight">Block height to start range.</param>
+        /// <param name="toBlockHeight">Block height end range.</param>
+        /// <returns>A dictionary of <see cref="ProvenBlockHeader"/> items by block height.</returns>
+        Task<Dictionary<int, ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight);
 
-        /// <summary>Persists <see cref="ProvenBlockHeader"/> items to the database.</summary>
-        /// <param name="stakeItems">Proof of stake items which includes <see cref="ProvenBlockHeader"/>.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task PutAsync(IEnumerable<StakeItem> stakeItems);
+        /// <summary>
+        /// Retrieves a <see cref="ProvenBlockHeader"/> item from the database.
+        /// </summary>
+        /// <param name="blockHeight">Block height to query.</param>
+        /// <returns>A <see cref="ProvenBlockHeader"/> item.</returns>
+        Task<ProvenBlockHeader> GetAsync(int blockHeight);
+
+        /// <summary>
+        /// Persists <see cref="ProvenBlockHeader"/> items to the database.
+        /// </summary>
+        /// <param name="provenBlockHeaders">List of <see cref="ProvenBlockHeader"/> items.</param>
+        /// <param name="newTip">Block hash and height tip.</param>
+        Task PutAsync(List<ProvenBlockHeader> provenBlockHeaders, HashHeightPair newTip);
+
+        /// <summary>
+        /// Retrieves the block hash and height of the current <see cref="ProvenBlockHeader"/> tip.
+        /// </summary>
+        Task<HashHeightPair> GetTipHashHeightAsync();
 
         /// <summary>
         /// Determine if a <see cref="ProvenBlockHeader"/> already exists in the database.
         /// </summary>
-        /// <param name="blockId">The block hash.</param>
-        /// <returns><c>true</c> if the block hash can be found in the database, otherwise return <c>false</c>.</returns>
-        Task<bool> ExistsAsync(uint256 blockId);
+        /// <param name="blockHeight">The block height.</param>
+        /// <returns><c>true</c> if the block height can be found in the database, otherwise return <c>false</c>.</returns>
+        Task<bool> ExistsAsync(int blockHeight);
 
         /// <summary>
         /// Delete <see cref="ProvenBlockHeader"/> items.
         /// </summary>
-        /// <param name="newTip">Hash and height of the new repository's tip.</param>
-        /// <param name="blockIds">List of all block hashes to be deleted.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task DeleteAsync(uint256 newTip, List<uint256> blockIds);
+        /// <param name="newTip">Block hash and height pair of the new repository's tip.</param>
+        /// <param name="blockHeights">List of all block heights to be deleted.</param>
+        Task DeleteAsync(HashHeightPair newTip, List<int> blockHeights);        
     }
 }
