@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 premineReward: Money.Coins(100_000_000),
                 proofOfWorkReward: Money.Coins(0),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
-                powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
+                powTargetSpacing: TimeSpan.FromSeconds(60),
                 powAllowMinDifficultyBlocks: false,
                 powNoRetargeting: false,
                 powLimit: new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Features.PoA
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0966e06b4b2aeb31c913ee066f62909c8dcd68f4e0fcf54165a8852db3ed2df2"));
         }
 
-        protected static Block CreateStratisGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
+        private static Block CreateStratisGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {
             string data = "506f41202d204345485450414a6c75334f424148484139205845504839";
 

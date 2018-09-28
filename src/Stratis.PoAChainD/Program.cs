@@ -30,10 +30,9 @@ namespace Stratis.PoAChainD
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
-                    .UsePosConsensus() // TODO POA
+                    .UsePoAConsensusAndMining()
                     .UseMempool()
                     .UseWallet()
-                    .AddPowPosMining() // TODO POA
                     .UseApi()
                     .UseApps()
                     .AddRPC()
