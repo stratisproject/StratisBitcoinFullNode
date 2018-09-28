@@ -109,7 +109,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (!invocationResult.IsSuccess)
             {
                 this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_FAILED]");
-                return VmExecutionResult.Fail(VmExecutionErrorKind.InvocationFailed, invocationResult.ErrorMessage);
+                return GetInvocationVmErrorResult(invocationResult);
             }
 
             this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_SUCCEEDED]");
@@ -161,7 +161,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (!invocationResult.IsSuccess)
             {
                 this.logger.LogTrace("(-)[CALLCONTRACT_INSTANTIATION_FAILED]");
-                return VmExecutionResult.Fail(VmExecutionErrorKind.InvocationFailed, invocationResult.ErrorMessage);
+
+                return GetInvocationVmErrorResult(invocationResult);
             }
 
             this.logger.LogTrace("[CALL_CONTRACT_INSTANTIATION_SUCCEEDED]");
@@ -169,6 +170,21 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.logger.LogTrace("(-)");
 
             return VmExecutionResult.Ok(invocationResult.Return, typeName);
+        }
+
+        private static VmExecutionResult GetInvocationVmErrorResult(IContractInvocationResult invocationResult)
+        {
+            if (invocationResult.InvocationErrorType == ContractInvocationErrorType.OutOfGas)
+            {
+                return VmExecutionResult.Fail(VmExecutionErrorKind.OutOfGas, invocationResult.ErrorMessage);
+            }
+
+            if (invocationResult.InvocationErrorType == ContractInvocationErrorType.OverMemoryLimit)
+            {
+                return VmExecutionResult.Fail(VmExecutionErrorKind.OutOfResources, invocationResult.ErrorMessage);
+            }
+
+            return VmExecutionResult.Fail(VmExecutionErrorKind.InvocationFailed, invocationResult.ErrorMessage);
         }
 
         /// <summary>
