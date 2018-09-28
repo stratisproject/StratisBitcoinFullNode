@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var contractTxData = new ContractTxData(1, 1, (Gas)1000, new byte[] { 0xAA, 0xBB, 0xCC });
             
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas) 100, new ContractErrorMessage("Error"));
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas) 100, StateTransitionErrorKind.VmError);
             
             var fixture = new ExecutorFixture(contractTxData);
             IState snapshot = fixture.State.Object.Snapshot();
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var parameters = new object[] { };
             var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", "", parameters);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)100, new ContractErrorMessage("Error"));
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)100, StateTransitionErrorKind.VmError);
 
             var fixture = new ExecutorFixture(contractTxData);
             IState snapshot = fixture.State.Object.Snapshot();
