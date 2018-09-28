@@ -12,6 +12,7 @@
         UInt,
         UInt160,
         ULong,
-        Address
+        Address,
+        Long
     }
 }
