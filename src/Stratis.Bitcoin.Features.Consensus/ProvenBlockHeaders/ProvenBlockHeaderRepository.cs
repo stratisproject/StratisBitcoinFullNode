@@ -47,18 +47,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// Initializes a new instance of the object.
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - RegTest/TestNet/MainNet.</param>
-        /// <param name="dataFolder">Information about path locations to important folders and files on disk.</param>
-        /// <param name="dateTimeProvider">Provider of time functions.</param>
-        /// <param name="loggerFactory">Factory to create a logger for this type.</param>
-        public ProvenBlockHeaderRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats)
-            : this(network, dataFolder.ProvenBlockHeaderPath, dateTimeProvider, loggerFactory)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the object.
-        /// </summary>
-        /// <param name="network">Specification of the network the node runs on - RegTest/TestNet/MainNet.</param>
         /// <param name="folder"><see cref="ProvenBlockHeaderStore"/> folder path to the DBreeze database files.</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
