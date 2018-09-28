@@ -30,19 +30,19 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             VmExecutionResult result = this.Vm.Create(state.ContractState, smartContractState, code, parameters, type);
 
-            bool revert = result.ErrorMessage != null;
+            bool revert = !result.IsSuccess;
 
             if (revert)
             {
                 return StateTransitionResult.Fail(
                     gasMeter.GasConsumed,
-                    result.ErrorMessage);
+                    result.Error.Message);
             }
 
             return StateTransitionResult.Ok(
                 gasMeter.GasConsumed,
                 address,
-                result.Result
+                result.Success.Result
             );
         }
 
@@ -102,19 +102,19 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             VmExecutionResult result = this.Vm.ExecuteMethod(smartContractState, message.Method, contractCode, type);
 
-            bool revert = result.ErrorMessage != null;
+            bool revert = !result.IsSuccess;
 
             if (revert)
             {
                 return StateTransitionResult.Fail(
                     gasMeter.GasConsumed,
-                    result.ErrorMessage);
+                    result.Error.Message);
             }
 
             return StateTransitionResult.Ok(
                 gasMeter.GasConsumed,
                 message.To,
-                result.Result
+                result.Success.Result
             );
         }
 

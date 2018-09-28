@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void ExternalCreate_Success()
         {
             var newContractAddress = uint160.One;
-            var vmExecutionResult = VmExecutionResult.Success(true, "Test");
+            var vmExecutionResult = VmExecutionResult.Ok(true, "Test");
 
             var externalCreateMessage = new ExternalCreateMessage(
                 uint160.Zero,
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Success);
             Assert.Equal(newContractAddress, result.Success.ContractAddress);
-            Assert.Equal(vmExecutionResult.Result, result.Success.ExecutionResult);
+            Assert.Equal(vmExecutionResult.Success.Result, result.Success.ExecutionResult);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void ExternalCreate_Vm_Error()
         {
             var newContractAddress = uint160.One;
-            var vmExecutionResult = VmExecutionResult.Error(new ContractErrorMessage("Error"));
+            var vmExecutionResult = VmExecutionResult.Fail(VmExecutionErrorKind.InvocationFailed, "Error");
 
             var externalCreateMessage = new ExternalCreateMessage(
                 uint160.Zero,
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.False(result.IsSuccess);
             Assert.True(result.IsFailure);
             Assert.NotNull(result.Error);
-            Assert.Equal(vmExecutionResult.ErrorMessage, result.Error.VmError);
+            Assert.Equal(vmExecutionResult.Error.Message, result.Error.VmError);
             Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void ExternalCall_Success()
         {
             var gasLimit = (Gas)(GasPriceList.BaseCost + 100000);
-            var vmExecutionResult = VmExecutionResult.Success(true, "Test");
+            var vmExecutionResult = VmExecutionResult.Ok(true, "Test");
 
             // Code must have a length to pass precondition checks.
             var code = new byte[1];
@@ -159,7 +159,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Success);
             Assert.Equal(externalCallMessage.To, result.Success.ContractAddress);
-            Assert.Equal(vmExecutionResult.Result, result.Success.ExecutionResult);
+            Assert.Equal(vmExecutionResult.Success.Result, result.Success.ExecutionResult);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void ExternalCall_Vm_Error()
         {
             var gasLimit = (Gas)(GasPriceList.BaseCost + 100000);
-            var vmExecutionResult = VmExecutionResult.Error(new ContractErrorMessage("Error"));
+            var vmExecutionResult = VmExecutionResult.Fail(VmExecutionErrorKind.InvocationFailed, "Error");
 
             // Code must have a length to pass precondition checks.
             var code = new byte[1];
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.True(result.IsFailure);
             Assert.NotNull(result.Error);
-            Assert.Equal(result.Error.VmError, vmExecutionResult.ErrorMessage);
+            Assert.Equal(result.Error.VmError, vmExecutionResult.Error.Message);
             Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // - Internal create performs a balance check before execution
             // - Internal create appends a new internal transfer if successful
             var newContractAddress = uint160.One;
-            var vmExecutionResult = VmExecutionResult.Success(true, "Test");
+            var vmExecutionResult = VmExecutionResult.Ok(true, "Test");
             var code = new byte[1];
             var typeName = "Test";
 
@@ -312,7 +312,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Success);
             Assert.Equal(newContractAddress, result.Success.ContractAddress);
-            Assert.Equal(vmExecutionResult.Result, result.Success.ExecutionResult);
+            Assert.Equal(vmExecutionResult.Success.Result, result.Success.ExecutionResult);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
@@ -321,7 +321,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var newContractAddress = uint160.One;
 
-            var vmExecutionResult = VmExecutionResult.Error(new ContractErrorMessage("Error"));
+            var vmExecutionResult = VmExecutionResult.Fail(VmExecutionErrorKind.InvocationFailed, "Error");
 
             // Code must have a length to pass precondition checks.
             var code = new byte[1];
@@ -370,7 +370,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.True(result.IsFailure);
             Assert.NotNull(result.Error);
-            Assert.Equal(result.Error.VmError, vmExecutionResult.ErrorMessage);
+            Assert.Equal(result.Error.VmError, vmExecutionResult.Error.Message);
             Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
@@ -418,7 +418,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // The difference between an internal and an external call:
             // - Internal call performs a balance check before execution
             // - Internal call appends a new internal transfer if successful
-            var vmExecutionResult = VmExecutionResult.Success(true, "Test");
+            var vmExecutionResult = VmExecutionResult.Ok(true, "Test");
             var code = new byte[1];
             var typeName = "Test";
 
@@ -472,14 +472,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Success);
             Assert.Equal(internalCallMessage.To, result.Success.ContractAddress);
-            Assert.Equal(vmExecutionResult.Result, result.Success.ExecutionResult);
+            Assert.Equal(vmExecutionResult.Success.Result, result.Success.ExecutionResult);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
         [Fact]
         public void InternalCall_Vm_Error()
         {
-            var vmExecutionResult = VmExecutionResult.Error(new ContractErrorMessage("Error"));
+            var vmExecutionResult = VmExecutionResult.Fail(VmExecutionErrorKind.InvocationFailed, "Error");
 
             // Code must have a length to pass precondition checks.
             var code = new byte[1];
@@ -529,7 +529,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.True(result.IsFailure);
             Assert.NotNull(result.Error);
-            Assert.Equal(result.Error.VmError, vmExecutionResult.ErrorMessage);
+            Assert.Equal(result.Error.VmError, vmExecutionResult.Error.Message);
             Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
@@ -606,7 +606,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Contract_Transfer_To_Other_Contract_Success()
         {
             // There is code at the destination address, which causes an internal call to the receive method
-            var vmExecutionResult = VmExecutionResult.Success(true, "Test");
+            var vmExecutionResult = VmExecutionResult.Ok(true, "Test");
             var code = new byte[1];
             var typeName = "Test";
 
@@ -660,14 +660,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Success);
             Assert.Equal(contractTransferMessage.To, result.Success.ContractAddress);
-            Assert.Equal(vmExecutionResult.Result, result.Success.ExecutionResult);
+            Assert.Equal(vmExecutionResult.Success.Result, result.Success.ExecutionResult);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }
 
         [Fact]
         public void Contract_Transfer_To_Other_Contract_VM_Error()
         {
-            var vmExecutionResult = VmExecutionResult.Error(new ContractErrorMessage("Error"));
+            var vmExecutionResult = VmExecutionResult.Fail(VmExecutionErrorKind.InvocationFailed, "Error");
 
             // Code must have a length to pass precondition checks.
             var code = new byte[1];
@@ -716,7 +716,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.True(result.IsFailure);
             Assert.NotNull(result.Error);
-            Assert.Equal(result.Error.VmError, vmExecutionResult.ErrorMessage);
+            Assert.Equal(result.Error.VmError, vmExecutionResult.Error.Message);
             Assert.Equal(StateTransitionErrorKind.VmError, result.Error.Kind);
             Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
         }

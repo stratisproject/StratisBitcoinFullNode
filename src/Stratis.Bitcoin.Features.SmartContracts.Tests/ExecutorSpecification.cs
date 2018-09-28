@@ -14,9 +14,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var contractTxData = new ContractTxData(1, 1, (Gas) 1000, new byte[] { 0xAA, 0xBB, 0xCC });
 
-            VmExecutionResult vmExecutionResult = VmExecutionResult.Success(new object(), null);
+            VmExecutionResult vmExecutionResult = VmExecutionResult.Ok(new object(), null);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Result);
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Success.Result);
 
             var fixture = new ExecutorFixture(contractTxData);
             IState snapshot = fixture.State.Object.Snapshot();
@@ -166,9 +166,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var parameters = new object[] { };
             var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", "", parameters);
 
-            VmExecutionResult vmExecutionResult = VmExecutionResult.Success(new object(), null);
+            VmExecutionResult vmExecutionResult = VmExecutionResult.Ok(new object(), null);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Result);
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Success.Result);
 
             var fixture = new ExecutorFixture(contractTxData);
             IState snapshot = fixture.State.Object.Snapshot();
