@@ -687,7 +687,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             ulong fundsToSend = 1000;
             string[] testMethodParameters = new string[]
             {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, newContractAddress.ToAddress(context.network)),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.String, newContractAddress.ToAddress(context.network)),
             };
 
             var testMethodParametersRaw = context.callDataSerializer.MethodParamSerializer.ToRaw(testMethodParameters);
@@ -748,7 +748,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             ulong fundsToSend = 1000;
             string[] testMethodParameters = new string[]
             {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, newContractAddress.ToAddress(context.network)),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.String, newContractAddress.ToAddress(context.network)),
             };
 
             var testMethodParametersRaw = context.callDataSerializer.MethodParamSerializer.ToRaw(testMethodParameters);
@@ -803,7 +803,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             ulong fundsToSend = 1000;
             string[] testMethodParameters = new string[]
             {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, newContractAddress.ToString()),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.String, newContractAddress.ToString()),
             };
 
             var testMethodParametersRaw = context.callDataSerializer.MethodParamSerializer.ToRaw(testMethodParameters);
@@ -890,8 +890,8 @@ namespace Stratis.SmartContracts.IntegrationTests
             ulong fundsToSend = 1000;
             string[] testMethodParameters = new string[]
             {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, receiveContractAddress2.ToAddress(context.network)),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ULong, fundsToSend),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, receiveContractAddress2.ToAddress(context.network)),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ULong, fundsToSend),
             };
 
             var testMethodParametersRaw = context.callDataSerializer.MethodParamSerializer.ToRaw(testMethodParameters);

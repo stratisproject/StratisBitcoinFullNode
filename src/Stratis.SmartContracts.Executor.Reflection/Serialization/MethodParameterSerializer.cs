@@ -97,7 +97,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 // after the first one.
                 // 
                 // Once this is done, prepend the string with the data type,
-                // which is an integer representation of SmartContractCarrierDataType,
+                // which is an integer representation of MethodParameterDataType,
                 // as well as a hash, so that it can be split again upon deserialization.
                 //
                 // I.e. 3#dcg#5d# will split into 3 / dcg / 5d

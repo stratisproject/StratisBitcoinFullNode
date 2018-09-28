@@ -9,6 +9,7 @@ using Stratis.SmartContracts.IntegrationTests.MockChain;
 using Xunit;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Block = NBitcoin.Block;
 
 namespace Stratis.SmartContracts.IntegrationTests
@@ -51,7 +52,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Send amount to contract, which will send to wallet address (address without code)
             uint160 walletUint160 = new uint160(1);
             string address = walletUint160.ToAddress(this.mockChain.Network);
-            string[] parameters = new string[] { string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, address) };
+            string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Address, address) };
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(
                 nameof(BasicTransfer.SendToAddress),
                 preResponse.NewContractAddress,
@@ -120,7 +121,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             // Send amount to contract, which will send to contract address
-            string[] parameters = new string[] { string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, receiveResponse.NewContractAddress) };
+            string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Address, receiveResponse.NewContractAddress) };
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(
                 nameof(BasicTransfer.SendToAddress),
                 preResponse.NewContractAddress,
@@ -189,7 +190,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.True(compilationResult.Success);
             uint160 walletUint160 = new uint160(1);
             string address = walletUint160.ToAddress(this.mockChain.Network);
-            string[] parameters = new string[] { string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, address) };
+            string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Address, address) };
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);

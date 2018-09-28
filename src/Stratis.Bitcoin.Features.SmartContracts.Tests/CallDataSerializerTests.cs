@@ -63,12 +63,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             string[] methodParameters = new string[]
             {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 12),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Bool, true),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, "te|s|t"),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, "te#st"),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, "#4#te#st#"),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Char, '#'),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Short, 12),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Bool, true),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.String, "te|s|t"),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.String, "te#st"),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.String, "#4#te#st#"),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Char, '#'),
             };
 
             var serializer = CallDataSerializer.Default;
@@ -132,18 +132,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             string[] methodParameters = new string[]
             {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Bool, true),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Byte, (byte)1),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ByteArray, BitConverter.ToString(Encoding.UTF8.GetBytes("test"))),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Char, 's'),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.SByte, -45),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 7),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, "test"),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.UInt, 36),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.UInt160, new uint160(new byte[20]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1})),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.ULong, 29),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, new Address("0x95D34980095380851902ccd9A1Fb4C813C2cb639")),
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Address, new Address("mxKorCkWmtrPoekfWiMzERJPhaT13nnkMy"))
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Bool, true),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Byte, (byte)1),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ByteArray, BitConverter.ToString(Encoding.UTF8.GetBytes("test"))),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Char, 's'),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.SByte, -45),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Short, 7),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.String, "test"),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.UInt, 36),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.UInt160, new uint160(new byte[20]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1})),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ULong, 29),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, new Address("0x95D34980095380851902ccd9A1Fb4C813C2cb639")),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, new Address("mxKorCkWmtrPoekfWiMzERJPhaT13nnkMy"))
             };
 
             var serializer = CallDataSerializer.Default;

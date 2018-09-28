@@ -1,6 +1,6 @@
-﻿namespace Stratis.SmartContracts.Executor.Reflection
+﻿namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
-    public enum SmartContractCarrierDataType
+    public enum MethodParameterDataType
     {
         Bool = 1,
         Byte,

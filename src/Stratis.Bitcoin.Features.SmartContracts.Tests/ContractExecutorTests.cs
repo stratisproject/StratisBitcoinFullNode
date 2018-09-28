@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             string[] methodParameters = new string[]
             {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 5),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Short, 5),
             };
 
             var methodParametersRaw = this.serializer.MethodParamSerializer.ToRaw(methodParameters);
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             string[] methodParameters = new string[]
             {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Bool, true),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Bool, true),
             };
 
             var methodParametersRaw = this.serializer.MethodParamSerializer.ToRaw(methodParameters);
@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             string[] parameters =
             {
-                string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, address1.ToAddress(this.network).Value),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.String, address1.ToAddress(this.network).Value),
             };
 
             var methodParametersRaw = this.serializer.MethodParamSerializer.ToRaw(parameters);
