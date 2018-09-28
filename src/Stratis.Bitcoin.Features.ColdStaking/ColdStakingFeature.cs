@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -187,7 +188,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         }
 
         /// <inheritdoc />
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
             this.logger.LogTrace("()");
 
@@ -201,6 +202,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
             this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
