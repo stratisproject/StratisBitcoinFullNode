@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.IntegrationTests.Common;
@@ -268,33 +269,30 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Sync the network to height 10.
                 TestHelper.ConnectAndSync(syncer, minerA, minerB);
 
-                // Disconnect Miner B and ensure node is disconnected.
-                TestHelper.Disconnect(syncer, minerB);
+                // Disable syncer from sending blocks to miner B
+                TestHelper.DisableBlockPropagation(syncer, minerB);
 
                 // Miner A and syncer continues to mine to height 20.
                 TestHelper.MineBlocks(minerA, 10);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
 
+                // Enable syncer to send blocks to miner B
+                TestHelper.EnableBlockPropagation(syncer, minerB);
+
+                // Disable syncer from sending blocks to miner A
+                TestHelper.DisableBlockPropagation(syncer, minerA);
+
                 // Miner B continues to mine to height 30 on a new and longer chain whilst disconnected.
                 TestHelper.MineBlocks(minerB, 20);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
 
-                // Disconnect syncer from Miner A.
-                TestHelper.Disconnect(syncer, minerA);
-
-                // Connect syncer to Miner B, now syncer will reorg 10 blocks back and sync back up to height 30 (same as miner B).
-                TestHelper.ConnectAndSync(syncer, minerB);
+                // Enable syncer to send blocks to miner B
+                TestHelper.EnableBlockPropagation(syncer, minerA);
 
                 // Miner A mines to height 40.
                 TestHelper.MineBlocks(minerA, 20);
-
-                // Disconnect syncer from Miner B.
-                TestHelper.Disconnect(syncer, minerB);
-
-                // Connect syncer to Miner A, now syncer will reorg 10 blocks back and sync back up to height 40 (same as miner A).
-                TestHelper.ConnectAndSync(syncer, minerA);
-
-                // Bring miner B on the longest chain.
-                TestHelper.ConnectAndSync(syncer, minerB);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
 
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 40);
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 40);
@@ -325,31 +323,36 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Sync the network to height 10.
                 TestHelper.ConnectAndSync(syncer, minerA, minerB);
 
-                // Disconnect Miner B and ensure node is disconnected.
-                TestHelper.Disconnect(syncer, minerB);
+                // Disable syncer from sending blocks to miner B
+                TestHelper.DisableBlockPropagation(syncer, minerB);
 
                 // Miner A and syncer continues to mine to height 20.
                 TestHelper.MineBlocks(minerA, 10);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
 
-                // Miner B continues to mine to height 30 on a new and longer chain whilst disconnected.
-                TestHelper.MineBlocks(minerB, 20);
-
-                // Inject a rule that will fail at block 15 of the new chain
+                // Inject a rule that will fail at block 15 of the new chain.
                 ConsensusRuleEngine engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
                 syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(15));
                 engine.Register();
 
-                // Connect syncer to Miner B, reorg should fail.
-                TestHelper.Connect(syncer, minerB);
+                // Miner B continues to mine to height 30 on a new and longer chain.
+                // We split the mining to first mine to block 29 then enable syncer to serve blocks.
+                // If not syncer will server better blocks before miner B can mine a longer chain.
+                // The last block we allow syncer to serve blocks, this will trigger a reorg on syncer.
+                TestHelper.MineBlocks(minerB, 19);
+                TestHelper.EnableBlockPropagation(syncer, minerB);
+                TestHelper.MineBlocks(minerB, 1);
+
+                // check miner B at height 30.
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 30);
 
                 // Miner B should become disconnected.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, minerB));
                 
-                // Make sure syncer rolled back
+                // Make sure syncer rolled back.
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 20);
 
-                // Check syncer is still synced with Miner A
+                // Check syncer is still synced with Miner A.
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
             }
         }
@@ -377,23 +380,28 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Sync the network to height 10.
                 TestHelper.ConnectAndSync(syncer, minerA, minerB);
 
-                // Disconnect Miner B and ensure node is disconnected.
-                TestHelper.Disconnect(syncer, minerB);
+                // Disable syncer from sending blocks to miner B
+                TestHelper.DisableBlockPropagation(syncer, minerB);
 
                 // Miner A and syncer continues to mine to height 20.
                 TestHelper.MineBlocks(minerA, 10);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
-
-                // Miner B continues to mine to height 30 on a new and longer chain whilst disconnected.
-                TestHelper.MineBlocks(minerB, 20);
 
                 // Inject a rule that will fail at block 11 of the new chain
                 ConsensusRuleEngine engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
                 syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(11));
                 engine.Register();
 
-                // Connect syncer to Miner B, reorg should fail.
-                TestHelper.Connect(syncer, minerB);
+                // Miner B continues to mine to height 30 on a new and longer chain.
+                // We split the mining to first mine to block 29 then enable syncer to serve blocks.
+                // If not syncer will server better blocks before miner B can mine a longer chain.
+                // The last block we allow syncer to serve blocks, this will trigger a reorg on syncer.
+                TestHelper.MineBlocks(minerB, 19);
+                TestHelper.EnableBlockPropagation(syncer, minerB);
+                TestHelper.MineBlocks(minerB, 1);
+
+                // check miner B at height 30.
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 30);
 
                 // Miner B should become disconnected.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, minerB));
