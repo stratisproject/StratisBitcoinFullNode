@@ -134,6 +134,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Inte
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Features.PoA", "Stratis.Bitcoin.Features.PoA\Stratis.Bitcoin.Features.PoA.csproj", "{E3268F4A-6217-4A77-8E26-8DCD5B082DCF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.PoAChainD", "Stratis.PoAChainD\Stratis.PoAChainD.csproj", "{834BE4BB-09CA-43A0-B2CF-D1CBC38C1BD7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -352,6 +354,10 @@ Global
 		{E3268F4A-6217-4A77-8E26-8DCD5B082DCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E3268F4A-6217-4A77-8E26-8DCD5B082DCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E3268F4A-6217-4A77-8E26-8DCD5B082DCF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{834BE4BB-09CA-43A0-B2CF-D1CBC38C1BD7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{834BE4BB-09CA-43A0-B2CF-D1CBC38C1BD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{834BE4BB-09CA-43A0-B2CF-D1CBC38C1BD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{834BE4BB-09CA-43A0-B2CF-D1CBC38C1BD7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
