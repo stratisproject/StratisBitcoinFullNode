@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using CSharpFunctionalExtensions;
@@ -65,6 +66,45 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             return Result.Fail<ContractTxData>("Error deserializing calldata. Incorrect first byte.");
+        }
+
+        public byte[] Serialize(ContractTxData contractTxData)
+        {
+            var bytes = new List<byte>
+            {
+                contractTxData.OpCodeType
+            };
+
+            bytes.AddRange(PrefixLength(BitConverter.GetBytes(contractTxData.VmVersion)));
+            bytes.AddRange(PrefixLength(BitConverter.GetBytes(contractTxData.GasPrice)));
+            bytes.AddRange(PrefixLength(BitConverter.GetBytes(contractTxData.GasLimit)));
+
+            if (contractTxData.OpCodeType == (byte)ScOpcodeType.OP_CALLCONTRACT)
+            {
+                bytes.AddRange(PrefixLength(contractTxData.ContractAddress.ToBytes()));
+                bytes.AddRange(PrefixLength(Encoding.UTF8.GetBytes(contractTxData.MethodName)));
+            }
+
+            if (contractTxData.OpCodeType == (byte)ScOpcodeType.OP_CREATECONTRACT)
+                bytes.AddRange(PrefixLength(contractTxData.ContractExecutionCode));
+
+            if (contractTxData.MethodParameters != null && contractTxData.MethodParameters.Length > 0)
+                bytes.AddRange(PrefixLength(this.methodParamSerializer.ToBytes(contractTxData.MethodParametersRaw)));
+            else
+                bytes.AddRange(BitConverter.GetBytes(0));
+
+            return bytes.ToArray();
+        }
+
+        /// <summary>
+        /// Prefixes the byte array with the length of the array that follows.
+        /// </summary>
+        private static byte[] PrefixLength(byte[] toPrefix)
+        {
+            var prefixedBytes = new List<byte>();
+            prefixedBytes.AddRange(BitConverter.GetBytes(toPrefix.Length));
+            prefixedBytes.AddRange(toPrefix);
+            return prefixedBytes.ToArray();
         }
 
         private static bool IsCreateContract(byte type)
