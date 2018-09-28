@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var methodParametersRaw = this.serializer.MethodParamSerializer.ToRaw(methodParameters);
 
-            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)10000, contractCode, methodParametersRaw, this.serializer.MethodParamSerializer.ToObjects(methodParametersRaw));
+            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)10000, contractCode, this.serializer.MethodParamSerializer.ToObjects(methodParametersRaw));
             var tx = new Transaction();
             tx.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
 
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var methodParametersRaw = this.serializer.MethodParamSerializer.ToRaw(methodParameters);
 
-            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)10000, contractCode, methodParametersRaw, this.serializer.MethodParamSerializer.ToObjects(methodParametersRaw)); var tx = new Transaction();
+            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)10000, contractCode, this.serializer.MethodParamSerializer.ToObjects(methodParametersRaw)); var tx = new Transaction();
             tx.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
 
             IContractTransactionContext transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)MethodParameterDataType.String, address1.ToAddress(this.network).Value),
             };
 
-            contractTxData = new ContractTxData(1, (Gas)1, gasLimit, address2, "CallInfiniteLoop", "", this.serializer.MethodParamSerializer.ToObjects(parameters));
+            contractTxData = new ContractTxData(1, (Gas)1, gasLimit, address2, "CallInfiniteLoop", this.serializer.MethodParamSerializer.ToObjects(parameters));
             transaction = new Transaction();
             txOut = transaction.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
             txOut.Value = 100;

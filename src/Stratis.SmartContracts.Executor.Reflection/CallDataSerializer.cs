@@ -44,7 +44,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                     var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
 
-                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, "", methodParameters);
+                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParameters);
                     return Result.Ok(callData);
                 }
 
@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                     var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
 
-                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw, methodParameters);
+                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParameters);
                     return Result.Ok(callData);
                 }
             }
