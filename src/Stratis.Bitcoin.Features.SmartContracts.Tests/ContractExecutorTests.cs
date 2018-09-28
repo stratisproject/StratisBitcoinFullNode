@@ -176,12 +176,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] contractCode = compilationResult.Compilation;
 
-            string[] methodParameters = new string[]
-            {
-                string.Format("{0}#{1}", (int)MethodParameterDataType.Short, 5),
-            };
+            object[] methodParameters = { 5 };
 
-            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)10000, contractCode, this.serializer.MethodParamSerializer.ToObjects(methodParameters));
+            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)10000, contractCode, methodParameters);
             var tx = new Transaction();
             tx.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
 
@@ -209,12 +206,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] contractCode = compilationResult.Compilation;
 
-            string[] methodParameters = new string[]
-            {
-                string.Format("{0}#{1}", (int)MethodParameterDataType.Bool, true),
-            };
+            object[] methodParameters = { true };
 
-            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)10000, contractCode, this.serializer.MethodParamSerializer.ToObjects(methodParameters));
+            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)10000, contractCode, methodParameters);
             var tx = new Transaction();
             tx.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
 
@@ -303,12 +297,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var gasLimit = (Gas)100_000;
 
-            string[] parameters =
-            {
-                string.Format("{0}#{1}", (int)MethodParameterDataType.String, address1.ToAddress(this.network).Value),
-            };
+            object[] parameters = { address1.ToAddress(this.network).Value };
 
-            contractTxData = new ContractTxData(1, (Gas)1, gasLimit, address2, "CallInfiniteLoop", this.serializer.MethodParamSerializer.ToObjects(parameters));
+            contractTxData = new ContractTxData(1, (Gas)1, gasLimit, address2, "CallInfiniteLoop", parameters);
             transaction = new Transaction();
             txOut = transaction.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
             txOut.Value = 100;

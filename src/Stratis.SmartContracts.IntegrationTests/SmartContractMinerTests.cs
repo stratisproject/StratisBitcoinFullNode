@@ -685,15 +685,9 @@ namespace Stratis.SmartContracts.IntegrationTests
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
-            string[] testMethodParameters = new string[]
-            {
-                string.Format("{0}#{1}", (int)MethodParameterDataType.String, newContractAddress.ToAddress(context.network)),
-            };
-
-            var testMethodParametersSerialized =
-                context.callDataSerializer.MethodParamSerializer.ToObjects(testMethodParameters);
-
-            var transferContractCall = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "ContractTransfer", testMethodParametersSerialized);
+            object[] testMethodParameters =  { newContractAddress.ToAddress(context.network).Value };
+            
+            var transferContractCall = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "ContractTransfer", testMethodParameters);
             blockTemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferContractCall, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(Encoding.UTF8.GetBytes("testString"), context.StateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("test")));
             Assert.Equal(3, blockTemplate.Block.Transactions.Count);
@@ -745,15 +739,9 @@ namespace Stratis.SmartContracts.IntegrationTests
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
-            string[] testMethodParameters = new string[]
-            {
-                string.Format("{0}#{1}", (int)MethodParameterDataType.String, newContractAddress.ToAddress(context.network)),
-            };
+            object[] testMethodParameters =  { newContractAddress.ToAddress(context.network).Value };
 
-            var testMethodParametersSerialized =
-                context.callDataSerializer.MethodParamSerializer.ToObjects(testMethodParameters);
-
-            var transferContractCallData = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "Tester", testMethodParametersSerialized);
+            var transferContractCallData = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "Tester", testMethodParameters);
             blockTemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferContractCallData, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
             byte[] stateSaveValue = context.StateRoot.GetStorageValue(newContractAddress, Encoding.UTF8.GetBytes("SaveWorked"));
             Assert.NotNull(stateSaveValue);
@@ -799,15 +787,9 @@ namespace Stratis.SmartContracts.IntegrationTests
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
-            string[] testMethodParameters = new string[]
-            {
-                string.Format("{0}#{1}", (int)MethodParameterDataType.String, newContractAddress.ToString()),
-            };
+            object[] testMethodParameters = { newContractAddress.ToString() };
 
-            var testMethodParametersSerialized =
-                context.callDataSerializer.MethodParamSerializer.ToObjects(testMethodParameters);
-
-            var transferContractCallData = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "ContractTransferWithFail", testMethodParametersSerialized);
+            var transferContractCallData = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "ContractTransferWithFail", testMethodParameters);
             blockTemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferContractCallData, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
             Assert.Equal(3, blockTemplate.Block.Transactions.Count);
             Assert.Single(blockTemplate.Block.Transactions[2].Inputs);
@@ -885,16 +867,9 @@ namespace Stratis.SmartContracts.IntegrationTests
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
-            string[] testMethodParameters = new string[]
-            {
-                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, receiveContractAddress2.ToAddress(context.network)),
-                string.Format("{0}#{1}", (int)MethodParameterDataType.ULong, fundsToSend),
-            };
-
-            var testMethodParametersSerialized =
-                context.callDataSerializer.MethodParamSerializer.ToObjects(testMethodParameters);
-
-            var transferContractCallData = new ContractTxData(1, gasPrice, gasLimit, receiveContractAddress1, "SendFunds", testMethodParametersSerialized);
+            object[] testMethodParameters = { receiveContractAddress2.ToAddress(context.network), fundsToSend };
+            
+            var transferContractCallData = new ContractTxData(1, gasPrice, gasLimit, receiveContractAddress1, "SendFunds", testMethodParameters);
 
             blockTemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferContractCallData, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
             byte[] receiveInvoked = context.StateRoot.GetStorageValue(receiveContractAddress2, Encoding.UTF8.GetBytes("ReceiveInvoked"));
