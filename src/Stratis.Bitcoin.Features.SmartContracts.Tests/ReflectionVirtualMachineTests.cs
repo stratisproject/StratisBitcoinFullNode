@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using System;
+using Moq;
 using NBitcoin;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
@@ -21,11 +22,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
         private IStateRepository state;
         private SmartContractState contractState;
+        private ContractExecutorTestContext context;
 
         public ReflectionVirtualMachineTests()
         {
             // Take what's needed for these tests
-            var context = new ContractExecutorTestContext();
+            this.context = new ContractExecutorTestContext();
             this.network = context.Network;
             this.vm = context.Vm;
             this.state = context.State;
@@ -94,6 +96,43 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.True(result.IsSuccess);
             Assert.Null(result.Error);
+        }
+
+        [Fact]
+        public void VM_ExecuteContract_OutOfGas()
+        {
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(
+@"
+using System;
+using Stratis.SmartContracts;
+
+public class Contract : SmartContract
+{
+    public Contract(ISmartContractState state) : base(state) {}
+}
+");
+            Assert.True(compilationResult.Success);
+
+            byte[] contractExecutionCode = compilationResult.Compilation;
+    
+            // Set up the state with an empty gasmeter so that out of gas occurs
+            var contractState = Mock.Of<ISmartContractState>(s =>
+                s.Block == Mock.Of<IBlock>(b => b.Number == 1 && b.Coinbase == TestAddress) &&
+                s.Message == new Message(TestAddress, TestAddress, 0) &&
+                s.PersistentState == new PersistentState(
+                    new TestPersistenceStrategy(this.state),
+                    this.context.ContractPrimitiveSerializer, TestAddress.ToUint160(this.network)) &&
+                s.Serializer == this.context.ContractPrimitiveSerializer &&
+                s.GasMeter == new GasMeter((Gas) 0) &&
+                s.ContractLogger == new ContractLogHolder(this.network) &&
+                s.InternalTransactionExecutor == Mock.Of<IInternalTransactionExecutor>() &&
+                s.InternalHashHelper == new InternalHashHelper() &&
+                s.GetBalance == new Func<ulong>(() => 0));
+
+            VmExecutionResult result = this.vm.Create(this.state, contractState, contractExecutionCode, null);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(VmExecutionErrorKind.OutOfGas, result.Error.ErrorKind);
         }
     }
 
