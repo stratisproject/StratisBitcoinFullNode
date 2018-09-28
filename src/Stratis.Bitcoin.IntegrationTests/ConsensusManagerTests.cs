@@ -336,12 +336,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 engine.Register();
 
                 // Miner B continues to mine to height 30 on a new and longer chain.
-                // We split the mining to first mine to block 29 then enable syncer to serve blocks.
-                // If not syncer will server better blocks before miner B can mine a longer chain.
-                // The last block we allow syncer to serve blocks, this will trigger a reorg on syncer.
-                TestHelper.MineBlocks(minerB, 19);
-                TestHelper.EnableBlockPropagation(syncer, minerB);
-                TestHelper.MineBlocks(minerB, 1);
+                TestHelper.MineBlocks(minerB, 20);
 
                 // check miner B at height 30.
                 Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 30);
@@ -393,12 +388,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 engine.Register();
 
                 // Miner B continues to mine to height 30 on a new and longer chain.
-                // We split the mining to first mine to block 29 then enable syncer to serve blocks.
-                // If not syncer will server better blocks before miner B can mine a longer chain.
-                // The last block we allow syncer to serve blocks, this will trigger a reorg on syncer.
-                TestHelper.MineBlocks(minerB, 19);
-                TestHelper.EnableBlockPropagation(syncer, minerB);
-                TestHelper.MineBlocks(minerB, 1);
+                TestHelper.MineBlocks(minerB, 20);
 
                 // check miner B at height 30.
                 Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 30);
