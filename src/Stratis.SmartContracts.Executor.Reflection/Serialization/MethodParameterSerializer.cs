@@ -15,7 +15,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         /// <summary>
         /// Serializes an array of method parameter objects to the bytes of their string-encoded representation.
         /// </summary>
-        public byte[] ToBytes(object[] methodParameters)
+        public byte[] Serialize(object[] methodParameters)
         {
             var sb = new List<string>();
 
@@ -72,13 +72,13 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
-        public object[] ToObjects(string[] parameters)
+        public object[] Deserialize(string[] parameters)
         {
             return StringToObjects(this.EscapeAndJoin(parameters));
         }
 
         /// <inheritdoc />
-        public object[] ToObjects(byte[] parameterBytes)
+        public object[] Deserialize(byte[] parameterBytes)
         {
             var parameters = Encoding.UTF8.GetString(parameterBytes);
             return StringToObjects(parameters);

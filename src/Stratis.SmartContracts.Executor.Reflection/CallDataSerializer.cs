@@ -89,7 +89,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 bytes.AddRange(PrefixLength(contractTxData.ContractExecutionCode));
 
             if (contractTxData.MethodParameters != null && contractTxData.MethodParameters.Any())
-                bytes.AddRange(PrefixLength(this.MethodParamSerializer.ToBytes(contractTxData.MethodParameters)));
+                bytes.AddRange(PrefixLength(this.MethodParamSerializer.Serialize(contractTxData.MethodParameters)));
             else
                 bytes.AddRange(BitConverter.GetBytes(0));
 
@@ -122,7 +122,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             object[] methodParameters = null;
 
             if (methodParametersRaw != null && methodParametersRaw.Length > 0)
-                methodParameters = this.MethodParamSerializer.ToObjects(methodParametersRaw);
+                methodParameters = this.MethodParamSerializer.Deserialize(methodParametersRaw);
             return methodParameters;
         }
 

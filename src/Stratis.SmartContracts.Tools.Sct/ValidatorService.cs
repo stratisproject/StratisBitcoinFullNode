@@ -61,7 +61,7 @@ namespace Stratis.SmartContracts.Tools.Sct
             object[] methodParameters = null;
             if (parameters.Length != 0)
             {
-                methodParameters = serializer.ToObjects(parameters);
+                methodParameters = serializer.Deserialize(parameters);
             }
 
             validationServiceResult.ConstructorExists = Contract.ConstructorExists(smartContract.ExportedTypes.FirstOrDefault(), methodParameters);

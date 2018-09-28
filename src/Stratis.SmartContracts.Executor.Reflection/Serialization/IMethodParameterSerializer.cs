@@ -3,17 +3,18 @@
     public interface IMethodParameterSerializer
     {
         /// <summary>
-        /// Serializes an array of method parameter objects to their string representation.
+        /// Serializes an array of method parameter objects to their byte representation.
         /// </summary>
-        /// <param name="methodParameters"></param>
-        byte[] ToBytes(object[] methodParameters);
-
-        object[] ToObjects(string[] parameters);
+        byte[] Serialize(object[] methodParameters);
 
         /// <summary>
-        /// Converts the input method parameters to an object array when the carrier is created or called.
+        /// Deserializes an encoded array of strings to parameter objects.
         /// </summary>
-        /// <param name="methodParameters">A pipe joined representation string of unescaped method parameters.</param>
-        object[] ToObjects(byte[] methodParameters);
+        object[] Deserialize(string[] parameters);
+
+        /// <summary>
+        /// Deserializes an encoded array of bytes to parameter objects.
+        /// </summary>
+        object[] Deserialize(byte[] methodParameters);
     }
 }
