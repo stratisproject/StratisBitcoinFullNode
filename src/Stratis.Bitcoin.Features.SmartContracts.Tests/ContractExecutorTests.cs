@@ -78,9 +78,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
 
             //Call smart contract and add to transaction-------------
-            ContractCarrier carrier = ContractCarrier.CallContract(1, ToAddress, "ThrowException", 1, (Gas)5000);
+            var contractTxData = new ContractTxData(1, 1, (Gas)5000, ToAddress, "ThrowException");
             var transactionCall = new Transaction();
-            TxOut callTxOut = transactionCall.AddOutput(0, new Script(carrier.Serialize()));
+            TxOut callTxOut = transactionCall.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
             callTxOut.Value = 100;
             //-------------------------------------------------------
 
@@ -117,10 +117,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContractExecutor_CallContract_DoesNotExist_Refund()
         {
-            ContractCarrier carrier = ContractCarrier.CallContract(1, ToAddress, "TestMethod", 1, (Gas) 10000);
+            var contractTxData = new ContractTxData(1, 1, (Gas) 10000, ToAddress, "TestMethod");
 
             var transaction = new Transaction();
-            TxOut txOut = transaction.AddOutput(0, new Script(carrier.Serialize()));
+            TxOut txOut = transaction.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
             txOut.Value = 100;
 
             IContractTransactionContext transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), transaction);
@@ -146,9 +146,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] contractCode = compilationResult.Compilation;
 
-            ContractCarrier carrier = ContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000);
+            var contractTxData = new ContractTxData(0, (Gas) 1, (Gas)10000, contractCode);
             var tx = new Transaction();
-            tx.AddOutput(0, new Script(carrier.Serialize()));
+            tx.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
 
             IContractTransactionContext transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
@@ -181,9 +181,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Short, 5),
             };
 
-            ContractCarrier carrier = ContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000, methodParameters);
+            var methodParametersRaw = this.serializer.MethodParamSerializer.ToRaw(methodParameters);
+
+            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)10000, contractCode, methodParametersRaw, this.serializer.MethodParamSerializer.ToObjects(methodParametersRaw));
             var tx = new Transaction();
-            tx.AddOutput(0, new Script(carrier.Serialize()));
+            tx.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
 
             IContractTransactionContext transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
@@ -214,9 +216,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.Bool, true),
             };
 
-            var carrier = ContractCarrier.CreateContract(0, contractCode, 1, (Gas)10000, methodParameters);
-            var tx = new Transaction();
-            tx.AddOutput(0, new Script(carrier.Serialize()));
+            var methodParametersRaw = this.serializer.MethodParamSerializer.ToRaw(methodParameters);
+
+            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)10000, contractCode, methodParametersRaw, this.serializer.MethodParamSerializer.ToObjects(methodParametersRaw)); var tx = new Transaction();
+            tx.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
 
             IContractTransactionContext transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, new uint160(2), tx);
 
@@ -248,9 +251,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             // Add contract creation code to transaction-------------
-            var carrier = ContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)3500);
+            var contractTxData = new ContractTxData(1, (Gas)1, (Gas)3500, contractExecutionCode);
             var transaction = new Transaction();
-            TxOut txOut = transaction.AddOutput(0, new Script(carrier.Serialize()));
+            TxOut txOut = transaction.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
             txOut.Value = 100;
             //-------------------------------------------------------
 
@@ -283,9 +286,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             //Call smart contract and add to transaction-------------
-            carrier = ContractCarrier.CreateContract(1, contractExecutionCode, 1, (Gas)3500);
+            contractTxData = new ContractTxData(1, (Gas)1, (Gas)3500, contractExecutionCode);
             transaction = new Transaction();
-            txOut = transaction.AddOutput(0, new Script(carrier.Serialize()));
+            txOut = transaction.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
             txOut.Value = 100;
             //-------------------------------------------------------
 
@@ -308,9 +311,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)SmartContractCarrierDataType.String, address1.ToAddress(this.network).Value),
             };
 
-            carrier = ContractCarrier.CallContract(1, address2, "CallInfiniteLoop", 1, gasLimit, parameters);
+            var methodParametersRaw = this.serializer.MethodParamSerializer.ToRaw(parameters);
+
+            contractTxData = new ContractTxData(1, (Gas)1, gasLimit, address2, "CallInfiniteLoop", methodParametersRaw, this.serializer.MethodParamSerializer.ToObjects(methodParametersRaw));
             transaction = new Transaction();
-            txOut = transaction.AddOutput(0, new Script(carrier.Serialize()));
+            txOut = transaction.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
             txOut.Value = 100;
 
             transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
