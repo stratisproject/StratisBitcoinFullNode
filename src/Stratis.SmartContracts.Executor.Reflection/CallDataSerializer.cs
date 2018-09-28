@@ -88,7 +88,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (contractTxData.OpCodeType == (byte)ScOpcodeType.OP_CREATECONTRACT)
                 bytes.AddRange(PrefixLength(contractTxData.ContractExecutionCode));
 
-            if (contractTxData.MethodParameters != null && contractTxData.MethodParameters.Length > 0)
+            if (!string.IsNullOrWhiteSpace(contractTxData.MethodParametersRaw))
                 bytes.AddRange(PrefixLength(this.methodParamSerializer.ToBytes(contractTxData.MethodParametersRaw)));
             else
                 bytes.AddRange(BitConverter.GetBytes(0));
