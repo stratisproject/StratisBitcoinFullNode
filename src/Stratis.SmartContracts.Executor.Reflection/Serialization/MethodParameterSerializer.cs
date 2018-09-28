@@ -11,7 +11,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// Class that handles method parameter serialization.
     /// </summary>
     public sealed class MethodParameterSerializer : IMethodParameterSerializer
-    {
+    {        
+        public byte[] ToBytes(object[] methodParameters)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <inheritdoc />
         public byte[] ToBytes(string rawMethodParameters)
         {
