@@ -35,9 +35,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>The serializer we use to serialize the method parameters.</summary>
         private readonly IMethodParameterSerializer serializer;
 
-        /// <summary>The initiator of the the smart contract. TODO: Make set private.</summary>
-        public uint160 Sender { get; set; }
-
         public ContractCarrier(IMethodParameterSerializer serializer)
         {
             this.serializer = serializer;
