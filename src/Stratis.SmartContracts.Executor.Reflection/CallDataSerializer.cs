@@ -44,7 +44,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                     var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
 
-                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw, methodParameters);
+                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, "", methodParameters);
                     return Result.Ok(callData);
                 }
 
@@ -88,8 +88,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (contractTxData.OpCodeType == (byte)ScOpcodeType.OP_CREATECONTRACT)
                 bytes.AddRange(PrefixLength(contractTxData.ContractExecutionCode));
 
-            if (!string.IsNullOrWhiteSpace(contractTxData.MethodParametersRaw))
-                bytes.AddRange(PrefixLength(this.MethodParamSerializer.ToBytes(contractTxData.MethodParametersRaw)));
+            if (contractTxData.MethodParameters != null && contractTxData.MethodParameters.Any())
+                bytes.AddRange(PrefixLength(this.MethodParamSerializer.ToBytes(contractTxData.MethodParameters)));
             else
                 bytes.AddRange(BitConverter.GetBytes(0));
 

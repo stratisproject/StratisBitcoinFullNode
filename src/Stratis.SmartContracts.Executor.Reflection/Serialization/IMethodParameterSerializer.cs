@@ -3,7 +3,7 @@
     public interface IMethodParameterSerializer
     {
         /// <summary>
-        /// Serializes an array of method parameter objects to their byte representation.
+        /// Serializes an array of method parameter objects to their string representation.
         /// </summary>
         /// <param name="methodParameters"></param>
         byte[] ToBytes(object[] methodParameters);
@@ -13,6 +13,10 @@
         /// </summary>
         /// <param name="rawMethodParameters">A pipe joined representation string of escaped method parameters.</param>
         byte[] ToBytes(string rawMethodParameters);
+
+        object[] ToObjects(byte[] parameters);
+
+        object[] ToObjects(string[] parameters);
 
         /// <summary>
         /// Converts the input method parameters to an object array when the carrier is created or called.

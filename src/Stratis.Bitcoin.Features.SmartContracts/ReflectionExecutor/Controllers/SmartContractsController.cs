@@ -376,9 +376,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ContractTxData txData;
             if (request.Parameters != null && request.Parameters.Any())
             {
-                var methodParametersRaw = this.callDataSerializer.MethodParamSerializer.ToRaw(request.Parameters);
-                var methodParameters = this.callDataSerializer.MethodParamSerializer.ToObjects(methodParametersRaw);
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)gasPrice, (Gas)gasLimit, addressNumeric, request.MethodName, methodParametersRaw, methodParameters);
+                var methodParameters = this.callDataSerializer.MethodParamSerializer.ToObjects(request.Parameters);
+                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)gasPrice, (Gas)gasLimit, addressNumeric, request.MethodName, "", methodParameters);
             }
             else
             {

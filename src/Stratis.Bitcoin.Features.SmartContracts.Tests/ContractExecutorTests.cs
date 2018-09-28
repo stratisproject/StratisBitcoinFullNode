@@ -311,9 +311,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)MethodParameterDataType.String, address1.ToAddress(this.network).Value),
             };
 
-            var methodParametersRaw = this.serializer.MethodParamSerializer.ToRaw(parameters);
-
-            contractTxData = new ContractTxData(1, (Gas)1, gasLimit, address2, "CallInfiniteLoop", methodParametersRaw, this.serializer.MethodParamSerializer.ToObjects(methodParametersRaw));
+            contractTxData = new ContractTxData(1, (Gas)1, gasLimit, address2, "CallInfiniteLoop", "", this.serializer.MethodParamSerializer.ToObjects(parameters));
             transaction = new Transaction();
             txOut = transaction.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
             txOut.Value = 100;

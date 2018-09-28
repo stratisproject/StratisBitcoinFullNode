@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using DBreeze.Utils;
 using NBitcoin;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
@@ -11,16 +12,81 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// Class that handles method parameter serialization.
     /// </summary>
     public sealed class MethodParameterSerializer : IMethodParameterSerializer
-    {        
+    {
+        /// <summary>
+        /// Serializes an array of method parameter objects to the bytes of their string-encoded representation.
+        /// </summary>
         public byte[] ToBytes(object[] methodParameters)
         {
-            throw new NotImplementedException();
+            var sb = new List<string>();
+
+            foreach (var obj in methodParameters)
+            {
+                sb.Add(string.Format("{0}#{1}", (int)GetPrimitiveType(obj), obj));
+            }
+
+            return Encoding.UTF8.GetBytes(this.ToRaw(sb.ToArray()));
+        }
+
+        private static MethodParameterDataType GetPrimitiveType(object o)
+        {
+            if (o is bool)
+                return MethodParameterDataType.Bool;
+
+            if (o is byte)
+                return MethodParameterDataType.Byte;
+
+            if (o is byte[])
+                return MethodParameterDataType.ByteArray;
+
+            if (o is char)
+                return MethodParameterDataType.Char;
+
+            if (o is sbyte)
+                return MethodParameterDataType.SByte;
+
+            if (o is short)
+                return MethodParameterDataType.Short;
+
+            if (o is string)
+                return MethodParameterDataType.String;
+
+            if (o is uint)
+                return MethodParameterDataType.UInt;
+
+            if (o is uint160)
+                return MethodParameterDataType.UInt160;
+
+            if (o is ulong)
+                return MethodParameterDataType.ULong;
+
+            if (o is Address)
+                return MethodParameterDataType.Address;
+
+            if (o is long)
+                return MethodParameterDataType.Long;
+
+            if (o is int)
+                return MethodParameterDataType.Int;
+            
+            // Any other types are not supported.
+            throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
         /// <inheritdoc />
         public byte[] ToBytes(string rawMethodParameters)
         {
             return Encoding.UTF8.GetBytes(rawMethodParameters);
+        }
+
+        public object[] ToObjects(byte[] parameters)
+        {
+            return this.ToObjects(Encoding.UTF8.GetString(parameters));
+        }
+
+        public object[] ToObjects(string[] parameters)
+        {
+            return this.ToObjects(this.ToRaw(parameters));
         }
 
         /// <inheritdoc />
@@ -70,6 +136,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
                 else if (parameterSignature[0] == "12")
                     processedParameters.Add(long.Parse(parameterSignature[1]));
+
+                else if (parameterSignature[0] == "13")
+                    processedParameters.Add(int.Parse(parameterSignature[1]));
 
                 else
                     throw new Exception(string.Format("{0} is not supported.", parameterSignature[0]));
