@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager
 
         public double GetAvgExecutionTimeMs()
         {
-            return Math.Round((this.totalDelayTicks / (double)this.totalExecutionsCount) / 1000.0, 4);
+            return Math.Round((this.totalDelayTicks / (double)this.totalExecutionsCount) / 10000.0, 4);
         }
 
         public void Increment(long elapsedTicks)
