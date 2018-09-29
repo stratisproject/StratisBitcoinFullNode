@@ -5,6 +5,8 @@ namespace Stratis.Bitcoin.Features.PoA
 {
     public class KeyTool
     {
+        public const string KeyFileDefaultName = "federationKey.dat";
+
         public Key GeneratePrivateKey()
         {
             var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);

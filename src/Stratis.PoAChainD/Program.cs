@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin;
@@ -22,8 +24,16 @@ namespace Stratis.PoAChainD
             try
             {
                 Network network = new PoANetwork();
-
                 var nodeSettings = new NodeSettings(args: args, network: network);
+
+                bool keyGenerationRequired = nodeSettings.ConfigReader.GetOrDefault("generateKeyPair", false);
+
+                if (keyGenerationRequired)
+                {
+                    GenerateFederationKey(nodeSettings);
+
+                    return;
+                }
 
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
@@ -45,6 +55,27 @@ namespace Stratis.PoAChainD
             {
                 Console.WriteLine("There was a problem running the node. Details: '{0}'", ex.ToString());
             }
+        }
+
+        private static void GenerateFederationKey(NodeSettings nodeSettings)
+        {
+            var tool = new KeyTool();
+            Key key = tool.GeneratePrivateKey();
+
+            string savePath = Path.Combine(nodeSettings.DataDir, KeyTool.KeyFileDefaultName);
+            tool.SavePrivateKey(key, savePath);
+
+            var stringBuilder = new StringBuilder();
+
+            stringBuilder.AppendLine($"Federation key pair was generated and saved to {savePath}.");
+            stringBuilder.AppendLine("Make sure to back it up!");
+            stringBuilder.AppendLine($"Your public key is {key.PubKey}.");
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine("Press eny key to exit...");
+
+            Console.WriteLine(stringBuilder.ToString());
+
+            Console.ReadKey();
         }
     }
 }
