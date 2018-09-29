@@ -2,24 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
     public class PoANetwork : Network
     {
-        /// <summary> Stratis maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
-        public const int StratisMaxTimeOffsetSeconds = 25 * 60; //TODO POA rename later
-
-        /// <summary> Stratis default value for the maximum tip age in seconds to consider the node in initial block download (2 hours). </summary>
-        public const int StratisDefaultMaxTipAgeInSeconds = 2 * 60 * 60; //TODO POA rename later
-
         /// <summary> The name of the root folder containing the different PoA blockchains.</summary>
-        public const string StratisRootFolderName = "poa"; //TODO POA rename later
+        private const string NetworkRootFolderName = "poa";
 
         /// <summary> The default name used for the Stratis configuration file. </summary>
-        public const string StratisDefaultConfigFilename = "poa.conf"; //TODO POA rename later
+        private const string NetworkDefaultConfigFilename = "poa.conf";
 
         public PoANetwork()
         {
@@ -41,8 +34,8 @@ namespace Stratis.Bitcoin.Features.PoA
             this.MinTxFee = 10000;
             this.FallbackFee = 10000;
             this.MinRelayTxFee = 10000;
-            this.RootFolderName = StratisRootFolderName;
-            this.DefaultConfigFilename = StratisDefaultConfigFilename;
+            this.RootFolderName = NetworkRootFolderName;
+            this.DefaultConfigFilename = NetworkDefaultConfigFilename;
             this.MaxTimeOffsetSeconds = 25 * 60;
             this.CoinTicker = "POA";
 
@@ -75,7 +68,6 @@ namespace Stratis.Bitcoin.Features.PoA
 
             var bip9Deployments = new BIP9DeploymentsArray();
 
-            // TODO POA remove ALL POW CONSTANTS
             this.Consensus = new NBitcoin.Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
@@ -101,18 +93,19 @@ namespace Stratis.Bitcoin.Features.PoA
                 powTargetSpacing: TimeSpan.FromSeconds(60),
                 powAllowMinDifficultyBlocks: false,
                 powNoRetargeting: false,
-                powLimit: new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
+                powLimit: null,
                 minimumChainWork: null,
-                isProofOfStake: true,
-                lastPowBlock: 12500,
-                proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeReward: Money.COIN
+                isProofOfStake: false,
+                lastPowBlock: 0,
+                proofOfStakeLimit: null,
+                proofOfStakeLimitV2: null,
+                proofOfStakeReward: Money.Zero
             );
 
+            // https://en.bitcoin.it/wiki/List_of_address_prefixes
             this.Base58Prefixes = new byte[12][];
-            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (63) };
-            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (125) };
+            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (55) }; // 'P' prefix
+            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (117) }; // 'p' prefix
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (63 + 128) };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
