@@ -5,6 +5,7 @@ using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -22,10 +23,38 @@ namespace Stratis.Bitcoin.Features.PoA
     /// </summary>
     public static class FullNodeBuilderConsensusExtension
     {
+        public class PoAFeature : FullNodeFeature
+        {
+            /// <inheritdoc />
+            public override Task InitializeAsync()
+            {
+                // TODO POA here call a component that will implement what is in 'Stratis.PoAChainD feature startup (4d)a' task
+
+                return Task.CompletedTask;
+            }
+
+            /// <inheritdoc />
+            public override void Dispose()
+            {
+            }
+        }
+
+        /// <summary>This is mandatory for all PoA networks.</summary>
         public static IFullNodeBuilder UsePoAConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
-            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<PoAFeature>()
+                    .DependOn<ConsensusFeature>()
+                    .FeatureServices(services =>
+                    {
+                        //services.AddSingleton<  >(); //TODO PoA add miner and other things
+                    });
+            });
 
+
+            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -35,7 +64,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>(); // PoA rule engine?
+                        services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>(); // TODO POA: PoA rule engine?
                         services.AddSingleton<IChainState, ChainState>();
                         services.AddSingleton<ConsensusQuery>()
                             .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
@@ -47,7 +76,7 @@ namespace Stratis.Bitcoin.Features.PoA
             return fullNodeBuilder;
         }
 
-        public class PoAConsensusRulesRegistration : IRuleRegistration
+        private class PoAConsensusRulesRegistration : IRuleRegistration
         {
             public void RegisterRules(IConsensus consensus)
             {
