@@ -1,18 +1,27 @@
 ﻿using System;
 using System.Text;
+using System.Threading;
 
 namespace Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager
 {
     /// <summary>Snapshot of <see cref="ConsensusManager"/> performance.</summary>
     public class ConsensusManagerPerformanceSnapshot
     {
-        public readonly ExecutionsCountAndDelay TotalConnectionTime = new ExecutionsCountAndDelay();
+        public ExecutionsCountAndDelay TotalConnectionTime { get; }
 
-        public readonly ExecutionsCountAndDelay ConnectBlockFV = new ExecutionsCountAndDelay();
+        public ExecutionsCountAndDelay ConnectBlockFV { get; }
 
-        public readonly ExecutionsCountAndDelay BlockDisconnectedSignal = new ExecutionsCountAndDelay();
+        public ExecutionsCountAndDelay BlockDisconnectedSignal { get; }
 
-        public readonly ExecutionsCountAndDelay BlockConnectedSignal = new ExecutionsCountAndDelay();
+        public ExecutionsCountAndDelay BlockConnectedSignal { get; }
+
+        public ConsensusManagerPerformanceSnapshot()
+        {
+            this.TotalConnectionTime = new ExecutionsCountAndDelay();
+            this.ConnectBlockFV = new ExecutionsCountAndDelay();
+            this.BlockDisconnectedSignal = new ExecutionsCountAndDelay();
+            this.BlockConnectedSignal = new ExecutionsCountAndDelay();
+        }
 
         public override string ToString()
         {
@@ -34,18 +43,24 @@ namespace Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager
 
     public class ExecutionsCountAndDelay
     {
-        public int TotalExecutionsCount;
-        public long TotalDelayTicks;
+        private int totalExecutionsCount;
+        private long totalDelayTicks;
 
         public ExecutionsCountAndDelay()
         {
-            this.TotalExecutionsCount = 0;
-            this.TotalDelayTicks = 0;
+            this.totalExecutionsCount = 0;
+            this.totalDelayTicks = 0;
         }
 
         public double GetAvgExecutionTimeMs()
         {
-            return Math.Round((this.TotalDelayTicks / (double)this.TotalExecutionsCount) / 1000.0, 4);
+            return Math.Round((this.totalDelayTicks / (double)this.totalExecutionsCount) / 1000.0, 4);
+        }
+
+        public void Increment(long elapsedTicks)
+        {
+            Interlocked.Increment(ref this.totalExecutionsCount);
+            Interlocked.Add(ref this.totalDelayTicks, elapsedTicks);
         }
     }
 }
