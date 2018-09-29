@@ -17,33 +17,19 @@ using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
-    public class PoAFeature : FullNodeFeature
-    {
-        /// <inheritdoc />
-        public override Task InitializeAsync()
-        {
-            return Task.CompletedTask;
-        }
-
-        /// <inheritdoc />
-        public override void Dispose()
-        {
-        }
-    }
-
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
     public static class FullNodeBuilderConsensusExtension
     {
-        public static IFullNodeBuilder UsePoAConsensusAndMining(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UsePoAConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
-            LoggingConfiguration.RegisterFeatureNamespace<PoAFeature>("poaconsensus");
+            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
-                    .AddFeature<PoAFeature>()
+                    .AddFeature<ConsensusFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<DBreezeCoinView>();
