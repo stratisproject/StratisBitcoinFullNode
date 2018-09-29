@@ -27,11 +27,9 @@ namespace Stratis.PoAChainD
                 var nodeSettings = new NodeSettings(args: args, network: network);
 
                 bool keyGenerationRequired = nodeSettings.ConfigReader.GetOrDefault("generateKeyPair", false);
-
                 if (keyGenerationRequired)
                 {
                     GenerateFederationKey(nodeSettings);
-
                     return;
                 }
 

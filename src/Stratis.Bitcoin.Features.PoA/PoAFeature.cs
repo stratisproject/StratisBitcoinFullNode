@@ -53,7 +53,6 @@ namespace Stratis.Bitcoin.Features.PoA
                     });
             });
 
-
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
             fullNodeBuilder.ConfigureFeature(features =>
             {

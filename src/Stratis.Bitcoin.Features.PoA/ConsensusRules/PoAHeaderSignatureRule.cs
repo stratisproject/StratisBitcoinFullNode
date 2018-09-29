@@ -10,7 +10,8 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
         public override void Run(RuleContext context)
         {
             // TODO POA implement rule
-            // PoAIntegritySignatureRule (like PosBlockSignatureRule but for header's sig),
+            // first check timestamp and estimate which pubkey should be used. Then check signature against that pubkey.
+            // (like PosBlockSignatureRule but for header's sig),
         }
     }
 }
