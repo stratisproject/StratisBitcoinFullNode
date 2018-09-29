@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.PoA.ConsensusRules;
 using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Features.PoA
@@ -53,15 +54,15 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
                 {
-                    //TODO POA HeaderTimeChecksPoARule
+                    new HeaderTimeChecksPoARule(),
                     new StratisHeaderVersionRule(),
-                    //TODO POA PoAHeaderSignatureRule
+                    new PoAHeaderSignatureRule()
                 };
 
                 consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
                 {
                     new BlockMerkleRootRule(),
-                    //TODO PoAIntegritySignatureRule (like PosBlockSignatureRule but for header's sig),
+                    new PoAIntegritySignatureRule()
                 };
 
                 consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
@@ -86,7 +87,7 @@ namespace Stratis.Bitcoin.Features.PoA
                     // rules that require the store to be loaded (coinview)
                     new LoadCoinviewRule(),
                     new TransactionDuplicationActivationRule(), // implements BIP30
-                    //TODO POA new PoACoinviewRule(),
+                    new PoACoinviewRule(),
                     new SaveCoinviewRule()
                 };
             }
