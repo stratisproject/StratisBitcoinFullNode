@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="fromBlockHeight">Block height to start querying from.</param>
         /// <param name="toBlockHeight">Block height to stop querying to.</param>
         /// <returns>A dictionary of <see cref="ProvenBlockHeader"/> items by block height key.</returns>
-        Task<Dictionary<int, ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight);
+        Task<List<ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight);
 
         /// <summary>
         /// Retrieves the <see cref="ProvenBlockHeader"/> of the current tip.

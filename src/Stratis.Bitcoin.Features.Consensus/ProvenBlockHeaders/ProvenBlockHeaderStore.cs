@@ -17,9 +17,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Specification of the network the node runs on - RegTest/TestNet/MainNet.</summary>
-        private readonly Network network;
-
         /// <summary>Allows consumers to perform clean-up during a graceful shutdown.</summary>
         private readonly INodeLifetime nodeLifetime;
 
@@ -68,7 +65,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
-        /// <param name="network">Specification of the network the node runs on - RegTest/TestNet/MainNet.</param>
         /// <param name="chain">Thread safe class representing a chain of headers from genesis</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
@@ -77,7 +73,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="chainState">Chain state holds various information related to the status of the chain and its validation.</param>
         /// <param name="nodeStats">Registers an action used to append node stats when collected.</param>
         public ProvenBlockHeaderStore(
-            Network network, 
             ConcurrentChain chain, 
             IDateTimeProvider dateTimeProvider, 
             ILoggerFactory loggerFactory, 
@@ -86,13 +81,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             IChainState chainState,
             INodeStats nodeStats)
         {
-            Guard.NotNull(network, nameof(network));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(provenBlockHeaderRepository, nameof(provenBlockHeaderRepository));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.network = network;
             this.chain = chain;
             this.provenBlockHeaderRepository = provenBlockHeaderRepository;
             this.nodeLifetime = nodeLifetime;
@@ -151,15 +144,19 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     next = next.Previous;
                 }
 
-                var items = new Dictionary<int, ProvenBlockHeader>();
+                var items = new List<ProvenBlockHeader>();
 
                 items = await this.provenBlockHeaderRepository.GetAsync(1, tip.Height).ConfigureAwait(false);
 
-                foreach (KeyValuePair<int, ProvenBlockHeader> item in items)
-                {
-                    var hashHeightPair = new HashHeightPair(this.chain.GetBlock(item.Key).HashBlock, item.Key);
+                int heightCount = 1;
 
-                    this.provenBlockHeaderQueue.Enqueue(new KeyValuePair<HashHeightPair, ProvenBlockHeader>(hashHeightPair, item.Value));
+                foreach (var item in items)
+                {
+                    var hashHeightPair = new HashHeightPair(this.chain.GetBlock(heightCount).HashBlock, heightCount);
+
+                    this.provenBlockHeaderQueue.Enqueue(new KeyValuePair<HashHeightPair, ProvenBlockHeader>(hashHeightPair, item));
+
+                    heightCount++;
                 }
             }
 
@@ -188,12 +185,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             return item;
         }
 
-        public async Task<Dictionary<int, ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight)
+        public async Task<List<ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(fromBlockHeight), fromBlockHeight);
             this.logger.LogTrace("({0}:'{1}')", nameof(toBlockHeight), toBlockHeight);
 
-            var items = new Dictionary<int, ProvenBlockHeader>();
+            var items = new List<ProvenBlockHeader>();
 
             using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
             {

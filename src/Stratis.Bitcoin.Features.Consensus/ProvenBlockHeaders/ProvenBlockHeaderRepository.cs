@@ -27,9 +27,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>Specification of the network the node runs on - RegTest/TestNet/MainNet.</summary>
         private readonly Network network;
 
-        /// <summary>Database key under which the <see cref="ProvenBlockHeader"/> item is stored.</summary>
-        private static readonly byte[] provenBlockHeaderKey = new byte[0];
-
         /// <summary>Database key under which the block hash and height of a <see cref="ProvenBlockHeader"/> tip is stored.</summary>
         private static readonly byte[] blockHashHeightKey = new byte[0];
 
@@ -48,9 +45,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         /// <param name="network">Specification of the network the node runs on - RegTest/TestNet/MainNet.</param>
         /// <param name="folder"><see cref="ProvenBlockHeaderStore"/> folder path to the DBreeze database files.</param>
-        /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
-        public ProvenBlockHeaderRepository(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public ProvenBlockHeaderRepository(Network network, string folder, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(folder, nameof(folder));
@@ -90,16 +86,16 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             return task;
         }
 
-        public Task<Dictionary<int, ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight)
+        public Task<List<ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight)
         {
-            Task<Dictionary<int, ProvenBlockHeader>> task = Task.Run(() =>
+            Task<List<ProvenBlockHeader>> task = Task.Run(() =>
             {
                 this.logger.LogTrace("({0}:'{1}')", nameof(fromBlockHeight), fromBlockHeight);
                 this.logger.LogTrace("({0}:'{1}')", nameof(toBlockHeight), toBlockHeight);
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    var items = new Dictionary<int, ProvenBlockHeader>();
+                    List<ProvenBlockHeader> items = new List<ProvenBlockHeader>();
 
                     transaction.SynchronizeTables(ProvenBlockHeaderTable);
 
@@ -114,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                             transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, i.ToBytes(false));
 
                         if (row.Exists)
-                            items.Add(i, row.Value);
+                            items.Add(row.Value);
                     }
 
                     this.logger.LogTrace("(-)");
@@ -164,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public Task PutAsync(List<ProvenBlockHeader> headers, HashHeightPair newTip)  
         {
             Guard.NotNull(headers, nameof(headers));
-            Guard.NotNull(newTip, nameof(newTip));
+            Guard.NotNull(newTip, nameof(newTip));            
 
             if ((this.provenBlockHeaderTip != null) && (newTip.Hash != this.provenBlockHeaderTip.HashPrevBlock))
             {
@@ -214,46 +210,17 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             return task;
         }
 
-        /// <inheritdoc />
-        public Task<bool> ExistsAsync(int blockHeight)
+        /// <summary>
+        /// Delete <see cref="ProvenBlockHeader"/> items.
+        /// </summary>
+        /// <param name="fromBlockHeight">Block height to start range.</param>
+        /// <param name="toBlockHeight">Block height end range.</param>
+        private Task DeleteAsync(int fromBlockHeight, int toBlockHeight)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockHeight), blockHeight);
-
-            Guard.NotNull(blockHeight, nameof(blockHeight));
-
-            Task<bool> task = Task.Run(() =>
-            {
-                this.logger.LogTrace("()");
-
-                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
-                {
-                    transaction.ValuesLazyLoadingIsOn = false;
-
-                    bool rowExists = this.ProvenBlockHeaderExists(transaction, blockHeight);
-
-                    this.logger.LogTrace("(-):{0}", rowExists);
-
-                    return rowExists;
-                }
-            });
-
-            this.logger.LogTrace("(-)");
-
-            return task;
-        }
-
-        /// <inheritdoc />
-        public Task DeleteAsync(HashHeightPair newTip, List<int> blockHeights)  // pull everything from the last height
-        {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(newTip), newTip, nameof(blockHeights), nameof(blockHeights.Count), blockHeights?.Count);
-
-            Guard.NotNull(newTip, nameof(newTip));
-
-            Guard.NotNull(blockHeights, nameof(blockHeights));
-
             Task task = Task.Run(() =>
             {
-                this.logger.LogTrace("()");
+                this.logger.LogTrace("({0}:'{1}')", nameof(fromBlockHeight), fromBlockHeight);
+                this.logger.LogTrace("({0}:'{1}')", nameof(toBlockHeight), toBlockHeight);
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
@@ -261,10 +228,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     transaction.ValuesLazyLoadingIsOn = false;
 
-                    foreach (int blockHeight in blockHeights)
-                        transaction.RemoveKey<byte[]>(ProvenBlockHeaderTable, blockHeight.ToBytes(false));
-
-                    this.SetTip(transaction, newTip);
+                    for (int i = fromBlockHeight; i <= toBlockHeight; i++)
+                        transaction.RemoveKey<byte[]>(ProvenBlockHeaderTable, i.ToBytes(false));
 
                     transaction.Commit();
                 }

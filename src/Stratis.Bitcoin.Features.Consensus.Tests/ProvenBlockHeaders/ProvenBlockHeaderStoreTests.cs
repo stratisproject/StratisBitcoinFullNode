@@ -37,10 +37,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             this.Folder = CreateTestDir(this);
 
-            this.provenBlockHeaderRepository = new ProvenBlockHeaderRepository(this.network,
-                this.Folder, DateTimeProvider.Default, this.LoggerFactory.Object);
+            this.provenBlockHeaderRepository = new ProvenBlockHeaderRepository(this.network, this.Folder, this.LoggerFactory.Object);
 
-            this.provenBlockHeaderStore = new ProvenBlockHeaderStore(this.network,
+            this.provenBlockHeaderStore = new ProvenBlockHeaderStore(
                 this.concurrentChain, DateTimeProvider.Default, this.LoggerFactory.Object,
                 this.provenBlockHeaderRepository, this.nodeLifetime.Object, this.chainState, this.nodeStats);
         }
@@ -68,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         [Fact(Skip = "Fix as part of the caching layer work")]
         public async Task LoadItemsAsync()
         {
-            // Put 4 items to in the repository - items created in constructor.
+            // Put 4 items to in the repository - items created in the constructor.
             var inItems = new List<ProvenBlockHeader>();
 
             var itemCounter = 0;
@@ -89,23 +88,23 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             await this.provenBlockHeaderRepository.PutAsync(inItems, new HashHeightPair());
 
             // Then load them.
-            using (IProvenBlockHeaderStore store = this.SetupStore(this.Network, this.Folder))
+            using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
                 var outItems = await store.GetAsync(0, itemCounter).ConfigureAwait(false);
 
                 outItems.Count.Should().Be(itemCounter);
                 
-                foreach(var item in outItems.Values)
+                foreach(var item in outItems)
                 {
                     item.Should().BeSameAs(provenHeaderMock);
                 }
             }
         }
 
-        private IProvenBlockHeaderStore SetupStore(Network network, string folder)
+        private IProvenBlockHeaderStore SetupStore(string folder)
         {
             return new ProvenBlockHeaderStore(
-                network, this.concurrentChain, DateTimeProvider.Default,
+                this.concurrentChain, DateTimeProvider.Default,
                 this.LoggerFactory.Object, this.provenBlockHeaderRepository,
                 this.nodeLifetime.Object, this.chainState, new NodeStats(DateTimeProvider.Default));
         }

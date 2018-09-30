@@ -22,8 +22,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         /// <param name="fromBlockHeight">Block height to start range.</param>
         /// <param name="toBlockHeight">Block height end range.</param>
-        /// <returns>A dictionary of <see cref="ProvenBlockHeader"/> items by block height.</returns>
-        Task<Dictionary<int, ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight);
+        /// <returns>A list of <see cref="ProvenBlockHeader"/> items within the block height range.</returns>
+        Task<List<ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight);
 
         /// <summary>
         /// Retrieves a <see cref="ProvenBlockHeader"/> item from the database.
@@ -43,19 +43,5 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// Retrieves the block hash and height of the current <see cref="ProvenBlockHeader"/> tip.
         /// </summary>
         Task<HashHeightPair> GetTipHashHeightAsync();
-
-        /// <summary>
-        /// Determine if a <see cref="ProvenBlockHeader"/> already exists in the database.
-        /// </summary>
-        /// <param name="blockHeight">The block height.</param>
-        /// <returns><c>true</c> if the block height can be found in the database, otherwise return <c>false</c>.</returns>
-        Task<bool> ExistsAsync(int blockHeight);
-
-        /// <summary>
-        /// Delete <see cref="ProvenBlockHeader"/> items.
-        /// </summary>
-        /// <param name="newTip">Block hash and height pair of the new repository's tip.</param>
-        /// <param name="blockHeights">List of all block heights to be deleted.</param>
-        Task DeleteAsync(HashHeightPair newTip, List<int> blockHeights);        
     }
 }
