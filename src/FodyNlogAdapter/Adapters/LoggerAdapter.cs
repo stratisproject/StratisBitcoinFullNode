@@ -50,9 +50,10 @@ namespace FodyNlogAdapter.Adapters
                     var parameters = new StringBuilder();
                     for (int i = 0; i < paramNames.Length; i++)
                     {
-                        parameters.Append(this.RenderVariable(paramValues[i], paramNames[i]));
+                        string rendered = this.RenderVariable(paramValues[i], paramNames[i]);
+                        parameters.Append(rendered);
 
-                        if (i < paramNames.Length - 1)
+                        if ((i < paramNames.Length - 1) && rendered != string.Empty)
                             parameters.Append(",");
                     }
 
@@ -82,9 +83,10 @@ namespace FodyNlogAdapter.Adapters
                     var parameters = new StringBuilder();
                     for (int i = 0; i < paramNames.Length; i++)
                     {
-                        parameters.Append(this.RenderVariable(paramValues[i], paramNames[i]));
+                        string rendered = this.RenderVariable(paramValues[i], paramNames[i]);
+                        parameters.Append(rendered);
 
-                        if (i < paramNames.Length - 1)
+                        if ((i < paramNames.Length - 1) && rendered != string.Empty)
                             parameters.Append(", ");
                     }
                     returnValue = parameters.ToString();
