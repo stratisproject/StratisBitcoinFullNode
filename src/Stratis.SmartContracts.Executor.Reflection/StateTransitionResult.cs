@@ -174,9 +174,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a new result for a failed state transition due to a VM exception.
         /// </summary>
-        public static StateTransitionResult Fail(Gas gasConsumed, ContractErrorMessage vmError)
+        public static StateTransitionResult Fail(Gas gasConsumed, VmExecutionError vmError)
         {
-            return new StateTransitionResult(new StateTransitionError(gasConsumed, StateTransitionErrorKind.VmError, vmError));
+            // If VM execution ran out of gas we return a different kind of state transition error.
+            StateTransitionErrorKind errorKind = vmError.ErrorKind == VmExecutionErrorKind.OutOfGas
+                        ? StateTransitionErrorKind.OutOfGas
+                        : StateTransitionErrorKind.VmError;
+            
+            return new StateTransitionResult(new StateTransitionError(gasConsumed, errorKind, vmError.Message));
         }
 
         /// <summary>

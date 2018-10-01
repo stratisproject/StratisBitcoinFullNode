@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using NBitcoin;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
@@ -46,7 +45,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // Create a new balance state based off the old one but with the repository and internal transfers list reference
             this.BalanceState = new BalanceState(this.ContractState, state.BalanceState.TxAmount, this.internalTransfers);
             this.Network = state.Network;
-            this.Nonce = state.Nonce;
+            this.NonceGenerator = state.NonceGenerator;
             this.Block = state.Block;
             this.TransactionHash = state.TransactionHash;
             this.smartContractStateFactory = state.smartContractStateFactory;
@@ -67,7 +66,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.internalTransfers = internalTransfers;
             this.BalanceState = new BalanceState(this.ContractState, txAmount, this.InternalTransfers);
             this.Network = network;
-            this.Nonce = 0;
+            this.NonceGenerator = new NonceGenerator();
             this.Block = block;
             this.TransactionHash = transactionHash;
             this.smartContractStateFactory = smartContractStateFactory;
@@ -79,18 +78,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         private Network Network { get; }
 
-        public ulong Nonce { get; private set; }
+        public NonceGenerator NonceGenerator { get; }
 
         public IContractLogHolder LogHolder { get; }
 
         public BalanceState BalanceState { get; }
 
         public IReadOnlyList<TransferInfo> InternalTransfers => this.internalTransfers;
-
-        public ulong GetNonceAndIncrement()
-        {
-            return this.Nonce++;
-        }
 
         public IStateRepository ContractState { get; }
 
@@ -125,9 +119,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.LogHolder.Clear();
             this.LogHolder.AddRawLogs(state.LogHolder.GetRawLogs());
 
-            // Update nonce
-            this.Nonce = state.Nonce;
-
             // Commit the state to update the parent state
             state.ContractState.Commit();
 
@@ -146,7 +137,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public uint160 GenerateAddress(IAddressGenerator addressGenerator)
         {
-            return addressGenerator.GenerateAddress(this.TransactionHash, this.GetNonceAndIncrement());
+            return addressGenerator.GenerateAddress(this.TransactionHash, this.NonceGenerator.Next);
         }
 
         /// <summary>
