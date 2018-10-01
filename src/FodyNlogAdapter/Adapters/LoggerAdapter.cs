@@ -166,6 +166,9 @@ namespace FodyNlogAdapter.Adapters
             if (variable is DateTime dateTime)
                 return $"{varName}:{dateTime::yyyy-MM-dd HH:mm:ss}";
 
+            if (variable is StringBuilder builder)
+                return $"{varName}.Length:{builder.Length}";
+
             // Other types.
             string stringRepresentation = variable.ToString();
 
