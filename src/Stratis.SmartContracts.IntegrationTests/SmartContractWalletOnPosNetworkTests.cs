@@ -15,10 +15,16 @@ namespace Stratis.SmartContracts.IntegrationTests
 {
     public sealed class SmartContractWalletOnPosNetworkTests
     {
+        private readonly ICallDataSerializer callDataSerializer;
         private const string WalletName = "mywallet";
         private const string Password = "123456";
         private const string Passphrase = "test";
         private const string AccountName = "account 0";
+
+        public SmartContractWalletOnPosNetworkTests()
+        {
+            this.callDataSerializer = CallDataSerializer.Default;
+        }
 
         [Fact]
         public void SendAndReceiveSmartContractTransactionsOnPosNetwork()
@@ -47,9 +53,9 @@ namespace Stratis.SmartContracts.IntegrationTests
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTestPos.cs");
                 Assert.True(compilationResult.Success);
 
-                var contractCarrier = ContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
+                var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, compilationResult.Compilation);
 
-                var contractCreateScript = new Script(contractCarrier.Serialize());
+                var contractCreateScript = new Script(this.callDataSerializer.Serialize(contractTxData));
                 var txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
                     AccountReference = new WalletAccountReference(WalletName, AccountName),
@@ -89,8 +95,8 @@ namespace Stratis.SmartContracts.IntegrationTests
                 // Create a transfer token contract
                 compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTestPos.cs");
                 Assert.True(compilationResult.Success);
-                contractCarrier = ContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
-                contractCreateScript = new Script(contractCarrier.Serialize());
+                contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, compilationResult.Compilation);
+                contractCreateScript = new Script(this.callDataSerializer.Serialize(contractTxData));
                 txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
                     AccountReference = new WalletAccountReference(WalletName, AccountName),
@@ -120,8 +126,8 @@ namespace Stratis.SmartContracts.IntegrationTests
                 scSender.FullNode.MempoolManager().Clear();
 
                 // Create a call contract transaction which will transfer funds
-                contractCarrier = ContractCarrier.CallContract(1, tokenContractAddress, "Test", gasPrice, gasLimit);
-                Script contractCallScript = new Script(contractCarrier.Serialize());
+                contractTxData = new ContractTxData(1, gasPrice, gasLimit, tokenContractAddress, "Test");
+                Script contractCallScript = new Script(this.callDataSerializer.Serialize(contractTxData));
                 txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
                     AccountReference = new WalletAccountReference(WalletName, AccountName),

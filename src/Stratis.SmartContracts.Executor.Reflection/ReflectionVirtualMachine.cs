@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (moduleResult.IsFailure)
             {
                 this.logger.LogTrace("(-)[CONTRACT_BYTECODE_INVALID]");
-                return VmExecutionResult.Error(new ContractErrorMessage("Contract bytecode is not valid IL."));
+                return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, "Contract bytecode is not valid IL.");
             }
 
             // Validate contract execution code
@@ -68,7 +68,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 {
                     this.logger.LogTrace("(-)[CONTRACT_VALIDATION_FAILED]");
                     // TODO: List errors by string.
-                    return VmExecutionResult.Error(new ContractErrorMessage(new SmartContractValidationException(validation.Errors).ToString()));
+                    return VmExecutionResult.Fail(VmExecutionErrorKind.ValidationFailed, new SmartContractValidationException(validation.Errors).ToString());
                 }
 
                 typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
@@ -92,7 +92,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 this.logger.LogTrace("(-)[LOAD_CONTRACT_FAILED]");
 
-                return VmExecutionResult.Error(new ContractErrorMessage(contractLoadResult.Error));
+                return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, contractLoadResult.Error);
             }
 
             IContract contract = contractLoadResult.Value;
@@ -109,14 +109,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (!invocationResult.IsSuccess)
             {
                 this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_FAILED]");
-                return VmExecutionResult.Error(invocationResult.ErrorMessage);
+                return GetInvocationVmErrorResult(invocationResult);
             }
 
             this.logger.LogTrace("[CREATE_CONTRACT_INSTANTIATION_SUCCEEDED]");
 
             this.logger.LogTrace("(-):{0}={1}", nameof(contract.Address), contract.Address);
 
-            return VmExecutionResult.Success(invocationResult.Return, typeToInstantiate);
+            return VmExecutionResult.Ok(invocationResult.Return, typeToInstantiate);
         }
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
                 this.logger.LogTrace("(-)[LOAD_CONTRACT_FAILED]");
 
-                return VmExecutionResult.Error(new ContractErrorMessage(contractLoadResult.Error));
+                return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, contractLoadResult.Error);
             }
 
             IContract contract = contractLoadResult.Value;
@@ -161,14 +161,30 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (!invocationResult.IsSuccess)
             {
                 this.logger.LogTrace("(-)[CALLCONTRACT_INSTANTIATION_FAILED]");
-                return VmExecutionResult.Error(invocationResult.ErrorMessage);
+
+                return GetInvocationVmErrorResult(invocationResult);
             }
 
             this.logger.LogTrace("[CALL_CONTRACT_INSTANTIATION_SUCCEEDED]");
 
             this.logger.LogTrace("(-)");
 
-            return VmExecutionResult.Success(invocationResult.Return, typeName);
+            return VmExecutionResult.Ok(invocationResult.Return, typeName);
+        }
+
+        private static VmExecutionResult GetInvocationVmErrorResult(IContractInvocationResult invocationResult)
+        {
+            if (invocationResult.InvocationErrorType == ContractInvocationErrorType.OutOfGas)
+            {
+                return VmExecutionResult.Fail(VmExecutionErrorKind.OutOfGas, invocationResult.ErrorMessage);
+            }
+
+            if (invocationResult.InvocationErrorType == ContractInvocationErrorType.OverMemoryLimit)
+            {
+                return VmExecutionResult.Fail(VmExecutionErrorKind.OutOfResources, invocationResult.ErrorMessage);
+            }
+
+            return VmExecutionResult.Fail(VmExecutionErrorKind.InvocationFailed, invocationResult.ErrorMessage);
         }
 
         /// <summary>
