@@ -297,8 +297,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             Task task = Task.Run(() =>
             {
-                this.logger.LogTrace("()");
-
                 // DBreeze is faster if sort ascending by key in memory before insert
                 // however we need to find how byte arrays are sorted in DBreeze.
                 using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
@@ -408,8 +406,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             Task<List<Block>> task = Task.Run(() =>
             {
-                this.logger.LogTrace("()");
-
                 List<Block> blocks;
 
                 using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())

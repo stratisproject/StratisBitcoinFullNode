@@ -21,7 +21,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.ResultProcessors
             Gas gasConsumed,
             bool outOfGas)
         {
-            this.logger.LogTrace("(){0}:{1}", nameof(mempoolFee), mempoolFee);
 
             Money fee = mempoolFee;
 

@@ -309,7 +309,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             }
             else
             {
-                this.logger.LogTrace("(-):'{0}'", block?.ToHex(this.Network));
                 return block;
             }
         }

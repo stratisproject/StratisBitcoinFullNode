@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// <param name="fullNode">Full Node.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
         /// <param name="walletManager">The wallet manager.</param>
-        public MiningController(Network network, IPowMining powMining, ILoggerFactory loggerFactory, IWalletManager walletManager) 
+        public MiningController(Network network, IPowMining powMining, ILoggerFactory loggerFactory, IWalletManager walletManager)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(powMining, nameof(powMining));
@@ -84,8 +84,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                 if (blockCount <= 0)
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Invalid request", "The number of blocks to mine must be higher than zero.");
 
-                this.logger.LogTrace("({0}:{1})", nameof(request.BlockCount), blockCount);
-
                 WalletAccountReference accountReference = this.GetAccount();
                 HdAddress address = this.walletManager.GetUnusedAddress(accountReference);
 
@@ -94,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
                     Blocks = this.powMining.GenerateBlocks(new ReserveScript(address.Pubkey), (ulong)blockCount, int.MaxValue)
                 };
 
-                this.logger.LogTrace("(-):*.{0}={1}", "Generated block count", generateBlocksModel.Blocks.Count);
+                this.logger.LogTrace("Generated block count: {0}", generateBlocksModel.Blocks.Count);
 
                 return this.Json(generateBlocksModel);
             }
@@ -113,11 +111,11 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         {
             const string noWalletMessage = "No wallet found";
             const string noAccountMessage = "No account found on wallet";
-            
+
 
             string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
             if (walletName == null)
-            {                
+            {
                 this.logger.LogError(ExceptionOccurredMessage, noWalletMessage);
                 throw new Exception(noWalletMessage);
             }
@@ -130,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             }
 
             var res = new WalletAccountReference(walletName, account.Name);
-            
+
             return res;
         }
     }

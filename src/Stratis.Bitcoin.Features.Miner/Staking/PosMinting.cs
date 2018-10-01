@@ -584,7 +584,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     ECDSASignature signature = coinstakeContext.Key.Sign(block.GetHash());
 
                     block.BlockSignature = new BlockSignature { Signature = signature.ToDER() };
-                    this.logger.LogTrace("(-):true");
                     return true;
                 }
                 else this.logger.LogTrace("Coinstake transaction created with too early timestamp {0}, minimal timestamp is {1}.", coinstakeContext.CoinstakeTx.Time, minTimestamp);

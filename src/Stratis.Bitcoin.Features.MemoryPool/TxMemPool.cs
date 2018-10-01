@@ -587,7 +587,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 if (this.Exists(txInput.PrevOut.Hash))
                 {
-                    this.logger.LogTrace("(-):false");
                     return false;
                 }
             }
