@@ -106,11 +106,31 @@
     /// </summary>
     public class PosConsensusOptions : ConsensusOptions
     {
-        /// <summary>Coinstake minimal confirmations softfork activation height for the mainnet.</summary>
+        /// <summary>Coinstake minimal confirmations softfork activation height for mainnet.</summary>
         public const int CoinstakeMinConfirmationActivationHeightMainnet = 1005000;
 
-        /// <summary>Coinstake minimal confirmations softfork activation height for the testnet.</summary>
+        /// <summary>Coinstake minimal confirmations softfork activation height for testnet.</summary>
         public const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
+
+        /// <summary>
+        /// Maximum coinstake serialized size in bytes.
+        /// </summary>
+        public const int MaxCoinstakeSerializedSize = 1_000_000;
+
+        /// <summary>
+        /// Maximum signature serialized size in bytes.
+        /// </summary>
+        public const int MaxBlockSignatureSerializedSize = 80;
+
+        /// <summary>
+        /// Maximum merkle proof serialized size in bytes.
+        /// </summary>
+        public const int MaxMerkleProofSerializedSize = 512;
+
+        /// <summary>
+        /// Gets proven headers activation height.
+        /// </summary>
+        public int ProvenHeadersActivationHeight { get; }
 
         /// <summary>
         /// Initializes the default values.
@@ -129,8 +149,10 @@
             int witnessScaleFactor,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost) : base(maxBlockBaseSize, maxBlockWeight, maxBlockSerializedSize, witnessScaleFactor, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxBlockWeight, maxBlockSerializedSize, witnessScaleFactor, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
         {
+            this.ProvenHeadersActivationHeight = provenHeadersActivationHeight;
         }
 
         /// <summary>
@@ -140,8 +162,10 @@
             uint maxBlockBaseSize,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
         {
+            this.ProvenHeadersActivationHeight = provenHeadersActivationHeight;
         }
 
         /// <summary>
