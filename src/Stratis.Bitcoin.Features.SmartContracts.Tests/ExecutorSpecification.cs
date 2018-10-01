@@ -164,7 +164,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Call_Contract_Success()
         {
             var parameters = new object[] { };
-            var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", "", parameters);
+            var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", parameters);
 
             VmExecutionResult vmExecutionResult = VmExecutionResult.Ok(new object(), null);
 
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Call_Contract_Failure()
         {
             var parameters = new object[] { };
-            var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", "", parameters);
+            var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", parameters);
 
             StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)100, StateTransitionErrorKind.VmError);
 

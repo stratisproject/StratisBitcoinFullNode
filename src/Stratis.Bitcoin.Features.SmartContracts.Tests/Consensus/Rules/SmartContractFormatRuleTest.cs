@@ -15,10 +15,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
     public class SmartContractFormatRuleTest
     {
         private readonly Network network;
+        private readonly ICallDataSerializer callDataSerializer;
 
         public SmartContractFormatRuleTest()
         {
             this.network = new SmartContractsRegTest();
+            this.callDataSerializer = CallDataSerializer.Default;
         }
 
         private UnspentOutputSet GetMockOutputSet()
@@ -69,8 +71,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var totalSuppliedSatoshis = gasBudgetSatoshis + relayFeeSatoshis;
 
-            var carrier = ContractCarrier.CallContract(1, 0, "TestMethod", (ulong)gasPriceSatoshis, (Gas)gasLimit);
-            var serialized = carrier.Serialize();
+            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Gas)gasLimit, 0, "TestMethod");
+            var serialized = this.callDataSerializer.Serialize(contractTxData);
 
             Transaction funding = new Transaction
             {
@@ -116,8 +118,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var totalSuppliedSatoshis = gasBudgetSatoshis + relayFeeSatoshis;
 
-            var carrier = ContractCarrier.CallContract(1, 0, "TestMethod", (ulong)gasPriceSatoshis, (Gas)gasLimit);
-            var serialized = carrier.Serialize();
+            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Gas)gasLimit, 0, "TestMethod");
+            var serialized = this.callDataSerializer.Serialize(contractTxData);
 
             Transaction funding = new Transaction
             {
@@ -167,8 +169,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var higherGasLimit = gasLimit + 10000;
 
-            var carrier = ContractCarrier.CallContract(1, 0, "TestMethod", (ulong)gasPriceSatoshis, (Gas)higherGasLimit);
-            var serialized = carrier.Serialize();
+            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Gas)higherGasLimit, 0, "TestMethod");
+            var serialized = this.callDataSerializer.Serialize(contractTxData);
 
             Transaction funding = new Transaction
             {
