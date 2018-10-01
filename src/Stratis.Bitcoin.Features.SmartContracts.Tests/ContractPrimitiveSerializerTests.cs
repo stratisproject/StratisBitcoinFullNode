@@ -51,6 +51,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void PersistentState_CanSerializeDeserializeArrayOfAllPrimitives_ViaArrayMethod()
+        {
+            TestArrayType<Address>(new Address[] { new uint160(123456).ToAddress(this.network), new uint160(1234567).ToAddress(this.network) });
+            TestArrayType<bool>(new bool[] { true, false, true });
+            TestArrayType<int>(new int[] { 1, 2, 3 });
+            TestArrayType<long>(new long[] { long.MaxValue - 1, 23 });
+            TestArrayType<uint>(new uint[] { uint.MaxValue - 1, 1234 });
+            TestArrayType<ulong>(new ulong[] { ulong.MaxValue - 1, 123 });
+            TestArrayType<char>(new char[] { 'a', 'b', 'c' });
+            TestArrayType<string>(new string[] { "test", "1", "2", "3" });
+        }
+
+        [Fact]
         public void PersistentState_CanSerialize_Deserialize_ValueType()
         {
             TestValueType valueType = this.NewTestValueType();
@@ -159,6 +172,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             instance.StringField = "Test123";
 
             return instance;
+        }
+
+        private void TestArrayType<T>(T[] input)
+        {
+            byte[] testBytes = this.serializer.SerializeArray(input);
+            T[] output = this.serializer.DeserializeArray<T>(testBytes);
+            Assert.Equal(input, output);
         }
 
         private void TestType<T>(T input)
