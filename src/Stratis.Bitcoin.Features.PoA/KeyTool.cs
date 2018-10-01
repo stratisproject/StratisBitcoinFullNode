@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -13,6 +14,13 @@ namespace Stratis.Bitcoin.Features.PoA
             Key privKey = mnemonic.DeriveExtKey().PrivateKey;
 
             return privKey;
+        }
+
+        public string GetPrivateKeyDefaultPath(NodeSettings settings)
+        {
+            string path = Path.Combine(settings.DataDir, KeyTool.KeyFileDefaultName);
+
+            return path;
         }
 
         public void SavePrivateKey(Key privKey, string path)
@@ -29,6 +37,9 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public Key LoadPrivateKey(string path)
         {
+            if (!File.Exists(path))
+                return null;
+
             FileStream readStream = File.OpenRead(path);
 
             var privKey = new Key();

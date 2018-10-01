@@ -25,10 +25,17 @@ namespace Stratis.Bitcoin.Features.PoA
     {
         public class PoAFeature : FullNodeFeature
         {
+            private readonly FederationManager federationManager;
+
+            public PoAFeature(FederationManager federationManager)
+            {
+                this.federationManager = federationManager;
+            }
+
             /// <inheritdoc />
             public override Task InitializeAsync()
             {
-                // TODO POA here call a component that will implement what is in 'Stratis.PoAChainD feature startup (4d)a' task
+                this.federationManager.Initialize();
 
                 return Task.CompletedTask;
             }
@@ -49,7 +56,7 @@ namespace Stratis.Bitcoin.Features.PoA
                     .DependOn<ConsensusFeature>()
                     .FeatureServices(services =>
                     {
-                        //services.AddSingleton<  >(); //TODO PoA add miner and other things
+                        services.AddSingleton<FederationManager>();
                     });
             });
 

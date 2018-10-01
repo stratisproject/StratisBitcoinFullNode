@@ -60,7 +60,7 @@ namespace Stratis.PoAChainD
             var tool = new KeyTool();
             Key key = tool.GeneratePrivateKey();
 
-            string savePath = Path.Combine(nodeSettings.DataDir, KeyTool.KeyFileDefaultName);
+            string savePath = tool.GetPrivateKeyDefaultPath(nodeSettings);
             tool.SavePrivateKey(key, savePath);
 
             var stringBuilder = new StringBuilder();
