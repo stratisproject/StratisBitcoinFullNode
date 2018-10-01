@@ -32,14 +32,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </returns>
         public bool IsProvenHeaderActivated(int height)
         {
-            if (this.PosParent.Network is StratisMain)
+            if (this.PosParent.Network.Consensus.Options is PosConsensusOptions options)
             {
-                return height >= PosConsensusOptions.ProvenHeadersActivationHeightMainnet;
-            }
-
-            if (this.PosParent.Network is StratisTest)
-            {
-                return height >= PosConsensusOptions.ProvenHeadersActivationHeightTestnet;
+                return height >= options.ProvenHeadersActivationHeight;
             }
 
             return false;
