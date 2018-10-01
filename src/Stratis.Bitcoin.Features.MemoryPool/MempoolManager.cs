@@ -97,7 +97,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>List of transaction information.</returns>
         public List<TxMempoolInfo> InfoAll()
         {
-            this.logger.LogTrace("()");
             // TODO: DepthAndScoreComparator
 
             var infoList = this.memPool.MapTx.DescendantScore.Select(item => new TxMempoolInfo
@@ -108,7 +107,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 FeeDelta = item.ModifiedFee - item.Fee
             }).ToList();
 
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(infoList.Count), infoList.Count);
             return infoList;
         }
 
@@ -126,7 +124,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="fileName">Filename to load from.</param>
         internal async Task LoadPoolAsync(string fileName = null)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(fileName), fileName);
             if (this.mempoolPersistence != null && this.memPool?.MapTx != null && this.Validator != null)
             {
                 this.logger.LogInformation("Loading Memory Pool.");
@@ -137,7 +134,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 this.logger.LogInformation("Unable to load memory pool cache from '{0}'.", fileName);
             }
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -146,8 +142,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Memory pool save result.</returns>
         internal MemPoolSaveResult SavePool()
         {
-            this.logger.LogTrace("()");
-
             if (this.mempoolPersistence == null)
             {
                 this.logger.LogTrace("(-)[NON_SUCCESS]");
@@ -155,7 +149,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             MemPoolSaveResult saveResult = this.mempoolPersistence.Save(this.network, this.memPool);
 
-            this.logger.LogTrace("(-):'{0}'", saveResult);
             return saveResult;
         }
 
@@ -166,8 +159,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Transaction information.</returns>
         public TxMempoolInfo Info(uint256 hash)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
-
             TxMempoolEntry item = this.memPool.MapTx.TryGet(hash);
             var infoItem = item == null ? null : new TxMempoolInfo
             {
@@ -177,7 +168,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 FeeDelta = item.ModifiedFee - item.Fee
             };
 
-            this.logger.LogTrace("(-):{0}.{1}='{2}'", nameof(TxMempoolInfo), nameof(TxMempoolInfo.Trx), infoItem?.Trx?.GetHash());
             return infoItem;
         }
 
@@ -229,8 +219,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
-
             TxMempoolInfo txInfo = await this.InfoAsync(trxid);
             if (txInfo == null)
             {
@@ -241,8 +229,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             var memPoolCoinView = new MempoolCoinView(this.coinView, this.memPool, this.MempoolLock, this.Validator);
             await memPoolCoinView.LoadViewAsync(txInfo.Trx);
             UnspentOutputs unspentOutputs = memPoolCoinView.GetCoins(trxid);
-
-            this.logger.LogTrace("(-):{0}.{1}='{2}'", nameof(UnspentOutputs), nameof(UnspentOutputs.TransactionId), unspentOutputs?.TransactionId);
+            
             return unspentOutputs;
         }
 
@@ -252,8 +239,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="entries">Entries read from mempool cache.</param>
         internal async Task AddMempoolEntriesToMempoolAsync(IEnumerable<MempoolPersistenceEntry> entries)
         {
-            this.logger.LogTrace("({0}.Count:{1})", nameof(entries), entries?.Count());
-
             int i = 0;
             if (entries != null)
             {
@@ -292,8 +277,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
                 this.logger.LogInformation("{0} entries accepted.", i);
             }
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

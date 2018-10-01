@@ -34,13 +34,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public async Task<UnspentOutputs> GetUnspentTransactionAsync(uint256 trxid)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
-
             FetchCoinsResponse response = await this.coinView.FetchCoinsAsync(new[] { trxid }).ConfigureAwait(false);
 
             UnspentOutputs unspentOutputs = response.UnspentOutputs.FirstOrDefault();
-
-            this.logger.LogTrace("(-):{0}", unspentOutputs);
             return unspentOutputs;
         }
 

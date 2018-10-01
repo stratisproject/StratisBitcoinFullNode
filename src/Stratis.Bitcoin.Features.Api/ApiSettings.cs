@@ -67,8 +67,7 @@ namespace Stratis.Bitcoin.Features.Api
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
-            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ApiSettings).FullName);           
-            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
+            this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ApiSettings).FullName);    
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
@@ -111,8 +110,6 @@ namespace Stratis.Bitcoin.Features.Api
                     Interval = keepAlive * 1000
                 };
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

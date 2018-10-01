@@ -69,7 +69,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         protected override void OnNextCore(ChainedHeaderBlock blockPair)
         {
-            this.logger.LogTrace("()");
             if (this.storeSettings.Prune)
             {
                 this.logger.LogTrace("(-)[PRUNE]");
@@ -96,8 +95,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Block header '{0}' added to the announce queue.", chainedHeader);
             this.blocksToAnnounce.Enqueue(chainedHeader);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -181,8 +178,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </remarks>
         private async Task SendBatchAsync(List<ChainedHeader> batch)
         {
-            this.logger.LogTrace("()");
-
             int announceBlockCount = batch.Count;
             if (announceBlockCount == 0)
             {
@@ -223,8 +218,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("{0} blocks will be sent to {1} peers.", batch.Count, behaviours.Count);
             foreach (BlockStoreBehavior behaviour in behaviours)
                 await behaviour.AnnounceBlocksAsync(batch).ConfigureAwait(false);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />

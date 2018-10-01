@@ -103,8 +103,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// </summary>
         private void UpdateStateUnspents(Transaction tx)
         {
-            this.logger.LogTrace("()");
-
             foreach (KeyValuePair<uint160, ulong> balance in this.txBalances)
             {
                 if (this.stateRepository.GetAccountState(balance.Key) != null)
@@ -129,8 +127,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
                     this.stateRepository.SetUnspent(balance.Key, newContractVin);
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -138,8 +134,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
         /// </summary>
         private IList<TxOut> GetOutputs()
         {
-            this.logger.LogTrace("()");
-
             var txOuts = new List<TxOut>();
 
             // Order by descending for now. Easier to test. TODO: Worth changing in long run?
@@ -151,8 +145,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
                 this.logger.LogTrace("{0}:{1},{2}:{3}", nameof(balance.Key), balance.Key.ToAddress(this.network), nameof(txOuts.Count), txOuts.Count - 1);
                 this.nVouts.Add(balance.Key, Convert.ToUInt32(txOuts.Count - 1));
             }
-
-            this.logger.LogTrace("(-):{0}={1}", nameof(txOuts), txOuts.Count);
 
             return txOuts;
         }
@@ -189,8 +181,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
         private void SetupBalances()
         {
-            this.logger.LogTrace("()");
-
             // Add the value of the initial transaction.
             if (this.transactionContext.TxOutValue > 0)
             {
@@ -262,8 +252,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
                 this.txBalances[transfer.From] -= transfer.Value;
             }
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

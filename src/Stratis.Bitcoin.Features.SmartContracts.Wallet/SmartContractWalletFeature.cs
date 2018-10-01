@@ -96,7 +96,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
 
@@ -106,7 +105,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
             this.logger.LogInformation("Smart Contract Feature Wallet Injected.");
-            this.logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 
