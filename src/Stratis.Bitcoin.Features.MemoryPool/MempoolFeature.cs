@@ -109,8 +109,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolSignaled.Start();
 
             this.signals.SubscribeForBlocksDisconnected(this.blocksDisconnectedSignaled);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

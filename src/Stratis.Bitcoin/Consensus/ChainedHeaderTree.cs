@@ -273,7 +273,6 @@ namespace Stratis.Bitcoin.Consensus
         {
             if (this.chainedHeadersByHash.TryGetValue(blockHash, out ChainedHeader chainedHeader))
             {
-                this.logger.LogTrace("(-):'{0}'", chainedHeader);
                 return chainedHeader;
             }
 
@@ -481,7 +480,6 @@ namespace Stratis.Bitcoin.Consensus
 
             if ((fork != chainedHeader2) && (fork != chainedHeader1))
             {
-                this.logger.LogTrace("(-):'{0}'", fork);
                 return fork;
             }
 
@@ -1022,7 +1020,6 @@ namespace Stratis.Bitcoin.Consensus
                 if (!this.chainedHeadersByHash.ContainsKey(currentBlockHash))
                 {
                     this.logger.LogTrace("A new header with hash '{0}' was found that is not connected to the tree.", currentBlockHash);
-                    this.logger.LogTrace("(-):true,{0}:{1}", nameof(newHeaderIndex), newHeaderIndex);
                     return true;
                 }
             }

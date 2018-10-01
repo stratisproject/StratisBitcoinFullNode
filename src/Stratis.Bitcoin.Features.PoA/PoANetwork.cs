@@ -56,7 +56,8 @@ namespace Stratis.Bitcoin.Features.PoA
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
-                maxBlockSigopsCost: 20_000
+                maxBlockSigopsCost: 20_000,
+                provenHeadersActivationHeight: int.MaxValue
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
