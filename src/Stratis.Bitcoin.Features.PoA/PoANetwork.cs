@@ -14,6 +14,13 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary> The default name used for the Stratis configuration file. </summary>
         private const string NetworkDefaultConfigFilename = "poa.conf";
 
+        /// <summary>Public keys of all federation members.</summary>
+        /// <remarks>
+        /// Blocks that are not signed with private keys that correspond
+        /// to public keys from this list are considered to be invalid.
+        /// </remarks>
+        public List<PubKey> FederationPublicKeys { get; }
+
         public PoANetwork()
         {
             // The message start string is designed to be unlikely to occur in normal data.
@@ -40,6 +47,14 @@ namespace Stratis.Bitcoin.Features.PoA
             this.CoinTicker = "POA";
 
             var consensusFactory = new PoAConsensusFactory();
+
+            // Configure federation public keys.
+            // Keep in mind that order in which keys are added to this list is important
+            // and should be the same for all nodes operating on this network.
+            this.FederationPublicKeys = new List<PubKey>()
+            {
+                new PubKey("02d485fc5ae101c2780ff5e1f0cb92dd907053266f7cf3388eb22c5a4bd266ca2e")
+            };
 
             // Create the genesis block.
             this.GenesisTime = 1513622125;
@@ -143,6 +158,11 @@ namespace Stratis.Bitcoin.Features.PoA
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0621b88fb7a99c985d695be42e606cb913259bace2babe92970547fa033e4076"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x9928b372fd9e4cf62a31638607344c03c48731ba06d24576342db9c8591e1432"));
+
+            if ((this.FederationPublicKeys == null) || (this.FederationPublicKeys.Count == 0))
+            {
+                throw new Exception("No keys for federation members are configured!");
+            }
         }
 
         private static Block CreatePoAGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
