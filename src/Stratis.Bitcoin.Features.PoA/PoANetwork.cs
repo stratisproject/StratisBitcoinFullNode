@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.MaxTimeOffsetSeconds = 25 * 60;
             this.CoinTicker = "POA";
 
-            var consensusFactory = new PosConsensusFactory();
+            var consensusFactory = new PosConsensusFactory(); // TODO POA create new consensus factory that creates blocks with PoAHeaders
 
             // Create the genesis block.
             this.GenesisTime = 1513622125;
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
-            Block genesisBlock = CreateStratisGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+            Block genesisBlock = CreatePoAGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
 
             this.Genesis = genesisBlock;
 
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.PoA
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0966e06b4b2aeb31c913ee066f62909c8dcd68f4e0fcf54165a8852db3ed2df2"));
         }
 
-        private static Block CreateStratisGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
+        private static Block CreatePoAGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {
             string data = "506f41202d204345485450414a6c75334f424148484139205845504839";
 
