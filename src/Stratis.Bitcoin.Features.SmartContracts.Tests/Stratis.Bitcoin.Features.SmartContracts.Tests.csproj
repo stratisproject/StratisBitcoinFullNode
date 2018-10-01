@@ -70,6 +70,9 @@
     <Compile Update="SmartContracts\InfiniteLoop.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="SmartContracts\Inheritance.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
     <Compile Update="SmartContracts\InvalidImplicitAssembly.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -14,8 +13,6 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
@@ -99,7 +96,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return this;
         }
 
-        public Mnemonic WithWallet(string walletPassword = "123456", string walletName = "mywallet", string walletPassphrase = "passphrase")
+        public Mnemonic WithWallet(string walletPassword = "password", string walletName = "mywallet", string walletPassphrase = "passphrase")
         {
             return this.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
         }
@@ -478,11 +475,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             var state = new MempoolValidationState(true);
             return this.runner.FullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
-        }
-
-        public List<uint256> GenerateStratisWithMiner(int blockCount)
-        {
-            return this.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(new ReserveScript { ReserveFullNodeScript = this.MinerSecret.ScriptPubKey }, (ulong)blockCount, uint.MaxValue);
         }
 
         public async Task BroadcastBlocksAsync(Block[] blocks, INetworkPeer peer)

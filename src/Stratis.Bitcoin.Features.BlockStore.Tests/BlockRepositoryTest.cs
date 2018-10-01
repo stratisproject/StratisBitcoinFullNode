@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<Transaction> task = repository.GetTrxAsync(uint256.Zero);
+                Task<Transaction> task = repository.GetTransactionByIdAsync(uint256.Zero);
                 task.Wait();
 
                 Assert.Equal(default(Transaction), task.Result);
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<Transaction> task = repository.GetTrxAsync(new uint256(65));
+                Task<Transaction> task = repository.GetTransactionByIdAsync(new uint256(65));
                 task.Wait();
 
                 Assert.Null(task.Result);
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<Transaction> task = repository.GetTrxAsync(trans.GetHash());
+                Task<Transaction> task = repository.GetTransactionByIdAsync(trans.GetHash());
                 task.Wait();
 
                 Assert.Equal((uint)125, task.Result.Version);
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<uint256> task = repository.GetTrxBlockIdAsync(new uint256(26));
+                Task<uint256> task = repository.GetBlockIdByTransactionIdAsync(new uint256(26));
                 task.Wait();
 
                 Assert.Equal(default(uint256), task.Result);
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<uint256> task = repository.GetTrxBlockIdAsync(new uint256(26));
+                Task<uint256> task = repository.GetBlockIdByTransactionIdAsync(new uint256(26));
                 task.Wait();
 
                 Assert.Null(task.Result);
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             using (IBlockRepository repository = this.SetupRepository(this.Network, dir))
             {
-                Task<uint256> task = repository.GetTrxBlockIdAsync(new uint256(26));
+                Task<uint256> task = repository.GetBlockIdByTransactionIdAsync(new uint256(26));
                 task.Wait();
 
                 Assert.Equal(new uint256(42), task.Result);

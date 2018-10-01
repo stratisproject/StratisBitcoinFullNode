@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.Tools.Sct
             console.WriteLine("Building ModuleDefinition...");
 
             compilation = validationServiceResult.CompilationResult.Compilation;
-            moduleDefinition = ContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
+            moduleDefinition = ContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver()).Value;
             console.WriteLine("ModuleDefinition built successfully.");
 
             console.WriteLine();
@@ -61,8 +61,7 @@ namespace Stratis.SmartContracts.Tools.Sct
             object[] methodParameters = null;
             if (parameters.Length != 0)
             {
-                var methodParametersRaw = new MethodParameterSerializer().ToRaw(parameters);
-                methodParameters = serializer.ToObjects(methodParametersRaw);
+                methodParameters = serializer.Deserialize(parameters);
             }
 
             validationServiceResult.ConstructorExists = Contract.ConstructorExists(smartContract.ExportedTypes.FirstOrDefault(), methodParameters);
