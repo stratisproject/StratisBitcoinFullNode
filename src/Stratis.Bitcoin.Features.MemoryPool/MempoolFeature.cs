@@ -102,8 +102,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public override async Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             await this.mempoolManager.LoadPoolAsync().ConfigureAwait(false);
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);

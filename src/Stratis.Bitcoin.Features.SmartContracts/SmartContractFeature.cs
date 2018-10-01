@@ -53,8 +53,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             if (this.network.Consensus.IsProofOfStake)
                 Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPosConsensusFactory);
             else
@@ -63,7 +61,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             this.stateRoot.SyncToRoot(((SmartContractBlockHeader)this.consensusManager.Tip.Header).HashStateRoot.ToBytes());
 
             this.logger.LogInformation("Smart Contract Feature Injected.");
-            this.logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
     }

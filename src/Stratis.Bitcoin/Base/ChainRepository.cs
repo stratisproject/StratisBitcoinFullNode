@@ -127,11 +127,7 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public void Dispose()
         {
-            this.logger.LogTrace("()");
-
             this.dbreeze?.Dispose();
-
-            this.logger.LogTrace("(-)");
         }
     }
 }
