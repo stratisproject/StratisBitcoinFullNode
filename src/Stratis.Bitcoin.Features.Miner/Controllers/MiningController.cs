@@ -21,7 +21,8 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
     [Route("api/[controller]")]
     public class MiningController : Controller
     {
-        private const string exceptionOccurredMessage = "Exception occurred: {0}";
+        private const string ExceptionOccurredMessage = "Exception occurred: {0}";
+        public const string LastPowBlockExceededMessage = "This is a POS node and mining is not allowed past block {0}";
 
         private readonly IConsensusManager consensusManager;
         private readonly ILogger logger;
@@ -33,8 +34,11 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         public MiningController(IConsensusManager consensusManager, IFullNode fullNode, ILoggerFactory loggerFactory, Network network, IPowMining powMining, IWalletManager walletManager)
         {
             Guard.NotNull(consensusManager, nameof(consensusManager));
+            Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
+            Guard.NotNull(powMining, nameof(powMining));
+            Guard.NotNull(walletManager, nameof(walletManager));
 
             this.consensusManager = consensusManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -60,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             try
             {
                 if (this.network.Consensus.IsProofOfStake && (this.consensusManager.Tip.Height > this.network.Consensus.LastPOWBlock))
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", $"This is a POS node and it's consensus tip is higher than the allowed LastPowBlock height of {this.network.Consensus.LastPOWBlock}");
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.MethodNotAllowed, "Method not allowed", string.Format(LastPowBlockExceededMessage, this.network.Consensus.LastPOWBlock));
 
                 if (!this.ModelState.IsValid)
                 {
@@ -89,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError(exceptionOccurredMessage, e.ToString());
+                this.logger.LogError(ExceptionOccurredMessage, e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -124,14 +128,14 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
             if (walletName == null)
             {
-                this.logger.LogError(exceptionOccurredMessage, noWalletMessage);
+                this.logger.LogError(ExceptionOccurredMessage, noWalletMessage);
                 throw new Exception(noWalletMessage);
             }
 
             HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
             if (account == null)
             {
-                this.logger.LogError(exceptionOccurredMessage, noAccountMessage);
+                this.logger.LogError(ExceptionOccurredMessage, noAccountMessage);
                 throw new Exception(noAccountMessage);
             }
 

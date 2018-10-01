@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             ErrorModel error = errorResponse.Errors[0];
             Assert.Equal(405, error.Status);
             Assert.Equal("Method not allowed", error.Message);
-            Assert.Equal(string.Format("This is a POS node and it's consensus tip is higher than the allowed LastPowBlock height of {0}", this.network.Consensus.LastPOWBlock), error.Description);
+            Assert.Equal(string.Format(MiningController.LastPowBlockExceededMessage, this.network.Consensus.LastPOWBlock), error.Description);
         }
 
         [Fact]
