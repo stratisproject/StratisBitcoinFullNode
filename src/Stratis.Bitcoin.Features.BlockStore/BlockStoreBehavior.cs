@@ -97,27 +97,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         protected override void AttachCore()
         {
-            this.logger.LogTrace("()");
-
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
             this.consensusManagerBehavior = this.AttachedPeer.Behavior<ConsensusManagerBehavior>();
-
-            this.logger.LogTrace("(-)");
         }
 
         protected override void DetachCore()
         {
-            this.logger.LogTrace("()");
-
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
         }
 
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
             try
             {
                 await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
@@ -133,14 +123,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.logger.LogTrace("(-)[EXCEPTION]");
                 throw;
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         private async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
             switch (message.Message.Payload)
             {
                 case GetDataPayload getDataPayload:
@@ -174,8 +160,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.PreferHeaders = true;
                     break;
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -185,8 +169,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="getBlocksPayload">Payload of "getblocks" message to process.</param>
         private async Task ProcessGetBlocksAsync(INetworkPeer peer, GetBlocksPayload getBlocksPayload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getBlocksPayload), getBlocksPayload);
-
             if (getBlocksPayload.BlockLocators.Blocks.Count > BlockLocator.MaxLocatorSize)
             {
                 this.logger.LogTrace("Peer '{0}' sent getblocks with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
@@ -300,8 +282,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 await peer.SendMessageAsync(inv).ConfigureAwait(false);
             }
             else this.logger.LogTrace("Nothing to send.");
-
-            this.logger.LogTrace("(-)");
         }
 
         private Task ProcessSendCmpctPayloadAsync(INetworkPeer peer, SendCmpctPayload sendCmpct)
@@ -312,8 +292,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private async Task ProcessGetDataAsync(INetworkPeer peer, GetDataPayload getDataPayload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
-
             // TODO: bring logic from core
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
             {
@@ -347,14 +325,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     else this.logger.LogTrace("Reorg in blockstore, inventory continuation won't be sent to peer '{0}'.", peer.RemoteSocketEndpoint);
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         private async Task SendAsBlockInventoryAsync(INetworkPeer peer, List<ChainedHeader> blocks)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(peer), peer.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
-
             // TODO please don't use queue here. Refactor it.
             var queue = new Queue<InventoryVector>(blocks.Select(s => new InventoryVector(InventoryType.MSG_BLOCK, s.HashBlock)));
             while (queue.Count > 0)
@@ -366,15 +340,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     await peer.SendMessageAsync(new InvPayload(items)).ConfigureAwait(false);
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public async Task AnnounceBlocksAsync(List<ChainedHeader> blocksToAnnounce)
         {
             Guard.NotNull(blocksToAnnounce, nameof(blocksToAnnounce));
-            this.logger.LogTrace("({0}.{1}:{2})", nameof(blocksToAnnounce), nameof(blocksToAnnounce.Count), blocksToAnnounce.Count);
 
             if (!blocksToAnnounce.Any())
             {
@@ -506,21 +477,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
                 return;
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         public override object Clone()
         {
-            this.logger.LogTrace("()");
-
             var res = new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload
             };
-
-            this.logger.LogTrace("(-)");
+            
             return res;
         }
     }

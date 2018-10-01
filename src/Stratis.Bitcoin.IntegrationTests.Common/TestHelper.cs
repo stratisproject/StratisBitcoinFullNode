@@ -6,6 +6,7 @@ using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
@@ -110,6 +111,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             nodes.ToList().ForEach(n => WaitLoop(() => IsNodeSynced(n)));
             nodes.Skip(1).ToList().ForEach(n => WaitLoop(() => AreNodesSynced(nodes.First(), n)));
+        }
+
+        public static void DisableBlockPropagation(CoreNode from, CoreNode to)
+        {
+            from.FullNode.ConnectionManager.ConnectedPeers.FindByEndpoint(to.Endpoint).Behavior<BlockStoreBehavior>().CanRespondToGetDataPayload = false;
+        }
+
+        public static void EnableBlockPropagation(CoreNode from, CoreNode to)
+        {
+            from.FullNode.ConnectionManager.ConnectedPeers.FindByEndpoint(to.Endpoint).Behavior<BlockStoreBehavior>().CanRespondToGetDataPayload = true;
         }
 
         public static void WaitForNodeToSyncIgnoreMempool(params CoreNode[] nodes)

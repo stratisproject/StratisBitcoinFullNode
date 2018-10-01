@@ -31,22 +31,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <inheritdoc />
         public override void Initialize()
         {
-            this.Logger.LogTrace("()");
-
             base.Initialize();
 
             this.generatedTransaction = null;
             this.refundCounter = 1;
             this.ContractCoinviewRule = (ISmartContractCoinviewRule)this.Parent;
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public async override Task RunAsync(RuleContext context)
         {
-            this.Logger.LogTrace("()");
-
             this.blockTxsProcessed = new List<Transaction>();
             NBitcoin.Block block = context.ValidationContext.BlockToValidate;
             ChainedHeader index = context.ValidationContext.ChainedHeaderToValidate;
@@ -156,23 +150,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ValidateAndStoreReceipts(((SmartContractBlockHeader)block.Header).ReceiptRoot);
 
             this.ContractCoinviewRule.OriginalStateRoot.Commit();
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
         public override void CheckBlockReward(RuleContext context, Money fees, int height, NBitcoin.Block block)
         {
-            this.Logger.LogTrace("()");
-
             Money blockReward = fees + this.GetProofOfWorkReward(height);
             if (block.Transactions[0].TotalOut > blockReward)
             {
                 this.Logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
                 ConsensusErrors.BadCoinbaseAmount.Throw();
             }
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
@@ -326,8 +314,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         private void ValidateRefunds(TxOut refund, Transaction coinbaseTransaction)
         {
-            this.Logger.LogTrace("({0}:{1})", nameof(refund), refund);
-
             TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
             if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
             {
@@ -338,8 +324,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
 
             this.refundCounter++;
-
-            this.Logger.LogTrace("(-){0}:{1}", nameof(this.refundCounter), this.refundCounter);
         }
 
         /// <inheritdoc/>
