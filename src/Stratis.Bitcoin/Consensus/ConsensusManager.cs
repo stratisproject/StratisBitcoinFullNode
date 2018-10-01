@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Consensus
         private const long ConsumptionThresholdBytes = MaxUnconsumedBlocksDataBytes / 10;
 
         /// <summary>The maximum amount of blocks that can be assigned to <see cref="IBlockPuller"/> at the same time.</summary>
-        private const int MaxBlocksToAskFromPuller = 30000;
+        private const int MaxBlocksToAskFromPuller = 10000;
 
         /// <summary>The minimum amount of slots that should be available to trigger asking block puller for blocks.</summary>
         private const int ConsumptionThresholdSlots = MaxBlocksToAskFromPuller / 10;
@@ -472,20 +472,19 @@ namespace Stratis.Bitcoin.Consensus
                     }
                 }
 
-                // Partial validation should continue if:
-                //  1: There are more blocks to validate.
-                //  2: A full validation did not fail (if full validation was needed).
-                bool nextValidationNeeded = chainedHeaderBlocksToValidate != null;
-                bool fullValidationFailed = (connectBlocksResult != null) && !connectBlocksResult.Succeeded;
-                if (nextValidationNeeded && !fullValidationFailed)
+                // If more blocks are available continue validation.
+                if (chainedHeaderBlocksToValidate != null)
                 {
-                    this.logger.LogTrace("Partial validation of {0} block will be started.", chainedHeaderBlocksToValidate.Count);
-
+                    // Validate the next blocks if validation was not needed, or if needed then it succeeded.
+                    if ((connectBlocksResult == null) || connectBlocksResult.Succeeded)
+                    {
+                        this.logger.LogTrace("Partial validation of {0} block will be started.", chainedHeaderBlocksToValidate.Count);
 
                         // Start validating all next blocks that come after the current block,
                         // all headers in this list have the blocks present in the header.
                         foreach (ChainedHeaderBlock toValidate in chainedHeaderBlocksToValidate)
                             this.partialValidator.StartPartialValidation(toValidate.ChainedHeader, toValidate.Block, this.OnPartialValidationCompletedCallbackAsync);
+                    }
                 }
             }
 
@@ -666,6 +665,8 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             disconnectedBlocks.Reverse();
+
+            this.logger.LogInformation("Reorg from block '{0}' to '{1}'", oldTip, fork);
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(disconnectedBlocks.Count), disconnectedBlocks.Count);
             return disconnectedBlocks;

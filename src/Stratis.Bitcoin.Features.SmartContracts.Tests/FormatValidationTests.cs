@@ -356,6 +356,130 @@ public class Test2 {
             Assert.Equal(2, result.Errors.Count());
         }
 
+        [Fact]
+        public void SmartContract_ValidateFormat_NewObj_Fails()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state) : base(state) {}
+
+    public void CreateNewObject() {
+        var obj = new object();
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            var validator = new SmartContractFormatValidator();
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = validator.Validate(decomp.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.Single(result.Errors);
+            Assert.IsType<NewObjValidator.NewObjValidationResult>(result.Errors.First());
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_NewStruct_Succeeds()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+public class Test : SmartContract
+{
+    public struct Item
+    {
+        public int Number;
+        public string Name;
+    }
+
+    public Test(ISmartContractState state) : base(state) {}
+
+    public void CreateNewStruct() {
+        var item = new Item();
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            var validator = new SmartContractFormatValidator();
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = validator.Validate(decomp.ModuleDefinition);
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_NewArray_Succeeds()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state) : base(state) {}
+
+    public void CreateNewStruct() {
+        var item = new [] { 1, 2, 3, 4, 5 };
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            var validator = new SmartContractFormatValidator();
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = validator.Validate(decomp.ModuleDefinition);
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void SmartContract_ValidateFormat_NewShortArray_Succeeds()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state) : base(state) {}
+
+    public void CreateNewStruct() {
+        var item = new [] { 1 };
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            var validator = new SmartContractFormatValidator();
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = validator.Validate(decomp.ModuleDefinition);
+
+            Assert.True(result.IsValid);
+        }
+
         /// <summary>
         /// Get the compiled bytecode for the specified C# source code.
         /// </summary>

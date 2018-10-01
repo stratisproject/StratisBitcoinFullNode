@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
                     foreach (Transaction transaction in block.Transactions)
                     {
-                        Transaction trx = blockRepository.GetTrxAsync(transaction.GetHash()).GetAwaiter().GetResult();
+                        Transaction trx = blockRepository.GetTransactionByIdAsync(transaction.GetHash()).GetAwaiter().GetResult();
                         Assert.True(trx.ToBytes().SequenceEqual(transaction.ToBytes()));
                     }
                 }
@@ -223,9 +223,23 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 Assert.NotNull(bestBlock1);
 
                 // get the block coinbase trx
-                Transaction trx = stratisNode2.FullNode.BlockStore().GetTrxAsync(bestBlock1.Transactions.First().GetHash()).Result;
+                Transaction trx = stratisNode2.FullNode.BlockStore().GetTransactionByIdAsync(bestBlock1.Transactions.First().GetHash()).Result;
                 Assert.NotNull(trx);
                 Assert.Equal(bestBlock1.Transactions.First().GetHash(), trx.GetHash());
+            }
+        }
+
+        [Fact]
+        public void GetBlockCanRetreiveGenesis()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node = builder.CreateStratisPowNode(this.regTest);
+                builder.StartAll();
+                node.NotInIBD();
+                uint256 genesisHash = node.FullNode.Chain.Genesis.HashBlock;
+                Block genesisBlock = node.FullNode.BlockStore().GetBlockAsync(genesisHash).Result;
+                Assert.Equal(genesisHash, genesisBlock.GetHash());
             }
         }
     }
