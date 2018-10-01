@@ -46,7 +46,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
             foreach (FieldInfo field in this.LogStruct.GetType().GetFields().Where(x=>x.CustomAttributes.Any(y=>y.AttributeType == typeof(IndexAttribute))))
             {
                 object value = field.GetValue(this.LogStruct);
-                byte[] serialized = serializer.Serialize(value);
+                byte[] serialized = serializer.Serialize(field.FieldType, value);
                 topics.Add(serialized);
             }
 

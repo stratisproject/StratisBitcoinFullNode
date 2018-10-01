@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             TestType<long>((long)6775492);
             TestType<uint>((uint)101);
             TestType<ulong>((ulong)1245);
-            TestType<byte>(new byte());
+            TestType<byte>(0xA4);
             TestType<byte[]>(new byte[] { 127, 123 });
             TestType<char>('c');
             TestType<string>("Test String");
@@ -48,6 +48,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             TestType<ulong[]>(new ulong[] { ulong.MaxValue - 1, 123 });
             TestType<char[]>(new char[] { 'a', 'b', 'c' });
             TestType<string[]>(new string[] { "test", "1", "2", "3" });
+        }
+
+        [Fact]
+        public void PersistentState_DefaultValuesSerializedAsBytes0()
+        {
+            TestStoredAsBytes0<bool>(false);
+            TestStoredAsBytes0<int>(0);
+            TestStoredAsBytes0<uint>(0);
+            TestStoredAsBytes0<long>(0);
+            TestStoredAsBytes0<ulong>(0);
+            TestStoredAsBytes0<Address>(new Address(null));
+            TestStoredAsBytes0<byte>(new byte());
+            TestStoredAsBytes0<char>(new char());
+            TestStoredAsBytes0<string>(null);
+            TestStoredAsBytes0(new byte[0]);
         }
 
         [Fact]
@@ -159,6 +174,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             instance.StringField = "Test123";
 
             return instance;
+        }
+
+        private void TestStoredAsBytes0<T>(T input)
+        {
+            byte[] testBytes = this.serializer.Serialize(input);
+            Assert.Equal(new byte[0], testBytes);
+            T output = this.serializer.Deserialize<T>(testBytes);
+            Assert.Equal(input, output);
         }
 
         private void TestType<T>(T input)

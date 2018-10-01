@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using NBitcoin;
 using Nethereum.RLP;
 using Stratis.SmartContracts.Core;
@@ -22,9 +23,20 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             this.network = network;
         }
 
-        public byte[] Serialize(object o)
+        // TODO: Remove this?
+        public byte[] Serialize<T>(T o)
         {
-            if (o is null)
+            return Serialize(typeof(T), o);
+        }
+
+        public byte[] Serialize(Type type, object o)
+        {
+            // Reference type defaults
+            if (o == null)
+                return new byte[0];
+
+            // Value type defaults
+            if (type.IsValueType && o.Equals(Activator.CreateInstance(type)))
                 return new byte[0];
 
             if (o is byte[] bytes)
@@ -59,10 +71,10 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             if (o is string s)
                 return Serialize(s);
-            
+
             if (o.GetType().IsValueType)
                 return SerializeStruct(o);
-                
+
             throw new ContractPrimitiveSerializationException(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
@@ -112,7 +124,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             foreach (FieldInfo field in o.GetType().GetFields())
             {
                 object value = field.GetValue(o);
-                byte[] serialized = Serialize(value);
+                byte[] serialized = Serialize(field.FieldType, value);
                 toEncode.Add(RLP.EncodeElement(serialized));
             }
 
@@ -126,7 +138,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             for(int i=0; i< array.Length; i++)
             {
                 object value = array.GetValue(i);
-                byte[] serialized = Serialize(value);
+                byte[] serialized = Serialize(array.GetType().GetElementType(), value);
                 toEncode.Add(RLP.EncodeElement(serialized));
             }
 
@@ -135,6 +147,10 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public T Deserialize<T>(byte[] stream)
         {
+            // If getting bytes, it's already ready
+            if (typeof(T) == typeof(byte[]))
+                return (T) (object) stream;
+
             object deserialized = Deserialize(typeof(T), stream);
             if (deserialized == null)
                 return default(T);
@@ -254,6 +270,15 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             }
 
             return ret;
+        }
+
+        private static object GetDefault(Type type)
+        {
+            if (type.IsValueType)
+            {
+                return Activator.CreateInstance(type);
+            }
+            return null;
         }
     }
 }
