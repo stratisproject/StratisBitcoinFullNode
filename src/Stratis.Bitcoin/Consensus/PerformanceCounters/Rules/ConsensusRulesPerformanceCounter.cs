@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Consensus.PerformanceCounters.Rules
 {
     /// <summary>Measures rules average execution time.</summary>
+    [TracerAttributes.NoTrace]
     public class ConsensusRulesPerformanceCounter
     {
         /// <summary>List of rules registered for performance tracking.</summary>

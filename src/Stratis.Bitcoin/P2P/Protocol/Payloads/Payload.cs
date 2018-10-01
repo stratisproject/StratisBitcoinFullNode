@@ -25,6 +25,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         {
         }
 
+        [TracerAttributes.NoTrace]
         public override string ToString()
         {
             return this.GetType().Name;

@@ -49,6 +49,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Stops the time measurement and calls the action with the measured elapsed ticks.
         /// </summary>
+        [TracerAttributes.NoTrace]
         public void Dispose()
         {
             this.watch.Stop();

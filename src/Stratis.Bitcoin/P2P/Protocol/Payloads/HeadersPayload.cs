@@ -24,6 +24,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
                 this.Header = header;
             }
 
+            [TracerAttributes.NoTrace]
             public void ReadWrite(BitcoinStream stream)
             {
                 stream.ReadWrite(ref this.Header);
@@ -49,6 +50,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             this.Headers.AddRange(headers);
         }
 
+        [TracerAttributes.NoTrace]
         public override void ReadWriteCore(BitcoinStream stream)
         {
             if (stream.Serializing)

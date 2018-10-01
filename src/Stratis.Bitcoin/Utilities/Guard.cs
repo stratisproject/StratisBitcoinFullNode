@@ -15,6 +15,7 @@ namespace Stratis.Bitcoin.Utilities
         /// Asserts that a condition is true.
         /// </summary>
         /// <param name="condition">The condition to assert.</param>
+        [TracerAttributes.NoTrace]
         public static void Assert(bool condition)
         {
             if (!condition)
@@ -29,6 +30,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="parameterName">The name of the object.</param>
         /// <returns>The object if it is not null.</returns>
         /// <exception cref="ArgumentNullException">An exception if the object passed is null.</exception>
+        [TracerAttributes.NoTrace]
         public static T NotNull<T>(T value, string parameterName)
         {
             // the parameterName should never be null or empty
@@ -52,6 +54,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="value">The string to check.</param>
         /// <param name="parameterName">The name of the string.</param>
         /// <returns>The string if it is not null or empty.</returns>
+        [TracerAttributes.NoTrace]
         public static string NotEmpty(string value, string parameterName)
         {
             NotNull(value, parameterName);

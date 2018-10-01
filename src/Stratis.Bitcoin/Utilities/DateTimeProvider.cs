@@ -43,6 +43,7 @@ namespace Stratis.Bitcoin.Utilities
     }
 
     /// <inheritdoc />
+    [TracerAttributes.NoTrace]
     public class DateTimeProvider : IDateTimeProvider
     {
         /// <summary>Static instance of the object to prevent the need of creating new instance.</summary>
