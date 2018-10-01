@@ -32,7 +32,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.ResultProcessors
             }
 
             var refund = new Money(contractTxData.GasCostBudget - (gasConsumed * contractTxData.GasPrice));
-            this.logger.LogTrace("{0}:{1},{2}:{3},{4}:{5},{6}:{7}", nameof(contractTxData.GasCostBudget), contractTxData.GasCostBudget, nameof(gasConsumed), gasConsumed, nameof(contractTxData.GasPrice), contractTxData.GasPrice, nameof(refund), refund);
 
             TxOut ret = null;
 
@@ -41,8 +40,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.ResultProcessors
                 fee -= refund;
                 ret = CreateRefund(sender, refund);
             }
-
-            this.logger.LogTrace("(-)");
 
             return (fee, ret);
         }
@@ -53,12 +50,8 @@ namespace Stratis.SmartContracts.Executor.Reflection.ResultProcessors
         /// </summary>
         private TxOut CreateRefund(uint160 senderAddress, Money refund)
         {
-            this.logger.LogTrace("(){0}:{1},{2}:{3}", nameof(senderAddress), senderAddress, nameof(refund), refund);
-
             Script senderScript = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId(senderAddress));
-
-            this.logger.LogTrace("(-)");
-
+            
             return new TxOut(refund, senderScript);
         }
     }

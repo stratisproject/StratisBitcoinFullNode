@@ -185,8 +185,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes),
             startAfter: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes));
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />

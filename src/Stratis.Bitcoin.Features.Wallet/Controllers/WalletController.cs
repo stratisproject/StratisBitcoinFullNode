@@ -278,8 +278,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     request.CreationDate);
 
                 this.SyncFromBestHeightForRecoveredWallets(request.CreationDate);
-
-                this.logger.LogTrace("(-)");
+                
                 return this.Ok();
             }
             catch (WalletException e)
