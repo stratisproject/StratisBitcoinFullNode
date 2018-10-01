@@ -170,7 +170,6 @@ namespace FodyNlogAdapter.Adapters
             if (stringRepresentation == variable.GetType().ToString())
             {
                 // `.ToString()` is not overloaded and therefore no need to log this variable.
-
                 return string.Empty;
             }
 
