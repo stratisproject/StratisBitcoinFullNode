@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <PackageReference Include="NLog" Version="5.0.0-beta09" />
-    <PackageReference Include="Tracer.4NLog.Fody" Version="2.2.0" />
   </ItemGroup>
 
 </Project>
