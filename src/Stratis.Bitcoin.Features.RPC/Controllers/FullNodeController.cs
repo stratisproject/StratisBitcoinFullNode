@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         }
 
         /// <summary>
-        /// Implements the getblockcount RPC call. 
+        /// Implements the getblockcount RPC call.
         /// </summary>
         /// <returns>The current consensus tip height.</returns>
         [ActionName("getblockcount")]
@@ -300,8 +300,6 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         [ActionDescription("Returns the block in hex, given a block hash.")]
         public async Task<object> GetBlockAsync(string blockHash, bool isJsonFormat = false)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockHash), blockHash);
-
             Block block = this.blockStore != null ? await this.blockStore.GetBlockAsync(uint256.Parse(blockHash)).ConfigureAwait(false) : null;
 
             if (isJsonFormat)
@@ -315,7 +313,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 return block;
             }
         }
-       
+
         private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)
         {
             ChainedHeader block = null;

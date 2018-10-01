@@ -161,6 +161,9 @@ namespace FodyNlogAdapter.Adapters
             if (variable is IList list)
                 return $"{varName}.Count={list.Count}";
 
+            if (variable is DateTime dateTime)
+                return $"{varName}={dateTime::yyyy-MM-dd HH:mm:ss}";
+
             return $"{varName}={variable}";
         }
 
