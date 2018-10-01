@@ -8,6 +8,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -59,7 +60,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc />
-        [TracerAttributes.NoTrace]
+        [NoTrace]
         public void LoadPeers()
         {
             List<PeerAddress> loadedPeers = this.fileStorage.LoadByFileName(PeerFileName);

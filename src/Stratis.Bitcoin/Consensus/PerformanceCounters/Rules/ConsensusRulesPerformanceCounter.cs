@@ -5,11 +5,12 @@ using System.Threading;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus.PerformanceCounters.Rules
 {
     /// <summary>Measures rules average execution time.</summary>
-    [TracerAttributes.NoTrace]
+    [NoTrace]
     public class ConsensusRulesPerformanceCounter
     {
         /// <summary>List of rules registered for performance tracking.</summary>
