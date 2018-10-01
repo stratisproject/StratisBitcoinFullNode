@@ -98,7 +98,7 @@ namespace FodyNlogAdapter.Adapters
 
                 string message = (returnValue == null) ? "(-)" : $"(-){returnValue}";
 
-                this.LogTrace(LogLevel.Trace, methodInfo, message: $"{message}; Elapsed: {timeTaken:0.00} ms.",
+                this.LogTrace(LogLevel.Trace, methodInfo, message: $"{message}",
                     exception: null, properties: propDict);
             }
         }
@@ -150,21 +150,31 @@ namespace FodyNlogAdapter.Adapters
         /// <remarks>Override formats for different messages here.</remarks>
         private string RenderVariable(object variable, string variableName)
         {
-            string varName = variableName ?? "*";
+            string varName = variableName ?? string.Empty;
 
             if (variable == null)
-                return $"{varName}={NullString}";
+                return $"{varName}:{NullString}";
 
             if (variable is string s)
-                return $"{varName}='{s}'";
+                return $"{varName}:'{s}'";
 
             if (variable is IList list)
-                return $"{varName}.Count={list.Count}";
+                return $"{varName}.Count:{list.Count}";
 
             if (variable is DateTime dateTime)
-                return $"{varName}={dateTime::yyyy-MM-dd HH:mm:ss}";
+                return $"{varName}:{dateTime::yyyy-MM-dd HH:mm:ss}";
 
-            return $"{varName}={variable}";
+            // Other types.
+            string stringRepresentation = variable.ToString();
+
+            if (stringRepresentation == variable.GetType().ToString())
+            {
+                // `.ToString()` is not overloaded and therefore no need to log this variable.
+
+                return string.Empty;
+            }
+
+            return $"{varName}:{stringRepresentation}";
         }
 
         private void LogTrace(LogLevel level, string methodInfo, string message, Exception exception = null, Dictionary<string, object> properties = null)
