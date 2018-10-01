@@ -99,6 +99,27 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// The gas consumed during execution.
         /// </summary>
         public Gas GasConsumed { get; }
+
+        public ContractErrorMessage GetErrorMessage()
+        {
+            switch (this.Kind)
+            {
+                case StateTransitionErrorKind.InsufficientBalance:
+                    return new ContractErrorMessage(StateTransitionErrors.InsufficientBalance);
+                case StateTransitionErrorKind.InsufficientGas:
+                    return new ContractErrorMessage(StateTransitionErrors.InsufficientGas);
+                case StateTransitionErrorKind.NoCode:
+                    return  new ContractErrorMessage(StateTransitionErrors.NoCode);
+                case StateTransitionErrorKind.NoMethodName:
+                    return new ContractErrorMessage(StateTransitionErrors.NoMethodName);
+                case StateTransitionErrorKind.OutOfGas:
+                    return  new ContractErrorMessage(StateTransitionErrors.OutOfGas);
+                case StateTransitionErrorKind.VmError:
+                    return this.VmError;
+            }
+            
+            throw new NotSupportedException("No error message has been set for this ErrorKind.");
+        }
     }
 
     /// <summary>
@@ -153,9 +174,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a new result for a failed state transition due to a VM exception.
         /// </summary>
-        public static StateTransitionResult Fail(Gas gasConsumed, ContractErrorMessage vmError)
+        public static StateTransitionResult Fail(Gas gasConsumed, VmExecutionError vmError)
         {
-            return new StateTransitionResult(new StateTransitionError(gasConsumed, StateTransitionErrorKind.VmError, vmError));
+            // If VM execution ran out of gas we return a different kind of state transition error.
+            StateTransitionErrorKind errorKind = vmError.ErrorKind == VmExecutionErrorKind.OutOfGas
+                        ? StateTransitionErrorKind.OutOfGas
+                        : StateTransitionErrorKind.VmError;
+            
+            return new StateTransitionResult(new StateTransitionError(gasConsumed, errorKind, vmError.Message));
         }
 
         /// <summary>
@@ -163,28 +189,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public static StateTransitionResult Fail(Gas gasConsumed, StateTransitionErrorKind kind)
         {
-            string error = GetErrorFromKind(kind);
-
-            return new StateTransitionResult(new StateTransitionError(gasConsumed, kind, new ContractErrorMessage(error)));
-        }
-
-        private static string GetErrorFromKind(StateTransitionErrorKind kind)
-        {
-            switch (kind)
-            {
-                case StateTransitionErrorKind.InsufficientBalance:
-                    return StateTransitionErrors.InsufficientBalance;
-                case StateTransitionErrorKind.InsufficientGas:
-                    return StateTransitionErrors.InsufficientGas;
-                case StateTransitionErrorKind.NoCode:
-                    return StateTransitionErrors.NoCode;
-                case StateTransitionErrorKind.NoMethodName:
-                    return StateTransitionErrors.NoMethodName;
-                case StateTransitionErrorKind.OutOfGas:
-                    return StateTransitionErrors.OutOfGas;
-            }
-
-            throw new NotSupportedException("Error should not be VMError and should have an error message assigned.");
+            return new StateTransitionResult(new StateTransitionError(gasConsumed, kind, null));
         }
     }
 }

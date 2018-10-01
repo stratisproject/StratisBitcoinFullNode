@@ -12,6 +12,13 @@ namespace Stratis.SmartContracts.IntegrationTests
 {
     public class SmartContractMemoryPoolTests
     {
+        private readonly ICallDataSerializer callDataSerializer;
+
+        public SmartContractMemoryPoolTests()
+        {
+            this.callDataSerializer = CallDataSerializer.Default;
+        }
+
         [Fact]
         public void SmartContracts_AddToMempool_Success()
         {
@@ -61,24 +68,22 @@ namespace Stratis.SmartContracts.IntegrationTests
                 // Gas higher than allowed limit
                 Transaction tx = new Transaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
-                ContractCarrier smartContractCarrier = ContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(10_000_000));
-                tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
+                var contractTxData = new ContractTxData(1, 1, new Gas(10_000_000), new uint160(0), "Test");
+                tx.AddOutput(new TxOut(1, new Script(this.callDataSerializer.Serialize(contractTxData))));
                 tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                 stratisNodeSync.Broadcast(tx);
 
                 // OP_SPEND in user's tx - we can't sign this because the TransactionBuilder recognises the ScriptPubKey is invalid.
                 tx = new Transaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), new Script(new[] { (byte)ScOpcodeType.OP_SPEND })));
-                smartContractCarrier = ContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(100_000));
-                tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
+                tx.AddOutput(new TxOut(1, new Script(this.callDataSerializer.Serialize(contractTxData))));
                 stratisNodeSync.Broadcast(tx);
 
                 // 2 smart contract outputs
                 tx = new Transaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
-                smartContractCarrier = ContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(100_000));
-                tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
-                tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
+                tx.AddOutput(new TxOut(1, new Script(this.callDataSerializer.Serialize(contractTxData))));
+                tx.AddOutput(new TxOut(1, new Script(this.callDataSerializer.Serialize(contractTxData))));
                 tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                 stratisNodeSync.Broadcast(tx);
 

@@ -166,12 +166,11 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             AccountState accountState = this.stateRepository.GetAccountState(address);
             if (accountState != null)
             {
-                byte[] pushOp = Op.GetPushOp(address.ToBytes()).ToBytes();
                 var s = new List<byte>
                 {
                     (byte) ScOpcodeType.OP_INTERNALCONTRACTTRANSFER
                 };
-                s.AddRange(pushOp);
+                s.AddRange(address.ToBytes());
 
                 return new Script(s);
             }

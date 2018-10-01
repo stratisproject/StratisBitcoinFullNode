@@ -17,7 +17,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         IReadOnlyList<TransferInfo> InternalTransfers { get; }
         IContractLogHolder LogHolder { get; }
         IState Snapshot();
-        ulong Nonce { get; }
+        NonceGenerator NonceGenerator { get; }
         void TransitionTo(IState state);
         void AddInternalTransfer(TransferInfo transferInfo);
         ulong GetBalance(uint160 address);

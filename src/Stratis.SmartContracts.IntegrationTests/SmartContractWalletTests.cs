@@ -24,10 +24,16 @@ namespace Stratis.SmartContracts.IntegrationTests
 {
     public sealed class SmartContractWalletTests
     {
+        private ICallDataSerializer callDataSerializer;
         private const string WalletName = "mywallet";
         private const string Password = "123456";
         private const string Passphrase = "passphrase";
         private const string AccountName = "account 0";
+
+        public SmartContractWalletTests()
+        {
+            this.callDataSerializer = CallDataSerializer.Default;
+        }
 
         /// <summary>
         /// These are the same tests as in WalletTests.cs, just using the smart contract classes instead.
@@ -54,7 +60,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 Assert.Equal(Money.COIN * 100, (long) scReceiver.WalletSpendableBalance); // Balance is added (unconfirmed)
 
                 // Transaction is in chain in last block.
-                TestHelper.MineBlocks(scReceiver.CoreNode, 1, scReceiver.WalletName, scReceiver.Password, scReceiver.AccountName);
+                scReceiver.MineBlocks(1);
                 var lastBlock = scReceiver.GetLastBlock();
                 Assert.Equal(scReceiver.SpendableTransactions.First().Transaction.BlockHash, lastBlock.GetHash());
             }
@@ -94,9 +100,9 @@ namespace Stratis.SmartContracts.IntegrationTests
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
                 Assert.True(compilationResult.Success);
 
-                var contractCarrier = ContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
+                var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, compilationResult.Compilation);
 
-                var contractCreateScript = new Script(contractCarrier.Serialize());
+                var contractCreateScript = new Script(this.callDataSerializer.Serialize(contractTxData));
                 var txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
                     AccountReference = new WalletAccountReference(WalletName, AccountName),
@@ -135,8 +141,8 @@ namespace Stratis.SmartContracts.IntegrationTests
                 // Create a transfer token contract.
                 compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
                 Assert.True(compilationResult.Success);
-                contractCarrier = ContractCarrier.CreateContract(vmVersion, compilationResult.Compilation, gasPrice, gasLimit);
-                contractCreateScript = new Script(contractCarrier.Serialize());
+                contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, compilationResult.Compilation);
+                contractCreateScript = new Script(this.callDataSerializer.Serialize(contractTxData));
                 txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
                     AccountReference = new WalletAccountReference(WalletName, AccountName),
@@ -169,8 +175,8 @@ namespace Stratis.SmartContracts.IntegrationTests
                 scSender.FullNode.MempoolManager().Clear();
 
                 // Create a call contract transaction which will transfer funds.
-                contractCarrier = ContractCarrier.CallContract(1, tokenContractAddress, "Test", gasPrice, gasLimit);
-                Script contractCallScript = new Script(contractCarrier.Serialize());
+                contractTxData = new ContractTxData(1, gasPrice, gasLimit, tokenContractAddress, "Test");
+                Script contractCallScript = new Script(this.callDataSerializer.Serialize(contractTxData));
                 txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
                     AccountReference = new WalletAccountReference(WalletName, AccountName),
@@ -430,14 +436,12 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void MockChain_AuctionTest()
         {
-            var network = new SmartContractsRegTest(); // ew hack. TODO: Expose from Chain or Node.
-
             using (Chain chain = new Chain(2))
             {
                 Node sender = chain.Nodes[0];
                 Node receiver = chain.Nodes[1];
 
-                TestHelper.MineBlocks(sender.CoreNode, 1, sender.WalletName, sender.Password, sender.AccountName);
+                sender.MineBlocks(1);
 
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
                 Assert.True(compilationResult.Success);
@@ -451,7 +455,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 // Test that the contract address, event name, and logging values are available in the bloom.
                 var scBlockHeader = receiver.GetLastBlock().Header as SmartContractBlockHeader;
-                Assert.True(scBlockHeader.LogsBloom.Test(new Address(response.NewContractAddress).ToUint160(network).ToBytes()));
+                Assert.True(scBlockHeader.LogsBloom.Test(new Address(response.NewContractAddress).ToUint160(chain.Network).ToBytes()));
                 Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("Created")));
                 Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes((ulong) 20)));
                 // And sanity test that a non-indexed field and random value is not available in bloom.
@@ -469,10 +473,10 @@ namespace Stratis.SmartContracts.IntegrationTests
                 Assert.Equal(sender.GetStorageValue(response.NewContractAddress, "Owner"), sender.GetStorageValue(response.NewContractAddress, "HighestBidder"));
 
                 // Wait 20 blocks and end auction and check for transaction to victor
-                TestHelper.MineBlocks(sender.CoreNode, 20, sender.WalletName, sender.Password, sender.AccountName);
+                sender.MineBlocks(20);
                 sender.SendCallContractTransaction("AuctionEnd", response.NewContractAddress, 0);
                 sender.WaitMempoolCount(1);
-                TestHelper.MineBlocks(sender.CoreNode, 1, sender.WalletName, sender.Password, sender.AccountName);
+                sender.MineBlocks(1);
 
                 NBitcoin.Block block = sender.GetLastBlock();
                 Assert.Equal(3, block.Transactions.Count);
@@ -489,7 +493,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 // Mine some coins so we have balance
                 int maturity = (int) chain.Network.Consensus.CoinbaseMaturity;
-                TestHelper.MineBlocks(sender.CoreNode, maturity + 1, sender.WalletName, sender.Password, sender.AccountName);
+                sender.MineBlocks(maturity + 1);
                 int spendable = GetSpendableBlocks(maturity + 1, maturity);
                 Assert.Equal(Money.COIN * spendable * 50, (long) sender.WalletSpendableBalance);
 
@@ -500,7 +504,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 // Send create with value, and ensure balance is stored.
                 BuildCreateContractTransactionResponse sendResponse = sender.SendCreateContractTransaction(compilationResult.Compilation, 30);
                 sender.WaitMempoolCount(1);
-                TestHelper.MineBlocks(sender.CoreNode, 1, sender.WalletName, sender.Password, sender.AccountName);                
+                sender.MineBlocks(1);                
 
                 Assert.Equal((ulong)30 * 100_000_000, sender.GetContractBalance(sendResponse.NewContractAddress));
             }
