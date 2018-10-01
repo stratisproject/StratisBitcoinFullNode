@@ -460,25 +460,6 @@ namespace Stratis.Bitcoin.Consensus
                 currentHeader = currentHeader.Previous;
             }
 
-            // When we are switching to a different chain remove block data for blocks that are being reorged away.
-            // We are also marking block data availability as header only because we expect block store to reorganize those blocks shortly.
-            // In case chain that we reorged away from gets a prolongation which will make it desirable we will need to redownload all those blocks again.
-            if (fork != oldConsensusTip)
-            {
-                this.logger.LogTrace("Consensus tip is being changed to another chain, removing block data for the old chain.");
-                currentHeader = oldConsensusTip;
-
-                while (currentHeader != fork)
-                {
-                    currentHeader.Block = null;
-                    currentHeader.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
-
-                    this.logger.LogTrace("Block data for '{0}' is removed.", currentHeader);
-
-                    currentHeader = currentHeader.Previous;
-                }
-            }
-
             // Switch consensus tip to the new block header.
             this.AddOrReplacePeerTip(LocalPeerId, newConsensusTip.HashBlock);
 

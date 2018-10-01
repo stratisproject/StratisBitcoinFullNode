@@ -110,6 +110,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         private CachePerformanceSnapshot latestPerformanceSnapShot;
 
+        private readonly Random random;
+
         /// <summary>
         /// Initializes instance of the object based on DBreeze based coinview.
         /// </summary>
@@ -159,6 +161,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.performanceCounter = new CachePerformanceCounter(this.dateTimeProvider);
             this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
             this.cachedRewindDataList = new List<RewindData>();
+            this.random = new Random();
 
             nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 300);
         }
@@ -239,13 +242,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.cachedUtxoItems.TryAdd(txIds[index], cache);
                 }
                 result = new FetchCoinsResponse(outputs, this.blockHash);
-            }
 
-            int cacheEntryCount = this.cacheEntryCount;
-            if (cacheEntryCount > this.MaxItems)
-            {
-                this.logger.LogTrace("Cache is full now with {0} entries, evicting.", cacheEntryCount);
-                await this.EvictAsync().ConfigureAwait(false);
+                int cacheEntryCount = this.cacheEntryCount;
+                if (cacheEntryCount > this.MaxItems)
+                {
+                    this.logger.LogTrace("Cache is full now with {0} entries, evicting.", cacheEntryCount);
+                    this.EvictLocked();
+                }
             }
 
             this.logger.LogTrace("(-):*.{0}='{1}',*.{2}.{3}={4}", nameof(result.BlockHash), result.BlockHash, nameof(result.UnspentOutputs), nameof(result.UnspentOutputs.Length), result.UnspentOutputs.Length);
@@ -316,23 +319,19 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Deletes some items from the cache to free space for new items.
         /// Only items that are persisted in the underlaying storage can be deleted from the cache.
         /// </summary>
-        private async Task EvictAsync()
+        /// <remarks>Should be protected by <see cref="lockobj"/>.</remarks>
+        private void EvictLocked()
         {
             this.logger.LogTrace("()");
 
-            using (await this.lockobj.LockAsync().ConfigureAwait(false))
+            foreach (KeyValuePair<uint256, CacheItem> entry in this.cachedUtxoItems.ToList())
             {
-                // TODO: Do not create new random source every time.
-                var rand = new Random();
-                foreach (KeyValuePair<uint256, CacheItem> entry in this.cachedUtxoItems.ToList())
+                if (!entry.Value.IsDirty && entry.Value.ExistInInner)
                 {
-                    if (!entry.Value.IsDirty && entry.Value.ExistInInner)
+                    if ((this.random.Next() % 3) == 0)
                     {
-                        if (rand.Next() % 3 == 0)
-                        {
-                            this.logger.LogTrace("Transaction ID '{0}' selected to be removed from the cache.", entry.Key);
-                            this.cachedUtxoItems.Remove(entry.Key);
-                        }
+                        this.logger.LogTrace("Transaction ID '{0}' selected to be removed from the cache.", entry.Key);
+                        this.cachedUtxoItems.Remove(entry.Key);
                     }
                 }
             }

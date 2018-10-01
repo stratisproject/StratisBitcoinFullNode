@@ -19,54 +19,22 @@ namespace Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager
         /// </summary>
         public IDisposable MeasureTotalConnectionTime()
         {
-            var stopwatch = new StopwatchDisposable(elapsedTicks =>
-            {
-                ConsensusManagerPerformanceSnapshot snapshot = this.currentSnapshot;
-
-                Interlocked.Increment(ref snapshot.TotalConnectionTime.TotalExecutionsCount);
-                Interlocked.Add(ref snapshot.TotalConnectionTime.TotalDelayTicks, elapsedTicks);
-            });
-
-            return stopwatch;
+            return new StopwatchDisposable((elapsed) => this.currentSnapshot.TotalConnectionTime.Increment(elapsed));
         }
 
         public IDisposable MeasureBlockConnectionFV()
         {
-            var stopwatch = new StopwatchDisposable(elapsedTicks =>
-            {
-                ConsensusManagerPerformanceSnapshot snapshot = this.currentSnapshot;
-
-                Interlocked.Increment(ref snapshot.ConnectBlockFV.TotalExecutionsCount);
-                Interlocked.Add(ref snapshot.ConnectBlockFV.TotalDelayTicks, elapsedTicks);
-            });
-
-            return stopwatch;
+            return new StopwatchDisposable((elapsed) => this.currentSnapshot.ConnectBlockFV.Increment(elapsed));
         }
 
         public IDisposable MeasureBlockConnectedSignal()
         {
-            var stopwatch = new StopwatchDisposable(elapsedTicks =>
-            {
-                ConsensusManagerPerformanceSnapshot snapshot = this.currentSnapshot;
-
-                Interlocked.Increment(ref snapshot.BlockConnectedSignal.TotalExecutionsCount);
-                Interlocked.Add(ref snapshot.BlockConnectedSignal.TotalDelayTicks, elapsedTicks);
-            });
-
-            return stopwatch;
+            return new StopwatchDisposable((elapsed) => this.currentSnapshot.BlockConnectedSignal.Increment(elapsed));
         }
 
         public IDisposable MeasureBlockDisconnectedSignal()
         {
-            var stopwatch = new StopwatchDisposable(elapsedTicks =>
-            {
-                ConsensusManagerPerformanceSnapshot snapshot = this.currentSnapshot;
-
-                Interlocked.Increment(ref snapshot.BlockDisconnectedSignal.TotalExecutionsCount);
-                Interlocked.Add(ref snapshot.BlockDisconnectedSignal.TotalDelayTicks, elapsedTicks);
-            });
-
-            return stopwatch;
+            return new StopwatchDisposable((elapsed) => this.currentSnapshot.BlockDisconnectedSignal.Increment(elapsed));
         }
 
         /// <summary>Takes current snapshot.</summary>

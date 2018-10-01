@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task<Transaction> GetTrxAsync(uint256 trxid)
+        public Task<Transaction> GetTransactionByIdAsync(uint256 trxid)
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
             Guard.NotNull(trxid, nameof(trxid));
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task<uint256> GetTrxBlockIdAsync(uint256 trxid)
+        public Task<uint256> GetBlockIdByTransactionIdAsync(uint256 trxid)
         {
             Guard.NotNull(trxid, nameof(trxid));
             this.logger.LogTrace("({0}:'{1}')", nameof(trxid), trxid);
@@ -443,6 +443,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     Row<byte[], Block> blockRow = transaction.Select<byte[], Block>(BlockTableName, key);
                     if (blockRow.Exists)
                         res = blockRow.Value;
+                }
+
+                // If searching for genesis block, return it.
+                if (res == null && hash == this.network.GenesisHash)
+                {
+                    res = this.network.GetGenesis();
                 }
 
                 this.logger.LogTrace("(-):{0}", res);

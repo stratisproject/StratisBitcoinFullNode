@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
+using NLog;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
@@ -40,13 +41,25 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public static NodeBuilder Create(object caller, [CallerMemberName] string callingMethod = null)
         {
             string testFolderPath = TestBase.CreateTestDir(caller, callingMethod);
-            return new NodeBuilder(testFolderPath);
+            return CreateNodeBuilder(testFolderPath);
         }
 
         public static NodeBuilder Create(string testDirectory)
         {
             string testFolderPath = TestBase.CreateTestDir(testDirectory);
-            return new NodeBuilder(testFolderPath);
+            return CreateNodeBuilder(testFolderPath);
+        }
+
+        /// <summary>
+        /// Creates a node builder instance and disable logs.
+        /// To enable logs please refer to the <see cref="WithLogsEnabled"/> method.
+        /// </summary>
+        /// <param name="testFolderPath">The test folder path.</param>
+        /// <returns>A <see cref="NodeBuilder"/> instance with logs disabled.</returns>
+        private static NodeBuilder CreateNodeBuilder(string testFolderPath)
+        {
+            return new NodeBuilder(testFolderPath)
+                .WithLogsDisabled();
         }
 
         private static string GetBitcoinCorePath(string version)
@@ -148,7 +161,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             string hash = Guid.NewGuid().ToString("N").Substring(0, 7);
             string numberedFolderName = string.Join(
                 ".",
-                new[] {hash, folderName}.Where(s => s != null));
+                new[] { hash, folderName }.Where(s => s != null));
             string dataFolderName = Path.Combine(this.rootFolder, numberedFolderName);
 
             return dataFolderName;
@@ -166,6 +179,58 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             foreach (CoreNode node in this.Nodes)
                 node.Kill();
+
+            // Logs are static so clear them after every run.
+            LogManager.Configuration.LoggingRules.Clear();
+            LogManager.ReconfigExistingLoggers();
+        }
+
+        /// <summary>
+        /// By default, logs are disabled when using <see cref="Create(string)"/> or <see cref="Create(object, string)"/> methods,
+        /// by using this fluent method the caller can enable the logs at will.
+        /// </summary>
+        /// <returns>Current <see cref="NodeBuilder"/> instance, used for fluent API style</returns>
+        /// <example>
+        /// //default use (without logs)
+        /// using (NodeBuilder builder = NodeBuilder.Create(this))
+        /// {
+        ///     //your test code here
+        /// }
+        ///
+        /// //with logs enabled
+        /// using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
+        /// {
+        ///     //your test code here
+        /// }
+        /// </example>
+        public NodeBuilder WithLogsEnabled()
+        {
+            // NLog Enable/Disable logging is based on internal counter. To ensure logs are enabled
+            // keep calling EnableLogging until IsLoggingEnabled returns true.
+            while (!LogManager.IsLoggingEnabled())
+            {
+                LogManager.EnableLogging();
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// If logs have been enabled by calling WithLogsEnabled you can disable it manually by calling this method.
+        /// If the test is running within an "using block" where the nodebuilder is created, without using <see cref="WithLogsEnabled"/>,
+        /// you shouldn't need to call this method.
+        /// </summary>
+        /// <returns>Current <see cref="NodeBuilder"/> instance, used for fluent API style.</returns>
+        public NodeBuilder WithLogsDisabled()
+        {
+            // NLog Enable/Disable logging is based on internal counter. To ensure logs are disabled
+            // keep calling DisableLogging until IsLoggingEnabled returns false.
+            while (LogManager.IsLoggingEnabled())
+            {
+                LogManager.DisableLogging();
+            }
+
+            return this;
         }
     }
 }

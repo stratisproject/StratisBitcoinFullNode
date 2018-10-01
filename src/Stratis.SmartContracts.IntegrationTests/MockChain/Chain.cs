@@ -3,23 +3,24 @@ using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 
-namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
+namespace Stratis.SmartContracts.IntegrationTests.MockChain
 {
     /// <summary>
     /// Facade for NodeBuilder.
     /// </summary>
-    public class MockChain : IDisposable
+    public class Chain : IDisposable
     {
         private readonly NodeBuilder builder;
 
-        protected readonly MockChainNode[] nodes;
+        protected readonly Node[] nodes;
 
         /// <summary>
         /// Nodes on this network.
         /// </summary>
-        public IReadOnlyList<MockChainNode> Nodes
+        public IReadOnlyList<Node> Nodes
         {
             get { return this.nodes; }
         }
@@ -29,12 +30,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
         /// </summary>
         public Network Network { get; }
 
-        public MockChain(int numNodes)
+        public Chain(int numNodes)
         {
             this.Network = new SmartContractsRegTest(); // TODO: Make this configurable.
 
             this.builder = NodeBuilder.Create(this);
-            this.nodes = new MockChainNode[numNodes];
+            this.nodes = new Node[numNodes];
 
             for (int i = 0; i < numNodes; i++)
             {
@@ -44,11 +45,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.MockChain
                 RPCClient rpcClient = node.CreateRPCClient();
                 for (int j = 0; j < i; j++)
                 {
-                    MockChainNode otherNode = this.nodes[j];
+                    Node otherNode = this.nodes[j];
                     rpcClient.AddNode(otherNode.CoreNode.Endpoint, true);
                     otherNode.CoreNode.CreateRPCClient().AddNode(node.Endpoint);
                 }
-                this.nodes[i] = new MockChainNode(node, this);
+                this.nodes[i] = new Node(node, this);
             }
         }
 
