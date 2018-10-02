@@ -21,6 +21,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         private readonly Node node2;
 
         private readonly ISenderRetriever senderRetriever;
+        private readonly IAddressGenerator addressGenerator;
 
         public ContractInternalTransferTests(MockChainFixture fixture)
         {
@@ -29,6 +30,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.node2 = this.mockChain.Nodes[1];
 
             this.senderRetriever = new SenderRetriever();
+            this.addressGenerator = new AddressGenerator();
         }
 
         [Fact]
@@ -251,10 +253,71 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Special case because code needs to be stored in repo before execution. 
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public void InternalTransfer_Create_WithValueTransfer()
         {
-            //Create with value transfer
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/CreationTransfer.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+            this.node1.WaitMempoolCount(1);
+            this.node1.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
+
+            double amount = 25;
+            Money senderBalanceBefore = this.node1.WalletSpendableBalance;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+
+            // Send amount to contract, which will send to new address of contract it creates
+            BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(
+                nameof(CreationTransfer.CreateAnotherContract),
+                preResponse.NewContractAddress,
+                amount);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+
+            Block lastBlock = this.node1.GetLastBlock();
+
+            // Blocks progressed
+            Assert.NotEqual(currentHash, lastBlock.GetHash());
+
+            // Get created contract address - TODO FIX
+            uint160 createdAddress = this.addressGenerator.GenerateAddress(response.TransactionId, 0);
+
+            // Block contains a condensing transaction
+            Assert.Equal(3, lastBlock.Transactions.Count);
+            Transaction condensingTransaction = lastBlock.Transactions[2];
+            Assert.Single(condensingTransaction.Outputs); // Entire balance was forwarded,
+            byte[] toBytes = condensingTransaction.Outputs[0].ScriptPubKey.ToBytes();
+            Assert.Equal((byte)ScOpcodeType.OP_INTERNALCONTRACTTRANSFER, toBytes[0]);
+            uint160 toAddress = new uint160(toBytes.Skip(1).ToArray());
+            Assert.Equal(createdAddress, toAddress);
+            Assert.Equal(new Money((long)amount, MoneyUnit.BTC), condensingTransaction.Outputs[0].Value);
+            Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
+
+            // Amount in wallet is reduced by amount sent and fee.
+            Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee + new Money((long)amount, MoneyUnit.BTC));
+
+            // Contract doesn't maintain any balance
+            Assert.Equal((ulong)0, this.node1.GetContractBalance(preResponse.NewContractAddress));
+
+            // Created contract received full amount
+            Assert.Equal((ulong) new Money((ulong)amount, MoneyUnit.BTC), this.node1.GetContractBalance(createdAddress.ToAddress(this.mockChain.Network)));
+
+            // Receipt is correct
+            ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
+            Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
+            Assert.Empty(receipt.Logs); // TODO: Could add logs to this test
+            Assert.True(receipt.Success);
+            Assert.True(receipt.GasUsed > GasPriceList.BaseCost);
+            Assert.Null(receipt.NewContractAddress);
+            Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
+            Assert.Null(receipt.Error);
+            Assert.Equal(preResponse.NewContractAddress, receipt.To);
         }
 
     }
