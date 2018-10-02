@@ -8,7 +8,7 @@ public class MultipleNestedCalls : SmartContract
         Create<Caller>(this.Balance);
     }
 
-    public void CalledInsideConstruction()
+    public void CalledInsideConstructor()
     {
         this.PersistentState.SetAddress("Caller", this.Message.Sender);
     }
