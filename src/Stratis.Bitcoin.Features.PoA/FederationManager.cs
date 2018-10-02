@@ -38,7 +38,10 @@ namespace Stratis.Bitcoin.Features.PoA
                 // Loaded key has to be a key for current federation.
                 if (!this.network.FederationPublicKeys.Contains(this.FederationMemberKey.PubKey))
                 {
-                    throw new Exception("Key provided is not registered on the network!");
+                    string message = "Key provided is not registered on the network!";
+
+                    this.logger.LogCritical(message);
+                    throw new Exception(message);
                 }
 
                 this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: {0}.", this.FederationMemberKey.PubKey);
