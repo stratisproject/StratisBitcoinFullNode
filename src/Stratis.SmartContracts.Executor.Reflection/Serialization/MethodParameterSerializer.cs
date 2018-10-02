@@ -31,6 +31,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         {
             var primitiveType = GetPrimitiveType(obj);
 
+            // ToString works fine for all of our data types except byte arrays.
             var serialized = primitiveType == MethodParameterDataType.ByteArray
                 ? Encoding.UTF8.GetString((byte[])obj)
                 : obj.ToString();
