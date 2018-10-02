@@ -119,11 +119,11 @@ namespace Stratis.Bitcoin.Utilities
                 {
                     if (delayStart != null)
                     {
-                        this.logger.LogInformation($"{this.Name} starting in {delayStart.Value.TotalSeconds} seconds.");
+                        this.logger.LogInformation("{0} starting in {1} seconds.", this.Name, delayStart.Value.TotalSeconds);
                         await Task.Delay(delayStart.Value, cancellation).ConfigureAwait(false);
                     }
 
-                    this.logger.LogInformation($"{this.Name} starting.");
+                    this.logger.LogInformation("{0} starting.", this.Name);
 
                     if (this.RepeatEvery == TimeSpans.RunOnce)
                     {
