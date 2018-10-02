@@ -115,11 +115,15 @@ namespace Stratis.Bitcoin.Utilities
             return Task.Run(async () =>
             {
                 Exception uncaughtException = null;
-                this.logger.LogInformation(this.Name + " starting.");
                 try
                 {
                     if (delayStart != null)
+                    {
+                        this.logger.LogInformation($"{this.Name} starting in {delayStart.Value.TotalSeconds} seconds.");
                         await Task.Delay(delayStart.Value, cancellation).ConfigureAwait(false);
+                    }
+
+                    this.logger.LogInformation($"{this.Name} starting.");
 
                     if (this.RepeatEvery == TimeSpans.RunOnce)
                     {
