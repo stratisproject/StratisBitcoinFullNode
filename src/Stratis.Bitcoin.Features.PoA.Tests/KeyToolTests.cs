@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests
@@ -11,9 +9,15 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
     {
         private readonly KeyTool tool;
 
+        private readonly DataFolder dataFolder;
+
         public KeyToolTests()
         {
-            this.tool = new KeyTool();
+            string testRootPath = Path.Combine(Path.GetTempPath(), this.GetType().Name + "_" + nameof(this.CanSaveLoadKey));
+            Directory.CreateDirectory(testRootPath);
+
+            this.dataFolder = new DataFolder(testRootPath);
+            this.tool = new KeyTool(this.dataFolder);
         }
 
         [Fact]
@@ -31,19 +35,14 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         [Fact]
         public void CanSaveLoadKey()
         {
-            string testPath = Path.Combine(Path.GetTempPath(), this.GetType().Name + "_" + nameof(this.CanSaveLoadKey));
-            Directory.CreateDirectory(testPath);
-
-            string filePath = testPath + @"\key.dat";
-
             Key key = this.tool.GeneratePrivateKey();
 
-            this.tool.SavePrivateKey(key, filePath);
-            Key loadedKey = this.tool.LoadPrivateKey(filePath);
+            this.tool.SavePrivateKey(key);
+            Key loadedKey = this.tool.LoadPrivateKey();
 
             Assert.Equal(loadedKey.PubKey, key.PubKey);
 
-            Directory.Delete(testPath, true);
+            Directory.Delete(this.dataFolder.RootPath, true);
         }
     }
 }

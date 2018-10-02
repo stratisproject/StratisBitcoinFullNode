@@ -1,12 +1,21 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
     public class KeyTool
     {
         public const string KeyFileDefaultName = "federationKey.dat";
+
+        private readonly DataFolder dataFolder;
+
+        public KeyTool(DataFolder dataFolder)
+        {
+            this.dataFolder = dataFolder;
+        }
 
         public Key GeneratePrivateKey()
         {
@@ -16,27 +25,29 @@ namespace Stratis.Bitcoin.Features.PoA
             return privKey;
         }
 
-        public string GetPrivateKeyDefaultPath(NodeSettings settings)
+        public string GetPrivateKeySavePath()
         {
-            string path = Path.Combine(settings.DataDir, KeyTool.KeyFileDefaultName);
+            string path = Path.Combine(this.dataFolder.RootPath, KeyTool.KeyFileDefaultName);
 
             return path;
         }
 
-        public void SavePrivateKey(Key privKey, string path)
+        public void SavePrivateKey(Key privKey)
         {
             var ms = new MemoryStream();
             var stream = new BitcoinStream(ms, true);
             stream.ReadWrite(ref privKey);
 
             ms.Seek(0, SeekOrigin.Begin);
-            FileStream fileStream = File.Create(path);
+            FileStream fileStream = File.Create(this.GetPrivateKeySavePath());
             ms.CopyTo(fileStream);
             fileStream.Close();
         }
 
-        public Key LoadPrivateKey(string path)
+        public Key LoadPrivateKey()
         {
+            string path = this.GetPrivateKeySavePath();
+
             if (!File.Exists(path))
                 return null;
 
