@@ -39,7 +39,7 @@ init:
 build_script:
 - ps: |
       cd src
-      dotnet remove Stratis.Bitcoin/Stratis.Bitcoin.csproj package Fody
+      dotnet remove Stratis.Bitcoin/Stratis.Bitcoin.csproj package Tracer.Fody
       Write-Host "[$env:configuration] STARTED dotnet build" -foregroundcolor "magenta"
       dotnet build -c $env:configuration -v m 
       Write-Host "[$env:configuration] FINISHED dotnet build" -foregroundcolor "magenta"
