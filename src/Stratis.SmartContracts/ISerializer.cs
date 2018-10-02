@@ -6,15 +6,6 @@ namespace Stratis.SmartContracts
     {
         // TODO: Document the requirements for inputs for these fields?
 
-
-        byte[] SerializeStruct(object o);
-
-        byte[] SerializeArray(Array array);
-
-        T ToStruct<T>(byte[] val) where T : struct;
-
-        T[] ToArray<T>(byte[] val);
-
         /// <summary>
         /// Serializes an address into its 20-bytes representation.
         /// </summary>
@@ -51,10 +42,23 @@ namespace Stratis.SmartContracts
         byte[] Serialize(string s);
 
         /// <summary>
+        /// Serializes a struct into an RLP-encoded byte[].
+        /// </summary>
+        byte[] SerializeStruct(object o);
+
+        /// <summary>
+        /// Serializes an array into an RLP-encoded byte[].
+        /// </summary>
+        byte[] SerializeArray(Array array);
+
+        /// <summary>
         /// Serializes bytes into a boolean via BitConverter.
         /// </summary>
         bool ToBool(byte[] val);
 
+        /// <summary>
+        /// Serializes UTF-8 encoded bytes into a char.
+        /// </summary>
         char ToChar(byte[] val);
 
         /// <summary>
@@ -87,6 +91,14 @@ namespace Stratis.SmartContracts
         /// </summary>
         string ToString(byte[] val);
 
+        /// <summary>
+        /// Serializes RLP-encoded bytes into a struct.
+        /// </summary>
+        T ToStruct<T>(byte[] val) where T : struct;
 
+        /// <summary>
+        /// Serializes RLP-encoded bytes into an array.
+        /// </summary>
+        T[] ToArray<T>(byte[] val);
     }
 }
