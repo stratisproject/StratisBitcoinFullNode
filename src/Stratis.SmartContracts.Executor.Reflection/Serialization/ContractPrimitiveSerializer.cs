@@ -119,7 +119,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return RLP.EncodeList(toEncode.ToArray());
         }
 
-        private byte[] SerializeArray(Array array)
+        public byte[] SerializeArray(Array array)
         {
             List<byte[]> toEncode = new List<byte[]>();
 
@@ -242,7 +242,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return ret;
         }
 
-        private object DeserializeArray(Type elementType, byte[] bytes)
+        public T[] DeserializeArray<T>(byte[] bytes)
+        {
+            return (T[]) DeserializeArray(typeof(T), bytes);
+        }
+
+        private Array DeserializeArray(Type elementType, byte[] bytes)
         {
             RLPCollection collection = (RLPCollection)RLP.Decode(bytes)[0];
 

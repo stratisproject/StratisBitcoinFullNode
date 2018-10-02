@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts
+﻿using System;
+
+namespace Stratis.SmartContracts
 {
     public interface ISerializer
     {
@@ -73,5 +75,15 @@
         /// Serializes UTF8-encoded bytes into a string.
         /// </summary>
         string ToString(byte[] val);
+
+        /// <summary>
+        /// Serializes an array of primitives using RLP encoding. 
+        /// </summary>
+        byte[] SerializeArray(Array array);
+
+        /// <summary>
+        /// Deserializes an RLP encoded array to bytes.
+        /// </summary>
+        T[] DeserializeArray<T>(byte[] bytes);
     }
 }
