@@ -11,6 +11,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public sealed class CallDataSerializerTests
     {
+        public ICallDataSerializer Serializer = new CallDataSerializer(new MethodParameterSerializer());
+
         [Fact]
         public void SmartContract_CanSerialize_OP_CREATECONTRACT_WithoutMethodParameters()
         {
@@ -29,10 +31,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 }"
             );
             
-            var serializer = CallDataSerializer.Default;
-
             var contractTxData = new ContractTxData(1, 1, (Gas)5000, contractExecutionCode);
-            var callDataResult = serializer.Deserialize(serializer.Serialize(contractTxData));
+            var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
 
             Assert.True(callDataResult.IsSuccess);
@@ -71,13 +71,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Char, '#'),
             };
 
-            var serializer = CallDataSerializer.Default;
+            var contractTxData = new ContractTxData(1, 1, (Gas)5000, contractExecutionCode, this.Serializer.MethodParamSerializer.Deserialize(methodParameters));
 
-            var methodParamSerializer = new MethodParameterSerializer();
-
-            var contractTxData = new ContractTxData(1, 1, (Gas)5000, contractExecutionCode, methodParamSerializer.Deserialize(methodParameters));
-
-            var callDataResult = serializer.Deserialize(serializer.Serialize(contractTxData));
+            var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
 
             Assert.True(callDataResult.IsSuccess);
@@ -111,11 +107,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_CanSerialize_OP_CALLCONTRACT_WithoutMethodParameters()
         {          
-            var serializer = CallDataSerializer.Default;
-
             var contractTxData = new ContractTxData(1, 1, (Gas)5000, 100, "Execute");
 
-            var callDataResult = serializer.Deserialize(serializer.Serialize(contractTxData));
+            var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
 
             Assert.True(callDataResult.IsSuccess);
@@ -146,12 +140,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Address, new Address("mxKorCkWmtrPoekfWiMzERJPhaT13nnkMy"))
             };
 
-            var serializer = CallDataSerializer.Default;
-
-            var methodParamSerializer = new MethodParameterSerializer();
-
-            var contractTxData = new ContractTxData(1, 1, (Gas)5000, 100, "Execute", methodParamSerializer.Deserialize(methodParameters));
-            var callDataResult = serializer.Deserialize(serializer.Serialize(contractTxData));
+            var contractTxData = new ContractTxData(1, 1, (Gas)5000, 100, "Execute", this.Serializer.MethodParamSerializer.Deserialize(methodParameters));
+            var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
 
             Assert.True(callDataResult.IsSuccess);

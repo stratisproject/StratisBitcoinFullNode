@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests
@@ -23,7 +24,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         public SmartContractWalletOnPosNetworkTests()
         {
-            this.callDataSerializer = CallDataSerializer.Default;
+            this.callDataSerializer = new CallDataSerializer(new MethodParameterSerializer());
         }
 
         [Fact]
