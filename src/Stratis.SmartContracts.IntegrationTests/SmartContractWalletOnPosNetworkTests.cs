@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         public SmartContractWalletOnPosNetworkTests()
         {
-            this.callDataSerializer = new CallDataSerializer(new MethodParameterSerializer());
+            this.callDataSerializer = new CallDataSerializer(new MethodParameterStringSerializer());
         }
 
         [Fact]

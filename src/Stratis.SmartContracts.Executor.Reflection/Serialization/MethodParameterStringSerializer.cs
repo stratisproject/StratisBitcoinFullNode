@@ -10,7 +10,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// <summary>
     /// Class that handles method parameter serialization.
     /// </summary>
-    public sealed class MethodParameterSerializer : IMethodParameterSerializer
+    public sealed class MethodParameterStringSerializer : IMethodParameterSerializer
     {
         /// <summary>
         /// Serializes an array of method parameter objects to the bytes of their string-encoded representation.

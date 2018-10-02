@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public sealed class CallDataSerializerTests
     {
-        public ICallDataSerializer Serializer = new CallDataSerializer(new MethodParameterSerializer());
+        public ICallDataSerializer Serializer = new CallDataSerializer(new MethodParameterStringSerializer());
 
         [Fact]
         public void SmartContract_CanSerialize_OP_CREATECONTRACT_WithoutMethodParameters()
