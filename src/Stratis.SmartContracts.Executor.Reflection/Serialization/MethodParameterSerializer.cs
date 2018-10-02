@@ -113,7 +113,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                     processedParameters.Add(Convert.ToByte(parameterSignature[1]));
 
                 else if (parameterSignature[0] == "3")
-                    processedParameters.Add(parameterSignature[1]);
+                    processedParameters.Add(Encoding.UTF8.GetBytes(parameterSignature[1]));
 
                 else if (parameterSignature[0] == "4")
                     processedParameters.Add(parameterSignature[1]);
