@@ -93,6 +93,12 @@ in the else branch. If the node is normal, no log will be created and thus the r
 
 ## Method Entry/Exit Logs
 
+Entry and exit logs are added automatically on compilation by fody weaver and therefore should not be added manually except for exit markers (`(-)[THIS_IS_MARKER]`).
+
+This section is outdated but for historical reasons it's kept as it is in case we would like to return to manual entry\exit logs.
+
+
+
 All important methods, which are almost all methods, except for methods that do very little, are very simple (trivial), and are called very often, 
 should have special method entry and exit logs. These logs have a unified structure and provide an uniform looking logs that are very easy 
 to read. A method is considered to be called too often, if it is called in a loop, in which the same set of objects are being used. 
@@ -135,7 +141,7 @@ The only exception to this entry-exit pairing are unhandled exceptions coming fr
 ```
 "(-):resultValue,outarg1=outval1,outarg2=outval2,..."
 ```
- 
+
 We log result value and values of all output arguments (same rules as for the input arguments) and in case the method changes a global state 
 variable (or object state variable), we also consider such value as an output argument. A very common example of exit log:
 

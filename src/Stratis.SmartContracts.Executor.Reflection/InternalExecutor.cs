@@ -7,7 +7,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     ///<inheritdoc/>
     public sealed class InternalExecutor : IInternalTransactionExecutor
     {
-        private const ulong DefaultGasLimit = GasPriceList.BaseCost * 2 - 1;
+        public const ulong DefaultGasLimit = GasPriceList.BaseCost * 2 - 1;
 
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
@@ -109,8 +109,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         ///<inheritdoc />
         public ITransferResult Transfer(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer)
         {
-            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(addressTo), addressTo, nameof(amountToTransfer), amountToTransfer);
-
             ulong gasBudget = DefaultGasLimit; // for Transfer always send limited gas to prevent re-entrance.
 
             Gas gasRemaining = smartContractState.GasMeter.GasAvailable;
@@ -137,8 +135,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             smartContractState.GasMeter.Spend(result.GasConsumed);
 
-            return result.IsSuccess 
-                ? TransferResult.Empty() 
+            return result.IsSuccess
+                ? TransferResult.Empty()
                 : TransferResult.Failed();
         }
     }

@@ -18,13 +18,13 @@ namespace Stratis.Bitcoin.Interfaces
         /// Retrieve the transaction information asynchronously using transaction id.
         /// </summary>
         /// <param name="trxid">The transaction id to find.</param>
-        Task<Transaction> GetTrxAsync(uint256 trxid);
+        Task<Transaction> GetTransactionByIdAsync(uint256 trxid);
 
         /// <summary>
         /// Get the corresponding block hash by using transaction hash.
         /// </summary>
-        /// <param name="trxid">The transaction hash</param>
-        Task<uint256> GetTrxBlockIdAsync(uint256 trxid);
+        /// <param name="trxid">The transaction hash.</param>
+        Task<uint256> GetBlockIdByTransactionIdAsync(uint256 trxid);
 
         /// <summary>
         /// Get the block from the database by using block hash.

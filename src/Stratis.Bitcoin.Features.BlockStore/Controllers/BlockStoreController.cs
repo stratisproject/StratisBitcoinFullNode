@@ -62,8 +62,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
-            this.logger.LogTrace("({0}:'{1}')", nameof(SearchByHashRequest.Hash), query.Hash);
-
             try
             {
                 Block block = await this.blockStore.GetBlockAsync(uint256.Parse(query.Hash)).ConfigureAwait(false);

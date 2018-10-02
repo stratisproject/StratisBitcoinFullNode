@@ -241,6 +241,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     case "Serializer":
                         field.SetValue(smartContract, contractState.Serializer);
                         break;
+                    case "contractLogger":
+                        field.SetValue(smartContract, contractState.ContractLogger);
+                        break;
                     default:
                         break;
                 }

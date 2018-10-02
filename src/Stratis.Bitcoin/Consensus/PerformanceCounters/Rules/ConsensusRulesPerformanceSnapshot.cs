@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NBitcoin.Rules;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus.PerformanceCounters.Rules
 {
     /// <summary>Snapshot of rule's performance.</summary>
+    [NoTrace]
     public class ConsensusRulesPerformanceSnapshot
     {
         internal Dictionary<IConsensusRuleBase, RulePerformance> PerformanceInfo { get; }
