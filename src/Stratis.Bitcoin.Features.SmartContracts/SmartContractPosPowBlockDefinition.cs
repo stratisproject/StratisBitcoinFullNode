@@ -80,8 +80,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <inheritdoc/>
         public override void AddToBlock(TxMempoolEntry mempoolEntry)
         {
-            this.logger.LogTrace("()");
-
             TxOut smartContractTxOut = mempoolEntry.Transaction.TryGetSmartContractTxOut();
             if (smartContractTxOut == null)
             {
@@ -116,15 +114,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     this.logger.LogTrace("Internal {0}:{1} was added.", nameof(result.InternalTransaction), result.InternalTransaction.GetHash());
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
-            this.logger.LogTrace("()");
-
             GetSenderResult getSenderResult = this.senderRetriever.GetAddressFromScript(scriptPubKey);
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-createnewblock", getSenderResult.Error));
@@ -139,17 +133,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             base.OnBuild(chainTip, scriptPubKey);
 
             this.coinbase.Outputs.AddRange(this.refundOutputs);
-
-            this.logger.LogTrace("(-)");
-
+            
             return this.BlockTemplate;
         }
 
         /// <inheritdoc/>
         public override void UpdateHeaders()
         {
-            this.logger.LogTrace("()");
-
             base.UpdateBaseHeaders();
 
             this.block.Header.Bits = this.stakeValidator.GetNextTargetRequired(this.stakeChain, this.ChainTip, this.Network.Consensus, false);
@@ -161,8 +151,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             UpdateReceiptRoot(scHeader);
 
             UpdateLogsBloom(scHeader);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -194,8 +182,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <remarks>TODO: At some point we need to change height to a ulong.</remarks> 
         private IContractExecutionResult ExecuteSmartContract(TxMempoolEntry mempoolEntry)
         {
-            this.logger.LogTrace("()");
-
             GetSenderResult getSenderResult = this.senderRetriever.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));
@@ -210,9 +196,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 result.Logs.ToArray()
             );
             this.receipts.Add(receipt);
-
-            this.logger.LogTrace("(-)");
-
+            
             return result;
         }
     }

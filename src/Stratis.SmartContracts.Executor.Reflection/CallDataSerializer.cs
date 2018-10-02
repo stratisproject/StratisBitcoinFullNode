@@ -11,9 +11,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public class CallDataSerializer : ICallDataSerializer
     {
-        // TODO this is ugly but there is poor DI support for rules so we can't inject it yet
-        public static ICallDataSerializer Default = new CallDataSerializer(new MethodParameterSerializer());
-
         public IMethodParameterSerializer MethodParamSerializer { get; }
 
         private const int intLength = sizeof(int);

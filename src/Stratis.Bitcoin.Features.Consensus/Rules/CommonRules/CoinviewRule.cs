@@ -28,19 +28,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override void Initialize()
         {
-            this.Logger.LogTrace("()");
-
             this.Consensus = this.Parent.Network.Consensus;
             this.ConsensusOptions = this.Parent.Network.Consensus.Options;
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public override async Task RunAsync(RuleContext context)
         {
-            this.Logger.LogTrace("()");
-
             Block block = context.ValidationContext.BlockToValidate;
             ChainedHeader index = context.ValidationContext.ChainedHeaderToValidate;
             DeploymentFlags flags = context.Flags;
@@ -137,8 +131,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
             else this.Logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -148,14 +140,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <param name="transaction">Transaction which outputs will be added to the context's <see cref="UnspentOutputSet"/> and which inputs will be removed from it.</param>
         protected void UpdateUTXOSet(RuleContext context, Transaction transaction)
         {
-            this.Logger.LogTrace("()");
-
             ChainedHeader index = context.ValidationContext.ChainedHeaderToValidate;
             UnspentOutputSet view = (context as UtxoRuleContext).UnspentOutputSet;
 
             view.Update(transaction, index.Height);
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -190,8 +178,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadTransactionPrematureCoinbaseSpending">Thrown if transaction tries to spend coins that are not mature.</exception>
         public void CheckCoinbaseMaturity(UnspentOutputs coins, int spendHeight)
         {
-            this.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
-
             // If prev is coinbase, check that it's matured
             if (coins.IsCoinbase)
             {
@@ -202,8 +188,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     ConsensusErrors.BadTransactionPrematureCoinbaseSpending.Throw();
                 }
             }
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -227,8 +211,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadTransactionFeeOutOfRange">Thrown if fees value is out of range.</exception>
         public void CheckInputs(Transaction transaction, UnspentOutputSet inputs, int spendHeight)
         {
-            this.Logger.LogTrace("({0}:{1})", nameof(spendHeight), spendHeight);
-
             if (!inputs.HaveInputs(transaction))
                 ConsensusErrors.BadTransactionMissingInput.Throw();
 
@@ -270,8 +252,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("(-)[BAD_FEE]");
                 ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
             }
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <summary>

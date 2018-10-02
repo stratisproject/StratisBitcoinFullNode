@@ -93,6 +93,11 @@ namespace NBitcoin
             }
         }
 
+        /// <summary>
+        /// Gets the total processed bytes for read or write.
+        /// </summary>
+        public long ProcessedBytes => this.Serializing ? this.Counter.WrittenBytes : this.Counter.ReadBytes;
+
         public BitcoinStream(Stream inner, bool serializing)
         {
             this.ConsensusFactory = new DefaultConsensusFactory();
