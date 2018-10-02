@@ -28,13 +28,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var contractAddress = new uint160(1);
 
-            var carrier = ContractCarrier.CallContract(1, contractAddress, "ThrowException", 1, (Gas)5000);
-            carrier.Sender = new uint160(2);
+            var contractTxData = new ContractTxData(1, 1, (Gas)5000, contractAddress, "ThrowException");
+            var sender = new uint160(2);
 
-            (Money fee, TxOut refund) = this.refundProcessor.Process(carrier.ContractTxData, new Money(10500), carrier.Sender, (Gas)950, false);
+            (Money fee, TxOut refund) = this.refundProcessor.Process(contractTxData, new Money(10500), sender, (Gas)950, false);
 
             Assert.Equal(6450, fee);
-            Assert.Equal(carrier.Sender.ToBytes(), refund.ScriptPubKey.GetDestination(this.network).ToBytes());
+            Assert.Equal(sender.ToBytes(), refund.ScriptPubKey.GetDestination(this.network).ToBytes());
             Assert.Equal(4050, refund.Value);
         }
 
@@ -43,10 +43,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var contractAddress = new uint160(1);
 
-            var carrier = ContractCarrier.CallContract(1, contractAddress, "ThrowException", 1, (Gas)5000);
-            carrier.Sender = new uint160(2);
+            var contractTxData = new ContractTxData(1, 1, (Gas)5000, contractAddress, "ThrowException");
+            var sender = new uint160(2);
 
-            (Money fee, TxOut refund) = this.refundProcessor.Process(carrier.ContractTxData, new Money(10500), carrier.Sender, (Gas)5000, false);
+            (Money fee, TxOut refund) = this.refundProcessor.Process(contractTxData, new Money(10500), sender, (Gas)5000, false);
 
             Assert.Equal(10500, fee);
             Assert.Null(refund);
@@ -57,10 +57,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var contractAddress = new uint160(1);
 
-            var carrier = ContractCarrier.CallContract(1, contractAddress, "ThrowException", 1, (Gas)5000);
-            carrier.Sender = new uint160(2);
+            var contractTxData = new ContractTxData(1, 1, (Gas)5000, contractAddress, "ThrowException");
+            var sender = new uint160(2);
 
-            (Money fee, TxOut refund) = this.refundProcessor.Process(carrier.ContractTxData, new Money(10500), carrier.Sender, (Gas)5000, true);
+            (Money fee, TxOut refund) = this.refundProcessor.Process(contractTxData, new Money(10500), sender, (Gas)5000, true);
 
             Assert.Equal(10500, fee);
             Assert.Null(refund);

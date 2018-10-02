@@ -41,15 +41,12 @@ namespace Stratis.Bitcoin.Configuration.Settings
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(ConsensusSettings).FullName);
-            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.UseCheckpoints = config.GetOrDefault<bool>("checkpoints", true, this.logger);
             this.BlockAssumedValid = config.GetOrDefault<uint256>("assumevalid", nodeSettings.Network.Consensus.DefaultAssumeValid, this.logger);
             this.MaxTipAge = config.GetOrDefault("maxtipage", nodeSettings.Network.MaxTipAge, this.logger);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Prints the help information on how to configure the Consensus settings to the logger.</summary>

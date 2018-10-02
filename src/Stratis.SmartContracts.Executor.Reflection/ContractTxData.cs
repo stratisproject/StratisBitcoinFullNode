@@ -12,7 +12,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// Creates a ContractTxData object for a method invocation
         /// </summary>
         public ContractTxData(int vmVersion, ulong gasPrice, Gas gasLimit, uint160 contractAddress,
-            string method, string rawParameters = "", object[] methodParameters = null)
+            string method, object[] methodParameters = null)
         {
             this.OpCodeType = (byte) ScOpcodeType.OP_CALLCONTRACT;
             this.VmVersion = vmVersion;
@@ -20,7 +20,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.GasLimit = gasLimit;
             this.ContractAddress = contractAddress;
             this.MethodName = method;
-            this.MethodParametersRaw = rawParameters;            
             this.MethodParameters = methodParameters;
             this.ContractExecutionCode = new byte[0];
         }
@@ -28,7 +27,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Creates a ContractTxData for contract creation
         /// </summary>
-        public ContractTxData(int vmVersion, ulong gasPrice, Gas gasLimit, byte[] code, string rawParameters = "",
+        public ContractTxData(int vmVersion, ulong gasPrice, Gas gasLimit, byte[] code,
             object[] methodParameters = null)
         {
             this.OpCodeType = (byte)ScOpcodeType.OP_CREATECONTRACT;
@@ -37,15 +36,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.GasLimit = gasLimit;
             this.ContractExecutionCode = code;
             this.MethodName = "";
-            this.MethodParametersRaw = rawParameters;
             this.MethodParameters = methodParameters;
             this.ContractAddress = uint160.Zero;
         }
 
         /// <summary>The method name of the contract that will be executed.</summary>
         public string MethodName { get; }
-
-        public string MethodParametersRaw { get; }
 
         public object[] MethodParameters { get; }
 

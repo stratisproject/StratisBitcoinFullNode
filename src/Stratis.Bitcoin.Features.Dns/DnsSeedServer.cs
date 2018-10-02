@@ -165,8 +165,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         public void Initialize()
         {
-            this.logger.LogTrace("()");
-
             // Load masterfile from disk if it exists.
             lock (this.masterFileLock)
             {
@@ -192,8 +190,6 @@ namespace Stratis.Bitcoin.Features.Dns
 
             // Create async loop for saving the master file.
             this.StartSaveMasterfileLoop();
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -204,8 +200,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <returns>A task used to await the listen operation.</returns>
         public async Task ListenAsync(int dnsListenPort, CancellationToken token)
         {
-            this.logger.LogTrace("()");
-
             try
             {
                 // Start listening on UDP port.
@@ -253,8 +247,6 @@ namespace Stratis.Bitcoin.Features.Dns
             finally
             {
                 this.udpClient.StopListening();
-
-                this.logger.LogTrace("(-)");
             }
         }
 
@@ -270,8 +262,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="masterFile">The new masterfile to swap in.</param>
         public void SwapMasterfile(IMasterFile masterFile)
         {
-            this.logger.LogTrace("()");
-
             Guard.NotNull(masterFile, nameof(masterFile));
 
             lock (this.masterFileLock)
@@ -281,8 +271,6 @@ namespace Stratis.Bitcoin.Features.Dns
                 // Seed with SOA and NS resource records when this is a new masterfile.
                 this.SeedMasterFile();
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -323,8 +311,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <returns>A DNS response.</returns>
         private IResponse Resolve(Request request)
         {
-            this.logger.LogTrace("()");
-
             Response response = Response.FromRequest(request);
 
             IList<IResourceRecord> allAnswers = new List<IResourceRecord>();
@@ -369,9 +355,7 @@ namespace Stratis.Bitcoin.Features.Dns
 
             // Set new start index.
             Interlocked.Increment(ref this.startIndex);
-
-            this.logger.LogTrace("(-)");
-
+            
             return response;
         }
 
@@ -381,8 +365,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="udpRequest">The DNS request received from the UDP client.</param>
         private async Task HandleRequestAsync(Tuple<IPEndPoint, byte[]> udpRequest)
         {
-            this.logger.LogTrace("()");
-
             Request request = null;
 
             try
@@ -444,8 +426,6 @@ namespace Stratis.Bitcoin.Features.Dns
                     this.logger.LogError(ex, "Sending DNS response to {0} timed out.", udpRequest.Item1);
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -488,8 +468,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         private void LogMetrics()
         {
-            this.logger.LogTrace("()");
-
             try
             {
                 // Print out total and period values.
@@ -533,8 +511,6 @@ namespace Stratis.Bitcoin.Features.Dns
                 // If metrics fail, just log.
                 this.logger.LogWarning(e, "Failed to output DNS metrics.");
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -542,8 +518,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         private void StartSaveMasterfileLoop()
         {
-            this.logger.LogTrace("()");
-
             this.saveMasterfileLoop = this.asyncLoopFactory.Run($"{nameof(DnsFeature)}.WhitelistRefreshLoop", token =>
             {
                 string path = Path.Combine(this.dataFolders.DnsMasterFilePath, DnsFeature.DnsMasterFileName);
@@ -558,8 +532,6 @@ namespace Stratis.Bitcoin.Features.Dns
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpan.FromSeconds(SaveMasterfileRate));
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

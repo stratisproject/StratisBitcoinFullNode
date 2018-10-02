@@ -62,7 +62,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         [ActionDescription("Tries to mine a given number of blocks and returns a list of block header hashes.")]
         public List<uint256> Generate(int blockCount)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(blockCount), blockCount);
             if (blockCount <= 0)
             {
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "The number of blocks to mine must be higher than zero.");
@@ -72,19 +71,15 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             HdAddress address = this.walletManager.GetUnusedAddress(accountReference);
 
             List<uint256> res = this.powMining.GenerateBlocks(new ReserveScript(address.Pubkey), (ulong)blockCount, int.MaxValue);
-
-            this.logger.LogTrace("(-):*.{0}={1}", nameof(res.Count), res.Count);
             return res;
         }
-   
+
         /// <summary>
         /// Finds first available wallet and its account.
         /// </summary>
         /// <returns>Reference to wallet account.</returns>
         private WalletAccountReference GetAccount()
         {
-            this.logger.LogTrace("()");
-
             string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
             if (walletName == null)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
@@ -95,7 +90,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
 
             var res = new WalletAccountReference(walletName, account.Name);
 
-            this.logger.LogTrace("(-):'{0}'", res);
             return res;
         }
     }

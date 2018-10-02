@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using CSharpFunctionalExtensions;
@@ -10,16 +11,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public class CallDataSerializer : ICallDataSerializer
     {
-        // TODO this is ugly but there is poor DI support for rules so we can't inject it yet
-        public static ICallDataSerializer Default = new CallDataSerializer(new MethodParameterSerializer());
-
-        private readonly IMethodParameterSerializer methodParamSerializer;
+        public IMethodParameterSerializer MethodParamSerializer { get; }
 
         private const int intLength = sizeof(int);
 
         public CallDataSerializer(IMethodParameterSerializer methodParameterSerializer)
         {
-            this.methodParamSerializer = methodParameterSerializer;
+            this.MethodParamSerializer = methodParameterSerializer;
         }
 
         public Result<ContractTxData> Deserialize(byte[] smartContractBytes)
@@ -39,22 +37,22 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 {
                     var contractAddress = Deserialize<uint160>(smartContractBytes, ref byteCursor, ref takeLength);
                     var methodName = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
-                    var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+                    var methodParametersRaw = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
 
                     var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
 
-                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParametersRaw, methodParameters);
+                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParameters);
                     return Result.Ok(callData);
                 }
 
                 if (IsCreateContract(type))
                 {
                     var contractExecutionCode = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
-                    var methodParametersRaw = Deserialize<string>(smartContractBytes, ref byteCursor, ref takeLength);
+                    var methodParametersRaw = Deserialize<byte[]>(smartContractBytes, ref byteCursor, ref takeLength);
 
                     var methodParameters = this.DeserializeMethodParameters(methodParametersRaw);
 
-                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParametersRaw, methodParameters);
+                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParameters);
                     return Result.Ok(callData);
                 }
             }
@@ -67,6 +65,45 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return Result.Fail<ContractTxData>("Error deserializing calldata. Incorrect first byte.");
         }
 
+        public byte[] Serialize(ContractTxData contractTxData)
+        {
+            var bytes = new List<byte>
+            {
+                contractTxData.OpCodeType
+            };
+
+            bytes.AddRange(PrefixLength(BitConverter.GetBytes(contractTxData.VmVersion)));
+            bytes.AddRange(PrefixLength(BitConverter.GetBytes(contractTxData.GasPrice)));
+            bytes.AddRange(PrefixLength(BitConverter.GetBytes(contractTxData.GasLimit)));
+
+            if (contractTxData.OpCodeType == (byte)ScOpcodeType.OP_CALLCONTRACT)
+            {
+                bytes.AddRange(PrefixLength(contractTxData.ContractAddress.ToBytes()));
+                bytes.AddRange(PrefixLength(Encoding.UTF8.GetBytes(contractTxData.MethodName)));
+            }
+
+            if (contractTxData.OpCodeType == (byte)ScOpcodeType.OP_CREATECONTRACT)
+                bytes.AddRange(PrefixLength(contractTxData.ContractExecutionCode));
+
+            if (contractTxData.MethodParameters != null && contractTxData.MethodParameters.Any())
+                bytes.AddRange(PrefixLength(this.MethodParamSerializer.Serialize(contractTxData.MethodParameters)));
+            else
+                bytes.AddRange(BitConverter.GetBytes(0));
+
+            return bytes.ToArray();
+        }
+
+        /// <summary>
+        /// Prefixes the byte array with the length of the array that follows.
+        /// </summary>
+        private static byte[] PrefixLength(byte[] toPrefix)
+        {
+            var prefixedBytes = new List<byte>();
+            prefixedBytes.AddRange(BitConverter.GetBytes(toPrefix.Length));
+            prefixedBytes.AddRange(toPrefix);
+            return prefixedBytes.ToArray();
+        }
+
         private static bool IsCreateContract(byte type)
         {
             return type == (byte)ScOpcodeType.OP_CREATECONTRACT;
@@ -77,12 +114,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return type == (byte)ScOpcodeType.OP_CALLCONTRACT;
         }
 
-        private object[] DeserializeMethodParameters(string methodParametersRaw)
+        private object[] DeserializeMethodParameters(byte[] methodParametersRaw)
         {
             object[] methodParameters = null;
 
-            if (!string.IsNullOrWhiteSpace(methodParametersRaw))
-                methodParameters = this.methodParamSerializer.ToObjects(methodParametersRaw);
+            if (methodParametersRaw != null && methodParametersRaw.Length > 0)
+                methodParameters = this.MethodParamSerializer.Deserialize(methodParametersRaw);
             return methodParameters;
         }
 
