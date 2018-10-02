@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public SmartContractFormatRuleTest()
         {
             this.network = new SmartContractsRegTest();
-            this.callDataSerializer = CallDataSerializer.Default;
+            this.callDataSerializer = new CallDataSerializer(new MethodParameterSerializer());
         }
 
         private UnspentOutputSet GetMockOutputSet()
@@ -58,7 +59,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public async Task SmartContractFormatRule_SuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            SmartContractFormatRule rule = testContext.CreateRule<SmartContractFormatRule>();
+            SmartContractFormatRule rule = testContext.CreateSmartContractFormatRule();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.UnspentOutputSet = GetMockOutputSet();
@@ -101,7 +102,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public async Task SmartContractFormatRule_MultipleOutputs_SuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            SmartContractFormatRule rule = testContext.CreateRule<SmartContractFormatRule>();
+            SmartContractFormatRule rule = testContext.CreateSmartContractFormatRule();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset())
             {
@@ -154,7 +155,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public void SmartContractFormatRule_FailureAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            SmartContractFormatRule rule = testContext.CreateRule<SmartContractFormatRule>();
+            SmartContractFormatRule rule = testContext.CreateSmartContractFormatRule();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
 

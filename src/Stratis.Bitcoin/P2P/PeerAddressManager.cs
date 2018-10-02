@@ -8,6 +8,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -59,10 +60,12 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public void LoadPeers()
         {
-
             List<PeerAddress> loadedPeers = this.fileStorage.LoadByFileName(PeerFileName);
+            this.logger.LogTrace("{0} peers were loaded.", loadedPeers.Count);
+
             loadedPeers.ForEach(peer =>
             {
                 // Ensure that any address already in store is mapped.

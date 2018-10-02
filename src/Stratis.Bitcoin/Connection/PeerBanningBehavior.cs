@@ -48,8 +48,6 @@ namespace Stratis.Bitcoin.Connection
         /// <inheritdoc />
         protected override void AttachCore()
         {
-            this.logger.LogTrace("()");
-
             INetworkPeer peer = this.AttachedPeer;
             var peerBehavior = peer.Behavior<IConnectionManagerBehavior>();
             if (peer.State == NetworkPeerState.Connected && !peerBehavior.Whitelisted)
@@ -62,8 +60,6 @@ namespace Stratis.Bitcoin.Connection
                     return;
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

@@ -14,6 +14,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.Executor.Reflection;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
@@ -31,6 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
             var loggerFactory = new ExtendedLoggerFactory();
 
             var dateTimeProvider = new DateTimeProvider();
+            var callDataSerializer = Mock.Of<ICallDataSerializer>();
 
             var consensusRules = new SmartContractPowConsensusRuleEngine(
                 chain, new Mock<ICheckpoints>().Object, new Configuration.Settings.ConsensusSettings(),
@@ -43,7 +45,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
                 new InvalidBlockHashStore(dateTimeProvider),
                 new NodeStats(dateTimeProvider));
 
-            var feature = new ReflectionVirtualMachineFeature(loggerFactory, network);
+            var feature = new ReflectionVirtualMachineFeature(loggerFactory, network, callDataSerializer);
             feature.InitializeAsync().GetAwaiter().GetResult();
 
             Assert.Single(network.Consensus.FullValidationRules.Where(r => r.GetType() == typeof(SmartContractFormatRule)));

@@ -130,8 +130,6 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc/>
         public void AddSample(long blockSizeBytes, double delaySinceRequestedSeconds)
         {
-            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(blockSizeBytes), blockSizeBytes, nameof(delaySinceRequestedSeconds), delaySinceRequestedSeconds);
-
             double adjustedDelay = delaySinceRequestedSeconds;
 
             if (this.lastDeliveryTime != null)
@@ -153,15 +151,11 @@ namespace Stratis.Bitcoin.BlockPulling
                 speedPerSeconds = MaxSpeedBytesPerSecond;
 
             this.SpeedBytesPerSecond = speedPerSeconds;
-
-            this.logger.LogTrace("(-):{0}={1}", nameof(this.SpeedBytesPerSecond), this.SpeedBytesPerSecond);
         }
 
         /// <inheritdoc/>
         public void Penalize(double delaySeconds, int notDeliveredBlocksCount)
         {
-            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(delaySeconds), delaySeconds, nameof(notDeliveredBlocksCount), notDeliveredBlocksCount);
-
             int maxSamplesToPenalize = (int)(this.averageDelaySeconds.GetMaxSamples() * MaxSamplesPercentageToPenalize);
             int penalizeTimes = notDeliveredBlocksCount < maxSamplesToPenalize ? notDeliveredBlocksCount : maxSamplesToPenalize;
             if (penalizeTimes < 1)
@@ -171,28 +165,20 @@ namespace Stratis.Bitcoin.BlockPulling
 
             for (int i = 0; i < penalizeTimes; i++)
                 this.AddSample(0, delaySeconds);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
         public void OnIbdStateChanged(bool isIbd)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(isIbd), isIbd);
-
             // Recalculates the max samples count that can be used for quality score calculation.
             int samplesCount = isIbd ? IbdSamplesCount : NormalSamplesCount;
             this.averageSizeBytes.SetMaxSamples(samplesCount);
             this.averageDelaySeconds.SetMaxSamples(samplesCount);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
         public void RecalculateQualityScore(long bestSpeedBytesPerSecond)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(bestSpeedBytesPerSecond), bestSpeedBytesPerSecond);
-
             if (bestSpeedBytesPerSecond == 0)
                 this.QualityScore = MaxQualityScore;
             else
@@ -205,13 +191,10 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.QualityScore = MaxQualityScore;
 
             this.logger.LogTrace("Quality score was set to {0}.", this.QualityScore);
-            this.logger.LogTrace("(-)");
         }
 
         private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
             if (message.Message.Payload is BlockPayload block)
             {
                 uint256 blockHash = block.Obj.GetHash();
@@ -221,16 +204,13 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.blockPuller.PushBlock(blockHash, block.Obj, peer.Connection.Id);
                 this.lastDeliveryTime = this.dateTimeProvider.GetUtcNow();
             }
-
-            this.logger.LogTrace("(-)");
+            
             return Task.CompletedTask;
         }
 
         /// <inheritdoc/>
         public async Task RequestBlocksAsync(List<uint256> hashes)
         {
-            this.logger.LogTrace("({0}.{1}:{2})", nameof(hashes), nameof(hashes.Count), hashes.Count);
-
             var getDataPayload = new GetDataPayload();
 
             INetworkPeer peer = this.AttachedPeer;
@@ -256,8 +236,6 @@ namespace Stratis.Bitcoin.BlockPulling
             }
 
             await peer.SendMessageAsync(getDataPayload).ConfigureAwait(false);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -269,21 +247,13 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc />
         protected override void AttachCore()
         {
-            this.logger.LogTrace("()");
-
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         protected override void DetachCore()
         {
-            this.logger.LogTrace("()");
-
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

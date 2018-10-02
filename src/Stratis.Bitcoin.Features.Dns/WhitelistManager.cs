@@ -99,8 +99,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         public void RefreshWhitelist()
         {
-            this.logger.LogTrace("()");
-
             this.dnsPeerBlacklistThresholdInSeconds = this.dnsSettings.DnsPeerBlacklistThresholdInSeconds;
             this.dnsHostName = this.dnsSettings.DnsHostName;
             this.fullNodeMode = this.dnsSettings.DnsFullNode;
@@ -141,8 +139,6 @@ namespace Stratis.Bitcoin.Features.Dns
             }
 
             this.dnsServer.SwapMasterfile(masterFile);
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

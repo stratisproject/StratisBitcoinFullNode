@@ -150,8 +150,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             if (this.minerSettings.Mine)
             {
                 string mineToAddress = this.minerSettings.MineAddress;
@@ -171,7 +169,6 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.StartStaking(this.minerSettings.WalletName, this.minerSettings.WalletPassword);
             }
 
-            this.logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 
