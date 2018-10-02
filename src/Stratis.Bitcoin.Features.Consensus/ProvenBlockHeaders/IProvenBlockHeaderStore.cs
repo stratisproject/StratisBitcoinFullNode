@@ -18,11 +18,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         Task InitializeAsync();
 
         /// <summary>
-        /// Load <see cref="ProvenBlockHeader"/> items into the store.
-        /// </summary>
-        Task LoadAsync();
-
-        /// <summary>
         /// Get a <see cref="ProvenBlockHeader"/> corresponding to a block.
         /// </summary>
         /// <param name="blockHeight">Height used to retrieve the <see cref="ProvenBlockHeader"/>.</param>
@@ -52,6 +47,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
         /// <summary> Retrieves the block height of the current <see cref="ProvenBlockHeader"/> tip.</summary>
         /// <returns>Block height of the current tip of the <see cref="ProvenBlockHeader"/>.</returns>
-        Task<HashHeightPair> GetTipHashHeightAsync();
+        Task<HashHeightPair> CurrentTipHashHeightAsync();
     }
 }

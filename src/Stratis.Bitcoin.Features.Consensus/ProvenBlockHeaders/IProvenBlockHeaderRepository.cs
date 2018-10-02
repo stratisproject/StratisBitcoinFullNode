@@ -37,7 +37,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         /// <param name="provenBlockHeaders">List of <see cref="ProvenBlockHeader"/> items.</param>
         /// <param name="newTip">Block hash and height tip.</param>
-        Task PutAsync(List<ProvenBlockHeader> provenBlockHeaders, HashHeightPair newTip);
+        /// <returns><c>true</c> when a <see cref="ProvenBlockHeader"/> is saved to disk, otherwise <c>false</c>.</returns>
+        Task<bool>PutAsync(List<ProvenBlockHeader> provenBlockHeaders, HashHeightPair newTip);
 
         /// <summary>
         /// Retrieves the block hash and height of the current <see cref="ProvenBlockHeader"/> tip.

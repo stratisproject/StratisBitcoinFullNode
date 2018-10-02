@@ -8,7 +8,6 @@ using DBreeze.DataTypes;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
@@ -157,10 +156,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public Task PutAsync(List<ProvenBlockHeader> headers, HashHeightPair newTip)  
+        public Task<bool> PutAsync(List<ProvenBlockHeader> headers, HashHeightPair newTip)  
         {
             Guard.NotNull(headers, nameof(headers));
-            Guard.NotNull(newTip, nameof(newTip));            
+            Guard.NotNull(newTip, nameof(newTip));
+
+            Guard.Assert(newTip.Hash == headers.LastOrDefault().GetHash());
 
             if ((this.provenBlockHeaderTip != null) && (newTip.Hash != this.provenBlockHeaderTip.HashPrevBlock))
             {
@@ -168,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 throw new InvalidOperationException("Invalid newTip block hash.");
             }
 
-            Task task = Task.Run(() =>
+            Task<bool> task = Task.Run(() =>
             {
                 this.logger.LogTrace("({0}.Count():{1})", nameof(headers), headers.Count());
 
@@ -179,10 +180,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     this.InsertHeaders(transaction, headers, newTip);
                     this.SetTip(transaction, newTip);
 
-                    transaction.Commit();
+                    transaction.Commit();                    
                 }
 
                 this.logger.LogTrace("(-)");
+
+                return true;
+
             });
 
             return task;
@@ -297,22 +301,17 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             var headerDict = new Dictionary<int, ProvenBlockHeader>();
 
             // Gather headers.
-            foreach (ProvenBlockHeader header in headers)
-            {
-                headerDict[tipHeight] = header;
-                tipHeight--;
-            }
+            for (int i = tipHeight; i > -1; i--)
+                headerDict[i] = headers[i];
 
             var sortedHeaders = headerDict.ToList();
             sortedHeaders.Sort((pair1, pair2) => pair1.Key.CompareTo(pair2.Key));
 
             foreach (KeyValuePair<int, ProvenBlockHeader> header in sortedHeaders)
-            {
                 transaction.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, header.Key.ToBytes(false), header.Value);
-            }
 
             // Store the latest ProvenBlockHeader in memory.
-            this.provenBlockHeaderTip = headerDict.Values.LastOrDefault();
+            this.provenBlockHeaderTip = headers.LastOrDefault();
 
             this.logger.LogTrace("(-)");
         }

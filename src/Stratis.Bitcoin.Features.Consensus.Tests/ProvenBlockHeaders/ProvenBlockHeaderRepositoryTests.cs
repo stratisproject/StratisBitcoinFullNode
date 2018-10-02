@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             ProvenBlockHeader provenBlockHeaderIn = CreateNewProvenBlockHeaderMock();
 
-            var blockHashHieghtPair = new HashHeightPair(new uint256(), 1);
+            var blockHashHieghtPair = new HashHeightPair(provenBlockHeaderIn.GetHash(), 0);
             var items = new List<ProvenBlockHeader> { provenBlockHeaderIn };
 
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             // Put the items in the repository.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                await repo.PutAsync(items, new HashHeightPair(new uint256(), items.Count));
+                await repo.PutAsync(items, new HashHeightPair(header2.GetHash(), items.Count - 1));
             }
 
             // Check the ProvenBlockHeader exists in the database - and are in sorted order.
