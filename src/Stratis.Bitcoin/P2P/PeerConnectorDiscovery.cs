@@ -60,8 +60,6 @@ namespace Stratis.Bitcoin.P2P
 
         public override async Task OnConnectAsync()
         {
-            this.logger.LogTrace("()");
-
             int peerSelectionFailed = 0;
 
             PeerAddress peer = null;
@@ -131,8 +129,6 @@ namespace Stratis.Bitcoin.P2P
             }
             else
                 await this.ConnectAsync(peer).ConfigureAwait(false);
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

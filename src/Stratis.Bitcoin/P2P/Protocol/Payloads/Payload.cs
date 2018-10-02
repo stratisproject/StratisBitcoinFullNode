@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using NBitcoin;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 {
@@ -25,6 +26,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         {
         }
 
+        [NoTrace]
         public override string ToString()
         {
             return this.GetType().Name;

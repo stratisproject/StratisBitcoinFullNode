@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace NBitcoin
 {
@@ -63,10 +61,18 @@ namespace NBitcoin
         /// </summary>
         public BlockSignature Signature => this.signature;
 
-        /// <summary>The size of the ProvenBlockHeader in bytes.</summary>
-        public long HeaderSize { get; protected set; }
+        /// <summary>Gets the size of the merkle proof in bytes, the header must be serialized or deserialized for this property to be set.</summary>
+        public long? MerkleProofSize { get; protected set; }
 
-        public ProvenBlockHeader() { }
+        /// <summary>Gets the size of the signature in bytes, the header must be serialized or deserialized for this property to be set.</summary>
+        public long? SignatureSize { get; protected set; }
+
+        /// <summary>Gets the size of the coinstake in bytes, the header must be serialized or deserialized for this property to be set.</summary>
+        public long? CoinstakeSize { get; protected set; }
+
+        public ProvenBlockHeader()
+        {
+        }
 
         public ProvenBlockHeader(PosBlock block)
         {
@@ -81,9 +87,12 @@ namespace NBitcoin
             this.Version = block.Header.Version;
 
             // Set additional properties.
+            this.MerkleProofSize = null;
+            this.CoinstakeSize = null;
+            this.SignatureSize = null;
+
             this.signature = block.BlockSignature;
             this.coinstake = block.Transactions[1];
-
             this.merkleProof = new MerkleBlock(block, new[] { this.coinstake.GetHash() }).PartialMerkleTree;
         }
 
@@ -91,11 +100,18 @@ namespace NBitcoin
         public override void ReadWrite(BitcoinStream stream)
         {
             base.ReadWrite(stream);
-            stream.ReadWrite(ref this.merkleProof);
-            stream.ReadWrite(ref this.signature);
-            stream.ReadWrite(ref this.coinstake);
+            long baseByteSize = stream.ProcessedBytes;
 
-            this.HeaderSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
+            stream.ReadWrite(ref this.merkleProof);
+            this.MerkleProofSize = stream.ProcessedBytes - baseByteSize;
+
+            stream.ReadWrite(ref this.signature);
+            this.SignatureSize = stream.ProcessedBytes - baseByteSize - this.MerkleProofSize;
+
+            stream.ReadWrite(ref this.coinstake);
+            this.CoinstakeSize = stream.ProcessedBytes - baseByteSize - this.MerkleProofSize - this.SignatureSize;
+
+            this.HeaderSize = baseByteSize;
         }
 
         /// <inheritdoc />

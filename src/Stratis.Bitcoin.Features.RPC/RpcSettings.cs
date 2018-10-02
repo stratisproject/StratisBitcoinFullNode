@@ -58,7 +58,6 @@ namespace Stratis.Bitcoin.Features.RPC
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(RpcSettings).FullName);
-            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             this.Bind = new List<IPEndPoint>();
             this.DefaultBindings = new List<IPEndPoint>();
@@ -69,8 +68,6 @@ namespace Stratis.Bitcoin.Features.RPC
 
             // Check validity of settings
             this.CheckConfigurationValidity(nodeSettings.Logger);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

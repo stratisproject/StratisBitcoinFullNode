@@ -113,14 +113,11 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             // Create long running task for DNS service.
             this.dnsTask = Task.Factory.StartNew(this.RunDnsService, TaskCreationOptions.LongRunning);
 
             this.StartWhitelistRefreshLoop();
-
-            this.logger.LogTrace("(-)");
+            
             return Task.CompletedTask;
         }
 
@@ -130,8 +127,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <returns>A task used to allow the caller to await the operation.</returns>
         private void RunDnsService()
         {
-            this.logger.LogTrace("()");
-
             // Initialize DNS server.
             this.dnsServer.Initialize();
 
@@ -169,8 +164,6 @@ namespace Stratis.Bitcoin.Features.Dns
                     this.logger.LogTrace("Restarting DNS server following previous failure.");
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -226,8 +219,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         private void StartWhitelistRefreshLoop()
         {
-            this.logger.LogTrace("()");
-
             this.whitelistRefreshLoop = this.asyncLoopFactory.Run($"{nameof(DnsFeature)}.WhitelistRefreshLoop", token =>
             {
                 this.whitelistManager.RefreshWhitelist();
@@ -235,8 +226,6 @@ namespace Stratis.Bitcoin.Features.Dns
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpan.FromSeconds(30));
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

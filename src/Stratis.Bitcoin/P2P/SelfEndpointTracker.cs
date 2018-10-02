@@ -55,8 +55,6 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void UpdateAndAssignMyExternalAddress(IPEndPoint ipEndPoint, bool suppliedEndPointIsFinal, int ipEndPointScore = 0)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:{3},{4}:{5})", nameof(ipEndPoint), ipEndPoint, nameof(suppliedEndPointIsFinal), suppliedEndPointIsFinal, nameof(ipEndPointScore), ipEndPointScore);
-
             lock (this.lockObject)
             {
                 if (suppliedEndPointIsFinal)
@@ -93,8 +91,6 @@ namespace Stratis.Bitcoin.P2P
                     this.MyExternalAddressPeerScore = 1;
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

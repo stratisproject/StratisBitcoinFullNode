@@ -109,6 +109,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void State_Snapshot_Has_Original_NonceGenerator()
+        {
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, 100_000, null);
+
+            IState newState = state.Snapshot();
+
+            Assert.Same(state.NonceGenerator, newState.NonceGenerator);
+        }
+
+        [Fact]
         public void TransitionTo_Fails_If_New_State_Is_Not_Child()
         {
             var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, 0, null);
@@ -138,8 +148,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new RawLog(null, null)
             };
 
-            ulong newNonce = 999;
-
             var testLogHolder = new Mock<IContractLogHolder>();
             testLogHolder.Setup(lh => lh.GetRawLogs())
                 .Returns(newLogs);
@@ -151,8 +159,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 .Returns(testLogHolder.Object);
             testState.Setup(ts => ts.ContractState)
                 .Returns(this.trackedState.Object);
-            testState.Setup(ts => ts.Nonce)
-                .Returns(newNonce);
 
             state.SetPrivateFieldValue("child", testState.Object);
 
@@ -167,7 +173,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Contains(newTransfers[0], state.InternalTransfers);
             Assert.Contains(newTransfers[1], state.InternalTransfers);
             Assert.Contains(newTransfers[2], state.InternalTransfers);
-            Assert.Equal(newNonce, state.Nonce);
+        }
+
+        [Fact]
+        public void New_State_NonceGenerator_Generates_Zero_Nonce()
+        {
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, 0, null);
+            
+            Assert.Equal(0UL, state.NonceGenerator.Next);
         }
     }
 }

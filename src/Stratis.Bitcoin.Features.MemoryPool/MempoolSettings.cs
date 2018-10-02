@@ -70,7 +70,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(MempoolSettings).FullName);
-            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
@@ -86,8 +85,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DefaultMaxOrphanTransactions, this.logger);
             this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay, this.logger);
             this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.Network.IsTest()), this.logger);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Prints the help information on how to configure the mempool settings to the logger.</summary>
