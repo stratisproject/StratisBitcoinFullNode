@@ -21,10 +21,21 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             foreach (var obj in methodParameters)
             {
-                sb.Add(string.Format("{0}#{1}", (int)GetPrimitiveType(obj), obj));
+                sb.Add(SerializeObject(obj));
             }
 
             return Encoding.UTF8.GetBytes(this.EscapeAndJoin(sb.ToArray()));
+        }
+
+        private static string SerializeObject(object obj)
+        {
+            var primitiveType = GetPrimitiveType(obj);
+
+            var serialized = primitiveType == MethodParameterDataType.ByteArray
+                ? Encoding.UTF8.GetString((byte[])obj)
+                : obj.ToString();
+
+            return string.Format("{0}#{1}", (int) primitiveType, serialized);
         }
 
         private static MethodParameterDataType GetPrimitiveType(object o)
