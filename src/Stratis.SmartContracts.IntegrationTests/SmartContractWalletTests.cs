@@ -17,6 +17,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
 using Xunit;
 
@@ -32,7 +33,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         public SmartContractWalletTests()
         {
-            this.callDataSerializer = CallDataSerializer.Default;
+            this.callDataSerializer = new CallDataSerializer(new MethodParameterSerializer());
         }
 
         /// <summary>

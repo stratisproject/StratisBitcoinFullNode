@@ -6,6 +6,7 @@ using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests
@@ -16,7 +17,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         public SmartContractMemoryPoolTests()
         {
-            this.callDataSerializer = CallDataSerializer.Default;
+            this.callDataSerializer = new CallDataSerializer(new MethodParameterSerializer());
         }
 
         [Fact]

@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
@@ -20,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public SmartContractFormatRuleTest()
         {
             this.network = new SmartContractsRegTest();
-            this.callDataSerializer = CallDataSerializer.Default;
+            this.callDataSerializer = new CallDataSerializer(new MethodParameterSerializer());
         }
 
         private UnspentOutputSet GetMockOutputSet()
