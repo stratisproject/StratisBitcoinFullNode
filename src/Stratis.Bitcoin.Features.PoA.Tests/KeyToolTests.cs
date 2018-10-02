@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Xunit;
@@ -16,10 +13,10 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
         public KeyToolTests()
         {
-            string testPath = Path.Combine(Path.GetTempPath(), this.GetType().Name + "_" + nameof(this.CanSaveLoadKey));
-            Directory.CreateDirectory(testPath);
+            string testRootPath = Path.Combine(Path.GetTempPath(), this.GetType().Name + "_" + nameof(this.CanSaveLoadKey));
+            Directory.CreateDirectory(testRootPath);
 
-            this.dataFolder = new DataFolder(testPath);
+            this.dataFolder = new DataFolder(testRootPath);
             this.tool = new KeyTool(this.dataFolder);
         }
 

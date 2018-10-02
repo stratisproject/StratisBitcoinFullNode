@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.PoA
             return privKey;
         }
 
-        public string GetPrivateKeyDefaultPath()
+        public string GetPrivateKeySavePath()
         {
             string path = Path.Combine(this.dataFolder.RootPath, KeyTool.KeyFileDefaultName);
 
@@ -39,14 +39,14 @@ namespace Stratis.Bitcoin.Features.PoA
             stream.ReadWrite(ref privKey);
 
             ms.Seek(0, SeekOrigin.Begin);
-            FileStream fileStream = File.Create(this.GetPrivateKeyDefaultPath());
+            FileStream fileStream = File.Create(this.GetPrivateKeySavePath());
             ms.CopyTo(fileStream);
             fileStream.Close();
         }
 
         public Key LoadPrivateKey()
         {
-            string path = this.GetPrivateKeyDefaultPath();
+            string path = this.GetPrivateKeySavePath();
 
             if (!File.Exists(path))
                 return null;
