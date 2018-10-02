@@ -6,6 +6,7 @@ using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
@@ -110,6 +111,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             nodes.ToList().ForEach(n => WaitLoop(() => IsNodeSynced(n)));
             nodes.Skip(1).ToList().ForEach(n => WaitLoop(() => AreNodesSynced(nodes.First(), n)));
+        }
+
+        public static void DisableBlockPropagation(CoreNode from, CoreNode to)
+        {
+            from.FullNode.ConnectionManager.ConnectedPeers.FindByEndpoint(to.Endpoint).Behavior<BlockStoreBehavior>().CanRespondToGetDataPayload = false;
+        }
+
+        public static void EnableBlockPropagation(CoreNode from, CoreNode to)
+        {
+            from.FullNode.ConnectionManager.ConnectedPeers.FindByEndpoint(to.Endpoint).Behavior<BlockStoreBehavior>().CanRespondToGetDataPayload = true;
         }
 
         public static void WaitForNodeToSyncIgnoreMempool(params CoreNode[] nodes)
@@ -224,6 +235,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         public static void Disconnect(CoreNode from, CoreNode to)
         {
             from.CreateRPCClient().RemoveNode(to.Endpoint);
+            WaitLoop(() => !IsNodeConnectedTo(from, to));
         }
 
         private class TransactionNode
@@ -261,17 +273,21 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         public static void Connect(CoreNode from, CoreNode to)
         {
             from.CreateRPCClient().AddNode(to.Endpoint, true);
+            WaitLoop(() => IsNodeConnectedTo(from, to));
         }
 
-        public static void ConnectAndSync(CoreNode from, CoreNode to)
+        public static void ConnectAndSync(CoreNode from, params CoreNode[] to)
         {
-            Connect(from, to);
-            WaitLoop(() => AreNodesSynced(from, to));
+            foreach (CoreNode coreNode in to)
+                Connect(from, coreNode);
+
+            foreach (CoreNode coreNode in to)
+                WaitLoop(() => AreNodesSynced(from, coreNode));
         }
 
         public static bool IsNodeConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
         {
-            return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint == isConnectedToNode.Endpoint);
+            return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Equals(isConnectedToNode.Endpoint));
         }
     }
 }

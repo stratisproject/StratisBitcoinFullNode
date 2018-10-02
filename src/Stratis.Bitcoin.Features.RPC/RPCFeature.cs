@@ -63,8 +63,6 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             if (this.rpcSettings.Server)
             {
                 // TODO: The web host wants to create IServiceProvider, so build (but not start)
@@ -105,8 +103,7 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 this.logger.LogInformation("RPC Server is off based on configuration.");
             }
-
-            this.logger.LogTrace("(-)");
+            
             return Task.CompletedTask;
         }
     }

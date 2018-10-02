@@ -50,14 +50,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Submits raw transaction (serialized, hex-encoded) to local node and network.")]
         public async Task<uint256> SendTransactionAsync(string hex)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(hex), hex);
-
             Transaction transaction = this.fullNode.Network.CreateTransaction(hex);
             await this.broadcasterManager.BroadcastTransactionAsync(transaction);
 
             uint256 hash = transaction.GetHash();
-
-            this.logger.LogTrace("(-):'{0}'", hash);
+            
             return hash;
         }
              
@@ -70,12 +67,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Returns a new wallet address for receiving payments.")]
         public NewAddressModel GetNewAddress()
         {
-            this.logger.LogTrace("()");
-
             HdAddress hdAddress = this.walletManager.GetUnusedAddress(this.GetAccount());
             string base58Address = hdAddress.Address;
-
-            this.logger.LogTrace("(-):'{0}'", base58Address);
+            
             return new NewAddressModel(base58Address);
         }
 

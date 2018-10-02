@@ -54,7 +54,6 @@ namespace Stratis.Bitcoin.Features.Dns
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(DnsSettings).FullName);            
-            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
@@ -64,8 +63,6 @@ namespace Stratis.Bitcoin.Features.Dns
             this.DnsHostName = config.GetOrDefault<string>("dnshostname", null, this.logger);
             this.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null, this.logger);
             this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null, this.logger);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Prints the help information on how to configure the DNS settings to the logger.</summary>

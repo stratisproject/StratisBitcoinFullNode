@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             fixture.SetGasMeterLimitAbove(gasLimit);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)1000, new ContractErrorMessage("Error"));
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)1000, StateTransitionErrorKind.VmError);
 
             fixture.StateProcessor
                 .Setup(sp => sp.Apply(It.IsAny<IState>(), It.IsAny<InternalCreateMessage>()))
@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             fixture.SetGasMeterLimitAbove(gasLimit);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)1000, new ContractErrorMessage("Error"));
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)1000, StateTransitionErrorKind.VmError);
 
             fixture.StateProcessor
                 .Setup(sp => sp.Apply(It.IsAny<IState>(), It.IsAny<InternalCallMessage>()))
@@ -309,7 +309,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             fixture.SetGasMeterLimitAbove((Gas)InternalExecutor.DefaultGasLimit);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)1000, new ContractErrorMessage("Error"));
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)1000, StateTransitionErrorKind.VmError);
 
             fixture.StateProcessor
                 .Setup(sp => sp.Apply(It.IsAny<IState>(), It.IsAny<ContractTransferMessage>()))

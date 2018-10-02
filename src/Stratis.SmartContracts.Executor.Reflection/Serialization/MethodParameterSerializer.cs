@@ -8,18 +8,83 @@ using NBitcoin;
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
     /// <summary>
-    /// Class that handles method parameter serialization in the <see cref="ContractCarrier"/>.
+    /// Class that handles method parameter serialization.
     /// </summary>
     public sealed class MethodParameterSerializer : IMethodParameterSerializer
     {
-        /// <inheritdoc />
-        public byte[] ToBytes(string rawMethodParameters)
+        /// <summary>
+        /// Serializes an array of method parameter objects to the bytes of their string-encoded representation.
+        /// </summary>
+        public byte[] Serialize(object[] methodParameters)
         {
-            return Encoding.UTF8.GetBytes(rawMethodParameters);
+            var sb = new List<string>();
+
+            foreach (var obj in methodParameters)
+            {
+                sb.Add(string.Format("{0}#{1}", (int)GetPrimitiveType(obj), obj));
+            }
+
+            return Encoding.UTF8.GetBytes(this.EscapeAndJoin(sb.ToArray()));
+        }
+
+        private static MethodParameterDataType GetPrimitiveType(object o)
+        {
+            if (o is bool)
+                return MethodParameterDataType.Bool;
+
+            if (o is byte)
+                return MethodParameterDataType.Byte;
+
+            if (o is byte[])
+                return MethodParameterDataType.ByteArray;
+
+            if (o is char)
+                return MethodParameterDataType.Char;
+
+            if (o is sbyte)
+                return MethodParameterDataType.SByte;
+
+            if (o is short)
+                return MethodParameterDataType.Short;
+
+            if (o is string)
+                return MethodParameterDataType.String;
+
+            if (o is uint)
+                return MethodParameterDataType.UInt;
+
+            if (o is uint160)
+                return MethodParameterDataType.UInt160;
+
+            if (o is ulong)
+                return MethodParameterDataType.ULong;
+
+            if (o is Address)
+                return MethodParameterDataType.Address;
+
+            if (o is long)
+                return MethodParameterDataType.Long;
+
+            if (o is int)
+                return MethodParameterDataType.Int;
+            
+            // Any other types are not supported.
+            throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
+        }
+
+        public object[] Deserialize(string[] parameters)
+        {
+            return StringToObjects(this.EscapeAndJoin(parameters));
         }
 
         /// <inheritdoc />
-        public object[] ToObjects(string parameters)
+        public object[] Deserialize(byte[] parameterBytes)
+        {
+            var parameters = Encoding.UTF8.GetString(parameterBytes);
+            return StringToObjects(parameters);
+        }
+
+        private static object[] StringToObjects(string parameters)
         {
             string[] split = Regex.Split(parameters, @"(?<!(?<!\\)*\\)\|").ToArray();
 
@@ -66,6 +131,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 else if (parameterSignature[0] == "12")
                     processedParameters.Add(long.Parse(parameterSignature[1]));
 
+                else if (parameterSignature[0] == "13")
+                    processedParameters.Add(int.Parse(parameterSignature[1]));
+
                 else
                     throw new Exception(string.Format("{0} is not supported.", parameterSignature[0]));
             }
@@ -74,7 +142,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         }
 
         /// <inheritdoc />
-        public string ToRaw(string[] parameters)
+        private string EscapeAndJoin(string[] parameters)
         {
             IEnumerable<string> escaped = this.EscapePipesAndHashes(parameters);
             return string.Join('|', escaped);
@@ -97,7 +165,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 // after the first one.
                 // 
                 // Once this is done, prepend the string with the data type,
-                // which is an integer representation of SmartContractCarrierDataType,
+                // which is an integer representation of MethodParameterDataType,
                 // as well as a hash, so that it can be split again upon deserialization.
                 //
                 // I.e. 3#dcg#5d# will split into 3 / dcg / 5d

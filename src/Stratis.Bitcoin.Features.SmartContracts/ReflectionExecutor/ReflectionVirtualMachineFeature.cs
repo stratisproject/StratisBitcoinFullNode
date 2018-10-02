@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
 {
@@ -11,23 +13,30 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
     {
         private readonly ILogger logger;
         private readonly Network network;
+        private readonly ICallDataSerializer callDataSerializer;
 
-        public ReflectionVirtualMachineFeature(ILoggerFactory loggerFactory, Network network)
+        public ReflectionVirtualMachineFeature(ILoggerFactory loggerFactory, Network network, ICallDataSerializer callDataSerializer)
         {
             this.network = network;
+            this.callDataSerializer = callDataSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
-            new ReflectionRuleRegistration().RegisterRules(this.network.Consensus);
+            this.RegisterRules(this.network.Consensus);
 
             this.logger.LogInformation("Reflection Virtual Machine Injected.");
-
-            this.logger.LogTrace("(-)");
+            
             return Task.CompletedTask;
+        }
+
+        private void RegisterRules(IConsensus consensus)
+        {
+            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            {
+                new SmartContractFormatRule(this.callDataSerializer)
+            };
         }
     }
 }

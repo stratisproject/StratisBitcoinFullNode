@@ -85,16 +85,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager));
 
             // Signal to peers that this node can serve blocks.
             this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network) | NetworkPeerServices.NODE_WITNESS;
 
             this.signals.SubscribeForBlocksConnected(this.blockStoreSignaled);
-
-            this.logger.LogTrace("(-)");
+            
             return Task.CompletedTask;
         }
 

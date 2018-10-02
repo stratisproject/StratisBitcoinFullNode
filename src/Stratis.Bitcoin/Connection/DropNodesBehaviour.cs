@@ -47,8 +47,6 @@ namespace Stratis.Bitcoin.Connection
 
         private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
             if (message.Message.Payload is VersionPayload version)
             {
                 IPeerConnector peerConnector = null;
@@ -67,26 +65,17 @@ namespace Stratis.Bitcoin.Connection
                 }
             }
 
-            this.logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 
         protected override void AttachCore()
         {
-            this.logger.LogTrace("()");
-
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
         }
 
         protected override void DetachCore()
         {
-            this.logger.LogTrace("()");
-
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
         }
 
         public override object Clone()
