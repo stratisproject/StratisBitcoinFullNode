@@ -879,8 +879,8 @@ namespace Stratis.SmartContracts.IntegrationTests
 
             Assert.NotNull(receiveInvoked);
             Assert.NotNull(fundsReceived);
-            Assert.True(serializer.Deserialize<bool>(receiveInvoked));
-            Assert.Equal(fundsToSend, serializer.Deserialize<ulong>(fundsReceived));
+            Assert.True(serializer.ToBool(receiveInvoked));
+            Assert.Equal(fundsToSend, serializer.ToUInt64(fundsReceived));
         }
 
         private async Task<BlockTemplate> AddTransactionToMemPoolAndBuildBlockAsync(TestContext context, ContractTxData contractTxData, uint256 prevOutHash, ulong value, ulong gasBudget)

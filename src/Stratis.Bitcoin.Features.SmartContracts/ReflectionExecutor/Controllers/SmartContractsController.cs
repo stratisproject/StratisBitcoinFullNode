@@ -419,25 +419,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             switch (dataType)
             {
                 case SmartContractDataType.Address:
-                    return this.contractPrimitiveSerializer.Deserialize<Address>(bytes);
+                    return this.contractPrimitiveSerializer.ToAddress(bytes);
                 case SmartContractDataType.Bool:
-                    return this.contractPrimitiveSerializer.Deserialize<bool>(bytes);
+                    return this.contractPrimitiveSerializer.ToBool(bytes);
                 case SmartContractDataType.Bytes:
-                    return this.contractPrimitiveSerializer.Deserialize<byte[]>(bytes);
+                    return bytes;
                 case SmartContractDataType.Char:
-                    return this.contractPrimitiveSerializer.Deserialize<char>(bytes);
+                    return this.contractPrimitiveSerializer.ToChar(bytes);
                 case SmartContractDataType.Int:
-                    return this.contractPrimitiveSerializer.Deserialize<int>(bytes);
+                    return this.contractPrimitiveSerializer.ToInt32(bytes);
                 case SmartContractDataType.Long:
-                    return this.contractPrimitiveSerializer.Deserialize<long>(bytes);
-                case SmartContractDataType.Sbyte:
-                    return this.contractPrimitiveSerializer.Deserialize<sbyte>(bytes);
+                    return this.contractPrimitiveSerializer.ToUInt64(bytes);
+                //case SmartContractDataType.Sbyte:
+                //    return this.contractPrimitiveSerializer.Deserialize<sbyte>(bytes); // TODO: Check that we did in fact remove Sbyte and remove it everywhere.
                 case SmartContractDataType.String:
-                    return this.contractPrimitiveSerializer.Deserialize<string>(bytes);
+                    return this.contractPrimitiveSerializer.ToString(bytes);
                 case SmartContractDataType.Uint:
-                    return this.contractPrimitiveSerializer.Deserialize<uint>(bytes);
+                    return this.contractPrimitiveSerializer.ToUInt32(bytes);
                 case SmartContractDataType.Ulong:
-                    return this.contractPrimitiveSerializer.Deserialize<ulong>(bytes);
+                    return this.contractPrimitiveSerializer.ToUInt64(bytes);
             }
             return null;
         }

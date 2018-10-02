@@ -12,7 +12,7 @@ public class CallContract : SmartContract
     {
         get
         {
-            return PersistentState.GetString("Test");
+            return PersistentState.GetAsString("Test");
         }
         set
         {

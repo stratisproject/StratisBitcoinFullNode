@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts.Executor.Reflection.Serialization
+﻿using System;
+
+namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
     public interface IContractPrimitiveSerializer : ISerializer
     {

@@ -51,9 +51,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             const ulong duration = 20;
             var contract = new Auction(smartContractState, duration);
-            Assert.Equal(TestAddress, smartContractState.PersistentState.GetAddress("Owner"));
-            Assert.False(smartContractState.PersistentState.GetBool("HasEnded"));
-            Assert.Equal(duration + smartContractState.Block.Number, smartContractState.PersistentState.GetUInt64("EndBlock"));
+            Assert.Equal(TestAddress, smartContractState.PersistentState.GetAsAddress("Owner"));
+            Assert.False(smartContractState.PersistentState.GetAsBool("HasEnded"));
+            Assert.Equal(duration + smartContractState.Block.Number, smartContractState.PersistentState.GetAsUInt64("EndBlock"));
         }
 
         [Fact]
@@ -63,12 +63,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var contract = new Auction(this.smartContractState, duration);
 
             ((TestMessage)smartContractState.Message).Value = 100;
-            Assert.Null(smartContractState.PersistentState.GetAddress("HighestBidder").Value);
-            Assert.Equal(0uL, smartContractState.PersistentState.GetUInt64("HighestBid"));
+            Assert.Null(smartContractState.PersistentState.GetAsAddress("HighestBidder").Value);
+            Assert.Equal(0uL, smartContractState.PersistentState.GetAsUInt64("HighestBid"));
 
             contract.Bid();
-            Assert.NotNull(smartContractState.PersistentState.GetAddress("HighestBidder").Value);
-            Assert.Equal(100uL, smartContractState.PersistentState.GetUInt64("HighestBid"));
+            Assert.NotNull(smartContractState.PersistentState.GetAsAddress("HighestBidder").Value);
+            Assert.Equal(100uL, smartContractState.PersistentState.GetAsUInt64("HighestBid"));
 
             ((TestMessage)this.smartContractState.Message).Value = 90;
             Assert.ThrowsAny<Exception>(() => contract.Bid());
@@ -132,137 +132,104 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     {
         private Dictionary<string, object> objects = new Dictionary<string, object>();
 
-        private T GetObject<T>(string key)
+        public byte[] GetBytes(string key)
         {
-            if (this.objects.ContainsKey(key))
-                return (T)this.objects[key];
-
-            return default(T);
+            throw new NotImplementedException();
         }
 
-        public byte GetByte(string key)
+        public void SetBytes(string key, byte[] bytes)
         {
-            return this.GetObject<byte>(key);
+            throw new NotImplementedException();
         }
 
-        public byte[] GetByteArray(string key)
+        public char GetAsChar(string key)
         {
-            return this.GetObject<byte[]>(key);
+            throw new NotImplementedException();
         }
 
-        public char GetChar(string key)
+        public Address GetAsAddress(string key)
         {
-            return this.GetObject<char>(key);
+            throw new NotImplementedException();
         }
 
-        public Address GetAddress(string key)
+        public bool GetAsBool(string key)
         {
-            return this.GetObject<Address>(key);
+            throw new NotImplementedException();
         }
 
-        public bool GetBool(string key)
+        public int GetAsInt32(string key)
         {
-            return this.GetObject<bool>(key);
+            throw new NotImplementedException();
         }
 
-        public int GetInt32(string key)
+        public uint GetAsUInt32(string key)
         {
-            return this.GetObject<int>(key);
+            throw new NotImplementedException();
         }
 
-        public uint GetUInt32(string key)
+        public long GetAsInt64(string key)
         {
-            return this.GetObject<uint>(key);
+            throw new NotImplementedException();
         }
 
-        public long GetInt64(string key)
+        public ulong GetAsUInt64(string key)
         {
-            return this.GetObject<long>(key);
+            throw new NotImplementedException();
         }
 
-        public ulong GetUInt64(string key)
+        public string GetAsString(string key)
         {
-            return this.GetObject<ulong>(key);
+            throw new NotImplementedException();
         }
 
-        public string GetString(string key)
+        public T GetAsStruct<T>(string key) where T : struct
         {
-            return this.GetObject<string>(key);
-        }
-
-        public sbyte GetSbyte(string key)
-        {
-            return this.GetObject<sbyte>(key);
-        }
-
-        public T GetStruct<T>(string key) where T : struct
-        {
-            return this.GetObject<T>(key);
-        }
-
-        private void SetObject<T>(string key, T obj)
-        {
-            this.objects[key] = obj;
-        }
-
-        public void SetByte(string key, byte value)
-        {
-            this.SetObject(key, value);
-        }
-
-        public void SetByteArray(string key, byte[] value)
-        {
-            this.SetObject(key, value);
+            throw new NotImplementedException();
         }
 
         public void SetChar(string key, char value)
         {
-            this.SetObject(key, value);
+            throw new NotImplementedException();
         }
 
         public void SetAddress(string key, Address value)
         {
-            this.SetObject(key, value);
+            throw new NotImplementedException();
         }
 
         public void SetBool(string key, bool value)
         {
-            this.SetObject(key, value);
+            throw new NotImplementedException();
         }
 
         public void SetInt32(string key, int value)
         {
-            this.SetObject(key, value);
+            throw new NotImplementedException();
         }
 
         public void SetUInt32(string key, uint value)
         {
-            this.SetObject(key, value);
+            throw new NotImplementedException();
         }
 
         public void SetInt64(string key, long value)
         {
-            this.SetObject(key, value);
+            throw new NotImplementedException();
         }
 
         public void SetUInt64(string key, ulong value)
         {
-            this.SetObject(key, value);
+            throw new NotImplementedException();
         }
 
         public void SetString(string key, string value)
         {
-            this.SetObject(key, value);
-        }
-
-        public void SetSByte(string key, sbyte value)
-        {
-            this.SetObject(key, value);
+            throw new NotImplementedException();
         }
 
         public void SetStruct<T>(string key, T value) where T : struct
         {
-            this.SetObject(key, value);
+            throw new NotImplementedException();
         }
     }
 }

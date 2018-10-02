@@ -7,7 +7,7 @@ public class CatOwner : SmartContract
     {
         get
         {
-            return PersistentState.GetInt32(nameof(CatCounter));
+            return PersistentState.GetAsInt32(nameof(CatCounter));
         }
         set
         {
@@ -19,7 +19,7 @@ public class CatOwner : SmartContract
     {
         get
         {
-            return PersistentState.GetAddress(nameof(LastCreatedCat));
+            return PersistentState.GetAsAddress(nameof(LastCreatedCat));
         }
         set
         {
@@ -56,7 +56,7 @@ public class Cat : SmartContract
     {
         get
         {
-            return PersistentState.GetInt32(nameof(CatNumber));
+            return PersistentState.GetAsInt32(nameof(CatNumber));
         }
         set
         {

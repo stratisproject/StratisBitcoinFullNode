@@ -130,112 +130,104 @@ namespace Stratis.SmartContracts.Tools.Sct
 
     public sealed class ValidatorPersistentState : IPersistentState
     {
-        public void SetStruct<T>(string key, T value) where T : struct
+        public byte[] GetBytes(string key)
         {
+            throw new NotImplementedException();
         }
 
-
-        public byte GetByte(string key)
+        public void SetBytes(string key, byte[] bytes)
         {
-            return 0;
+            throw new NotImplementedException();
         }
 
-        public byte[] GetByteArray(string key)
+        public char GetAsChar(string key)
         {
-            return new byte[] { };
+            throw new NotImplementedException();
         }
 
-        public char GetChar(string key)
+        public Address GetAsAddress(string key)
         {
-            return '\0';
+            throw new NotImplementedException();
         }
 
-        public Address GetAddress(string key)
+        public bool GetAsBool(string key)
         {
-            return new Address();
+            throw new NotImplementedException();
         }
 
-        public bool GetBool(string key)
+        public int GetAsInt32(string key)
         {
-            return false;
+            throw new NotImplementedException();
         }
 
-        public int GetInt32(string key)
+        public uint GetAsUInt32(string key)
         {
-            return 0;
+            throw new NotImplementedException();
         }
 
-        public uint GetUInt32(string key)
+        public long GetAsInt64(string key)
         {
-            return 0;
+            throw new NotImplementedException();
         }
 
-        public long GetInt64(string key)
+        public ulong GetAsUInt64(string key)
         {
-            return 0;
+            throw new NotImplementedException();
         }
 
-        public ulong GetUInt64(string key)
+        public string GetAsString(string key)
         {
-            return 0;
+            throw new NotImplementedException();
         }
 
-        public string GetString(string key)
+        public T GetAsStruct<T>(string key) where T : struct
         {
-            return null;
-        }
-
-        public sbyte GetSbyte(string key)
-        {
-            return 0;
-        }
-
-        public T GetStruct<T>(string key) where T : struct
-        {
-            return default(T);
-        }
-        public void SetByte(string key, byte value)
-        {
-        }
-
-        public void SetByteArray(string key, byte[] value)
-        {
+            throw new NotImplementedException();
         }
 
         public void SetChar(string key, char value)
         {
+            throw new NotImplementedException();
         }
 
         public void SetAddress(string key, Address value)
         {
+            throw new NotImplementedException();
         }
 
         public void SetBool(string key, bool value)
         {
+            throw new NotImplementedException();
         }
 
         public void SetInt32(string key, int value)
         {
+            throw new NotImplementedException();
         }
 
         public void SetUInt32(string key, uint value)
         {
+            throw new NotImplementedException();
         }
 
         public void SetInt64(string key, long value)
         {
+            throw new NotImplementedException();
         }
 
         public void SetUInt64(string key, ulong value)
         {
+            throw new NotImplementedException();
         }
 
         public void SetString(string key, string value)
         {
+            throw new NotImplementedException();
         }
 
-        public void SetSByte(string key, sbyte value)
+        public void SetStruct<T>(string key, T value) where T : struct
         {
+            throw new NotImplementedException();
         }
     }
 }

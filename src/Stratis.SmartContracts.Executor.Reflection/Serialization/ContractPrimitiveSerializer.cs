@@ -59,10 +59,10 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             if (o is string s)
                 return Serialize(s);
-            
+
             if (o.GetType().IsValueType)
                 return SerializeStruct(o);
-                
+
             throw new ContractPrimitiveSerializationException(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
@@ -105,7 +105,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         #endregion
 
-        private byte[] SerializeStruct(object o)
+        public byte[] SerializeStruct(object o)
         {
             List<byte[]> toEncode = new List<byte[]>(); 
 
@@ -119,7 +119,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return RLP.EncodeList(toEncode.ToArray());
         }
 
-        private byte[] SerializeArray(Array array)
+        public byte[] SerializeArray(Array array)
         {
             List<byte[]> toEncode = new List<byte[]>();
 
@@ -133,6 +133,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return RLP.EncodeList(toEncode.ToArray());
         }
 
+        // Purely kept in for some tests at the moment.
         public T Deserialize<T>(byte[] stream)
         {
             object deserialized = Deserialize(typeof(T), stream);
@@ -142,7 +143,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return (T) deserialized;
         }
 
-        private object Deserialize(Type type, byte[] stream)
+        public object Deserialize(Type type, byte[] stream)
         {
             if (stream == null || stream.Length == 0)
                 return null;
@@ -182,7 +183,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             if (type.IsValueType)
                 return DeserializeStruct(type, stream);
-                
+
             throw new ContractPrimitiveSerializationException(string.Format("{0} is not supported.", type.Name));
         }
 
@@ -191,6 +192,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         public bool ToBool(byte[] val)
         {
             return BitConverter.ToBoolean(val);
+        }
+
+        public char ToChar(byte[] val)
+        {
+            return ToString(val)[0];
         }
 
         public Address ToAddress(byte[] val)
@@ -223,6 +229,15 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return Encoding.UTF8.GetString(val);
         }
 
+        public T ToStruct<T>(byte[] val) where T : struct
+        {
+            return (T) DeserializeStruct(typeof(T), val);
+        }
+
+        public T[] ToArray<T>(byte[] val)
+        {
+            return (T[]) DeserializeArray(typeof(T), val);
+        }
         #endregion
 
         private object DeserializeStruct(Type type, byte[] bytes)

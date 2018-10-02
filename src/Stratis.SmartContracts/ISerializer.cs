@@ -1,8 +1,19 @@
-﻿namespace Stratis.SmartContracts
+﻿using System;
+
+namespace Stratis.SmartContracts
 {
     public interface ISerializer
     {
         // TODO: Document the requirements for inputs for these fields?
+
+
+        byte[] SerializeStruct(object o);
+
+        byte[] SerializeArray(Array array);
+
+        T ToStruct<T>(byte[] val) where T : struct;
+
+        T[] ToArray<T>(byte[] val);
 
         /// <summary>
         /// Serializes an address into its 20-bytes representation.
@@ -44,6 +55,8 @@
         /// </summary>
         bool ToBool(byte[] val);
 
+        char ToChar(byte[] val);
+
         /// <summary>
         /// Serializes 20-bytes into an address.
         /// </summary>
@@ -73,5 +86,7 @@
         /// Serializes UTF8-encoded bytes into a string.
         /// </summary>
         string ToString(byte[] val);
+
+
     }
 }
