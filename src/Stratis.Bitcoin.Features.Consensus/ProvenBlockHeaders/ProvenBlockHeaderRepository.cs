@@ -64,8 +64,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             Task task = Task.Run(() =>
             {
-                this.logger.LogInformation("Initializing {0}.", nameof(ProvenBlockHeaderRepository));
-
                 Block genesis = this.network.GetGenesis();
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
@@ -78,8 +76,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                         transaction.Commit();
                     }
                 }
-
-                this.logger.LogTrace("(-)");
             });
 
             return task;
@@ -89,9 +85,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             Task<List<ProvenBlockHeader>> task = Task.Run(() =>
             {
-                this.logger.LogTrace("({0}:'{1}')", nameof(fromBlockHeight), fromBlockHeight);
-                this.logger.LogTrace("({0}:'{1}')", nameof(toBlockHeight), toBlockHeight);
-
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     List<ProvenBlockHeader> items = new List<ProvenBlockHeader>();
@@ -112,8 +105,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                             items.Add(row.Value);
                     }
 
-                    this.logger.LogTrace("(-)");
-
                     return items;
                 }
             });
@@ -128,8 +119,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             Task<ProvenBlockHeader> task = Task.Run(() =>
             {
-                this.logger.LogTrace("({0}:'{1}')", nameof(blockHeight), blockHeight);
-
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     ProvenBlockHeader header = null;
@@ -145,8 +134,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     if (row.Exists)
                         header = row.Value;
-
-                    this.logger.LogTrace("(-)");
 
                     return header;
                 }
@@ -183,8 +170,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     transaction.Commit();                    
                 }
 
-                this.logger.LogTrace("(-)");
-
                 return true;
 
             });
@@ -197,16 +182,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             Task<HashHeightPair> task = Task.Run(() =>
             {
-                this.logger.LogTrace("()");
-
                 HashHeightPair tip;
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     tip = this.GetTipHashHeight(transaction);
                 }
-
-                this.logger.LogTrace("(-):'{0}'", tip);
 
                 return tip;
             });
@@ -223,9 +204,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             Task task = Task.Run(() =>
             {
-                this.logger.LogTrace("({0}:'{1}')", nameof(fromBlockHeight), fromBlockHeight);
-                this.logger.LogTrace("({0}:'{1}')", nameof(toBlockHeight), toBlockHeight);
-
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     transaction.SynchronizeTables(BlockHashHeightTable, ProvenBlockHeaderTable);
@@ -237,11 +215,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     transaction.Commit();
                 }
-
-                this.logger.LogTrace("(-)");
             });
-
-            this.logger.LogTrace("(-)");
 
             return task;
         }
@@ -277,13 +251,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             Guard.NotNull(newTip, nameof(newTip));
 
-            this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
-
             this.blockHashHeightPair = newTip;
 
             transaction.Insert<byte[], HashHeightPair>(BlockHashHeightTable, blockHashHeightKey, newTip);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -294,8 +264,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="newTip">Hash and height of the new repository's tip.</param>
         private void InsertHeaders(DBreeze.Transactions.Transaction transaction, List<ProvenBlockHeader> headers, HashHeightPair newTip)
         {
-            this.logger.LogTrace("({0}.Count():{1})", nameof(headers), headers.Count());
-
             int tipHeight = newTip.Height;
 
             var headerDict = new Dictionary<int, ProvenBlockHeader>();
@@ -305,6 +273,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 headerDict[i] = headers[i];
 
             var sortedHeaders = headerDict.ToList();
+
             sortedHeaders.Sort((pair1, pair2) => pair1.Key.CompareTo(pair2.Key));
 
             foreach (KeyValuePair<int, ProvenBlockHeader> header in sortedHeaders)
@@ -312,8 +281,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             // Store the latest ProvenBlockHeader in memory.
             this.provenBlockHeaderTip = headers.LastOrDefault();
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -324,12 +291,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <returns>True if the items exists in the database.</returns>
         private bool ProvenBlockHeaderExists(DBreeze.Transactions.Transaction transaction, int blockHeight)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockHeight), blockHeight);
-
             Row<byte[], ProvenBlockHeader> row = transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeight.ToBytes(false));
         
-            this.logger.LogTrace("(-):{0}", row.Exists);
-
             return row.Exists;
         }
 

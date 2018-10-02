@@ -111,8 +111,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task InitializeAsync()
         {
-            this.logger.LogInformation("Initializing {0}.", nameof(ProvenBlockHeaderStore));
-
             await this.provenBlockHeaderRepository.InitializeAsync().ConfigureAwait(false);
 
             this.CurrentTipHashHeight = await this.CurrentTipHashHeightAsync().ConfigureAwait(false);
@@ -136,15 +134,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpan.FromMinutes(1),
             startAfter: TimeSpan.FromMinutes(1));
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public async Task<ProvenBlockHeader> GetAsync(int blockHeight)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockHeight), blockHeight);
-
             ProvenBlockHeader header = null;
 
             using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
@@ -179,9 +173,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task<List<ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(fromBlockHeight), fromBlockHeight);
-            this.logger.LogTrace("({0}:'{1}')", nameof(toBlockHeight), toBlockHeight);
-
             var cachedHeaders = new List<ProvenBlockHeader>();            
 
             using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
@@ -237,11 +228,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task<HashHeightPair> CurrentTipHashHeightAsync()
         {
-            this.logger.LogTrace("()");
-
             this.CurrentTipHashHeight = await this.provenBlockHeaderRepository.GetTipHashHeightAsync().ConfigureAwait(false);
-
-            this.logger.LogTrace("(-)");
 
             return this.CurrentTipHashHeight;
         }
@@ -249,11 +236,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task<ProvenBlockHeader> GetTipAsync()
         {
-            this.logger.LogTrace("()");
-
             this.CurrentTipHashHeight = await this.CurrentTipHashHeightAsync();
-
-            this.logger.LogTrace("(-)");
 
             return await this.GetAsync(this.CurrentTipHashHeight.Height).ConfigureAwait(false);
         }
@@ -261,22 +244,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public void AddToPending(ProvenBlockHeader provenBlockHeader, HashHeightPair newTip)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(provenBlockHeader), provenBlockHeader);
-
-            this.logger.LogTrace("({0}:'{1}')", nameof(newTip), newTip);
-
             this.PendingCache.AddOrUpdate(newTip.Height, provenBlockHeader, (key, value) => { return provenBlockHeader; });
 
             this.pendingTipHashHeight = newTip;
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Saves pending <see cref="ProvenBlockHeader"/> items to the <see cref="ProvenBlockHeaderRepository"/>.</summary>
         private async Task SaveAsync()
         {
-            this.logger.LogTrace("()");
-
             if (this.PendingCache.Count == 0)
             {
                 this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADER_CACHE_EMPTY]");
@@ -307,8 +282,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                         this.pendingTipHashHeight = null;
                 }
             }           
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Gets <see cref="ProvenBlockHeader"></see> items from pending cache with specific key if present.</summary>
@@ -316,16 +289,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <returns><see cref="ProvenBlockHeader"></see> if cache contains the item, <c>null</c> otherwise.</returns>
         private ProvenBlockHeader GetHeaderFromPendingCache(int key)
         {
-            this.logger.LogTrace("()");
-
             if (this.PendingCache.TryGetValue(key, out ProvenBlockHeader header))
             {
                 this.logger.LogTrace("(-):{0}", header);
 
                 return header;
             }
-
-            this.logger.LogTrace("(-)");
 
             return null;
         }
@@ -335,8 +304,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <returns><see cref="ProvenBlockHeader"></see> if cache contains the item, <c>null</c> otherwise.</returns>
         private ProvenBlockHeader GetHeaderFromStoreCache(int key)
         {
-            this.logger.LogTrace("()");
-
             if (this.Cache.TryGetValue(key, out ProvenBlockHeader header))
             {
                 this.logger.LogTrace("(-):{0}", header);
@@ -344,16 +311,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 return header;
             }
 
-            this.logger.LogTrace("(-)");
-
             return null;
         }
 
         /// <summary>Manages store cache size.  Remove 30% of items if the memory cache size has been reached.</summary>
         private void ManangeCacheSize()
         {
-            this.logger.LogTrace("()");
-
             do
             {
                 if (this.MemoryCacheSize() > this.MaxMemoryCacheSizeInBytes)
@@ -376,16 +339,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
 
             } while (this.MemoryCacheSize() > this.MaxMemoryCacheSizeInBytes);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Get current store cache size in bytes.</summary>
         /// <returns>Size of store cache in bytes.</returns>
         private long MemoryCacheSize()
         {
-            this.logger.LogTrace("()");
-
             long size = 0;
 
             for (int i = 0; i <= this.Cache.Count - 1; i++)
@@ -394,15 +353,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     size += header.HeaderSize;
             }
 
-            this.logger.LogTrace("(-)");
-
             return size;
         }
 
         private void AddBenchStats(StringBuilder benchLog)
-        {
-            this.logger.LogTrace("()");
-
+        {        
             benchLog.AppendLine("======ProvenBlockHeaderStore Bench======");
 
             BackendPerformanceSnapshot snapShot = this.performanceCounter.Snapshot();
@@ -413,20 +368,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 benchLog.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
 
             this.latestPerformanceSnapShot = snapShot;
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            this.logger.LogTrace("()");
-
             this.lockobj.Dispose();
 
             this.asyncLoop?.Dispose();
-
-            this.logger.LogTrace("(-)");
         }
     }
 }
