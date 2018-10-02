@@ -15,6 +15,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// </summary>
     public class ContractPrimitiveSerializer : IContractPrimitiveSerializer, ISerializer
     {
+        private static readonly byte[] DefaultValue = new byte[0];
         private readonly Network network;
 
         public ContractPrimitiveSerializer(Network network)
@@ -70,36 +71,57 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public byte[] Serialize(Address address)
         {
+            if (address == default(Address))
+                return DefaultValue;
+
             return address.ToUint160(this.network).ToBytes();
         }
 
         public byte[] Serialize(bool b)
         {
+            if (b == default(bool))
+                return DefaultValue;
+
             return BitConverter.GetBytes(b);
         }
 
         public byte[] Serialize(int i)
         {
+            if (i == default(int))
+                return DefaultValue;
+
             return BitConverter.GetBytes(i);
         }
 
         public byte[] Serialize(long l)
         {
+            if (l == default(long))
+                return DefaultValue;
+
             return BitConverter.GetBytes(l);
         }
 
         public byte[] Serialize(uint u)
         {
+            if (u == default(uint))
+                return DefaultValue;
+
             return BitConverter.GetBytes(u);
         }
 
         public byte[] Serialize(ulong ul)
         {
+            if (ul == default(ulong))
+                return DefaultValue;
+
             return BitConverter.GetBytes(ul);
         }
 
         public byte[] Serialize(string s)
         {
+            if (s == default(string))
+                return DefaultValue;
+
             return Encoding.UTF8.GetBytes(s);
         }
 
@@ -191,41 +213,65 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public bool ToBool(byte[] val)
         {
+            if (val.Length == 0)
+                return default(bool);
+
             return BitConverter.ToBoolean(val);
         }
 
         public char ToChar(byte[] val)
         {
+            if (val.Length == 0)
+                return default(char);
+
             return ToString(val)[0];
         }
 
         public Address ToAddress(byte[] val)
         {
+            if (val.Length == 0)
+                return default(Address);
+
             return new uint160(val).ToAddress(this.network);
         }
 
         public int ToInt32(byte[] val)
         {
+            if (val.Length == 0)
+                return default(int);
+
             return BitConverter.ToInt32(val, 0);
         }
 
         public uint ToUInt32(byte[] val)
         {
+            if (val.Length == 0)
+                return default(uint);
+
             return BitConverter.ToUInt32(val, 0);
         }
 
         public long ToInt64(byte[] val)
         {
+            if (val.Length == 0)
+                return default(long);
+
             return BitConverter.ToInt64(val, 0);
         }
 
         public ulong ToUInt64(byte[] val)
         {
+            if (val.Length == 0)
+                return default(ulong);
+
             return BitConverter.ToUInt64(val, 0);
         }
 
         public string ToString(byte[] val)
         {
+            if (val.Length == 0)
+                return default(string);
+
             return Encoding.UTF8.GetString(val);
         }
 

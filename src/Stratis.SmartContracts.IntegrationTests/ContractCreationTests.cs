@@ -45,7 +45,8 @@ namespace Stratis.SmartContracts.IntegrationTests
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("CreateCat", response.NewContractAddress, 0);
                 receiver.WaitMempoolCount(1);
                 receiver.MineBlocks(1);
-                
+
+                var test = sender.GetStorageValue(response.NewContractAddress, "CatCounter");
                 Assert.Equal(1, BitConverter.ToInt32(sender.GetStorageValue(response.NewContractAddress, "CatCounter")));
                 uint160 lastCreatedCatAddress =  new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));
                 uint160 expectedCreatedCatAddress = this.addressGenerator.GenerateAddress(callResponse.TransactionId, 0);

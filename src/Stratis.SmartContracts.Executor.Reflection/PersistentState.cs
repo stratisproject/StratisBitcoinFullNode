@@ -30,7 +30,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public byte[] GetBytes(string key)
         {
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            return this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
+            return this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes) ?? new byte[0];
         }
 
         public void SetBytes(string key, byte[] bytes)
@@ -41,71 +41,61 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public char GetAsChar(string key)
         {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            byte[] toReturn = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
+            byte[] toReturn = this.GetBytes(key);
             return Serializer.ToChar(toReturn);
         }
 
         public Address GetAsAddress(string key)
         {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            byte[] toReturn = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
+            byte[] toReturn = this.GetBytes(key);
             return Serializer.ToAddress(toReturn);
         }
 
         public bool GetAsBool(string key)
         {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            byte[] toReturn = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
+            byte[] toReturn = this.GetBytes(key);
             return Serializer.ToBool(toReturn);
         }
 
         public int GetAsInt32(string key)
         {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            byte[] toReturn = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
+            byte[] toReturn = this.GetBytes(key);
             return Serializer.ToInt32(toReturn);
         }
 
         public uint GetAsUInt32(string key)
         {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            byte[] toReturn = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
+            byte[] toReturn = this.GetBytes(key);
             return Serializer.ToUInt32(toReturn);
         }
 
         public long GetAsInt64(string key)
         {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            byte[] toReturn = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
+            byte[] toReturn = this.GetBytes(key);
             return Serializer.ToInt64(toReturn);
         }
 
         public ulong GetAsUInt64(string key)
         {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            byte[] toReturn = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
+            byte[] toReturn = this.GetBytes(key);
             return Serializer.ToUInt64(toReturn);
         }
 
         public string GetAsString(string key)
         {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            byte[] toReturn = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
+            byte[] toReturn = this.GetBytes(key);
             return Serializer.ToString(toReturn);
         }
 
         public T GetAsStruct<T>(string key) where T : struct
         {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            byte[] toReturn = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
+            byte[] toReturn = this.GetBytes(key);
             return Serializer.ToStruct<T>(toReturn);
         }
 
         public T[] GetAsArray<T>(string key)
         {
-            byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            byte[] toReturn = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
+            byte[] toReturn = this.GetBytes(key);
             return Serializer.ToArray<T>(toReturn);
         }
 
