@@ -320,5 +320,36 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Equal(preResponse.NewContractAddress, receipt.To);
         }
 
+        [Fact]
+        public void InternalTransfer_CreateMultipleContracts_FromConstructor()
+        {
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            double amount = 25;
+            Money senderBalanceBefore = this.node1.WalletSpendableBalance;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/NonceTest.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
+            this.node1.WaitMempoolCount(1);
+            this.node1.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
+            
+            // Check that there is code for nonces 1 and 3 (not 2, contract deployment should have failed).
+            uint160 successAddress1 = this.addressGenerator.GenerateAddress(response.TransactionId, 1);
+            uint160 failAddress = this.addressGenerator.GenerateAddress(response.TransactionId, 2);
+            uint160 successAddress2 = this.addressGenerator.GenerateAddress(response.TransactionId, 3);
+            Assert.NotNull(this.node1.GetCode(successAddress1.ToAddress(this.mockChain.Network)));
+            Assert.Null(this.node1.GetCode(failAddress.ToAddress(this.mockChain.Network)));
+            Assert.NotNull(this.node1.GetCode(successAddress2.ToAddress(this.mockChain.Network)));
+
+            Assert.Equal((ulong) 1, this.node1.GetContractBalance(successAddress1.ToAddress(this.mockChain.Network)));
+            Assert.Equal((ulong) 0, this.node1.GetContractBalance(failAddress.ToAddress(this.mockChain.Network)));
+            Assert.Equal((ulong) 1, this.node1.GetContractBalance(successAddress2.ToAddress(this.mockChain.Network)));
+        }
+
     }
 }
