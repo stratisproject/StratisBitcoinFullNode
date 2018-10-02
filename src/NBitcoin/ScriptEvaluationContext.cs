@@ -1679,9 +1679,9 @@ namespace NBitcoin
             return true;
         }
 
-        public static bool IsLowDerSignature(byte[] vchSig)
+        public static bool IsLowDerSignature(byte[] vchSig, bool haveSigHash = true)
         {
-            if (!IsValidSignatureEncoding(vchSig, false))
+            if (!IsValidSignatureEncoding(vchSig, haveSigHash))
             {
                 return false;
             }
@@ -1714,9 +1714,9 @@ namespace NBitcoin
             return true;
         }
 
-        public bool IsLowDERSignature(byte[] vchSig)
+        public bool IsLowDERSignature(byte[] vchSig, bool haveSigHash = true)
         {
-            if(!IsValidSignatureEncoding(vchSig, true))
+            if(!IsValidSignatureEncoding(vchSig, haveSigHash))
             {
                 this.Error = ScriptError.SigDer;
                 return false;
@@ -1797,7 +1797,7 @@ namespace NBitcoin
         }
 
 
-        public static bool IsValidSignatureEncoding(byte[] sig, bool haveSigHash)
+        public static bool IsValidSignatureEncoding(byte[] sig, bool haveSigHash = true)
         {
             // Format: 0x30 [total-length] 0x02 [R-length] [R] 0x02 [S-length] [S] [sighash]
             // * total-length: 1-byte length descriptor of everything that follows,

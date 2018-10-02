@@ -1,5 +1,4 @@
 ﻿using NBitcoin;
-using NBitcoin.Crypto;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
@@ -10,17 +9,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (BlockStake.IsProofOfWork(block))
                 return block.BlockSignature.IsEmpty();
 
-            return checkLowS ?
-                ScriptEvaluationContext.IsLowDerSignature(block.BlockSignature.Signature) :
-                ScriptEvaluationContext.IsValidSignatureEncoding(block.BlockSignature.Signature, false);
-        }
+            // For POS blocks that have a signature we do not append a SIGHASH type at the end of the signature.
+            // Therefore IsValidSignatureEncoding should be called with haveSigHash = false.
 
-        public static bool EnsureLowS(BlockSignature blockSignature)
-        {
-            var signature = new ECDSASignature(blockSignature.Signature);
-            if (!signature.IsLowS)
-                blockSignature.Signature = signature.MakeCanonical().ToDER();
-            return true;
+            return checkLowS ?
+                ScriptEvaluationContext.IsLowDerSignature(block.BlockSignature.Signature, false) :
+                ScriptEvaluationContext.IsValidSignatureEncoding(block.BlockSignature.Signature, false);
         }
     }
 }
