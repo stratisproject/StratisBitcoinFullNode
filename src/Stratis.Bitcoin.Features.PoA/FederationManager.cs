@@ -48,10 +48,9 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Loads federation key if it exists.</summary>
         private void LoadKey()
         {
-            var keyTool = new KeyTool();
+            var keyTool = new KeyTool(this.settings.DataFolder);
 
-            string keyPath = keyTool.GetPrivateKeyDefaultPath(this.settings);
-            Key key = keyTool.LoadPrivateKey(keyPath);
+            Key key = keyTool.LoadPrivateKey();
 
             this.IsFederationMember = key != null;
             this.FederationMemberKey = key;
