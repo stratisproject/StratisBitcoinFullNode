@@ -245,12 +245,23 @@ namespace Stratis.SmartContracts.IntegrationTests
             //Method calls back and forth between 2 contracts
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public void InternalTransfer_BetweenContracts_FromConstructor()
         {
-            //Method calls back and forth between 2 contracts, but from constructor. 
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
 
-            // Special case because code needs to be stored in repo before execution. 
+            double amount = 25;
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/MultipleNestedCalls.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
+            this.node1.WaitMempoolCount(1);
+            this.node1.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
+
+            Assert.NotNull(this.node1.GetStorageValue(response.NewContractAddress, "Caller"));
         }
 
         [Fact]
@@ -327,8 +338,6 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.node1.MineBlocks(1);
 
             double amount = 25;
-            Money senderBalanceBefore = this.node1.WalletSpendableBalance;
-            uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             // Deploy contract
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/NonceTest.cs");

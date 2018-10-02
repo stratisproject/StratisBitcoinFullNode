@@ -34,8 +34,6 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         // Also check that validation and base cost fees are being applied correctly.
 
-        // TODO: NonceGenerator Behaviour.
-
         // TODO: Calls to methods with incorrect parameters
 
         // TODO: Calls to private methods.
