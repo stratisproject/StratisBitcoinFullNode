@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests
@@ -17,7 +18,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             var dataFolder = new DataFolder(testRootPath);
             this.tool = new KeyTool(dataFolder);
 
-            this.validator = new PoABlockHeaderValidator();
+            this.validator = new PoABlockHeaderValidator(new ExtendedLoggerFactory());
         }
 
         [Fact]
