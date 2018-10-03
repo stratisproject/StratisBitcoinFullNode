@@ -40,14 +40,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             Network regTest = KnownNetworks.RegTest;
 
-            this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest);
-            this.nodeB = this.nodeBuilder.CreateStratisPowNode(regTest);
-            this.nodeC = this.nodeBuilder.CreateStratisPowNode(regTest);
+            this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD();
+            this.nodeB = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD();
+            this.nodeC = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD();
 
             this.nodeBuilder.StartAll();
-            this.nodeA.NotInIBD().WithWallet();
-            this.nodeB.NotInIBD();
-            this.nodeC.NotInIBD();
+            this.nodeA.WithWallet();
 
             this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.CoinbaseMaturity;
         }

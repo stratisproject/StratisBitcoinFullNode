@@ -85,8 +85,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         {
             this.CoreNode = coreNode;
             this.chain = chain;
+
             // Set up address and mining
-            this.CoreNode.NotInIBD();
             this.CoreNode.FullNode.WalletManager().CreateWallet(this.Password, this.WalletName, this.Passphrase);
             this.MinerAddress = this.CoreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.WalletName, this.AccountName));
             Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(this.WalletName);
@@ -141,7 +141,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
                 return Result.Fail<WalletSendTransactionModel>(errorResponse.Errors[0].Message);
             }
 
-            JsonResult response = (JsonResult) result;
+            JsonResult response = (JsonResult)result;
             return Result.Ok((WalletSendTransactionModel)response.Value);
         }
 

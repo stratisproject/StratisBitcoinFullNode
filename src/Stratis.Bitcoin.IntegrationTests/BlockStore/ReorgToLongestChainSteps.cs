@@ -44,21 +44,21 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void four_miners()
         {
-            this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network);
+            this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD();
             this.jingNode.Start();
-            this.jingNode.NotInIBD().WithWallet();
+            this.jingNode.WithWallet();
 
-            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network);
+            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD();
             this.bobNode.Start();
-            this.bobNode.NotInIBD().WithWallet();
+            this.bobNode.WithWallet();
 
-            this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network);
+            this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD();
             this.charlieNode.Start();
-            this.charlieNode.NotInIBD().WithWallet();
+            this.charlieNode.WithWallet();
 
-            this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network);
+            this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD();
             this.daveNode.Start();
-            this.daveNode.NotInIBD().WithWallet();
+            this.daveNode.WithWallet();
 
             TestHelper.Connect(this.jingNode, this.bobNode);
             TestHelper.Connect(this.bobNode, this.charlieNode);
