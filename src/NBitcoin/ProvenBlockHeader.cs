@@ -70,6 +70,9 @@ namespace NBitcoin
         /// <summary>Gets the size of the coinstake in bytes, the header must be serialized or deserialized for this property to be set.</summary>
         public long? CoinstakeSize { get; protected set; }
 
+        /// <summary>Gets the header size in bytes, the header must be serialized or deserialized for this property to be set.</summary>
+        public long HeaderSize { get; private set; }
+
         public ProvenBlockHeader()
         {
         }
