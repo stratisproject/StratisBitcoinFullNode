@@ -249,19 +249,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         public void InternalTransfer_BetweenContracts_FromConstructor()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
-
-            double amount = 25;
-
-            // Deploy contract
-            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/MultipleNestedCalls.cs");
-            Assert.True(compilationResult.Success);
-            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
-            this.node1.WaitMempoolCount(1);
-            this.node1.MineBlocks(1);
-            Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
-
-            Assert.NotNull(this.node1.GetStorageValue(response.NewContractAddress, "Caller"));
+            // Special case because code needs to be stored in repo before execution. 
         }
 
         [Fact]
