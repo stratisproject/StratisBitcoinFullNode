@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
@@ -15,6 +16,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.PoA.ConsensusRules;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -27,9 +29,11 @@ namespace Stratis.Bitcoin.Features.PoA
         {
             private readonly FederationManager federationManager;
 
-            public PoAFeature(FederationManager federationManager)
+            public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider)
             {
                 this.federationManager = federationManager;
+
+                payloadProvider.DiscoverPayloads(this.GetType().Assembly);
             }
 
             /// <inheritdoc />
