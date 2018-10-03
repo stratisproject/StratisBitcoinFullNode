@@ -64,14 +64,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             Task task = Task.Run(() =>
             {
-                Block genesis = this.network.GetGenesis();
-
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     if (this.blockHashHeightPair == null)
                     {
-                        // set to genesis
-                        this.SetTip(transaction, new HashHeightPair(genesis.GetHash(), 0));
+                        this.SetTip(transaction, new HashHeightPair(this.network.GetGenesis().GetHash(), 0));
 
                         transaction.Commit();
                     }
