@@ -1,6 +1,7 @@
 ﻿namespace City.Chain
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
@@ -47,9 +48,6 @@
         {
             try
             {
-                // Temporary enforce testnet if anyone launces without -testnet parameter. TODO: Remove before mainnet launch.
-                args = args.Append("-testnet").ToArray();
-
                 // To avoid modifying Stratis source, we'll parse the arguments and set some hard-coded defaults for City Chain, like the ports.
                 var configReader = new TextFileConfiguration(args ?? new string[] { });
 
@@ -68,14 +66,17 @@
                 // Example: -chain=bitcoin
                 var chain = configReader.GetOrDefault<string>("chain", "city");
 
-                var networkConfiguration = new NetworkConfigurations().GetNetwork(networkIdentifier, chain);
+                // TODO: Perform full test validation of Stratis and Bitcoin before adding support for it.
+                chain = "city";
+
+                NetworkConfiguration networkConfiguration = new NetworkConfigurations().GetNetwork(networkIdentifier, chain);
 
                 if (networkConfiguration == null)
                 {
                     throw new ArgumentException($"The supplied chain ({chain}) and network ({networkIdentifier}) parameters did not result in a valid network.");
                 }
 
-                var network = GetNetwork(networkConfiguration.Identifier, networkConfiguration.Chain);
+                Network network = GetNetwork(networkConfiguration.Identifier, networkConfiguration.Chain);
 
                 // Register the network found.
                 NetworkRegistration.Register(network);
@@ -86,8 +87,10 @@
                     return;
                 }
 
+                var apiPort = configReader.GetOrDefault<string>("apiport", networkConfiguration.ApiPort.ToString());
+
                 args = args
-                    .Append("-apiport=" + networkConfiguration.ApiPort)
+                    .Append("-apiport=" + apiPort)
                     .Append("-txindex=1") // Required for History (Block) explorer.
                     .Append("-wsport=" + networkConfiguration.WsPort).ToArray();
 

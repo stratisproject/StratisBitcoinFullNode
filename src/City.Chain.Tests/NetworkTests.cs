@@ -52,14 +52,14 @@ namespace City.Chain.Tests
         {
             Network network = new CityMain();
 
-            Assert.Equal(0, network.Checkpoints.Count);
+            Assert.Equal(1, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
             Assert.Equal(3, network.SeedNodes.Count);
 
             Assert.Equal("CityMain", network.Name);
             Assert.Equal(CityMain.CityRootFolderName, network.RootFolderName);
             Assert.Equal(CityMain.CityDefaultConfigFilename, network.DefaultConfigFilename);
-            Assert.Equal(0x23898467.ToString(), network.Magic.ToString());
+            Assert.Equal(0x43545901.ToString(), network.Magic.ToString());
             Assert.Equal(4333, network.DefaultPort);
             Assert.Equal(4334, network.RPCPort);
             Assert.Equal(CityMain.CityMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
@@ -108,21 +108,21 @@ namespace City.Chain.Tests
             Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.Segwit]);
             Assert.Equal(125000, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
-            Assert.Equal(4535, network.Consensus.CoinType);
+            Assert.Equal(1926, network.Consensus.CoinType);
             Assert.Equal(new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimit);
             Assert.Equal(new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimitV2);
-            Assert.Equal(new uint256("0x000007e4aff2b770e876ac1bc2d5317f15c2505b1f8e58423febf0913bd0cc34"), network.Consensus.DefaultAssumeValid);
+            Assert.Equal(new uint256("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"), network.Consensus.DefaultAssumeValid);
             Assert.Equal(50, network.Consensus.CoinbaseMaturity);
             Assert.Equal(Money.Coins(13736000000), network.Consensus.PremineReward);
             Assert.Equal(2, network.Consensus.PremineHeight);
-            Assert.Equal(Money.Coins(1), network.Consensus.ProofOfWorkReward);
-            Assert.Equal(Money.Coins(100), network.Consensus.ProofOfStakeReward);
+            Assert.Equal(Money.Coins(2), network.Consensus.ProofOfWorkReward);
+            Assert.Equal(Money.Coins(20), network.Consensus.ProofOfStakeReward);
             Assert.Equal((uint)500, network.Consensus.MaxReorgLength);
             Assert.Equal(long.MaxValue, network.Consensus.MaxMoney);
 
             Block genesis = network.GetGenesis();
-            Assert.Equal(uint256.Parse("0x000007e4aff2b770e876ac1bc2d5317f15c2505b1f8e58423febf0913bd0cc34"), genesis.GetHash());
-            Assert.Equal(uint256.Parse("0x40ba87eb3e03731abe7f2c7643c493b6383020513d5352334c6e0ff343e2f82d"), genesis.Header.HashMerkleRoot);
+            Assert.Equal(uint256.Parse("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"), genesis.GetHash());
+            Assert.Equal(uint256.Parse("0xb3425d46594a954b141898c7eebe369c6e6a35d2dab393c1f495504d2147883b"), genesis.Header.HashMerkleRoot);
         }
 
         [Fact]
@@ -223,14 +223,14 @@ namespace City.Chain.Tests
         {
             Network network = new CityTest();
 
-            Assert.Equal(0, network.Checkpoints.Count);
-            Assert.Equal(4, network.DNSSeeds.Count);
+            Assert.Equal(1, network.Checkpoints.Count);
+            Assert.Equal(3, network.DNSSeeds.Count);
             Assert.Equal(3, network.SeedNodes.Count);
 
             Assert.Equal("CityTest", network.Name);
             Assert.Equal(CityMain.CityRootFolderName, network.RootFolderName);
             Assert.Equal(CityMain.CityDefaultConfigFilename, network.DefaultConfigFilename);
-            Assert.Equal(0x26898467.ToString(), network.Magic.ToString());
+            Assert.Equal(0x43545401.ToString(), network.Magic.ToString());
             Assert.Equal(24333, network.DefaultPort);
             Assert.Equal(24334, network.RPCPort);
             Assert.Equal(CityMain.CityMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
@@ -265,7 +265,7 @@ namespace City.Chain.Tests
             Assert.Equal(0, network.Consensus.BuriedDeployments[BuriedDeployments.BIP34]);
             Assert.Equal(0, network.Consensus.BuriedDeployments[BuriedDeployments.BIP65]);
             Assert.Equal(0, network.Consensus.BuriedDeployments[BuriedDeployments.BIP66]);
-            Assert.Equal(new uint256("0x000fd5ab3150ba1f57dbbfb449b67f4d4a30a634d997b269eccb0a48dd7cd3d9"), network.Consensus.BIP34Hash);
+            Assert.Equal(new uint256("0x00077765f625cc2cb6266544ff7d5a462f25be14ea1116dc2bd2fec17e40a5e3"), network.Consensus.BIP34Hash);
             Assert.Equal(new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000")), network.Consensus.PowLimit);
             Assert.Null(network.Consensus.MinimumChainWork);
             Assert.Equal(TimeSpan.FromSeconds(14 * 24 * 60 * 60), network.Consensus.PowTargetTimespan);
@@ -279,21 +279,21 @@ namespace City.Chain.Tests
             Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.Segwit]);
             Assert.Equal(125000, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
-            Assert.Equal(4535, network.Consensus.CoinType);
+            Assert.Equal(1926, network.Consensus.CoinType);
             Assert.Equal(new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimit);
             Assert.Equal(new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimitV2);
-            Assert.Equal(new uint256("0x000fd5ab3150ba1f57dbbfb449b67f4d4a30a634d997b269eccb0a48dd7cd3d9"), network.Consensus.DefaultAssumeValid);
+            Assert.Equal(new uint256("0x00077765f625cc2cb6266544ff7d5a462f25be14ea1116dc2bd2fec17e40a5e3"), network.Consensus.DefaultAssumeValid);
             Assert.Equal(10, network.Consensus.CoinbaseMaturity);
             Assert.Equal(Money.Coins(13736000000), network.Consensus.PremineReward);
             Assert.Equal(2, network.Consensus.PremineHeight);
-            Assert.Equal(Money.Coins(1), network.Consensus.ProofOfWorkReward);
-            Assert.Equal(Money.Coins(100), network.Consensus.ProofOfStakeReward);
+            Assert.Equal(Money.Coins(2), network.Consensus.ProofOfWorkReward);
+            Assert.Equal(Money.Coins(20), network.Consensus.ProofOfStakeReward);
             Assert.Equal((uint)500, network.Consensus.MaxReorgLength);
             Assert.Equal(long.MaxValue, network.Consensus.MaxMoney);
 
             Block genesis = network.GetGenesis();
-            Assert.Equal(uint256.Parse("0x000fd5ab3150ba1f57dbbfb449b67f4d4a30a634d997b269eccb0a48dd7cd3d9"), genesis.GetHash());
-            Assert.Equal(uint256.Parse("0xc83d0753a8826119c898cc23828356b760f0042ff8e9d67b3a03edfce5824a74"), genesis.Header.HashMerkleRoot);
+            Assert.Equal(uint256.Parse("0x00077765f625cc2cb6266544ff7d5a462f25be14ea1116dc2bd2fec17e40a5e3"), genesis.GetHash());
+            Assert.Equal(uint256.Parse("0x034aaae9ca8e297078a2fed80cdaaf72ffad8aa1b1988c7b6edd8f01d69312ca"), genesis.Header.HashMerkleRoot);
         }
 
         [Fact]
@@ -303,13 +303,13 @@ namespace City.Chain.Tests
             Network network = new CityRegTest();
 
             Assert.Empty(network.Checkpoints);
-            Assert.Empty(network.DNSSeeds);
-            Assert.Empty(network.SeedNodes);
+            Assert.Equal(3, network.DNSSeeds.Count);
+            Assert.Equal(3, network.SeedNodes.Count);
 
             Assert.Equal("CityRegTest", network.Name);
             Assert.Equal(CityMain.CityRootFolderName, network.RootFolderName);
             Assert.Equal(CityMain.CityDefaultConfigFilename, network.DefaultConfigFilename);
-            Assert.Equal(0x21898467.ToString(), network.Magic.ToString());
+            Assert.Equal(0x43525901.ToString(), network.Magic.ToString());
             Assert.Equal(14333, network.DefaultPort);
             Assert.Equal(14334, network.RPCPort);
             Assert.Equal(CityMain.CityMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
@@ -344,7 +344,7 @@ namespace City.Chain.Tests
             Assert.Equal(0, network.Consensus.BuriedDeployments[BuriedDeployments.BIP34]);
             Assert.Equal(0, network.Consensus.BuriedDeployments[BuriedDeployments.BIP65]);
             Assert.Equal(0, network.Consensus.BuriedDeployments[BuriedDeployments.BIP66]);
-            Assert.Equal(new uint256("0x0000ee46643d31e70802b25996f2efc3229660c11d65fb70be19b49320ec8a9a"), network.Consensus.BIP34Hash);
+            Assert.Equal(new uint256("0x0000da5d40883d6c8aade797d8d6dcbf5cbc8e6428569170da39d2f01e8290e5"), network.Consensus.BIP34Hash);
             Assert.Equal(new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), network.Consensus.PowLimit);
             Assert.Null(network.Consensus.MinimumChainWork);
             Assert.Equal(TimeSpan.FromSeconds(14 * 24 * 60 * 60), network.Consensus.PowTargetTimespan);
@@ -358,21 +358,21 @@ namespace City.Chain.Tests
             Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.Segwit]);
             Assert.Equal(125000, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
-            Assert.Equal(4535, network.Consensus.CoinType);
+            Assert.Equal(1926, network.Consensus.CoinType);
             Assert.Equal(new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimit);
             Assert.Equal(new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimitV2);
             Assert.Null(network.Consensus.DefaultAssumeValid);
             Assert.Equal(10, network.Consensus.CoinbaseMaturity);
             Assert.Equal(Money.Coins(13736000000), network.Consensus.PremineReward);
             Assert.Equal(2, network.Consensus.PremineHeight);
-            Assert.Equal(Money.Coins(1), network.Consensus.ProofOfWorkReward);
-            Assert.Equal(Money.Coins(100), network.Consensus.ProofOfStakeReward);
+            Assert.Equal(Money.Coins(2), network.Consensus.ProofOfWorkReward);
+            Assert.Equal(Money.Coins(20), network.Consensus.ProofOfStakeReward);
             Assert.Equal((uint)500, network.Consensus.MaxReorgLength);
             Assert.Equal(long.MaxValue, network.Consensus.MaxMoney);
 
             Block genesis = network.GetGenesis();
-            Assert.Equal(uint256.Parse("0x0000ee46643d31e70802b25996f2efc3229660c11d65fb70be19b49320ec8a9a"), genesis.GetHash());
-            Assert.Equal(uint256.Parse("0x0f874fd7797bbcf30f918ddde77ace58623f22f2118bf87f3fa84711471c250a"), genesis.Header.HashMerkleRoot);
+            Assert.Equal(uint256.Parse("0x0000da5d40883d6c8aade797d8d6dcbf5cbc8e6428569170da39d2f01e8290e5"), genesis.GetHash());
+            Assert.Equal(uint256.Parse("0x49f8ad9e1d47aec09a38b7b54e282ed0ba30099b8632152931be74e2865266d5"), genesis.Header.HashMerkleRoot);
         }
     }
 }

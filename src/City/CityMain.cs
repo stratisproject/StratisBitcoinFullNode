@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
+using NBitcoin.Protocol;
 
 namespace City.Networks
 {
@@ -23,18 +25,8 @@ namespace City.Networks
 
         public CityMain()
         {
-            // The message start string is designed to be unlikely to occur in normal data.
-            // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-            // a large 4-byte int at any alignment.
-            var messageStart = new byte[4];
-            messageStart[0] = 0x67;
-            messageStart[1] = 0x84;
-            messageStart[2] = 0x89;
-            messageStart[3] = 0x23;
-            uint magic = BitConverter.ToUInt32(messageStart, 0); //0x23898467; 
-
             this.Name = "CityMain";
-            this.Magic = magic;
+            this.Magic = 0x43545901; // .CTY
             this.DefaultPort = 4333;
             this.RPCPort = 4334;
             this.MaxTipAge = 2 * 60 * 60;
@@ -49,8 +41,8 @@ namespace City.Networks
             var consensusFactory = new PosConsensusFactory();
 
             // Create the genesis block.
-            this.GenesisTime = 1533081600;
-            this.GenesisNonce = 162758;
+            this.GenesisTime = 1538481600; // 10/02/2018 @ 12:00pm (UTC)
+            this.GenesisNonce = 1626464;
             this.GenesisBits = 0x1E0FFFFF;
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
@@ -68,7 +60,8 @@ namespace City.Networks
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
-                maxBlockSigopsCost: 20_000
+                maxBlockSigopsCost: 20_000,
+                provenHeadersActivationHeight: 20_000_000 // TODO: Set it to the real value once it is known.
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -83,7 +76,7 @@ namespace City.Networks
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
-                coinType: 4535,
+                coinType: 1926,
                 hashGenesisBlock: genesisBlock.GetHash(),
                 subsidyHalvingInterval: 210000,
                 majorityEnforceBlockUpgrade: 750,
@@ -91,16 +84,16 @@ namespace City.Networks
                 majorityWindow: 1000,
                 buriedDeployments: buriedDeployments,
                 bip9Deployments: bip9Deployments,
-                bip34Hash: new uint256("0x000007e4aff2b770e876ac1bc2d5317f15c2505b1f8e58423febf0913bd0cc34"),
+                bip34Hash: new uint256("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 500,
-                defaultAssumeValid: new uint256("0x000007e4aff2b770e876ac1bc2d5317f15c2505b1f8e58423febf0913bd0cc34"),
+                defaultAssumeValid: new uint256("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"),
                 maxMoney: long.MaxValue,
                 coinbaseMaturity: 50,
                 premineHeight: 2,
                 premineReward: Money.Coins(13736000000),
-                proofOfWorkReward: Money.Coins(1), // Produced up until last POW block.
+                proofOfWorkReward: Money.Coins(2), // Produced up until last POW block.
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: false,
@@ -111,7 +104,7 @@ namespace City.Networks
                 lastPowBlock: 125000,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeReward: Money.Coins(100) // 52 560 000 a year.
+                proofOfStakeReward: Money.Coins(20) //  a year.  
             );
 
             this.Base58Prefixes = new byte[12][];
@@ -130,6 +123,7 @@ namespace City.Networks
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
+                { 0, new CheckpointInfo(new uint256("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
             };
 
             var encoder = new Bech32Encoder("bc");
@@ -140,16 +134,20 @@ namespace City.Networks
             this.DNSSeeds = new List<DNSSeedData>
             {
                 new DNSSeedData("city-chain.org", "seed.city-chain.org"),
+                new DNSSeedData("city-coin.org", "seed.city-coin.org"),
                 new DNSSeedData("citychain.foundation", "seed.citychain.foundation"),
-                new DNSSeedData("liberstad.com", "seed.liberstad.com"),
-                new DNSSeedData("city-coin.org", "seed.city-coin.org")
+                new DNSSeedData("liberstad.com", "seed.liberstad.com")
             };
 
-            string[] seedNodes = { "13.73.143.193", "40.115.2.6", "13.66.158.6" };
-            this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
+            this.SeedNodes = new List<NetworkAddress>
+            {
+                new NetworkAddress(IPAddress.Parse("13.73.143.193"), this.DefaultPort),
+                new NetworkAddress(IPAddress.Parse("40.115.2.6"), this.DefaultPort),
+                new NetworkAddress(IPAddress.Parse("13.66.158.6"), this.DefaultPort),
+            };
 
-            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000007e4aff2b770e876ac1bc2d5317f15c2505b1f8e58423febf0913bd0cc34"));
-            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x40ba87eb3e03731abe7f2c7643c493b6383020513d5352334c6e0ff343e2f82d"));
+            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"));
+            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0xb3425d46594a954b141898c7eebe369c6e6a35d2dab393c1f495504d2147883b"));
         }
 
         protected static Block CreateCityGenesisBlock(string pszTimestamp, ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)

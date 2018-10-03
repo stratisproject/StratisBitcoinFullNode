@@ -11,18 +11,8 @@ namespace City.Networks
     {
         public CityTest()
         {
-            // The message start string is designed to be unlikely to occur in normal data.
-            // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-            // a large 4-byte int at any alignment.
-            var messageStart = new byte[4];
-            messageStart[0] = 0x67;
-            messageStart[1] = 0x84;
-            messageStart[2] = 0x89;
-            messageStart[3] = 0x26;
-            uint magic = BitConverter.ToUInt32(messageStart, 0); // 0x26898467;
-
             this.Name = "CityTest";
-            this.Magic = magic;
+            this.Magic = 0x43545401; // .CTT
             this.DefaultPort = 24333;
             this.RPCPort = 24334;
             this.CoinTicker = "TCITY";
@@ -32,8 +22,8 @@ namespace City.Networks
             var consensusFactory = new PosConsensusFactory();
 
             // Create the genesis block.
-            this.GenesisTime = 1496275200;
-            this.GenesisNonce = 14660;
+            this.GenesisTime = 1538395200; // 10/01/2018 @ 12:00pm (UTC)
+            this.GenesisNonce = 6967;
             this.GenesisBits = 0x1F0FFFFF;
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
@@ -55,7 +45,8 @@ namespace City.Networks
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
-                maxBlockSigopsCost: 20_000
+                maxBlockSigopsCost: 20_000,
+                provenHeadersActivationHeight: 20_000_000 // TODO: Set it to the real value once it is known.
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -70,7 +61,7 @@ namespace City.Networks
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
-                coinType: 4535,
+                coinType: 1926,
                 hashGenesisBlock: genesisBlock.GetHash(),
                 subsidyHalvingInterval: 210000,
                 majorityEnforceBlockUpgrade: 750,
@@ -78,16 +69,16 @@ namespace City.Networks
                 majorityWindow: 1000,
                 buriedDeployments: buriedDeployments,
                 bip9Deployments: bip9Deployments,
-                bip34Hash: new uint256("0x000fd5ab3150ba1f57dbbfb449b67f4d4a30a634d997b269eccb0a48dd7cd3d9"),
+                bip34Hash: new uint256("0x00077765f625cc2cb6266544ff7d5a462f25be14ea1116dc2bd2fec17e40a5e3"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 500,
-                defaultAssumeValid: new uint256("0x000fd5ab3150ba1f57dbbfb449b67f4d4a30a634d997b269eccb0a48dd7cd3d9"), // 372652
+                defaultAssumeValid: new uint256("0x00077765f625cc2cb6266544ff7d5a462f25be14ea1116dc2bd2fec17e40a5e3"),
                 maxMoney: long.MaxValue,
                 coinbaseMaturity: 10,
                 premineHeight: 2,
                 premineReward: Money.Coins(13736000000),
-                proofOfWorkReward: Money.Coins(1),
+                proofOfWorkReward: Money.Coins(2),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: false,
@@ -98,7 +89,7 @@ namespace City.Networks
                 lastPowBlock: 125000,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeReward: Money.Coins(100) // 52 560 000 a year.
+                proofOfStakeReward: Money.Coins(20) // 52 560 000 a year.
             );
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (66) };
@@ -107,35 +98,25 @@ namespace City.Networks
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
-                //{ 0, new CheckpointInfo(new uint256("0x00000e246d7b73b88c9ab55f2e5e94d9e22d471def3df5ea448f5576b1d156b9"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
-                //{ 2, new CheckpointInfo(new uint256("0x56959b1c8498631fb0ca5fe7bd83319dccdc6ac003dccb3171f39f553ecfa2f2"), new uint256("0x13f4c27ca813aefe2d9018077f8efeb3766796b9144fcc4cd51803bf4376ab02")) },
-                //{ 50000, new CheckpointInfo(new uint256("0xb42c18eacf8fb5ed94eac31943bd364451d88da0fd44cc49616ffea34d530ad4"), new uint256("0x824934ddc5f935e854ac59ae7f5ed25f2d29a7c3914cac851f3eddb4baf96d78")) },
-                //{ 100000, new CheckpointInfo(new uint256("0xf9e2f7561ee4b92d3bde400d251363a0e8924204c326da7f4ad9ccc8863aad79"), new uint256("0xdef8d92d20becc71f662ee1c32252aca129f1bf4744026b116d45d9bfe67e9fb")) },
-                //{ 150000, new CheckpointInfo(new uint256("0x08b7c20a450252ddf9ce41dbeb92ecf54932beac9090dc8250e933ad3a175381"), new uint256("0xf05dad15f733ae0acbd34adc449be9429099dbee5fa9ecd8e524cf28e9153adb")) },
-                //{ 200000, new CheckpointInfo(new uint256("0x8609cc873222a0573615788dc32e377b88bfd6a0015791f627d969ee3a415115"), new uint256("0xfa28c1f20a8162d133607c6a1c8997833befac3efd9076567258a7683ac181fa")) },
-                //{ 250000, new CheckpointInfo(new uint256("0xdd664e15ac679a6f3b96a7176303956661998174a697ad8231f154f1e32ff4a3"), new uint256("0x19fc0fa29418f8b19cbb6557c1c79dfd0eff6779c0eaaec5d245c5cdf3c96d78")) },
-                //{ 300000, new CheckpointInfo(new uint256("0x2409eb5ae72c80d5b37c77903d75a8e742a33843ab633935ce6e5264db962e23"), new uint256("0xf5ec7af55516b8e264ed280e9a5dba0180a4a9d3713351bfea275b18f3f1514e")) },
-                //{ 350000, new CheckpointInfo(new uint256("0x36811041e9060f4b4c26dc20e0850dca5efaabb60618e3456992e9c0b1b2120e"), new uint256("0xbfda55ef0756bcee8485e15527a2b8ca27ca877aa09c88e363ef8d3253cdfd1c")) },
-                //{ 400000, new CheckpointInfo(new uint256("0xb6abcb933d3e3590345ca5d3abb697461093313f8886568ac8ae740d223e56f6"), new uint256("0xfaf5fcebee3ec0df5155393a99da43de18b12e620fef5edb111a791ecbfaa63a")) }
+                { 0, new CheckpointInfo(new uint256("0x00077765f625cc2cb6266544ff7d5a462f25be14ea1116dc2bd2fec17e40a5e3"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
             };
 
             this.DNSSeeds = new List<DNSSeedData>
             {
                 new DNSSeedData("city-chain.org", "testseed.city-chain.org"),
-                new DNSSeedData("citychain.foundation", "testseed.citychain.foundation"),
-                new DNSSeedData("liberstad.com", "testseed.liberstad.com"),
-                new DNSSeedData("city-coin.org", "testseed.city-coin.org")
+                new DNSSeedData("city-coin.org", "testseed.city-coin.org"),
+                new DNSSeedData("citychain.foundation", "testseed.citychain.foundation")
             };
 
             this.SeedNodes = new List<NetworkAddress>
             {
-                new NetworkAddress(IPAddress.Parse("13.73.143.193"), 24333),
-                new NetworkAddress(IPAddress.Parse("40.115.2.6"), 24333),
-                new NetworkAddress(IPAddress.Parse("13.66.158.6"), 24333),
+                new NetworkAddress(IPAddress.Parse("40.115.2.6"), this.DefaultPort),
+                new NetworkAddress(IPAddress.Parse("13.66.158.6"), this.DefaultPort),
+                new NetworkAddress(IPAddress.Parse("52.175.194.227"), this.DefaultPort)
             };
 
-            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000fd5ab3150ba1f57dbbfb449b67f4d4a30a634d997b269eccb0a48dd7cd3d9"));
-            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0xc83d0753a8826119c898cc23828356b760f0042ff8e9d67b3a03edfce5824a74"));
+            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00077765f625cc2cb6266544ff7d5a462f25be14ea1116dc2bd2fec17e40a5e3"));
+            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x034aaae9ca8e297078a2fed80cdaaf72ffad8aa1b1988c7b6edd8f01d69312ca"));
         }
     }
 }

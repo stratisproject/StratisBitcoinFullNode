@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.V2.Controllers
 
             try
             {
-                var trx = await this.blockRepository.GetTrxAsync(new uint256(id));
+                var trx = await this.blockRepository.GetTransactionByIdAsync(new uint256(id));
                 var model = new TransactionVerboseModel(trx, this.network);
                 return this.Json(model);
             }

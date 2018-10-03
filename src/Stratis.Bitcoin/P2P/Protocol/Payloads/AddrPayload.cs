@@ -10,13 +10,9 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     [Payload("addr")]
     public class AddrPayload : Payload, IBitcoinSerializable
     {
-        private NetworkAddress[] addresses = new NetworkAddress[3] { new NetworkAddress(System.Net.IPAddress.Parse("90.149.160.12"), 24333)
-        ,new NetworkAddress(System.Net.IPAddress.Parse("40.91.197.238"), 24333),
-        new NetworkAddress(System.Net.IPAddress.Parse("13.73.143.193"), 24333)};
+        private NetworkAddress[] addresses = new NetworkAddress[0];
 
-        public NetworkAddress[] Addresses { get { return new NetworkAddress[3] { new NetworkAddress(System.Net.IPAddress.Parse("90.149.160.12"), 24333)
-        ,new NetworkAddress(System.Net.IPAddress.Parse("40.91.197.238"), 24333),
-        new NetworkAddress(System.Net.IPAddress.Parse("13.73.143.193"), 24333)}; } }
+        public NetworkAddress[] Addresses { get { return this.addresses; } }
 
         public AddrPayload()
         {

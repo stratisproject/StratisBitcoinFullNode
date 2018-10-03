@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Protocol;
@@ -10,15 +12,8 @@ namespace City.Networks
     {
         public CityRegTest()
         {
-            var messageStart = new byte[4];
-            messageStart[0] = 0x67;
-            messageStart[1] = 0x84;
-            messageStart[2] = 0x89;
-            messageStart[3] = 0x21;
-            uint magic = BitConverter.ToUInt32(messageStart, 0); // 0xefc0f2cd
-
             this.Name = "CityRegTest";
-            this.Magic = magic;
+            this.Magic = 0x43525901; // .CRT
             this.DefaultPort = 14333;
             this.RPCPort = 14334;
             this.MinTxFee = 0;
@@ -31,8 +26,8 @@ namespace City.Networks
             var consensusFactory = new PosConsensusFactory();
 
             // Create the genesis block.
-            this.GenesisTime = 1428883200;
-            this.GenesisNonce = 9945;
+            this.GenesisTime = 1538568000; // 10/03/2018 @ 12:00pm (UTC)
+            this.GenesisNonce = 82501;
             this.GenesisBits = 0x1F00FFFF;
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
@@ -54,7 +49,8 @@ namespace City.Networks
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
-                maxBlockSigopsCost: 20_000
+                maxBlockSigopsCost: 20_000,
+                provenHeadersActivationHeight: 20_000_000 // TODO: Set it to the real value once it is known.
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -69,7 +65,7 @@ namespace City.Networks
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
-                coinType: 4535,
+                coinType: 1926,
                 hashGenesisBlock: genesisBlock.GetHash(),
                 subsidyHalvingInterval: 210000,
                 majorityEnforceBlockUpgrade: 750,
@@ -77,7 +73,7 @@ namespace City.Networks
                 majorityWindow: 1000,
                 buriedDeployments: buriedDeployments,
                 bip9Deployments: bip9Deployments,
-                bip34Hash: new uint256("0x0000ee46643d31e70802b25996f2efc3229660c11d65fb70be19b49320ec8a9a"),
+                bip34Hash: new uint256("0x0000da5d40883d6c8aade797d8d6dcbf5cbc8e6428569170da39d2f01e8290e5"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 500,
@@ -86,7 +82,7 @@ namespace City.Networks
                 coinbaseMaturity: 10,
                 premineHeight: 2,
                 premineReward: Money.Coins(13736000000),
-                proofOfWorkReward: Money.Coins(1),
+                proofOfWorkReward: Money.Coins(2),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: true,
@@ -97,19 +93,31 @@ namespace City.Networks
                 lastPowBlock: 125000,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeReward: Money.Coins(100) // 52 560 000 a year.
+                proofOfStakeReward: Money.Coins(20) // 52 560 000 a year.
             );
+
+            this.Checkpoints = new Dictionary<int, CheckpointInfo>();
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (66) };
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (66 + 128) };
 
-            this.Checkpoints = new Dictionary<int, CheckpointInfo>();
-            this.DNSSeeds = new List<DNSSeedData>();
-            this.SeedNodes = new List<NetworkAddress>();
+            this.DNSSeeds = new List<DNSSeedData>
+            {
+                new DNSSeedData("city-chain.org", "regtestseed.city-chain.org"),
+                new DNSSeedData("city-coin.org", "regtestseed.city-coin.org"),
+                new DNSSeedData("citychain.foundation", "regtestseed.citychain.foundation")
+            };
 
-            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000ee46643d31e70802b25996f2efc3229660c11d65fb70be19b49320ec8a9a"));
-            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x0f874fd7797bbcf30f918ddde77ace58623f22f2118bf87f3fa84711471c250a"));
+            this.SeedNodes = new List<NetworkAddress>
+            {
+                new NetworkAddress(IPAddress.Parse("13.73.143.193"), this.DefaultPort),
+                new NetworkAddress(IPAddress.Parse("40.115.2.6"), this.DefaultPort),
+                new NetworkAddress(IPAddress.Parse("13.66.158.6"), this.DefaultPort),
+            };
+
+            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000da5d40883d6c8aade797d8d6dcbf5cbc8e6428569170da39d2f01e8290e5"));
+            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x49f8ad9e1d47aec09a38b7b54e282ed0ba30099b8632152931be74e2865266d5"));
         }
     }
 }
