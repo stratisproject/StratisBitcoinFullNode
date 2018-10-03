@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.PoA
         }
 
         /// <summary>
-        /// Generates the hash of a <see cref="BlockHeader"/>.
+        /// Generates the hash of a <see cref="PoABlockHeader"/>.
         /// </summary>
         /// <returns>A hash.</returns>
         public override uint256 GetHash()
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
             using (var hs = new HashStream())
             {
-                // We are using base serialization to avoid putting signature inside hash.
+                // We are using base serialization to avoid using signature during hash calculation.
                 base.ReadWrite(new BitcoinStream(hs, true));
                 hash = hs.GetHash();
             }
