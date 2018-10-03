@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
         /// <summary>Maximum number of items to cache.</summary>
-        private const int CacheMaxItemsCount = 5_000;
+        private const int CacheMaxItemsCount = 1_000;
 
         /// <summary>Limit <see cref="Cache"/> size to 100MB.</summary>
         private readonly int MaxMemoryCacheSizeInBytes = 100 * 1024 * 1024;
