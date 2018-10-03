@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     /// <summary>
     /// Cache layer for <see cref="ProvenBlockHeader"/>s.
     /// </summary>
-    public interface IProvenBlockHeaderStore : IProvenBlockHeader, IDisposable
+    public interface IProvenBlockHeaderStore : IProvenBlockHeaderProvider, IDisposable
     {
         /// <summary>
         /// Adds a <see cref="ProvenBlockHeader"/> to pending batch concurrent dictionary.

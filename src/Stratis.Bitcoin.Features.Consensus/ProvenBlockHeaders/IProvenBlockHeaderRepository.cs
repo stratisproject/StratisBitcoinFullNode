@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     /// <summary>
     /// Interface for database <see cref="ProvenBlockHeader"></see> repository.
     /// </summary>
-    public interface IProvenBlockHeaderRepository : IProvenBlockHeader, IDisposable
+    public interface IProvenBlockHeaderRepository : IProvenBlockHeaderProvider, IDisposable
     {
         /// <summary>
         /// Persists <see cref="ProvenBlockHeader"/> items to the database.
