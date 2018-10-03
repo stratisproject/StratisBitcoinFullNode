@@ -48,6 +48,17 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Assert.True(validSig);
         }
 
+        [Fact]
+        public void VerifyHeaderSignature_SignatureIsInvalid()
+        {
+            PoABlockHeader header = this.CreateHeader();
+            this.validator.Sign(this.tool.GeneratePrivateKey(), header);
+
+            bool validSig = this.validator.VerifySignature(this.tool.GeneratePrivateKey().PubKey, header);
+
+            Assert.False(validSig);
+        }
+
         private PoABlockHeader CreateHeader()
         {
             var header = new PoABlockHeader();

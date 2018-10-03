@@ -42,6 +42,7 @@ namespace Stratis.Bitcoin.Features.PoA
             }
 
             hashes = this.hashes;
+
             if (hashes != null)
                 hashes[0] = hash;
 
