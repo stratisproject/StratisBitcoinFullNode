@@ -234,5 +234,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             txTrack.Commit();
             Assert.Equal(cat, repository.GetStorageValue(testAddress, dog));
         }
+
+        [Fact]
+        public void Repository_Bytes0VsNull()
+        {
+            // Demonstrates that our repository treats byte[0] and null as the same.
+
+            ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource());
+            StateRepositoryRoot repository = new StateRepositoryRoot(stateDB);
+            repository.CreateAccount(testAddress);
+            repository.SetStorageValue(testAddress, dog, new byte[0]);
+            Assert.Equal(new byte[0], repository.GetStorageValue(testAddress, dog));
+            repository.Commit();
+
+            // We have pushed byte[0] to the kv store. Should come back as byte[0] right?
+            StateRepositoryRoot repository2 = new StateRepositoryRoot(stateDB, repository.Root);
+            // Nope, comes back null...
+            Assert.Null(repository2.GetStorageValue(testAddress, dog));
+        }
     }
 }

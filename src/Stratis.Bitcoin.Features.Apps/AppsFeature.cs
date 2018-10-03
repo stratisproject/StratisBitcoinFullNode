@@ -31,15 +31,12 @@ namespace Stratis.Bitcoin.Features.Apps
 
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             this.logger.LogInformation("Initializing {0}.", nameof(AppsFeature));
 
             Directory.CreateDirectory(this.dataFolder.ApplicationsPath);
 
             this.appsHost.Host(this.appsStore.Applications);
 
-            this.logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 

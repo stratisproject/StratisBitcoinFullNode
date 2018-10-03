@@ -86,8 +86,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         [HttpGet]
         public IActionResult GetCode([FromQuery]string address)
         {
-            this.logger.LogTrace("(){0}:{1}", nameof(address), address);
-
             uint160 addressNumeric = new Address(address).ToUint160(this.network);
             byte[] contractCode = this.stateRoot.GetCode(addressNumeric);
 
@@ -105,9 +103,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 var decompiler = new CSharpDecompiler(modDefinition, new DecompilerSettings { });
                 // TODO: Update decompiler to display all code, not just this rando FirstOrDefault (given we now allow multiple types)
                 string cSharp = decompiler.DecompileAsString(modDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>"));
-
-                this.logger.LogTrace("(-)");
-
+                
                 return Json(new GetCodeResponse
                 {
                     Message = string.Format("Contract execution code retrieved at {0}", address),
@@ -121,13 +117,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         [HttpGet]
         public IActionResult GetBalance([FromQuery]string address)
         {
-            this.logger.LogTrace("(){0}:{1}", nameof(address), address);
-
             uint160 addressNumeric = new Address(address).ToUint160(this.network);
             ulong balance = this.stateRoot.GetCurrentBalance(addressNumeric);
-
-            this.logger.LogTrace("(-)");
-
+            
             return Json(balance);
         }
 
@@ -135,8 +127,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         [HttpGet]
         public IActionResult GetStorage([FromQuery] GetStorageRequest request)
         {
-            this.logger.LogTrace("(){0}:{1},{2}:{3},{4}:{5}", nameof(request.ContractAddress), request.ContractAddress, nameof(request.DataType), request.DataType, nameof(request.StorageKey), request.StorageKey);
-
             if (!this.ModelState.IsValid)
             {
                 this.logger.LogTrace("(-)[MODELSTATE_INVALID]");
@@ -145,7 +135,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             uint160 addressNumeric = new Address(request.ContractAddress).ToUint160(this.network);
             byte[] storageValue = this.stateRoot.GetStorageValue(addressNumeric, Encoding.UTF8.GetBytes(request.StorageKey));
-            this.logger.LogTrace("(-){0}:{1}", nameof(storageValue), storageValue);
 
             return Json(GetStorageValue(request.DataType, storageValue).ToString());
         }
@@ -280,8 +269,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         [HttpGet]
         public IActionResult GetAddressesWithBalances([FromQuery] string walletName)
         {
-            this.logger.LogTrace("(){0}:{1}", nameof(walletName), walletName);
-
             IEnumerable<IGrouping<HdAddress, UnspentOutputReference>> allSpendable = this.walletManager.GetSpendableTransactionsInWallet(walletName, MinConfirmationsAllChecks).GroupBy(x => x.Address);
             var result = new List<object>();
             foreach (IGrouping<HdAddress, UnspentOutputReference> grouping in allSpendable)
@@ -292,9 +279,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     Sum = grouping.Sum(x => x.Transaction.SpendableAmount(false))
                 });
             }
-
-            this.logger.LogTrace("(-)");
-
+            
             return Json(result);
         }
 

@@ -60,9 +60,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         {
             Guard.NotEmpty(walletName, nameof(walletName));
             Guard.NotEmpty(walletPassword, nameof(walletPassword));
-
-            this.logger.LogTrace("({0}:{1})", nameof(walletName), walletName);
-
+            
             Wallet.Wallet wallet = this.walletManager.GetWallet(walletName);
 
             // Check the password
@@ -89,8 +87,6 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         [ActionDescription("Gets the staking information.")]
         public GetStakingInfoModel GetStakingInfo(bool isJsonFormat = true)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(isJsonFormat), isJsonFormat);
-
             if (!isJsonFormat)
             {
                 this.logger.LogError("Binary serialization is not supported for RPC '{0}'.", nameof(this.GetStakingInfo));
@@ -98,8 +94,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             }
 
             GetStakingInfoModel model = this.posMinting != null ? this.posMinting.GetGetStakingInfoModel() : new GetStakingInfoModel();
-
-            this.logger.LogTrace("(-):{0}", model);        
+            
             return model;
         }
     }

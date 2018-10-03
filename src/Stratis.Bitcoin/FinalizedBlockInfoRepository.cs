@@ -88,8 +88,6 @@ namespace Stratis.Bitcoin
 
         private async Task PersistFinalizedBlockInfoContinuouslyAsync()
         {
-            this.logger.LogTrace("()");
-
             while (!this.cancellation.IsCancellationRequested)
             {
                 try
@@ -124,8 +122,6 @@ namespace Stratis.Bitcoin
 
                 this.logger.LogTrace("Finalized info saved: '{0}'.", lastFinalizedBlock);
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -137,12 +133,8 @@ namespace Stratis.Bitcoin
         /// <inheritdoc />
         public Task LoadFinalizedBlockInfoAsync(Network network)
         {
-            this.logger.LogTrace("()");
-
             Task task = Task.Run(() =>
             {
-                this.logger.LogTrace("()");
-
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
@@ -155,20 +147,15 @@ namespace Stratis.Bitcoin
                     }
                     else
                         this.finalizedBlockInfo = row.Value;
-
-                    this.logger.LogTrace("(-):{0}='{1}'", nameof(this.finalizedBlockInfo), this.finalizedBlockInfo);
                 }
             });
-
-            this.logger.LogTrace("(-)");
+            
             return task;
         }
 
         /// <inheritdoc />
         public bool SaveFinalizedBlockHashAndHeight(uint256 hash, int height)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(height), height);
-
             if (this.finalizedBlockInfo != null && height <= this.finalizedBlockInfo.Height)
             {
                 this.logger.LogTrace("(-)[CANT_GO_BACK]:false");
@@ -187,22 +174,17 @@ namespace Stratis.Bitcoin
                 this.finalizedBlockInfosToSave.Enqueue(finalizedInfo);
                 this.queueUpdatedEvent.Set();
             }
-
-            this.logger.LogTrace("(-):true");
+            
             return true;
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            this.logger.LogTrace("()");
-
             this.cancellation.Cancel();
             this.finalizedBlockInfoPersistingTask.GetAwaiter().GetResult();
 
             this.dbreeze?.Dispose();
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

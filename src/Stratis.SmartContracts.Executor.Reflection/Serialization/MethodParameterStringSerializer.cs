@@ -10,7 +10,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// <summary>
     /// Class that handles method parameter serialization.
     /// </summary>
-    public sealed class MethodParameterSerializer : IMethodParameterSerializer
+    public sealed class MethodParameterStringSerializer : IMethodParameterSerializer
     {
         /// <summary>
         /// Serializes an array of method parameter objects to the bytes of their string-encoded representation.
@@ -21,10 +21,22 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             foreach (var obj in methodParameters)
             {
-                sb.Add(string.Format("{0}#{1}", (int)GetPrimitiveType(obj), obj));
+                sb.Add(SerializeObject(obj));
             }
 
             return Encoding.UTF8.GetBytes(this.EscapeAndJoin(sb.ToArray()));
+        }
+
+        private static string SerializeObject(object obj)
+        {
+            var primitiveType = GetPrimitiveType(obj);
+
+            // ToString works fine for all of our data types except byte arrays.
+            var serialized = primitiveType == MethodParameterDataType.ByteArray
+                ? Encoding.UTF8.GetString((byte[])obj)
+                : obj.ToString();
+
+            return string.Format("{0}#{1}", (int) primitiveType, serialized);
         }
 
         private static MethodParameterDataType GetPrimitiveType(object o)
@@ -102,16 +114,16 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                     processedParameters.Add(Convert.ToByte(parameterSignature[1]));
 
                 else if (parameterSignature[0] == "3")
-                    processedParameters.Add(parameterSignature[1]);
+                    processedParameters.Add(Encoding.UTF8.GetBytes(parameterSignature[1]));
 
                 else if (parameterSignature[0] == "4")
-                    processedParameters.Add(parameterSignature[1]);
+                    processedParameters.Add(parameterSignature[1][0]);
 
                 else if (parameterSignature[0] == "5")
                     processedParameters.Add(Convert.ToSByte(parameterSignature[1]));
 
                 else if (parameterSignature[0] == "6")
-                    processedParameters.Add(int.Parse(parameterSignature[1]));
+                    processedParameters.Add(short.Parse(parameterSignature[1]));
 
                 else if (parameterSignature[0] == "7")
                     processedParameters.Add(parameterSignature[1]);
