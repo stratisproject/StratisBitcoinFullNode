@@ -42,14 +42,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
 
         private void CheckTransaction(Transaction transaction)
         {
-            foreach (TxOut output in transaction.Outputs)
-            {
-                CheckOutput(output);
-            }
-
-            // Coinbase inputs are funny-lookin so don't validate them
+            // Why dodge coinbase?
+            // 1) Coinbase can only be written by Authority nodes anyhow.
+            // 2) Coinbase inputs look weird, are tough to validate.
             if (!transaction.IsCoinBase)
             {
+                foreach (TxOut output in transaction.Outputs)
+                {
+                    CheckOutput(output);
+                }
+
                 foreach (TxIn input in transaction.Inputs)
                 {
                     CheckInput(input);
@@ -68,6 +70,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
                 return;
 
+            if (PayToScriptHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
+                return;
+
             new ConsensusError("disallowed-output-script", "Only P2PKH, multisig and smart contract scripts are allowed.").Throw();
         }
 
@@ -77,6 +82,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
                 return;
 
             if (PayToPubkeyHashTemplate.Instance.CheckScriptSig(this.ContractCoinviewRule.Network, input.ScriptSig))
+                return;
+
+            if (PayToScriptHashTemplate.Instance.CheckScriptSig(this.ContractCoinviewRule.Network, input.ScriptSig, null)) // TODO: This last parameter is a ScriptPubKey. Which ScriptPubKey??
                 return;
 
             new ConsensusError("disallowed-input-script", "Only P2PKH, multisig and smart contract scripts are allowed.").Throw();
