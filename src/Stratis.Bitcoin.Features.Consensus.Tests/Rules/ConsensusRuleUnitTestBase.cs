@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         internal PosBlockBuilder WithLargeSignature(int numberOfBytes = 100)
         {
             // Replace existing signature with an invalid one.
-            this.posBlock.BlockSignature = new BlockSignature { Signature = RandomUtils.GetBytes(100) };
+            this.posBlock.BlockSignature = new BlockSignature { Signature = RandomUtils.GetBytes(numberOfBytes) };
 
             return this;
         }
