@@ -357,6 +357,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Execute_NestedLoop_ExecutionSucceeds()
         {
+            AssertSuccessfulContractMethodExecution(nameof(NestedLoop), nameof(NestedLoop.GetNumbers), new object[] { (int)6 }, "1; 1,2; 1,2,3; 1,2,3,4; 1,2,3,4,5; 1,2,3,4,5,6; ");
+        }
+
+        [Fact]
+        public void Execute_MultipleIfElseBlocks_ExecutionSucceeds()
+        {
+            AssertSuccessfulContractMethodExecution(nameof(MultipleIfElseBlocks), nameof(MultipleIfElseBlocks.PersistNormalizeValue), new object[] { "z" });
+        }
+
+        [Fact]
+        public void Execute_MemoryLimitRewriterEdgeCase1_ExecutionSucceeds()
+        {
+            AssertSuccessfulContractMethodExecution(nameof(MemoryLimitRewriterEdgeCases), nameof(MemoryLimitRewriterEdgeCases.EdgeCase1));
+        }
+
+        private void AssertSuccessfulContractMethodExecution(string contractName, string methodName, object[] methodParameters = null, string expectedReturn = null)
+        {
             var transactionValue = (Money)100;
 
             var executor = new ContractExecutor(this.loggerFactory,
@@ -369,7 +386,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
 
-            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/NestedLoop.cs");
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile($"SmartContracts/{contractName}.cs");
             Assert.True(compilationResult.Success);
             byte[] contractExecutionCode = compilationResult.Compilation;
 
@@ -383,11 +400,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractExecutionResult result = executor.Execute(transactionContext);
             uint160 contractAddress = result.NewContractAddress;
 
-            object[] methodParameters = { (int)6 };
-            contractTxData = new ContractTxData(1, (Gas)1, (Gas)5000, contractAddress, nameof(NestedLoop.GetNumbers), methodParameters);
+            contractTxData = new ContractTxData(1, (Gas)1, (Gas)5000, contractAddress, methodName, methodParameters);
 
             transaction = new Transaction();
-            txOut = transaction.AddOutput(0, new Script(this.serializer.Serialize( contractTxData)));
+            txOut = transaction.AddOutput(0, new Script(this.serializer.Serialize(contractTxData)));
             txOut.Value = transactionValue;
             transactionContext = new ContractTransactionContext(BlockHeight, CoinbaseAddress, MempoolFee, SenderAddress, transaction);
 
@@ -395,8 +411,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.NotNull(result);
             Assert.Null(result.ErrorMessage);
-            Assert.NotNull(result.Return);
-            Assert.Equal("1; 1,2; 1,2,3; 1,2,3,4; 1,2,3,4,5; 1,2,3,4,5,6;", (string)result.Return);
+
+            if (expectedReturn != null)
+            {
+                Assert.NotNull(result.Return);
+                Assert.Equal(expectedReturn, (string)result.Return);
+            }
         }
     }
 }
