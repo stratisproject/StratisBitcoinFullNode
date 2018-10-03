@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Tests.Common;
@@ -25,7 +24,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         private readonly ConcurrentChain concurrentChain;
         private readonly ProvenBlockHeaderStore provenBlockHeaderStore;
         private IProvenBlockHeaderRepository provenBlockHeaderRepository;
-        private readonly IChainState chainState;
         private readonly Mock<INodeLifetime> nodeLifetime;
         private readonly Mock<IAsyncLoopFactory> asyncLoopFactoryLoop;
         private readonly string Folder;
@@ -35,7 +33,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         {
             this.consensusManager = new Mock<IConsensusManager>();
             this.concurrentChain = this.GenerateChainWithHeight(3);
-            this.chainState = new ChainState();
             this.nodeLifetime = new Mock<INodeLifetime>();
             this.nodeStats = new NodeStats(DateTimeProvider.Default);
             this.asyncLoopFactoryLoop = new Mock<IAsyncLoopFactory>();
@@ -46,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             this.provenBlockHeaderStore = new ProvenBlockHeaderStore(
                 this.concurrentChain, DateTimeProvider.Default, this.LoggerFactory.Object,
-                this.provenBlockHeaderRepository, this.nodeLifetime.Object, this.chainState, this.nodeStats, this.asyncLoopFactoryLoop.Object);
+                this.provenBlockHeaderRepository, this.nodeLifetime.Object, this.nodeStats, this.asyncLoopFactoryLoop.Object);
         }
 
         [Fact]
@@ -288,7 +285,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             return new ProvenBlockHeaderStore(
                 this.concurrentChain, DateTimeProvider.Default,
                 this.LoggerFactory.Object, this.provenBlockHeaderRepository,
-                this.nodeLifetime.Object, this.chainState, new NodeStats(DateTimeProvider.Default), this.asyncLoopFactoryLoop.Object);
+                this.nodeLifetime.Object, new NodeStats(DateTimeProvider.Default), this.asyncLoopFactoryLoop.Object);
         }
 
         private ConcurrentChain GenerateChainWithHeight(int blockAmount)

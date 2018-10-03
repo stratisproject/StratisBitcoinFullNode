@@ -20,9 +20,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>Allows consumers to perform clean-up during a graceful shutdown.</summary>
         private readonly INodeLifetime nodeLifetime;
 
-        /// <summary>Chain state holds various information related to the status of the chain and its validation.</summary>
-        private readonly IChainState chainState;
-
         /// <summary>Thread safe class representing a chain of headers from genesis.</summary>
         private readonly ConcurrentChain chain;
 
@@ -71,7 +68,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
         /// <param name="provenBlockHeaderRepository">Persistent interface of the <see cref="ProvenBlockHeader"></see> DBreeze repository.</param>
         /// <param name="nodeLifetime">Allows consumers to perform clean-up during a graceful shutdown.</param>
-        /// <param name="chainState">Chain state holds various information related to the status of the chain and its validation.</param>
         /// <param name="nodeStats">Registers an action used to append node stats when collected.</param>
         /// <param name="asyncLoopFactory">Factory for creating and also possibly starting application defined tasks inside async loop.</param>
         public ProvenBlockHeaderStore(
@@ -80,7 +76,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             ILoggerFactory loggerFactory, 
             IProvenBlockHeaderRepository provenBlockHeaderRepository,
             INodeLifetime nodeLifetime,
-            IChainState chainState,
             INodeStats nodeStats,
             IAsyncLoopFactory asyncLoopFactory)
         {
@@ -88,7 +83,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(provenBlockHeaderRepository, nameof(provenBlockHeaderRepository));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
-            Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(nodeStats, nameof(nodeStats));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
 
@@ -96,7 +90,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.chain = chain;
             this.provenBlockHeaderRepository = provenBlockHeaderRepository;
             this.nodeLifetime = nodeLifetime;
-            this.chainState = chainState;
             this.lockobj = new AsyncLock();
 
             this.PendingCache = new ConcurrentDictionary<int, ProvenBlockHeader>();
