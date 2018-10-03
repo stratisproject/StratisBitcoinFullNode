@@ -25,17 +25,17 @@ namespace Stratis.StratisD.Test
             try
             {
                 Network network = null;
-                if (args.Contains("-network=StratisPosTestNetwork"))
-                    network = new StratisPosTestNetwork();
+                if (args.Contains($"-network={typeof(PosTestNetwork).Name}"))
+                    network = new PosTestNetwork();
 
-                if (args.Contains("-network=StratisPowTestNetwork"))
-                    network = new StratisPowTestNetwork();
+                if (args.Contains($"-network={typeof(PowTestNetwork).Name}"))
+                    network = new PowTestNetwork();
 
                 if (network == null)
                 {
                     Console.WriteLine("No network has been specified.");
-                    Console.WriteLine("For a proof of stake network use: -network=StratisPosTestNetwork");
-                    Console.WriteLine("For a proof of work network use: -network=StratisPowTestNetwork");
+                    Console.WriteLine($"For a proof of stake network use: -network={typeof(PosTestNetwork).Name}");
+                    Console.WriteLine($"For a proof of work network use: -network{typeof(PowTestNetwork).Name}");
                 }
 
                 var nodeSettings = new NodeSettings(network: network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);

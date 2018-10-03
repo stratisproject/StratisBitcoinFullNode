@@ -3,7 +3,7 @@ using NBitcoin.DataEncoders;
 
 namespace Stratis.StratisD.Test.Networks
 {
-    internal static class StratisTestNetwork
+    internal static class TestNetwork
     {
         /// <summary> Stratis maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
         public const int StratisMaxTimeOffsetSeconds = 25 * 60;
