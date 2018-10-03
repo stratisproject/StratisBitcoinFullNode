@@ -33,7 +33,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         public SmartContractWalletTests()
         {
-            this.callDataSerializer = new CallDataSerializer(new MethodParameterSerializer());
+            this.callDataSerializer = new CallDataSerializer(new MethodParameterStringSerializer());
         }
 
         /// <summary>
