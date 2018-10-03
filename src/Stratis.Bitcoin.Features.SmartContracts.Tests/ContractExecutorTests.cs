@@ -366,12 +366,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             AssertSuccessfulContractMethodExecution(nameof(MultipleIfElseBlocks), nameof(MultipleIfElseBlocks.PersistNormalizeValue), new object[] { "z" });
         }
 
-        [Fact]
-        public void Execute_MemoryLimitRewriterEdgeCase1_ExecutionSucceeds()
-        {
-            AssertSuccessfulContractMethodExecution(nameof(MemoryLimitRewriterEdgeCases), nameof(MemoryLimitRewriterEdgeCases.EdgeCase1));
-        }
-
         private void AssertSuccessfulContractMethodExecution(string contractName, string methodName, object[] methodParameters = null, string expectedReturn = null)
         {
             var transactionValue = (Money)100;
