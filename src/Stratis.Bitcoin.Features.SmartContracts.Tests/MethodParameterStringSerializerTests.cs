@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             object[] methodParameters =
             {
-                (short) 12,
+                (int) 12,
                 true,
                 "te|s|t",
                 "te#st",
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             };
 
             var serialized = this.Serializer.Serialize(methodParameters);
-            Assert.True(Encoding.UTF8.GetBytes("6#12|1#True|7#te\\|s\\|t|7#te\\#st|7#\\#4\\#te\\#st\\#|4#\\#").SequenceEqual(serialized));
+            Assert.True(Encoding.UTF8.GetBytes("7#12|1#True|5#te\\|s\\|t|5#te\\#st|5#\\#4\\#te\\#st\\#|4#\\#").SequenceEqual(serialized));
         }
 
         public static IEnumerable<object[]> GetData(int numTests)
@@ -58,8 +58,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             yield return new object[] { (byte)1 }; // MethodParameterDataType.Byte
             yield return new object[] { Encoding.UTF8.GetBytes("test") }; // MethodParameterDataType.ByteArray
             yield return new object[] { 's' }; // MethodParameterDataType.Char
-            yield return new object[] { (sbyte)-45 }; // MethodParameterDataType.SByte
-            yield return new object[] { (short)7 }; // MethodParameterDataType.Short
             yield return new object[] { "test" }; // MethodParameterDataType.String
             yield return new object[] { (uint)36 }; // MethodParameterDataType.UInt
             yield return new object[] { new uint160(new byte[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }) }; // MethodParameterDataType.UInt160
