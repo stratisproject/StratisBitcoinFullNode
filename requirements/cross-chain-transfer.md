@@ -122,7 +122,7 @@ The leader role will be assigned round-robin to each member in turn, following t
 
 - less transactions on the network, only true when multiple deposits to the multisig are present in the same block.
 
-**Per Transactoin pros**
+**Per Transaction pros**
 
 - Consideration 2 and 7 are dealt with  
     2 is unlikely to happen because we would have to create a single transaction too big for target block size.  
