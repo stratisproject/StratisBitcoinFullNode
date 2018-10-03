@@ -1632,7 +1632,7 @@ namespace NBitcoin
             {
                 return true;
             }
-            if((this.ScriptVerify & (ScriptVerify.DerSig | ScriptVerify.LowS | ScriptVerify.StrictEnc)) != 0 && !IsValidSignatureEncoding(vchSig, true))
+            if((this.ScriptVerify & (ScriptVerify.DerSig | ScriptVerify.LowS | ScriptVerify.StrictEnc)) != 0 && !IsValidSignatureEncoding(vchSig))
             {
                 this.Error = ScriptError.SigDer;
                 return false;
