@@ -99,6 +99,13 @@ namespace Stratis.SmartContracts.IntegrationTests
                 tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                 stratisNodeSync.Broadcast(tx);
 
+                // OP_RETURN (Anything non-P2PKH
+                tx = new Transaction();
+                tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
+                tx.AddOutput(new TxOut(1, new Script(new byte[]{(byte) OpcodeType.OP_RETURN})));
+                tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
+                stratisNodeSync.Broadcast(tx);
+
                 // After 5 seconds (plenty of time but ideally we would have a more accurate measure) no txs in mempool. All failed validation.
                 Thread.Sleep(5000);
                 Assert.Empty(stratisNodeSync.CreateRPCClient().GetRawMempool());
