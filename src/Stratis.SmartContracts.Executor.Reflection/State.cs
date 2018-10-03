@@ -130,6 +130,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.internalTransfers.Add(transferInfo);
         }
 
+        public void InsertInternalTransfer(int index, TransferInfo transferInfo)
+        {
+            this.internalTransfers.Insert(index, transferInfo);
+        }
+
         public ulong GetBalance(uint160 address)
         {
             return this.BalanceState.GetBalance(address);
