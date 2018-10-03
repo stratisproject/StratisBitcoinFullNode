@@ -1054,22 +1054,22 @@ namespace Stratis.Bitcoin.BlockPulling
                 statsBuilder.AppendLine($"Queueued downloads: {unassignedDownloads}");
             }
 
-            double averageBlockSizeKb = this.GetAverageBlockSizeBytes() / 1024.0;
+            double avgBlockSizeBytes = this.GetAverageBlockSizeBytes();
+            double averageBlockSizeKb = avgBlockSizeBytes / 1024.0;
             statsBuilder.AppendLine($"Average block size: {Math.Round(averageBlockSizeKb, 2)} KB");
 
-            double totalSpeedKB = (this.GetTotalSpeedOfAllPeersBytesPerSec() / 1024.0);
-            statsBuilder.AppendLine($"Total download speed: {Math.Round(totalSpeedKB, 2)} KB/sec");
+            double totalSpeedBytesPerSec = this.GetTotalSpeedOfAllPeersBytesPerSec();
+            double totalSpeedKbPerSec = (totalSpeedBytesPerSec / 1024.0);
+            statsBuilder.AppendLine($"Total download speed: {Math.Round(totalSpeedKbPerSec, 2)} KB/sec");
 
-            // TODO: do that when component is activated.
-            // TODO move to nodestats and not bench
-            // just for logging
-	        // show it as a part of nodestats, not separated spammer:
-		    // avg download speed
-		    // peer quality score (sort by quality score)
-		    // number of assigned blocks
-		    // MaxBlocksBeingDownloaded
-		    // amount of blocks being downloaded
-		    // show actual speed (no 1mb limit)
+            double timeToDownloadBlockMs = Math.Round((avgBlockSizeBytes / totalSpeedBytesPerSec) * 1000, 2);
+            statsBuilder.AppendLine($"Average time to download a block: {timeToDownloadBlockMs} ms");
+
+            double blocksPerSec = Math.Round(totalSpeedBytesPerSec / avgBlockSizeBytes, 2);
+            statsBuilder.AppendLine($"Amount of blocks node can download in 1 second: {blocksPerSec}");
+
+            // TODO: add logging per each peer
+            // peer -- quality score -- assigned blocks -- speed  (SORT BY QualityScore)
 
             this.logger.LogTrace("(-)");
         }

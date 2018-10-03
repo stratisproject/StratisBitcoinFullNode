@@ -11,14 +11,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class StateTests
     {
-        private readonly Mock<IContractStateRoot> contractStateRoot;
-        private readonly Mock<IContractState> trackedState;
+        private readonly Mock<IStateRepositoryRoot> contractStateRoot;
+        private readonly Mock<IStateRepository> trackedState;
         private readonly Mock<IContractLogHolder> contractLogHolder;
 
         public StateTests()
         {
-            this.trackedState = new Mock<IContractState>();
-            this.contractStateRoot = new Mock<IContractStateRoot>();
+            this.trackedState = new Mock<IStateRepository>();
+            this.contractStateRoot = new Mock<IStateRepositoryRoot>();
             this.contractStateRoot.Setup(c => c.StartTracking())
                 .Returns(this.trackedState.Object);
             this.contractLogHolder = new Mock<IContractLogHolder>();

@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager;
 using Stratis.Bitcoin.Consensus.ValidationResults;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Interfaces;
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Consensus
         private const long ConsumptionThresholdBytes = MaxUnconsumedBlocksDataBytes / 10;
 
         /// <summary>The maximum amount of blocks that can be assigned to <see cref="IBlockPuller"/> at the same time.</summary>
-        private const int MaxBlocksToAskFromPuller = 5000;
+        private const int MaxBlocksToAskFromPuller = 30000;
 
         /// <summary>The minimum amount of slots that should be available to trigger asking block puller for blocks.</summary>
         private const int ConsumptionThresholdSlots = MaxBlocksToAskFromPuller / 10;
@@ -51,7 +52,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly Signals.Signals signals;
         private readonly IPeerBanning peerBanning;
         private readonly IBlockStore blockStore;
-        private readonly IFinalizedBlockInfo finalizedBlockInfo;
+        private readonly IFinalizedBlockInfoRepository finalizedBlockInfo;
         private readonly IBlockPuller blockPuller;
         private readonly IIntegrityValidator integrityValidator;
         private readonly INodeLifetime nodeLifetime;
@@ -88,6 +89,8 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly ConcurrentChain chain;
 
+        private readonly ConsensusManagerPerformanceCounter performanceCounter;
+
         private bool isIbd;
 
         public ConsensusManager(
@@ -99,7 +102,7 @@ namespace Stratis.Bitcoin.Consensus
             IPartialValidator partialValidator,
             IFullValidator fullValidator,
             IConsensusRuleEngine consensusRules,
-            IFinalizedBlockInfo finalizedBlockInfo,
+            IFinalizedBlockInfoRepository finalizedBlockInfo,
             Signals.Signals signals,
             IPeerBanning peerBanning,
             IInitialBlockDownloadState ibdState,
@@ -136,11 +139,14 @@ namespace Stratis.Bitcoin.Consensus
             this.callbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
             this.peersByPeerId = new Dictionary<int, INetworkPeer>();
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
+            this.performanceCounter = new ConsensusManagerPerformanceCounter();
             this.ibdState = ibdState;
 
             this.blockPuller = blockPuller;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1000);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 1000);
         }
 
         /// <inheritdoc />
@@ -414,64 +420,72 @@ namespace Stratis.Bitcoin.Consensus
         {
             this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
-            List<ChainedHeaderBlock> chainedHeaderBlocksToValidate;
-            ConnectBlocksResult connectBlocksResult = null;
-
-            using (await this.reorgLock.LockAsync().ConfigureAwait(false))
+            using (this.performanceCounter.MeasureTotalConnectionTime())
             {
-                bool fullValidationRequired;
+                List<ChainedHeaderBlock> chainedHeaderBlocksToValidate;
+                ConnectBlocksResult connectBlocksResult = null;
 
-                lock (this.peerLock)
+                using (await this.reorgLock.LockAsync().ConfigureAwait(false))
                 {
-                    chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out fullValidationRequired);
-                }
-
-                this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? "" : " NOT");
-
-                if (fullValidationRequired)
-                {
-                    connectBlocksResult = await this.FullyValidateLockedAsync(chainedHeader).ConfigureAwait(false);
-                }
-            }
-
-            if (connectBlocksResult != null)
-            {
-                if (connectBlocksResult.PeersToBan != null)
-                {
-                    var peersToBan = new List<INetworkPeer>();
+                    bool fullValidationRequired;
 
                     lock (this.peerLock)
                     {
-                        foreach (int peerId in connectBlocksResult.PeersToBan)
-                        {
-                            if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
-                                peersToBan.Add(peer);
-                        }
+                        chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out fullValidationRequired);
                     }
 
-                    this.logger.LogTrace("{0} peers will be banned.", peersToBan.Count);
+                    this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? "" : " NOT");
 
-                    foreach (INetworkPeer peer in peersToBan)
-                        this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, connectBlocksResult.BanDurationSeconds, connectBlocksResult.BanReason);
+                    if (fullValidationRequired)
+                    {
+                        connectBlocksResult = await this.FullyValidateLockedAsync(chainedHeader).ConfigureAwait(false);
+                    }
                 }
 
-                if (connectBlocksResult.ConsensusTipChanged)
-                    await this.NotifyBehaviorsOnConsensusTipChangedAsync().ConfigureAwait(false);
-
-                lock (this.peerLock)
+                if (connectBlocksResult != null)
                 {
-                    this.ProcessDownloadQueueLocked();
+                    if (connectBlocksResult.PeersToBan != null)
+                    {
+                        var peersToBan = new List<INetworkPeer>();
+
+                        lock (this.peerLock)
+                        {
+                            foreach (int peerId in connectBlocksResult.PeersToBan)
+                            {
+                                if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
+                                    peersToBan.Add(peer);
+                            }
+                        }
+
+                        this.logger.LogTrace("{0} peers will be banned.", peersToBan.Count);
+
+                        foreach (INetworkPeer peer in peersToBan)
+                            this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, connectBlocksResult.BanDurationSeconds, connectBlocksResult.BanReason);
+                    }
+
+                    if (connectBlocksResult.ConsensusTipChanged)
+                        await this.NotifyBehaviorsOnConsensusTipChangedAsync().ConfigureAwait(false);
+
+                    lock (this.peerLock)
+                    {
+                        this.ProcessDownloadQueueLocked();
+                    }
                 }
-            }
 
-            if (chainedHeaderBlocksToValidate != null)
-            {
-                this.logger.LogTrace("Partial validation of {0} block will be started.", chainedHeaderBlocksToValidate.Count);
+                // If more blocks are available continue validation.
+                if (chainedHeaderBlocksToValidate != null)
+                {
+                    // Validate the next blocks if validation was not needed, or if needed then it succeeded.
+                    if ((connectBlocksResult == null) || connectBlocksResult.Succeeded)
+                    {
+                        this.logger.LogTrace("Partial validation of {0} block will be started.", chainedHeaderBlocksToValidate.Count);
 
-                // Start validating all next blocks that come after the current block,
-                // all headers in this list have the blocks present in the header.
-                foreach (ChainedHeaderBlock toValidate in chainedHeaderBlocksToValidate)
-                    this.partialValidator.StartPartialValidation(toValidate.ChainedHeader, toValidate.Block, this.OnPartialValidationCompletedCallbackAsync);
+                        // Start validating all next blocks that come after the current block,
+                        // all headers in this list have the blocks present in the header.
+                        foreach (ChainedHeaderBlock toValidate in chainedHeaderBlocksToValidate)
+                            this.partialValidator.StartPartialValidation(toValidate.ChainedHeader, toValidate.Block, this.OnPartialValidationCompletedCallbackAsync);
+                    }
+                }
             }
 
             this.logger.LogTrace("(-)");
@@ -642,12 +656,17 @@ namespace Stratis.Bitcoin.Consensus
 
                 disconnectedBlocks.Add(disconnectedBlock);
 
-                this.signals.SignalBlockDisconnected(disconnectedBlock);
+                using (this.performanceCounter.MeasureBlockDisconnectedSignal())
+                {
+                    this.signals.SignalBlockDisconnected(disconnectedBlock);
+                }
 
                 current = current.Previous;
             }
 
             disconnectedBlocks.Reverse();
+
+            this.logger.LogInformation("Reorg from block '{0}' to '{1}'", oldTip, fork);
 
             this.logger.LogTrace("(-):*.{0}={1}", nameof(disconnectedBlocks.Count), disconnectedBlocks.Count);
             return disconnectedBlocks;
@@ -665,36 +684,42 @@ namespace Stratis.Bitcoin.Consensus
 
             foreach (ChainedHeaderBlock blockToConnect in blocksToConnect)
             {
-                connectBlockResult = await this.ConnectBlockAsync(blockToConnect).ConfigureAwait(false);
-
-                if (!connectBlockResult.Succeeded)
+                using (this.performanceCounter.MeasureBlockConnectionFV())
                 {
-                    connectBlockResult.LastValidatedBlockHeader = lastValidatedBlockHeader;
+                    connectBlockResult = await this.ConnectBlockAsync(blockToConnect).ConfigureAwait(false);
 
-                    this.logger.LogTrace("(-)[FAILED_TO_CONNECT]:'{0}'", connectBlockResult);
-                    return connectBlockResult;
-                }
-
-                lastValidatedBlockHeader = blockToConnect.ChainedHeader;
-
-                // Block connected successfully.
-                List<int> peersToResync = this.SetConsensusTip(blockToConnect.ChainedHeader);
-
-                await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
-
-                if (this.network.Consensus.MaxReorgLength != 0)
-                {
-                    int newFinalizedHeight = blockToConnect.ChainedHeader.Height - (int)this.network.Consensus.MaxReorgLength;
-
-                    if (newFinalizedHeight > 0)
+                    if (!connectBlockResult.Succeeded)
                     {
-                        uint256 newFinalizedHash = blockToConnect.ChainedHeader.GetAncestor(newFinalizedHeight).HashBlock;
+                        connectBlockResult.LastValidatedBlockHeader = lastValidatedBlockHeader;
 
-                        await this.finalizedBlockInfo.SaveFinalizedBlockHashAndHeightAsync(newFinalizedHash, newFinalizedHeight).ConfigureAwait(false);
+                        this.logger.LogTrace("(-)[FAILED_TO_CONNECT]:'{0}'", connectBlockResult);
+                        return connectBlockResult;
+                    }
+
+                    lastValidatedBlockHeader = blockToConnect.ChainedHeader;
+
+                    // Block connected successfully.
+                    List<int> peersToResync = this.SetConsensusTip(blockToConnect.ChainedHeader);
+
+                    await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
+
+                    if (this.network.Consensus.MaxReorgLength != 0)
+                    {
+                        int newFinalizedHeight = blockToConnect.ChainedHeader.Height - (int)this.network.Consensus.MaxReorgLength;
+
+                        if (newFinalizedHeight > 0)
+                        {
+                            uint256 newFinalizedHash = blockToConnect.ChainedHeader.GetAncestor(newFinalizedHeight).HashBlock;
+
+                            this.finalizedBlockInfo.SaveFinalizedBlockHashAndHeight(newFinalizedHash, newFinalizedHeight);
+                        }
                     }
                 }
 
-                this.signals.SignalBlockConnected(blockToConnect);
+                using (this.performanceCounter.MeasureBlockConnectedSignal())
+                {
+                    this.signals.SignalBlockConnected(blockToConnect);
+                }
             }
 
             this.logger.LogTrace("(-):'{0}'", connectBlockResult);
@@ -829,7 +854,7 @@ namespace Stratis.Bitcoin.Consensus
 
             while (currentHeader.Height >= heightOfFirstBlock)
             {
-                ChainedHeaderBlock chainedHeaderBlock = await this.LoadBlockDataAsync(currentHeader.HashBlock).ConfigureAwait(false);
+                ChainedHeaderBlock chainedHeaderBlock = await this.GetBlockDataAsync(currentHeader.HashBlock).ConfigureAwait(false);
 
                 if (chainedHeaderBlock?.Block == null)
                 {
@@ -1053,7 +1078,7 @@ namespace Stratis.Bitcoin.Consensus
 
             foreach (uint256 blockHash in blockHashes)
             {
-                ChainedHeaderBlock chainedHeaderBlock = await this.LoadBlockDataAsync(blockHash).ConfigureAwait(false);
+                ChainedHeaderBlock chainedHeaderBlock = await this.GetBlockDataAsync(blockHash).ConfigureAwait(false);
 
                 if ((chainedHeaderBlock == null) || (chainedHeaderBlock.Block != null))
                 {
@@ -1080,9 +1105,8 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("(-)");
         }
 
-        /// <summary>Loads the block data from <see cref="chainedHeaderTree"/> or block store if it's enabled.</summary>
-        /// <param name="blockHash">The block hash.</param>
-        private async Task<ChainedHeaderBlock> LoadBlockDataAsync(uint256 blockHash)
+        /// <inheritdoc />
+        public async Task<ChainedHeaderBlock> GetBlockDataAsync(uint256 blockHash)
         {
             this.logger.LogTrace("({0}:{1})", nameof(blockHash), blockHash);
 
@@ -1221,7 +1245,7 @@ namespace Stratis.Bitcoin.Consensus
             return isConsideredSynced;
         }
 
-        private void AddInlineStats(StringBuilder benchLog)
+        private void AddInlineStats(StringBuilder log)
         {
             this.logger.LogTrace("()");
 
@@ -1235,15 +1259,60 @@ namespace Stratis.Bitcoin.Consensus
                 string headersLog = "Headers.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + bestTip.Height.ToString().PadRight(8) +
                                     " Headers.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + bestTip.HashBlock;
 
-                benchLog.AppendLine(headersLog);
+                log.AppendLine(headersLog);
             }
 
             string consensusLog = "Consensus.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + this.Tip.Height.ToString().PadRight(8) +
                                   " Consensus.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + this.Tip.HashBlock;
 
-            benchLog.AppendLine(consensusLog);
+            log.AppendLine(consensusLog);
 
             this.logger.LogTrace("(-)");
+        }
+
+        private void AddBenchStats(StringBuilder benchLog)
+        {
+            this.logger.LogTrace("()");
+
+            benchLog.AppendLine(this.performanceCounter.TakeSnapshot().ToString());
+
+            this.logger.LogTrace("(-)");
+        }
+
+        private void AddComponentStats(StringBuilder log)
+        {
+            this.logger.LogTrace("()");
+
+            log.AppendLine();
+            log.AppendLine("======Consensus Manager======");
+
+            lock (this.peerLock)
+            {
+                string unconsumedBlocks = this.formatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
+
+                string unconsumedBytes = this.formatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
+                string maxUnconsumedBytes = this.formatBigNumber(MaxUnconsumedBlocksDataBytes);
+
+                double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)MaxUnconsumedBlocksDataBytes) * 100, 2);
+
+                log.AppendLine($"Unconsumed blocks: {unconsumedBlocks} -- ({unconsumedBytes} / {maxUnconsumedBytes} bytes). Cache is filled by: {filledPercentage}%");
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <summary>Formats the big number.</summary>
+        /// <remarks><c>123456789</c> => <c>123 456 789</c></remarks>
+        private string formatBigNumber(long number)
+        {
+            string temp = number.ToString("N").Replace(',', ' ');
+
+            int index = temp.IndexOf(".00");
+
+            if (index != -1)
+                temp = temp.Substring(0, index);
+
+            return temp;
         }
 
         /// <inheritdoc />

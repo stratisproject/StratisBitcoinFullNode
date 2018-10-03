@@ -17,11 +17,6 @@ namespace Stratis.Bitcoin.Consensus
     public interface IConsensusRuleEngine : IDisposable
     {
         /// <summary>
-        /// Keeps track of how much time different actions took to execute and how many times they were executed.
-        /// </summary>
-        ConsensusPerformanceCounter PerformanceCounter { get; }
-
-        /// <summary>
         /// Initialize the rules engine.
         /// </summary>
         Task Initialize();

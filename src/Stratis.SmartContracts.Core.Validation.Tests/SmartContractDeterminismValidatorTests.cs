@@ -13,21 +13,21 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
     {
         public IContractModuleDefinition CompileFileToModuleDef(FileInfo file)
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile(file.FullName);
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile(file.FullName);
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;
-            IContractModuleDefinition decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
             return decomp;
         }
 
         public IContractModuleDefinition CompileToModuleDef(string source)
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(source);
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;
-            IContractModuleDefinition decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
             return decomp;
         }
 
@@ -89,29 +89,6 @@ public class Test : SmartContract
                                                     : base(state) { }
 
                                                 public void B() { var test = new A(); }
-                                            }";
-
-            var decompilation = CompileToModuleDef(source);
-
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
-
-            Assert.Empty(result.Errors);
-        }
-
-        [Fact]
-        public void SmartContractValidator_Should_Allow_New_TransferFundsToContract()
-        {
-            const string source = @"using System;
-                                            using Stratis.SmartContracts;
-
-                                            public class Test : SmartContract
-                                            {
-                                                public struct A {}
-
-                                                public Test(ISmartContractState state)
-                                                    : base(state) { }
-
-                                                public void B() { var test = new TransferFundsToContract(); }
                                             }";
 
             var decompilation = CompileToModuleDef(source);

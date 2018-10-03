@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -147,8 +148,10 @@ namespace Stratis.Bitcoin.Features.Miner
         }
 
         /// <inheritdoc />
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
+            this.logger.LogTrace("()");
+
             if (this.minerSettings.Mine)
             {
                 string mineToAddress = this.minerSettings.MineAddress;
@@ -167,6 +170,9 @@ namespace Stratis.Bitcoin.Features.Miner
             {
                 this.StartStaking(this.minerSettings.WalletName, this.minerSettings.WalletPassword);
             }
+
+            this.logger.LogTrace("(-)");
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />

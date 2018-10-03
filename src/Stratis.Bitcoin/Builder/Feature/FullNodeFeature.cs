@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Builder.Feature
 {
@@ -10,7 +11,7 @@ namespace Stratis.Bitcoin.Builder.Feature
         /// <summary>
         /// Triggered when the FullNode host has fully started.
         /// </summary>
-        void Initialize();
+        Task InitializeAsync();
 
         /// <summary>
         /// Validates the feature's required dependencies are all present.
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.Builder.Feature
     public abstract class FullNodeFeature : IFullNodeFeature
     {
         /// <inheritdoc />
-        public abstract void Initialize();
+        public abstract Task InitializeAsync();
 
         /// <inheritdoc />
         public virtual void Dispose()

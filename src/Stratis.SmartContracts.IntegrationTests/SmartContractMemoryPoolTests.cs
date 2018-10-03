@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 builder.StartAll();
 
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratisWithMiner(105); // coinbase maturity = 100
+                TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
@@ -50,7 +50,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 builder.StartAll();
 
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
-                stratisNodeSync.GenerateStratisWithMiner(105); // coinbase maturity = 100
+                TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
@@ -61,7 +61,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 // Gas higher than allowed limit
                 Transaction tx = new Transaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
-                SmartContractCarrier smartContractCarrier = SmartContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(10_000_000));
+                ContractCarrier smartContractCarrier = ContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(10_000_000));
                 tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
                 tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                 stratisNodeSync.Broadcast(tx);
@@ -69,14 +69,14 @@ namespace Stratis.SmartContracts.IntegrationTests
                 // OP_SPEND in user's tx - we can't sign this because the TransactionBuilder recognises the ScriptPubKey is invalid.
                 tx = new Transaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), new Script(new[] { (byte)ScOpcodeType.OP_SPEND })));
-                smartContractCarrier = SmartContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(100_000));
+                smartContractCarrier = ContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(100_000));
                 tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
                 stratisNodeSync.Broadcast(tx);
 
                 // 2 smart contract outputs
                 tx = new Transaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
-                smartContractCarrier = SmartContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(100_000));
+                smartContractCarrier = ContractCarrier.CallContract(1, new uint160(0), "Test", 1, new Gas(100_000));
                 tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
                 tx.AddOutput(new TxOut(1, new Script(smartContractCarrier.Serialize())));
                 tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
@@ -84,7 +84,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 // Send to contract
                 uint160 contractAddress = new uint160(123);
-                var state = stratisNodeSync.FullNode.NodeService<IContractStateRoot>();
+                var state = stratisNodeSync.FullNode.NodeService<IStateRepositoryRoot>();
                 state.CreateAccount(contractAddress);
                 state.Commit();
                 tx = new Transaction();
