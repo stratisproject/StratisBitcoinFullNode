@@ -53,9 +53,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
 
-            var hashHeightPair = await this.provenBlockHeaderStore.CurrentTipHashHeightAsync().ConfigureAwait(false);
-
-            hashHeightPair.Hash.Should().Be(this.network.GetGenesis().GetHash());
+            this.provenBlockHeaderStore.TipHashHeight.Hash.Should().Be(this.network.GetGenesis().GetHash());
         }
 
         [Fact]
@@ -83,7 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 var outItems = await store.GetAsync(0, inItems.Count).ConfigureAwait(false);
 
                 outItems.Count.Should().Be(inItems.Count);
-                
+
                 foreach(var item in outItems)
                 {
                     item.GetHash().Should().Be(provenHeaderMock.GetHash());
@@ -99,10 +97,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             // Add to pending (add to internal cache).
             var inHeader = CreateNewProvenBlockHeaderMock();
-            this.provenBlockHeaderStore.AddToPending(inHeader, new HashHeightPair(inHeader.GetHash(), 1));
+            this.provenBlockHeaderStore.AddToPendingBatch(inHeader, new HashHeightPair(inHeader.GetHash(), 1));
 
             // Check Item in cache.
-            var cacheCount = this.provenBlockHeaderStore.PendingCache.GetMemberValue("Count");
+            var cacheCount = this.provenBlockHeaderStore.PendingBatch.GetMemberValue("Count");
             cacheCount.Should().Be(1);
 
             // Get item.
@@ -122,10 +120,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             // Add to pending (add to internal cache).
             var inHeader = CreateNewProvenBlockHeaderMock();
-            this.provenBlockHeaderStore.AddToPending(inHeader, new HashHeightPair(inHeader.GetHash(), 0));
+            this.provenBlockHeaderStore.AddToPendingBatch(inHeader, new HashHeightPair(inHeader.GetHash(), 0));
 
             // Check Item in cache.
-            var cacheCount = this.provenBlockHeaderStore.PendingCache.GetMemberValue("Count");
+            var cacheCount = this.provenBlockHeaderStore.PendingBatch.GetMemberValue("Count");
             cacheCount.Should().Be(1);
 
             // Get item.
@@ -158,11 +156,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             for (int i = 0; i < 2_000; i++)
             {
                 inHeader = CreateNewProvenBlockHeaderMock();
-                this.provenBlockHeaderStore.AddToPending(inHeader, new HashHeightPair(inHeader.GetHash(), i));
+                this.provenBlockHeaderStore.AddToPendingBatch(inHeader, new HashHeightPair(inHeader.GetHash(), i));
             }
 
             // Check Item in cache.
-            var cacheCount = this.provenBlockHeaderStore.PendingCache.GetMemberValue("Count");
+            var cacheCount = this.provenBlockHeaderStore.PendingBatch.GetMemberValue("Count");
             cacheCount.Should().Be(2_000);
 
             // Check if it has been saved to disk.  It shouldn't as the asyncLoopFactory() would not have been called yet.
@@ -182,11 +180,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             for (int i = 0; i < 2_000; i++)
             {
                 inHeader = CreateNewProvenBlockHeaderMock();
-                this.provenBlockHeaderStore.AddToPending(inHeader, new HashHeightPair(inHeader.GetHash(), i));
+                this.provenBlockHeaderStore.AddToPendingBatch(inHeader, new HashHeightPair(inHeader.GetHash(), i));
             }
 
             // Check Item in cache.
-            var cacheCount = this.provenBlockHeaderStore.PendingCache.GetMemberValue("Count");
+            var cacheCount = this.provenBlockHeaderStore.PendingBatch.GetMemberValue("Count");
             cacheCount.Should().Be(2_000);
 
             // Call the internal save method to save cached item to disk.
@@ -203,44 +201,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             outHeaderRepo.Should().NotBeNull();
 
             // Check items in cache - should now be empty.
-            cacheCount = this.provenBlockHeaderStore.PendingCache.GetMemberValue("Count");
+            cacheCount = this.provenBlockHeaderStore.PendingBatch.GetMemberValue("Count");
             cacheCount.Should().Be(0);
-        }
-
-        [Fact]
-        public async Task GetAsync_MaxCacheItems_Gets_Items_From_Repository_Adds_To_Store_Cache_Async()
-        {
-            // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
-
-            int maxCacheCount = (int)this.provenBlockHeaderStore
-                .GetType()
-                .GetField("CacheMaxItemsCount", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
-                .GetValue(null);
-
-            var inHeaders = new List<ProvenBlockHeader>();
-
-            // Add maximum cache count items headers.
-            for (int i = 0; i < maxCacheCount; i++)
-                inHeaders.Add(CreateNewProvenBlockHeaderMock());
-
-            // Add items to the repository.
-            await this.provenBlockHeaderRepository.PutAsync(inHeaders, 
-                new HashHeightPair(inHeaders.LastOrDefault().GetHash(), inHeaders.Count - 1)).ConfigureAwait(false);
-
-            // Check Item in cache -  should be zero as not asked for headers from the store.
-            var cacheCount = this.provenBlockHeaderStore.Cache.GetMemberValue("Count");
-            cacheCount.Should().Be(0);
-
-            // Asking for headers will check the cache store.  If the header is not in the cache store, then it will check the repository and add the cache store.
-            var outHeaders = await this.provenBlockHeaderStore.GetAsync(0, inHeaders.Count - 1).ConfigureAwait(false);
-
-            // Check Item in cache -  should now contain the cached items.
-            cacheCount = this.provenBlockHeaderStore.Cache.GetMemberValue("Count");
-            cacheCount.Should().Be(inHeaders.Count);
-
-            // Get items returned from getAsync().
-            outHeaders.Count.Should().Be(maxCacheCount);
         }
 
         [Fact]
@@ -256,10 +218,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 inHeaders.Add(CreateNewProvenBlockHeaderMock());
 
             // Reduce the MaxMemoryCacheSizeInBytes size for test.
-            FieldInfo field = typeof(ProvenBlockHeaderStore).GetField("MaxMemoryCacheSizeInBytes", BindingFlags.NonPublic | BindingFlags.Instance);
-            field.SetValue(this.provenBlockHeaderStore, 1000);
-
-            this.provenBlockHeaderStore.InvokeMethod("ManangeCacheSize");
+            FieldInfo field = typeof(ProvenBlockHeaderStore).GetField("MemoryCacheSizeLimitInBytes", BindingFlags.NonPublic | BindingFlags.Instance);
+            field.SetValue(this.provenBlockHeaderStore, 500);
 
             // Add items to the repository.
             await this.provenBlockHeaderRepository.PutAsync(inHeaders,
@@ -269,18 +229,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var cacheCount = this.provenBlockHeaderStore.Cache.GetMemberValue("Count");
             cacheCount.Should().Be(0);
 
-            long cacheStoreSize = (long)this.provenBlockHeaderStore.InvokeMethod("MemoryCacheSize");
-            cacheStoreSize.Should().Be(0);
-
             // Asking for headers will check the cache store.  If the header is not in the cache store, then it will check the repository and add the cache store.
             var outHeaders = await this.provenBlockHeaderStore.GetAsync(0, inHeaders.Count - 1).ConfigureAwait(false);
 
+            // Invoke ManageCacheSize to determine whether items from cache should be removed.
             this.provenBlockHeaderStore.InvokeMethod("ManangeCacheSize");
-            cacheStoreSize = (long)this.provenBlockHeaderStore.InvokeMethod("MemoryCacheSize");
-            cacheStoreSize.Should().BeLessThan(1000);
+
+            long cacheSizeInBytes = (long)this.provenBlockHeaderStore.GetMemberValue("CacheSizeInBytes");
+            int memoryCacheSizeLimitInBytes = (int)this.provenBlockHeaderStore.GetMemberValue("MemoryCacheSizeLimitInBytes");
+
+            cacheSizeInBytes.Should().BeLessThan(memoryCacheSizeLimitInBytes);
         }
 
-        private IProvenBlockHeaderStore SetupStore(string folder)
+        private ProvenBlockHeaderStore SetupStore(string folder)
         {
             return new ProvenBlockHeaderStore(
                 this.concurrentChain, DateTimeProvider.Default,

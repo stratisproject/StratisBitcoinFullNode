@@ -35,9 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             using (IProvenBlockHeaderRepository repository = this.SetupRepository(this.Network, folder))
             {
                 // Check the BlockHash (blockId) exists.
-                HashHeightPair TipHashtask = await repository.GetTipHashHeightAsync();
-
-                TipHashtask.Height.Should().Be(0);
+                repository.TipHashHeight.Height.Should().Be(0);
             }
         }
 
@@ -118,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             }
 
             // Query the repository for the item that was inserted in the above code.
-            using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
+            using (ProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
                 var headerOut = await repo.GetAsync(blockHeight).ConfigureAwait(false);
 
@@ -145,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             }
 
             // Query the repository for the item that was inserted in the above code.
-            using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
+            using (ProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
                 List<ProvenBlockHeader> headersOut = await repo.GetAsync(1, 2).ConfigureAwait(false);
 
@@ -167,8 +165,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 txn.Insert<byte[], HashHeightPair>(BlockHashTable, new byte[0], new HashHeightPair(new uint256(), 1));
                 txn.Commit();
             }
-            
-            using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
+
+            using (ProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
                 // Select a different block height.
                 ProvenBlockHeader outHeader = await repo.GetAsync(2).ConfigureAwait(false);
@@ -236,7 +234,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             }
         }
 
-        private IProvenBlockHeaderRepository SetupRepository(Network network, string folder)
+        private ProvenBlockHeaderRepository SetupRepository(Network network, string folder)
         {
             var repo = new ProvenBlockHeaderRepository(network, folder, this.LoggerFactory.Object);
 

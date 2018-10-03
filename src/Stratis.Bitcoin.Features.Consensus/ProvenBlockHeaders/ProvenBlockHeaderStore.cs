@@ -6,59 +6,88 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
-    public class ProvenBlockHeaderStore : IProvenBlockHeaderStore, IDisposable
+    public class ProvenBlockHeaderStore : IProvenBlockHeaderStore
     {
-        /// <summary>Instance logger.</summary>
+        /// <summary>
+        /// Instance logger.
+        /// </summary>
         private readonly ILogger logger;
 
-        /// <summary>Allows consumers to perform clean-up during a graceful shutdown.</summary>
+        /// <summary>
+        /// Allows consumers to perform clean-up during a graceful shutdown.
+        /// </summary>
         private readonly INodeLifetime nodeLifetime;
 
-        /// <summary>Thread safe class representing a chain of headers from genesis.</summary>
+        /// <summary>
+        /// Thread safe class representing a chain of headers from genesis.
+        /// </summary>
         private readonly ConcurrentChain chain;
 
-        /// <summary>Database repository storing <see cref="ProvenBlockHeader"></see>s.</summary>
+        /// <summary>
+        /// Database repository storing <see cref="ProvenBlockHeader"></see> items.
+        /// </summary>
         private readonly IProvenBlockHeaderRepository provenBlockHeaderRepository;
 
-        /// <summary>Lock object to protect access to <see cref="ProvenBlockHeader"/>.</summary>
-        private readonly AsyncLock lockobj;
-
-        /// <summary>Performance counter to measure performance of the save and query operation.</summary>
+        /// <summary>
+        /// Performance counter to measure performance of the save and get operations.
+        /// </summary>
         private readonly BackendPerformanceCounter performanceCounter;
 
+        /// <summary>
+        /// Latest snapshot performance counter to measure performance of the save and get operations.
+        /// </summary>
         private BackendPerformanceSnapshot latestPerformanceSnapShot;
 
-        /// <summary>Current block tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.</summary>
-        public HashHeightPair CurrentTipHashHeight { get; private set; }
+        /// <summary>
+        /// Current block tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.
+        /// </summary>
+        public HashHeightPair TipHashHeight { get; private set; }
 
-        /// <summary>Pending - not yet saved to disk - block tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.</summary>
+        /// <summary>
+        /// Pending - not yet saved to disk - block tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.
+        /// </summary>
         private HashHeightPair pendingTipHashHeight;
 
-        /// <summary>The async loop we wait upon.</summary>
+        /// <summary>
+        /// The async loop we wait upon.
+        /// </summary>
         private IAsyncLoop asyncLoop;
 
-        /// <summary>Factory for creating background async loop tasks.</summary>
+        /// <summary>
+        /// Factory for creating background async loop tasks.
+        /// </summary>
         private readonly IAsyncLoopFactory asyncLoopFactory;
 
-        /// <summary>Maximum number of items to cache.</summary>
-        private const int CacheMaxItemsCount = 1_000;
+        /// <summary>
+        /// Limit <see cref="Cache"/> size to 100MB.
+        /// </summary>
+        private readonly int MemoryCacheSizeLimitInBytes = 100 * 1024 * 1024;
 
-        /// <summary>Limit <see cref="Cache"/> size to 100MB.</summary>
-        private readonly int MaxMemoryCacheSizeInBytes = 100 * 1024 * 1024;
+        /// <summary>
+        /// Current size of the Cache in bytes.
+        /// </summary>
+        private long CacheSizeInBytes;
 
-        /// <summary>Cache of pending <see cref= "ProvenBlockHeader"/> items.</summary>
-        /// <remarks>Pending <see cref= "ProvenBlockHeader"/> items will be saved to disk every minute.</remarks>
-        public ConcurrentDictionary<int, ProvenBlockHeader> PendingCache { get; }
+        /// <summary>
+        /// Cache of pending <see cref= "ProvenBlockHeader"/> items.
+        /// </summary>
+        /// <remarks>
+        /// Pending <see cref= "ProvenBlockHeader"/> items will be saved to disk every minute.
+        /// </remarks>
+        public ConcurrentDictionary<int, ProvenBlockHeader> PendingBatch { get; }
 
-        /// <summary>Store Cache of <see cref= "ProvenBlockHeader"/> items.</summary>
-        /// <remarks>Items are added to this cache when the caller asks for a <see cref= "ProvenBlockHeader"/>.</remarks>
-        public MemoryCache<int, ProvenBlockHeader> Cache { get; }
+        /// <summary>
+        /// Store Cache of <see cref= "ProvenBlockHeader"/> items.
+        /// </summary>
+        /// <remarks>
+        /// Items are added to this cache when the caller asks for a <see cref= "ProvenBlockHeader"/>.
+        /// </remarks>
+        public ConcurrentDictionary<int, ProvenBlockHeader> Cache { get; }
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -71,9 +100,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="nodeStats">Registers an action used to append node stats when collected.</param>
         /// <param name="asyncLoopFactory">Factory for creating and also possibly starting application defined tasks inside async loop.</param>
         public ProvenBlockHeaderStore(
-            ConcurrentChain chain, 
-            IDateTimeProvider dateTimeProvider, 
-            ILoggerFactory loggerFactory, 
+            ConcurrentChain chain,
+            IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory,
             IProvenBlockHeaderRepository provenBlockHeaderRepository,
             INodeLifetime nodeLifetime,
             INodeStats nodeStats,
@@ -90,10 +119,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.chain = chain;
             this.provenBlockHeaderRepository = provenBlockHeaderRepository;
             this.nodeLifetime = nodeLifetime;
-            this.lockobj = new AsyncLock();
 
-            this.PendingCache = new ConcurrentDictionary<int, ProvenBlockHeader>();
-            this.Cache = new MemoryCache<int, ProvenBlockHeader>(CacheMaxItemsCount);
+            this.PendingBatch = new ConcurrentDictionary<int, ProvenBlockHeader>();
+            this.Cache = new ConcurrentDictionary<int, ProvenBlockHeader>();
 
             this.asyncLoopFactory = asyncLoopFactory;
 
@@ -106,18 +134,16 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             await this.provenBlockHeaderRepository.InitializeAsync().ConfigureAwait(false);
 
-            this.CurrentTipHashHeight = await this.CurrentTipHashHeightAsync().ConfigureAwait(false);
+            this.TipHashHeight = this.provenBlockHeaderRepository.TipHashHeight;
 
-            this.logger.LogDebug("Initialized ProvenBlockHader block tip at '{0}'.", this.CurrentTipHashHeight);
+            this.logger.LogDebug("Initialized ProvenBlockHader block tip at '{0}'.", this.TipHashHeight);
 
             this.asyncLoop = this.asyncLoopFactory.Run("ProvenBlockHeaders job", token =>
             {
-                this.logger.LogTrace("()");
-
                 // Save pending items.
                 this.SaveAsync().ConfigureAwait(false);
 
-                // Check and make sure the store cache limit isn't breached.
+                // Check and make sure the cache limit hasn't been breached.
                 this.ManangeCacheSize();
 
                 this.logger.LogTrace("(-)[IN_ASYNC_LOOP]");
@@ -136,29 +162,16 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
             {
-                // Check pending cache first.
-                header = this.GetHeaderFromPendingCache(blockHeight);
+                header = this.CheckCache(blockHeight);
 
                 if (header == null)
                 {
-                    // Check store cache next.
-                    header = this.GetHeaderFromStoreCache(blockHeight);
+                    // Check the repository (DBreeze).
+                    header = await this.provenBlockHeaderRepository.GetAsync(blockHeight).ConfigureAwait(false);
 
-                    if (header == null)
-                    {
-                        // Check the repository (DBreeze).
-                        header = await this.provenBlockHeaderRepository.GetAsync(blockHeight).ConfigureAwait(false);
-
-                        // Add the item to the store cache.
-                        this.Cache.AddOrUpdate(blockHeight, header);
-                    }
+                    this.TryAddToCache(blockHeight, header);
                 }
             }
-
-            if (header != null)
-                this.logger.LogTrace("(-):*.{0}='{1}'", nameof(header), header);
-            else
-                this.logger.LogTrace("(-):null");
 
             return header;
         }
@@ -166,123 +179,106 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task<List<ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight)
         {
-            var cachedHeaders = new List<ProvenBlockHeader>();            
+            var headersInCache = new List<ProvenBlockHeader>();
 
             using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
             {
                 int heightKey = fromBlockHeight;
 
-                // Check if the items exist in the store cache before checking the repository.
-                ProvenBlockHeader headerCache = null;
+                ProvenBlockHeader header = null;
 
-                var blockHeightList = new List<int>();
+                var headersNotInCache = new List<int>();
 
                 do
                 {
-                    headerCache = this.GetHeaderFromStoreCache(heightKey);
+                    header = this.CheckCache(heightKey);
 
-                    if (headerCache != null)
-                        cachedHeaders.Add(headerCache);
+                    if (header != null)
+                        headersInCache.Add(header);
                     else
-                        blockHeightList.Add(heightKey);
+                        headersNotInCache.Add(heightKey);
 
                     heightKey++;
 
                 } while (heightKey <= toBlockHeight);
 
                 // Try and get items from the repository if not found in the store cache.
-                if (blockHeightList.Count > 0)
+                if (headersNotInCache.Count > 0)
                 {
                     var repositoryHeaders = new List<ProvenBlockHeader>();
 
-                    foreach(int blockHeight in blockHeightList)
+                    foreach(int headerNotInCache in headersNotInCache)
                     {
                         var repositoryHeader = new ProvenBlockHeader();
 
-                        repositoryHeader = await this.provenBlockHeaderRepository.GetAsync(blockHeight).ConfigureAwait(false);
+                        repositoryHeader = await this.provenBlockHeaderRepository.GetAsync(headerNotInCache).ConfigureAwait(false);
 
                         if (repositoryHeader != null)
                         {
                             repositoryHeaders.Add(repositoryHeader);
 
-                            // When found also add to cache.
-                            this.Cache.AddOrUpdate(blockHeight, repositoryHeader);
+                            this.TryAddToCache(headerNotInCache, repositoryHeader);
                         }
                     }
 
                     if (repositoryHeaders.Count > 0)
-                        cachedHeaders.AddRange(repositoryHeaders);
+                        headersInCache.AddRange(repositoryHeaders);
                 }
             }
 
-            return cachedHeaders;
+            return headersInCache;
         }
 
         /// <inheritdoc />
-        public async Task<HashHeightPair> CurrentTipHashHeightAsync()
+        public void AddToPendingBatch(ProvenBlockHeader provenBlockHeader, HashHeightPair newTip)
         {
-            this.CurrentTipHashHeight = await this.provenBlockHeaderRepository.GetTipHashHeightAsync().ConfigureAwait(false);
+            this.PendingBatch.AddOrUpdate(newTip.Height, provenBlockHeader, (key, value) => { return provenBlockHeader; });
 
-            return this.CurrentTipHashHeight;
-        }
-
-        /// <inheritdoc />
-        public async Task<ProvenBlockHeader> GetTipAsync()
-        {
-            this.CurrentTipHashHeight = await this.CurrentTipHashHeightAsync();
-
-            return await this.GetAsync(this.CurrentTipHashHeight.Height).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc />
-        public void AddToPending(ProvenBlockHeader provenBlockHeader, HashHeightPair newTip)
-        {
-            this.PendingCache.AddOrUpdate(newTip.Height, provenBlockHeader, (key, value) => { return provenBlockHeader; });
+            this.Cache.AddOrUpdate(newTip.Height, provenBlockHeader, (key, value) => { return provenBlockHeader; });
 
             this.pendingTipHashHeight = newTip;
         }
 
-        /// <summary>Saves pending <see cref="ProvenBlockHeader"/> items to the <see cref="ProvenBlockHeaderRepository"/>.</summary>
+        /// <summary> Saves pending <see cref="ProvenBlockHeader"/> items to the <see cref="ProvenBlockHeaderRepository"/>.</summary>
         private async Task SaveAsync()
         {
-            if (this.PendingCache.Count == 0)
+            if (this.PendingBatch.Count == 0)
             {
-                this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADER_CACHE_EMPTY]");
+                this.logger.LogTrace("(-)[PENDING_BATCH_EMPTY]");
                 return;
+            }
+
+            if (!this.PendingBatch.Keys.OrderBy(s => s).SequenceEqual(this.PendingBatch.Keys))
+            {
+                this.logger.LogTrace("(-)[PENDING_BATCH_INCORRECT_SEQEUNCE]");
+                throw new InvalidOperationException("Invalid ProvenBlockHeader pending batch sequence - unable to save to the database repository.");
             }
 
             using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
             {
-                using (await this.lockobj.LockAsync().ConfigureAwait(false))
-                {
-                    var pendingHeaders = new List<ProvenBlockHeader>();
+                var pendingBatchKeys = this.PendingBatch.Keys.ToList();
 
-                    for (int i = this.CurrentTipHashHeight.Height; i <= this.pendingTipHashHeight.Height; i++)
-                    {
-                        ProvenBlockHeader cachedHeader = this.GetHeaderFromPendingCache(i);
+                List<ProvenBlockHeader> pendingBatchValues = this.PendingBatch.Values.ToList();
 
-                        if (cachedHeader != null)
-                        {
-                            pendingHeaders.Add(cachedHeader);
-                            this.PendingCache.TryRemove(i, out ProvenBlockHeader removedItem);
-                        }
-                    }
+                await this.provenBlockHeaderRepository.PutAsync(
+                    pendingBatchValues, this.pendingTipHashHeight).ConfigureAwait(false);
 
-                    if (pendingHeaders.Count > 0)
-                        await this.provenBlockHeaderRepository.PutAsync(pendingHeaders, this.pendingTipHashHeight).ConfigureAwait(false);
+                pendingBatchKeys.ForEach(
+                    blockHeight => this.PendingBatch.TryRemove(blockHeight, out ProvenBlockHeader unused));
 
-                    if (this.PendingCache.Count == 0)
-                        this.pendingTipHashHeight = null;
-                }
-            }           
+                this.pendingTipHashHeight = null;
+            }
         }
 
-        /// <summary>Gets <see cref="ProvenBlockHeader"></see> items from pending cache with specific key if present.</summary>
-        /// <param name="key">Item's key.</param>
-        /// <returns><see cref="ProvenBlockHeader"></see> if cache contains the item, <c>null</c> otherwise.</returns>
-        private ProvenBlockHeader GetHeaderFromPendingCache(int key)
+        /// <summary>
+        /// Gets <see cref="ProvenBlockHeader"></see> items from cache with specific key if present.
+        /// </summary>
+        /// <param name="key"> Item's key.</param>
+        /// <param name = "items"> Dictionary of items in cache</param>
+        /// <returns> <see cref="ProvenBlockHeader"></see> if cache contains the item, <c>null</c> otherwise.</returns>
+        private ProvenBlockHeader GetHeaderFromCache(int key, ConcurrentDictionary<int, ProvenBlockHeader> items)
         {
-            if (this.PendingCache.TryGetValue(key, out ProvenBlockHeader header))
+            if (items.TryGetValue(key, out ProvenBlockHeader header))
             {
                 this.logger.LogTrace("(-):{0}", header);
 
@@ -292,65 +288,69 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             return null;
         }
 
-        /// <summary>Gets <see cref="ProvenBlockHeader"></see> items from store cache with specific key if present.</summary>
-        /// <param name="key">Item's key.</param>
-        /// <returns><see cref="ProvenBlockHeader"></see> if cache contains the item, <c>null</c> otherwise.</returns>
-        private ProvenBlockHeader GetHeaderFromStoreCache(int key)
-        {
-            if (this.Cache.TryGetValue(key, out ProvenBlockHeader header))
-            {
-                this.logger.LogTrace("(-):{0}", header);
-
-                return header;
-            }
-
-            return null;
-        }
-
-        /// <summary>Manages store cache size.  Remove 30% of items if the memory cache size has been reached.</summary>
+        /// <summary>
+        /// Manages store cache size. Remove 30% of items if the memory cache size has been reached.
+        /// </summary>
         private void ManangeCacheSize()
         {
             do
             {
-                if (this.MemoryCacheSize() > this.MaxMemoryCacheSizeInBytes)
+                if (this.CacheSizeInBytes > this.MemoryCacheSizeLimitInBytes)
                 {
-                    double removeThreshold = this.Cache.Count * 0.3;
+                    List<int> sortedList = this.Cache.Keys.OrderBy(s => s).ToList();
 
-                    int removedItemCount = 0;
+                    var itemsToRemove = sortedList.Take(Convert.ToInt32(sortedList.Count * 0.3));
 
-                    for (int i = this.Cache.Count; i >= 0; i--)
+                    foreach (var itemToRemove in itemsToRemove)
                     {
-                        if (this.Cache.TryGetValue(i, out ProvenBlockHeader header))
-                        {
-                            this.Cache.Remove(i);
-                            removedItemCount++;
-
-                            if (removedItemCount > removeThreshold)
-                                break;
-                        }
+                        if (this.Cache.TryRemove(itemToRemove, out ProvenBlockHeader header))
+                            this.CacheSizeInBytes -= header.HeaderSize;
                     }
                 }
 
-            } while (this.MemoryCacheSize() > this.MaxMemoryCacheSizeInBytes);
+            } while (this.CacheSizeInBytes > this.MemoryCacheSizeLimitInBytes);
         }
 
-        /// <summary>Get current store cache size in bytes.</summary>
-        /// <returns>Size of store cache in bytes.</returns>
-        private long MemoryCacheSize()
+        /// <summary>
+        /// Check pending cache first. Then check store cache next.
+        /// </summary>
+        /// <param name="blockHeight">Item's key.</param>
+        /// <returns><see cref="ProvenBlockHeader"> if found, otherwise null.</returns>
+        private ProvenBlockHeader CheckCache(int blockHeight)
         {
-            long size = 0;
+            ProvenBlockHeader header = null;
 
-            for (int i = 0; i <= this.Cache.Count - 1; i++)
-            {
-                if (this.Cache.TryGetValue(i, out ProvenBlockHeader header))
-                    size += header.HeaderSize;
-            }
+            header = this.GetHeaderFromCache(blockHeight, this.PendingBatch);
 
-            return size;
+            if (header == null)
+                header = this.GetHeaderFromCache(blockHeight, this.Cache);
+
+            return header;
+        }
+
+        /// <summary>
+        /// Adds <see cref="ProvenBlockHeader"> items to cache and update the size of the cache in bytes.
+        /// </summary>
+        /// <param name="blockHeight">Block height key.</param>
+        /// <param name="header"><see cref="ProvenBlockHeader"> to add.</param>
+        private void AddToCache(int blockHeight, ProvenBlockHeader header)
+        {
+            this.Cache.AddOrUpdate(blockHeight, header, (key, value) => { return header; });
+
+            this.CacheSizeInBytes += header.HeaderSize;
+        }
+
+        /// <summary> Only add to cache if the item does not already exist.</summary>
+        /// <param name="blockHeight">Block height key.</param>
+        /// <param name="header"><see cref="ProvenBlockHeader"> to add.</param>///
+        private void TryAddToCache(int blockHeight, ProvenBlockHeader header)
+        {
+            if (!this.Cache.TryGetValue(blockHeight, out ProvenBlockHeader cachedHeader))
+                this.AddToCache(blockHeight, header);
         }
 
         private void AddBenchStats(StringBuilder benchLog)
-        {        
+        {
             benchLog.AppendLine("======ProvenBlockHeaderStore Bench======");
 
             BackendPerformanceSnapshot snapShot = this.performanceCounter.Snapshot();
@@ -366,8 +366,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public void Dispose()
         {
-            this.lockobj.Dispose();
-
             this.asyncLoop?.Dispose();
         }
     }
