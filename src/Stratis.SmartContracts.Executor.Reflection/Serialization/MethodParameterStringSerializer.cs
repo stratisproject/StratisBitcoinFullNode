@@ -51,13 +51,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return MethodParameterDataType.ByteArray;
 
             if (o is char)
-                return MethodParameterDataType.Char;
-
-            if (o is sbyte)
-                return MethodParameterDataType.SByte;
-
-            if (o is short)
-                return MethodParameterDataType.Short;
+                return MethodParameterDataType.Char;         
 
             if (o is string)
                 return MethodParameterDataType.String;
@@ -120,32 +114,26 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                     processedParameters.Add(parameterSignature[1][0]);
 
                 else if (parameterSignature[0] == "5")
-                    processedParameters.Add(Convert.ToSByte(parameterSignature[1]));
-
-                else if (parameterSignature[0] == "6")
-                    processedParameters.Add(short.Parse(parameterSignature[1]));
-
-                else if (parameterSignature[0] == "7")
                     processedParameters.Add(parameterSignature[1]);
-
-                else if (parameterSignature[0] == "8")
+                
+                else if (parameterSignature[0] == "6")
                     processedParameters.Add(uint.Parse(parameterSignature[1]));
 
-                else if (parameterSignature[0] == "9")
-                    processedParameters.Add(new uint160(parameterSignature[1]));
-
-                else if (parameterSignature[0] == "10")
-                    processedParameters.Add(ulong.Parse(parameterSignature[1]));
-
-                else if (parameterSignature[0] == "11")
-                    processedParameters.Add(new Address(parameterSignature[1]));
-
-                else if (parameterSignature[0] == "12")
-                    processedParameters.Add(long.Parse(parameterSignature[1]));
-
-                else if (parameterSignature[0] == "13")
+                else if (parameterSignature[0] == "7")
                     processedParameters.Add(int.Parse(parameterSignature[1]));
 
+                else if (parameterSignature[0] == "8")
+                    processedParameters.Add(ulong.Parse(parameterSignature[1]));
+
+                else if (parameterSignature[0] == "9")
+                    processedParameters.Add(long.Parse(parameterSignature[1]));
+
+                else if (parameterSignature[0] == "10")
+                    processedParameters.Add(new uint160(parameterSignature[1]));
+
+               else if (parameterSignature[0] == "11")
+                    processedParameters.Add(new Address(parameterSignature[1]));
+                
                 else
                     throw new Exception(string.Format("{0} is not supported.", parameterSignature[0]));
             }
