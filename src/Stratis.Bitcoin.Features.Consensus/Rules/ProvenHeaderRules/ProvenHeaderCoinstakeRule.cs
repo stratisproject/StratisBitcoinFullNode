@@ -1,5 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.IO;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.BouncyCastle.Math;
+using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -78,6 +83,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             this.CheckHeaderAndCoinstakeTimes(header);
 
             this.CheckCoinstakeAgeRequirement(chainedHeader, prevUtxo);
+
+            this.CheckSignature(header, prevUtxo);
+
+            this.CheckStakeKernelHash((PosRuleContext)context, prevUtxo, header, chainedHeader);
         }
 
         private void CheckCoinstakeIsNotNull(ProvenBlockHeader header)
@@ -147,6 +156,117 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             this.Logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
             ConsensusErrors.InvalidStakeDepth.Throw();
+        }
+
+        private void CheckSignature(ProvenBlockHeader header, UnspentOutputs unspentOutputs)
+        {
+            TxIn input = header.Coinstake.Inputs[0];
+
+            if ((input.PrevOut.N >= unspentOutputs.Outputs.Length) || (input.PrevOut.Hash != unspentOutputs.TransactionId))
+            {
+                this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
+                ConsensusErrors.CoinstakeVerifySignatureFailed.Throw();
+            }
+
+            TxOut output = unspentOutputs.Outputs[input.PrevOut.N];
+
+            var txData = new PrecomputedTransactionData(header.Coinstake);
+            var checker = new TransactionChecker(header.Coinstake, 0, output.Value, txData);
+            var ctx = new ScriptEvaluationContext(this.PosParent.Network) { ScriptVerify = ScriptVerify.None };
+
+            if (ctx.VerifyScript(input.ScriptSig, output.ScriptPubKey, checker))
+                return;
+
+            this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
+            ConsensusErrors.CoinstakeVerifySignatureFailed.Throw();
+        }
+
+        private void CheckStakeKernelHash(PosRuleContext context, UnspentOutputs stakingCoins, ProvenBlockHeader header, ChainedHeader chainedHeader)
+        {
+            TxIn input = header.Coinstake.Inputs[0];
+            OutPoint prevout = input.PrevOut;
+            uint transactionTime = header.Coinstake.Time;
+
+            ChainedHeader prevChainedHeader = chainedHeader.Previous;
+
+            BlockStake prevBlockStake = this.PosParent.StakeChain.Get(prevChainedHeader.HashBlock);
+            if (prevBlockStake == null)
+            {
+                this.Logger.LogTrace("(-)[BAD_PREV_STAKE]");
+                ConsensusErrors.PrevStakeNull.Throw();
+            }
+
+            uint headerBits = chainedHeader.Header.Bits.ToCompact();
+
+            if (transactionTime < stakingCoins.Time)
+            {
+                this.Logger.LogTrace("Coinstake transaction timestamp {0} is lower than it's own UTXO timestamp {1}.", transactionTime, stakingCoins.Time);
+                this.Logger.LogTrace("(-)[BAD_STAKE_TIME]");
+                ConsensusErrors.StakeTimeViolation.Throw();
+            }
+
+            // Base target.
+            BigInteger target = new Target(headerBits).ToBigInteger();
+
+            // TODO: Investigate:
+            // The POS protocol should probably put a limit on the max amount that can be staked
+            // not a hard limit but a limit that allow any amount to be staked with a max weight value.
+            // the max weight should not exceed the max uint256 array size (array size = 32).
+
+            // Weighted target.
+            long valueIn = stakingCoins.Outputs[prevout.N].Value.Satoshi;
+            BigInteger weight = BigInteger.ValueOf(valueIn);
+            BigInteger weightedTarget = target.Multiply(weight);
+
+            context.TargetProofOfStake = ToUInt256(weightedTarget);
+            this.Logger.LogTrace("POS target is '{0}', weighted target for {1} coins is '{2}'.", ToUInt256(target), valueIn, context.TargetProofOfStake);
+
+            uint256 stakeModifierV2 = prevBlockStake.StakeModifierV2;
+
+            // Calculate hash.
+            using (var ms = new MemoryStream())
+            {
+                var serializer = new BitcoinStream(ms, true);
+                serializer.ReadWrite(stakeModifierV2);
+                serializer.ReadWrite(stakingCoins.Time);
+                serializer.ReadWrite(prevout.Hash);
+                serializer.ReadWrite(prevout.N);
+                serializer.ReadWrite(transactionTime);
+
+                context.HashProofOfStake = Hashes.Hash256(ms.ToArray());
+            }
+
+            this.Logger.LogTrace("Stake modifier V2 is '{0}', hash POS is '{1}'.", stakeModifierV2, context.HashProofOfStake);
+
+            // Now check if proof-of-stake hash meets target protocol.
+            var hashProofOfStakeTarget = new BigInteger(1, context.HashProofOfStake.ToBytes(false));
+            if (hashProofOfStakeTarget.CompareTo(weightedTarget) > 0)
+            {
+                this.Logger.LogTrace("(-)[TARGET_MISSED]");
+                ConsensusErrors.StakeHashInvalidTarget.Throw();
+            }
+        }
+
+        /// <summary>
+        /// Converts <see cref="BigInteger" /> to <see cref="uint256" />.
+        /// </summary>
+        /// <param name="input"><see cref="BigInteger"/> input value.</param>
+        /// <returns><see cref="uint256"/> version of <paramref name="input"/>.</returns>
+        private uint256 ToUInt256(BigInteger input)
+        {
+            byte[] array = input.ToByteArray();
+
+            int missingZero = 32 - array.Length;
+            if (missingZero < 0)
+            {
+                //throw new InvalidOperationException("Awful bug, this should never happen");
+                array = array.Skip(Math.Abs(missingZero)).ToArray();
+            }
+
+            if (missingZero > 0)
+                array = new byte[missingZero].Concat(array).ToArray();
+
+            return new uint256(array, false);
         }
     }
 }
