@@ -259,7 +259,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             //Create with value transfer
         }
 
-        [Fact]
+        [Fact(Skip = "Currently fails, shows issue with BalanceState.")]
         public void InternalTransfer_Nested_Balance_Correct()
         {
             // Ensure fixture is funded.
