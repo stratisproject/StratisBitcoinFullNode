@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, null, testRulesContext.ChainState,
                 new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(new DateTimeProvider())).Register();
 
-            testRulesContext.CallDataSerializer = new CallDataSerializer(new MethodParameterSerializer());
+            testRulesContext.CallDataSerializer = new CallDataSerializer(new MethodParameterStringSerializer());
             return testRulesContext;
         }
 
