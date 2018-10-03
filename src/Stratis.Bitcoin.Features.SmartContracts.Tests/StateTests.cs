@@ -98,17 +98,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void State_Snapshot_BalanceState_Has_Original_TxOut()
-        {
-            ulong initialTxOut = 100_000;
-            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, initialTxOut, null);
-
-            IState newState = state.Snapshot();
-
-            Assert.Equal(initialTxOut, newState.BalanceState.TxAmount);
-        }
-
-        [Fact]
         public void State_Snapshot_Has_Original_NonceGenerator()
         {
             var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, 100_000, null);
