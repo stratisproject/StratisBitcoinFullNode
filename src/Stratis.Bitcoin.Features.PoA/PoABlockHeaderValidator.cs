@@ -17,24 +17,24 @@ namespace Stratis.Bitcoin.Features.PoA
         {
             ECDSASignature signature = key.Sign(header.GetHash());
 
-            header.FederationSignature = new BlockSignature { Signature = signature.ToDER() };
+            header.BlockSignature = new BlockSignature { Signature = signature.ToDER() };
         }
 
         public bool VerifySignature(PubKey pubKey, PoABlockHeader header)
         {
-            if (header.FederationSignature.IsEmpty())
+            if (header.BlockSignature.IsEmpty())
             {
                 this.logger.LogTrace("(-)[EMPTY_SIGNATURE]");
                 return false;
             }
 
-            if (!ECDSASignature.IsValidDER(header.FederationSignature.Signature))
+            if (!ECDSASignature.IsValidDER(header.BlockSignature.Signature))
             {
                 this.logger.LogTrace("(-)[INVALID_DER]");
                 return false;
             }
 
-            ECDSASignature signature = ECDSASignature.FromDER(header.FederationSignature.Signature);
+            ECDSASignature signature = ECDSASignature.FromDER(header.BlockSignature.Signature);
 
             if (!signature.IsLowS)
             {

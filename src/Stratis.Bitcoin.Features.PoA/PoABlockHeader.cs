@@ -5,18 +5,18 @@ namespace Stratis.Bitcoin.Features.PoA
 {
     public class PoABlockHeader : BlockHeader
     {
-        private BlockSignature federationSignature;
+        private BlockSignature blockSignature;
 
-        public BlockSignature FederationSignature
+        public BlockSignature BlockSignature
         {
-            get => this.federationSignature;
-            set => this.federationSignature = value;
+            get => this.blockSignature;
+            set => this.blockSignature = value;
         }
 
         public override void ReadWrite(BitcoinStream stream)
         {
             base.ReadWrite(stream);
-            stream.ReadWrite(ref this.federationSignature);
+            stream.ReadWrite(ref this.blockSignature);
         }
 
         /// <summary>
