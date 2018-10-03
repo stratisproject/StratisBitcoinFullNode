@@ -13,7 +13,6 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 {
-    /// <inheritdoc />
     /// <summary>
     /// Rule to check if the coinstake inside proven header is valid:
     /// <list type="number">
