@@ -20,6 +20,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         private readonly Node node1;
         private readonly Node node2;
 
+        private readonly IAddressGenerator addressGenerator;
         private readonly ISenderRetriever senderRetriever;
 
         public ContractInternalTransferTests(MockChainFixture fixture)
@@ -28,6 +29,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.node1 = this.mockChain.Nodes[0];
             this.node2 = this.mockChain.Nodes[1];
 
+            this.addressGenerator = new AddressGenerator();
             this.senderRetriever = new SenderRetriever();
         }
 
@@ -257,5 +259,27 @@ namespace Stratis.SmartContracts.IntegrationTests
             //Create with value transfer
         }
 
+        [Fact]
+        public void InternalTransfer_Nested_Balance_Correct()
+        {
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            double amount = 25;
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/BalanceTest.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
+            uint160 internalContract = this.addressGenerator.GenerateAddress(response.TransactionId, 1);
+
+            // Stored balance in PersistentState should be only that which was sent (10)
+            byte[] saved = this.node1.GetStorageValue(internalContract.ToAddress(this.mockChain.Network), "Balance");
+            ulong savedUlong = BitConverter.ToUInt64(saved);
+            Assert.Equal((ulong) 10, savedUlong);
+        }
     }
 }
