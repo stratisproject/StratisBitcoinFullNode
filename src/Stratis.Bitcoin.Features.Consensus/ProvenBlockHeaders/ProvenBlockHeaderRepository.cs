@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    if (this.GetTipHashHeight(transaction) == null)
+                    if (this.blockHashHeightPair == null)
                     {
                         // set to genesis
                         this.SetTip(transaction, new HashHeightPair(genesis.GetHash(), 0));
@@ -102,7 +102,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                             transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, i.ToBytes(false));
 
                         if (row.Exists)
+                        {
                             items.Add(row.Value);
+                        }
+                        else
+                        {
+                            this.logger.LogTrace($"ProvenBlockHeader block height ({i}) doesn't exist in the database.");
+                            items.Add(null);
+                        }
                     }
 
                     return items;
@@ -134,6 +141,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     if (row.Exists)
                         header = row.Value;
+                    else
+                        this.logger.LogTrace($"ProvenBlockHeader block height ({blockHeight}) doesn't exist in the database.");
 
                     return header;
                 }
@@ -181,13 +190,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public Task<HashHeightPair> GetTipHashHeightAsync()
         {
             Task<HashHeightPair> task = Task.Run(() =>
-            {
-                HashHeightPair tip;
+            {                               
+                HashHeightPair tip = this.blockHashHeightPair;
 
-                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
-                {
-                    tip = this.GetTipHashHeight(transaction);
-                }
+                if (tip == null)
+                    tip = this.GetTipHashHeight();
 
                 return tip;
             });
@@ -214,6 +221,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                         transaction.RemoveKey<byte[]>(ProvenBlockHeaderTable, i.ToBytes(false));
 
                     transaction.Commit();
+
+                    // TODO : Get the most recent value in ProvenBlockHeaderTable and set the tip.
+                    // TODO:  Also check that sequentiality is kept.
                 }
             });
 
@@ -223,20 +233,22 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Obtains a block hash and height of the current tip.
         /// </summary>
-        /// <param name="transaction">Open DBreeze transaction.</param>
         /// <returns><see cref="HashHeightPair"/> of current <see cref="ProvenBlockHeader"/> tip.</returns>
-        private HashHeightPair GetTipHashHeight(DBreeze.Transactions.Transaction transaction)
+        private HashHeightPair GetTipHashHeight()
         {
             HashHeightPair tip = this.blockHashHeightPair;
 
-            if (tip == null)
+            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
             {
-                transaction.ValuesLazyLoadingIsOn = false;
+                if (tip == null)
+                {
+                    transaction.ValuesLazyLoadingIsOn = false;
 
-                Row<byte[], HashHeightPair> row = transaction.Select<byte[], HashHeightPair>(BlockHashHeightTable, blockHashHeightKey);
+                    Row<byte[], HashHeightPair> row = transaction.Select<byte[], HashHeightPair>(BlockHashHeightTable, blockHashHeightKey);
 
-                if (row.Exists)
-                    this.blockHashHeightPair = row.Value;
+                    if (row.Exists)
+                        this.blockHashHeightPair = row.Value;
+                }
             }
 
             return this.blockHashHeightPair;
@@ -291,6 +303,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <returns>True if the items exists in the database.</returns>
         private bool ProvenBlockHeaderExists(DBreeze.Transactions.Transaction transaction, int blockHeight)
         {
+            transaction.ValuesLazyLoadingIsOn = true;
+
             Row<byte[], ProvenBlockHeader> row = transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeight.ToBytes(false));
         
             return row.Exists;

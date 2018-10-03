@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             // Check if it has been saved to disk.  It shouldn't as the asyncLoopFactory() would not have been called yet.
             var outHeaderRepo = await this.provenBlockHeaderRepository.GetAsync(1, 1).ConfigureAwait(false);
-            outHeaderRepo.Should().BeNullOrEmpty();
+            outHeaderRepo.FirstOrDefault().Should().BeNull();
         }
 
         [Fact]
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             // Check if it has been saved to disk.  It shouldn't as the asyncLoopFactory() would not have been called yet.
             var outHeaderRepo = await this.provenBlockHeaderRepository.GetAsync(1, 1).ConfigureAwait(false);
-            outHeaderRepo.Should().BeNullOrEmpty();
+            outHeaderRepo.FirstOrDefault().Should().BeNull();
         }
 
         [Fact]
