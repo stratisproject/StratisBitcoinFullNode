@@ -61,7 +61,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public StateTransitionResult Apply(IState state, InternalCreateMessage message)
         {
-            bool enoughBalance = this.EnsureContractHasEnoughBalance(state, message.From, message.Amount);
+            bool enoughBalance = this.EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
 
             if (!enoughBalance)
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance);
@@ -127,7 +127,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public StateTransitionResult Apply(IState state, InternalCallMessage message)
         {
-            bool enoughBalance = this.EnsureContractHasEnoughBalance(state, message.From, message.Amount);
+            bool enoughBalance = this.EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
 
             if (!enoughBalance)
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance);
@@ -176,7 +176,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public StateTransitionResult Apply(IState state, ContractTransferMessage message)
         {
-            bool enoughBalance = this.EnsureContractHasEnoughBalance(state, message.From, message.Amount);
+            bool enoughBalance = this.EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
 
             if (!enoughBalance)
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance);
@@ -217,7 +217,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Checks whether a contract has enough funds to make this transaction.
         /// </summary>
-        private bool EnsureContractHasEnoughBalance(IState state, uint160 contractAddress, ulong amountToTransfer)
+        private bool EnsureSenderHasEnoughBalance(IState state, uint160 contractAddress, ulong amountToTransfer)
         {
             ulong balance = state.GetBalance(contractAddress);
 
