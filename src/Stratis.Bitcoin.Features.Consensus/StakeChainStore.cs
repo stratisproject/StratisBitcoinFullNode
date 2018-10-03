@@ -78,10 +78,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             var stakeItem = new StakeItem { BlockId = blockid };
             await this.dBreezeCoinView.GetStakeAsync(new[] { stakeItem }).ConfigureAwait(false);
-
-            if (stakeItem.BlockStake != null) this.logger.LogTrace("(-):*.{0}='{1}'", nameof(stakeItem.BlockStake.HashProof), stakeItem.BlockStake.HashProof);
-            else this.logger.LogTrace("(-):null");
-
+            
             Guard.Assert(stakeItem.BlockStake != null); // if we ask for it then we expect its in store
             return stakeItem.BlockStake;
         }

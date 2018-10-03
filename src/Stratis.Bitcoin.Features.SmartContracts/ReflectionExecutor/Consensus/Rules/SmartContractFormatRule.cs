@@ -26,6 +26,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
 
         public const ulong GasPriceMaximum = 10_000;
 
+        private readonly ICallDataSerializer callDataSerializer;
+
+        public SmartContractFormatRule(ICallDataSerializer callDataSerializer)
+        {
+            this.callDataSerializer = callDataSerializer;
+        }
+
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
@@ -60,8 +67,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 new ConsensusError("no-smart-contract-tx-out", "No smart contract TxOut").Throw();
             }
 
-            ICallDataSerializer serializer = CallDataSerializer.Default;
-            Result<ContractTxData> callDataDeserializationResult = serializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
+            Result<ContractTxData> callDataDeserializationResult = this.callDataSerializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
 
             if (callDataDeserializationResult.IsFailure)
             {

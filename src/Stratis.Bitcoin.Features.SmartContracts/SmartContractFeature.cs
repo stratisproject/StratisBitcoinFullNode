@@ -107,9 +107,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<ISenderRetriever, SenderRetriever>();
                         services.AddSingleton<IVersionProvider, SmartContractVersionProvider>();
 
-                        ICallDataSerializer callDataSerializer = CallDataSerializer.Default;
-                        services.AddSingleton(callDataSerializer);
-                        services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), new SmartContractScriptAddressReader(new ScriptAddressReader(), callDataSerializer)));
+                        services.AddSingleton<IMethodParameterSerializer, MethodParameterStringSerializer>();
+                        services.AddSingleton<ICallDataSerializer, CallDataSerializer>();
+
+                        // Registers the ScriptAddressReader concrete type and replaces the IScriptAddressReader implementation
+                        // with SmartContractScriptAddressReader, which depends on the ScriptAddressReader concrete type.
+                        services.AddSingleton<ScriptAddressReader>();
+                        services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), typeof(SmartContractScriptAddressReader), ServiceLifetime.Singleton));
                     });
             });
 
@@ -255,7 +259,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IContractTransferProcessor, ContractTransferProcessor>();
                         services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
                         services.AddSingleton<IContractExecutorFactory, ReflectionExecutorFactory>();
-                        services.AddSingleton<IMethodParameterSerializer, MethodParameterSerializer>();
+                        services.AddSingleton<IMethodParameterSerializer, MethodParameterStringSerializer>();
                         services.AddSingleton<IContractPrimitiveSerializer, ContractPrimitiveSerializer>();
 
                         // Controllers

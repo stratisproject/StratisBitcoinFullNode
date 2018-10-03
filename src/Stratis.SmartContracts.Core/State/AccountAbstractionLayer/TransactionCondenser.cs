@@ -107,8 +107,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             {
                 if (this.stateRepository.GetAccountState(balance.Key) != null)
                 {
-                    this.logger.LogTrace("{0}:{1}", nameof(balance.Key), balance.Key.ToAddress(this.network));
-
                     if (balance.Value == 0)
                     {
                         // We need to clear the unspent from the db. There is no output to point to.
@@ -141,8 +139,7 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             {
                 Script script = this.GetTxOutScriptForAddress(balance.Key);
                 txOuts.Add(new TxOut(new Money(balance.Value), script));
-
-                this.logger.LogTrace("{0}:{1},{2}:{3}", nameof(balance.Key), balance.Key.ToAddress(this.network), nameof(txOuts.Count), txOuts.Count - 1);
+                
                 this.nVouts.Add(balance.Key, Convert.ToUInt32(txOuts.Count - 1));
             }
 
@@ -184,8 +181,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             // Add the value of the initial transaction.
             if (this.transactionContext.TxOutValue > 0)
             {
-                this.logger.LogTrace("{0}:{1}", nameof(this.transactionContext.TxOutValue), this.transactionContext.TxOutValue);
-
                 this.unspents.Add(new ContractUnspentOutput
                 {
                     Hash = this.transactionContext.TransactionHash,
@@ -204,21 +199,15 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
 
             foreach (TransferInfo transferInfo in this.transfers)
             {
-                this.logger.LogTrace("{0}:{1},{2}:{3}", nameof(transferInfo.From), transferInfo.From.ToAddress(this.network), nameof(transferInfo.To), transferInfo.To.ToAddress(this.network));
-
                 uniqueAddresses.Add(transferInfo.To);
                 uniqueAddresses.Add(transferInfo.From);
             }
 
             foreach (uint160 uniqueAddress in uniqueAddresses)
             {
-                this.logger.LogTrace("{0}:{1}", nameof(uniqueAddress), uniqueAddress.ToAddress(this.network));
-
                 ContractUnspentOutput unspent = this.stateRepository.GetUnspent(uniqueAddress);
                 if (unspent != null && unspent.Value > 0)
                 {
-                    this.logger.LogTrace("{0}:{1},{2}:{3}", nameof(unspent.Hash), unspent.Hash, nameof(unspent.Nvout), unspent.Nvout, nameof(unspent.Value), unspent.Value);
-
                     this.unspents.Add(unspent);
 
                     if (this.txBalances.ContainsKey(uniqueAddress))
@@ -237,8 +226,6 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             // Lastly update the funds to be distributed based on the transfers that have taken place.
             foreach (TransferInfo transfer in this.transfers.Where(x => x.Value > 0))
             {
-                this.logger.LogTrace("{0}:{1},{2}:{3}", nameof(transfer.To), transfer.To.ToAddress(this.network), nameof(transfer.Value), transfer.Value);
-
                 if (this.txBalances.ContainsKey(transfer.To))
                 {
                     this.logger.LogTrace("[TXBALANCE_CONTAINS_TRANSFER_TO]");

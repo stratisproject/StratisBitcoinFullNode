@@ -26,9 +26,7 @@
   <ItemGroup>
     <PackageReference Include="ConcurrentHashSet" Version="1.0.2" />
     <PackageReference Include="DBreeze" Version="1.89.0" />
-    <PackageReference Include="Microsoft.Bcl.Build" Version="1.0.21" />
     <PackageReference Include="NLog" Version="5.0.0-beta09" />
-    <PackageReference Include="Fody" Version="3.2.4" />
     <PackageReference Include="NLog.Extensions.Logging" Version="1.0.0-rtm-beta5" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.0.2" />
     <PackageReference Include="System.Reactive" Version="4.0.0" />
@@ -45,6 +43,7 @@
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.1" />
+    <PackageReference Include="Tracer.Fody" Version="2.2.0" />
 
   </ItemGroup>
 
