@@ -25,7 +25,6 @@ namespace Stratis.SmartContracts.Core
         public static bool IsSmartContractSpend(this Script script)
         {
             return TestFirstByte(script, (byte)ScOpcodeType.OP_SPEND);
-
         }
 
         public static bool IsSmartContractInternalCall(this Script script)
