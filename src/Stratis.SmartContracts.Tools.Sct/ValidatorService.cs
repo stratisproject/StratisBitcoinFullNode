@@ -57,7 +57,7 @@ namespace Stratis.SmartContracts.Tools.Sct
 
             Assembly smartContract = Assembly.Load(compilation);
 
-            var serializer = new MethodParameterSerializer();
+            var serializer = new MethodParameterStringSerializer();
             object[] methodParameters = null;
             if (parameters.Length != 0)
             {
