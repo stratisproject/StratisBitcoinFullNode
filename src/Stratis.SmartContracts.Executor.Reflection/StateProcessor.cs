@@ -66,17 +66,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             byte[] contractCode = state.ContractState.GetCode(message.From);
 
-            // We need to put our internal transfer in the correct place after execution, so need to know what index we're starting from:
-            int transfersSoFar = state.InternalTransfers.Count;
-
             StateTransitionResult result = this.ApplyCreate(state, message.Parameters, contractCode, message, message.Type);
 
             // For successful internal creates we need to add the transfer to the internal transfer list.
             // For external creates we do not need to do this.
             if (result.IsSuccess)
             {
-                // Put it after any previous transfers but before all that occurred inside this execution
-                state.InsertInternalTransfer(transfersSoFar, new TransferInfo
+                state.AddInternalTransfer(new TransferInfo
                 {
                     From = message.From,
                     To = result.Success.ContractAddress,
@@ -139,16 +135,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.NoCode);
             }
 
-            // We need to put our internal transfer in the correct place after execution, so need to know what index we're starting from:
-            int transfersSoFar = state.InternalTransfers.Count;
-
             StateTransitionResult result = this.ApplyCall(state, message, contractCode);
 
             // For successful internal calls we need to add the transfer to the internal transfer list.
             // For external calls we do not need to do this.
             if (result.IsSuccess)
             {
-                state.InsertInternalTransfer(transfersSoFar, new TransferInfo
+                state.AddInternalTransfer(new TransferInfo
                 {
                     From = message.From,
                     To = message.To,
