@@ -60,7 +60,8 @@ If not enough members are online to reach the minimum number of signatures requi
 
 ### The leader comes back online
 
-When the leader comes back online, they will retrieve from their store the last known block heights which they had processed transfers for, and resync their store from there while synching up the chain A & chain B nodes. Partial transactions will then be added to the store and updated (or potentially completed) depending on their status on the chain B.
+When the leader comes back online, they will retrieve from their store the last known block heights which they had processed transfers for, and resync their store from there while synching up the chain A & chain B nodes.  
+Partial transactions will then be added to the store and updated (or potentially completed) depending on their status on the chain B.  
 The node will only be able to participate in cross chain transfers when it is fully synced again, and has the correct view of the multisig utxos set.  
 
 A leader that is now synced and observing unprocessed previous transfers will start creating signatures for those transfers and broadcasting them to the other federation members.
@@ -77,15 +78,20 @@ Assuming members are synced and have the same view of the multisig address (the 
 It may be that in order to use a multisig UTXO the algorithm will require it to be buried under enough blocks, to avoid reorgs and ensure that all member have the same view of the UTXO list.
 
 **The algorithm to select UTXOs for a transfer:**
+
 - The oldest UTXO (determined by block height) is selected first.
 - If a block has more than one UTXO, then they are selected in order of appearance in the block transaction list.
 - If multiple UTXOs appear within a transaction then they are selected in ascending index order.
+- Dusty UTXOs are ignored (below 100 Strats ?).
+- When change is non null and below dust level (100 Strats ?), the next UTXOs needed to build up a change value above that level are selected.
 
 **The structure of the inputs of the transaction:**
+
 - UTXOs appear as transaction inputs in age order (per the selection algorithm described).
 - Sufficient UTXOs are selected to cover the value of the outputs.
 
 **The structure of the outputs of the transaction:**
+
 - Outputs, if more than one is required, are sorted by destination address (i.e. the scriptPubKey).
 - The output returning change back to the multisig, if any, appears after the value transfer output(s).
 - An OP_RETURN output containing the hash of the block on the originating chain (i.e. the block the deposit transactions appear in).
@@ -101,12 +107,25 @@ The leader role will be assigned round-robin to each member in turn, following t
 
 ## Considerations ## 
 
-- What is the fee going to be on the transfer trx (to maintain determinism)?
-- What if a block is full of transfer transactions (too full for the other chain)?
-- What if all members are offline how do we handle resync of federation members?
-- If a member comes online as the current leader, without having been present for a previous unprocessed block, they will need to get signatures from the other members for that previous block. This implies the need for some form of rebroadcast mechanism, presumably initiated by the current leader.
-- If the maturity of a UTXO has to be considered (i.e. due to the possibility of reorgs), then there is a bootstrapping issue when the network is first initialised. The premine is a single UTXO, and would have to be split in order for the chain to have adequate UTXO bandwidth. This splitting would have to be done on a continuous basis to preserve a pool of available UTXOs of appropriate sizes. These sizes are difficult to anticipate in advance as they would depend on the particular sidechain.
-- In general there is a UTXO bandwidth issue due to the ancestor transaction limit in a block. In other words, per UTXO per block, there are a finite number of transactions that could potentially be constructed from it, no matter what value the UTXO itself has.
-- The described design implies that deposits requested will be processed in batches in transfer transactions with multiple outputs. Thus the block hash of the originating block is stored in the OP_RETURN output of the transfer transaction. However, due to various scenarios where not all the transactions in a block can be processed (due to size or other reasons) this implies that multiple transfer transactions could have the same OP_RETURN contents.
-- What can cause a member to generate a multisig that is different for the rest of the federation (i.e. break determinism)?
+1. What is the fee going to be on the transfer trx (to maintain determinism)?
+2. What if a block is full of transfer transactions (too full for the other chain)?
+3. What if all members are offline how do we handle resync of federation members?
+4. If a member comes online as the current leader, without having been present for a previous unprocessed block, they will need to get signatures from the other members for that previous block. This implies the need for some form of rebroadcast mechanism, presumably initiated by the current leader.
+5. If the maturity of a UTXO has to be considered (i.e. due to the possibility of reorgs), then there is a bootstrapping issue when the network is first initialised. The premine is a single UTXO, and would have to be split in order for the chain to have adequate UTXO bandwidth. This splitting would have to be done on a continuous basis to preserve a pool of available UTXOs of appropriate sizes. These sizes are difficult to anticipate in advance as they would depend on the particular sidechain.
+6. In general there is a UTXO bandwidth issue due to the ancestor transaction limit in a block. In other words, per UTXO per block, there are a finite number of transactions that could potentially be constructed from it, no matter what value the UTXO itself has.
+7. The described design implies that deposits requested will be processed in batches in transfer transactions with multiple outputs. Thus the block hash of the originating block is stored in the OP_RETURN output of the transfer transaction. However, due to various scenarios where not all the transactions in a block can be processed (due to size or other reasons) this implies that multiple transfer transactions could have the same OP_RETURN contents.
+8. What can cause a member to generate a multisig that is different for the rest of the federation (i.e. break determinism)?
 
+### Handling deposits per block vs handling deposits per transactions
+
+**Per Block pros**
+
+- less transactions on the network, only true when multiple deposits to the multisig are present in the same block.
+
+**Per Transactoin pros**
+
+- Consideration 2 and 7 are dealt with  
+    2 is unlikely to happen because we would have to create a single transaction too big for target block size.  
+    7 does not happen as each deposit to multisig can be tracked by its transaction hash.
+- As transactions are dealt with individually, when chains have different maximum size and frequency for producing blocks, it is not possible for a user to try and stop some transfers by bloating a given block with many small ones (enough to make the block too big for target chain). We also need to impose a minimum transfer fee to prevent that from happening anyway (simply imposing a high value is not enough as you can transfer to your own addresses and back).
+- Cf. Above, ability to refund transaction under a certain amount, but keeping a punishment fee for it.
