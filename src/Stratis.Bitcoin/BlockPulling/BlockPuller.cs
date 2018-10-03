@@ -281,7 +281,10 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <inheritdoc/>
         public double GetAverageBlockSizeBytes()
         {
-            return this.averageBlockSizeBytes.Average;
+            // To fix issue https://github.com/stratisproject/StratisBitcoinFullNode/issues/2294#issue-364513736
+            // if there are no samples, return the max block size, otherwise the samples average.
+            // TODO: move MaxBlockSize on a common place.
+            return this.averageBlockSizeBytes.IsEmpty ? Block.MaxBlockSize : this.averageBlockSizeBytes.Average;
         }
 
         private long GetTotalSpeedOfAllPeersBytesPerSec()
