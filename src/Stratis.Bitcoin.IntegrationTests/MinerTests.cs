@@ -887,5 +887,85 @@ namespace Stratis.Bitcoin.IntegrationTests
             //    SetMockTime(0);
             //    mempool.clear();
         }
+
+        [Fact]
+        public void MiningAndPropagatingPOW_MineBlockCheckNodeConsensusTipIsCorrect()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                builder.StartAll();
+                miner.NotInIBD().SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
+                miner.GenerateStratisWithMiner(5);
+
+                Assert.Equal(5, miner.FullNode.ConsensusManager().Tip.Height);
+            }
+        }
+
+        [Fact]
+        public void MiningAndPropagatingPOW_MineBlockCheckPeerHasNewBlock()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode[] syncers = new CoreNode[]
+                {
+                    builder.CreateStratisPowNode(KnownNetworks.RegTest),
+                    builder.CreateStratisPowNode(KnownNetworks.RegTest),
+                    builder.CreateStratisPowNode(KnownNetworks.RegTest)
+                };
+
+                builder.StartAll();
+
+                foreach (var syncer in syncers)
+                {
+                    miner.CreateRPCClient().AddNode(syncer.NotInIBD().Endpoint, true);
+                }
+
+                miner.NotInIBD().SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
+
+                Assert.True(syncers.All(x => x.FullNode.ConsensusManager().Tip.Height == 0));
+
+                miner.GenerateStratisWithMiner(3);
+
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncers[0]));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncers[1]));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncers[2]));
+
+                Assert.True(syncers.All(x => x.FullNode.ConsensusManager().Tip.Height == 3));
+            }
+        }
+
+        [Fact]
+        public void MiningAndPropagatingPOW_NodeConsensusTipHasLessWorkThanNetworkTipResets()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+
+                int initialChainLength = 1;
+
+                builder.StartAll();
+                miner.NotInIBD().SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
+                miner.GenerateStratisWithMiner(initialChainLength);
+
+                // Connect syncer and check nodes are in step.
+                miner.CreateRPCClient().AddNode(syncer.NotInIBD().Endpoint, true);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
+                Assert.Equal(miner.FullNode.ConsensusManager().Tip, syncer.FullNode.ConsensusManager().Tip);
+
+                // Syncer disconnects and extends its chain by 3 blocks.  Chains now have different tips.
+                miner.CreateRPCClient().RemoveNode(syncer.Endpoint);
+                syncer.NotInIBD().SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
+                syncer.GenerateStratisWithMiner(initialChainLength + 3);
+                Assert.NotEqual(miner.FullNode.ConsensusManager().Tip, syncer.FullNode.ConsensusManager().Tip);
+
+                // Main re-adds syncer node which has more chainwork.  Nodes sync and chains now have common tip.
+                miner.CreateRPCClient().AddNode(syncer.NotInIBD().Endpoint, true);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
+                Assert.Equal(miner.FullNode.ConsensusManager().Tip, syncer.FullNode.ConsensusManager().Tip);
+            }
+        }
     }
 }
