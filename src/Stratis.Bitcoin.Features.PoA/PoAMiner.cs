@@ -12,9 +12,9 @@ namespace Stratis.Bitcoin.Features.PoA
 {
     public class PoAMiner : IDisposable
     {
-        // TODO POA. First add creation of block template and later apply signatures and other stuff. We need bare minimum to test syncing and payloads
+        // TODO POA. Implement miner properly later. Right now we need bare minimum to test syncing and payloads.
 
-        private const bool MineDuringIBD = true; // TODO for tests
+        private const bool MineDuringIBD = true; // TODO POA just for tests
 
         private readonly IConsensusManager consensusManager;
 
@@ -67,41 +67,45 @@ namespace Stratis.Bitcoin.Features.PoA
         {
             while (!this.cancellation.IsCancellationRequested)
             {
-                // TODO try catch and check for cancellation
-
-                // Don't mine in IBD.
-                if (this.indState.IsInitialBlockDownload() && !MineDuringIBD)
+                try
                 {
-                    int attemptDelayMs = 20_000;
-                    await Task.Delay(attemptDelayMs, this.cancellation.Token).ConfigureAwait(false);
+                    // Don't mine in IBD.
+                    if (this.indState.IsInitialBlockDownload() && !MineDuringIBD)
+                    {
+                        int attemptDelayMs = 20_000;
+                        await Task.Delay(attemptDelayMs, this.cancellation.Token).ConfigureAwait(false);
 
-                    continue;
+                        continue;
+                    }
+
+                    // TODO check that on fresh start we are not in IBD
+
+                    // TODO POA check if our timestamp and if not wait for our timestamp (wait with cancellation token)
+
+                    // TODO poa custom block provider that will set nonce and target to const
+                    ChainedHeader tip = this.consensusManager.Tip;
+
+                    BlockTemplate blockTemplate = this.blockDefinition.Build(tip);
+
+                    // Timestamp should only greater than prev one.
+                    if (blockTemplate.Block.Header.Time <= tip.Header.Time)
+                        continue; // TODO POA Log
+
+                    // TODO sign the block with out signature
+
+                    ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
+
+                    if (chainedHeader == null)
+                    {
+                        this.logger.LogTrace("(-)[BLOCK_VALIDATION_ERROR]:false");
+                        continue;
+                    }
+
+                    // TODO POA Log mined block
                 }
-
-                // TODO check that on fresh start we are not in IBD
-
-                // TODO POA check if our timestamp and if not wait for our timestamp
-
-                // TODO poa custom block provider that will set nonce and target to const
-                ChainedHeader tip = this.consensusManager.Tip;
-
-                BlockTemplate blockTemplate = this.blockDefinition.Build(tip);
-
-                // Timestamp should only greater than prev one.
-                if (blockTemplate.Block.Header.Time <= tip.Header.Time)
-                    continue; // TODO POA Log
-
-                // TODO sign the block with out signature
-
-                ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
-
-                if (chainedHeader == null)
+                catch (OperationCanceledException)
                 {
-                    this.logger.LogTrace("(-)[BLOCK_VALIDATION_ERROR]:false");
-                    continue;
                 }
-
-                // TODO POA Log mined block
             }
         }
 
