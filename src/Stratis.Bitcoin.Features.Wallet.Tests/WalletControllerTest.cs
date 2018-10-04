@@ -226,10 +226,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Create(new WalletCreationRequest
             {
                 Name = "myName",
-                FolderPath = "",
                 Password = "",
                 Passphrase = "",
-                Network = ""
             });
 
             mockWalletCreate.VerifyAll();
@@ -250,9 +248,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Create(new WalletCreationRequest
             {
                 Name = "",
-                FolderPath = "",
                 Password = "",
-                Network = ""
             });
 
             var errorResult = Assert.IsType<ErrorResult>(result);
@@ -277,10 +273,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Create(new WalletCreationRequest
             {
                 Name = "myName",
-                FolderPath = "",
                 Password = "",
                 Passphrase = "",
-                Network = ""
             });
 
             mockWalletCreate.VerifyAll();
@@ -305,10 +299,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Create(new WalletCreationRequest
             {
                 Name = "myName",
-                FolderPath = "",
                 Password = "",
                 Passphrase = "",
-                Network = ""
             });
 
             mockWalletCreate.VerifyAll();
@@ -341,9 +333,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = "",
-                Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
 
@@ -382,9 +372,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = "",
-                Network = "MainNet",
                 Mnemonic = "mnemonic",
                 CreationDate = lastBlockDateTime
             });
@@ -406,9 +394,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = "",
-                Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
 
@@ -434,9 +420,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = "",
-                Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
 
@@ -462,9 +446,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = "",
-                Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
 
@@ -491,9 +473,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = "",
-                Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
 
@@ -549,10 +529,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.RecoverViaExtPubKey(new WalletExtPubRecoveryRequest
             {
                 Name = walletName,
-                FolderPath = "",
                 ExtPubKey = extPubKey,
                 AccountIndex = 1,
-                Network = wallet.Network.Name
             });
 
             walletManager.VerifyAll();
@@ -600,7 +578,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = walletName,
                 ExtPubKey = extPubKey,
                 AccountIndex = 1,
-                Network = wallet.Network.Name,
                 CreationDate = lastBlockDateTime
             });
 
@@ -626,7 +603,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Load(new WalletLoadRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = ""
             });
 
@@ -646,7 +622,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Load(new WalletLoadRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = ""
             });
 
@@ -670,7 +645,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Load(new WalletLoadRequest
             {
                 Name = "myName",
-                FolderPath = "",
                 Password = ""
             });
 
@@ -696,7 +670,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Load(new WalletLoadRequest
             {
                 Name = "myName",
-                FolderPath = "",
                 Password = ""
             });
 
@@ -722,7 +695,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Load(new WalletLoadRequest
             {
                 Name = "myName",
-                FolderPath = "",
                 Password = ""
             });
 
