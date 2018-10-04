@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             uint160 address = state.GenerateAddress(this.AddressGenerator);
 
             // For external creates we need to increment the balance state to take into
-            // account any funds sent as part of the original transaction.
+            // account any funds sent as part of the original contract invocation transaction.
             state.AddInitialTransfer(new TransferInfo { Value = message.Amount, To = address, From = message.From});
 
             return this.ApplyCreate(state, message.Parameters, message.Code, message, address);
@@ -75,7 +75,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             uint160 address = state.GenerateAddress(this.AddressGenerator);
 
-            // For successful internal creates we need to add the transfer to the internal transfer list.
+            // For internal creates we need to add the value contained in the contract invocation transaction
+            // to the internal transfer list. This must occur before we apply the message to the state.
             // For external creates we do not need to do this.
             state.AddInternalTransfer(new TransferInfo
             {
@@ -140,8 +141,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             {
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.NoCode);
             }
-            
-            // For successful internal calls we need to add the transfer to the internal transfer list.
+
+            // For internal calls we need to add the value contained in the contract invocation transaction
+            // to the internal transfer list. This must occur before we apply the message to the state.
             // For external calls we do not need to do this.
             state.AddInternalTransfer(new TransferInfo
             {
@@ -168,7 +170,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
 
             // For external calls we need to increment the balance state to take into
-            // account any funds sent as part of the original transaction.
+            // account any funds sent as part of the original contract invocation transaction.
             state.AddInitialTransfer(new TransferInfo { Value = message.Amount, To = message.To, From = message.From });
 
             return this.ApplyCall(state, message, contractCode);
@@ -201,7 +203,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return StateTransitionResult.Ok((Gas)0, message.To);
             }
 
-            // For internal contract-contract transfers we need to add the transfer to the internal transfer list.            
+            // For internal contract-contract transfers we need to add the value contained in the contract invocation transaction
+            // to the internal transfer list. This must occur before we apply the message to the state.
             state.AddInternalTransfer(new TransferInfo
             {
                 From = message.From,

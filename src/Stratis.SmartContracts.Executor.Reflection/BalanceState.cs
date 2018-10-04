@@ -29,8 +29,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.InitialTransfer = initialTransfer;
         }
 
+        /// <summary>
+        /// The initial value transfer to the contract's address.
+        /// </summary>
         public TransferInfo InitialTransfer { get; private set; }
 
+        /// <summary>
+        /// Adds a single value transfer to an address, which will be used in all future accounting.
+        /// Used when performing an external contract create/call to reflect the value sent with
+        /// the contract invocation transaction.
+        /// </summary>
         public void AddInitialTransfer(TransferInfo transferInfo)
         {
             this.InitialTransfer = transferInfo;

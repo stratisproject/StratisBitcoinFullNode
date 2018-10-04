@@ -93,6 +93,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.smartContractStateFactory.Create(state, gasMeter, address, message, repository);
         }
 
+        /// <summary>
+        /// Adds the initial transfer to the BalanceState. It is necessary to call this method if an external create or call
+        /// is being executed in order to reflect the balance of the of the UTXO sent along with the contract invocation transaction.
+        /// </summary>
         public void AddInitialTransfer(TransferInfo initialTransfer)
         {
             this.BalanceState.AddInitialTransfer(initialTransfer);
