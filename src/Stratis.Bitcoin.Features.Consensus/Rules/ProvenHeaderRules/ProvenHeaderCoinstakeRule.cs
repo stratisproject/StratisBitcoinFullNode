@@ -8,7 +8,6 @@ using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
@@ -38,12 +37,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
     /// <seealso cref="T:Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules.ProvenHeaderRuleBase" />
     public class ProvenHeaderCoinstakeRule : ProvenHeaderRuleBase
     {
-        /// <summary>Coinstale validator instance.</summary>
-        private IStakeValidator stakeValidator;
-
-        /// <summary>Coin view.</summary>
-        private ICoinView coinView;
-
         /// <summary>PoS block's timestamp mask.</summary>
         /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
         public const uint StakeTimestampMask = 0x0000000F;
@@ -55,9 +48,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             Guard.NotNull(this.PosParent.StakeValidator, nameof(this.PosParent.StakeValidator));
             Guard.NotNull(this.PosParent.UtxoSet, nameof(this.PosParent.UtxoSet));
-
-            this.stakeValidator = this.PosParent.StakeValidator;
-            this.coinView = this.PosParent.UtxoSet;
         }
 
         public override void Run(RuleContext context)
