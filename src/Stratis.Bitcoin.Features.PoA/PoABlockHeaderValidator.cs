@@ -22,9 +22,9 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public bool VerifySignature(PubKey pubKey, PoABlockHeader header)
         {
-            if (header.BlockSignature.IsEmpty())
+            if ((header.BlockSignature == null) || header.BlockSignature.IsEmpty())
             {
-                this.logger.LogTrace("(-)[EMPTY_SIGNATURE]");
+                this.logger.LogTrace("(-)[NO_SIGNATURE]");
                 return false;
             }
 
