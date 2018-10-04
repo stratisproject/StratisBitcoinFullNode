@@ -42,7 +42,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.internalTransfers = new List<TransferInfo>(state.InternalTransfers);
 
             // Create a new balance state based off the old one but with the repository and internal transfers list reference
-            this.BalanceState = new BalanceState(this.ContractState, this.internalTransfers, state.BalanceState.InitialBalance);
+            this.BalanceState = new BalanceState(this.ContractState, this.internalTransfers, state.BalanceState.InitialTransfer);
             this.Network = state.Network;
             this.NonceGenerator = state.NonceGenerator;
             this.Block = state.Block;
@@ -93,9 +93,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.smartContractStateFactory.Create(state, gasMeter, address, message, repository);
         }
 
-        public void AddInitialBalance(TransferInfo initialTransfer)
+        public void AddInitialTransfer(TransferInfo initialTransfer)
         {
-            this.BalanceState.AddInitialBalance(initialTransfer);
+            this.BalanceState.AddInitialTransfer(initialTransfer);
         }
 
         /// <summary>

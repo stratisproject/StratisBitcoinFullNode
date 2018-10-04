@@ -105,14 +105,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ulong initialBalance = 123456;
             uint160 initialAddress = uint160.One;
-            state.AddInitialBalance(new TransferInfo { Value = initialBalance, To = initialAddress});
+            state.AddInitialTransfer(new TransferInfo { Value = initialBalance, To = initialAddress});
 
             IState newState = state.Snapshot();
 
-            Assert.Equal(initialBalance, state.BalanceState.InitialBalance.Value);
-            Assert.Equal(initialAddress, state.BalanceState.InitialBalance.To);
-            Assert.Same(state.BalanceState.InitialBalance, newState.BalanceState.InitialBalance);
-            Assert.Equal(state.BalanceState.InitialBalance, newState.BalanceState.InitialBalance);
+            Assert.Equal(initialBalance, state.BalanceState.InitialTransfer.Value);
+            Assert.Equal(initialAddress, state.BalanceState.InitialTransfer.To);
+            Assert.Same(state.BalanceState.InitialTransfer, newState.BalanceState.InitialTransfer);
+            Assert.Equal(state.BalanceState.InitialTransfer, newState.BalanceState.InitialTransfer);
         }
 
         [Fact]

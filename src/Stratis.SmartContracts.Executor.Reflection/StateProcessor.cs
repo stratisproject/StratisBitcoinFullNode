@@ -56,7 +56,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // For external creates we need to increment the balance state to take into
             // account any funds sent as part of the original transaction.
-            state.AddInitialBalance(new TransferInfo { Value = message.Amount, To = address, From = message.From});
+            state.AddInitialTransfer(new TransferInfo { Value = message.Amount, To = address, From = message.From});
 
             return this.ApplyCreate(state, message.Parameters, message.Code, message, address);
         }
@@ -169,7 +169,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // For external calls we need to increment the balance state to take into
             // account any funds sent as part of the original transaction.
-            state.AddInitialBalance(new TransferInfo { Value = message.Amount, To = message.To, From = message.From });
+            state.AddInitialTransfer(new TransferInfo { Value = message.Amount, To = message.To, From = message.From });
 
             return this.ApplyCall(state, message, contractCode);
         }
