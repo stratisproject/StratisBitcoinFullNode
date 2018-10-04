@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task InitializesGenesisProvenBlockHeaderOnFirstLoadAsync()
+        public async Task Initializes_Genesis_ProvenBlockHeader_OnLoadAsync()
         {
             string folder = CreateTestDir(this);
 
@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             {
                 // Check the BlockHash (blockId) exists.
                 repository.TipHashHeight.Height.Should().Be(0);
+                repository.TipHashHeight.Hash.Should().Be(this.Network.GetGenesis().GetHash());
             }
         }
 
@@ -68,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task PutAsync_WritesMultipleProvenBlockHeadersAsync()
+        public async Task PutAsync_Inserts_MultipleProvenBlockHeadersAsync()
         {
             string folder = CreateTestDir(this);
 
@@ -84,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 await repo.PutAsync(items, new HashHeightPair(header2.GetHash(), items.Count - 1));
             }
 
-            // Check the ProvenBlockHeader exists in the database - and are in sorted order.
+            // Check the ProvenBlockHeader exists in the database.
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
@@ -100,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task GetAsync_ReadsProvenBlockHeaderFromDatabaseAndDoesNotOverwriteOnFirstLoadAsync()
+        public async Task GetAsync_ReadsProvenBlockHeaderAsync()
         {
             string folder = CreateTestDir(this);
 
@@ -126,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task GetAsync_ReadsMultipleProvenBlockHeaderFromDatabaseAndDoesNotOverwriteOnFirstLoadAsync()
+        public async Task GetAsync_Reads_MultipleProvenBlockHeadersAsync()
         {
             string folder = CreateTestDir(this);
 
@@ -178,7 +179,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             }
         }
 
-        [Fact(Skip = "Used only during rewinding (and only for not overridden headers)")]
+        [Fact(Skip = "Used when reorg happens - complete in next task.")]
         public async Task DeleteAsync_RemovesProvenBlockHeadersAsync()
         {
             string folder = CreateTestDir(this);
@@ -239,6 +240,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var repo = new ProvenBlockHeaderRepository(network, folder, this.LoggerFactory.Object);
 
             Task task = repo.InitializeAsync();
+
             task.Wait();
 
             return repo;

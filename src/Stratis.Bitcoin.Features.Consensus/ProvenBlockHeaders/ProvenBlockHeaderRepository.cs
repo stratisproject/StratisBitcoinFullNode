@@ -13,7 +13,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
     /// <summary>
-    /// Persistent implementation of the <see cref="ProvenBlockHeader"></see> DBreeze repository.
+    /// Persistent implementation of the <see cref="ProvenBlockHeader"/> DBreeze repository.
     /// </summary>
     public class ProvenBlockHeaderRepository : IProvenBlockHeaderRepository
     {
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public Task<bool> PutAsync(List<ProvenBlockHeader> headers, HashHeightPair newTip)
+        public Task PutAsync(List<ProvenBlockHeader> headers, HashHeightPair newTip)
         {
             Guard.NotNull(headers, nameof(headers));
             Guard.NotNull(newTip, nameof(newTip));
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 throw new InvalidOperationException("Invalid newTip block hash.");
             }
 
-            Task<bool> task = Task.Run(() =>
+            Task task = Task.Run(() =>
             {
                 this.logger.LogTrace("({0}.Count():{1})", nameof(headers), headers.Count());
 
@@ -170,9 +170,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     this.TipHashHeight = newTip;
                 }
-
-                return true;
-
             });
 
             return task;

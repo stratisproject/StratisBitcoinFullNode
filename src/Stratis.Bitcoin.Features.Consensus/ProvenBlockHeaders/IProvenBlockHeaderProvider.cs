@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
     /// <summary>
-    /// Interface for initializing and querying <see cref="ProvenBlockHeader"></see> items.
+    /// Interface <see cref="ProvenBlockHeader"/> provider.
     /// </summary>
     public interface IProvenBlockHeaderProvider : IDisposable
     {

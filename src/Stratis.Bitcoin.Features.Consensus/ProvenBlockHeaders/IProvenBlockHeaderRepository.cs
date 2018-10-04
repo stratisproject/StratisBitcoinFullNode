@@ -7,9 +7,9 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
     /// <summary>
-    /// Interface for database <see cref="ProvenBlockHeader"></see> repository.
+    /// Interface for <see cref="ProvenBlockHeaderRepository"></see>.
     /// </summary>
-    public interface IProvenBlockHeaderRepository : IProvenBlockHeaderProvider, IDisposable
+    public interface IProvenBlockHeaderRepository : IProvenBlockHeaderProvider
     {
         /// <summary>
         /// Persists <see cref="ProvenBlockHeader"/> items to the database.
@@ -17,6 +17,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="provenBlockHeaders">List of <see cref="ProvenBlockHeader"/> items.</param>
         /// <param name="newTip">Block hash and height tip.</param>
         /// <returns><c>true</c> when a <see cref="ProvenBlockHeader"/> is saved to disk, otherwise <c>false</c>.</returns>
-        Task<bool>PutAsync(List<ProvenBlockHeader> provenBlockHeaders, HashHeightPair newTip);
+        Task PutAsync(List<ProvenBlockHeader> provenBlockHeaders, HashHeightPair newTip);
     }
 }

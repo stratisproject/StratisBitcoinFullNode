@@ -5,7 +5,7 @@ namespace Stratis.Bitcoin.Utilities
     /// <summary>
     /// Memory cache that implements the Least Recently Used (LRU) policy.
     /// </summary>
-    public class MemoryCache<TKey, TValue>
+    public class MemorySizeCache<TKey, TValue>
     {
         /// <summary>Cache item for the inner usage of the <see cref="MemoryCache{TKey,TValue}"/> class.</summary>
         private class CacheItem
@@ -14,13 +14,17 @@ namespace Stratis.Bitcoin.Utilities
 
             public TValue Value { get; set; }
 
+            public long Size { get; }
+
             /// <summary>Initializes a new instance of the <see cref="CacheItem{TKey, TValue}"/> class.</summary>
             /// <param name="key">The key.</param>
             /// <param name="value">The value.</param>
-            public CacheItem(TKey key, TValue value)
+            /// <param name="size">Size in bytes.</param>
+            public CacheItem(TKey key, TValue value, long size)
             {
                 this.Key = key;
                 this.Value = value;
+                this.Size = size;
             }
         }
 
@@ -32,24 +36,27 @@ namespace Stratis.Bitcoin.Utilities
         /// <remarks>Should be accessed inside a lock using <see cref="lockObject"/>.</remarks>
         private readonly LinkedList<CacheItem> keys;
 
-        /// <summary>Maximum items count that can be stored in the cache.</summary>
-        private readonly int maxItemsCount;
-
         /// <summary>Lock to protect access to <see cref="keys"/> and <see cref="cache"/>.</summary>
         private readonly object lockObject;
+
+        /// <summary>Maximum size in bytes that can be stored in the cache.</summary>
+        private readonly long maxSize;
+
+        /// <summary>Total size in bytes stored in the cache.</summary>
+        private long totalSize;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MemoryCache{TKey, TValue}"/> class.
         /// </summary>
-        /// <param name="maxItemsCount">Maximum items count that can be stored in the cache.</param>
+        /// <param name="maxSize">Maximum size in bytes count that can be stored in the cache.</param>
         /// <param name="comparer">The <see cref="IEqualityComparer{T}"/> implementation to use when comparing keys, or <c>null</c> to use the default comparer for the type of the key.</param>
-        public MemoryCache(int maxItemsCount, IEqualityComparer<TKey> comparer = null)
+        public MemorySizeCache(long maxSize, IEqualityComparer<TKey> comparer = null)
         {
-            Guard.Assert(maxItemsCount > 0);
+            Guard.Assert(maxSize > 0);
 
-            this.maxItemsCount = maxItemsCount;
+            this.maxSize = maxSize;
 
-            this.cache = new Dictionary<TKey, LinkedListNode<CacheItem>>(this.maxItemsCount, comparer);
+            this.cache = new Dictionary<TKey, LinkedListNode<CacheItem>>(comparer);
             this.keys = new LinkedList<CacheItem>();
             this.lockObject = new object();
         }
@@ -66,10 +73,22 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
+        /// <summary>Gets the size of all items in the cache, in bytes.</summary>
+        public long TotalSize
+        {
+            get
+            {
+                lock (this.lockObject)
+                {
+                    return this.totalSize;
+                }
+            }
+        }
+
         /// <summary>Create or overwrite an item in the cache.</summary>
         /// <param name="key">The key.</param>
         /// <param name="value">The value to add to the cache.</param>
-        public void AddOrUpdate(TKey key, TValue value)
+        public void AddOrUpdate(TKey key, TValue value, long size)
         {
             LinkedListNode<CacheItem> node;
 
@@ -82,16 +101,19 @@ namespace Stratis.Bitcoin.Utilities
                 }
                 else
                 {
-                    if (this.keys.Count == this.maxItemsCount)
+                    if (this.totalSize > (this.maxSize - size))
                     {
                         // Remove the item that was not used for the longest time.
                         LinkedListNode<CacheItem> lastNode = this.keys.First;
                         this.cache.Remove(lastNode.Value.Key);
                         this.keys.RemoveFirst();
+                        this.totalSize -= lastNode.Value.Size;
                     }
 
-                    node = new LinkedListNode<CacheItem>(new CacheItem(key, value));
+                    node = new LinkedListNode<CacheItem>(new CacheItem(key, value, size));
                     this.cache.Add(key, node);
+
+                    this.totalSize += size;
                 }
 
                 this.keys.AddLast(node);
@@ -108,6 +130,8 @@ namespace Stratis.Bitcoin.Utilities
                 {
                     this.cache.Remove(node.Value.Key);
                     this.keys.Remove(node);
+
+                    this.totalSize -= node.Value.Size;
                 }
             }
         }

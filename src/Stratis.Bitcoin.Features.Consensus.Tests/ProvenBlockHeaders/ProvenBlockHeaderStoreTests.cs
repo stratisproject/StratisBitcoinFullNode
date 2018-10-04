@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task AddToPending_Adds_To_Cache_Async()
+        public async Task AddToPending_Adds_To_CacheAsync()
         {
             // Initialise store.
             await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task AddToPending_Adds_To_Cache_Then_Save_To_Disk_Async()
+        public async Task AddToPending_Adds_To_Cache_Then_Save_To_DiskAsync()
         {
             // Initialise store.
             await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task Add_2k_ProvenHeaders_ToPending_Cache_Async()
+        public async Task Add_2k_ProvenHeaders_ToPending_CacheAsync()
         {
             // Initialise store.
             await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task Add_2k_ProvenHeaders_ToPending_Cache_Save_Items_Cache_Should_Be_Empty_Async()
+        public async Task Add_2k_ProvenHeaders_To_PendingBatch_Then_Save_Then_PendingBatch_Should_Be_EmptyAsync()
         {
             // Initialise store.
             await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task GetAsync_MaxCacheItems_Exceeds_Max_Size_Cache_Reduced_Async()
+        public async Task GetAsync_Add_Items_Greater_Than_Max_Size_Cache_Stays_Below_Max_SizeAsync()
         {
             // Initialise store.
             await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
@@ -217,28 +217,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             for (int i = 0; i < 10; i++)
                 inHeaders.Add(CreateNewProvenBlockHeaderMock());
 
+            long maxSize = 500;
+
             // Reduce the MaxMemoryCacheSizeInBytes size for test.
-            FieldInfo field = typeof(ProvenBlockHeaderStore).GetField("MemoryCacheSizeLimitInBytes", BindingFlags.NonPublic | BindingFlags.Instance);
-            field.SetValue(this.provenBlockHeaderStore, 500);
+            FieldInfo field = typeof(MemorySizeCache<int, ProvenBlockHeader>).GetField("maxSize", BindingFlags.NonPublic | BindingFlags.Instance);
+            field.SetValue(this.provenBlockHeaderStore.Cache, maxSize);
 
             // Add items to the repository.
             await this.provenBlockHeaderRepository.PutAsync(inHeaders,
                 new HashHeightPair(inHeaders.LastOrDefault().GetHash(), inHeaders.Count - 1)).ConfigureAwait(false);
 
-            // Check Item in cache - should be zero as not asked for headers from the store.
-            var cacheCount = this.provenBlockHeaderStore.Cache.GetMemberValue("Count");
-            cacheCount.Should().Be(0);
-
             // Asking for headers will check the cache store.  If the header is not in the cache store, then it will check the repository and add the cache store.
             var outHeaders = await this.provenBlockHeaderStore.GetAsync(0, inHeaders.Count - 1).ConfigureAwait(false);
 
-            // Invoke ManageCacheSize to determine whether items from cache should be removed.
-            this.provenBlockHeaderStore.InvokeMethod("ManangeCacheSize");
+            long cacheSizeInBytes = (long)this.provenBlockHeaderStore.Cache.GetMemberValue("totalSize");
 
-            long cacheSizeInBytes = (long)this.provenBlockHeaderStore.GetMemberValue("CacheSizeInBytes");
-            int memoryCacheSizeLimitInBytes = (int)this.provenBlockHeaderStore.GetMemberValue("MemoryCacheSizeLimitInBytes");
-
-            cacheSizeInBytes.Should().BeLessThan(memoryCacheSizeLimitInBytes);
+            cacheSizeInBytes.Should().BeLessThan(maxSize);
         }
 
         private ProvenBlockHeaderStore SetupStore(string folder)
