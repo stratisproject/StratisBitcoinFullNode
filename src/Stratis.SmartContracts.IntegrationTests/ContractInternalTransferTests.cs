@@ -260,6 +260,29 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
         [Fact]
+        public void ExternalTransfer_Create_WithValueTransfer()
+        {
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            ulong amount = 25;
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ReceiveFundsTest.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
+            uint160 contractAddress = this.addressGenerator.GenerateAddress(response.TransactionId, 0);
+
+            // Stored balance in PersistentState should be only that which was sent (10)
+            byte[] saved = this.node1.GetStorageValue(contractAddress.ToAddress(this.mockChain.Network), "Balance");
+            ulong savedUlong = BitConverter.ToUInt64(saved);
+            Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
+        }
+
+        [Fact]
         public void InternalTransfer_Nested_Create_Balance_Correct()
         {
             // Ensure fixture is funded.
@@ -300,7 +323,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             ulong amount = 123;
 
             BuildCallContractTransactionResponse callResponse = this.node1.SendCallContractTransaction(
-                nameof(BalanceTest.MethodReceiveFunds),
+                nameof(ReceiveFundsTest.MethodReceiveFunds),
                 response.NewContractAddress,
                 amount);
             this.node2.WaitMempoolCount(1);
