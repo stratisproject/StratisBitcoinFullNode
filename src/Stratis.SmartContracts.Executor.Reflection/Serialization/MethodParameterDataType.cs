@@ -4,14 +4,14 @@
     {
         Bool = 1,
         Byte = 2,
-        ByteArray = 3,
-        Char = 4,
-        String = 5,
-        UInt = 6,
-        Int = 7,
-        ULong = 8,
-        Long = 9,
-        UInt160 = 10,
-        Address = 11   
+        Char = 3,
+        String = 4,
+        UInt = 5,
+        Int = 6,
+        ULong = 7,
+        Long = 8,
+        UInt160 = 9,
+        Address = 10,
+        ByteArray = 11
     }
 }
