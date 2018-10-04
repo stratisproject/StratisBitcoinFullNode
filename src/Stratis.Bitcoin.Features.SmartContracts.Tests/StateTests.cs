@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Moq;
+using NBitcoin;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -95,6 +96,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IState newState = state.Snapshot();
 
             Assert.NotSame(state.BalanceState, newState.BalanceState);
+        }
+
+        [Fact]
+        public void State_Snapshot_BalanceState_Has_Original_InitialBalance()
+        {
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, null);
+
+            ulong initialBalance = 123456;
+            uint160 initialAddress = uint160.One;
+            state.AddInitialBalance(initialBalance, initialAddress);
+
+            IState newState = state.Snapshot();
+
+            Assert.Equal(initialBalance, state.BalanceState.InitialBalance.Item1);
+            Assert.Equal(initialAddress, state.BalanceState.InitialBalance.Item2);
+            Assert.Equal(state.BalanceState.InitialBalance.Item1, newState.BalanceState.InitialBalance.Item1);
+            Assert.Equal(state.BalanceState.InitialBalance.Item2, newState.BalanceState.InitialBalance.Item2);
         }
 
         [Fact]
