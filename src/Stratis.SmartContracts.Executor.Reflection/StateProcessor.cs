@@ -87,8 +87,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         private StateTransitionResult ApplyCall(IState state, CallMessage message, byte[] contractCode)
         {
-            state.AddInitialBalance(message.Amount, message.To);
-
             var gasMeter = new GasMeter(message.GasLimit);
 
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
@@ -167,6 +165,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             {
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.NoCode);
             }
+
+            state.AddInitialBalance(message.Amount, message.To);
 
             return this.ApplyCall(state, message, contractCode);
         }
