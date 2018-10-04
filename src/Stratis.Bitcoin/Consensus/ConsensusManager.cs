@@ -1105,8 +1105,7 @@ namespace Stratis.Bitcoin.Consensus
                 long avgSize = (long)this.blockPuller.GetAverageBlockSizeBytes();
                 if (avgSize == 0)
                 {
-                    // TODO: move MaxBlockSize on a common place.
-                    avgSize = Block.MaxBlockSize;
+                    avgSize = this.network.Consensus.Options.MaxBlockBaseSize;
                 }
 
                 int maxBlocksToAsk = avgSize != 0 ? (int)(freeBytes / avgSize) : DefaultNumberOfBlocksToAsk;
