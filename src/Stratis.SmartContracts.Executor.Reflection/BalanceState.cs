@@ -38,15 +38,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Adds a single value transfer to an address, which will be used in all future accounting.
         /// Used when performing an external contract create/call to reflect the value sent with
-        /// the contract invocation transaction. This method can only be used to set an initial transfer once.
+        /// the contract invocation transaction.
         /// </summary>
         public void AddInitialTransfer(TransferInfo transferInfo)
         {
-            if (this.InitialTransfer != null)
-            {
-                throw new Exception("Cannot add an initial transfer twice!");
-            }
-
             this.InitialTransfer = transferInfo;
         }
 

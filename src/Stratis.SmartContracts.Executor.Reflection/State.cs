@@ -96,9 +96,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>
         /// Adds the initial transfer to the BalanceState. It is necessary to call this method if an external create or call
         /// is being executed in order to reflect the balance of the of the UTXO sent along with the contract invocation transaction.
+        /// This method can only be used to set an initial transfer once.
         /// </summary>
         public void AddInitialTransfer(TransferInfo initialTransfer)
         {
+            if (this.BalanceState.InitialTransfer != null)
+            {
+                throw new Exception("Cannot add an initial transfer twice!");
+            }
+
             this.BalanceState.AddInitialTransfer(initialTransfer);
         }
 
