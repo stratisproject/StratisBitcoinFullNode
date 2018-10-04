@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: {0}.", this.FederationMemberKey.PubKey);
 
                 // Enable mining because we are a federation member.
-                this.miner.StartMining();
+                this.miner.InitializeMining();
             }
         }
 
