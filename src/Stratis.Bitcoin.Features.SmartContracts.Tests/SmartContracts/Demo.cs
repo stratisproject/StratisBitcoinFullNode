@@ -12,7 +12,7 @@ public class Demo : SmartContract
     {
         get
         {
-            return PersistentState.GetInt32("Counter");
+            return PersistentState.GetAsInt32("Counter");
         }
         set
         {
@@ -24,7 +24,7 @@ public class Demo : SmartContract
     {
         get
         {
-            return PersistentState.GetString("TestSave");
+            return PersistentState.GetAsString("TestSave");
         }
         set
         {

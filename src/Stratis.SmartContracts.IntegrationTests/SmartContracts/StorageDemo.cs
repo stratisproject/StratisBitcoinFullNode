@@ -14,7 +14,7 @@ public class StorageDemo : SmartContract
     {
         get
         {
-            return PersistentState.GetInt32("Counter");
+            return PersistentState.GetAsInt32("Counter");
         }
         set
         {
@@ -26,7 +26,7 @@ public class StorageDemo : SmartContract
     {
         get
         {
-            return PersistentState.GetString("TestSave");
+            return PersistentState.GetAsString("TestSave");
         }
         set
         {
@@ -38,7 +38,7 @@ public class StorageDemo : SmartContract
     {
         get
         {
-            return PersistentState.GetAddress("Owner");
+            return PersistentState.GetAsAddress("Owner");
         }
         set
         {
@@ -50,7 +50,7 @@ public class StorageDemo : SmartContract
     {
         int expected = 12345;
         PersistentState.SetInt32("Int32", expected);
-        byte[] intBytes = PersistentState.GetByteArray("Int32");
+        byte[] intBytes = PersistentState.GetBytes("Int32");
         int actual = Serializer.ToInt32(intBytes);
         Assert(actual == expected);
     }

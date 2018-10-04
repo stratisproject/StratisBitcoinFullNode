@@ -10,13 +10,13 @@ public class Token : SmartContract
 
     public Address Owner
     {
-        get { return this.PersistentState.GetAddress("Owner"); }
+        get { return this.PersistentState.GetAsAddress("Owner"); }
         private set { this.PersistentState.SetAddress("Owner", value); }
     }
 
     public ulong GetBalance(Address address)
     {
-        return this.PersistentState.GetUInt64($"Balances[{address}]");
+        return this.PersistentState.GetAsUInt64($"Balances[{address}]");
     }
 
     private void SetBalance(Address address, ulong balance)

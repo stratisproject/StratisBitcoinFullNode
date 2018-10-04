@@ -7,7 +7,7 @@ public class Auction : SmartContract
     {
         get
         {
-            return this.PersistentState.GetAddress("Owner");
+            return this.PersistentState.GetAsAddress("Owner");
         }
         set
         {
@@ -19,7 +19,7 @@ public class Auction : SmartContract
     {
         get
         {
-            return this.PersistentState.GetUInt64("EndBlock");
+            return this.PersistentState.GetAsUInt64("EndBlock");
         }
         set
         {
@@ -31,7 +31,7 @@ public class Auction : SmartContract
     {
         get
         {
-            return this.PersistentState.GetAddress("HighestBidder");
+            return this.PersistentState.GetAsAddress("HighestBidder");
         }
         set
         {
@@ -43,7 +43,7 @@ public class Auction : SmartContract
     {
         get
         {
-            return this.PersistentState.GetUInt64("HighestBid");
+            return this.PersistentState.GetAsUInt64("HighestBid");
         }
         set
         {
@@ -55,7 +55,7 @@ public class Auction : SmartContract
     {
         get
         {
-            return this.PersistentState.GetBool("HasEnded");
+            return this.PersistentState.GetAsBool("HasEnded");
         }
         set
         {
@@ -65,7 +65,7 @@ public class Auction : SmartContract
 
     public ulong GetBalance(Address address)
     {
-        return this.PersistentState.GetUInt64($"Balances[{address}]");
+        return this.PersistentState.GetAsUInt64($"Balances[{address}]");
     }
 
     private void SetBalance(Address address, ulong balance)

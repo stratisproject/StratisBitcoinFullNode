@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts
+﻿using System;
+
+namespace Stratis.SmartContracts
 {
     public interface ISerializer
     {
@@ -40,9 +42,24 @@
         byte[] Serialize(string s);
 
         /// <summary>
+        /// Serializes a struct into an RLP-encoded byte[].
+        /// </summary>
+        byte[] SerializeStruct(object o);
+
+        /// <summary>
+        /// Serializes an array into an RLP-encoded byte[].
+        /// </summary>
+        byte[] SerializeArray(Array array);
+
+        /// <summary>
         /// Serializes bytes into a boolean via BitConverter.
         /// </summary>
         bool ToBool(byte[] val);
+
+        /// <summary>
+        /// Serializes UTF-8 encoded bytes into a char.
+        /// </summary>
+        char ToChar(byte[] val);
 
         /// <summary>
         /// Serializes 20-bytes into an address.
@@ -73,5 +90,15 @@
         /// Serializes UTF8-encoded bytes into a string.
         /// </summary>
         string ToString(byte[] val);
+
+        /// <summary>
+        /// Serializes RLP-encoded bytes into a struct.
+        /// </summary>
+        T ToStruct<T>(byte[] val) where T : struct;
+
+        /// <summary>
+        /// Serializes RLP-encoded bytes into an array.
+        /// </summary>
+        T[] ToArray<T>(byte[] val);
     }
 }

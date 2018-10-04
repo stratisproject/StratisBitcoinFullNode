@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var serialized = this.serializer.Serialize(valueType);
 
-            TestValueType deserialized = this.serializer.Deserialize<TestValueType>(serialized);
+            TestValueType deserialized = this.serializer.ToStruct<TestValueType>(serialized);
             TestValueTypeEqual(valueType, deserialized);
         }
 
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var serialized = this.serializer.Serialize(nestedValueType);
 
-            NestedValueType deserialized = this.serializer.Deserialize<NestedValueType>(serialized);
+            NestedValueType deserialized = this.serializer.ToStruct<NestedValueType>(serialized);
 
             TestValueType nested = deserialized.ValueType;
 
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var serialized = this.serializer.Serialize(nestedValueType);
 
-            HasReferenceTypeValueType deserialized = this.serializer.Deserialize<HasReferenceTypeValueType>(serialized);
+            HasReferenceTypeValueType deserialized = this.serializer.ToStruct<HasReferenceTypeValueType>(serialized);
 
             Assert.Equal(nestedValueType.ReferenceType, deserialized.ReferenceType);
         }
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             complexType.TestValueType = NewTestValueType();
 
             byte[] serialized = this.serializer.Serialize(complexType);
-            ComplexValueType deserialized = this.serializer.Deserialize<ComplexValueType>(serialized);
+            ComplexValueType deserialized = this.serializer.ToStruct<ComplexValueType>(serialized);
             Assert.Equal(complexType.Id, deserialized.Id);
             Assert.Equal(complexType.String, deserialized.String);
             Assert.Equal(complexType.NestedValueType.Id, deserialized.NestedValueType.Id);
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var testStruct = new ContainsNullInt();
             testStruct.NullInt = null;
             byte[] serialized = this.serializer.Serialize(testStruct);
-            ContainsNullInt deserialized = this.serializer.Deserialize<ContainsNullInt>(serialized);
+            ContainsNullInt deserialized = this.serializer.ToStruct<ContainsNullInt>(serialized);
             Assert.Equal(testStruct.NullInt, deserialized.NullInt);
 
             // When the value is set, the serializer breaks.
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //TODO: Should throw the ContractPrimitiveSerializationException
             testStruct.NullInt = 6;
             serialized = this.serializer.Serialize(testStruct);
-            Assert.ThrowsAny<Exception>(() => this.serializer.Deserialize<ContainsNullInt>(serialized));
+            Assert.ThrowsAny<Exception>(() => this.serializer.ToStruct<ContainsNullInt>(serialized));
         }
 
         private TestValueType NewTestValueType()

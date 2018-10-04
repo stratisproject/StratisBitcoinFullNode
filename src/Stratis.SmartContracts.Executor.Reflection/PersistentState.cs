@@ -26,141 +26,131 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         internal IContractPrimitiveSerializer Serializer { get; }
 
-        internal T GetObject<T>(string key)
+        // Will always return byte[0]
+        public byte[] GetBytes(string key)
         {
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            byte[] bytes = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
-
-            if (bytes == null)
-                return default(T);
-
-            return this.Serializer.Deserialize<T>(bytes);
+            return this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes) ?? new byte[0];
         }
 
-        public byte GetByte(string key)
-        {
-            return this.GetObject<byte>(key);
-        }
-
-        public byte[] GetByteArray(string key)
-        {
-            return this.GetObject<byte[]>(key);
-        }
-
-        public char GetChar(string key)
-        {
-            return this.GetObject<char>(key);
-        }
-
-        public Address GetAddress(string key)
-        {
-            return this.GetObject<Address>(key);
-        }
-
-        public bool GetBool(string key)
-        {
-            return this.GetObject<bool>(key);
-        }
-
-        public int GetInt32(string key)
-        {
-            return this.GetObject<int>(key);
-        }
-
-        public uint GetUInt32(string key)
-        {
-            return this.GetObject<uint>(key);
-        }
-
-        public long GetInt64(string key)
-        {
-            return this.GetObject<long>(key);
-        }
-
-        public ulong GetUInt64(string key)
-        {
-            return this.GetObject<ulong>(key);
-        }
-
-        public string GetString(string key)
-        {
-            return this.GetObject<string>(key);
-        }
-
-        public sbyte GetSbyte(string key)
-        {
-            return this.GetObject<sbyte>(key);
-        }
-
-        public T GetStruct<T>(string key) where T : struct
-        {
-            return this.GetObject<T>(key);
-        }
-
-        internal void SetObject<T>(string key, T obj)
+        public void SetBytes(string key, byte[] bytes)
         {
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-            this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, this.Serializer.Serialize(obj));
+            this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, bytes);
         }
 
-        public void SetByte(string key, byte value)
+        public char GetAsChar(string key)
         {
-            this.SetObject(key, value);
+            byte[] toReturn = this.GetBytes(key);
+            return Serializer.ToChar(toReturn);
         }
 
-        public void SetByteArray(string key, byte[] value)
+        public Address GetAsAddress(string key)
         {
-            this.SetObject(key, value);
+            byte[] toReturn = this.GetBytes(key);
+            return Serializer.ToAddress(toReturn);
+        }
+
+        public bool GetAsBool(string key)
+        {
+            byte[] toReturn = this.GetBytes(key);
+            return Serializer.ToBool(toReturn);
+        }
+
+        public int GetAsInt32(string key)
+        {
+            byte[] toReturn = this.GetBytes(key);
+            return Serializer.ToInt32(toReturn);
+        }
+
+        public uint GetAsUInt32(string key)
+        {
+            byte[] toReturn = this.GetBytes(key);
+            return Serializer.ToUInt32(toReturn);
+        }
+
+        public long GetAsInt64(string key)
+        {
+            byte[] toReturn = this.GetBytes(key);
+            return Serializer.ToInt64(toReturn);
+        }
+
+        public ulong GetAsUInt64(string key)
+        {
+            byte[] toReturn = this.GetBytes(key);
+            return Serializer.ToUInt64(toReturn);
+        }
+
+        public string GetAsString(string key)
+        {
+            byte[] toReturn = this.GetBytes(key);
+            return Serializer.ToString(toReturn);
+        }
+
+        public T GetAsStruct<T>(string key) where T : struct
+        {
+            byte[] toReturn = this.GetBytes(key);
+            return Serializer.ToStruct<T>(toReturn);
+        }
+
+        public T[] GetAsArray<T>(string key)
+        {
+            byte[] toReturn = this.GetBytes(key);
+            return Serializer.ToArray<T>(toReturn);
         }
 
         public void SetChar(string key, char value)
         {
-            this.SetObject(key, value);
+            byte[] valBytes = Serializer.Serialize(value);
+            this.SetBytes(key, valBytes);
         }
 
         public void SetAddress(string key, Address value)
         {
-            this.SetObject(key, value);
+            byte[] valBytes = Serializer.Serialize(value);
+            this.SetBytes(key, valBytes);
         }
 
         public void SetBool(string key, bool value)
         {
-            this.SetObject(key, value);
+            byte[] valBytes = Serializer.Serialize(value);
+            this.SetBytes(key, valBytes);
         }
 
         public void SetInt32(string key, int value)
         {
-            this.SetObject(key, value);
+            byte[] valBytes = Serializer.Serialize(value);
+            this.SetBytes(key, valBytes);
         }
 
         public void SetUInt32(string key, uint value)
         {
-            this.SetObject(key, value);
+            byte[] valBytes = Serializer.Serialize(value);
+            this.SetBytes(key, valBytes);
         }
 
         public void SetInt64(string key, long value)
         {
-            this.SetObject(key, value);
+            byte[] valBytes = Serializer.Serialize(value);
+            this.SetBytes(key, valBytes);
         }
 
         public void SetUInt64(string key, ulong value)
         {
-            this.SetObject(key, value);
+            byte[] valBytes = Serializer.Serialize(value);
+            this.SetBytes(key, valBytes);
         }
 
         public void SetString(string key, string value)
         {
-            this.SetObject(key, value);
-        }
-
-        public void SetSByte(string key, sbyte value)
-        {
-            this.SetObject(key, value);
+            byte[] valBytes = Serializer.Serialize(value);
+            this.SetBytes(key, valBytes);
         }
 
         public void SetStruct<T>(string key, T value) where T : struct
         {
-            this.SetObject(key, value);
+            byte[] valBytes = Serializer.SerializeStruct(value);
+            this.SetBytes(key, valBytes);
         }
     }
 }

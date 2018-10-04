@@ -9,7 +9,7 @@ public class CountContract : SmartContract
     {
         get
         {
-            return PersistentState.GetInt32("Count");
+            return PersistentState.GetAsInt32("Count");
         }
         set
         {
@@ -20,7 +20,7 @@ public class CountContract : SmartContract
     public bool SaveWorked {
         get
         {
-            return PersistentState.GetBool("SaveWorked");
+            return PersistentState.GetAsBool("SaveWorked");
         }
         set
         {

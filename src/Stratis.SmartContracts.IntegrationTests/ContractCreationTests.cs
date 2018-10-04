@@ -45,7 +45,8 @@ namespace Stratis.SmartContracts.IntegrationTests
                 BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("CreateCat", response.NewContractAddress, 0);
                 receiver.WaitMempoolCount(1);
                 receiver.MineBlocks(1);
-                
+
+                var test = sender.GetStorageValue(response.NewContractAddress, "CatCounter");
                 Assert.Equal(1, BitConverter.ToInt32(sender.GetStorageValue(response.NewContractAddress, "CatCounter")));
                 uint160 lastCreatedCatAddress =  new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));
                 uint160 expectedCreatedCatAddress = this.addressGenerator.GenerateAddress(callResponse.TransactionId, 0);
@@ -55,7 +56,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 var scBlockHeader = receiver.GetLastBlock().Header as SmartContractBlockHeader;
                 Assert.True(scBlockHeader.LogsBloom.Test(lastCreatedCatAddress.ToBytes()));
                 Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("CatCreated")));
-                Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes(0)));
+                Assert.True(scBlockHeader.LogsBloom.Test(new byte[0]));
                 // And sanity test that a random value is not available in bloom.
                 Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
 
