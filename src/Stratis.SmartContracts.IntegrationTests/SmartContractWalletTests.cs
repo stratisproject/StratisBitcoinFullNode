@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
@@ -48,17 +47,17 @@ namespace Stratis.SmartContracts.IntegrationTests
                 Node scReceiver = chain.Nodes[1];
 
                 // Mining adds coins to wallet.
-                var maturity = (int) chain.Network.Consensus.CoinbaseMaturity;
+                var maturity = (int)chain.Network.Consensus.CoinbaseMaturity;
                 TestHelper.MineBlocks(scSender.CoreNode, maturity + 5, scSender.WalletName, scSender.Password, scSender.AccountName);
                 chain.WaitForAllNodesToSync();
                 int spendable = GetSpendableBlocks(maturity + 5, maturity);
-                Assert.Equal(Money.COIN * spendable * 50, (long) scSender.WalletSpendableBalance);
+                Assert.Equal(Money.COIN * spendable * 50, (long)scSender.WalletSpendableBalance);
 
                 // Send coins to receiver.
                 HdAddress address = scReceiver.GetUnusedAddress();
                 scSender.SendTransaction(address.ScriptPubKey, Money.COIN * 100);
                 scReceiver.WaitMempoolCount(1);
-                Assert.Equal(Money.COIN * 100, (long) scReceiver.WalletSpendableBalance); // Balance is added (unconfirmed)
+                Assert.Equal(Money.COIN * 100, (long)scReceiver.WalletSpendableBalance); // Balance is added (unconfirmed)
 
                 // Transaction is in chain in last block.
                 scReceiver.MineBlocks(1);
@@ -72,13 +71,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPowNode();
-                CoreNode scReceiver = builder.CreateSmartContractPowNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode().NotInIBD();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode().NotInIBD();
 
                 builder.StartAll();
-
-                scSender.NotInIBD();
-                scReceiver.NotInIBD();
 
                 scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
                 scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
@@ -215,10 +211,8 @@ namespace Stratis.SmartContracts.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPowNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode().NotInIBD();
                 builder.StartAll();
-
-                scSender.NotInIBD();
 
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
 
@@ -261,13 +255,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPowNode();
-                CoreNode scReceiver = builder.CreateSmartContractPowNode();
+                CoreNode scSender = builder.CreateSmartContractPowNode().NotInIBD();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode().NotInIBD();
 
                 builder.StartAll();
-
-                scSender.NotInIBD();
-                scReceiver.NotInIBD();
 
                 int maturity = (int)scReceiver.FullNode.Network.Consensus.CoinbaseMaturity;
 
@@ -317,7 +308,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 Assert.Single(walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send));
 
                 // Check receipt was stored and can be retrieved.
-                var receiptResponse = (ReceiptResponse) ((JsonResult)senderSmartContractsController.GetReceipt(response.TransactionId.ToString())).Value;
+                var receiptResponse = (ReceiptResponse)((JsonResult)senderSmartContractsController.GetReceipt(response.TransactionId.ToString())).Value;
                 Assert.True(receiptResponse.Success);
                 Assert.Equal(response.NewContractAddress, receiptResponse.NewContractAddress);
                 Assert.Null(receiptResponse.To);
@@ -458,7 +449,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 var scBlockHeader = receiver.GetLastBlock().Header as SmartContractBlockHeader;
                 Assert.True(scBlockHeader.LogsBloom.Test(new Address(response.NewContractAddress).ToUint160(chain.Network).ToBytes()));
                 Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("Created")));
-                Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes((ulong) 20)));
+                Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes((ulong)20)));
                 // And sanity test that a non-indexed field and random value is not available in bloom.
                 Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes(sender.MinerAddress.Address)));
                 Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
@@ -493,10 +484,10 @@ namespace Stratis.SmartContracts.IntegrationTests
                 Node receiver = chain.Nodes[1];
 
                 // Mine some coins so we have balance
-                int maturity = (int) chain.Network.Consensus.CoinbaseMaturity;
+                int maturity = (int)chain.Network.Consensus.CoinbaseMaturity;
                 sender.MineBlocks(maturity + 1);
                 int spendable = GetSpendableBlocks(maturity + 1, maturity);
-                Assert.Equal(Money.COIN * spendable * 50, (long) sender.WalletSpendableBalance);
+                Assert.Equal(Money.COIN * spendable * 50, (long)sender.WalletSpendableBalance);
 
                 // Compile file
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
@@ -505,7 +496,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 // Send create with value, and ensure balance is stored.
                 BuildCreateContractTransactionResponse sendResponse = sender.SendCreateContractTransaction(compilationResult.Compilation, 30);
                 sender.WaitMempoolCount(1);
-                sender.MineBlocks(1);                
+                sender.MineBlocks(1);
 
                 Assert.Equal((ulong)30 * 100_000_000, sender.GetContractBalance(sendResponse.NewContractAddress));
             }

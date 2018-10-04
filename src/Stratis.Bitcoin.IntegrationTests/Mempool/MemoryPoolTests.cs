@@ -26,11 +26,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD();
 
                 builder.StartAll();
 
-                stratisNodeSync.NotInIBD().WithWallet();
+                stratisNodeSync.WithWallet();
 
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
@@ -57,11 +57,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD();
 
                 builder.StartAll();
 
-                stratisNodeSync.NotInIBD().WithWallet();
+                stratisNodeSync.WithWallet();
 
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
@@ -102,9 +102,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD();
                 builder.StartAll();
-                stratisNodeSync.NotInIBD().WithWallet();
+                stratisNodeSync.WithWallet();
 
                 TestHelper.MineBlocks(stratisNodeSync, 201); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
@@ -139,11 +139,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD();
 
                 builder.StartAll();
 
-                stratisNodeSync.NotInIBD().WithWallet();
+                stratisNodeSync.WithWallet();
 
                 stratisNodeSync.FullNode.NodeService<MempoolSettings>().RequireStandard = true; // make sure to test standard tx
 
@@ -283,11 +283,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD();
 
                 builder.StartAll();
 
-                stratisNodeSync.NotInIBD().WithWallet();
+                stratisNodeSync.WithWallet();
 
                 TestHelper.MineBlocks(stratisNodeSync, 101); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
@@ -326,15 +326,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network);
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD();
 
                 builder.StartAll();
 
-                stratisNodeSync.NotInIBD().WithWallet();
-                stratisNode1.NotInIBD();
-                stratisNode2.NotInIBD();
+                stratisNodeSync.WithWallet();
 
                 // generate blocks and wait for the downloader to pickup
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
