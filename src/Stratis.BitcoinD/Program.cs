@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Apps;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.BitcoinD
@@ -21,7 +22,9 @@ namespace Stratis.BitcoinD
         {
             try
             {
-                var nodeSettings = new NodeSettings(args:args);
+                var network = NodeSettings.FindNetwork(args, () => new BitcoinMain(), () => new BitcoinTest(), () => new BitcoinRegTest());
+
+                var nodeSettings = new NodeSettings(network, args: args);
 
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
