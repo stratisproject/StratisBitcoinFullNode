@@ -29,7 +29,7 @@ namespace Stratis.PoAChainD
                 bool keyGenerationRequired = nodeSettings.ConfigReader.GetOrDefault("generateKeyPair", false);
                 if (keyGenerationRequired)
                 {
-                    GenerateFederationKey(nodeSettings);
+                    GenerateFederationKey(nodeSettings.DataFolder);
                     return;
                 }
 
@@ -55,13 +55,13 @@ namespace Stratis.PoAChainD
             }
         }
 
-        private static void GenerateFederationKey(NodeSettings nodeSettings)
+        private static void GenerateFederationKey(DataFolder dataFolder)
         {
-            var tool = new KeyTool();
+            var tool = new KeyTool(dataFolder);
             Key key = tool.GeneratePrivateKey();
 
-            string savePath = tool.GetPrivateKeyDefaultPath(nodeSettings);
-            tool.SavePrivateKey(key, savePath);
+            string savePath = tool.GetPrivateKeySavePath();
+            tool.SavePrivateKey(key);
 
             var stringBuilder = new StringBuilder();
 

@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         public SmartContractWalletOnPosNetworkTests()
         {
-            this.callDataSerializer = new CallDataSerializer(new MethodParameterSerializer());
+            this.callDataSerializer = new CallDataSerializer(new MethodParameterStringSerializer());
         }
 
         [Fact]
@@ -32,13 +32,13 @@ namespace Stratis.SmartContracts.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPosNode();
-                CoreNode scReceiver = builder.CreateSmartContractPosNode();
+                CoreNode scSender = builder.CreateSmartContractPosNode().NotInIBD();
+                CoreNode scReceiver = builder.CreateSmartContractPosNode().NotInIBD();
 
                 builder.StartAll();
 
-                scSender.NotInIBD().WithWallet(Password, WalletName, Passphrase);
-                scReceiver.NotInIBD().WithWallet(Password, WalletName, Passphrase);
+                scSender.WithWallet(Password, WalletName, Passphrase);
+                scReceiver.WithWallet(Password, WalletName, Passphrase);
 
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 HdAddress senderAddress = TestHelper.MineBlocks(scSender, maturity + 5, WalletName, Password, AccountName).AddressUsed;
