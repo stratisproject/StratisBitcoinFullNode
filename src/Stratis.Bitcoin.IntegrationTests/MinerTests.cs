@@ -887,7 +887,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest);
                 builder.StartAll();
                 miner.NotInIBD().SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
-                miner.GenerateStratisWithMiner(5);
+                miner.GenerateAsync(5).GetAwaiter().GetResult();
 
                 Assert.Equal(5, miner.FullNode.ConsensusManager().Tip.Height);
             }
@@ -917,7 +917,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 Assert.True(syncers.All(x => x.FullNode.ConsensusManager().Tip.Height == 0));
 
-                miner.GenerateStratisWithMiner(3);
+                miner.GenerateAsync(3).GetAwaiter().GetResult();
 
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncers[0]));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncers[1]));
@@ -939,7 +939,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 builder.StartAll();
                 miner.NotInIBD().SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
-                miner.GenerateStratisWithMiner(initialChainLength);
+                miner.GenerateAsync(initialChainLength).GetAwaiter().GetResult();
 
                 // Connect syncer and check nodes are in step.
                 miner.CreateRPCClient().AddNode(syncer.NotInIBD().Endpoint, true);
@@ -949,7 +949,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Syncer disconnects and extends its chain by 3 blocks.  Chains now have different tips.
                 miner.CreateRPCClient().RemoveNode(syncer.Endpoint);
                 syncer.NotInIBD().SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
-                syncer.GenerateStratisWithMiner(initialChainLength + 3);
+                miner.GenerateAsync(initialChainLength + 3).GetAwaiter().GetResult();
                 Assert.NotEqual(miner.FullNode.ConsensusManager().Tip, syncer.FullNode.ConsensusManager().Tip);
 
                 // Main re-adds syncer node which has more chainwork.  Nodes sync and chains now have common tip.
