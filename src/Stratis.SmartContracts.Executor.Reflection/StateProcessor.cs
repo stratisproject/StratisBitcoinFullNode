@@ -54,6 +54,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // We need to generate an address here so that we can set the initial balance.
             uint160 address = state.GenerateAddress(this.AddressGenerator);
 
+            // For external creates we need to increment the balance state to take into
+            // account any funds sent as part of the original transaction.
             state.AddInitialBalance(message.Amount, address);
 
             return this.ApplyCreate(state, message.Parameters, message.Code, message, address);
@@ -165,6 +167,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.NoCode);
             }
 
+            // For external calls we need to increment the balance state to take into
+            // account any funds sent as part of the original transaction.
             state.AddInitialBalance(message.Amount, message.To);
 
             return this.ApplyCall(state, message, contractCode);
