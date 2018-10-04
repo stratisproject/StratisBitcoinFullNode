@@ -58,7 +58,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         private ulong GetPendingBalance(uint160 address)
         {
-            ulong ret = this.InitialTransfer?.To != null ? this.InitialTransfer.Value : 0UL;
+            ulong ret = this.InitialTransfer != null && this.InitialTransfer.To == address ? this.InitialTransfer.Value : 0UL;
 
             foreach (TransferInfo transfer in this.internalTransfers.Where(x => x.To == address))
             {
