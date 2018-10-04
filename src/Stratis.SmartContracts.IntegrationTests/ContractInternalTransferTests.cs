@@ -253,10 +253,35 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Special case because code needs to be stored in repo before execution. 
         }
 
-        [Fact(Skip = "TODO")]
-        public void InternalTransfer_Create_WithValueTransfer()
+        [Fact]
+        public void ExternalTransfer_ReceiveHandler_WithValue()
         {
-            //Create with value transfer
+            //Regular value transfer
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ReceiveFundsTest.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
+            uint160 contractAddress = this.addressGenerator.GenerateAddress(response.TransactionId, 0);
+
+            ulong amount = 123;
+
+            BuildCallContractTransactionResponse callResponse = this.node1.SendCallContractTransaction(
+                MethodCall.ReceiveHandlerName,
+                response.NewContractAddress,
+                amount);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+
+            // Stored balance in PersistentState should be only that which was sent
+            byte[] saved = this.node1.GetStorageValue(contractAddress.ToAddress(this.mockChain.Network), "Balance");
+            ulong savedUlong = BitConverter.ToUInt64(saved);
+            Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
         }
 
         [Fact]
