@@ -134,13 +134,7 @@ namespace Stratis.SmartContracts.Tools.Sct
         {
         }
 
-
-        public byte GetByte(string key)
-        {
-            return 0;
-        }
-
-        public byte[] GetByteArray(string key)
+        public byte[] GetBytes(string key)
         {
             return new byte[] { };
         }
@@ -185,20 +179,12 @@ namespace Stratis.SmartContracts.Tools.Sct
             return null;
         }
 
-        public sbyte GetSbyte(string key)
-        {
-            return 0;
-        }
-
         public T GetStruct<T>(string key) where T : struct
         {
             return default(T);
         }
-        public void SetByte(string key, byte value)
-        {
-        }
 
-        public void SetByteArray(string key, byte[] value)
+        public void SetBytes(string key, byte[] value)
         {
         }
 
@@ -234,8 +220,5 @@ namespace Stratis.SmartContracts.Tools.Sct
         {
         }
 
-        public void SetSByte(string key, sbyte value)
-        {
-        }
     }
 }

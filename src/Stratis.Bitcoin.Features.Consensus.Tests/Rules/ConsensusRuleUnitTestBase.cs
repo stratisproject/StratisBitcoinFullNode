@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -222,6 +223,90 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             return new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain,
                 this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
                 this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object));
+        }
+    }
+
+    public sealed class ProvenBlockHeaderBuilder
+    {
+        private readonly ProvenBlockHeader provenBlockHeader;
+
+        public ProvenBlockHeaderBuilder(PosBlock posBlock, Network network)
+        {
+            this.provenBlockHeader = ((PosConsensusFactory)network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBlock);
+        }
+
+        internal ProvenBlockHeader Build()
+        {
+            return this.provenBlockHeader;
+        }
+    }
+
+    public sealed class PosBlockBuilder
+    {
+        private readonly PosBlock posBlock;
+
+        public PosBlockBuilder(Network network)
+        {
+            // Create coinstake Tx.
+            Transaction previousTx = network.CreateTransaction();
+            previousTx.AddOutput(new TxOut());
+            Transaction coinstakeTx = network.CreateTransaction();
+            coinstakeTx.AddOutput(new TxOut(0, Script.Empty));
+            coinstakeTx.AddOutput(new TxOut(50, new Script()));
+            coinstakeTx.AddInput(previousTx, 0);
+
+            // Create coinbase Tx.
+            Transaction coinBaseTx = network.CreateTransaction();
+            coinBaseTx.AddOutput(100, new Script());
+            coinBaseTx.AddInput(new TxIn());
+
+            var block = (PosBlock)network.CreateBlock();
+            block.AddTransaction(coinBaseTx);
+            block.AddTransaction(coinstakeTx);
+            block.BlockSignature = new BlockSignature { Signature = new byte[] { 0x2, 0x3 } };
+
+            this.posBlock = block;
+        }
+
+        internal PosBlockBuilder WithLargeMerkleProof(int numberOfHashes = 50_000)
+        {
+            var hashes = new List<uint256>();
+            for (int i = 0; i < numberOfHashes; i++)
+            {
+                var hash = new uint256(RandomUtils.GetBytes(32));
+                hashes.Add(hash);
+                this.posBlock.Transactions.Add(new Transaction { Time = (uint)i });
+            }
+
+            this.posBlock.UpdateMerkleRoot();
+            return this;
+        }
+
+        internal PosBlockBuilder WithLargeCoinstake(int numberOfTransactions = 100_000)
+        {
+            var rogueCoinstakeTransaction = new Transaction();
+            for (int i = 0; i < numberOfTransactions; i++)
+            {
+                rogueCoinstakeTransaction.Inputs.Add(new TxIn(new Script(RandomUtils.GetBytes(100))));
+            }
+
+            // Replace existing coinstake with a rogue one.
+            this.posBlock.Transactions[1] = rogueCoinstakeTransaction;
+
+            return this;
+        }
+
+        internal PosBlockBuilder WithLargeSignature(int numberOfBytes = 100)
+        {
+            // Replace existing signature with an invalid one.
+            this.posBlock.BlockSignature = new BlockSignature { Signature = RandomUtils.GetBytes(numberOfBytes) };
+
+            return this;
+        }
+
+        internal PosBlock Build()
+        {
+            return this.posBlock;
         }
     }
 }
